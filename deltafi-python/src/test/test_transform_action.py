@@ -94,7 +94,6 @@ def test_action_returns_error():
     plugin_to_response = Plugin.to_response(event, '12:00', '12:01', result)
 
     expected_plugin_to_response = {
-        'actionId': 'ACTION_ID',
         'actionName': 'ACTION_NAME',
         'did': '123did',
         'error': {

@@ -274,7 +274,6 @@ class ActionTest(ABC):
             flow_name=INGRESS_FLOW,
             flow_id="FLOWID",
             action_name=action_name,
-            action_id="ACTIONID",
             action_version="1.0",
             hostname=HOSTNAME,
             system_name=SYSTEM,

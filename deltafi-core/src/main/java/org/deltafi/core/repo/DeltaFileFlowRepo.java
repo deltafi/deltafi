@@ -25,12 +25,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
-public interface DeltaFileFlowRepo extends JpaRepository<DeltaFileFlow, UUID> {
+public interface DeltaFileFlowRepo extends JpaRepository<DeltaFileFlow, UUID>, DeltaFileFlowRepoCustom {
     @NotNull
     @EntityGraph(value = "deltaFile.withActions")
     Optional<DeltaFileFlow> findById(@NotNull UUID did);
@@ -40,4 +38,7 @@ public interface DeltaFileFlowRepo extends JpaRepository<DeltaFileFlow, UUID> {
 
     @Query("SELECT df FROM DeltaFileFlow df WHERE df.deltaFile.did IN :deltaFileIds AND df.number = 0")
     List<DeltaFileFlow> findAllByDeltaFileIdsAndFlowZero(@Param("deltaFileIds") List<UUID> deltaFileIds);
+
+    @Query("SELECT COUNT(*) FROM DeltaFileFlow df WHERE df.errorAcknowledged IS NULL AND df.state = 'ERROR'")
+    long countUnacknowledgedErrors();
 }

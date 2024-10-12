@@ -35,7 +35,6 @@ def make_context_dict():
         'flowName': 'FLOW_NAME',
         'flowId': 'FLOW_ID',
         'actionName': 'ACTION_NAME',
-        'actionId': 'ACTION_ID',
         'actionVersion': '1.0',
         'hostname': 'HOSTNAME',
         'systemName': 'SYSTEM_NAME'
@@ -64,7 +63,6 @@ def make_context():
                    flow_name='FLOW_NAME',
                    flow_id='FLOW_ID',
                    action_name='ACTION_NAME',
-                   action_id='ACTION_ID',
                    action_version='1.0',
                    hostname='HOSTNAME',
                    system_name='SYSTEM_NAME',

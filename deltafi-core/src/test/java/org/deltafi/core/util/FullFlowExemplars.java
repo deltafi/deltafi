@@ -46,12 +46,6 @@ public class FullFlowExemplars {
     public static final UUID UUID_1 = UUID.fromString("11111111-1111-1111-1111-111111111111");
     public static final UUID UUID_2 = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
-    public static final Map<String, UUID> ACTION_UUIDS = Map.of(
-            "SampleTransformAction", UUID.fromString("00000000-0000-0000-0000-000000000001"),
-            SAMPLE_EGRESS_ACTION, UUID.fromString("00000000-0000-0000-0000-000000000002"),
-            "Utf8TransformAction", UUID.fromString("00000000-0000-0000-0000-000000000003")
-    );
-
     public static DeltaFile ingressedFromAction(UUID did, String dataSource) {
         Content content = new Content("filename", "application/text",
                 new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 36, did));
@@ -93,9 +87,7 @@ public class FullFlowExemplars {
         DeltaFileFlow transformFlow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, ingressFlow,
                 Set.of(TRANSFORM_TOPIC), OffsetDateTime.now());
 
-        Action action = transformFlow.addAction("Utf8TransformAction", ActionType.TRANSFORM, ActionState.QUEUED,
-                        OffsetDateTime.now());
-        action.setId(ACTION_UUIDS.get("Utf8TransformAction"));
+        transformFlow.addAction("Utf8TransformAction", ActionType.TRANSFORM, ActionState.QUEUED, OffsetDateTime.now());
         transformFlow.setDeltaFile(deltaFile);
 
         return deltaFile;
@@ -129,7 +121,7 @@ public class FullFlowExemplars {
     }
 
     public static Action getAction(DeltaFileFlow flow, String actionName) {
-        return flow.getAction(actionName, ACTION_UUIDS.get(actionName));
+        return flow.getAction(actionName);
     }
 
     public static DeltaFile postTransformInvalidDeltaFile(UUID did) {
@@ -154,8 +146,7 @@ public class FullFlowExemplars {
         flow.setPendingActions(TRANSFORM_ACTIONS.stream().map(ActionConfiguration::getName).toList());
         flow.getInput().setMetadata(SOURCE_METADATA);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
-        Action action = flow.queueAction("Utf8TransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
-        action.setId(ACTION_UUIDS.get("Utf8TransformAction"));
+        flow.queueAction("Utf8TransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
         deltaFile.setName("input.txt");
         deltaFile.setDataSource(REST_DATA_SOURCE_NAME);
         return deltaFile;
@@ -167,10 +158,9 @@ public class FullFlowExemplars {
         Content content = new Content("file.json", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111114"), 0, 500, did));
         DeltaFileFlow flow = deltaFile.getFlow(TRANSFORM_FLOW_NAME, UUID_1);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
-        Action action = flow.getAction("Utf8TransformAction", ACTION_UUIDS.get("Utf8TransformAction"));
+        Action action = flow.getAction("Utf8TransformAction");
         action.complete(START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), OffsetDateTime.now());
-        Action newAction = flow.queueAction("SampleTransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
-        newAction.setId(ACTION_UUIDS.get("SampleTransformAction"));
+        flow.queueAction("SampleTransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
         return deltaFile;
     }
 
@@ -179,7 +169,7 @@ public class FullFlowExemplars {
         Content content = new Content("transformed", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFileFlow flow = deltaFile.getFlow(TRANSFORM_FLOW_NAME, UUID_1);
         flow.setPublishTopics(List.of(EGRESS_TOPIC));
-        Action action = flow.getAction("SampleTransformAction", ACTION_UUIDS.get("SampleTransformAction"));
+        Action action = flow.getAction("SampleTransformAction");
         action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), OffsetDateTime.now());
         Action noSubAction = flow.queueNewAction(NO_SUBSCRIBERS, ActionType.PUBLISH, false, OffsetDateTime.now());
         noSubAction.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), NO_SUBSCRIBER_CAUSE, "");
@@ -198,8 +188,7 @@ public class FullFlowExemplars {
         egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
         egressFlow.getInput().setMetadata(flow.getMetadata());
         egressFlow.getInput().setContent(flow.lastContent());
-        Action action = egressFlow.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
-        action.setId(ACTION_UUIDS.get(SAMPLE_EGRESS_ACTION));
+        egressFlow.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         return deltaFile;
     }
@@ -215,7 +204,7 @@ public class FullFlowExemplars {
         deltaFile.getFlows().get(1).setPendingActions(List.of(TRANSFORM2.getName()));
         deltaFile.setStage(DeltaFileStage.ERROR);
         DeltaFileFlow flow = deltaFile.getFlow(TRANSFORM_FLOW_NAME, UUID_1);
-        Action action = flow.getAction("SampleTransformAction", ACTION_UUIDS.get("SampleTransformAction"));
+        Action action = flow.getAction("SampleTransformAction");
         action.error(START_TIME, STOP_TIME, OffsetDateTime.now(), "transform failed", "message");
         return deltaFile;
     }
@@ -240,8 +229,7 @@ public class FullFlowExemplars {
         egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
         egressFlow.getInput().setMetadata(flow.getMetadata());
         egressFlow.getInput().setContent(flow.lastContent());
-        Action action = egressFlow.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
-        action.setId(ACTION_UUIDS.get(SAMPLE_EGRESS_ACTION));
+        egressFlow.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
         return deltaFile;
     }
 
@@ -253,7 +241,7 @@ public class FullFlowExemplars {
         flow.setState(DeltaFileFlowState.COMPLETE);
         flow.setPublishTopics(List.of(EGRESS_TOPIC));
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
-        Action action = flow.getAction("SampleTransformAction", ACTION_UUIDS.get("SampleTransformAction"));
+        Action action = flow.getAction("SampleTransformAction");
         action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), OffsetDateTime.now());
         return deltaFile;
     }
@@ -269,7 +257,7 @@ public class FullFlowExemplars {
         DeltaFileFlow flow = deltaFile.getFlow(EGRESS_FLOW_NAME, UUID_2);
         flow.setPendingActions(List.of(EGRESS.getName()));
         flow.setState(DeltaFileFlowState.ERROR);
-        Action action = flow.getAction(SAMPLE_EGRESS_ACTION, ACTION_UUIDS.get(SAMPLE_EGRESS_ACTION));
+        Action action = flow.getAction(SAMPLE_EGRESS_ACTION);
         action.error(START_TIME, STOP_TIME, OffsetDateTime.now(),
                 "Authority XYZ not recognized", "Dead beef feed face cafe");
         action.setNextAutoResume(nextAutoResume);
@@ -303,7 +291,7 @@ public class FullFlowExemplars {
         Action action = egressFlow.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
         action.setFilteredCause("Filtered by test mode");
         action.setFilteredContext("Filtered by test mode with a reason of - " + TRANSFORM_FLOW_NAME);
-        egressFlow.setState(DeltaFileFlowState.COMPLETE);
+        egressFlow.setState(DeltaFileFlowState.FILTERED);
         egressFlow.setTestMode(true);
         egressFlow.setTestModeReason(TRANSFORM_FLOW_NAME);
 
@@ -318,7 +306,7 @@ public class FullFlowExemplars {
         deltaFile.setEgressed(true);
         Content content = new Content("transformed", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFileFlow flow = deltaFile.getFlow(EGRESS_FLOW_NAME, UUID_2);
-        Action action = flow.getAction(SAMPLE_EGRESS_ACTION, ACTION_UUIDS.get(SAMPLE_EGRESS_ACTION));
+        Action action = flow.getAction(SAMPLE_EGRESS_ACTION);
         action.complete(START_TIME, STOP_TIME, List.of(content), flow.getMetadata(), List.of(), OffsetDateTime.now());
         flow.setState(DeltaFileFlowState.COMPLETE);
         return deltaFile;

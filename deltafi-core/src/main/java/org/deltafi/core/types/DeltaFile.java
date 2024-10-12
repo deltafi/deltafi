@@ -186,6 +186,7 @@ public class DeltaFile {
   public void updateFlags() {
     terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
+    filtered = flows.stream().anyMatch(f -> f.getState() == DeltaFileFlowState.FILTERED);
   }
 
   public void setContentDeleted(OffsetDateTime contentDeleted) {
@@ -219,7 +220,7 @@ public class DeltaFile {
     Set<String> pendingAnnotations = getPendingAnnotations(expectedAnnotations);
 
     flows.stream().filter(flow -> flow.getType() == FlowType.EGRESS && flow.getName().equals(flowName))
-            .forEach(deltaFileFlow -> setPendingAnnotations(deltaFileFlow, pendingAnnotations, now));
+            .forEach(deltaFileFlow -> setPendingAnnotations(deltaFileFlow, pendingAnnotations));
 
     updateFlags();
   }
@@ -233,9 +234,9 @@ public class DeltaFile {
     return pendingAnnotations;
   }
 
-  private void setPendingAnnotations(DeltaFileFlow flow, Set<String> expectedAnnotations, OffsetDateTime now) {
+  private void setPendingAnnotations(DeltaFileFlow flow, Set<String> expectedAnnotations) {
     flow.setPendingAnnotations(expectedAnnotations);
-    flow.updateState(now);
+    flow.updateState();
   }
 
   public List<DeltaFileFlow> erroredFlows() {
@@ -263,7 +264,7 @@ public class DeltaFile {
     deltaFileFlow.getActions().stream()
             .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.JOINING)
             .forEach(action -> action.changeState(ActionState.JOINED, start, stop, now));
-    deltaFileFlow.updateState(now);
+    deltaFileFlow.updateState();
   }
 
   public void timeoutJoinAction(UUID joinId, String actionName, OffsetDateTime now, String reason) {
@@ -275,7 +276,7 @@ public class DeltaFile {
     deltaFileFlow.getActions().stream()
             .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.JOINING)
             .forEach(a -> a.error(now, now, now, "Failed join", reason));
-    deltaFileFlow.updateState(now);
+    deltaFileFlow.updateState();
   }
 
   private Stream<DeltaFileFlow> joiningFlows(UUID joinId) {
@@ -505,7 +506,6 @@ public class DeltaFile {
                     .dataSource(dataSource)
                     .flowId(flow.getId())
                     .actionName(action.getName())
-                    .actionId(action.getId())
                     .did(did)
                     .deltaFileName(name)
                     .joinedDids(Objects.requireNonNullElseGet(joinedDids, List::of))

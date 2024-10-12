@@ -263,7 +263,6 @@ class Plugin(object):
             'flowName': event.context.flow_name,
             'flowId': event.context.flow_id,
             'actionName': event.context.action_name,
-            'actionId': event.context.action_id,
             'start': start_time,
             'stop': stop_time,
             'type': result.result_type,

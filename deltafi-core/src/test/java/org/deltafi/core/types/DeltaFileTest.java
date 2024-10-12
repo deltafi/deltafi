@@ -50,8 +50,8 @@ class DeltaFileTest {
 
         assertNull(action1.getNextAutoResumeReason());
         assertNull(action1.getNextAutoResume());
-        assertEquals("reason", action1.getErrorAcknowledgedReason());
-        assertEquals(now2, action1.getErrorAcknowledged());
+        assertEquals("reason", flow.getErrorAcknowledgedReason());
+        assertEquals(now2, flow.getErrorAcknowledged());
     }
 
     @Test

@@ -45,7 +45,7 @@
         <Column field="dataSource" header="Data Source" :sortable="true" />
         <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
           <template #body="{ data: deltaFile }">
-            <ErrorAcknowledgedBadge v-if="deltaFile.lastErroredAction.errorAcknowledged" :reason="deltaFile.lastErroredAction.errorAcknowledgedReason" :timestamp="deltaFile.lastErroredAction.errorAcknowledged" class="mr-1" />
+            <ErrorAcknowledgedBadge v-if="deltaFile.lastErroredFlow.errorAcknowledged" :reason="deltaFile.lastErroredFlow.errorAcknowledgedReason" :timestamp="deltaFile.lastErroredFlow.errorAcknowledged" class="mr-1" />
             <AutoResumeBadge v-if="deltaFile.lastErroredAction.nextAutoResume !== null" :timestamp="deltaFile.lastErroredAction.nextAutoResume" :reason="deltaFile.lastErroredAction.nextAutoResumeReason" />
             {{ deltaFile.lastErroredAction.errorCause }}
           </template>
@@ -259,7 +259,8 @@ const fetchErrors = async () => {
   errors.value = errors.value.map((deltaFile) => {
     return {
       ...deltaFile,
-      lastErroredAction: latestError(deltaFile),
+      lastErroredFlow: latestErrorFlow(deltaFile),
+      lastErroredAction: latestErrorAction(deltaFile),
     };
   });
 };
@@ -318,13 +319,20 @@ const filterSelectedDids = computed(() => {
   return dids;
 });
 
-const latestError = (deltaFile) => {
+const latestErrorAction = (deltaFile) => {
   return _.chain(deltaFile.flows)
     .map((flow) => flow.actions)
     .flatten()
     .filter((action) => action.state === "ERROR")
     .sortBy(["modified"])
     .value()[0];
+};
+
+const latestErrorFlow = (deltaFile) => {
+  return _.chain(deltaFile.flows)
+      .filter((flow) => flow.state === "ERROR")
+      .sortBy(["modified"])
+      .value()[0];
 };
 
 const actionRowClass = (action) => {

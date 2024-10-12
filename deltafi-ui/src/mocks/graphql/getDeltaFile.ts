@@ -39,10 +39,11 @@ const generateData = () => {
           topics: [],
           ancestorIds: []
         },
+        errorAcknowledged: null,
+        errorAcknowledgedReason: null,
         actions: [
           {
             name: "HelloWorldTimedIngressAction",
-            id: 0,
             type: "INGRESS",
             state: "COMPLETE",
             created: "2024-05-30T11:31:55.653Z",
@@ -52,8 +53,6 @@ const generateData = () => {
             modified: "2024-05-30T11:31:55.653Z",
             errorCause: null,
             errorContext: null,
-            errorAcknowledged: null,
-            errorAcknowledgedReason: null,
             nextAutoResume: null,
             nextAutoResumeReason: null,
             filteredCause: null,
@@ -94,7 +93,6 @@ const generateData = () => {
           },
           {
             name: "Replay",
-            id: 1,
             type: "INGRESS",
             state: "COMPLETE",
             created: "2024-05-30T11:31:55.653Z",
@@ -104,8 +102,6 @@ const generateData = () => {
             modified: "2024-05-30T11:31:55.653Z",
             errorCause: null,
             errorContext: null,
-            errorAcknowledged: null,
-            errorAcknowledgedReason: null,
             nextAutoResume: null,
             nextAutoResumeReason: null,
             filteredCause: null,
@@ -143,7 +139,6 @@ const generateData = () => {
       },
       {
         name: "hello-world-java-data-route-or-filter",
-        id: 1,
         type: "TRANSFORM",
         state: "COMPLETE",
         created: "2024-05-30T11:31:55.659Z",
@@ -174,10 +169,11 @@ const generateData = () => {
           ],
           ancestorIds: []
         },
+        errorAcknowledged: null,
+        errorAcknowledgedReason: null,
         actions: [
           {
             name: "NO_SUBSCRIBERS",
-            id: 0,
             type: "PUBLISH",
             state: "FILTERED",
             created: "2024-05-30T11:31:55.659Z",
@@ -187,8 +183,6 @@ const generateData = () => {
             modified: "2024-05-30T11:31:55.659Z",
             errorCause: null,
             errorContext: null,
-            errorAcknowledged: null,
-            errorAcknowledgedReason: null,
             nextAutoResume: null,
             nextAutoResumeReason: null,
             filteredCause: "No matching subscribers were found",

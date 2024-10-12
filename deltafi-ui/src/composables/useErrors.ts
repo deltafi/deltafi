@@ -57,6 +57,8 @@ export default function useErrors() {
             created: true,
             modified: true,
             state: true,
+            errorAcknowledged: true,
+            errorAcknowledgedReason: true,
             actions: {
               name: true,
               created: true,
@@ -65,8 +67,6 @@ export default function useErrors() {
               errorCause: true,
               errorContext: true,
               state: true,
-              errorAcknowledged: true,
-              errorAcknowledgedReason: true,
               nextAutoResume: true,
               nextAutoResumeReason: true,
               content: {

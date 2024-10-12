@@ -119,7 +119,7 @@ public class CoreEventQueue {
             }
 
             if (checkUnique) {
-                String pattern = "*\"" + actionInput.getActionContext().getActionId() + "\"*";
+                String pattern = "*\"" + actionInput.getActionContext().getFlowId() + "\"*";
                 if (valkeyKeyedBlockingQueue.exists(actionInput.getQueueName(), pattern)) {
                     log.warn("Skipping queueing for potential duplicate action event: {}", actionInput);
                     continue;

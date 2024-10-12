@@ -18,7 +18,6 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
@@ -71,10 +70,9 @@ public class DeltaFileFlow {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private DeltaFileFlowInput input = new DeltaFileFlowInput();
-    @OneToMany(mappedBy = "deltaFileFlow", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @Builder.Default
-    @JsonManagedReference
-    @OrderBy("number ASC")
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<Action> actions = new ArrayList<>();
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
@@ -92,6 +90,11 @@ public class DeltaFileFlow {
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private List<String> pendingActions = new ArrayList<>();
+    private OffsetDateTime errorAcknowledged;
+    private String errorAcknowledgedReason;
+    private boolean coldQueued;
+    private String errorOrFilterCause;
+    private OffsetDateTime nextAutoResume;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delta_file_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
@@ -122,6 +125,11 @@ public class DeltaFileFlow {
         this.pendingActions = other.pendingActions;
         this.deltaFile = other.deltaFile;
         this.version = other.version;
+        this.errorAcknowledged = other.errorAcknowledged;
+        this.errorAcknowledgedReason = other.errorAcknowledgedReason;
+        this.coldQueued = other.coldQueued;
+        this.errorOrFilterCause = other.errorOrFilterCause;
+        this.nextAutoResume = other.nextAutoResume;
     }
 
     @Override
@@ -147,12 +155,17 @@ public class DeltaFileFlow {
                 Objects.equals(pendingAnnotations, other.pendingAnnotations) &&
                 Objects.equals(testModeReason, other.testModeReason) &&
                 Objects.equals(joinId, other.joinId) &&
-                Objects.equals(pendingActions, other.pendingActions);
+                Objects.equals(pendingActions, other.pendingActions) &&
+                Objects.equals(errorAcknowledged, other.errorAcknowledged) &&
+                Objects.equals(errorAcknowledgedReason, other.errorAcknowledgedReason) &&
+                coldQueued == other.coldQueued &&
+                Objects.equals(errorOrFilterCause, other.errorOrFilterCause) &&
+                Objects.equals(nextAutoResume, other.nextAutoResume);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, number, type, state, created, modified, flowPlan, input, new ArrayList<>(actions), publishTopics, depth, pendingAnnotations, testMode, testModeReason, joinId, pendingActions);
+        return Objects.hash(id, name, number, type, state, created, modified, flowPlan, input, new ArrayList<>(actions), publishTopics, depth, pendingAnnotations, testMode, testModeReason, joinId, pendingActions, errorAcknowledged, errorAcknowledgedReason, coldQueued, errorOrFilterCause, nextAutoResume);
     }
 
     /**
@@ -219,7 +232,7 @@ public class DeltaFileFlow {
 
     public boolean hasUnacknowledgedError() {
         Action lastAction = lastAction();
-        return lastAction != null && lastAction.getState() == ActionState.ERROR && lastAction.getErrorAcknowledged() == null;
+        return lastAction != null && lastAction.getState() == ActionState.ERROR && errorAcknowledged == null;
     }
 
     public boolean hasPendingAnnotations() {
@@ -271,7 +284,6 @@ public class DeltaFileFlow {
                 .queued(now)
                 .modified(now)
                 .attempt(1 + getLastAttemptNum(name))
-                .deltaFileFlow(this)
                 .build();
         if (actions == null) {
             actions = new ArrayList<>();
@@ -292,20 +304,20 @@ public class DeltaFileFlow {
     }
 
     public boolean terminal() {
-        return state == DeltaFileFlowState.COMPLETE || state == DeltaFileFlowState.CANCELLED || state == DeltaFileFlowState.ERROR;
+        return state == DeltaFileFlowState.COMPLETE || state == DeltaFileFlowState.CANCELLED || state == DeltaFileFlowState.ERROR || state == DeltaFileFlowState.FILTERED;
     }
 
-    public Action getAction(String actionName, UUID actionId) {
+    public Action getAction(String actionName) {
         return getActions().stream()
-                .filter(action -> action.getName().equals(actionName) && action.getId().equals(actionId))
+                .filter(action -> action.getName().equals(actionName))
                 .findFirst()
                 .orElse(null);
     }
 
-    public Action getPendingAction(String actionName, UUID actionId, UUID did) {
-        Action action = getAction(actionName, actionId);
+    public Action getPendingAction(String actionName, UUID did) {
+        Action action = getAction(actionName);
         if (action == null || action.terminal()) {
-            throw new UnexpectedActionException(name, number, actionName, actionId, did);
+            throw new UnexpectedActionException(name, number, actionName, did);
         }
 
         return action;
@@ -318,7 +330,9 @@ public class DeltaFileFlow {
         }
 
         lastAction.retry(resumeMetadata.stream().filter(this::metadataFlowMatches).toList(), now);
-        updateState(now);
+        errorAcknowledged = null;
+        errorAcknowledgedReason = null;
+        updateState();
         return true;
     }
 
@@ -331,9 +345,11 @@ public class DeltaFileFlow {
     }
 
     public boolean acknowledgeError(OffsetDateTime now, String reason) {
-        boolean acked = !actions.isEmpty() && actions.getLast().acknowledgeError(now, reason);
+        boolean acked = !actions.isEmpty() && actions.getLast().acknowledgeError(now);
         if (acked) {
             modified = now;
+            errorAcknowledged = now;
+            errorAcknowledgedReason = reason;
         }
         return acked;
     }
@@ -343,23 +359,43 @@ public class DeltaFileFlow {
                 action.getState() != ActionState.RETRIED && action.terminal());
     }
 
-    public void updateState(OffsetDateTime now) {
-        modified = now;
-        ActionState lastState = lastActionState();
-        state = switch(lastState) {
+    public void updateState() {
+        Action action = lastAction();
+        if (action == null) {
+            state = DeltaFileFlowState.COMPLETE;
+            nextAutoResume = null;
+            errorOrFilterCause = null;
+            return;
+        }
+
+        modified = action.getModified();
+        ActionState lastState = action.getState();
+        state = switch (lastState) {
             case null -> DeltaFileFlowState.COMPLETE;
             case ERROR -> DeltaFileFlowState.ERROR;
             case CANCELLED -> DeltaFileFlowState.CANCELLED;
             case COMPLETE -> hasPendingAnnotations() ? DeltaFileFlowState.PENDING_ANNOTATIONS : DeltaFileFlowState.COMPLETE;
-            case JOINED, FILTERED, SPLIT -> DeltaFileFlowState.COMPLETE;
+            case JOINED, SPLIT -> DeltaFileFlowState.COMPLETE;
+            case FILTERED -> DeltaFileFlowState.FILTERED;
             default -> DeltaFileFlowState.IN_FLIGHT;
         };
+        coldQueued = lastState == ActionState.COLD_QUEUED;
+        if (lastState == ActionState.ERROR) {
+            errorOrFilterCause = action.getErrorCause();
+            nextAutoResume = action.getNextAutoResume();
+        } else {
+            nextAutoResume = null;
+            if (lastState == ActionState.FILTERED) {
+                errorOrFilterCause = action.getFilteredCause();
+            } else {
+                errorOrFilterCause = null;
+            }
+        }
     }
 
     public void removePendingAnnotations(Set<String> receivedAnnotations) {
         this.pendingAnnotations = this.pendingAnnotations != null ? new HashSet<>(pendingAnnotations) : new HashSet<>();
         this.pendingAnnotations.removeAll(receivedAnnotations);
-        updateState(OffsetDateTime.now());
     }
 
     public void removePendingAction(String actionName) {

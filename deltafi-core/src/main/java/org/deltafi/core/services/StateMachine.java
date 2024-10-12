@@ -86,7 +86,7 @@ public class StateMachine {
             }
         }
 
-        input.flow().updateState(OffsetDateTime.now(clock));
+        input.flow().updateState();
 
         return actionInputs;
     }
@@ -124,7 +124,6 @@ public class StateMachine {
                 OffsetDateTime.now(clock));
         action.setFilteredCause("Filtered by test mode");
         action.setFilteredContext("Filtered by test mode with a reason of - " + input.flow().getTestModeReason());
-        input.deltaFile().setFiltered(true);
         return Collections.emptyList();
     }
 

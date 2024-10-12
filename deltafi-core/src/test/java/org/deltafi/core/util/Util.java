@@ -33,7 +33,6 @@ import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
-import static org.deltafi.core.util.FullFlowExemplars.UUID_0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -88,18 +87,18 @@ public class Util {
     public static DeltaFile buildErrorDeltaFile(UUID did, String flow, String cause, String context, OffsetDateTime created,
                                                 OffsetDateTime modified, String extraError, List<Content> content) {
 
-        DeltaFile deltaFile = Util.buildDeltaFile(did, "ingressFlow", DeltaFileStage.ERROR, created, modified, content);
+        DeltaFile deltaFile = Util.buildDeltaFile(did, "ingressFlow", DeltaFileStage.COMPLETE, created, modified, content);
         deltaFile.getFlows().getFirst().getActions().getFirst().setState(ActionState.COMPLETE);
         DeltaFileFlow firstFlow = deltaFile.addFlow(flow, FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
         Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
-        firstFlow.updateState(modified);
+        firstFlow.updateState();
 
         if (extraError != null) {
             DeltaFileFlow secondFlow = deltaFile.addFlow("extraFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
             Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
             anotherErrorAction.error(modified, modified, modified, extraError, context);
-            secondFlow.updateState(modified);
+            secondFlow.updateState();
         }
         deltaFile.updateState(modified);
 
@@ -139,8 +138,7 @@ public class Util {
         deltaFile.getFlows().add(flow);
 
         flow.setDeltaFile(deltaFile);
-        ingressAction.setDeltaFileFlow(flow);
-
+        flow.updateState();
         deltaFile.updateFlags();
         return deltaFile;
     }
@@ -212,6 +210,7 @@ public class Util {
             Assertions.assertThat(actual.hasPendingAnnotations()).isEqualTo(expected.hasPendingAnnotations());
             Assertions.assertThat(actual.isTestMode()).isEqualTo(expected.isTestMode());
             Assertions.assertThat(actual.getTestModeReason()).isEqualTo(expected.getTestModeReason());
+            Assertions.assertThat(actual.getErrorAcknowledgedReason()).isEqualTo(expected.getErrorAcknowledgedReason());
         }
     }
 
@@ -243,7 +242,6 @@ public class Util {
             } else {
                 Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
             }
-            Assertions.assertThat(actual.getErrorAcknowledgedReason()).isEqualTo(expected.getErrorAcknowledgedReason());
             Assertions.assertThat(actual.getNextAutoResumeReason()).isEqualTo(expected.getNextAutoResumeReason());
             Assertions.assertThat(actual.getFilteredCause()).isEqualTo(expected.getFilteredCause());
             Assertions.assertThat(actual.getFilteredContext()).isEqualTo(expected.getFilteredContext());
@@ -277,8 +275,8 @@ public class Util {
         return CoreEventQueue.convertEvent(json);
     }
 
-    public static ActionEvent filterActionEvent(UUID did, String flow, UUID flowId, String filteredAction, UUID actionId) throws IOException {
-        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction, actionId);
+    public static ActionEvent filterActionEvent(UUID did, String flow, UUID flowId, String filteredAction) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction);
         return CoreEventQueue.convertEvent(json);
     }
 

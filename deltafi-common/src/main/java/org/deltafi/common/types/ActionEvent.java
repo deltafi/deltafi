@@ -46,7 +46,6 @@ public class ActionEvent {
     private String flowName;
     private UUID flowId;
     private String actionName;
-    private UUID actionId;
     private OffsetDateTime start;
     private OffsetDateTime stop;
     private ActionEventType type;
@@ -69,9 +68,6 @@ public class ActionEvent {
         }
         if (StringUtils.isEmpty(actionName)) {
             return "Missing actionName";
-        }
-        if (actionId == null) {
-            return "Missing actionId";
         }
 
         return null;

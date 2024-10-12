@@ -18,17 +18,17 @@
 package org.deltafi.core.types;
 
 import lombok.Data;
-import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.FlowType;
 
 @Data
 public class ColdQueuedActionSummary {
     private String actionName;
-    private ActionType actionType;
+    private FlowType flowType;
     private long count;
 
-    public ColdQueuedActionSummary(String actionName, ActionType actionType, long count) {
+    public ColdQueuedActionSummary(String actionName, FlowType flowType, long count) {
         this.actionName = actionName;
-        this.actionType = actionType;
+        this.flowType = flowType;
         this.count = count;
     }
 }

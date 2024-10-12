@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.repo.ActionRepo;
+import org.deltafi.core.repo.DeltaFileFlowRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +31,7 @@ import org.springframework.core.env.Environment;
 
 import java.util.*;
 
+import static org.deltafi.common.types.FlowType.TRANSFORM;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -39,14 +40,14 @@ class QueueManagementServiceTest {
 
     private static final String QUEUE_NAME = "queueName";
     private static final String ACTION_NAME = "actionName";
-    private static final ColdQueuedActionSummary COLD_QUEUED_ACTION_SUMMARY = new ColdQueuedActionSummary(ACTION_NAME, ActionType.TRANSFORM, 1);
+    private static final ColdQueuedActionSummary COLD_QUEUED_ACTION_SUMMARY = new ColdQueuedActionSummary(ACTION_NAME, TRANSFORM, 1);
     private static final ActionConfiguration ACTION_CONFIGURATION = new ActionConfiguration(ACTION_NAME, ActionType.TRANSFORM, QUEUE_NAME);
 
     @Mock
     CoreEventQueue coreEventQueue;
 
     @Mock
-    ActionRepo actionRepo;
+    DeltaFileFlowRepo deltaFileFlowRepo;
 
     @Mock
     UnifiedFlowService unifiedFlowService;
@@ -131,7 +132,7 @@ class QueueManagementServiceTest {
     void testColdToWarmWithoutCheckedQueues() {
         queueManagementService.getCheckedQueues().set(false);
         queueManagementService.coldToWarm();
-        verify(actionRepo, times(0)).coldQueuedActionsSummary();
+        verify(deltaFileFlowRepo, times(0)).coldQueuedActionsSummary();
     }
 
     @Test
@@ -140,7 +141,7 @@ class QueueManagementServiceTest {
         queueManagementService.getColdQueues().put(QUEUE_NAME, 8L);
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
-        when(actionRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
+        when(deltaFileFlowRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
         when(unifiedFlowService.runningAction(ACTION_NAME, ActionType.TRANSFORM)).thenReturn(ACTION_CONFIGURATION);
         when(env.getProperty("schedule.maintenance")).thenReturn("true");
         queueManagementService.scheduleColdToWarm();

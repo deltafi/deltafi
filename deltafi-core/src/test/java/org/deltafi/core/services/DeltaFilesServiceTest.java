@@ -87,7 +87,7 @@ class DeltaFilesServiceTest {
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
                           @Mock AnnotationRepo annotationRepo, @Mock DeltaFileRepo deltaFileRepo,
-                          @Mock ActionRepo actionRepo, @Mock DeltaFileFlowRepo deltaFileFlowRepo,
+                          @Mock DeltaFileFlowRepo deltaFileFlowRepo,
                           @Mock CoreEventQueue coreEventQueue, @Mock ContentStorageService contentStorageService,
                           @Mock ResumePolicyService resumePolicyService, @Mock MetricService metricService,
                           @Mock AnalyticEventService analyticEventService,
@@ -109,7 +109,7 @@ class DeltaFilesServiceTest {
         this.restDataSourceService = restDataSourceService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
-                stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, actionRepo, coreEventQueue, contentStorageService, resumePolicyService,
+                stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, timedDataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator());
     }

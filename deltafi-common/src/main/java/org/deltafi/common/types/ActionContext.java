@@ -38,7 +38,6 @@ public class ActionContext {
     private String flowName;
     private UUID flowId;
     private String actionName;
-    private UUID actionId;
     private String actionVersion;
     private String hostname;
     private OffsetDateTime startTime;
@@ -54,7 +53,7 @@ public class ActionContext {
      * @param newDid the new DID
      * */
     public ActionContext copy(UUID newDid) {
-        return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName, actionId,
+        return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName,
                 actionVersion, hostname, startTime, systemName, contentStorageService, join, joinedDids, memo);
     }
 }

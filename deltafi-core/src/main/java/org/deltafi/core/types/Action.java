@@ -17,88 +17,50 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.uuid.Generators;
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
-import jakarta.persistence.*;
 import lombok.*;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.ResumeMetadata;
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
-@Table(name = "actions")
-@EqualsAndHashCode(exclude = "deltaFileFlow")
-@DynamicUpdate
+@EqualsAndHashCode
 public class Action {
   static final private int MAX_CAUSE_SIZE = 100_000;
 
-  @Id
-  @Builder.Default
-  private UUID id = Generators.timeBasedEpochGenerator().generate();
   private String name;
   private int number;
   @Builder.Default
-  @Enumerated(EnumType.STRING)
   private ActionType type = ActionType.UNKNOWN;
-  @Enumerated(EnumType.STRING)
   private ActionState state;
   private OffsetDateTime created;
   private OffsetDateTime queued;
   private OffsetDateTime start;
   private OffsetDateTime stop;
   private OffsetDateTime modified;
-  @Column(length = MAX_CAUSE_SIZE)
   private String errorCause;
-  @Column(length = MAX_CAUSE_SIZE)
   private String errorContext;
-  private OffsetDateTime errorAcknowledged;
-  private String errorAcknowledgedReason;
   private OffsetDateTime nextAutoResume;
   private String nextAutoResumeReason;
-  @Column(length = MAX_CAUSE_SIZE)
   private String filteredCause;
-  @Column(length = MAX_CAUSE_SIZE)
   private String filteredContext;
   @Builder.Default
   private int attempt = 1;
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
   private List<Content> content;
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private Map<String, String> metadata = new HashMap<>();
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
   private List<String> deleteMetadataKeys;
   private boolean replayStart; // marker for the starting point of a replay
 
-  @Version
-  private int version;
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "delta_file_flow_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
-  @ToString.Exclude
-  @JsonBackReference
-  private DeltaFileFlow deltaFileFlow;
-
   public Action(Action other) {
-    this.id = other.id;
     this.name = other.name;
     this.number = other.number;
     this.type = other.type;
@@ -110,8 +72,6 @@ public class Action {
     this.modified = other.modified;
     this.errorCause = other.errorCause;
     this.errorContext = other.errorContext;
-    this.errorAcknowledged = other.errorAcknowledged;
-    this.errorAcknowledgedReason = other.errorAcknowledgedReason;
     this.nextAutoResume = other.nextAutoResume;
     this.nextAutoResumeReason = other.nextAutoResumeReason;
     this.filteredCause = other.filteredCause;
@@ -121,8 +81,6 @@ public class Action {
     this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
     this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
     this.replayStart = other.replayStart;
-    this.deltaFileFlow = other.deltaFileFlow;
-    this.version = other.version;
   }
 
   public List<Content> getContent() {
@@ -192,8 +150,6 @@ public class Action {
     modified = now;
     nextAutoResume = null;
     nextAutoResumeReason = null;
-    errorAcknowledged = null;
-    errorAcknowledgedReason = null;
     resumeMetadata
             .stream()
             .filter(this::metadataActionMatches)
@@ -213,11 +169,9 @@ public class Action {
     return  resumeMetadata.getAction().equals(name);
   }
 
-  public boolean acknowledgeError(OffsetDateTime now, String reason) {
+  public boolean acknowledgeError(OffsetDateTime now) {
     if (state == ActionState.ERROR) {
       modified = now;
-      errorAcknowledged = now;
-      errorAcknowledgedReason = reason;
       nextAutoResume = null;
       nextAutoResumeReason = null;
       return true;

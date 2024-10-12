@@ -20,7 +20,9 @@ package org.deltafi.core.services;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.core.repo.ActionRepo;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.FlowType;
+import org.deltafi.core.repo.DeltaFileFlowRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
@@ -47,20 +49,20 @@ public class QueueManagementService {
     private final ConcurrentHashMap<String, Long> allQueues = new ConcurrentHashMap<>();
 
     CoreEventQueue coreEventQueue;
-    ActionRepo actionRepo;
+    DeltaFileFlowRepo deltaFileFlowRepo;
     UnifiedFlowService unifiedFlowService;
     DeltaFilesService deltaFilesService;
     DeltaFiPropertiesService deltaFiPropertiesService;
     Environment env;
 
     public QueueManagementService(CoreEventQueue coreEventQueue,
-                                  ActionRepo actionRepo,
+                                  DeltaFileFlowRepo deltaFileFlowRepo,
                                   UnifiedFlowService unifiedFlowService,
                                   @Lazy DeltaFilesService deltaFilesService,
                                   DeltaFiPropertiesService deltaFiPropertiesService,
                                   Environment env) {
         this.coreEventQueue = coreEventQueue;
-        this.actionRepo = actionRepo;
+        this.deltaFileFlowRepo = deltaFileFlowRepo;
         this.unifiedFlowService = unifiedFlowService;
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
@@ -128,11 +130,11 @@ public class QueueManagementService {
         }
 
         // get all the actions that are currently COLD in the DB
-        List<ColdQueuedActionSummary> coldQueuedActionSummaries = actionRepo.coldQueuedActionsSummary();
+        List<ColdQueuedActionSummary> coldQueuedActionSummaries = deltaFileFlowRepo.coldQueuedActionsSummary();
         Map<String, List<String>> coldQueueActions = new HashMap<>();
         for (ColdQueuedActionSummary coldQueuedActionSummary : coldQueuedActionSummaries) {
             ActionConfiguration coldQueuedActionConfig = unifiedFlowService.runningAction(coldQueuedActionSummary.getActionName(),
-                    coldQueuedActionSummary.getActionType());
+                    coldQueuedActionSummary.getFlowType() == FlowType.TRANSFORM ? ActionType.TRANSFORM : ActionType.EGRESS);
 
             if (coldQueuedActionConfig != null) {
                 String queueName = coldQueuedActionConfig.getType();

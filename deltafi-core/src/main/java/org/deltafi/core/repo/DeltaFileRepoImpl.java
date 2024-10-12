@@ -18,12 +18,12 @@
 package org.deltafi.core.repo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -52,22 +52,7 @@ import static org.deltafi.common.types.ActionState.*;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
-    public static final String CREATED = "created";
-    public static final String STAGE = "stage";
-    public static final String NAME = "name";
-    public static final String CONTENT_DELETED = "contentDeleted";
-    public static final String DATA_SOURCE = "dataSource";
-    public static final String EGRESSED = "egressed";
     public static final String FILTERED = "filtered";
-    public static final String REFERENCED_BYTES = "referencedBytes";
-    public static final String TOTAL_BYTES = "totalBytes";
-    public static final String INGRESS_BYTES = "ingressBytes";
-    public static final String REPLAYED = "replayed";
-    public static final String REQUEUE_COUNT = "requeueCount";
-    private static final String DID = "did";
-    private static final String FLOWS = "flows";
-    private static final String TERMINAL = "terminal";
-    public static final String TYPE = "type";
 
     // a magic number known by the GUI that says there are "many" total results
     private static final int MANY_RESULTS = 10_000;
@@ -75,71 +60,66 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @PersistenceContext
     private final EntityManager entityManager;
     private final JdbcTemplate jdbcTemplate;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, true)
+            .configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, true);
 
     @Override
     @Transactional
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
-        StringBuilder filesToRequeueQuery = new StringBuilder("""
-            SELECT df
-            FROM DeltaFile df
-            WHERE df.stage = 'IN_FLIGHT'
-            AND df.modified < :requeueThreshold
-            """);
-
-        if (skipDids != null && !skipDids.isEmpty()) {
-            filesToRequeueQuery.append("AND df.did NOT IN :skipDids\n");
-        }
-
-        filesToRequeueQuery.append("""
-            AND EXISTS (
-                SELECT action
-                FROM df.flows flow
-                JOIN flow.actions action
-                WHERE flow.state = 'IN_FLIGHT'
-                AND action.modified < :requeueThreshold
-                AND action.state IN ('QUEUED', 'COLD_QUEUED')
-            """);
+        StringBuilder sqlQuery = new StringBuilder("""
+        SELECT df.* FROM delta_files df
+        WHERE df.stage = 'IN_FLIGHT'
+        AND df.modified < :requeueThreshold
+        AND EXISTS (
+            SELECT 1 FROM delta_file_flows flow
+            WHERE flow.delta_file_id = df.did
+            AND flow.state = 'IN_FLIGHT'
+            AND flow.modified < :requeueThreshold
+        """);
 
         if (skipActions != null && !skipActions.isEmpty()) {
-            filesToRequeueQuery.append("AND action.name NOT IN :skipActions\n");
+            sqlQuery.append("\nAND (flow.actions->(jsonb_array_length(flow.actions) - 1))->>'name' NOT IN (:skipActions)");
         }
 
-        filesToRequeueQuery.append(") ORDER BY df.modified ASC LIMIT :limit");
+        sqlQuery.append(") ");
+
+        if (skipDids != null && !skipDids.isEmpty()) {
+            sqlQuery.append("\nAND df.did NOT IN (:skipDids)");
+        }
+
+        sqlQuery.append("\nORDER BY df.modified ASC LIMIT :limit");
 
         OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
-        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(filesToRequeueQuery.toString(), DeltaFile.class)
+        Query query = entityManager.createNativeQuery(sqlQuery.toString(), DeltaFile.class)
                 .setParameter("requeueThreshold", requeueThreshold)
                 .setParameter("limit", limit);
 
         if (skipDids != null && !skipDids.isEmpty()) {
-            typedQuery.setParameter("skipDids", skipDids);
+            query.setParameter("skipDids", skipDids);
         }
         if (skipActions != null && !skipActions.isEmpty()) {
-            typedQuery.setParameter("skipActions", skipActions);
+            query.setParameter("skipActions", skipActions);
         }
-        List<DeltaFile> filesToRequeue = typedQuery.getResultList();
 
-        if (filesToRequeue.isEmpty()) {
-            return filesToRequeue;
-        }
+        List<DeltaFile> filesToRequeue = query.getResultList();
 
         filesToRequeue.forEach(deltaFile -> {
             deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
             deltaFile.setModified(requeueTime);
-        });
-
-        filesToRequeue.stream()
-                .flatMap(d -> d.getFlows().stream())
-                .flatMap(f -> f.getActions().stream())
-                .filter(a -> (a.getState() == QUEUED || a.getState() == COLD_QUEUED) &&
-                        a.getModified().isBefore(requeueThreshold) && (skipActions == null || !skipActions.contains(a.getName())))
-                .forEach(action -> {
-                    action.setState(QUEUED);
+            deltaFile.getFlows().forEach(flow -> {
+                Action action = flow.lastAction();
+                if ((action.getState() == QUEUED) &&
+                        action.getModified().isBefore(requeueThreshold) &&
+                        (skipActions == null || !skipActions.contains(action.getName()))) {
                     action.setModified(requeueTime);
                     action.setQueued(requeueTime);
-                    action.getDeltaFileFlow().updateState(requeueTime);
-                });
+                    flow.updateState();
+                }
+            });
+        });
 
         return filesToRequeue;
     }
@@ -147,45 +127,46 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     @Transactional
     public List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
-        List<DeltaFile> filesToRequeue = entityManager.createQuery("""
-                SELECT df
-                FROM DeltaFile df
-                JOIN df.flows flow
-                JOIN flow.actions action
-                WHERE df.stage = 'IN_FLIGHT'
-                AND EXISTS (
-                  SELECT action
-                  FROM df.flows flow
-                  JOIN flow.actions action
-                  WHERE  action.state = 'COLD_QUEUED'
-                  AND action.name IN :actionNames
+        String nativeQueryStr = """
+            SELECT df.*
+            FROM delta_files df
+            WHERE df.stage = 'IN_FLIGHT'
+            AND EXISTS (
+                    SELECT 1
+            FROM delta_file_flows dff
+            WHERE dff.delta_file_id = df.did
+            AND dff.state = 'IN_FLIGHT'
+            AND dff.cold_queued = TRUE
+            AND EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements(dff.actions) AS action
+                    WHERE action->>'state' = 'COLD_QUEUED'
+                    AND action->>'name' IN (:actionNames)
                 )
-                ORDER BY df.modified ASC
-                LIMIT :limit
-                """, DeltaFile.class)
-                .setParameter("actionNames", actionNames)
-                .setParameter("limit", maxFiles)
-                .getResultList();
+            )
+            ORDER BY df.modified
+            LIMIT :limit
+        """;
 
-        if (filesToRequeue.isEmpty()) {
-            return filesToRequeue;
-        }
+        Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, DeltaFile.class)
+                .setParameter("actionNames", actionNames)
+                .setParameter("limit", maxFiles);
+
+        List<DeltaFile> filesToRequeue = nativeQuery.getResultList();
 
         filesToRequeue.forEach(deltaFile -> {
             deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
             deltaFile.setModified(modified);
-        });
-
-        filesToRequeue.stream()
-                .flatMap(d -> d.getFlows().stream())
-                .flatMap(f -> f.getActions().stream())
-                .filter(a -> a.getState() == COLD_QUEUED && actionNames.contains(a.getName()))
-                .forEach(action -> {
+            deltaFile.getFlows().forEach(flow -> {
+                Action action = flow.lastAction();
+                if (action.getState() == COLD_QUEUED && actionNames.contains(action.getName())) {
                     action.setState(QUEUED);
                     action.setModified(modified);
                     action.setQueued(modified);
-                    action.getDeltaFileFlow().updateState(modified);
-                });
+                    flow.updateState();
+                }
+            });
+        });
 
         return filesToRequeue;
     }
@@ -193,50 +174,58 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
         String queryStr = """
-            SELECT DISTINCT df
-            FROM Action action
-            JOIN action.deltaFileFlow flow
-            JOIN flow.deltaFile df
-            WHERE action.nextAutoResume < :maxReadyTime
-            AND df.stage = 'ERROR'
-            AND df.contentDeleted IS NULL
-        """;
+            SELECT df.*
+            FROM delta_files df
+            WHERE df.stage = 'ERROR'
+            AND df.content_deleted IS NULL
+            AND EXISTS (
+                SELECT 1
+                FROM delta_file_flows dff
+                WHERE dff.delta_file_id = df.did
+                AND dff.state = 'ERROR'
+                AND dff.next_auto_resume < :maxReadyTime
+            )
+            """;
 
-        TypedQuery<DeltaFile> query = entityManager.createQuery(queryStr, DeltaFile.class)
+        Query query = entityManager.createNativeQuery(queryStr, DeltaFile.class)
                 .setParameter("maxReadyTime", maxReadyTime);
 
         return query.getResultList();
     }
 
-
     @Override
     public List<DeltaFile> findResumePolicyCandidates(String dataSource) {
         StringBuilder queryBuilder = new StringBuilder("""
-                SELECT df
-                FROM DeltaFile df
-                WHERE df.stage = 'ERROR'
-                AND df.contentDeleted IS NULL
+            SELECT df.*
+            FROM delta_files df
+            WHERE df.stage = 'ERROR'
+            AND df.content_deleted IS NULL
+            AND EXISTS (
+                SELECT 1
+                FROM delta_file_flows flow
+                WHERE flow.delta_file_id = df.did
+                AND flow.error_acknowledged IS NULL
                 AND EXISTS (
                     SELECT 1
-                    FROM DeltaFileFlow flow
-                    JOIN flow.actions action
-                    WHERE flow.deltaFile = df
-                    AND action.nextAutoResume IS NULL
-                    AND action.errorAcknowledged IS NULL
+                    FROM jsonb_array_elements(flow.actions) action
+                    WHERE action->>'nextAutoResume' IS NULL
                 )
-            """);
+            )
+        """);
 
         if (dataSource != null) {
-            queryBuilder.append("AND df.dataSource = :dataSource ");
+            queryBuilder.append("AND df.data_source = :dataSource ");
         }
 
-        TypedQuery<DeltaFile> query = entityManager.createQuery(queryBuilder.toString(), DeltaFile.class);
+        Query query = entityManager.createNativeQuery(queryBuilder.toString(), DeltaFile.class);
 
         if (dataSource != null) {
             query.setParameter("dataSource", dataSource);
         }
 
-        return query.getResultList();
+        @SuppressWarnings("unchecked")
+        List<DeltaFile> result = query.getResultList();
+        return result;
     }
 
     @Override
@@ -246,19 +235,45 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return;
         }
 
+        String nextAutoResumeJson;
+        String policyNameJson;
+        try {
+            nextAutoResumeJson = OBJECT_MAPPER.writeValueAsString(nextAutoResume);
+            policyNameJson = OBJECT_MAPPER.writeValueAsString(policyName);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(e);
+        }
+
         for (List<UUID> batch : Lists.partition(dids, 500)) {
-            CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-            CriteriaUpdate<Action> update = cb.createCriteriaUpdate(Action.class);
-            Root<Action> root = update.from(Action.class);
+            String queryStr = """
+                UPDATE delta_file_flows
+                SET actions = jsonb_set(
+                    jsonb_set(
+                        actions,
+                        CAST(ARRAY[jsonb_array_length(actions) - 1, 'nextAutoResume'] AS text[]),
+                        CAST(? AS jsonb),
+                        false
+                    ),
+                    CAST(ARRAY[jsonb_array_length(actions) - 1, 'nextAutoResumeReason'] AS text[]),
+                    CAST(? AS jsonb),
+                    false
+                )
+                FROM delta_files df
+                WHERE delta_file_flows.delta_file_id = df.did
+                AND df.did IN (?)
+                AND EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements(delta_file_flows.actions) AS action
+                    WHERE action->>'state' = 'ERROR'
+                )
+            """;
 
-            update.set("nextAutoResume", nextAutoResume)
-                    .set("nextAutoResumeReason", policyName)
-                    .where(cb.and(
-                            root.get("deltaFileFlow").get("deltaFile").get("did").in(batch),
-                            cb.equal(root.get("state"), ERROR)
-                    ));
+            Query query = entityManager.createNativeQuery(queryStr)
+                    .setParameter(1, nextAutoResumeJson)
+                    .setParameter(2, policyNameJson)
+                    .setParameter(3, batch);
 
-            entityManager.createQuery(update).executeUpdate();
+            query.executeUpdate();
         }
     }
 
@@ -302,11 +317,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         deleted_flows AS (
             DELETE FROM delta_file_flows
             WHERE delta_file_id IN (SELECT did FROM deleted_files)
-            RETURNING id
-        ),
-        deleted_actions AS (
-            DELETE FROM actions
-            WHERE delta_file_flow_id IN (SELECT id FROM deleted_flows)
         ),
         deleted_annotations AS (
             DELETE FROM annotations
@@ -336,10 +346,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         StringBuilder queryBuilder = new StringBuilder("""
-                SELECT df.did, df.content_deleted, df.total_bytes, array_agg(a.content) as content_list
+                SELECT df.did, df.content_deleted, df.total_bytes,
+                       COALESCE(
+                           (SELECT jsonb_agg(content_element)
+                            FROM (
+                                SELECT DISTINCT jsonb_array_elements(f.actions)->>'content' AS content_element
+                                FROM delta_file_flows f
+                                WHERE f.delta_file_id = df.did
+                            ) subquery
+                            WHERE content_element IS NOT NULL),
+                           jsonb_build_array()
+                       ) as content_list
                 FROM delta_files df
                 LEFT JOIN delta_file_flows f ON df.did = f.delta_file_id
-                LEFT JOIN actions a ON f.id = a.delta_file_flow_id
                 WHERE
                 """);
 
@@ -423,16 +442,25 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 : null;
         long totalBytes = ((Number) row[2]).longValue();
         List<Content> contentList = new ArrayList<>();
-        if (row[3] instanceof String[]) {
-            for (String content : (String[]) row[3]) {
-                if (content != null) {
-                    try {
-                        contentList.addAll(OBJECT_MAPPER.readValue(content, new TypeReference<>() {}));
-                    } catch (JsonProcessingException ignored) {
+        String contentJson = (String) row[3];
+
+        if (contentJson != null && !contentJson.equals("[]")) {
+            try {
+                JsonNode outerArray = OBJECT_MAPPER.readTree(contentJson);
+                for (JsonNode textNode : outerArray) {
+                    if (textNode.isTextual()) {
+                        String innerJson = textNode.asText();
+                        JsonNode innerArray = OBJECT_MAPPER.readTree(innerJson);
+                        for (JsonNode contentNode : innerArray) {
+                            if (contentNode.isObject()) {
+                                contentList.add(OBJECT_MAPPER.treeToValue(contentNode, Content.class));
+                            }
+                        }
                     }
                 }
-            }
+            } catch (JsonProcessingException ignored) {}
         }
+
         return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
     }
 
@@ -442,7 +470,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             SELECT df.did, df.content_deleted, df.total_bytes, df.modified
             FROM delta_files df
             WHERE df.content_deletable = true
-        """);
+    """);
 
         if (dataSource != null) {
             queryBuilder.append("AND df.data_source = :dataSource ");
@@ -453,10 +481,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             LIMIT :batchSize
         )
         SELECT ef.did, ef.content_deleted, ef.total_bytes,
-               array_agg(a.content) as content_list
+               COALESCE(
+                   (SELECT jsonb_agg(content_element)
+                    FROM (
+                        SELECT DISTINCT jsonb_array_elements(f.actions)->>'content' AS content_element
+                        FROM delta_file_flows f
+                        WHERE f.delta_file_id = ef.did
+                    ) subquery
+                    WHERE content_element IS NOT NULL),
+                   jsonb_build_array()
+               ) as content_list
         FROM eligible_files ef
-        LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id
-        LEFT JOIN actions a ON f.id = a.delta_file_flow_id
         GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified
         ORDER BY ef.modified
     """);
@@ -466,318 +501,269 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
-        Root<DeltaFile> root = query.from(DeltaFile.class);
+        StringBuilder sqlQuery = new StringBuilder("SELECT * FROM delta_files df WHERE TRUE\n");
+        Map<String, Object> parameters = new HashMap<>();
+        String criteria = buildDeltaFilesCriteria(parameters, filter);
 
-        List<Predicate> predicates = buildDeltaFilesCriteria(cb, root, filter);
-        query.where(cb.and(predicates.toArray(new Predicate[0])));
+        sqlQuery.append(criteria);
 
-        if (orderBy == null) {
-            orderBy = new DeltaFileOrder();
-            orderBy.setField("modified");
-            orderBy.setDirection(DeltaFileDirection.DESC);
-        }
-
-        query.orderBy(orderBy.getDirection() == DeltaFileDirection.ASC ?
-                cb.asc(root.get(orderBy.getField())) :
-                cb.desc(root.get(orderBy.getField())));
-
-        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(query);
-
-        if (offset != null && offset > 0) {
-            typedQuery.setFirstResult(offset);
+        if (orderBy != null) {
+            sqlQuery.append("ORDER BY df.")
+                    .append(orderBy.getField())
+                    .append(" ")
+                    .append(orderBy.getDirection() == DeltaFileDirection.ASC ? "ASC" : "DESC")
+                    .append(" ");
         } else {
-            offset = 0;
+            sqlQuery.append("ORDER BY df.modified DESC ");
         }
 
-        typedQuery.setMaxResults(limit);
+        sqlQuery.append("LIMIT :limit OFFSET :offset");
 
-        List<DeltaFile> deltaFileList = typedQuery.getResultList();
+        int intOffset = offset == null ? 0 : offset;
+
+        Query query = entityManager.createNativeQuery(sqlQuery.toString(), DeltaFile.class);
+        query.setParameter("limit", limit);
+        query.setParameter("offset", intOffset);
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        @SuppressWarnings("unchecked")
+        List<DeltaFile> deltaFileList = query.getResultList();
 
         DeltaFiles deltaFiles = new DeltaFiles();
-        deltaFiles.setOffset(offset);
+        deltaFiles.setOffset(intOffset);
         deltaFiles.setDeltaFiles(deltaFileList);
         deltaFiles.setCount(deltaFileList.size());
 
         if (deltaFileList.size() < limit) {
-            deltaFiles.setTotalCount(offset + deltaFileList.size());
+            deltaFiles.setTotalCount(intOffset + deltaFileList.size());
         } else {
-            // this makes me sad. JPA does not support limiting a subquery, so we can't do something like
-            // SELECT COUNT(*) FROM (SELECT 1 FROM delta_files WHERE /* criteria */ LIMIT /* limit */)
-            // building the criteria string manually would be hairy
-            // so return an array of 1s -- a bunch of unfortunately wasted bytes over the wire, and count them
-            CriteriaBuilder countCb = entityManager.getCriteriaBuilder();
-            CriteriaQuery<Integer> criteriaQuery = countCb.createQuery(Integer.class);
-            Root<DeltaFile> countRoot = criteriaQuery.from(DeltaFile.class);
+            String countQuerySql = "SELECT COUNT (*) FROM (SELECT 1 FROM delta_files df WHERE TRUE\n" + criteria +
+                    "LIMIT " + MANY_RESULTS + ") as sub";
+            Query countQuery = entityManager.createNativeQuery(countQuerySql, Integer.class);
+            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+                countQuery.setParameter(entry.getKey(), entry.getValue());
+            }
 
-            List<Predicate> countPredicates = buildDeltaFilesCriteria(countCb, countRoot, filter);
-            criteriaQuery.select(countCb.literal(1))
-                    .where(countCb.and(countPredicates.toArray(new Predicate[0])));
-
-            TypedQuery<Integer> countQuery = entityManager.createQuery(criteriaQuery)
-                    .setMaxResults(MANY_RESULTS);
-
-            deltaFiles.setTotalCount(countQuery.getResultList().size());
+            deltaFiles.setTotalCount((Integer) countQuery.getSingleResult());
         }
 
         return deltaFiles;
     }
 
-    private List<Predicate> buildDeltaFilesCriteria(CriteriaBuilder cb, Root<DeltaFile> root, DeltaFilesFilter filter) {
-        List<Predicate> predicates = new ArrayList<>();
-
+    private String buildDeltaFilesCriteria(Map<String, Object> parameters, DeltaFilesFilter filter) {
+        StringBuilder criteria = new StringBuilder();
         if (filter == null) {
-            return predicates;
+            return criteria.toString();
         }
 
         if (filter.getDataSources() != null && !filter.getDataSources().isEmpty()) {
-            predicates.add(root.get(DATA_SOURCE).in(filter.getDataSources()));
+            criteria.append("AND df.data_source IN (:dataSources) ");
+            parameters.put("dataSources", filter.getDataSources());
         }
-
-        if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
-            Join<DeltaFile, DeltaFileFlow> flowJoin = root.join(FLOWS);
-            predicates.add(cb.and(flowJoin.get(NAME).in(filter.getTransformFlows()), cb.equal(flowJoin.get(TYPE), FlowType.TRANSFORM)));
-        }
-
-        if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
-
-            subquery.select(cb.literal(1L)).where(
-                    cb.equal(subRoot.get("did"), root.get("did")),
-                    subFlowJoin.get("name").in(filter.getEgressFlows())
-            );
-
-            predicates.add(cb.exists(subquery));
-        }
-
         if (filter.getDids() != null && !filter.getDids().isEmpty()) {
-            predicates.add(root.get(DID).in(filter.getDids()));
+            criteria.append("AND df.did IN (:dids) ");
+            parameters.put("dids", filter.getDids());
         }
-
         if (filter.getParentDid() != null) {
-            predicates.add(cb.isMember(filter.getParentDid(), root.get("parentDids")));
+            criteria.append("AND :parentDid IN df.dids ");
+            parameters.put("parentDid", filter.getParentDid());
         }
-
         if (filter.getCreatedAfter() != null) {
-            predicates.add(cb.greaterThan(root.get(CREATED), filter.getCreatedAfter()));
+            criteria.append("AND df.created > :createdAfter ");
+            parameters.put("createdAfter", filter.getCreatedAfter());
         }
-
         if (filter.getCreatedBefore() != null) {
-            predicates.add(cb.lessThan(root.get(CREATED), filter.getCreatedBefore()));
+            criteria.append("AND df.created < :createdBefore ");
+            parameters.put("createdBefore", filter.getCreatedBefore());
+        }
+        if (filter.getModifiedAfter() != null) {
+            criteria.append("AND df.modified > :modifiedAfter ");
+            parameters.put("modifiedAfter", filter.getModifiedAfter());
+        }
+        if (filter.getModifiedBefore() != null) {
+            criteria.append("AND df.modified < :modifiedBefore ");
+            parameters.put("modifiedBefore", filter.getModifiedBefore());
+        }
+        if (filter.getTerminalStage() != null) {
+            criteria.append("AND df.terminal = :terminal ");
+            parameters.put("terminal", filter.getTerminalStage());
+        }
+        if (filter.getStage() != null) {
+            criteria.append("AND df.stage = :stage ");
+            parameters.put("stage", filter.getStage().name());
+        }
+        if (filter.getFiltered() != null) {
+            criteria.append("AND df.filtered = :filtered ");
+            parameters.put("filtered", filter.getFiltered());
+        }
+        if (filter.getRequeueCountMin() != null) {
+            criteria.append("AND df.requeue_count >= :requeueCountMin ");
+            parameters.put("requeueCountMin", filter.getRequeueCountMin());
+        }
+        if (filter.getIngressBytesMin() != null) {
+            criteria.append("AND df.ingress_bytes >= :ingressBytesMin ");
+            parameters.put("ingressBytesMin", filter.getIngressBytesMin());
+        }
+        if (filter.getIngressBytesMax() != null) {
+            criteria.append("AND df.ingress_bytes <= :ingressBytesMax ");
+            parameters.put("ingressBytesMax", filter.getIngressBytesMax());
+        }
+        if (filter.getReferencedBytesMin() != null) {
+            criteria.append("AND df.referenced_bytes >= :referencedBytesMin ");
+            parameters.put("referencedBytesMin", filter.getReferencedBytesMin());
+        }
+        if (filter.getReferencedBytesMax() != null) {
+            criteria.append("AND df.referenced_bytes <= :referencedBytesMax ");
+            parameters.put("referencedBytesMax", filter.getReferencedBytesMax());
+        }
+        if (filter.getTotalBytesMin() != null) {
+            criteria.append("AND df.total_bytes >= :totalBytesMin ");
+            parameters.put("totalBytesMin", filter.getTotalBytesMin());
+        }
+        if (filter.getTotalBytesMax() != null) {
+            criteria.append("AND df.total_bytes <= :totalBytesMax ");
+            parameters.put("totalBytesMax", filter.getTotalBytesMax());
+        }
+        if (filter.getEgressed() != null) {
+            criteria.append("AND df.egressed = :egressed ");
+            parameters.put("egressed", filter.getEgressed());
         }
 
         if (filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
-            for (KeyValue keyValue : filter.getAnnotations()) {
-                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-                Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-                Join<DeltaFile, Annotation> subAnnotationJoin = subRoot.join("annotations");
-
-                subquery.select(cb.literal(1L)).where(
-                        cb.equal(subRoot.get("did"), root.get("did")),
-                        cb.equal(subAnnotationJoin.get("key"), keyValue.getKey()),
-                        cb.equal(subAnnotationJoin.get("value"), keyValue.getValue())
-                );
-
-                predicates.add(cb.exists(subquery));
-            }
-        }
-
-        if (filter.getModifiedAfter() != null) {
-            predicates.add(cb.greaterThan(root.get("modified"), filter.getModifiedAfter()));
-        }
-
-        if (filter.getModifiedBefore() != null) {
-            predicates.add(cb.lessThan(root.get("modified"), filter.getModifiedBefore()));
-        }
-
-        if (filter.getTerminalStage() != null) {
-            predicates.add(cb.equal(root.get(TERMINAL), filter.getTerminalStage()));
-        }
-
-        if (filter.getStage() != null) {
-            predicates.add(cb.equal(root.get(STAGE), filter.getStage().name()));
-        }
-
-        if (filter.getNameFilter() != null) {
-            addNameCriteria(cb, root, filter.getNameFilter(), predicates);
-        }
-
-        if (filter.getActions() != null && !filter.getActions().isEmpty()) {
-            for (String actionName : filter.getActions()) {
-                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-                Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-                Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
-                Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
-
-                subquery.select(cb.literal(1L)).where(
-                        cb.equal(subRoot.get("did"), root.get("did")),
-                        cb.equal(subActionJoin.get("name"), actionName)
-                );
-
-                predicates.add(cb.exists(subquery));
-            }
-        }
-
-        if (filter.getPendingAnnotations() != null) {
-            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
-
-            if (filter.getPendingAnnotations()) {
-                subquery.select(cb.literal(1L)).where(
-                        cb.equal(subRoot.get("did"), root.get("did")),
-                        cb.greaterThan(cb.function("jsonb_array_length", Integer.class, subFlowJoin.get("pendingAnnotations")), 0));
-            } else {
-                subquery.select(cb.literal(1L)).where(
-                        cb.equal(subRoot.get("did"), root.get("did")),
-                        cb.equal(cb.function("jsonb_array_length", Integer.class, subFlowJoin.get("pendingAnnotations")), 0));
-            }
-
-            predicates.add(cb.exists(subquery));
-        }
-
-        if (filter.getErrorCause() != null) {
-            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
-            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
-
-            subquery.select(cb.literal(1L)).where(
-                    cb.equal(subRoot.get("did"), root.get("did")),
-                    cb.equal(subActionJoin.get("state"), "ERROR"),
-                    cb.like(cb.lower(subActionJoin.get("errorCause")), "%" + filter.getErrorCause().toLowerCase() + "%")
-            );
-            predicates.add(cb.exists(subquery));
-        }
-
-        if (filter.getFilteredCause() != null) {
-            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
-            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
-
-            subquery.select(cb.literal(1L)).where(
-                    cb.equal(subRoot.get("did"), root.get("did")),
-                    cb.equal(subActionJoin.get("state"), "FILTERED"),
-                    cb.like(cb.lower(subActionJoin.get("filteredCause")), "%" + filter.getFilteredCause().toLowerCase() + "%")
-            );
-            predicates.add(cb.exists(subquery));
-        }
-
-        if (filter.getErrorAcknowledged() != null) {
-            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
-            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
-
-            if (filter.getErrorAcknowledged()) {
-                subquery.select(cb.literal(1L)).where(
-                        cb.equal(subRoot.get("did"), root.get("did")),
-                        cb.equal(subActionJoin.get("state"), "ERROR"),
-                        cb.isNotNull((subActionJoin.get("errorAcknowledged"))));
-
-                predicates.add(cb.exists(subquery));
-            } else {
-                subquery.select(cb.literal(1L)).where(
-                        cb.equal(subRoot.get("did"), root.get("did")),
-                        cb.equal(subActionJoin.get("state"), "ERROR"),
-                        cb.isNull((subActionJoin.get("errorAcknowledged"))));
-            }
-
-            predicates.add(cb.exists(subquery));
-        }
-
-        if (filter.getFiltered() != null) {
-            predicates.add(cb.equal(root.get("filtered"), filter.getFiltered()));
-        }
-
-        if (filter.getRequeueCountMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get(REQUEUE_COUNT), filter.getRequeueCountMin()));
-        }
-
-        if (filter.getIngressBytesMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get(INGRESS_BYTES), filter.getIngressBytesMin()));
-        }
-
-        if (filter.getIngressBytesMax() != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get(INGRESS_BYTES), filter.getIngressBytesMax()));
-        }
-
-        if (filter.getReferencedBytesMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get(REFERENCED_BYTES), filter.getReferencedBytesMin()));
-        }
-
-        if (filter.getReferencedBytesMax() != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get(REFERENCED_BYTES), filter.getReferencedBytesMax()));
-        }
-
-        if (filter.getTotalBytesMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get(TOTAL_BYTES), filter.getTotalBytesMin()));
-        }
-
-        if (filter.getTotalBytesMax() != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get(TOTAL_BYTES), filter.getTotalBytesMax()));
-        }
-
-        if (filter.getEgressed() != null) {
-            predicates.add(cb.equal(root.get(EGRESSED), filter.getEgressed()));
-        }
-
-        if (filter.getTestMode() != null) {
-            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
-            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
-            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
-
-            subquery.select(cb.literal(1L)).where(
-                    cb.equal(subRoot.get("did"), root.get("did")),
-                    cb.equal(subFlowJoin.get("testMode"), true));
-
-            if (filter.getTestMode()) {
-                predicates.add(cb.exists(subquery));
-            } else {
-                predicates.add(cb.not(cb.exists(subquery)));
+            for (int i = 0; i < filter.getAnnotations().size(); i++) {
+                KeyValue keyValue = filter.getAnnotations().get(i);
+                criteria.append("AND EXISTS (SELECT 1 FROM annotations a WHERE a.delta_file_id = df.did ");
+                criteria.append("AND a.key = :annotationKey").append(i).append(" ");
+                criteria.append("AND a.value = :annotationValue").append(i).append(") ");
+                parameters.put("annotationKey" + i, keyValue.getKey());
+                parameters.put("annotationValue" + i, keyValue.getValue());
             }
         }
 
         if (filter.getReplayable() != null) {
             if (filter.getReplayable()) {
-                predicates.add(cb.isNull(root.get(REPLAYED)));
-                predicates.add(cb.isNull(root.get(CONTENT_DELETED)));
+                criteria.append("AND df.replayed IS NULL AND df.content_deleted IS NULL ");
             } else {
-                predicates.add(cb.or(cb.isNotNull(root.get(REPLAYED)), cb.isNotNull(root.get(CONTENT_DELETED))));
+                criteria.append("AND (df.replayed IS NOT NULL OR df.content_deleted IS NOT NULL) ");
             }
         }
 
         if (filter.getContentDeleted() != null) {
             if (filter.getContentDeleted()) {
-                predicates.add(cb.isNotNull(root.get(CONTENT_DELETED)));
+                criteria.append("AND df.content_deleted IS NOT NULL ");
             } else {
-                predicates.add(cb.isNull(root.get(CONTENT_DELETED)));
+                criteria.append("AND df.content_deleted IS NULL ");
             }
         }
 
         if (filter.getReplayed() != null) {
             if (filter.getReplayed()) {
-                predicates.add(cb.isNotNull(root.get(REPLAYED)));
+                criteria.append("AND df.replayed IS NOT NULL ");
             } else {
-                predicates.add(cb.isNull(root.get(REPLAYED)));
+                criteria.append("AND df.replayed IS NULL ");
             }
         }
 
-        return predicates;
-    }
+        if (filter.getNameFilter() != null) {
+            String name = filter.getNameFilter().getName();
 
-    private void addNameCriteria(CriteriaBuilder cb, Root<DeltaFile> root, NameFilter nameFilter, List<Predicate> predicates) {
-        String name = nameFilter.getName();
-        if (nameFilter.getCaseSensitive() != null && !nameFilter.getCaseSensitive()) {
-            name = name.toLowerCase();
-            predicates.add(cb.like(cb.lower(root.get("name")), "%" + name + "%"));
-        } else {
-            predicates.add(cb.like(root.get("name"), "%" + name + "%"));
+            if (filter.getNameFilter().getCaseSensitive() != null && !filter.getNameFilter().getCaseSensitive()) {
+                criteria.append("AND LOWER(df.name) LIKE :name ");
+                parameters.put("name", "%" + name.toLowerCase() + "%");
+            } else {
+                criteria.append("AND df.name LIKE :name ");
+                parameters.put("name", "%" + name + "%");
+            }
         }
+
+        if (filter.getErrorCause() != null) {
+            criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+            criteria.append("WHERE dff.delta_file_id = df.did ");
+            criteria.append("AND dff.state = 'ERROR' ");
+            criteria.append("AND LOWER(dff.error_or_filter_cause) LIKE :errorCause) ");
+
+            parameters.put("errorCause", "%" + filter.getErrorCause().toLowerCase() + "%");
+        }
+
+        if (filter.getFilteredCause() != null) {
+            criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+            criteria.append("WHERE dff.delta_file_id = df.did ");
+            criteria.append("AND dff.state = 'FILTERED' ");
+            criteria.append("AND LOWER(dff.error_or_filter_cause) LIKE :filteredCause) ");
+
+            parameters.put("filteredCause", "%" + filter.getFilteredCause().toLowerCase() + "%");
+        }
+
+        if (filter.getPendingAnnotations() != null) {
+            if (filter.getPendingAnnotations()) {
+                criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+                criteria.append("WHERE dff.delta_file_id = df.did ");
+                criteria.append("AND jsonb_array_length(dff.pending_annotations) > 0) ");
+            } else {
+                criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+                criteria.append("WHERE dff.delta_file_id = df.did ");
+                criteria.append("AND jsonb_array_length(dff.pending_annotations) = 0) ");
+            }
+        }
+
+        if (filter.getTestMode() != null) {
+            if (filter.getTestMode()) {
+                criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+            } else {
+                criteria.append("AND NOT EXISTS (SELECT 1 FROM delta_file_flows dff ");
+            }
+            criteria.append("WHERE dff.delta_file_id = df.did ");
+            criteria.append("AND dff.test_mode = true) ");
+        }
+
+        if (filter.getActions() != null && !filter.getActions().isEmpty()) {
+            for (String actionName : filter.getActions()) {
+                criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+                criteria.append("WHERE dff.delta_file_id = df.did ");
+                criteria.append("AND EXISTS ( ");
+                criteria.append("SELECT 1 FROM jsonb_array_elements(dff.actions) AS action ");
+                criteria.append("WHERE action->>'name' = :actionName_");
+                criteria.append(actionName.replace(" ", "_"));
+                criteria.append(")) ");
+
+                parameters.put("actionName_" + actionName.replace(" ", "_"), actionName);
+            }
+        }
+
+        if (filter.getErrorAcknowledged() != null) {
+            criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+            criteria.append("WHERE dff.delta_file_id = df.did ");
+            criteria.append("AND dff.state = 'ERROR' ");
+            if (filter.getErrorAcknowledged()) {
+                criteria.append("AND dff.error_acknowledged IS NOT NULL) ");
+            } else {
+                criteria.append("AND dff.error_acknowledged IS NULL) ");
+            }
+        }
+
+        if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
+            criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+            criteria.append("WHERE dff.delta_file_id = df.did ");
+            criteria.append("AND dff.name IN (:transformFlows) ");
+            criteria.append("AND dff.type = 'TRANSFORM') ");
+
+            parameters.put("transformFlows", filter.getTransformFlows());
+        }
+
+        if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
+            criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
+            criteria.append("WHERE dff.delta_file_id = df.did ");
+            criteria.append("AND dff.name IN (:egressFlows) ");
+            criteria.append("AND dff.type = 'EGRESS') ");
+
+            parameters.put("egressFlows", filter.getEgressFlows());
+        }
+
+
+
+        return criteria.toString();
     }
 
     @Override
@@ -823,15 +809,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
                                           publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
-                                          join_id, pending_actions, delta_file_id, version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?)""";
-
-    private static final String INSERT_ACTIONS = """
-            INSERT INTO actions (id, name, number, type, state, created, queued, start, stop, modified, error_cause,
-                                 error_context, error_acknowledged, error_acknowledged_reason, next_auto_resume,
-                                 next_auto_resume_reason, filtered_cause, filtered_context, attempt, content,
-                                 metadata, delete_metadata_keys, replay_start, delta_file_flow_id, version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)""";
+                                          join_id, pending_actions, delta_file_id, version, actions,
+                                          error_acknowledged, error_acknowledged_reason, cold_queued, error_or_filter_cause,
+                                          next_auto_resume)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_ANNOTATIONS = """
             INSERT INTO annotations (id, key, value, delta_file_id)
@@ -850,7 +831,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }, (PreparedStatementCallback<Void>) ps -> {
             try (PreparedStatement psDeltaFile = ps.getConnection().prepareStatement(INSERT_DELTA_FILES);
                  PreparedStatement psDeltaFileFlow = ps.getConnection().prepareStatement(INSERT_DELTA_FILE_FLOWS);
-                 PreparedStatement psAction = ps.getConnection().prepareStatement(INSERT_ACTIONS);
                  PreparedStatement psAnnotation = ps.getConnection().prepareStatement(INSERT_ANNOTATIONS)) {
 
                 for (DeltaFile deltaFile : deltaFiles) {
@@ -860,11 +840,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     for (DeltaFileFlow flow : deltaFile.getFlows()) {
                         setDeltaFileFlowParameters(psDeltaFileFlow, flow, deltaFile);
                         psDeltaFileFlow.addBatch();
-
-                        for (Action action : flow.getActions()) {
-                            setActionParameters(psAction, action, flow);
-                            psAction.addBatch();
-                        }
                     }
 
                     if (!deltaFile.getAnnotations().isEmpty()) {
@@ -877,7 +852,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
                 psDeltaFile.executeBatch();
                 psDeltaFileFlow.executeBatch();
-                psAction.executeBatch();
                 if (deltaFiles.stream().anyMatch(df -> !df.getAnnotations().isEmpty())) {
                     psAnnotation.executeBatch();
                 }
@@ -931,35 +905,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setObject(15, flow.getJoinId());
         ps.setString(16, toJson(flow.getPendingActions()));
         ps.setObject(17, deltaFile.getDid());
-        ps.setLong(18, deltaFile.getVersion());
-    }
-
-    private void setActionParameters(PreparedStatement ps, Action action, DeltaFileFlow flow) throws SQLException {
-        ps.setObject(1, action.getId());
-        ps.setString(2, action.getName());
-        ps.setInt(3, action.getNumber());
-        ps.setString(4, action.getType().name());
-        ps.setString(5, action.getState().name());
-        ps.setTimestamp(6, toTimestamp(action.getCreated()));
-        ps.setTimestamp(7, toTimestamp(action.getQueued()));
-        ps.setTimestamp(8, toTimestamp(action.getStart()));
-        ps.setTimestamp(9, toTimestamp(action.getStop()));
-        ps.setTimestamp(10, toTimestamp(action.getModified()));
-        ps.setString(11, action.getErrorCause());
-        ps.setString(12, action.getErrorContext());
-        ps.setTimestamp(13, toTimestamp(action.getErrorAcknowledged()));
-        ps.setString(14, action.getErrorAcknowledgedReason());
-        ps.setTimestamp(15, toTimestamp(action.getNextAutoResume()));
-        ps.setString(16, action.getNextAutoResumeReason());
-        ps.setString(17, action.getFilteredCause());
-        ps.setString(18, action.getFilteredContext());
-        ps.setInt(19, action.getAttempt());
-        ps.setString(20, toJson(action.getContent()));
-        ps.setString(21, toJson(action.getMetadata()));
-        ps.setString(22, toJson(action.getDeleteMetadataKeys()));
-        ps.setBoolean(23, action.isReplayStart());
-        ps.setObject(24, flow.getId());
-        ps.setLong(25, flow.getVersion());
+        ps.setLong(18, flow.getVersion());
+        ps.setString(19, toJson(flow.getActions()));
+        ps.setTimestamp(20, toTimestamp(flow.getErrorAcknowledged()));
+        ps.setString(21, flow.getErrorAcknowledgedReason());
+        ps.setBoolean(22, flow.isColdQueued());
+        ps.setString(23, flow.getErrorOrFilterCause());
+        ps.setTimestamp(24, toTimestamp(flow.getNextAutoResume()));
     }
 
     private void setAnnotationParameters(PreparedStatement ps, Annotation annotation, DeltaFile deltaFile) throws SQLException {
@@ -992,11 +944,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         WITH deleted_delta_file_flows AS (
             DELETE FROM delta_file_flows
             WHERE delta_file_id IN (:dids)
-            RETURNING id
-        ),
-        deleted_actions AS (
-            DELETE FROM actions
-            WHERE delta_file_flow_id IN (SELECT id FROM deleted_delta_file_flows)
         ),
         deleted_annotations AS (
             DELETE FROM annotations

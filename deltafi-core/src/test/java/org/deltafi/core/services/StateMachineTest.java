@@ -123,6 +123,7 @@ class StateMachineTest {
 
         DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
         deltaFileFlow.setType(FlowType.TRANSFORM);
+        deltaFileFlow.setTestMode(true);
 
         TransformFlow transformFlow = TransformFlowMaker.builder()
                 .name(TRANSFORM_FLOW)
@@ -140,6 +141,7 @@ class StateMachineTest {
         egressFlow.setTestMode(true);
         egressFlow.setTestModeReason("test mode reason");
         egressFlow.setPendingActions(new ArrayList<>(egressFlowConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
+        deltaFile.getFlows().add(egressFlow);
         when(publisherService.subscribers(transformFlow, deltaFile, deltaFileFlow))
                 .thenReturn(Set.of(egressFlow));
 

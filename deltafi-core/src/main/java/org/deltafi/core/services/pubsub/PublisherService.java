@@ -26,11 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -83,6 +79,7 @@ public class PublisherService {
         PublishRules publishRules = publisher.publishRules();
         if (publishRules == null) {
             errorDeltaFile(deltaFile, publishingFlow, "Flow " + publisher.getName() + " does not have publish rules");
+            return Collections.emptySet();
         }
 
         Set<String> publishTopics = getMatchingTopics(publishRules, publishingFlow);
@@ -245,7 +242,8 @@ public class PublisherService {
         action.setErrorCause(NO_SUBSCRIBER_CAUSE);
         action.setErrorContext(context);
         action.setContent(toCopy);
-        flow.setState(DeltaFileFlowState.ERROR);
+        flow.updateState();
+        deltaFile.updateState(OffsetDateTime.now(clock));
         analyticEventService.recordError(deltaFile, flow.getName(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
     }
 
@@ -254,7 +252,8 @@ public class PublisherService {
         action.setState(ActionState.FILTERED);
         action.setFilteredCause(NO_SUBSCRIBER_CAUSE);
         action.setFilteredContext(context);
-        deltaFile.setFiltered(true);
+        flow.updateState();
+        deltaFile.updateState(OffsetDateTime.now(clock));
         analyticEventService.recordFilter(deltaFile, flow.getName(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
     }
 

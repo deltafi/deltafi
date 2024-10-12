@@ -49,7 +49,6 @@ public abstract class Result<T extends Result<T>> implements ResultType {
         return ActionEvent.builder()
                 .type(actionEventType)
                 .actionName(context.getActionName())
-                .actionId(context.getActionId())
                 .flowName(context.getFlowName())
                 .flowId(context.getFlowId())
                 .did(context.getDid())

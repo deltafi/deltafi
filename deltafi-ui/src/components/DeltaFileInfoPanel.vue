@@ -32,7 +32,7 @@
               </span>
               <span v-else>{{ value }}</span>
               <span v-if="key === 'Stage'">
-                <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" class="ml-2" />
+                <ErrorAcknowledgedBadge v-if="latestErrorFlow && latestErrorFlow.errorAcknowledged" :reason="latestErrorFlow.errorAcknowledgedReason" :timestamp="latestErrorFlow.errorAcknowledged" class="ml-2" />
                 <AutoResumeBadge v-if="deltaFile.stage === 'ERROR' && nextActionWithAutoResume" :timestamp="nextActionWithAutoResume.nextAutoResume" :reason="nextActionWithAutoResume.nextAutoResumeReason" class="ml-2" />
                 <PendingAnnotationsBadge v-if="!_.isEmpty(deltaFile.pendingAnnotationsForFlows)" :pending-annotations="deltaFile.pendingAnnotations" class="ml-2" />
               </span>
@@ -75,6 +75,14 @@ const infoFields = computed(() => {
   fields["Created"] = deltaFile.created;
   fields["Modified"] = deltaFile.modified;
   return fields;
+});
+
+const latestErrorFlow = computed(() => {
+  return _.chain(deltaFile.flows)
+      .filter((flow) => flow.state === "ERROR")
+      .sortBy(["modified"])
+      .last()
+      .value();
 });
 
 const nextActionWithAutoResume = computed(() => {

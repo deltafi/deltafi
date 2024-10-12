@@ -46,17 +46,6 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     @EntityGraph(value = "deltaFile.withFlowsAndActions")
     Optional<DeltaFile> findById(@NotNull UUID did);
 
-    @Query(value = """
-            SELECT COUNT(*)
-            FROM delta_files df
-            JOIN delta_file_flows dff ON df.did = dff.delta_file_id
-            JOIN actions a ON dff.id = a.delta_file_flow_id
-            WHERE df.stage = :stage
-            AND a.state = 'ERROR'
-            AND a.error_acknowledged IS NULL
-            """, nativeQuery = true)
-    long countByStageAndErrorAcknowledgedIsNull(@Param("stage") String stage);
-
     /**
      * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
      * @param flowName name of dataSource to search for

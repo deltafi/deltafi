@@ -139,7 +139,6 @@ def test_context_json():
     assert context.flow_name == "FLOW_NAME"
     assert context.flow_id == "FLOW_ID"
     assert context.action_name == "ACTION_NAME"
-    assert context.action_id == "ACTION_ID"
     assert context.action_version == "1.0"
     assert context.hostname == "HOSTNAME"
     assert context.system_name == "SYSTEM_NAME"

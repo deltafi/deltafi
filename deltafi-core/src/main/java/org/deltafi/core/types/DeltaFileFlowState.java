@@ -22,5 +22,6 @@ public enum DeltaFileFlowState {
     PENDING_ANNOTATIONS,
     COMPLETE,
     ERROR,
+    FILTERED,
     CANCELLED
 }

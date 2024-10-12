@@ -35,6 +35,8 @@ const generateDeltaFiles = (count: number) => {
           created: date,
           modified: date,
           state: "COMPLETED",
+          errorAcknowledged: null,
+          errorAcknowledgedReason: null,
           actions: [
             {
               name: "IngressAction",
@@ -43,8 +45,6 @@ const generateDeltaFiles = (count: number) => {
               modified: date,
               errorCause: "Failed Ingress",
               errorContext: "Details...",
-              errorAcknowledged: null,
-              errorAcknowledgedReason: null,
               nextAutoResume: "2024-05-12T19:46:24.880Z",
               nextAutoResumeReason: "No compression or archive formats detected"
             },
@@ -55,8 +55,6 @@ const generateDeltaFiles = (count: number) => {
               modified: date,
               errorCause: "Failed Ingress Two",
               errorContext: "Details...",
-              errorAcknowledged: null,
-              errorAcknowledgedReason: null,
               nextAutoResume: "2024-05-12T19:46:24.880Z",
               nextAutoResumeReason: "No compression or archive formats detected"
             },
@@ -67,6 +65,8 @@ const generateDeltaFiles = (count: number) => {
           created: date,
           modified: date,
           state: "ERROR",
+          errorAcknowledged: null,
+          errorAcknowledgedReason: null,
           actions: [
             {
               name: "IngressAction",
@@ -75,8 +75,6 @@ const generateDeltaFiles = (count: number) => {
               modified: date,
               errorCause: "Failed Ingress",
               errorContext: "Details...",
-              errorAcknowledged: null,
-              errorAcknowledgedReason: null,
               nextAutoResume: "2024-05-12T19:46:24.880Z",
               nextAutoResumeReason: "No compression or archive formats detected"
             },
@@ -87,8 +85,6 @@ const generateDeltaFiles = (count: number) => {
               modified: date,
               errorCause: "Failed Ingress Two",
               errorContext: "Details...",
-              errorAcknowledged: null,
-              errorAcknowledgedReason: null,
               nextAutoResume: "2024-05-12T19:46:24.880Z",
               nextAutoResumeReason: "No compression or archive formats detected"
             },

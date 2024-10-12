@@ -20,8 +20,7 @@ package org.deltafi.core.repo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.ActionState;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.CountPerFlow;
 import org.deltafi.core.generated.types.CountPerMessage;
 import org.deltafi.core.generated.types.DeltaFileDirection;
@@ -32,43 +31,21 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
-@RequiredArgsConstructor
-public class ActionRepoImpl implements ActionRepoCustom {
+public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     @PersistenceContext
-    private EntityManager entityManager;
-
-    @Override
-    public SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlow(offset, limit, filter, direction, ActionState.ERROR);
-    }
-
-    @Override
-    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlow(offset, limit, filter, direction, ActionState.FILTERED);
-    }
-
-    @Override
-    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlowAndMessage(offset, limit, filter, direction, ActionState.ERROR);
-    }
-
-    @Override
-    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlowAndMessage(offset, limit, filter, direction, ActionState.FILTERED);
-    }
+    EntityManager entityManager;
 
     @Override
     public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
         String sql = """
-                SELECT df.name, COUNT(a.id) AS count
-                FROM actions a JOIN delta_file_flows df ON a.delta_file_flow_id = df.id
-                WHERE a.state = :state
-                AND a.error_acknowledged IS NULL
-                AND df.name IN (:flows)
-                GROUP BY df.name""";
+                SELECT name, COUNT(*) AS count
+                FROM delta_file_flows
+                WHERE state = 'ERROR'
+                AND error_acknowledged IS NULL
+                AND name IN (:flows)
+                GROUP BY name""";
 
         Query query = entityManager.createNativeQuery(sql)
-                .setParameter("state", ActionState.ERROR.toString())
                 .setParameter("flows", flows);
 
         @SuppressWarnings("unchecked")
@@ -77,20 +54,40 @@ public class ActionRepoImpl implements ActionRepoCustom {
                 .collect(Collectors.toMap(row -> (String) row[0], row -> ((Number) row[1]).intValue()));
     }
 
-    private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, ActionState actionState) {
+    @Override
+    public SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
+        return getSummaryByFlow(offset, limit, filter, direction, DeltaFileFlowState.ERROR);
+    }
+
+    @Override
+    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
+        return getSummaryByFlow(offset, limit, filter, direction, DeltaFileFlowState.FILTERED);
+    }
+
+    @Override
+    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
+        return getSummaryByFlowAndMessage(offset, limit, filter, direction, DeltaFileFlowState.ERROR);
+    }
+
+    @Override
+    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
+        return getSummaryByFlowAndMessage(offset, limit, filter, direction, DeltaFileFlowState.FILTERED);
+    }
+
+    private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, DeltaFileFlowState deltaFileFlowState) {
         StringBuilder sql = new StringBuilder("""
-                SELECT df.name, COUNT(a.id) AS count, ARRAY_AGG(df.delta_file_id) AS dids
-                FROM actions a JOIN delta_file_flows df ON a.delta_file_flow_id = df.id
-                WHERE a.state = :state\s""");
+                SELECT name, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
+                FROM delta_file_flows
+                WHERE state = :state\s""");
 
         addFilterClauses(sql, filter);
 
-        sql.append("GROUP BY df.name ");
+        sql.append("GROUP BY name ");
 
-        addFooterClauses(sql, direction, null);
+        addFooterClauses(sql, direction, false);
 
         Query query = entityManager.createNativeQuery(sql.toString())
-                .setParameter("state", actionState.toString())
+                .setParameter("state", deltaFileFlowState.toString())
                 .setParameter("limit", limit)
                 .setParameter("offset", offset != null ? offset : 0);
 
@@ -102,31 +99,25 @@ public class ActionRepoImpl implements ActionRepoCustom {
                 .map(row -> new CountPerFlow((String) row[0], ((Number) row[1]).intValue(), Arrays.stream((UUID[]) row[2]).sorted().distinct().toList()))
                 .collect(Collectors.toList());
 
-        Long totalCount = totalCountByFlow(filter, actionState);
+        Long totalCount = totalCountByFlow(filter, deltaFileFlowState);
 
         return new SummaryByFlow(offset != null ? offset : 0, countPerFlow.size(), totalCount.intValue(), countPerFlow);
     }
 
-    private String causeField(ActionState actionState) {
-        return actionState == ActionState.ERROR ? "error_cause" : "filtered_cause";
-    }
-
-    private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, ActionState actionState) {
-        String causeField = causeField(actionState);
+    private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
-            SELECT a.%s, df.name, COUNT(a.id) AS count, ARRAY_AGG(df.delta_file_id) AS dids
-            FROM actions a JOIN delta_file_flows df ON a.delta_file_flow_id = df.id
-            WHERE a.%s IS NOT NULL
-            AND a.state = :state\s""".formatted(causeField, causeField));
+            SELECT error_or_filter_cause, name, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
+            FROM delta_file_flows
+            WHERE state = :state\s""");
 
         addFilterClauses(sql, filter);
 
-        sql.append("GROUP BY a.%s, df.name ".formatted(causeField));
+        sql.append("GROUP BY error_or_filter_cause, name ");
 
-        addFooterClauses(sql, direction, causeField);
+        addFooterClauses(sql, direction, true);
 
         Query query = entityManager.createNativeQuery(sql.toString())
-                .setParameter("state", actionState.toString())
+                .setParameter("state", flowState.toString())
                 .setParameter("limit", limit)
                 .setParameter("offset", offset != null ? offset : 0);
 
@@ -138,7 +129,7 @@ public class ActionRepoImpl implements ActionRepoCustom {
                 .map(row -> new CountPerMessage((String) row[0], (String) row[1], ((Number) row[2]).intValue(), Arrays.stream((UUID[]) row[3]).sorted().distinct().toList()))
                 .collect(Collectors.toList());
 
-        Long totalCount = totalCountByFlowAndMessage(filter, actionState, causeField);
+        Long totalCount = totalCountByFlowAndMessage(filter, flowState);
 
         return new SummaryByFlowAndMessage(offset != null ? offset : 0, countPerMessage.size(), totalCount.intValue(), countPerMessage);
     }
@@ -146,75 +137,80 @@ public class ActionRepoImpl implements ActionRepoCustom {
     private void addFilterClauses(StringBuilder sql, SummaryFilter filter) {
         if (filter != null) {
             if (filter.getModifiedAfter() != null) {
-                sql.append("AND a.modified > :modifiedAfter ");
+                sql.append("AND modified > :modifiedAfter ");
             }
             if (filter.getModifiedBefore() != null) {
-                sql.append("AND a.modified < :modifiedBefore ");
+                sql.append("AND modified < :modifiedBefore ");
             }
             if (filter.getFlow() != null) {
-                sql.append("AND df.name = :flow ");
+                sql.append("AND name = :flow ");
             }
 
             if (filter instanceof ErrorSummaryFilter errorFilter && errorFilter.getErrorAcknowledged() != null) {
                 if (errorFilter.getErrorAcknowledged()) {
-                    sql.append("AND a.error_acknowledged IS NOT NULL ");
+                    sql.append("AND error_acknowledged IS NOT NULL ");
                 } else {
-                    sql.append("AND a.error_acknowledged IS NULL ");
+                    sql.append("AND error_acknowledged IS NULL ");
                 }
             }
         }
     }
 
-    private void addFooterClauses(StringBuilder sql, DeltaFileDirection direction, String causeField) {
-        sql.append("ORDER BY df.name");
-        if (causeField != null) {
-            sql.append(", a.%s".formatted(causeField));
-        }
-
+    private void addFooterClauses(StringBuilder sql, DeltaFileDirection direction, boolean includeCause) {
+        sql.append("ORDER BY name");
         if (direction == null || direction == DeltaFileDirection.ASC) {
             sql.append(" ASC ");
         } else {
             sql.append(" DESC ");
         }
 
+        if (includeCause) {
+            sql.append(", error_or_filter_cause");
+            if (direction == null || direction == DeltaFileDirection.ASC) {
+                sql.append(" ASC ");
+            } else {
+                sql.append(" DESC ");
+            }
+        }
+
         sql.append("LIMIT :limit OFFSET :offset");
     }
 
-    private Long totalCountByFlow(SummaryFilter filter, ActionState actionState) {
+    private Long totalCountByFlow(SummaryFilter filter, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
             SELECT COUNT(*)
             FROM (
-              SELECT DISTINCT df.name
-              FROM actions a JOIN delta_file_flows df ON a.delta_file_flow_id = df.id
-              WHERE a.state = :state\s""");
+              SELECT DISTINCT name
+              FROM delta_file_flows
+              WHERE state = :state\s""");
 
         addFilterClauses(sql, filter);
 
         sql.append(")");
 
         Query query = entityManager.createNativeQuery(sql.toString())
-                .setParameter("state", actionState.toString());
+                .setParameter("state", flowState.toString());
 
         addSummaryFilterParameters(query, filter);
 
         return ((Number) query.getSingleResult()).longValue();
     }
 
-    private Long totalCountByFlowAndMessage(SummaryFilter filter, ActionState actionState, String causeField) {
+    private Long totalCountByFlowAndMessage(SummaryFilter filter, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
             SELECT COUNT(*)
             FROM (
-              SELECT DISTINCT a.%s, df.name
-              FROM actions a JOIN delta_file_flows df ON a.delta_file_flow_id = df.id
-              WHERE a.%s IS NOT NULL
-              AND a.state = :state\s""".formatted(causeField, causeField));
+              SELECT DISTINCT error_or_filter_cause, name
+              FROM delta_file_flows
+              WHERE error_or_filter_cause IS NOT NULL
+              AND state = :state\s""");
 
         addFilterClauses(sql, filter);
 
         sql.append(")");
 
         Query query = entityManager.createNativeQuery(sql.toString())
-                .setParameter("state", actionState.toString());
+                .setParameter("state", flowState.toString());
 
         addSummaryFilterParameters(query, filter);
 
@@ -233,5 +229,30 @@ public class ActionRepoImpl implements ActionRepoCustom {
                 query.setParameter("flow", filter.getFlow());
             }
         }
+    }
+
+    @Override
+    public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
+        String queryStr = """
+            SELECT
+                (actions->(jsonb_array_length(actions) - 1))->>'name' as actionName,
+                type as type,
+                COUNT(*) as count
+            FROM delta_file_flows
+            WHERE state = 'IN_FLIGHT'
+            AND cold_queued = TRUE
+            GROUP BY (actions->(jsonb_array_length(actions) - 1))->>'name', type
+        """;
+
+        Query query = entityManager.createNativeQuery(queryStr);
+        List<Object[]> results = query.getResultList();
+
+        return results.stream()
+                .map(result -> new ColdQueuedActionSummary(
+                        (String) result[0],
+                        FlowType.valueOf((String) result[1]),
+                        ((Number) result[2]).longValue()
+                ))
+                .collect(Collectors.toList());
     }
 }

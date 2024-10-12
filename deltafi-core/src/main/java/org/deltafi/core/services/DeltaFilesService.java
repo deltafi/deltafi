@@ -105,7 +105,6 @@ public class DeltaFilesService {
     private final AnnotationRepo annotationRepo;
     private final DeltaFileRepo deltaFileRepo;
     private final DeltaFileFlowRepo deltaFileFlowRepo;
-    private final ActionRepo actionRepo;
     private final CoreEventQueue coreEventQueue;
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
@@ -241,7 +240,7 @@ public class DeltaFilesService {
     }
 
     public long countUnacknowledgedErrors() {
-        return actionRepo.countByStateAndErrorAcknowledgedIsNull(ActionState.ERROR);
+        return deltaFileFlowRepo.countUnacknowledgedErrors();
     }
 
     public DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
@@ -283,8 +282,6 @@ public class DeltaFilesService {
                 .flowPlan(new FlowPlanCoordinates(dataSource.getName(), dataSource.getSourcePlugin().groupAndArtifact(),
                         dataSource.getSourcePlugin().getVersion()))
                 .build();
-
-        ingressAction.setDeltaFileFlow(ingressFlow);
 
         long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
 
@@ -347,7 +344,7 @@ public class DeltaFilesService {
             }
 
             DeltaFileFlow flow = deltaFile.getPendingFlow(event.getFlowName(), event.getFlowId());
-            Action action = flow.getPendingAction(event.getActionName(), event.getActionId(), event.getDid());
+            Action action = flow.getPendingAction(event.getActionName(), event.getDid());
 
             if (event.getType() != ActionEventType.ERROR) {
                 flow.removePendingAction(action.getName());
@@ -603,7 +600,7 @@ public class DeltaFilesService {
             action.setNextAutoResume(event.getStop().plusSeconds(resumeDetails.get().delay()));
             action.setNextAutoResumeReason(resumeDetails.get().name());
         }
-        flow.updateState(now);
+        flow.updateState();
         deltaFile.updateState(now);
 
         // false: we don't want action execution metrics, since they have already been recorded.
@@ -766,7 +763,6 @@ public class DeltaFilesService {
                 .testModeReason(fromFlow.getTestModeReason())
                 .pendingActions(new ArrayList<>(fromFlow.getPendingActions()))
                 .build();
-        childFlow.getActions().forEach(a -> a.setDeltaFileFlow(childFlow));
 
         DeltaFile child = DeltaFile.builder()
                 .version(0)
@@ -923,7 +919,6 @@ public class DeltaFilesService {
                                     .joinId(deltaFile.getJoinId())
                                     .build();
                             flow.setDeltaFile(child);
-                            flow.getActions().forEach(a -> a.setDeltaFileFlow(flow));
 
                             inputs.add(new StateMachineInput(child, flow));
 
@@ -1309,7 +1304,6 @@ public class DeltaFilesService {
                     .flowName(flow.getName())
                     .flowId(flow.getId())
                     .actionName(action.getName())
-                    .actionId(action.getId())
                     .error(ErrorEvent.builder().cause(errorMessage).build())
                     .type(ActionEventType.UNKNOWN)
                     .build();
@@ -1584,28 +1578,28 @@ public class DeltaFilesService {
     }
 
     public SummaryByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
-        return actionRepo.getErrorSummaryByFlow(offset,
+        return deltaFileFlowRepo.getErrorSummaryByFlow(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
                 Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
     }
 
     public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
-        return actionRepo.getErrorSummaryByMessage(offset,
+        return deltaFileFlowRepo.getErrorSummaryByMessage(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
                 Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
     }
 
     public SummaryByFlow getFilteredSummaryByFlow(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
-        return actionRepo.getFilteredSummaryByFlow(offset,
+        return deltaFileFlowRepo.getFilteredSummaryByFlow(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
                 Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
     }
 
     public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
-        return actionRepo.getFilteredSummaryByMessage(offset,
+        return deltaFileFlowRepo.getFilteredSummaryByMessage(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
                 Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);

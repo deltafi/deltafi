@@ -99,7 +99,6 @@ enum ActionType {
 
 type Action {
   name: String!
-  id: UUID!
   number: Int!
   type: ActionType!
   state: ActionState!
@@ -110,8 +109,6 @@ type Action {
   modified: DateTime!
   errorCause: String
   errorContext: String
-  errorAcknowledged: DateTime
-  errorAcknowledgedReason: String
   nextAutoResume: DateTime
   nextAutoResumeReason: String
   filteredCause: String
@@ -140,6 +137,7 @@ enum DeltaFileFlowState {
   COMPLETE
   PENDING_ANNOTATIONS
   ERROR
+  FILTERED
   CANCELLED
 }
 
@@ -167,6 +165,8 @@ type DeltaFileFlow {
   pendingAnnotations: [String]
   testMode: Boolean!
   testModeReason: String
+  errorAcknowledged: DateTime
+  errorAcknowledgedReason: String
 }
 
 type DeltaFile {

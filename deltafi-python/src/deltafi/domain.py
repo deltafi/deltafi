@@ -45,7 +45,6 @@ class Context(NamedTuple):
     flow_name: str
     flow_id: str
     action_name: str
-    action_id: str
     action_version: str
     hostname: str
     system_name: str
@@ -79,10 +78,6 @@ class Context(NamedTuple):
             action_name = context['actionName']
         else:
             action_name = None
-        if 'actionId' in context:
-            action_id = context['actionId']
-        else:
-            action_id = None
         if 'actionVersion' in context:
             action_version = context['actionVersion']
         else:
@@ -114,7 +109,6 @@ class Context(NamedTuple):
                        flow_name=flow_name,
                        flow_id=flow_id,
                        action_name=action_name,
-                       action_id=action_id,
                        action_version=action_version,
                        hostname=hostname,
                        system_name=system_name,

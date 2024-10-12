@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.sameInstance;
 class ActionContextTest {
 
     // the expected number of member variables in 'ActionContext'
-    private static final int EXPECTED_NUMBER_FIELDS = 15;
+    private static final int EXPECTED_NUMBER_FIELDS = 14;
 
     private static final UUID PARENT_DID = UUID.fromString("d5b41c6b-7fce-43b7-b6bf-5cd0a3aa95b9");
     private static final UUID CHILD_DID = UUID.fromString("23463e0b-5843-4fd5-b67e-caeea5c2a2fe");
@@ -50,7 +50,6 @@ class ActionContextTest {
     private static final String FLOW_NAME = "the-flow-name";
     private static final UUID FLOW_ID = UUID.fromString("d5b41c6b-7fce-43b7-b6bf-5cd0a3aa1111");
     private static final String ACTION_NAME = "the-action-name";
-    private static final UUID ACTION_ID = UUID.fromString("d5b41c6b-7fce-43b7-b6bf-5cd0a3aa2222");
     private static final String ACTION_VERSION = "the-action-version";
     private static final String HOSTNAME = "the-hostname";
     private static final OffsetDateTime START_TIME = OffsetDateTime.parse("2019-08-31T15:20:30+08:00");
@@ -95,7 +94,6 @@ class ActionContextTest {
         assertThat(actionContext.getFlowName(), equalTo(FLOW_NAME));
         assertThat(actionContext.getFlowId(), equalTo(FLOW_ID));
         assertThat(actionContext.getActionName(), equalTo(ACTION_NAME));
-        assertThat(actionContext.getActionId(), equalTo(ACTION_ID));
         assertThat(actionContext.getActionVersion(), equalTo(ACTION_VERSION));
         assertThat(actionContext.getHostname(), equalTo(HOSTNAME));
         assertThat(actionContext.getStartTime().toString(), equalTo(START_TIME.toString()));
@@ -122,7 +120,6 @@ class ActionContextTest {
                 FLOW_NAME,
                 FLOW_ID,
                 ACTION_NAME,
-                ACTION_ID,
                 ACTION_VERSION,
                 HOSTNAME,
                 START_TIME,
@@ -146,7 +143,6 @@ class ActionContextTest {
                 FLOW_NAME,
                 FLOW_ID,
                 ACTION_NAME,
-                ACTION_ID,
                 ACTION_VERSION,
                 HOSTNAME,
                 START_TIME,
