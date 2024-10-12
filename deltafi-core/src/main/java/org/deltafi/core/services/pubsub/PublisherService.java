@@ -122,15 +122,10 @@ public class PublisherService {
     }
 
     private Set<DeltaFileFlow> subscribers(Set<String> topics, DeltaFile deltaFile, DeltaFileFlow completedFlow) {
-        // find all matching topics and map them to the set of subscribers
-        Set<Subscriber> potentialSubscribers = topics.stream()
-                    .map(this::getSubscribers)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
-
-        // check the subscribers rules to determine if DeltaFile should go there
-        return potentialSubscribers.stream()
-                .map(subscriber -> subscribedDeltaFileFlow(subscriber, deltaFile, completedFlow,  topics))
+        return topics.stream()
+                .flatMap(topic -> getSubscribers(topic).stream())
+                .distinct()
+                .map(subscriber -> subscribedDeltaFileFlow(subscriber, deltaFile, completedFlow, topics))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
