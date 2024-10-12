@@ -1,14 +1,3 @@
--- actions table
-ALTER TABLE actions ALTER COLUMN error_cause TYPE text;
-ALTER TABLE actions ALTER COLUMN error_context TYPE text;
-ALTER TABLE actions ALTER COLUMN filtered_cause TYPE text;
-ALTER TABLE actions ALTER COLUMN filtered_context TYPE text;
-ALTER TABLE actions ALTER COLUMN error_acknowledged_reason TYPE text;
-ALTER TABLE actions ALTER COLUMN name TYPE text;
-ALTER TABLE actions ALTER COLUMN next_auto_resume_reason TYPE text;
-ALTER TABLE actions ALTER COLUMN state TYPE text;
-ALTER TABLE actions ALTER COLUMN type TYPE text;
-
 -- annotations table
 ALTER TABLE annotations ALTER COLUMN key TYPE text;
 ALTER TABLE annotations ALTER COLUMN value TYPE text;
@@ -24,6 +13,8 @@ ALTER TABLE delta_file_flows ALTER COLUMN name TYPE text;
 ALTER TABLE delta_file_flows ALTER COLUMN state TYPE text;
 ALTER TABLE delta_file_flows ALTER COLUMN test_mode_reason TYPE text;
 ALTER TABLE delta_file_flows ALTER COLUMN type TYPE text;
+ALTER TABLE delta_file_flows ALTER COLUMN error_acknowledged_reason TYPE text;
+ALTER TABLE delta_file_flows ALTER COLUMN error_or_filter_cause TYPE text;
 
 -- delta_files table
 ALTER TABLE delta_files ALTER COLUMN content_deleted_reason TYPE text;
