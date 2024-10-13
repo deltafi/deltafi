@@ -1068,7 +1068,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFilesService.handleActionEvent(filterActionEvent(deltaFile.getDid(), flow, flowId, filteredAction));
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(deltaFile.getDid());
-		Action action = actual.getFlow(flow, flowId).getAction(filteredAction);
+		Action action = actual.getFlow(flowId).getAction(filteredAction);
 		assert action != null;
 
 		assertEquals(ActionState.FILTERED, action.getState());

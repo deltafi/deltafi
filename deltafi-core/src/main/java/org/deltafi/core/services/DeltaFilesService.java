@@ -711,7 +711,7 @@ public class DeltaFilesService {
      * If the collector list hits the batchSize limit, save the updated DeltaFiles and flush the list.
      */
     void updatePendingAnnotationsForFlowsAndCollect(DeltaFile deltaFile, String flowName, Set<String> expectedAnnotations, List<DeltaFile> collector, int batchSize) {
-        deltaFile.setPendingAnnotations(flowName, expectedAnnotations, OffsetDateTime.now(clock));
+        deltaFile.setPendingAnnotations(flowName, expectedAnnotations);
         collector.add(deltaFile);
 
         if (collector.size() == batchSize) {

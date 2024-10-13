@@ -216,7 +216,7 @@ public class DeltaFile {
     }
   }
 
-  public void setPendingAnnotations(String flowName, Set<String> expectedAnnotations, OffsetDateTime now) {
+  public void setPendingAnnotations(String flowName, Set<String> expectedAnnotations) {
     Set<String> pendingAnnotations = getPendingAnnotations(expectedAnnotations);
 
     flows.stream().filter(flow -> flow.getType() == FlowType.EGRESS && flow.getName().equals(flowName))
@@ -344,12 +344,12 @@ public class DeltaFile {
     return flows.stream().filter(f -> f.getName().equals(flowName)).findFirst().orElse(null);
   }
 
-  public DeltaFileFlow getFlow(String flowName, UUID flowId) {
-    return flows.stream().filter(f -> f.getId().equals(flowId) && f.getName().equals(flowName)).findFirst().orElse(null);
+  public DeltaFileFlow getFlow(UUID flowId) {
+    return flows.stream().filter(f -> f.getId().equals(flowId)).findFirst().orElse(null);
   }
 
   public DeltaFileFlow getPendingFlow(String flowName, UUID flowId) {
-    DeltaFileFlow flow = getFlow(flowName, flowId);
+    DeltaFileFlow flow = getFlow(flowId);
     if (flow == null || flow.terminal()) {
       throw new UnexpectedFlowException(flowName, flowId, did, flow != null);
     }
