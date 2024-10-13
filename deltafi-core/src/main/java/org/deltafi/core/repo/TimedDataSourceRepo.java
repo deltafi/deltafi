@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.repo;
 
+import org.deltafi.core.types.TimedDataSource;
 import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.common.types.IngressStatus;
 import org.springframework.data.jpa.repository.Modifying;
@@ -28,28 +29,43 @@ import java.util.UUID;
 
 @Repository
 public interface TimedDataSourceRepo extends FlowRepo, TimedDataSourceRepoCustom {
-    @Modifying
     @Transactional
-    @Query("UPDATE TimedDataSource t SET t.cronSchedule = :cronSchedule, t.nextRun = :nextRun WHERE t.name = :flowName")
-    int updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun);
+    @Query(value = "UPDATE flows " +
+            "SET cron_schedule = :cronSchedule, next_run = :nextRun " +
+            "WHERE name = :flowName AND type = 'TIMED_DATA_SOURCE' " +
+            "RETURNING *", nativeQuery = true)
+    TimedDataSource updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun);
 
-    @Modifying
     @Transactional
-    @Query("UPDATE TimedDataSource t SET t.lastRun = :lastRun, t.currentDid = :currentDid, t.executeImmediate = false WHERE t.name = :flowName")
-    int updateLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid);
+    @Query(value = "UPDATE flows " +
+            "SET last_run = :lastRun, current_did = :currentDid, execute_immediate = false " +
+            "WHERE name = :flowName AND type = 'TIMED_DATA_SOURCE' " +
+            "RETURNING *", nativeQuery = true)
+    TimedDataSource updateLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid);
 
-    @Modifying
     @Transactional
-    @Query("UPDATE TimedDataSource t SET t.memo = :memo WHERE t.name = :flowName")
-    int updateMemo(String flowName, String memo);
+    @Query(value = "UPDATE flows " +
+            "SET memo = :memo " +
+            "WHERE name = :flowName AND type = 'TIMED_DATA_SOURCE' " +
+            "RETURNING *", nativeQuery = true)
+    TimedDataSource updateMemo(String flowName, String memo);
 
-    @Modifying
     @Transactional
-    @Query("UPDATE TimedDataSource t SET t.currentDid = null, t.memo = :memo, t.executeImmediate = :executeImmediate, t.ingressStatus = :status, t.ingressStatusMessage = :statusMessage, t.nextRun = :nextRun WHERE t.name = :flowName AND t.currentDid = :currentDid")
-    int completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate, IngressStatus status, String statusMessage, OffsetDateTime nextRun);
+    @Query(value = "UPDATE flows " +
+            "SET current_did = null, " +
+            "    memo = :memo, " +
+            "    execute_immediate = :executeImmediate, " +
+            "    ingress_status = :status, " +
+            "    ingress_status_message = :statusMessage, " +
+            "    next_run = :nextRun " +
+            "WHERE name = :flowName AND current_did = :currentDid AND type = 'TIMED_DATA_SOURCE' " +
+            "RETURNING *", nativeQuery = true)
+    TimedDataSource completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate, String status, String statusMessage, OffsetDateTime nextRun);
 
-    @Modifying
     @Transactional
-    @Query("UPDATE TimedDataSource t SET t.maxErrors = :maxErrors WHERE t.name = :flowName")
-    int updateMaxErrors(String flowName, int maxErrors);
+    @Query(value = "UPDATE flows " +
+            "SET max_errors = :maxErrors " +
+            "WHERE name = :flowName AND type = 'TIMED_DATA_SOURCE' " +
+            "RETURNING *", nativeQuery = true)
+    TimedDataSource updateMaxErrors(String flowName, int maxErrors);
 }

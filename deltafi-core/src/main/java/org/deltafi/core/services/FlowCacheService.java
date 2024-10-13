@@ -45,6 +45,10 @@ public class FlowCacheService {
                 ));
     }
 
+    public void updateCache(Flow flow) {
+        flowCache.put(new FlowKey(flow.getName(), flow.getType()), flow);
+    }
+
     public List<Flow> flowsOfType(FlowType flowType) {
         return flowCache.entrySet().stream()
                 .filter(entry -> entry.getKey().type() == flowType)

@@ -133,8 +133,9 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
         }
 
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
-        if (timedDataSourceRepo.updateCronSchedule(flowName, cronSchedule, cronExpression.next(OffsetDateTime.now(clock))) > 0) {
-            flowCacheService.refreshCache();
+        TimedDataSource updated = timedDataSourceRepo.updateCronSchedule(flowName, cronSchedule, cronExpression.next(OffsetDateTime.now(clock)));
+        if (updated != null) {
+            flowCacheService.updateCache(updated);
             return true;
         }
 
@@ -165,8 +166,9 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
             return false;
         }
 
-        if (timedDataSourceRepo.updateMemo(flowName, memo) > 0) {
-            flowCacheService.refreshCache();
+        TimedDataSource updated = timedDataSourceRepo.updateMemo(flowName, memo);
+        if (updated != null) {
+            flowCacheService.updateCache(updated);
             return true;
         }
 
@@ -174,8 +176,9 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
     }
 
     public void setLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
-        if (timedDataSourceRepo.updateLastRun(flowName, lastRun, currentDid) > 0) {
-            flowCacheService.refreshCache();
+        TimedDataSource updated = timedDataSourceRepo.updateLastRun(flowName, lastRun, currentDid);
+        if (updated != null) {
+            flowCacheService.updateCache(updated);
         }
 
     }
@@ -184,9 +187,11 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
                                      IngressStatus status, String statusMessage, String cronSchedule) {
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
 
-        if (timedDataSourceRepo.completeExecution(flowName, currentDid, memo, executeImmediate,
-                status == null ? IngressStatus.HEALTHY : status, statusMessage, cronExpression.next(OffsetDateTime.now(clock))) > 0) {
-            flowCacheService.refreshCache();
+        TimedDataSource updated = timedDataSourceRepo.completeExecution(flowName, currentDid, memo, executeImmediate,
+                status == null ? IngressStatus.HEALTHY.toString() : status.toString(), statusMessage, cronExpression.next(OffsetDateTime.now(clock)));
+
+        if (updated != null) {
+            flowCacheService.updateCache(updated);
             return true;
         }
 
@@ -211,8 +216,9 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
             return false;
         }
 
-        if (flowRepo.updateMaxErrors(flowName, maxErrors) > 0) {
-            flowCacheService.refreshCache();
+        TimedDataSource updated = flowRepo.updateMaxErrors(flowName, maxErrors);
+        if (updated != null) {
+            flowCacheService.updateCache(flow);
             return true;
         }
 
