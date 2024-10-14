@@ -16,4 +16,4 @@ COPY deltafi-*.jar deltafi-app.jar
 COPY probe.sh .
 COPY --from=deltafi-ui-build-stage /ui/dist /deltafi
 COPY --from=deltafi-docs-build-stage /docs/dist /deltafi/docs
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-noverify","-jar","/deltafi-app.jar"]
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/deltafi-app.jar"]
