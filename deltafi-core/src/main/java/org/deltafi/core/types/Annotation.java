@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.uuid.Generators;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,30 +24,21 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "annotations")
-@EqualsAndHashCode(exclude = "deltaFile")
-public class Annotation implements Comparable<Annotation> {
+@EqualsAndHashCode
+public class Annotation implements Comparable<org.deltafi.core.types.Annotation> {
     @Id
     private UUID id = Generators.timeBasedEpochGenerator().generate();
     private String key;
     private String value;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delta_file_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
-    @ToString.Exclude
-    @JsonBackReference
-    private DeltaFile deltaFile;
-
-    public Annotation(String key, String value, DeltaFile deltaFile) {
+    public Annotation(String key, String value) {
         this.key = key;
         this.value = value;
-        this.deltaFile = deltaFile;
     }
 
     @Override

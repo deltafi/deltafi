@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
@@ -33,21 +32,14 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 
-import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Entity
 @Table(name = "delta_file_flows")
-@NamedEntityGraph(
-        name = "deltaFileFlow.withActions",
-        attributeNodes = {
-                @NamedAttributeNode("actions")
-        }
-)
 @DynamicUpdate
+@EqualsAndHashCode
 public class DeltaFileFlow {
     @Id
     @Builder.Default
@@ -96,13 +88,8 @@ public class DeltaFileFlow {
     private String errorOrFilterCause;
     private OffsetDateTime nextAutoResume;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delta_file_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
-    @ToString.Exclude
-    @JsonBackReference
-    private DeltaFile deltaFile;
-
     @Version
+    @EqualsAndHashCode.Exclude
     private long version;
 
     public DeltaFileFlow(DeltaFileFlow other) {
@@ -123,49 +110,12 @@ public class DeltaFileFlow {
         this.testModeReason = other.testModeReason;
         this.joinId = other.joinId;
         this.pendingActions = other.pendingActions;
-        this.deltaFile = other.deltaFile;
         this.version = other.version;
         this.errorAcknowledged = other.errorAcknowledged;
         this.errorAcknowledgedReason = other.errorAcknowledgedReason;
         this.coldQueued = other.coldQueued;
         this.errorOrFilterCause = other.errorOrFilterCause;
         this.nextAutoResume = other.nextAutoResume;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        DeltaFileFlow other = (DeltaFileFlow) o;
-
-        return number == other.number &&
-                depth == other.depth &&
-                testMode == other.testMode &&
-                Objects.equals(id, other.id) &&
-                Objects.equals(name, other.name) &&
-                type == other.type &&
-                state == other.state &&
-                Objects.equals(created, other.created) &&
-                Objects.equals(modified, other.modified) &&
-                Objects.equals(flowPlan, other.flowPlan) &&
-                Objects.equals(input, other.input) &&
-                Objects.equals(new ArrayList<>(actions), new ArrayList<>(other.actions)) &&
-                Objects.equals(publishTopics, other.publishTopics) &&
-                Objects.equals(pendingAnnotations, other.pendingAnnotations) &&
-                Objects.equals(testModeReason, other.testModeReason) &&
-                Objects.equals(joinId, other.joinId) &&
-                Objects.equals(pendingActions, other.pendingActions) &&
-                Objects.equals(errorAcknowledged, other.errorAcknowledged) &&
-                Objects.equals(errorAcknowledgedReason, other.errorAcknowledgedReason) &&
-                coldQueued == other.coldQueued &&
-                Objects.equals(errorOrFilterCause, other.errorOrFilterCause) &&
-                Objects.equals(nextAutoResume, other.nextAutoResume);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, number, type, state, created, modified, flowPlan, input, new ArrayList<>(actions), publishTopics, depth, pendingAnnotations, testMode, testModeReason, joinId, pendingActions, errorAcknowledged, errorAcknowledgedReason, coldQueued, errorOrFilterCause, nextAutoResume);
     }
 
     /**
@@ -226,8 +176,16 @@ public class DeltaFileFlow {
         return lastContent().stream().map(Content::copy).toList();
     }
 
+    public Action firstAction() {
+        return actions.stream()
+                .min(Comparator.comparingInt(Action::getNumber))
+                .orElse(null);
+    }
+
     public Action lastAction() {
-        return actions.isEmpty() ? null : actions.getLast();
+        return actions.stream()
+                .max(Comparator.comparingInt(Action::getNumber))
+                .orElse(null);
     }
 
     public boolean hasUnacknowledgedError() {
@@ -411,14 +369,14 @@ public class DeltaFileFlow {
     }
 
     public ActionType lastActionType() {
-        return !actions.isEmpty() ? actions.getLast().getType() : null;
+        return !actions.isEmpty() ? lastAction().getType() : null;
     }
 
     public ActionState lastActionState() {
-        return !actions.isEmpty() ? actions.getLast().getState() : null;
+        return !actions.isEmpty() ? lastAction().getState() : null;
     }
 
     public List<Content> lastActionContent() {
-        return !actions.isEmpty() ?  actions.getLast().getContent() : List.of();
+        return !actions.isEmpty() ? lastAction().getContent() : List.of();
     }
 }

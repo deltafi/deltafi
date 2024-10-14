@@ -18,7 +18,7 @@
 package org.deltafi.core.types;
 
 /**
- * the deltaFile, dataSource, and action that were most recently processed and require next steps
+ * the deltaFile and flow that were most recently processed and require next steps
  * @param deltaFile the deltaFile for which an event was received
  * @param flow the dataSource for which the event was received
  */

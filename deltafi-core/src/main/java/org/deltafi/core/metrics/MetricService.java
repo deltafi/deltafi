@@ -68,14 +68,18 @@ public class MetricService {
     }
 
     public void increment(@NotNull Metric metric) {
-        if (metrics != null) { metrics.counter(metric.metricName()).inc(metric.getValue()); }
-        log.debug("{}", metric);
+        if (metrics != null) {
+            metrics.counter(metric.metricName()).inc(metric.getValue());
+            log.debug("{}", metric);
+        }
     }
 
     public void increment(@NotNull String name, @NotNull Map<String, String> tags, long value) {
-        org.deltafi.common.types.Metric metric = new org.deltafi.common.types.Metric(name, value, tags);
-        if (metrics != null) { metrics.counter(metric.metricName()).inc(value); }
-        log.debug("{}", metric);
+        if (metrics != null) {
+            Metric metric = new Metric(name, value, tags);
+            metrics.counter(metric.metricName()).inc(value);
+            log.debug("{}", metric);
+        }
     }
 
     public synchronized void sendGauges(Map<String, Long> metrics) {

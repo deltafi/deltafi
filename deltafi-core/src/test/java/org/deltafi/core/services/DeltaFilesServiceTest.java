@@ -43,8 +43,10 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.deltafi.core.services.DeltaFilesService.REQUEUE_BATCH_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -53,6 +55,8 @@ class DeltaFilesServiceTest {
     private static final UUID DID = UUID.randomUUID();
     private final TestClock testClock = new TestClock();
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
+
+    private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
     private final RestDataSourceService restDataSourceService;
     private final EgressFlowService egressFlowService;
@@ -95,6 +99,7 @@ class DeltaFilesServiceTest {
                           @Mock TimedDataSourceService timedDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
                           @Mock Environment environment) {
+        this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
@@ -127,7 +132,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = deltaFilesService.ingress(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
-        DeltaFileFlow ingressFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow ingressFlow = deltaFile.firstFlow();
         assertEquals(dataSource.getName(), ingressFlow.getName());
         assertEquals(did, deltaFile.getDid());
         assertTrue(ingressFlow.lastCompleteAction().isPresent());
@@ -147,7 +152,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = deltaFilesService.ingress(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
-        DeltaFileFlow ingressFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow ingressFlow = deltaFile.firstFlow();
         assertEquals(dataSource.getName(), ingressFlow.getName());
         assertEquals(did, deltaFile.getDid());
         assertTrue(ingressFlow.isTestMode());
@@ -168,7 +173,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(DID)
                 .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
-                .flows(List.of(ingressFlow))
+                .flows(Set.of(ingressFlow))
                 .build();
         when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile(DID, false);
@@ -185,7 +190,7 @@ class DeltaFilesServiceTest {
         ingressFlow.setInput(new DeltaFileFlowInput());
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(DID)
-                .flows(List.of(ingressFlow))
+                .flows(Set.of(ingressFlow))
                 .build();
         when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile(DID, true);
@@ -206,7 +211,7 @@ class DeltaFilesServiceTest {
 
         // Map.of disallows null keys or values, so do it the hard way
         DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID(), List.of(), new HashMap<>());
-        DeltaFileFlow ingressFlow = deltaFile3.getFlows().getFirst();
+        DeltaFileFlow ingressFlow = deltaFile3.firstFlow();
         Map<String, String> metadata = new HashMap<>();
         metadata.put("k2", "val2");
         metadata.put("k3", null);
@@ -216,7 +221,7 @@ class DeltaFilesServiceTest {
         ingressFlow.getActions().add(action);
 
         List<UUID> dids = List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), UUID.randomUUID());
-        List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.getFlows().getFirst(), deltaFile2.getFlows().getFirst(), deltaFile3.getFlows().getFirst());
+        List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.firstFlow(), deltaFile2.firstFlow(), deltaFile3.firstFlow());
         when(deltaFileFlowRepo.findAllByDeltaFileIdsAndFlowZero(dids)).thenReturn(deltaFileFlows);
 
         List<UniqueKeyValues> uniqueMetadata = deltaFilesService.sourceMetadataUnion(dids);
@@ -303,11 +308,12 @@ class DeltaFilesServiceTest {
         OffsetDateTime modified = OffsetDateTime.now();
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        deltaFileFlow.setType(FlowType.EGRESS);
         deltaFileFlow.getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
-        ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.TRANSFORM, null);
+        ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.EGRESS, null);
         Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
         List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
@@ -320,11 +326,12 @@ class DeltaFilesServiceTest {
         OffsetDateTime modified = OffsetDateTime.now();
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
-        deltaFile.getFlows().getFirst().getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
+        deltaFile.firstFlow().setType(FlowType.EGRESS);
+        deltaFile.firstFlow().getActions().add(Action.builder().name("action").number(1).type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
         ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.EGRESS, null);
-        Mockito.when(transformFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
+        Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
         List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
         Assertions.assertThat(actionInvocations).hasSize(1);
@@ -435,7 +442,7 @@ class DeltaFilesServiceTest {
         Mockito.when(egressFlowService.getRunningFlowByName("dataSource")).thenReturn(egressFlow);
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.EGRESS).deltaFile(deltaFile).build();
+        DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.EGRESS).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
@@ -452,7 +459,7 @@ class DeltaFilesServiceTest {
         Mockito.when(egressFlowService.getRunningFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        DeltaFileFlow flow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow flow = deltaFile.firstFlow();
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
@@ -464,7 +471,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = new DeltaFile();
         deltaFile.setDid(UUID.randomUUID());
         deltaFile.setModified(OffsetDateTime.now());
-        deltaFile.setFlows(Stream.of("a", "b", "c").map(this::deltaFileFlow).toList());
+        deltaFile.setFlows(Stream.of("a", "b", "c").map(this::deltaFileFlow).collect(Collectors.toSet()));
         Mockito.when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
         Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).hasSize(3).contains("a", "b", "c");
 
@@ -488,7 +495,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = new DeltaFile();
         deltaFile.setDid(UUID.randomUUID());
         DeltaFileFlow deltaFileFlow = new DeltaFileFlow();
-        deltaFile.setFlows(List.of(deltaFileFlow));
+        deltaFile.setFlows(Set.of(deltaFileFlow));
 
         Mockito.when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
         Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).isEmpty();
@@ -504,33 +511,33 @@ class DeltaFilesServiceTest {
     @Test
     void testErrorMetadataUnion() {
         DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
-        DeltaFileFlow deltaFileFlow1 = deltaFile1.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow1 = deltaFile1.firstFlow();
         deltaFileFlow1.setName("flow1");
-        deltaFileFlow1.getActions().getFirst().setMetadata(Map.of("a", "1", "b", "2"));
+        deltaFileFlow1.firstAction().setMetadata(Map.of("a", "1", "b", "2"));
         Action error1 = deltaFileFlow1.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error1.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
-        DeltaFileFlow deltaFileFlow2 = deltaFile2.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow2 = deltaFile2.firstFlow();
         deltaFileFlow2.setName("flow1");
-        deltaFileFlow2.getActions().getFirst().setMetadata(Map.of("a", "somethingElse", "c", "3"));
+        deltaFileFlow2.firstAction().setMetadata(Map.of("a", "somethingElse", "c", "3"));
         Action error2 = deltaFileFlow2.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error2.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
-        DeltaFileFlow deltaFileFlow3 = deltaFile3.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow3 = deltaFile3.firstFlow();
         deltaFileFlow3.setName("flow2");
-        deltaFileFlow3.getActions().getFirst().setMetadata(Map.of("d", "4"));
+        deltaFileFlow3.firstAction().setMetadata(Map.of("d", "4"));
         Action error3 = deltaFileFlow3.queueAction("TransformAction2", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error3.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile4 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
-        DeltaFileFlow deltaFileFlow4 = deltaFile4.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow4 = deltaFile4.firstFlow();
         deltaFileFlow4.setName("flow3");
-        deltaFileFlow4.getActions().getFirst().setMetadata(Map.of("e", "5"));
+        deltaFileFlow4.firstAction().setMetadata(Map.of("e", "5"));
         deltaFileFlow4.queueAction("TransformAction3", ActionType.TRANSFORM, false, OffsetDateTime.now());
 
-        List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.getFlows().getFirst(), deltaFile2.getFlows().getFirst(), deltaFile3.getFlows().getFirst(), deltaFile4.getFlows().getFirst());
+        List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.firstFlow(), deltaFile2.firstFlow(), deltaFile3.firstFlow(), deltaFile4.firstFlow());
         when(deltaFileFlowRepo.findAllByDeltaFileIds(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()))).thenReturn(deltaFileFlows);
 
         List<PerActionUniqueKeyValues> actionVals = deltaFilesService.errorMetadataUnion(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()));
@@ -558,19 +565,19 @@ class DeltaFilesServiceTest {
         DeltaFile aggregate = Util.buildDeltaFile(UUID.randomUUID());
         aggregate.setJoinId(aggregate.getDid());
         DeltaFile parent1 = Util.buildDeltaFile(UUID.randomUUID());
-        parent1.getFlows().getFirst().setJoinId(aggregate.getDid());
+        parent1.firstFlow().setJoinId(aggregate.getDid());
         DeltaFile parent2 = Util.buildDeltaFile(UUID.randomUUID());
-        parent2.getFlows().getFirst().setJoinId(aggregate.getDid());
+        parent2.firstFlow().setJoinId(aggregate.getDid());
         aggregate.setParentDids(List.of(parent1.getDid(), parent2.getDid()));
 
-        DeltaFileFlow flow = aggregate.getFlows().getFirst();
+        DeltaFileFlow flow = aggregate.firstFlow();
         flow.queueAction("join-transform", ActionType.TRANSFORM, false, OffsetDateTime.now());
 
         testClock.setInstant(flow.actionNamed("join-transform").orElseThrow().getModified().toInstant());
         when(queueManagementService.coldQueueActions()).thenReturn(Collections.emptySet());
         when(deltaFileRepo.updateForRequeue(OffsetDateTime.now(testClock),
                 mockDeltaFiPropertiesService.getDeltaFiProperties().getRequeueDuration(), Collections.emptySet(),
-                Collections.emptySet(), 5000))
+                Collections.emptySet(), REQUEUE_BATCH_SIZE))
                 .thenReturn(List.of(aggregate));
         when(deltaFileRepo.findAllById(List.of(parent1.getDid(), parent2.getDid())))
                 .thenReturn(List.of(parent1, parent2));
@@ -578,7 +585,7 @@ class DeltaFilesServiceTest {
         ActionConfiguration ActionConfiguration =
                 new ActionConfiguration("join-transform", ActionType.TRANSFORM, "org.deltafi.SomeJoiningTransformAction");
         ActionConfiguration.setJoin(new JoinConfiguration(Duration.parse("PT1H"), null, 3, null));
-        when(transformFlowService.findActionConfig("myFlow", "join-transform"))
+        when(timedDataSourceService.findActionConfig("myFlow", "join-transform"))
                 .thenReturn(ActionConfiguration);
 
         deltaFilesService.requeue();
@@ -629,8 +636,8 @@ class DeltaFilesServiceTest {
         List<StateMachineInput> stateMachines = stateMachineInputCaptor.getValue();
         assertEquals(1, stateMachines.size());
         DeltaFile child = stateMachines.getFirst().deltaFile();
-        String nextAction = child.getFlows().getFirst().getNextPendingAction();
-        DeltaFileFlow childFirstFlow = child.getFlows().getFirst();
+        String nextAction = child.firstFlow().getNextPendingAction();
+        DeltaFileFlow childFirstFlow = child.firstFlow();
         assertEquals(2, childFirstFlow.getPendingActions().size());
         assertEquals("childAction", nextAction);
         List<Action> childActions = childFirstFlow.getActions();

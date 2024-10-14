@@ -37,7 +37,6 @@ public class PropertySyncScheduler {
 
     private final Optional<StorageConfigurationService> storageConfigurationService;
 
-
     @Scheduled(fixedDelay = 5000)
     public void syncProperties() {
         propertyService.refreshProperties();

@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
@@ -26,7 +25,10 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Type;
+import org.hibernate.collection.spi.PersistentCollection;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
@@ -43,19 +45,12 @@ import java.util.stream.Stream;
 @NamedEntityGraph(
         name = "deltaFile.withFlowsAndActions",
         attributeNodes = {
-                @NamedAttributeNode(value = "flows", subgraph = "flows"),
+                @NamedAttributeNode(value = "flows"),
                 @NamedAttributeNode("annotations")
-        },
-        subgraphs = {
-                @NamedSubgraph(
-                        name = "flows",
-                        attributeNodes = {
-                                @NamedAttributeNode("actions")
-                        }
-                )
         }
 )
 @DynamicUpdate
+@EqualsAndHashCode
 public class DeltaFile {
   @Id
   @Builder.Default
@@ -73,10 +68,11 @@ public class DeltaFile {
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
-  @OneToMany(mappedBy = "deltaFile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-  @JsonManagedReference
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @Fetch(FetchMode.SELECT)
+  @JoinColumn(name = "delta_file_id")
   @OrderBy("number ASC")
-  private List<DeltaFileFlow> flows = new ArrayList<>();
+  private Set<DeltaFileFlow> flows = new LinkedHashSet<>();
   private int requeueCount;
   private long ingressBytes;
   private long referencedBytes;
@@ -85,9 +81,10 @@ public class DeltaFile {
   @Builder.Default
   private DeltaFileStage stage = DeltaFileStage.IN_FLIGHT;
   @Builder.Default
-  @OneToMany(mappedBy = "deltaFile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-  @JsonManagedReference
-  private List<Annotation> annotations = new ArrayList<>();
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @Fetch(FetchMode.SELECT)
+  @JoinColumn(name = "delta_file_id")
+  private Set<Annotation> annotations = new LinkedHashSet<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
@@ -103,10 +100,12 @@ public class DeltaFile {
   private boolean contentDeletable = false;
 
   @Version
+  @EqualsAndHashCode.Exclude
   private long version;
 
   @Builder.Default
   @Transient
+  @EqualsAndHashCode.Exclude
   private OffsetDateTime cacheTime = null;
 
   public DeltaFile(DeltaFile other) {
@@ -122,8 +121,8 @@ public class DeltaFile {
     this.referencedBytes = other.referencedBytes;
     this.totalBytes = other.totalBytes;
     this.stage = other.stage;
-    this.flows = other.flows == null ? null : other.flows.stream().map(DeltaFileFlow::new).toList();
-    this.annotations = other.annotations == null ? null : new ArrayList<>(other.annotations);
+    this.flows = other.flows == null ? null : other.flows.stream().map(DeltaFileFlow::new).collect(Collectors.toSet());
+    this.annotations = other.annotations == null ? null : new LinkedHashSet<>(other.annotations);
     this.created = other.created;
     this.modified = other.modified;
     this.contentDeleted = other.contentDeleted;
@@ -138,44 +137,16 @@ public class DeltaFile {
     this.cacheTime = other.cacheTime;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    
-    DeltaFile other = (DeltaFile) o;
-
-    return requeueCount == other.requeueCount &&
-            ingressBytes == other.ingressBytes &&
-            referencedBytes == other.referencedBytes &&
-            totalBytes == other.totalBytes &&
-            terminal == other.terminal &&
-            contentDeletable == other.contentDeletable &&
-            version == other.version &&
-            Objects.equals(did, other.did) &&
-            Objects.equals(name, other.name) &&
-            Objects.equals(normalizedName, other.normalizedName) &&
-            Objects.equals(dataSource, other.dataSource) &&
-            Objects.equals(parentDids, other.parentDids) &&
-            Objects.equals(joinId, other.joinId) &&
-            Objects.equals(childDids, other.childDids) &&
-            Objects.equals(stage, other.stage) &&
-            Objects.equals(created, other.created) &&
-            Objects.equals(modified, other.modified) &&
-            Objects.equals(contentDeleted, other.contentDeleted) &&
-            Objects.equals(contentDeletedReason, other.contentDeletedReason) &&
-            Objects.equals(egressed, other.egressed) &&
-            Objects.equals(filtered, other.filtered) &&
-            Objects.equals(replayed, other.replayed) &&
-            Objects.equals(replayDid, other.replayDid) &&
-            Objects.equals(cacheTime, other.cacheTime) &&
-            Objects.equals(new ArrayList<>(flows), new ArrayList<>(other.flows)) &&
-            Objects.equals(new ArrayList<>(annotations).stream().sorted().toList(), new ArrayList<>(other.annotations).stream().sorted().toList());
+  @EqualsAndHashCode.Include(replaces = "flows")
+  @SuppressWarnings("unused")
+  private Set<DeltaFileFlow> getFlowsForEquality() {
+    return new LinkedHashSet<>(flows);
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(did, name, normalizedName, dataSource, parentDids, joinId, childDids, requeueCount, ingressBytes, referencedBytes, totalBytes, stage, created, modified, contentDeleted, contentDeletedReason, egressed, filtered, replayed, replayDid, terminal, contentDeletable, version, cacheTime, new ArrayList<>(flows), new ArrayList<>(annotations));
+  @EqualsAndHashCode.Include(replaces = "annotations")
+  @SuppressWarnings("unused")
+  private Set<Annotation> getAnnotationsForEquality() {
+    return new LinkedHashSet<>(annotations);
   }
 
   public void setStage(DeltaFileStage stage) {
@@ -301,14 +272,14 @@ public class DeltaFile {
 
   public void addAnnotations(Map<String, String> newAnnotations) {
     if (annotations == null) {
-      annotations = new ArrayList<>();
+      annotations = new LinkedHashSet<>();
     }
     for (Map.Entry<String, String> newAnnotation : newAnnotations.entrySet()) {
       Optional<Annotation> maybeAnnotation = annotations.stream().filter(a -> a.getKey().equals(newAnnotation.getKey())).findFirst();
       if (maybeAnnotation.isPresent()) {
         maybeAnnotation.get().setValue(newAnnotation.getValue());
       } else {
-        annotations.add(new Annotation(newAnnotation.getKey(), newAnnotation.getValue(), this));
+        annotations.add(new Annotation(newAnnotation.getKey(), newAnnotation.getValue()));
       }
     }
   }
@@ -323,9 +294,9 @@ public class DeltaFile {
     }
 
     if (annotations == null) {
-      annotations = new ArrayList<>();
+      annotations = new LinkedHashSet<>();
     }
-    this.annotations.add(new Annotation(key, value, this));
+    this.annotations.add(new Annotation(key, value));
   }
 
   public boolean hasPendingActions() {
@@ -456,7 +427,6 @@ public class DeltaFile {
             .depth(previousFlow.getDepth() + 1)
             .testMode(previousFlow.isTestMode())
             .testModeReason(previousFlow.getTestModeReason())
-            .deltaFile(this)
             .build();
     flows.add(flow);
 
@@ -528,5 +498,17 @@ public class DeltaFile {
   @Transient
   public List<String> getEgressFlows() {
     return flows.stream().filter(f -> f.getType() == FlowType.EGRESS).map(DeltaFileFlow::getName).distinct().toList();
+  }
+
+  public DeltaFileFlow firstFlow() {
+    return flows.stream()
+            .min(Comparator.comparingInt(DeltaFileFlow::getNumber))
+            .orElse(null);
+  }
+
+  public DeltaFileFlow lastFlow() {
+    return flows.stream()
+            .max(Comparator.comparingInt(DeltaFileFlow::getNumber))
+            .orElse(null);
   }
 }

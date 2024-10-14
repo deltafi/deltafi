@@ -25,6 +25,7 @@ import org.deltafi.core.types.JoinEntry;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,8 +50,7 @@ public class DeltaFileUtil {
                 .dataSource("joined:%s".formatted(currentFlow.getName()))
                 .created(now)
                 .modified(now)
-                .flows(List.of(aggregateFlow)).build();
-        aggregateFlow.setDeltaFile(aggregate);
+                .flows(new LinkedHashSet<>(List.of(aggregateFlow))).build();
 
         return aggregate.buildActionInput(joinAction, aggregateFlow, joinedDids, aggregateAction, systemName, returnAddress, null);
     }

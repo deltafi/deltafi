@@ -42,7 +42,6 @@ public class FullFlowExemplars {
     public static final ActionConfiguration EGRESS = new ActionConfiguration(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, "type");
     public static final List<ActionConfiguration> TRANSFORM_ACTIONS = List.of(TRANSFORM1, TRANSFORM2);
 
-    public static final UUID UUID_0 = UUID.fromString("00000000-0000-0000-0000-000000000000");
     public static final UUID UUID_1 = UUID.fromString("11111111-1111-1111-1111-111111111111");
     public static final UUID UUID_2 = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
@@ -62,7 +61,7 @@ public class FullFlowExemplars {
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .created(OffsetDateTime.now())
                 .modified(OffsetDateTime.now())
-                .flows(new ArrayList<>())
+                .flows(new LinkedHashSet<>())
                 .egressed(false)
                 .filtered(false)
                 .build();
@@ -75,7 +74,6 @@ public class FullFlowExemplars {
                 .publishTopics(List.of(TRANSFORM_TOPIC))
                 .flowPlan(new FlowPlanCoordinates(dataSource, PLUGIN_COORDINATES.groupAndArtifact(),
                         PLUGIN_COORDINATES.getVersion()))
-                .deltaFile(deltaFile)
                 .build();
         deltaFile.getFlows().add(ingressFlow);
 
@@ -88,7 +86,6 @@ public class FullFlowExemplars {
                 Set.of(TRANSFORM_TOPIC), OffsetDateTime.now());
 
         transformFlow.addAction("Utf8TransformAction", ActionType.TRANSFORM, ActionState.QUEUED, OffsetDateTime.now());
-        transformFlow.setDeltaFile(deltaFile);
 
         return deltaFile;
     }
@@ -96,16 +93,16 @@ public class FullFlowExemplars {
     public static DeltaFile ingressedFromActionWithError(UUID did) {
         DeltaFile deltaFile = ingressedFromAction(did, TIMED_DATA_SOURCE_ERROR_NAME);
         deltaFile.getFlow(TIMED_DATA_SOURCE_NAME).setPublishTopics(List.of(MISSING_PUBLISH_TOPIC));
-        deltaFile.getFlows().remove(1);
-        DeltaFileFlow flow = deltaFile.getFlows().getFirst();
+        deltaFile.setFlows(new HashSet<>(Set.of(deltaFile.firstFlow())));
+        DeltaFileFlow flow = deltaFile.firstFlow();
         flow.setName(TIMED_DATA_SOURCE_ERROR_NAME);
         flow.setState(DeltaFileFlowState.ERROR);
-        flow.getActions().getFirst().setName("SampleTimedIngressErrorAction");
+        flow.firstAction().setName("SampleTimedIngressErrorAction");
 
         Action action = flow.addAction("NO_SUBSCRIBERS", ActionType.PUBLISH, ActionState.ERROR, OffsetDateTime.now());
         action.setErrorCause(NO_SUBSCRIBER_CAUSE);
         action.setErrorContext("No subscribers found for data source 'sampleTimedDataSourceError' on topic 'missingPublishTopic'");
-        action.setContent(flow.getActions().getFirst().getContent());
+        action.setContent(flow.firstAction().getContent());
 
         deltaFile.setStage(DeltaFileStage.ERROR);
 
@@ -141,7 +138,7 @@ public class FullFlowExemplars {
         Content content = new Content("name", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFile deltaFile = Util.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
         deltaFile.setIngressBytes(500L);
-        DeltaFileFlow flow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), OffsetDateTime.now());
+        DeltaFileFlow flow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, deltaFile.firstFlow(), OffsetDateTime.now());
         flow.setId(UUID_1);
         flow.setPendingActions(TRANSFORM_ACTIONS.stream().map(ActionConfiguration::getName).toList());
         flow.getInput().setMetadata(SOURCE_METADATA);
@@ -201,7 +198,7 @@ public class FullFlowExemplars {
 
     public static DeltaFile postTransformHadErrorDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
-        deltaFile.getFlows().get(1).setPendingActions(List.of(TRANSFORM2.getName()));
+        deltaFile.lastFlow().setPendingActions(List.of(TRANSFORM2.getName()));
         deltaFile.setStage(DeltaFileStage.ERROR);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         Action action = flow.getAction("SampleTransformAction");
@@ -271,7 +268,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postErrorDeltaFile(did);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_2);
         flow.getActions().getFirst().setState(ActionState.RETRIED);
-        flow.getActions().getFirst().setMetadata(Map.of("a", "b"));
+        flow.firstAction().setMetadata(Map.of("a", "b"));
         Action action = flow.addAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, QUEUED, OffsetDateTime.now());
         action.setAttempt(2);
         flow.setState(DeltaFileFlowState.IN_FLIGHT);

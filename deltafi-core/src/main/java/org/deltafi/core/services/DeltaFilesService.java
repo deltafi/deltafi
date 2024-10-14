@@ -79,7 +79,7 @@ public class DeltaFilesService {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     public static final String REPLAY_ACTION_NAME = "Replay";
-    private static final int REQUEUE_BATCH_SIZE = 5000;
+    public static final int REQUEUE_BATCH_SIZE = 5000;
 
     static {
         SimpleModule simpleModule = new SimpleModule().addSerializer(OffsetDateTime.class, new JsonSerializer<>() {
@@ -285,7 +285,7 @@ public class DeltaFilesService {
 
         long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
 
-        DeltaFile deltaFile = DeltaFile.builder()
+        return DeltaFile.builder()
                 .did(ingressEventItem.getDid())
                 .dataSource(dataSource.getName())
                 .name(ingressEventItem.getDeltaFileName())
@@ -296,15 +296,12 @@ public class DeltaFilesService {
                 .ingressBytes(contentSize)
                 .totalBytes(contentSize)
                 .stage(DeltaFileStage.IN_FLIGHT)
-                .flows(new ArrayList<>(List.of(ingressFlow)))
+                .flows(new LinkedHashSet<>(List.of(ingressFlow)))
                 .created(ingressStartTime)
                 .modified(now)
                 .egressed(false)
                 .filtered(false)
                 .build();
-
-        ingressFlow.setDeltaFile(deltaFile);
-        return deltaFile;
     }
 
     private DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, List<UUID> parentDids, OffsetDateTime ingressStartTime,
@@ -312,7 +309,7 @@ public class DeltaFilesService {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
-        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.getFlows().getFirst())), true);
+        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.firstFlow())), true);
         return deltaFile;
     }
 
@@ -345,6 +342,7 @@ public class DeltaFilesService {
 
             DeltaFileFlow flow = deltaFile.getPendingFlow(event.getFlowName(), event.getFlowId());
             Action action = flow.getPendingAction(event.getActionName(), event.getDid());
+            ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), flow.getType(), action.getName());
 
             if (event.getType() != ActionEventType.ERROR) {
                 flow.removePendingAction(action.getName());
@@ -365,7 +363,7 @@ public class DeltaFilesService {
 
             switch (event.getType()) {
                 case TRANSFORM -> {
-                    generateMetrics(metrics, event, deltaFile, flow, action);
+                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                     transform(deltaFile, flow, action, event);
                 }
                 case EGRESS -> {
@@ -374,35 +372,35 @@ public class DeltaFilesService {
                                     .name(EXECUTION_TIME_MS)
                                     .value(Duration.between(deltaFile.getCreated(), deltaFile.getModified()).toMillis())
                                     .build());
-                    generateMetrics(metrics, event, deltaFile, flow, action);
+                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                     egress(deltaFile, flow, action, event.getStart(), event.getStop());
                     if (flow.getState() == DeltaFileFlowState.COMPLETE) {
                         analyticEventService.recordEgress(deltaFile, flow);
                     }
                 }
                 case ERROR -> {
-                    generateMetrics(metrics, event, deltaFile, flow, action);
+                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                     error(deltaFile, flow, action, event);
                 }
                 case FILTER -> {
                     metrics.add(new Metric(DeltaFiConstants.FILES_FILTERED, 1));
-                    generateMetrics(metrics, event, deltaFile, flow, action);
+                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                     filter(deltaFile, flow, action, event, OffsetDateTime.now());
                 }
                 default -> throw new UnknownTypeException(event.getActionName(), deltaFile.getDid(), event.getType());
             }
 
-            completeJoin(event, deltaFile, flow, action, OffsetDateTime.now());
+            completeJoin(event, deltaFile, action, actionConfiguration);
         });
     }
 
     private void generateMetrics(List<Metric> metrics, ActionEvent event, DeltaFile deltaFile, DeltaFileFlow flow,
-                                 Action action) {
-        generateMetrics(true, metrics, event, deltaFile, flow, action);
+                                 Action action, ActionConfiguration actionConfiguration) {
+        generateMetrics(true, metrics, event, deltaFile, flow, action, actionConfiguration);
     }
 
     private void generateMetrics(boolean actionExecuted, List<Metric> metrics, ActionEvent event, DeltaFile deltaFile,
-                                 DeltaFileFlow flow, Action action) {
+                                 DeltaFileFlow flow, Action action, ActionConfiguration actionConfiguration) {
         String egressFlow = flow.getType() == FlowType.EGRESS ? flow.getName() : null;
         Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), action.getName(),
                 deltaFile.getDataSource(), egressFlow);
@@ -415,7 +413,6 @@ public class DeltaFilesService {
         // or if we've already recorded them
         if (actionExecuted) {
             String actionClass = null;
-            ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), action.getName());
             if (actionConfiguration != null) {
                 actionClass = actionConfiguration.getType();
             }
@@ -462,7 +459,7 @@ public class DeltaFilesService {
                 .map((item) -> buildIngressDeltaFile(dataSource, event, item))
                 .toList();
         List<StateMachineInput> stateMachineInputs = deltaFiles.stream()
-                .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.getFlows().getFirst()))
+                .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.firstFlow()))
                 .toList();
 
         advanceAndSave(stateMachineInputs, true);
@@ -470,7 +467,7 @@ public class DeltaFilesService {
         for (DeltaFile deltaFile : deltaFiles) {
             counter.byteCount += deltaFile.getIngressBytes();
             if (deltaFile.getFlows().size() == 1) {
-                ActionState lastState = deltaFile.getFlows().getFirst().lastActionState();
+                ActionState lastState = deltaFile.firstFlow().lastActionState();
                 if (lastState == ActionState.FILTERED) {
                     counter.filteredFiles++;
                 } else if (lastState == ActionState.ERROR) {
@@ -604,7 +601,7 @@ public class DeltaFilesService {
         deltaFile.updateState(now);
 
         // false: we don't want action execution metrics, since they have already been recorded.
-        generateMetrics(false, List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile, flow, action);
+        generateMetrics(false, List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile, flow, action, actionConfiguration(flow.getName(), flow.getType(), action.getName()));
         logErrorAnalytics(deltaFile, event);
     }
 
@@ -774,13 +771,12 @@ public class DeltaFilesService {
                 .ingressBytes(deltaFile.getIngressBytes())
                 .totalBytes(deltaFile.getTotalBytes())
                 .stage(DeltaFileStage.IN_FLIGHT)
-                .flows(new ArrayList<>(List.of(childFlow)))
+                .flows(new LinkedHashSet<>(List.of(childFlow)))
                 .created(now)
                 .modified(now)
                 .egressed(false)
                 .filtered(false)
                 .build();
-        childFlow.setDeltaFile(child);
 
         child.setName(transformEvent.getName());
         return new StateMachineInput(child, childFlow);
@@ -866,7 +862,7 @@ public class DeltaFilesService {
                             result.setError("Cannot replay DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
                             OffsetDateTime now = OffsetDateTime.now(clock);
-                            DeltaFileFlow firstFlow = deltaFile.getFlows().getFirst();
+                            DeltaFileFlow firstFlow = deltaFile.firstFlow();
 
                             DeltaFileFlow flow = DeltaFileFlow.builder()
                                     .name(firstFlow.getName())
@@ -908,7 +904,7 @@ public class DeltaFilesService {
                                     .stage(DeltaFileStage.IN_FLIGHT)
                                     .terminal(false)
                                     .contentDeletable(false)
-                                    .flows(new ArrayList<>(List.of(flow)))
+                                    .flows(new LinkedHashSet<>(List.of(flow)))
                                     .dataSource(deltaFile.getDataSource())
                                     .name(deltaFile.getName())
                                     .normalizedName(deltaFile.getNormalizedName())
@@ -918,7 +914,6 @@ public class DeltaFilesService {
                                     .filtered(false)
                                     .joinId(deltaFile.getJoinId())
                                     .build();
-                            flow.setDeltaFile(child);
 
                             inputs.add(new StateMachineInput(child, flow));
 
@@ -986,7 +981,7 @@ public class DeltaFilesService {
 
             nextActions.addAll(childActionConfigurations);
         } else {
-            startFromAction = new Action(firstFlow.getActions().getFirst());
+            startFromAction = new Action(firstFlow.firstAction());
         }
 
         flow.setPendingActions(nextActions.stream().map(ActionConfiguration::getName).toList());
@@ -1294,7 +1289,7 @@ public class DeltaFilesService {
     }
 
     private WrappedActionInput requeueActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action) {
-        ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), action.getName());
+        ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), flow.getType(), action.getName());
 
         if (Objects.isNull(actionConfiguration)) {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
@@ -1366,12 +1361,13 @@ public class DeltaFilesService {
         }
     }
 
-    private ActionConfiguration actionConfiguration(String flow, String actionName) {
-        ActionConfiguration actionConfiguration = transformFlowService.findActionConfig(flow, actionName);
-        if (actionConfiguration == null) {
-            actionConfiguration = egressFlowService.findActionConfig(flow, actionName);
-        }
-        return actionConfiguration;
+    private ActionConfiguration actionConfiguration(String flow, FlowType flowType, String actionName) {
+        return switch (flowType) {
+            case TIMED_DATA_SOURCE -> timedDataSourceService.findActionConfig(flow, actionName);
+            case TRANSFORM -> transformFlowService.findActionConfig(flow, actionName);
+            case EGRESS -> egressFlowService.findActionConfig(flow, actionName);
+            default -> null;
+        };
     }
 
     public boolean processActionEvents(String uniqueId) {
@@ -1484,7 +1480,7 @@ public class DeltaFilesService {
             }
 
             DeltaFile deltaFile = actionInput.getDeltaFile();
-            Action action = deltaFile.getFlows().getFirst().getActions().getFirst();
+            Action action = deltaFile.firstFlow().firstAction();
             List<String> deleteMetadataKeys = new ArrayList<>();
             Map<String, String> addMetadata = new HashMap<>();
             boolean isReplay = action.getName().equals(REPLAY_ACTION_NAME);
@@ -1730,7 +1726,7 @@ public class DeltaFilesService {
     }
 
     public void queueTimedOutJoin(JoinEntry joinEntry, List<UUID> joinDids) {
-        ActionConfiguration actionConfiguration = actionConfiguration(joinEntry.getJoinDefinition().getFlow(),
+        ActionConfiguration actionConfiguration = actionConfiguration(joinEntry.getJoinDefinition().getFlow(), joinEntry.getJoinDefinition().getActionType() == ActionType.TRANSFORM ? FlowType.TRANSFORM : FlowType.EGRESS,
                 joinEntry.getJoinDefinition().getAction());
 
         if (actionConfiguration == null) {
@@ -1777,11 +1773,11 @@ public class DeltaFilesService {
         }
     }
 
-    private void completeJoin(ActionEvent event, DeltaFile deltaFile, DeltaFileFlow flow, Action action, OffsetDateTime now) {
-        ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), action.getName());
+    private void completeJoin(ActionEvent event, DeltaFile deltaFile, Action action, ActionConfiguration actionConfiguration) {
         if ((actionConfiguration != null) && (actionConfiguration.getJoin() != null)) {
             List<WrappedActionInput> actionInputs = new ArrayList<>();
             List<DeltaFile> parentDeltaFiles = deltaFileRepo.findAllById(deltaFile.getParentDids());
+            OffsetDateTime now = OffsetDateTime.now(clock);
             for (DeltaFile parentDeltaFile : parentDeltaFiles) {
                 parentDeltaFile.getChildDids().add(deltaFile.getDid());
                 parentDeltaFile.joinedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);

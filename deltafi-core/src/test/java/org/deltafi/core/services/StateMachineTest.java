@@ -85,7 +85,7 @@ class StateMachineTest {
                 .egressActionName(EGRESS_ACTION + "2").flowState(FlowState.RUNNING).build().makeEgressFlow();
         when(egressFlowService.getRunningFlowByName(EGRESS_FLOW + "2")).thenReturn(egressFlow2);
 
-        DeltaFileFlow deltaFileTransformFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow deltaFileTransformFlow = deltaFile.firstFlow();
         deltaFileTransformFlow.setType(FlowType.TRANSFORM);
         // Add flows and set action configurations to simulate PublisherService
         DeltaFileFlow deltaFileEgressFlow1 = deltaFile.addFlow(EGRESS_FLOW + "1", FlowType.EGRESS, deltaFileTransformFlow,
@@ -121,7 +121,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
         deltaFileFlow.setType(FlowType.TRANSFORM);
         deltaFileFlow.setTestMode(true);
 
@@ -154,7 +154,7 @@ class StateMachineTest {
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
         assertThat(deltaFile.getFiltered()).isTrue();
         assertThat(egressFlow.getActions()).hasSize(1);
-        Action egressAction = egressFlow.getActions().getFirst();
+        Action egressAction = egressFlow.firstAction();
         assertThat(egressAction.getName()).isEqualTo(SYNTHETIC_EGRESS_ACTION_FOR_TEST);
         assertThat(egressAction.getState()).isEqualTo(ActionState.FILTERED);
         assertThat(egressAction.getFilteredCause()).isEqualTo("Filtered by test mode");
@@ -165,7 +165,7 @@ class StateMachineTest {
     void advancesInTransformationFlowWithJoiningTransformAction() {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
         deltaFileFlow.setType(FlowType.TRANSFORM);
         ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
                 "org.deltafi.action.SomeJoiningTransformAction");
@@ -197,7 +197,7 @@ class StateMachineTest {
     void advancesInTransformationFlowWithJoiningTransformActionNullMaxNum() {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
         deltaFileFlow.setType(FlowType.TRANSFORM);
         ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
                 "org.deltafi.action.SomeJoiningTransformAction");
@@ -233,7 +233,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
         deltaFileFlow.setType(FlowType.TRANSFORM);
         deltaFileFlow.setDepth(deltaFiProperties.getMaxFlowDepth());
 
@@ -249,7 +249,7 @@ class StateMachineTest {
         assertThat(actionInputs).isEmpty();
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.ERROR);
         assertThat(deltaFileFlow.getActions()).hasSize(2);
-        Action sytheticAction = deltaFileFlow.getActions().getLast();
+        Action sytheticAction = deltaFileFlow.lastAction();
         assertThat(sytheticAction.getName()).isEqualTo("CIRCULAR_FLOWS");
         assertThat(sytheticAction.getState()).isEqualTo(ActionState.ERROR);
         assertThat(sytheticAction.getErrorCause()).isEqualTo("Circular flows detected");

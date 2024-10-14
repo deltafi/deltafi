@@ -57,6 +57,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -140,7 +141,7 @@ class IngressServiceTest {
         }
         Mockito.when(errorCountService.generateErrorMessage("dataSource")).thenReturn(null);
         DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").build();
-        DeltaFile deltaFile = DeltaFile.builder().flows(List.of(flow)).build();
+        DeltaFile deltaFile = DeltaFile.builder().flows(Set.of(flow)).build();
         Mockito.when(deltaFilesService.ingress(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
     }
 

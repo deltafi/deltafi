@@ -24,10 +24,8 @@ import org.deltafi.common.types.DeltaFileStage;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -43,7 +41,10 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     Page<DeltaFile> findByNameOrderByCreatedDesc(String filename, Pageable pageable);
 
     @NotNull
-    @EntityGraph(value = "deltaFile.withFlowsAndActions")
+    @Query("SELECT df FROM DeltaFile df " +
+            "LEFT JOIN FETCH df.annotations " +
+            "LEFT JOIN FETCH df.flows f " +
+            "WHERE df.did = :did")
     Optional<DeltaFile> findById(@NotNull UUID did);
 
     /**

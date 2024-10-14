@@ -43,7 +43,7 @@ class DeltaFileTest {
                 .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .flows(new ArrayList<>(List.of(flow)))
+                .flows(new LinkedHashSet<>(List.of(flow)))
                 .build();
 
         deltaFile.acknowledgeErrors(now2, "reason");
@@ -68,7 +68,7 @@ class DeltaFileTest {
                 .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .flows(new ArrayList<>(List.of(flow)))
+                .flows(new LinkedHashSet<>(List.of(flow)))
                 .stage(DeltaFileStage.ERROR)
                 .build();
 
@@ -91,7 +91,7 @@ class DeltaFileTest {
                 .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .flows(new ArrayList<>(List.of(flow)))
+                .flows(new LinkedHashSet<>(List.of(flow)))
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .build();
 
@@ -144,7 +144,7 @@ class DeltaFileTest {
                 .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .flows(new ArrayList<>(List.of(flow1, flow2, flow3)))
+                .flows(new LinkedHashSet<>(List.of(flow1, flow2, flow3)))
                 .build();
 
         List<DeltaFileFlow> retried = deltaFile.resumeErrors(List.of(
@@ -181,7 +181,7 @@ class DeltaFileTest {
         Content content5 = new Content("content1", "*/*", List.of(new Segment(uuid3, 5, 200, did2)));
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .flows(List.of(DeltaFileFlow.builder().actions(List.of(
+                .flows(Set.of(DeltaFileFlow.builder().actions(List.of(
                         Action.builder().content(List.of(content1, content2)).build(),
                         Action.builder().content(List.of(content3)).build(),
                         Action.builder().content(List.of(content4)).build(),

@@ -88,14 +88,14 @@ public class Util {
                                                 OffsetDateTime modified, String extraError, List<Content> content) {
 
         DeltaFile deltaFile = Util.buildDeltaFile(did, "ingressFlow", DeltaFileStage.COMPLETE, created, modified, content);
-        deltaFile.getFlows().getFirst().getActions().getFirst().setState(ActionState.COMPLETE);
-        DeltaFileFlow firstFlow = deltaFile.addFlow(flow, FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
+        deltaFile.firstFlow().getActions().getFirst().setState(ActionState.COMPLETE);
+        DeltaFileFlow firstFlow = deltaFile.addFlow(flow, FlowType.TRANSFORM, deltaFile.firstFlow(), created);
         Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
         firstFlow.updateState();
 
         if (extraError != null) {
-            DeltaFileFlow secondFlow = deltaFile.addFlow("extraFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
+            DeltaFileFlow secondFlow = deltaFile.addFlow("extraFlow", FlowType.TRANSFORM, deltaFile.firstFlow(), created);
             Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
             anotherErrorAction.error(modified, modified, modified, extraError, context);
             secondFlow.updateState();
@@ -137,7 +137,6 @@ public class Util {
         deltaFile.setModified(modified);
         deltaFile.getFlows().add(flow);
 
-        flow.setDeltaFile(deltaFile);
         flow.updateState();
         deltaFile.updateFlags();
         return deltaFile;
@@ -152,7 +151,7 @@ public class Util {
                 .name("filename")
                 .normalizedName("filename")
                 .dataSource(dataSource)
-                .flows(new ArrayList<>())
+                .flows(new LinkedHashSet<>())
                 .egressed(false)
                 .filtered(false)
                 .totalBytes(1)
@@ -179,7 +178,7 @@ public class Util {
         Assertions.assertThat(actual.getContentDeletedReason()).isEqualTo(expected.getContentDeletedReason());
     }
 
-    public static void assertFlowsEqualIgnoringDates(List<DeltaFileFlow> expected, List<DeltaFileFlow> actual) {
+    public static void assertFlowsEqualIgnoringDates(Set<DeltaFileFlow> expected, Set<DeltaFileFlow> actual) {
         if (expected == null || actual == null) {
             Assertions.assertThat(actual).isEqualTo(expected);
             return;
@@ -187,7 +186,7 @@ public class Util {
 
         Assertions.assertThat(actual).hasSize(expected.size());
         for (int i = 0; i < expected.size(); i++) {
-            assertFlowEqualIgnoringDates(expected.get(i), actual.get(i));
+            assertFlowEqualIgnoringDates(expected.stream().sorted(Comparator.comparingInt(DeltaFileFlow::getNumber)).toList().get(i), actual.stream().sorted(Comparator.comparingInt(DeltaFileFlow::getNumber)).toList().get(i));
         }
     }
 
@@ -222,7 +221,7 @@ public class Util {
 
         Assertions.assertThat(actual).hasSize(expected.size());
         for (int i = 0; i < expected.size(); i++) {
-            assertActionEqualIgnoringDates(expected.get(i), actual.get(i));
+            assertActionEqualIgnoringDates(expected.stream().sorted(Comparator.comparingInt(Action::getNumber)).toList().get(i), actual.stream().sorted(Comparator.comparingInt(Action::getNumber)).toList().get(i));
         }
     }
 
@@ -323,27 +322,27 @@ public class Util {
         return OffsetDateTime.now(clock);
     }
 
-    public static Action autoResumeIngress(OffsetDateTime time) {
-        return Action.builder().name("ingress").modified(time).state(ActionState.COMPLETE).build();
+    public static Action autoResumeIngress(OffsetDateTime time, int actionNum) {
+        return Action.builder().name("ingress").modified(time).state(ActionState.COMPLETE).number(actionNum).build();
     }
 
-    public static Action autoResumeHit(OffsetDateTime time) {
-        Action hit = Action.builder().name("hit").modified(time).state(ActionState.ERROR).build();
+    public static Action autoResumeHit(OffsetDateTime time, int actionNum) {
+        Action hit = Action.builder().name("hit").modified(time).state(ActionState.ERROR).number(actionNum).build();
         hit.setNextAutoResume(time.minusSeconds(1000));
         return hit;
     }
 
-    public static Action autoResumeMiss(OffsetDateTime time) {
-        Action miss = Action.builder().name("miss").modified(time).state(ActionState.ERROR).build();
+    public static Action autoResumeMiss(OffsetDateTime time, int actionNum) {
+        Action miss = Action.builder().name("miss").modified(time).state(ActionState.ERROR).number(actionNum).build();
         miss.setNextAutoResume(time.plusSeconds(1000));
         return miss;
     }
 
-    public static Action autoResumeNotSet(OffsetDateTime time) {
-        return Action.builder().name("notSet").modified(time).state(ActionState.ERROR).build();
+    public static Action autoResumeNotSet(OffsetDateTime time, int actionNum) {
+        return Action.builder().name("notSet").modified(time).state(ActionState.ERROR).number(actionNum).build();
     }
 
-    public static Action autoResumeOther(OffsetDateTime time) {
-        return Action.builder().name("other").modified(time).state(ActionState.COMPLETE).build();
+    public static Action autoResumeOther(OffsetDateTime time, int actionNum) {
+        return Action.builder().name("other").modified(time).state(ActionState.COMPLETE).number(actionNum).build();
     }
 }

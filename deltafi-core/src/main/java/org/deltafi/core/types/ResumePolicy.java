@@ -185,7 +185,7 @@ public class ResumePolicy {
 
     private boolean errorMatch(String error) {
         return StringUtils.isBlank(getErrorSubstring()) ||
-                error.contains(getErrorSubstring());
+                (error != null && error.contains(getErrorSubstring()));
     }
 
     private boolean canMatch(String objectValue, String searchValue) {
