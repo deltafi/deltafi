@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 export DELTAFICLI_PROJECT_NAME=deltafi
-export DELTAFICLI_CHART_PATH=${DELTAFICLI_WORKDIR}/../charts/deltafi
-export DELTAFICLI_COMPOSE_PATH=${DELTAFICLI_WORKDIR}/../compose
+export DELTAFICLI_CHART_PATH=${DELTAFICLI_WORKDIR}/../orchestration/charts/deltafi
+export DELTAFICLI_COMPOSE_PATH=${DELTAFICLI_WORKDIR}/../orchestration/compose
 export DELTAFICLI_DISABLED_STATE_PATH=${DELTAFICLI_WORKDIR}/.disabled_state.json
 
 KUBECTL_BIN="kubectl --namespace ${DELTAFICLI_K8S_NAMESPACE}"

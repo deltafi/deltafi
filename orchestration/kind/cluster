@@ -132,10 +132,11 @@ _is_arm() {
 KUBECTL="kubectl"
 BASE_PATH="$( cd "$( dirname "$(_readlink -f "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
 export BASE_PATH
-DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
-ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
+ORCHESTRATION_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
+DELTAFI_PATH="$( cd "$ORCHESTRATION_PATH/.." &> /dev/null && pwd)"
+ROOT="$( cd "$DELTAFI_PATH/.." &> /dev/null && pwd)"
 CLUSTER_NAME=deltafi
-PV_DIR=$BASE_PATH/data
+PV_DIR=$ORCHESTRATION_PATH/data
 SUDO=$(which sudo)
 KIND_DIR="${ROOT}/deltafi/kind"
 
@@ -537,7 +538,7 @@ nodes:
     hostPort: 443
     protocol: TCP
   extraMounts:
-  - hostPath: "../.."
+  - hostPath: "${ROOT}"
     containerPath: /usr/dev
   - hostPath: "${PV_DIR}"
     containerPath: /data/deltafi
@@ -680,7 +681,7 @@ _check_local_fqdns() {
 describe install "Initialize a KinD cluster and install core DeltaFi"
 install() {
   up
-  _conditional "DeltaFi core installed" _annotated_subshell -h "Install DeltaFi core" -v "admin.conf" _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml
+  _conditional "DeltaFi core installed" _annotated_subshell -h "Install DeltaFi core" -v "admin.conf" _kind_deltafi install "$@" -f deltafi/orchestration/charts/deltafi/values-kind.yaml
   _annotated_subshell -h "Set admin password" _kind_deltafi set-admin-password password
   _info -e "If basic_auth is enabled user is 'admin', password is 'password'"
   _info "Open the UI at http://local.deltafi.org"
@@ -916,7 +917,7 @@ loc() {
 
   if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
     _attention "Installing DeltaFi core"
-    install -f deltafi/charts/deltafi/values-kind.yaml -f deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
+    install -f deltafi/orchestration/charts/deltafi/values-kind.yaml -f deltafi/orchestration/charts/deltafi/values-local.yaml -f deltafi/orchestration/charts/deltafi/values-alerting-test.yaml
 
     _install_plugins
   fi
@@ -1213,7 +1214,7 @@ _local_push() {
 _local_cluster() {
   local_build "$@"
   up
-  install -f deltafi/charts/deltafi/values-kind.yaml -f deltafi/charts/deltafi/values-local.yaml -f deltafi/charts/deltafi/values-alerting-test.yaml
+  install -f deltafi/orchestration/charts/deltafi/values-kind.yaml -f deltafi/orchestration/charts/deltafi/values-local.yaml -f deltafi/orchestration/charts/deltafi/values-alerting-test.yaml
   for plugin in "${PLUGINS[@]}"; do
     run deltafi install-plugin "$plugin" -f "$plugin/charts/values-local.yaml"
   done

@@ -386,7 +386,6 @@ function create_distro() {
   _info -s "Creating air-gapped distro"
   pushd "$BASE_PATH" > /dev/null
   echo "$DELTAFI_VERSION" > "${AIRGAP_DISTRO_TREE}/VERSION"
-  cp -rLf "$DELTAFI_PATH/migrations" "$AIRGAP_DISTRO_TREE"
   cp -rLf "$DELTAFI_PATH/deltafi-cli" "$AIRGAP_DISTRO_TREE"
   rm -rf "$AIRGAP_DISTRO_TREE/deltafi-cli/logs"
   rm -rf "$AIRGAP_DISTRO_TREE/deltafi-cli/build"
