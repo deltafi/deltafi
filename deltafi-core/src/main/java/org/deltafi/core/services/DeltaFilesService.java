@@ -1195,7 +1195,13 @@ public class DeltaFilesService {
 
         int alreadyDeleted = 0;
         if (deleteMetadata) {
-            alreadyDeleted = deltaFileRepo.deleteIfNoContent(createdBefore, completedBefore, minBytes, flow);
+            boolean hasMore = true;
+            while (hasMore) {
+                int deletedInBatch = deltaFileRepo.deleteIfNoContent(createdBefore, completedBefore, minBytes, flow, batchSize);
+                hasMore = deletedInBatch == batchSize;
+                alreadyDeleted += deletedInBatch;
+            }
+
             if (alreadyDeleted > 0) {
                 log.info("Deleted {} deltaFiles with no content for policy {}", alreadyDeleted, policy);
             }

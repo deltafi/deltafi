@@ -279,19 +279,18 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     @Transactional
-    public int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow) {
+    public int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, int batchSize) {
         if (createdBefore == null && completedBefore == null) {
             return 0;
         }
 
         StringBuilder queryBuilder = new StringBuilder("""
-        WITH deleted_files AS (
-            SELECT did FROM delta_files WHERE content_deleted IS NOT NULL
-    """);
+                WITH deleted_files AS (
+                    SELECT did FROM delta_files WHERE content_deleted IS NOT NULL
+                """);
 
         Map<String, Object> parameters = new HashMap<>();
 
-        // Add dynamic conditions
         if (createdBefore != null) {
             queryBuilder.append(" AND created < :createdBefore");
             parameters.put("createdBefore", createdBefore);
@@ -313,28 +312,31 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         queryBuilder.append("""
-        ),
-        deleted_flows AS (
-            DELETE FROM delta_file_flows
-            WHERE delta_file_id IN (SELECT did FROM deleted_files)
-        ),
-        deleted_annotations AS (
-            DELETE FROM annotations
-            WHERE delta_file_id IN (SELECT did FROM deleted_files)
-        ),
-        deleted_delta_files AS (
-            DELETE FROM delta_files
-            WHERE did IN (SELECT did FROM deleted_files)
-        )
-        SELECT COUNT(*) FROM deleted_files;
-    """);
+                    LIMIT :batchSize
+                    ),
+                    deleted_flows AS (
+                        DELETE FROM delta_file_flows
+                        WHERE delta_file_id IN (SELECT did FROM deleted_files)
+                    ),
+                    deleted_annotations AS (
+                        DELETE FROM annotations
+                        WHERE delta_file_id IN (SELECT did FROM deleted_files)
+                    ),
+                    deleted_delta_files AS (
+                        DELETE FROM delta_files
+                        WHERE did IN (SELECT did FROM deleted_files)
+                    )
+                    SELECT COUNT(*) FROM deleted_files;
+                """);
 
         Query query = entityManager.createNativeQuery(queryBuilder.toString());
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
             query.setParameter(entry.getKey(), entry.getValue());
         }
+        query.setParameter("batchSize", batchSize);
 
         Number result = (Number) query.getSingleResult();
+
         return result.intValue();
     }
 
