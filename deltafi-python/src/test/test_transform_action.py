@@ -58,7 +58,7 @@ class InvalidResult(TransformAction):
         super().__init__('A sample transform action')
 
     def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
-        return EgressResult(context, 'destination', 42)
+        return EgressResult(context, 42)
 
 
 class SampleErrorAction(TransformAction):

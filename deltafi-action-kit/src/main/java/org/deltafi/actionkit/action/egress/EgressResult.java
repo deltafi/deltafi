@@ -37,15 +37,13 @@ import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
 public class EgressResult extends Result<EgressResult> implements EgressResultType {
     /**
      * @param context Context of the executed action
-     * @param destination Location where data was egressed
      * @param bytesEgressed Number of bytes egressed in the action
      */
     @Builder
-    public EgressResult(@NotNull ActionContext context, @NotNull String destination, long bytesEgressed) {
+    public EgressResult(@NotNull ActionContext context, long bytesEgressed) {
         super(context, ActionEventType.EGRESS);
 
-        String endpoint = destination.replace(';', '_').replace('=', '_');
-        add(new Metric(FILES_OUT, 1).addTag("endpoint", endpoint));
-        add(new Metric(BYTES_OUT, bytesEgressed).addTag("endpoint", endpoint));
+        add(new Metric(FILES_OUT, 1));
+        add(new Metric(BYTES_OUT, bytesEgressed));
     }
 }

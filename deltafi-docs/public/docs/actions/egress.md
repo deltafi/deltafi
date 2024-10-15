@@ -28,8 +28,8 @@ public class EgressInput {
 The `egress` method must return an `EgressResultType`, which is implemented by `EgressResult`,  `ErrorResult`, and
 `FilterResult`.
 
-Returning an `EgressResult` indicates a successful egress. It requires a destination where the file was sent and the
-number of bytes sent. These fields are used to automatically generate egress metrics.
+Returning an `EgressResult` indicates a successful egress. It requires the number of bytes sent, which is used to
+generate egress metrics.
 
 ### Example
 
@@ -86,8 +86,8 @@ class EgressInput(NamedTuple):
 
 The `egress()` method must return one of: `EgressResult`, `ErrorResult`, or `FilterResult`.
 
-Returning an `EgressResult` indicates a successful egress. It requires a destination where the file was sent and the
-number of bytes sent. These fields are used to automatically generate egress metrics.
+Returning an `EgressResult` indicates a successful egress. It requires the number of bytes sent, which is used to
+generate egress metrics.
 
 ### Example
 
@@ -104,5 +104,5 @@ class HelloWorldEgressAction(EgressAction):
         super().__init__('Hello pretends to egress')
 
     def egress(self, context: Context, params: BaseModel, egress_input: EgressInput):
-        return EgressResult(context, "pocUrl", 100)
+        return EgressResult(context, 100)
 ```

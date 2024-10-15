@@ -24,7 +24,6 @@ from typing import NamedTuple
 from deltafi.domain import Content, Context
 from deltafi.metric import Metric
 
-ENDPOINT_TAG = "endpoint"
 FILES_OUT = "files_out"
 BYTES_OUT = "bytes_out"
 
@@ -48,10 +47,10 @@ class Result:
 
 
 class EgressResult(Result):
-    def __init__(self, context: Context, destination: str, bytes_egressed: int):
+    def __init__(self, context: Context, bytes_egressed: int):
         super().__init__(None, 'EGRESS', context)
-        self.add_metric(Metric(FILES_OUT, 1, {ENDPOINT_TAG: destination}))
-        self.add_metric(Metric(BYTES_OUT, bytes_egressed, {ENDPOINT_TAG: destination}))
+        self.add_metric(Metric(FILES_OUT, 1))
+        self.add_metric(Metric(BYTES_OUT, bytes_egressed))
 
     def response(self):
         return None

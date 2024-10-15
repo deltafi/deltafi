@@ -29,20 +29,19 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 
 public class EgressResultTest {
 
-    final String DESTINATION = "overThere";
     final long BYTES_EGRESSED = 42;
 
     final ActionContext actionContext = new ActionContext(UUID.randomUUID(), "mySourceFilename", "dataSource", "myFlow", UUID.randomUUID(), "myName",
             "myHostName", "myActionVersion", null, null, null, null, null, null);
-    final EgressResult sut = new EgressResult(actionContext, DESTINATION, BYTES_EGRESSED);
+    final EgressResult sut = new EgressResult(actionContext, BYTES_EGRESSED);
     
     @Test
     void testDefaultCustomMetrics() {
         List<Metric> metrics = sut.getCustomMetrics();
 
         assertThat(metrics, containsInAnyOrder(
-                Metric.builder().name("files_out").value(1).build().addTag("endpoint", DESTINATION),
-                Metric.builder().name("bytes_out").value(BYTES_EGRESSED).build().addTag("endpoint", DESTINATION)
+                Metric.builder().name("files_out").value(1).build(),
+                Metric.builder().name("bytes_out").value(BYTES_EGRESSED).build()
         ));
     }
 
@@ -53,8 +52,8 @@ public class EgressResultTest {
         List<Metric> metrics = sut.getCustomMetrics();
 
         assertThat(metrics, containsInAnyOrder(
-                Metric.builder().name("files_out").value(1).build().addTag("endpoint", DESTINATION),
-                Metric.builder().name("bytes_out").value(BYTES_EGRESSED).build().addTag("endpoint", DESTINATION),
+                Metric.builder().name("files_out").value(1).build(),
+                Metric.builder().name("bytes_out").value(BYTES_EGRESSED).build(),
                 additionalMetric
         ));
     }

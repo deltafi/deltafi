@@ -98,10 +98,8 @@ public class HttpEgressBaseTest {
         assertInstanceOf(EgressResult.class, egressResultType);
         assertEquals(FILES_OUT, ((EgressResult) egressResultType).getMetrics().getFirst().getName());
         assertEquals(1, ((EgressResult) egressResultType).getMetrics().getFirst().getValue());
-        assertEquals(url, ((EgressResult) egressResultType).getMetrics().getFirst().getTags().get("endpoint"));
         assertEquals(BYTES_OUT, ((EgressResult) egressResultType).getMetrics().getLast().getName());
         assertEquals(CONTENT.length(), ((EgressResult) egressResultType).getMetrics().getLast().getValue());
-        assertEquals(url, ((EgressResult) egressResultType).getMetrics().getLast().getTags().get("endpoint"));
     }
 
     @Test
@@ -139,10 +137,8 @@ public class HttpEgressBaseTest {
         assertInstanceOf(EgressResult.class, egressResultType);
         assertEquals(FILES_OUT, ((EgressResult) egressResultType).getMetrics().getFirst().getName());
         assertEquals(1, ((EgressResult) egressResultType).getMetrics().getFirst().getValue());
-        assertEquals(url, ((EgressResult) egressResultType).getMetrics().getFirst().getTags().get("endpoint"));
         assertEquals(BYTES_OUT, ((EgressResult) egressResultType).getMetrics().getLast().getName());
         assertEquals(CONTENT.length(), ((EgressResult) egressResultType).getMetrics().getLast().getValue());
-        assertEquals(url, ((EgressResult) egressResultType).getMetrics().getLast().getTags().get("endpoint"));
     }
 
     @Test

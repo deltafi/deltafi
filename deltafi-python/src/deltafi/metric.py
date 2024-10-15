@@ -22,7 +22,7 @@ from typing import Dict, NamedTuple
 class Metric(NamedTuple):
     name: str
     value: int
-    tags: Dict[str, str]
+    tags: Dict[str, str] = {}
 
     def json(self):
         return {
