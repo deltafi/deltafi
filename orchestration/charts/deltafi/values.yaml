@@ -19,8 +19,6 @@ deltafi:
       enabled: false
       image: deltafi/deltafi-entity-resolver:2.0-rc17
       url: http://127.0.0.1:8080/
-  api:
-    image: deltafi/deltafi-api:2.0-rc17
   egress_sink:
     enabled: true
     image: deltafi/deltafi-egress-sink:2.0-rc17

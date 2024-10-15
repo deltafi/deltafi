@@ -13,13 +13,10 @@ update-helmchart:
     url: https://dev.deltafi.org
   variables:
     DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
-    PROJECT_LIST: "deltafi-clustermonitor deltafi-core deltafi-core-actions deltafi-auth deltafi-api deltafi-egress-sink deltafi-nodemonitor"
+    PROJECT_LIST: "deltafi-clustermonitor deltafi-core deltafi-core-actions deltafi-egress-sink deltafi-nodemonitor"
     deltafi_clustermonitor_HELM_IMAGE_PATH: deltafi.clustermonitor.image
     deltafi_core_HELM_IMAGE_PATH: deltafi.core.image
     deltafi_core_actions_HELM_IMAGE_PATH: deltafi.core_actions.image
-    deltafi_ingress_HELM_IMAGE_PATH: deltafi.ingress.image
-    deltafi_auth_HELM_IMAGE_PATH: deltafi.auth.image
-    deltafi_api_HELM_IMAGE_PATH: deltafi.api.image
     deltafi_egress_sink_HELM_IMAGE_PATH: deltafi.egress_sink.image
     deltafi_nodemonitor_HELM_IMAGE_PATH: deltafi.nodemonitor.image
   before_script:
@@ -39,7 +36,7 @@ update-helmchart:
     - wget -q https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/bin/yq
   script:
     - git clone ${DEV_CHART} -b ${CI_COMMIT_BRANCH}
-    - cd deltafi/charts/deltafi
+    - cd deltafi/orchestration/charts/deltafi
     - git branch -D ci || echo "CI branch does not exist"
     - git checkout -b ci
     - for project in $PROJECT_LIST; do DOCKER_TAG=${CI_REGISTRY_IMAGE}/${project}:${CI_COMMIT_SHORT_SHA}; PATH_VAR=${project//-/_}_HELM_IMAGE_PATH; HELM_IMAGE_PATH=$(eval echo \$$PATH_VAR); yq e ".${HELM_IMAGE_PATH} = \"${DOCKER_TAG}\"" -i values.yaml; done

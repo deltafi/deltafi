@@ -264,3 +264,4 @@ release:
 
 include:
   - local: '*/.gitlab-ci.yml'
+  - local: 'orchestration/*/.gitlab-ci.yml'
