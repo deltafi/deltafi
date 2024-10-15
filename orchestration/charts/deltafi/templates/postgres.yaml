@@ -39,7 +39,7 @@ spec:
     version: "{{ .Values.postgres.version }}"
     parameters:
       shared_buffers: "128MB"
-      max_connections: "100"
+      max_connections: "1000"
       log_statement: "info"
 #  env:
 #  - name: wal_s3_bucket

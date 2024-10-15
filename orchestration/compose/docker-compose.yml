@@ -183,6 +183,7 @@ services:
   deltafi-postgres:
     image: ${POSTGRES}
     container_name: deltafi-postgres
+    command: [ "-c", "max_connections=1000" ]
     env_file:
       - ${SECRETS_DIR}/postgres.env
     healthcheck:
