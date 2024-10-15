@@ -461,7 +461,7 @@ dependencies:
   nginx: nginx:1.27.1-alpine3.20
   promtail: grafana/promtail:2.9.10
   mongodb: bitnami/mongodb:5.0.17
-  valkey: bitnami/valkey:7.2.6
+  valkey: bitnami/valkey:8.0.1
   docker_web_gui: deltafi/docker-web-gui:1.0.1-0
   postgres: timescale/timescaledb:2.16.1-pg16
 EOF
