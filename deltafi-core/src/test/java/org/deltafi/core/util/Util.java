@@ -149,7 +149,6 @@ public class Util {
                 .childDids(new ArrayList<>())
                 .ingressBytes(0L)
                 .name("filename")
-                .normalizedName("filename")
                 .dataSource(dataSource)
                 .flows(new LinkedHashSet<>())
                 .egressed(false)
@@ -170,7 +169,6 @@ public class Util {
         assertFlowsEqualIgnoringDates(expected.getFlows(), actual.getFlows());
         Assertions.assertThat(actual.getDataSource()).isEqualTo(expected.getDataSource());
         Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
-        Assertions.assertThat(actual.getNormalizedName()).isEqualTo(expected.getNormalizedName());
         Assertions.assertThat(actual.annotationMap()).isEqualTo(expected.annotationMap());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());

@@ -799,12 +799,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private static final String INSERT_DELTA_FILES = """
-            INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, join_id, child_dids,
+            INSERT INTO delta_files (did, name, data_source, parent_dids, join_id, child_dids,
                                      requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
                                      content_deletable, version)
-            VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+            VALUES (?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
@@ -864,27 +864,26 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private void setDeltaFileParameters(PreparedStatement ps, DeltaFile deltaFile) throws SQLException {
         ps.setObject(1, deltaFile.getDid());
         ps.setString(2, deltaFile.getName());
-        ps.setString(3, deltaFile.getNormalizedName());
-        ps.setString(4, deltaFile.getDataSource());
-        ps.setString(5, toJson(deltaFile.getParentDids()));
-        ps.setObject(6, deltaFile.getJoinId());
-        ps.setString(7, toJson(deltaFile.getChildDids()));
-        ps.setInt(8, deltaFile.getRequeueCount());
-        ps.setLong(9, deltaFile.getIngressBytes());
-        ps.setLong(10, deltaFile.getReferencedBytes());
-        ps.setLong(11, deltaFile.getTotalBytes());
-        ps.setString(12, deltaFile.getStage().name());
-        ps.setTimestamp(13, toTimestamp(deltaFile.getCreated()));
-        ps.setTimestamp(14, toTimestamp(deltaFile.getModified()));
-        ps.setTimestamp(15, toTimestamp(deltaFile.getContentDeleted()));
-        ps.setString(16, deltaFile.getContentDeletedReason());
-        ps.setObject(17, deltaFile.getEgressed());
-        ps.setObject(18, deltaFile.getFiltered());
-        ps.setTimestamp(19, toTimestamp(deltaFile.getReplayed()));
-        ps.setObject(20, deltaFile.getReplayDid());
-        ps.setBoolean(21, deltaFile.isTerminal());
-        ps.setBoolean(22, deltaFile.isContentDeletable());
-        ps.setLong(23, deltaFile.getVersion());
+        ps.setString(3, deltaFile.getDataSource());
+        ps.setString(4, toJson(deltaFile.getParentDids()));
+        ps.setObject(5, deltaFile.getJoinId());
+        ps.setString(6, toJson(deltaFile.getChildDids()));
+        ps.setInt(7, deltaFile.getRequeueCount());
+        ps.setLong(8, deltaFile.getIngressBytes());
+        ps.setLong(9, deltaFile.getReferencedBytes());
+        ps.setLong(10, deltaFile.getTotalBytes());
+        ps.setString(11, deltaFile.getStage().name());
+        ps.setTimestamp(12, toTimestamp(deltaFile.getCreated()));
+        ps.setTimestamp(13, toTimestamp(deltaFile.getModified()));
+        ps.setTimestamp(14, toTimestamp(deltaFile.getContentDeleted()));
+        ps.setString(15, deltaFile.getContentDeletedReason());
+        ps.setObject(16, deltaFile.getEgressed());
+        ps.setObject(17, deltaFile.getFiltered());
+        ps.setTimestamp(18, toTimestamp(deltaFile.getReplayed()));
+        ps.setObject(19, deltaFile.getReplayDid());
+        ps.setBoolean(20, deltaFile.isTerminal());
+        ps.setBoolean(21, deltaFile.isContentDeletable());
+        ps.setLong(22, deltaFile.getVersion());
     }
 
     private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {

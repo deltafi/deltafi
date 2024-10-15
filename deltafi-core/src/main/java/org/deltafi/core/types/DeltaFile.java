@@ -28,7 +28,6 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Type;
-import org.hibernate.collection.spi.PersistentCollection;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
@@ -56,7 +55,6 @@ public class DeltaFile {
   @Builder.Default
   private UUID did = Generators.timeBasedEpochGenerator().generate();
   private String name;
-  private String normalizedName;
   private String dataSource;
   @Type(JsonBinaryType.class)
   @Column(columnDefinition = "jsonb")
@@ -111,7 +109,6 @@ public class DeltaFile {
   public DeltaFile(DeltaFile other) {
     this.did = other.did;
     this.name = other.name;
-    this.normalizedName = other.normalizedName;
     this.dataSource = other.dataSource;
     this.parentDids = other.parentDids == null ? null : new ArrayList<>(other.parentDids);
     this.joinId = other.joinId;
@@ -431,11 +428,6 @@ public class DeltaFile {
     flows.add(flow);
 
     return flow;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-    this.normalizedName = name != null ? name.toLowerCase() : null;
   }
 
   /**

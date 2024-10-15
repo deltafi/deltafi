@@ -56,7 +56,6 @@ public class FullFlowExemplars {
                 .childDids(new ArrayList<>())
                 .ingressBytes(36L)
                 .name("filename")
-                .normalizedName("filename")
                 .dataSource(dataSource)
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .created(OffsetDateTime.now())
