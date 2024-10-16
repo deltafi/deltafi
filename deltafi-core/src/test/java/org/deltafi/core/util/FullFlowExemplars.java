@@ -27,7 +27,6 @@ import java.util.*;
 import static org.deltafi.common.constant.DeltaFiConstants.INVALID_ACTION_EVENT_RECEIVED;
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
 import static org.deltafi.common.types.ActionState.QUEUED;
-import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBERS;
 import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBER_CAUSE;
 import static org.deltafi.core.util.Constants.*;
@@ -71,8 +70,6 @@ public class FullFlowExemplars {
                 .state(DeltaFileFlowState.COMPLETE)
                 .actions(new ArrayList<>())
                 .publishTopics(List.of(TRANSFORM_TOPIC))
-                .flowPlan(new FlowPlanCoordinates(dataSource, PLUGIN_COORDINATES.groupAndArtifact(),
-                        PLUGIN_COORDINATES.getVersion()))
                 .build();
         deltaFile.getFlows().add(ingressFlow);
 

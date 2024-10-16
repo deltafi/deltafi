@@ -93,7 +93,6 @@ generateJava {
 			"FilteredByFlow": "org.deltafi.core.types.SummaryByFlow",
 			"FilteredByMessage": "org.deltafi.core.types.SummaryByFlowAndMessage",
 			"FilteredSummaryFilter": "org.deltafi.core.types.FilteredSummaryFilter",
-			"FlowPlanCoordinates": "org.deltafi.common.types.FlowPlanCoordinates",
 			"FlowType": "org.deltafi.common.types.FlowType",
 			"MatchingPolicy": "org.deltafi.common.types.MatchingPolicy",
 			"KeyValue": "org.deltafi.common.types.KeyValue",

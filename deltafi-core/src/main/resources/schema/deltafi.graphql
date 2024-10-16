@@ -119,12 +119,6 @@ type Action {
   deleteMetadataKeys: [String!]!
 }
 
-type FlowPlanCoordinates {
-  name: String
-  plugin: String
-  pluginVersion: String
-}
-
 type DeltaFileFlowInput {
   metadata: Metadata!
   content: [Content!]!
@@ -156,7 +150,6 @@ type DeltaFileFlow {
   state: DeltaFileFlowState!
   created: DateTime!
   modified: DateTime!
-  flowPlan: FlowPlanCoordinates!
   input: DeltaFileFlowInput!
   actions: [Action!]!
   publishTopics: [String!]!

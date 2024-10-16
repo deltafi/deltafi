@@ -426,9 +426,6 @@ public class DeltaFile {
             .state(DeltaFileFlowState.IN_FLIGHT)
             .created(now)
             .modified(now)
-            // TODO: fix this
-            .flowPlan(FlowPlanCoordinates.builder()
-                    .build())
             .input(DeltaFileFlowInput.builder()
                     .metadata(previousFlow.getMetadata())
                     .content(previousFlow.lastContent())

@@ -57,10 +57,6 @@ public class DeltaFileFlow {
     @Builder.Default
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private FlowPlanCoordinates flowPlan = new FlowPlanCoordinates();
-    @Builder.Default
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
     private DeltaFileFlowInput input = new DeltaFileFlowInput();
     @Builder.Default
     @Type(JsonBinaryType.class)
@@ -100,7 +96,6 @@ public class DeltaFileFlow {
         this.state = other.state;
         this.created = other.created;
         this.modified = other.modified;
-        this.flowPlan = new FlowPlanCoordinates(other.flowPlan);
         this.input = other.input;
         this.actions = other.actions == null ? null : other.actions.stream().map(Action::new).toList();
         this.publishTopics = new ArrayList<>(other.publishTopics);

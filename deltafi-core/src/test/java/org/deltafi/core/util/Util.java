@@ -196,7 +196,6 @@ public class Util {
             Assertions.assertThat(actual.getNumber()).isEqualTo(expected.getNumber());
             Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
-            Assertions.assertThat(actual.getFlowPlan()).isEqualTo(expected.getFlowPlan());
             Assertions.assertThat(actual.getInput().getTopics()).isEqualTo(expected.getInput().getTopics());
             Assertions.assertThat(actual.getInput().getMetadata()).isEqualTo(expected.getInput().getMetadata());
             Assertions.assertThat(actual.getInput().getContent()).isEqualTo(expected.getInput().getContent());

@@ -802,12 +802,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             VALUES (?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
-            INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
+            INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, input,
                                           publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
                                           join_id, pending_actions, delta_file_id, version, actions,
                                           error_acknowledged, error_acknowledged_reason, cold_queued, error_or_filter_cause,
                                           next_auto_resume)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_ANNOTATIONS = """
             INSERT INTO annotations (id, key, value, delta_file_id)
@@ -890,23 +890,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setString(5, flow.getState().name());
         ps.setTimestamp(6, toTimestamp(flow.getCreated()));
         ps.setTimestamp(7, toTimestamp(flow.getModified()));
-        ps.setString(8, toJson(flow.getFlowPlan()));
-        ps.setString(9, toJson(flow.getInput()));
-        ps.setString(10, toJson(flow.getPublishTopics()));
-        ps.setInt(11, flow.getDepth());
-        ps.setString(12, toJson(flow.getPendingAnnotations()));
-        ps.setBoolean(13, flow.isTestMode());
-        ps.setString(14, flow.getTestModeReason());
-        ps.setObject(15, flow.getJoinId());
-        ps.setString(16, toJson(flow.getPendingActions()));
-        ps.setObject(17, deltaFile.getDid());
-        ps.setLong(18, flow.getVersion());
-        ps.setString(19, toJson(flow.getActions()));
-        ps.setTimestamp(20, toTimestamp(flow.getErrorAcknowledged()));
-        ps.setString(21, flow.getErrorAcknowledgedReason());
-        ps.setBoolean(22, flow.isColdQueued());
-        ps.setString(23, flow.getErrorOrFilterCause());
-        ps.setTimestamp(24, toTimestamp(flow.getNextAutoResume()));
+        ps.setString(8, toJson(flow.getInput()));
+        ps.setString(9, toJson(flow.getPublishTopics()));
+        ps.setInt(10, flow.getDepth());
+        ps.setString(11, toJson(flow.getPendingAnnotations()));
+        ps.setBoolean(12, flow.isTestMode());
+        ps.setString(13, flow.getTestModeReason());
+        ps.setObject(14, flow.getJoinId());
+        ps.setString(15, toJson(flow.getPendingActions()));
+        ps.setObject(16, deltaFile.getDid());
+        ps.setLong(17, flow.getVersion());
+        ps.setString(18, toJson(flow.getActions()));
+        ps.setTimestamp(19, toTimestamp(flow.getErrorAcknowledged()));
+        ps.setString(20, flow.getErrorAcknowledgedReason());
+        ps.setBoolean(21, flow.isColdQueued());
+        ps.setString(22, flow.getErrorOrFilterCause());
+        ps.setTimestamp(23, toTimestamp(flow.getNextAutoResume()));
     }
 
     private void setAnnotationParameters(PreparedStatement ps, Annotation annotation, DeltaFile deltaFile) throws SQLException {

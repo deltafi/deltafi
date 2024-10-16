@@ -64,7 +64,6 @@ public class DeltaFileUtil {
                 .type(currentFlow.getType())
                 .created(now)
                 .modified(now)
-                .flowPlan(currentFlow.getFlowPlan())
                 .testMode(currentFlow.isTestMode())
                 .testModeReason(currentFlow.isTestMode() ? currentFlow.getName() : currentFlow.getTestModeReason())
                 .pendingActions(new ArrayList<>(currentFlow.getPendingActions()))

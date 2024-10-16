@@ -280,8 +280,6 @@ public class DeltaFilesService {
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .publishTopics(new ArrayList<>())
                 .depth(0)
-                .flowPlan(new FlowPlanCoordinates(dataSource.getName(), dataSource.getSourcePlugin().groupAndArtifact(),
-                        dataSource.getSourcePlugin().getVersion()))
                 .build();
 
         long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
@@ -755,7 +753,6 @@ public class DeltaFilesService {
                 .actions(inheritedActions)
                 .publishTopics(new ArrayList<>())
                 .depth(fromFlow.getDepth())
-                .flowPlan(fromFlow.getFlowPlan())
                 .testMode(fromFlow.isTestMode())
                 .testModeReason(fromFlow.getTestModeReason())
                 .pendingActions(new ArrayList<>(fromFlow.getPendingActions()))

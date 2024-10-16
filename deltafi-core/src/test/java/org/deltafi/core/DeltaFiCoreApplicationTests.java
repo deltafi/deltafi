@@ -1837,7 +1837,6 @@ class DeltaFiCoreApplicationTests {
 		erroredAction.setNextAutoResume(NOW);
 		erroredAction.setNextAutoResumeReason("nextAutoResumeReason");
 		erroredAction.setCreated(NOW.minusSeconds(1));
-		deltaFile.getFlows().forEach(flow -> flow.setFlowPlan(FlowPlanCoordinates.builder().plugin("plugin").pluginVersion("1").name(flow.getName()).build()));
 
 		deltaFileRepo.save(deltaFile);
 
