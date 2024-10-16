@@ -26,12 +26,12 @@ import java.util.Set;
 
 public interface DeltaFileFlowRepoCustom {
     /**
-     * Retrieves the error counts for the specified set of flows.  Only unacknowledged errors are considered.
+     * Retrieves the error counts for the specified set of dataSources.  Only unacknowledged errors are considered.
      *
-     * @param flows A set of {@code String} values representing the flow names for which to retrieve error counts.
+     * @param dataSources A set of {@code String} values representing the flow names for which to retrieve error counts.
      * @return A {@code Map<String, Integer>} where the key is the flow name and the value is the error count for that flow.
      */
-    Map<String, Integer> errorCountsByFlow(Set<String> flows);
+    Map<String, Integer> errorCountsByDataSource(Set<String> dataSources);
 
     /**
      * Count the number of errors per dataSource using the optional filter parameters, and return the requested

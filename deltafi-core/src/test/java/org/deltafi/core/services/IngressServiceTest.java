@@ -26,6 +26,7 @@ import org.deltafi.common.nifi.FlowFileInputStream;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
@@ -130,6 +131,7 @@ class IngressServiceTest {
         mockExecution(true);
     }
 
+    @SneakyThrows
     private void mockExecution(boolean flowRunning) {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
@@ -139,7 +141,6 @@ class IngressServiceTest {
         } else {
             Mockito.when(restDataSourceService.getRunningFlowByName(any())).thenThrow(new MissingFlowException("Flow dataSource is not running"));
         }
-        Mockito.when(errorCountService.generateErrorMessage("dataSource")).thenReturn(null);
         DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").build();
         DeltaFile deltaFile = DeltaFile.builder().flows(Set.of(flow)).build();
         Mockito.when(deltaFilesService.ingress(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
@@ -371,12 +372,12 @@ class IngressServiceTest {
         mockExecution(false);
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
-        IngressException ingressException = assertThrows(IngressException.class,
+        IngressMetadataException ingressMetadataException = assertThrows(IngressMetadataException.class,
                 () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
                         "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
-        assertEquals("Flow dataSource is not running", ingressException.getMessage());
+        assertEquals("Flow dataSource is not running", ingressMetadataException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
@@ -384,18 +385,19 @@ class IngressServiceTest {
     }
 
     @Test
+    @SneakyThrows
     void ingressBinaryFlowErrorsExceeded() {
         mockNormalExecution();
 
-        Mockito.when(errorCountService.generateErrorMessage("dataSource")).thenReturn("errors exceeded");
+        Mockito.doThrow(new IngressUnavailableException("errors exceeded")).when(errorCountService).checkErrorsExceeded(FlowType.REST_DATA_SOURCE,"dataSource");
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
-        IngressException ingressException = assertThrows(IngressException.class,
+        IngressUnavailableException ingressUnavailableException = assertThrows(IngressUnavailableException.class,
                 () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
                         "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
-        assertEquals("errors exceeded", ingressException.getMessage());
+        assertEquals("errors exceeded", ingressUnavailableException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
@@ -403,18 +405,19 @@ class IngressServiceTest {
     }
 
     @Test
+    @SneakyThrows
     void transformFlowErrorsExceeded() {
         mockNormalExecution();
 
-        Mockito.when(errorCountService.generateErrorMessage("dataSource")).thenReturn("errors exceeded");
+        Mockito.doThrow(new IngressUnavailableException("errors exceeded")).when(errorCountService).checkErrorsExceeded(FlowType.REST_DATA_SOURCE,"dataSource");
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
-        IngressException ingressException = assertThrows(IngressException.class,
+        IngressUnavailableException ingressUnavailableException = assertThrows(IngressUnavailableException.class,
                 () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
                         "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
-        assertEquals("errors exceeded", ingressException.getMessage());
+        assertEquals("errors exceeded", ingressUnavailableException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");

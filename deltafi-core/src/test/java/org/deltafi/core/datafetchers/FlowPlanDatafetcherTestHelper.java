@@ -95,6 +95,7 @@ public class FlowPlanDatafetcherTestHelper {
                 new GetAllFlowsProjectionRoot().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().egress().name().root(), SystemFlows.class);
     }
 
+    @SuppressWarnings("unchecked")
     public static List<Topic> getAllTopics(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllTopicsGraphQLQuery.newRequest().build(),
                 new GetAllTopicsProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
@@ -103,6 +104,7 @@ public class FlowPlanDatafetcherTestHelper {
                 .toList();
     }
 
+    @SuppressWarnings("unchecked")
     public static List<Topic> getTopics(DgsQueryExecutor dgsQueryExecutor, List<String> topics) {
         return executeQuery(dgsQueryExecutor, GetTopicsGraphQLQuery.newRequest().names(topics).build(),
                 new GetTopicsProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),

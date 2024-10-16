@@ -213,9 +213,9 @@ class TimedDataSourceServiceTest {
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(List.of(flow1, flow2, flow3, flow4));
 
-        Mockito.when(errorCountService.errorsForFlow("flow1")).thenReturn(1);
-        Mockito.when(errorCountService.errorsForFlow("flow2")).thenReturn(5);
-        Mockito.when(errorCountService.errorsForFlow("flow3")).thenReturn(6);
+        Mockito.when(errorCountService.errorsForFlow(FlowType.TIMED_DATA_SOURCE, "flow1")).thenReturn(1);
+        Mockito.when(errorCountService.errorsForFlow(FlowType.TIMED_DATA_SOURCE, "flow2")).thenReturn(5);
+        Mockito.when(errorCountService.errorsForFlow(FlowType.TIMED_DATA_SOURCE, "flow3")).thenReturn(6);
 
         timedDataSourceService.refreshCache();
     }

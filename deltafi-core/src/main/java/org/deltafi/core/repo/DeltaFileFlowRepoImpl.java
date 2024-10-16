@@ -36,17 +36,18 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     EntityManager entityManager;
 
     @Override
-    public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
+    public Map<String, Integer> errorCountsByDataSource(Set<String> dataSources) {
         String sql = """
-                SELECT name, COUNT(*) AS count
-                FROM delta_file_flows
-                WHERE state = 'ERROR'
-                AND error_acknowledged IS NULL
-                AND name IN (:flows)
-                GROUP BY name""";
+            SELECT df.data_source, COUNT(*) AS count
+            FROM delta_file_flows dff
+            JOIN delta_files df ON df.did = dff.delta_file_id
+            WHERE dff.state = 'ERROR'
+            AND dff.error_acknowledged IS NULL
+            AND df.data_source IN (:dataSources)
+            GROUP BY df.data_source""";
 
         Query query = entityManager.createNativeQuery(sql)
-                .setParameter("flows", flows);
+                .setParameter("dataSources", dataSources);
 
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();

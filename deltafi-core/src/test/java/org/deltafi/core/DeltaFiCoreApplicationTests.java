@@ -108,7 +108,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.types.ActionState.*;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
@@ -3165,7 +3164,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testErrorCountsByFlow() {
+	void testErrorCountsByDataSource() {
 		OffsetDateTime now = OffsetDateTime.now();
 
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.ERROR, now, null);
@@ -3184,25 +3183,25 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile5);
 
 		Set<String> flowSet = new HashSet<>(Arrays.asList("flow1", "flow2", "flow3"));
-		Map<String, Integer> errorCountsByFlow = deltaFileFlowRepo.errorCountsByFlow(flowSet);
+		Map<String, Integer> errorCountsByDataSource = deltaFileFlowRepo.errorCountsByDataSource(flowSet);
 
-		assertEquals(3, errorCountsByFlow.size());
-		assertEquals(2, errorCountsByFlow.get("flow1").intValue());
-		assertEquals(1, errorCountsByFlow.get("flow2").intValue());
-		assertEquals(1, errorCountsByFlow.get("flow3").intValue());
+		assertEquals(3, errorCountsByDataSource.size());
+		assertEquals(2, errorCountsByDataSource.get("flow1").intValue());
+		assertEquals(1, errorCountsByDataSource.get("flow2").intValue());
+		assertEquals(1, errorCountsByDataSource.get("flow3").intValue());
 
 		// Test with a non-existing dataSource in the set
 		flowSet.add("flowNotFound");
-		errorCountsByFlow = deltaFileFlowRepo.errorCountsByFlow(flowSet);
+		errorCountsByDataSource = deltaFileFlowRepo.errorCountsByDataSource(flowSet);
 
-		assertEquals(3, errorCountsByFlow.size());
-		assertNull(errorCountsByFlow.get("flowNotFound"));
+		assertEquals(3, errorCountsByDataSource.size());
+		assertNull(errorCountsByDataSource.get("flowNotFound"));
 
 		// Test with an empty set
 		flowSet.clear();
-		errorCountsByFlow = deltaFileFlowRepo.errorCountsByFlow(flowSet);
+		errorCountsByDataSource = deltaFileFlowRepo.errorCountsByDataSource(flowSet);
 
-		assertEquals(0, errorCountsByFlow.size());
+		assertEquals(0, errorCountsByDataSource.size());
 	}
 
 	@Test

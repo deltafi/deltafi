@@ -34,6 +34,7 @@ import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV3;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.Content;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.exceptions.*;
@@ -101,7 +102,7 @@ public class IngressService {
                         ingressFlowFile(flow, filename, contentType, headerMetadata, dataStream, created);
                 default -> List.of(ingressBinary(flow, filename, contentType, headerMetadata, dataStream, created));
             };
-        } catch (IngressMetadataException | ObjectStorageException | IngressException e) {
+        } catch (IngressMetadataException | ObjectStorageException | IngressException | IngressUnavailableException e) {
             log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename,
                     contentType, username, e.getMessage());
             metricService.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(flow), 1);
@@ -121,7 +122,7 @@ public class IngressService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     Map<String, String> parseMetadata(String metadataString) throws IngressMetadataException {
-        if (metadataString == null) {
+        if (metadataString == null || metadataString.isEmpty()) {
             return Collections.emptyMap();
         }
 
@@ -139,7 +140,7 @@ public class IngressService {
 
     private List<IngressResult> ingressFlowFile(String flow, String filename, String contentType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws ObjectStorageException, IngressException, IngressMetadataException {
+            throws ObjectStorageException, IngressException, IngressMetadataException, IngressUnavailableException {
         FlowFileTwoStepUnpackager flowFileTwoStepUnpackager = switch (contentType) {
             case APPLICATION_FLOWFILE, APPLICATION_FLOWFILE_V_1 -> new FlowFileTwoStepUnpackagerV1();
             case APPLICATION_FLOWFILE_V_2 -> new FlowFileTwoStepUnpackagerV2();
@@ -178,18 +179,15 @@ public class IngressService {
     }
 
     private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
-            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
+            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException, IngressMetadataException, IngressUnavailableException {
         RestDataSource restDataSource;
         try {
             restDataSource = restDataSourceService.getRunningFlowByName(flow);
         } catch (MissingFlowException e) {
-            throw new IngressException(e.getMessage());
+            throw new IngressMetadataException(e.getMessage());
         }
 
-        String error = errorCountService.generateErrorMessage(flow);
-        if (error != null) {
-            throw new IngressException(error);
-        }
+        errorCountService.checkErrorsExceeded(FlowType.REST_DATA_SOURCE, flow);
 
         UUID did = uuidGenerator.generate();
 
@@ -218,7 +216,7 @@ public class IngressService {
 
     private IngressResult ingressBinary(String flow, String filename, String mediaType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws IngressMetadataException, IngressException, ObjectStorageException {
+            throws IngressMetadataException, IngressException, IngressUnavailableException, ObjectStorageException {
         if (filename == null) {
             throw new IngressMetadataException("Filename must be passed in as a header");
         }

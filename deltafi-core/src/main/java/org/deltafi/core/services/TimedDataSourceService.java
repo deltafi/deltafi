@@ -246,7 +246,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
      */
     public List<DataSourceErrorState> dataSourceErrorsExceeded() {
         return getRunningFlows().stream()
-                .map(f -> new DataSourceErrorState(f.getName(), errorCountService.errorsForFlow(f.getName()), f.getMaxErrors()))
+                .map(f -> new DataSourceErrorState(f.getName(), errorCountService.errorsForFlow(FlowType.TIMED_DATA_SOURCE, f.getName()), f.getMaxErrors()))
                 .filter(s -> s.getMaxErrors() >= 0 && s.getCurrErrors() > s.getMaxErrors())
                 .toList();
     }

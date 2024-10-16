@@ -52,8 +52,8 @@ public class ErrorCountScheduler {
     }
 
     public void populateErrorCounts() {
-        Set<String> flowNames = new HashSet<>(restDataSourceService.maxErrorsPerFlow().keySet());
-        flowNames.addAll(timedDataSourceService.maxErrorsPerFlow().keySet());
-        errorCountService.populateErrorCounts(flowNames);
+        Set<String> dataSourceNames = new HashSet<>(restDataSourceService.maxErrorsPerFlow().keySet());
+        dataSourceNames.addAll(timedDataSourceService.maxErrorsPerFlow().keySet());
+        errorCountService.populateErrorCounts(dataSourceNames);
     }
 }

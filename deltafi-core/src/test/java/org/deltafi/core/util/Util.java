@@ -54,42 +54,42 @@ public class Util {
         return buildDeltaFile(did, null, DeltaFileStage.IN_FLIGHT, now, now, content, metadata);
     }
 
-    public static DeltaFile emptyDeltaFile(UUID did, String flow) {
+    public static DeltaFile emptyDeltaFile(UUID did, String dataSource) {
         OffsetDateTime now = now();
-        return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, new ArrayList<>());
+        return buildDeltaFile(did, dataSource, DeltaFileStage.IN_FLIGHT, now, now, new ArrayList<>());
     }
 
-    public static DeltaFile emptyDeltaFile(UUID did, String flow, List<Content> content) {
+    public static DeltaFile emptyDeltaFile(UUID did, String dataSource, List<Content> content) {
         OffsetDateTime now = now();
-        return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, content);
+        return buildDeltaFile(did, dataSource, DeltaFileStage.IN_FLIGHT, now, now, content);
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, String flow, DeltaFileStage stage, OffsetDateTime created,
+    public static DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified) {
-        return buildDeltaFile(did, flow, stage, created, modified, new ArrayList<>(), new HashMap<>());
+        return buildDeltaFile(did, dataSource, stage, created, modified, new ArrayList<>(), new HashMap<>());
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, String flow, DeltaFileStage stage, OffsetDateTime created,
+    public static DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content) {
-        return buildDeltaFile(did, flow, stage, created, modified, content, new HashMap<>());
+        return buildDeltaFile(did, dataSource, stage, created, modified, content, new HashMap<>());
     }
 
     public static DeltaFile buildErrorDeltaFile(
-            UUID did, String flow, String cause, String context, OffsetDateTime created) {
-        return buildErrorDeltaFile(did, flow, cause, context, created, created, null, List.of());
+            UUID did, String dataSource, String cause, String context, OffsetDateTime created) {
+        return buildErrorDeltaFile(did, dataSource, cause, context, created, created, null, List.of());
     }
 
-    public static DeltaFile buildErrorDeltaFile(UUID did, String flow, String cause, String context,
+    public static DeltaFile buildErrorDeltaFile(UUID did, String dataSource, String cause, String context,
                                                 OffsetDateTime created, OffsetDateTime modified, String extraError) {
-        return buildErrorDeltaFile(did, flow, cause, context, created, modified, extraError, new ArrayList<>());
+        return buildErrorDeltaFile(did, dataSource, cause, context, created, modified, extraError, new ArrayList<>());
     }
 
-    public static DeltaFile buildErrorDeltaFile(UUID did, String flow, String cause, String context, OffsetDateTime created,
+    public static DeltaFile buildErrorDeltaFile(UUID did, String dataSource, String cause, String context, OffsetDateTime created,
                                                 OffsetDateTime modified, String extraError, List<Content> content) {
 
         DeltaFile deltaFile = Util.buildDeltaFile(did, "ingressFlow", DeltaFileStage.COMPLETE, created, modified, content);
         deltaFile.firstFlow().getActions().getFirst().setState(ActionState.COMPLETE);
-        DeltaFileFlow firstFlow = deltaFile.addFlow(flow, FlowType.TRANSFORM, deltaFile.firstFlow(), created);
+        DeltaFileFlow firstFlow = deltaFile.addFlow(dataSource, FlowType.TRANSFORM, deltaFile.firstFlow(), created);
         Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
         firstFlow.updateState();
@@ -105,7 +105,7 @@ public class Util {
         return deltaFile;
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, String flowName, DeltaFileStage stage, OffsetDateTime created,
+    public static DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content, Map<String, String> metadata) {
         Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
@@ -118,7 +118,7 @@ public class Util {
                 .build();
 
         DeltaFileFlow flow = DeltaFileFlow.builder()
-                .name(flowName)
+                .name(dataSource)
                 .type(FlowType.TIMED_DATA_SOURCE)
                 .state(DeltaFileFlowState.COMPLETE)
                 .created(created)
@@ -131,7 +131,7 @@ public class Util {
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .build();
 
-        DeltaFile deltaFile = buildDeltaFile(did, flowName);
+        DeltaFile deltaFile = buildDeltaFile(did, dataSource);
         deltaFile.setStage(stage);
         deltaFile.setCreated(created);
         deltaFile.setModified(modified);
