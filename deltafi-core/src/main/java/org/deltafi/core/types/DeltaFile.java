@@ -412,6 +412,7 @@ public class DeltaFile {
     }
     recalculateBytes();
     updateFlags();
+    updateContentObjectIds();
   }
 
   public DeltaFileFlow addFlow(String name, FlowType type, DeltaFileFlow previousFlow, OffsetDateTime now) {
