@@ -2320,6 +2320,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().minusSeconds(5));
 		deltaFile1.firstFlow().firstAction().setContent(List.of(new Content("content1", "mediaType1", List.of(new Segment(UUID.randomUUID(), 0, 100L, deltaFile1.getDid())))));
 		deltaFile1.setTotalBytes(100L);
+		deltaFile1.updateContentObjectIds();
 		deltaFileRepo.save(deltaFile1);
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now());
 		deltaFile2.firstFlow().firstAction().setContent(List.of(
@@ -2328,19 +2329,20 @@ class DeltaFiCoreApplicationTests {
 
 		));
 		deltaFile2.setTotalBytes(300L);
+		deltaFile2.updateContentObjectIds();
 		deltaFileRepo.save(deltaFile2);
 		DeltaFile deltaFile3 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(5));
 		deltaFile3.firstFlow().firstAction().setContent(List.of(new Content("content3", "mediaType3", List.of(new Segment(UUID.randomUUID(), 0, 500L, deltaFile3.getDid())))));
 		deltaFile3.setTotalBytes(500L);
+		deltaFile3.updateContentObjectIds();
 		deltaFileRepo.save(deltaFile3);
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(250L, null, 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		assertEquals(1, deltaFiles.getFirst().getContent().size());
-		assertEquals(deltaFile1.firstFlow().firstAction().getContent().getFirst(), deltaFiles.getFirst().getContent().getFirst());
-		assertEquals(2, deltaFiles.getLast().getContent().size());
-		assertEquals(deltaFile2.firstFlow().firstAction().getContent().getFirst(), deltaFiles.getLast().getContent().getFirst());
-		assertEquals(deltaFile2.firstFlow().firstAction().getContent().getLast(), deltaFiles.getLast().getContent().getLast());
+		assertEquals(1, deltaFiles.getFirst().getContentObjectIds().size());
+		assertEquals(deltaFile1.getContentObjectIds(), deltaFiles.getFirst().getContentObjectIds());
+		assertEquals(2, deltaFiles.getLast().getContentObjectIds().size());
+		assertEquals(deltaFile2.getContentObjectIds(), deltaFiles.getLast().getContentObjectIds());
 	}
 
 	@Test

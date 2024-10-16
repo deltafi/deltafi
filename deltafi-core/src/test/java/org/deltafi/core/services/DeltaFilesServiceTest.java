@@ -77,6 +77,9 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<List<UUID>> uuidListCaptor;
 
     @Captor
+    ArgumentCaptor<List<String>> stringListCaptor;
+
+    @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
 
     @Captor
@@ -270,16 +273,16 @@ class DeltaFilesServiceTest {
     void testDelete() {
         UUID did1 = UUID.randomUUID();
         Content content1 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did1));
-        DeltaFileDeleteDTO deltaFile1 = new DeltaFileDeleteDTO(did1, null, 0, List.of(content1));
+        DeltaFileDeleteDTO deltaFile1 = new DeltaFileDeleteDTO(did1, null, 0, List.of(content1.getSegments().getFirst().getUuid()));
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
-        DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2));
+        DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
         when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
-        verify(contentStorageService).deleteAll(segmentCaptor.capture());
-        assertEquals(List.of(content1.getSegments().getFirst(), content2.getSegments().getFirst()), segmentCaptor.getValue());
+        verify(contentStorageService).deleteAllByObjectName(stringListCaptor.capture());
+        assertEquals(List.of(content1.getSegments().getFirst().objectName(), content2.getSegments().getFirst().objectName()), stringListCaptor.getValue());
         verify(deltaFileRepo).setContentDeletedByDidIn(uuidListCaptor.capture(), any(), eq("policy"));
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
     }
@@ -288,16 +291,16 @@ class DeltaFilesServiceTest {
     void testDeleteMetadata() {
         UUID did1 = UUID.randomUUID();
         Content content1 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did1));
-        DeltaFileDeleteDTO deltaFile1 = new DeltaFileDeleteDTO(did1, null, 0, List.of(content1));
+        DeltaFileDeleteDTO deltaFile1 = new DeltaFileDeleteDTO(did1, null, 0, List.of(content1.getSegments().getFirst().getUuid()));
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
-        DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2));
+        DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
         when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
 
-        verify(contentStorageService).deleteAll(segmentCaptor.capture());
-        assertEquals(List.of(content1.getSegments().getFirst(), content2.getSegments().getFirst()), segmentCaptor.getValue());
+        verify(contentStorageService).deleteAllByObjectName(stringListCaptor.capture());
+        assertEquals(List.of(content1.getSegments().getFirst().objectName(), content2.getSegments().getFirst().objectName()), stringListCaptor.getValue());
         verify(deltaFileRepo, never()).saveAll(any());
         verify(deltaFileRepo).batchedBulkDeleteByDidIn(uuidListCaptor.capture());
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());

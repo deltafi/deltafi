@@ -108,7 +108,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             sqlQuery.append("\nAND df.did NOT IN (:skipDids)");
         }
 
-        sqlQuery.append("\nORDER BY df.modified ASC LIMIT :limit");
+        sqlQuery.append("\nORDER BY df.modified LIMIT :limit");
 
         OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
         Query query = entityManager.createNativeQuery(sqlQuery.toString(), UUID.class)
@@ -372,19 +372,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         StringBuilder queryBuilder = new StringBuilder("""
-                SELECT df.did, df.content_deleted, df.total_bytes,
-                       COALESCE(
-                           (SELECT jsonb_agg(content_element)
-                            FROM (
-                                SELECT DISTINCT jsonb_array_elements(f.actions)->>'content' AS content_element
-                                FROM delta_file_flows f
-                                WHERE f.delta_file_id = df.did
-                            ) subquery
-                            WHERE content_element IS NOT NULL),
-                           jsonb_build_array()
-                       ) as content_list
+                SELECT df.did, df.content_deleted, df.total_bytes, df.content_object_ids
                 FROM delta_files df
-                LEFT JOIN delta_file_flows f ON df.did = f.delta_file_id
                 WHERE
                 """);
 
@@ -418,7 +407,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             queryBuilder.append(" AND df.content_deletable = true");
         }
 
-        queryBuilder.append(" GROUP BY df.did, df.content_deleted, df.total_bytes LIMIT :batchSize");
+        queryBuilder.append(" LIMIT :batchSize");
 
         Query query = entityManager.createNativeQuery(queryBuilder.toString());
 
@@ -469,33 +458,26 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
                 : null;
         long totalBytes = ((Number) row[2]).longValue();
-        List<Content> contentList = new ArrayList<>();
+        List<UUID> contentObjectIds = new ArrayList<>();
         String contentJson = (String) row[3];
 
         if (contentJson != null && !contentJson.equals("[]")) {
             try {
-                JsonNode outerArray = OBJECT_MAPPER.readTree(contentJson);
-                for (JsonNode textNode : outerArray) {
-                    if (textNode.isTextual()) {
-                        String innerJson = textNode.asText();
-                        JsonNode innerArray = OBJECT_MAPPER.readTree(innerJson);
-                        for (JsonNode contentNode : innerArray) {
-                            if (contentNode.isObject()) {
-                                contentList.add(OBJECT_MAPPER.treeToValue(contentNode, Content.class));
-                            }
-                        }
+                JsonNode uuidArray = OBJECT_MAPPER.readTree(contentJson);
+                for (JsonNode uuidNode : uuidArray) {
+                    if (uuidNode.isTextual()) {
+                        contentObjectIds.add(UUID.fromString(uuidNode.asText()));
                     }
                 }
             } catch (JsonProcessingException ignored) {}
         }
 
-        return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
+        return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentObjectIds);
     }
 
     private static String diskSpaceDeleteQuery(String dataSource) {
         StringBuilder queryBuilder = new StringBuilder("""
-        WITH eligible_files AS (
-            SELECT df.did, df.content_deleted, df.total_bytes, df.modified
+            SELECT df.did, df.content_deleted, df.total_bytes, df.content_object_ids
             FROM delta_files df
             WHERE df.content_deletable = true
     """);
@@ -505,23 +487,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         queryBuilder.append("""
-            ORDER BY df.modified ASC
+            ORDER BY df.modified
             LIMIT :batchSize
-        )
-        SELECT ef.did, ef.content_deleted, ef.total_bytes,
-               COALESCE(
-                   (SELECT jsonb_agg(content_element)
-                    FROM (
-                        SELECT DISTINCT jsonb_array_elements(f.actions)->>'content' AS content_element
-                        FROM delta_file_flows f
-                        WHERE f.delta_file_id = ef.did
-                    ) subquery
-                    WHERE content_element IS NOT NULL),
-                   jsonb_build_array()
-               ) as content_list
-        FROM eligible_files ef
-        GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified
-        ORDER BY ef.modified
     """);
 
         return queryBuilder.toString();
@@ -831,8 +798,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                      requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
-                                     content_deletable, version)
-            VALUES (?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                     content_deletable, content_object_ids, version)
+            VALUES (?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
@@ -911,7 +878,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setObject(19, deltaFile.getReplayDid());
         ps.setBoolean(20, deltaFile.isTerminal());
         ps.setBoolean(21, deltaFile.isContentDeletable());
-        ps.setLong(22, deltaFile.getVersion());
+        ps.setString(22, toJson(deltaFile.getContentObjectIds()));
+        ps.setLong(23, deltaFile.getVersion());
     }
 
     private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {

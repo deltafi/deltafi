@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.deltafi.common.content.Segment;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -1554,11 +1555,10 @@ public class DeltaFilesService {
 
     private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata) {
         List<DeltaFileDeleteDTO> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
-        contentStorageService.deleteAll(deltaFilesWithContent.stream()
-                .map(DeltaFileDeleteDTO::getContent)
-                .flatMap(Collection::stream)
-                .map(Content::getSegments)
-                .flatMap(Collection::stream)
+        contentStorageService.deleteAllByObjectName(deltaFilesWithContent.stream()
+                .flatMap(d -> d.getContentObjectIds().stream()
+                        .map(contentId -> Segment.objectName(d.getDid(), contentId))
+                )
                 .toList());
 
         if (deleteMetadata) {

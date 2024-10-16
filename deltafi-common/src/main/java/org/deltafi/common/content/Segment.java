@@ -44,7 +44,11 @@ public class Segment {
     }
 
     public String objectName() {
-        return did.toString().substring(0, 3) + "/" + did + "/" + uuid;
+        return objectName(did, uuid);
+    }
+
+    public static String objectName(UUID did, UUID objectId) {
+        return did.toString().substring(0, 3) + "/" + did + "/" + objectId;
     }
 
     public static long calculateTotalSize(Set<Segment> segments) {

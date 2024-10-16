@@ -1,0 +1,1 @@
+alter table delta_files add column content_object_ids jsonb;

@@ -134,11 +134,15 @@ public class ContentStorageService {
     }
 
     public void deleteAll(List<Segment> segments) {
-        if (!segments.isEmpty()) {
-            objectStorageService.removeObjects(CONTENT_BUCKET, segments.stream()
+        deleteAllByObjectName(segments.stream()
                     .map(Segment::objectName)
                     .distinct()
                     .toList());
+    }
+
+    public void deleteAllByObjectName(List<String> objectNames) {
+        if (!objectNames.isEmpty()) {
+            objectStorageService.removeObjects(CONTENT_BUCKET, objectNames);
         }
     }
 

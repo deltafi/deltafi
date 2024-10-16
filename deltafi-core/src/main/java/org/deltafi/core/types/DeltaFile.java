@@ -97,6 +97,11 @@ public class DeltaFile {
   @Builder.Default
   private boolean contentDeletable = false;
 
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
+  @Builder.Default
+  private List<UUID> contentObjectIds = new ArrayList<>();
+
   @Version
   @EqualsAndHashCode.Exclude
   private long version;
@@ -132,6 +137,7 @@ public class DeltaFile {
     this.contentDeletable = other.contentDeletable;
     this.version = other.version;
     this.cacheTime = other.cacheTime;
+    this.contentObjectIds = other.contentObjectIds;
   }
 
   @EqualsAndHashCode.Include(replaces = "flows")
@@ -149,12 +155,20 @@ public class DeltaFile {
   public void setStage(DeltaFileStage stage) {
       this.stage = stage;
       updateFlags();
+      updateContentObjectIds();
   }
 
   public void updateFlags() {
     terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
     filtered = flows.stream().anyMatch(f -> f.getState() == DeltaFileFlowState.FILTERED);
+  }
+
+  public void updateContentObjectIds() {
+    contentObjectIds = storedSegments().stream()
+            .map(Segment::getUuid)
+            .distinct()
+            .toList();
   }
 
   public void setContentDeleted(OffsetDateTime contentDeleted) {
