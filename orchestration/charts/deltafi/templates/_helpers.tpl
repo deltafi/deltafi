@@ -11,7 +11,7 @@
 {{- end }}
 nginx.ingress.kubernetes.io/auth-cache-duration: 200 1m
 nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name, X-User-Permissions, X-Metrics-Role
-nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cluster.local/api/v2/auth
+nginx.ingress.kubernetes.io/auth-url: http://deltafi-core-service.deltafi.svc.cluster.local/api/v2/auth
 {{- end -}}
 
 {{- define "noAuthAnnotations" -}}
@@ -251,11 +251,19 @@ volumeMounts:
   value: "8125"
 - name: METRICS_PERIOD_SECONDS
   value: "10"
+- name: SERVER_PORT
+  value: "9292"
 {{ include "commonEnvVars" . }}
 {{ include "postgresEnvVars" . }}
 {{ include "minioEnvVars" . }}
 {{ include "valkeyEnvVars" . }}
 {{ include "sslEnvVars" . }}
+{{ if .Values.deltafi.auth.entityResolver.enabled }}
+- name: ENTITY_RESOLVER_ENABLED
+  value: "true"
+- name: ENTITY_RESOLVER_URL
+  value: {{ .Values.deltafi.auth.entityResolver.url | default "http://127.0.0.1:8080/" }}
+{{ end }}
 {{- end }}
 
 {{- define "coreVolumeMounts" -}}
@@ -270,4 +278,20 @@ volumeMounts:
 - name: action-deployment-template
   configMap:
     name: deltafi-action-deployment
+- name: entity-resolver-config
+  configMap:
+    name: entity-resolver-config
+    optional: true
+{{- end -}}
+
+{{- define "entityResolverContainer" -}}
+- name: deltafi-entity-resolver
+  image: {{ .Values.deltafi.auth.entityResolver.image }}
+  volumeMounts:
+  {{- include "sslVolumeMount" . | nindent 2 }}
+  - name: entity-resolver-config
+    mountPath: /config
+    readOnly: true
+  env:
+  {{- include "sslEnvVars" . | nindent 2 }}
 {{- end -}}

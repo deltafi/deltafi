@@ -21,6 +21,9 @@ spec:
     spec:
       {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       containers:
+      {{ if .Values.deltafi.auth.entityResolver.enabled }}
+      {{- include "entityResolverContainer" . | nindent 6 }}
+      {{ end }}
       - name: deltafi-core
         image: {{ .Values.deltafi.core.image }}
         env:
@@ -29,7 +32,7 @@ spec:
         - name: UNIQUE_ID
           value: core
         - name: SPRING_PROFILES_ACTIVE
-          value: kubernetes
+          value: kubernetes,monitor
         {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080

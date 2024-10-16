@@ -294,12 +294,6 @@ promtail:
               # Filtering out graphite debug logs containing "(Tagging|Tagged)"
               - drop:
                   expression: "Tagg"
-        # Clear out excessive debug messages
-        - match:
-            selector: '{app="deltafi-monitor"}'
-            stages:
-              - drop:
-                  expression: "DEBUG"
         # Clear out excessive post messages
         - match:
             selector: '{app="deltafi-egress-sink"}'
@@ -339,9 +333,6 @@ loki:
       - selector: '{container="deltafi-ingress",type="AUDIT"}'
         priority: 3
         period: 24h
-      - selector: '{container="deltafi-monitor"}'
-        priority: 4
-        period: 96h
       - selector: '{app="kubernetes-dashboard"}'
         priority: 6
         period: 96h

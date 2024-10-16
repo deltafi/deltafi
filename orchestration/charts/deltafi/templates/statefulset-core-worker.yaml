@@ -20,6 +20,9 @@ spec:
     spec:
       {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       containers:
+      {{ if .Values.deltafi.auth.entityResolver.enabled }}
+      {{- include "entityResolverContainer" . | nindent 6 }}
+      {{ end }}
       - name: deltafi-core
         image: {{ .Values.deltafi.core.image }}
         env:

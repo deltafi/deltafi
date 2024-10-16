@@ -17,7 +17,6 @@ data:
     - deltafi-ingress
     - deltafi-kubernetes-dashboard
     - deltafi-minio
-    - deltafi-monitor
   Ingress: |
     - deltafi-grafana
     - deltafi-graphite
@@ -39,7 +38,6 @@ data:
     - deltafi-valkey-headless
     - deltafi-valkey-master
   PersistentVolumeClaim: |
-    - deltafi-auth
     - deltafi-egress-sink
     - deltafi-grafana
     - deltafi-graphite
