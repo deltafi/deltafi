@@ -66,22 +66,40 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             .configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, true)
             .configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, true);
 
+    private List<DeltaFile> fetchByDidIn(List<UUID> dids) {
+        if (dids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String deltaFileQuery = """
+            SELECT DISTINCT df FROM DeltaFile df
+            LEFT JOIN FETCH df.flows f
+            LEFT JOIN FETCH df.annotations a
+            WHERE df.did IN :dids
+        """;
+
+        return entityManager.createQuery(deltaFileQuery, DeltaFile.class)
+                .setParameter("dids", dids)
+                .getResultList();
+    }
+
     @Override
     @Transactional
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
         StringBuilder sqlQuery = new StringBuilder("""
-        SELECT df.* FROM delta_files df
-        WHERE df.stage = 'IN_FLIGHT'
-        AND df.modified < :requeueThreshold
-        AND EXISTS (
-            SELECT 1 FROM delta_file_flows flow
-            WHERE flow.delta_file_id = df.did
-            AND flow.state = 'IN_FLIGHT'
-            AND flow.modified < :requeueThreshold
+            SELECT df.did FROM delta_files df
+            WHERE df.stage = 'IN_FLIGHT'
+            AND df.modified < :requeueThreshold
+            AND EXISTS ( SELECT 1
+                         FROM delta_file_flows dff
+                         WHERE dff.delta_file_id = df.did
+                         AND dff.state = 'IN_FLIGHT'
+                         AND dff.modified < :requeueThreshold
+                         AND dff.cold_queued = false
         """);
 
         if (skipActions != null && !skipActions.isEmpty()) {
-            sqlQuery.append("\nAND (flow.actions->(jsonb_array_length(flow.actions) - 1))->>'name' NOT IN (:skipActions)");
+            sqlQuery.append("AND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'name' NOT IN (:skipActions)");
         }
 
         sqlQuery.append(") ");
@@ -93,7 +111,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         sqlQuery.append("\nORDER BY df.modified ASC LIMIT :limit");
 
         OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
-        Query query = entityManager.createNativeQuery(sqlQuery.toString(), DeltaFile.class)
+        Query query = entityManager.createNativeQuery(sqlQuery.toString(), UUID.class)
                 .setParameter("requeueThreshold", requeueThreshold)
                 .setParameter("limit", limit);
 
@@ -104,7 +122,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             query.setParameter("skipActions", skipActions);
         }
 
-        List<DeltaFile> filesToRequeue = query.getResultList();
+        @SuppressWarnings("unchecked")
+        List<UUID> didsToRequeue = query.getResultList();
+        List<DeltaFile> filesToRequeue = fetchByDidIn(didsToRequeue);
 
         filesToRequeue.forEach(deltaFile -> {
             deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
@@ -128,16 +148,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Transactional
     public List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
         String nativeQueryStr = """
-            SELECT df.*
-            FROM delta_files df
+            SELECT df.did FROM delta_files df
             WHERE df.stage = 'IN_FLIGHT'
             AND EXISTS (
-                    SELECT 1
-            FROM delta_file_flows dff
-            WHERE dff.delta_file_id = df.did
-            AND dff.state = 'IN_FLIGHT'
-            AND dff.cold_queued = TRUE
-            AND EXISTS (
+                SELECT 1
+                FROM delta_file_flows dff
+                WHERE dff.delta_file_id = df.did
+                AND dff.state = 'IN_FLIGHT'
+                AND dff.cold_queued = TRUE
+                AND EXISTS (
                     SELECT 1
                     FROM jsonb_array_elements(dff.actions) AS action
                     WHERE action->>'state' = 'COLD_QUEUED'
@@ -148,11 +167,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             LIMIT :limit
         """;
 
-        Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, DeltaFile.class)
+        Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
                 .setParameter("actionNames", actionNames)
                 .setParameter("limit", maxFiles);
 
-        List<DeltaFile> filesToRequeue = nativeQuery.getResultList();
+        @SuppressWarnings("unchecked")
+        List<UUID> dids = nativeQuery.getResultList();
+        List<DeltaFile> filesToRequeue = fetchByDidIn(dids);
 
         filesToRequeue.forEach(deltaFile -> {
             deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
@@ -174,7 +195,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
         String queryStr = """
-            SELECT df.*
+            SELECT df.did
             FROM delta_files df
             WHERE df.stage = 'ERROR'
             AND df.content_deleted IS NULL
@@ -187,45 +208,48 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             )
             """;
 
-        Query query = entityManager.createNativeQuery(queryStr, DeltaFile.class)
+        Query query = entityManager.createNativeQuery(queryStr, UUID.class)
                 .setParameter("maxReadyTime", maxReadyTime);
 
-        return query.getResultList();
+        @SuppressWarnings("unchecked")
+        List<UUID> dids = query.getResultList();
+
+        return fetchByDidIn(dids);
     }
 
     @Override
     public List<DeltaFile> findResumePolicyCandidates(String dataSource) {
         StringBuilder queryBuilder = new StringBuilder("""
-            SELECT df.*
-            FROM delta_files df
-            WHERE df.stage = 'ERROR'
-            AND df.content_deleted IS NULL
-            AND EXISTS (
-                SELECT 1
-                FROM delta_file_flows flow
-                WHERE flow.delta_file_id = df.did
-                AND flow.error_acknowledged IS NULL
+                SELECT df.did
+                FROM delta_files df
+                WHERE df.stage = 'ERROR'
+                AND df.content_deleted IS NULL
                 AND EXISTS (
                     SELECT 1
-                    FROM jsonb_array_elements(flow.actions) action
-                    WHERE action->>'nextAutoResume' IS NULL
+                    FROM delta_file_flows flow
+                    WHERE flow.delta_file_id = df.did
+                    AND flow.error_acknowledged IS NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM jsonb_array_elements(flow.actions) action
+                        WHERE action->>'nextAutoResume' IS NULL
+                    )
                 )
-            )
-        """);
+            """);
 
         if (dataSource != null) {
             queryBuilder.append("AND df.data_source = :dataSource ");
         }
 
-        Query query = entityManager.createNativeQuery(queryBuilder.toString(), DeltaFile.class);
+        Query query = entityManager.createNativeQuery(queryBuilder.toString(), UUID.class);
 
         if (dataSource != null) {
             query.setParameter("dataSource", dataSource);
         }
 
         @SuppressWarnings("unchecked")
-        List<DeltaFile> result = query.getResultList();
-        return result;
+        List<UUID> dids = query.getResultList();
+        return fetchByDidIn(dids);
     }
 
     @Override
@@ -403,6 +427,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
         query.setParameter("batchSize", batchSize);
 
+        @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
 
         return results.stream()
@@ -423,6 +448,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
         nativeQuery.setParameter("batchSize", batchSize);
 
+        @SuppressWarnings("unchecked")
         List<Object[]> results = nativeQuery.getResultList();
 
         long[] sum = {0};
