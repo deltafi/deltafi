@@ -56,6 +56,7 @@ Document any changes on this branch here.
 ### Upgrade and Migration
 - 
 EOF
+    git add "${changelog_path}"
   fi
   echo "${changelog_path}"
 }
@@ -158,6 +159,7 @@ else
     -e)
       changelog_path=$(_changelog_for_branch)
       "${EDITOR}" "${changelog_path}"
+      git add "${changelog_path}"
       >&2 echo "Changelog written to ${changelog_path}"
       ;;
     -r)
