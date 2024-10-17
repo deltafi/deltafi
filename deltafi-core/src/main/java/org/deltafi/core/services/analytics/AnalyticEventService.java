@@ -27,6 +27,7 @@ import org.deltafi.core.types.timescale.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -46,6 +47,7 @@ public class AnalyticEventService {
     private final TSErrorRepo tsErrorRepo;
     private final TSIngressRepo tsIngressRepo;
     private final TSFilterRepo tsFilterRepo;
+    private final Clock clock;
 
     private final ConcurrentLinkedQueue<TSEgress> egressQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TSIngress> ingressQueue = new ConcurrentLinkedQueue<>();
@@ -148,7 +150,7 @@ public class AnalyticEventService {
         if (isDisabled()) return;
 
         TSError tsError = TSError.builder()
-                .key(new TSId(timestamp, deltaFile.getDataSource()))
+                .key(new TSId(timestamp == null ? OffsetDateTime.now(clock) : timestamp, deltaFile.getDataSource()))
                 .cause(cause)
                 .flow(flow)
                 .action(action)

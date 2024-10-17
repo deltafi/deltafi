@@ -98,14 +98,6 @@ public class ActionEventQueue {
         valkeyKeyedBlockingQueue.put(new SortedSetEntry(queueName(returnAddress), OBJECT_MAPPER.writeValueAsString(result), OffsetDateTime.now()));
     }
 
-    public ActionEvent takeResult(String returnAddress) throws JsonProcessingException {
-        return convertEvent(valkeyKeyedBlockingQueue.take(queueName(returnAddress)));
-    }
-
-    public static ActionEvent convertEvent(String element) throws JsonProcessingException {
-        return OBJECT_MAPPER.readValue(element, ActionEvent.class);
-    }
-
     public static ActionInput convertInput(String element) throws JsonProcessingException {
         return OBJECT_MAPPER.readValue(element, ActionInput.class);
     }
