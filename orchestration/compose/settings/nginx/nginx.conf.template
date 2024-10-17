@@ -5,23 +5,19 @@ events {
 http {
     map $host $upstream_mapping {
         "~^orchestration.*" "deltafi-docker-ui";
-        "~^ingress.*" "deltafi-ingress";
+        "~^ingress.*" "deltafi-core";
         "~^graphite.*" "deltafi-graphite";
         "~^minio.*" "deltafi-minio";
     }
 
     map $host $internal_upstream_mapping {
       "deltafi-core-service" "deltafi-core";
-      "deltafi-ingress-service" "deltafi-ingress";
-      "ingress" "deltafi-ingress";
+      "deltafi-ingress-service" "deltafi-core";
+      "ingress" "deltafi-core";
     }
 
     upstream deltafi-core {
         server deltafi-core:8080;
-    }
-
-    upstream deltafi-ingress {
-        server deltafi-ingress:8080;
     }
 
     upstream deltafi-grafana {

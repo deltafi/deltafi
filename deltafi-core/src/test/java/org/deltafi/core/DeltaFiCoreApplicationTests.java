@@ -2091,32 +2091,37 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFindReadyForAutoResume() {
 		DeltaFile shouldResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW);
-
 		shouldResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1), autoResumeHit(NOW, 2)));
 		shouldResume.firstFlow().updateState();
+		shouldResume.setVersion(1);
 
 		DeltaFile shouldNotResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(1));
 		shouldNotResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeMiss(NOW, 1)));
 		shouldNotResume.firstFlow().updateState();
+		shouldNotResume.setVersion(1);
 
 		DeltaFile notResumable = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(2));
 		notResumable.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeNotSet(NOW, 1)));
 		notResumable.firstFlow().updateState();
+		notResumable.setVersion(1);
 
 		DeltaFile cancelled = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.CANCELLED, NOW, NOW.minusSeconds(3));
 		cancelled.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1), autoResumeHit(NOW, 2)));
 		cancelled.firstFlow().updateState();
+		cancelled.setVersion(1);
 
 		DeltaFile contentDeleted = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(4));
 		contentDeleted.firstFlow().setActions(List.of(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1),autoResumeHit(NOW, 2)));
 		contentDeleted.setContentDeleted(NOW);
 		contentDeleted.firstFlow().updateState();
+		contentDeleted.setVersion(1);
 
 		DeltaFile shouldAlsoResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(5));
 		shouldAlsoResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1), autoResumeHit(NOW, 2)));
 		shouldAlsoResume.firstFlow().updateState();
+		shouldAlsoResume.setVersion(1);
 
-		deltaFileRepo.batchInsert(List.of(shouldResume, shouldNotResume, notResumable, cancelled, contentDeleted, shouldAlsoResume));
+		deltaFileRepo.insertBatch(List.of(shouldResume, shouldNotResume, notResumable, cancelled, contentDeleted, shouldAlsoResume));
 
 		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(NOW);
 		assertEquals(2, hits.size());
@@ -2164,7 +2169,7 @@ class DeltaFiCoreApplicationTests {
 		wrongStage.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
 		wrongStage.firstFlow().addAction("hit", ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
 
-		deltaFileRepo.batchInsert(List.of(oneHit, twoHits, miss, excludedByDid, wrongStage));
+		deltaFileRepo.insertBatch(List.of(oneHit, twoHits, miss, excludedByDid, wrongStage));
 
 		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(NOW, Duration.ofSeconds(30),
 				Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()), 5000);
@@ -2417,7 +2422,7 @@ class DeltaFiCoreApplicationTests {
 	void testDeltaFiles_all() {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.minusSeconds(2), NOW.minusSeconds(2));
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.plusSeconds(2), NOW.plusSeconds(2));
-		deltaFileRepo.batchInsert(List.of(deltaFile1, deltaFile2));
+		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2));
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null, null);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile2, deltaFile1));
@@ -2427,7 +2432,7 @@ class DeltaFiCoreApplicationTests {
 	void testDeltaFiles_limit() {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.minusSeconds(2), NOW.minusSeconds(2));
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.plusSeconds(2), NOW.plusSeconds(2));
-		deltaFileRepo.batchInsert(List.of(deltaFile1, deltaFile2));
+		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2));
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 1, DeltaFilesFilter.newBuilder()
 				.modifiedAfter(NOW.minusYears(1))
@@ -2453,7 +2458,7 @@ class DeltaFiCoreApplicationTests {
 	void testDeltaFiles_offset() {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.minusSeconds(2), NOW.plusSeconds(2));
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.plusSeconds(2), NOW.minusSeconds(2));
-		deltaFileRepo.batchInsert(List.of(deltaFile1, deltaFile2));
+		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2));
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(0, 50, new DeltaFilesFilter(), null, null);
 		assertEquals(0, deltaFiles.getOffset());
@@ -2472,7 +2477,7 @@ class DeltaFiCoreApplicationTests {
 	void testDeltaFiles_sort() {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.minusSeconds(2), NOW.plusSeconds(2));
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.ERROR, NOW.plusSeconds(2), NOW.minusSeconds(2));
-		deltaFileRepo.batchInsert(List.of(deltaFile1, deltaFile2));
+		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2));
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
 				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("created").build(), null);
@@ -2559,7 +2564,7 @@ class DeltaFiCoreApplicationTests {
 		flow3b.updateState();
 		deltaFile3.setEgressed(true);
 		deltaFile3.setFiltered(true);
-		deltaFileRepo.batchInsert(List.of(deltaFile1, deltaFile2, deltaFile3));
+		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2, deltaFile3));
 
 		testFilter(DeltaFilesFilter.newBuilder().testMode(true).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().testMode(false).build(), deltaFile2, deltaFile3);
@@ -2650,7 +2655,7 @@ class DeltaFiCoreApplicationTests {
 		unacknowledgedAction2.setErrorCause(reason);
 		filteredAndErrored.lastFlow().updateState();
 
-		deltaFileRepo.batchInsert(List.of(unacknowledgedError, acknowledgedError, filtered, filteredAndErrored));
+		deltaFileRepo.insertBatch(List.of(unacknowledgedError, acknowledgedError, filtered, filteredAndErrored));
 
 		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).build(), acknowledgedError, unacknowledgedError, filteredAndErrored);
 		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).errorAcknowledged(true).build(), acknowledgedError);
@@ -2685,7 +2690,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile5.firstFlow().setActions(List.of(Action.builder().name("action1").state(FILTERED).filteredCause("Filtered reason 2").build()));
 		deltaFile5.firstFlow().updateState();
 		deltaFile5.setFiltered(true);
-		deltaFileRepo.batchInsert(List.of(deltaFile1, deltaFile2, deltaFile3, deltaFile4, deltaFile5));
+		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2, deltaFile3, deltaFile4, deltaFile5));
 
 		testFilter(DeltaFilesFilter.newBuilder().errorCause("reason").build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("reason").build(), deltaFile5);
@@ -2700,7 +2705,7 @@ class DeltaFiCoreApplicationTests {
 		hasReplayDate.setReplayed(NOW);
 		DeltaFile replayable = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW, NOW.plusSeconds(2));
 
-		deltaFileRepo.batchInsert(List.of(noContent, hasReplayDate, replayable));
+		deltaFileRepo.insertBatch(List.of(noContent, hasReplayDate, replayable));
 
 		testFilter(DeltaFilesFilter.newBuilder().replayable(true).build(), replayable);
 		testFilter(DeltaFilesFilter.newBuilder().replayable(false).build(), hasReplayDate, noContent);
@@ -2715,7 +2720,7 @@ class DeltaFiCoreApplicationTests {
 		hasReplayDate.setReplayed(NOW);
 		DeltaFile noReplayDate = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW, NOW);
 
-		deltaFileRepo.batchInsert(List.of(hasReplayDate, noReplayDate));
+		deltaFileRepo.insertBatch(List.of(hasReplayDate, noReplayDate));
 
 		testFilter(DeltaFilesFilter.newBuilder().replayed(true).build(), hasReplayDate);
 		testFilter(DeltaFilesFilter.newBuilder().replayed(false).build(), noReplayDate);
@@ -2730,7 +2735,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile error = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.ERROR, NOW.plusSeconds(2), NOW.minusSeconds(3));
 		error.acknowledgeErrors(NOW, "acked");
 		DeltaFile cancelled = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.CANCELLED, NOW.plusSeconds(2), NOW.plusSeconds(2));
-		deltaFileRepo.batchInsert(List.of(ingress, enrich, egress, complete, error, cancelled));
+		deltaFileRepo.insertBatch(List.of(ingress, enrich, egress, complete, error, cancelled));
 		testFilter(DeltaFilesFilter.newBuilder().terminalStage(true).build(), cancelled, error, complete);
 		testFilter(DeltaFilesFilter.newBuilder().terminalStage(false).build(), egress, enrich, ingress);
 		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.CANCELLED).terminalStage(false).build());
@@ -2743,7 +2748,7 @@ class DeltaFiCoreApplicationTests {
 		pending.firstFlow().setPendingAnnotations(Set.of("a"));
 		DeltaFile notPending = buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.COMPLETE, NOW, NOW);
 
-		deltaFileRepo.batchInsert(List.of(pending, notPending));
+		deltaFileRepo.insertBatch(List.of(pending, notPending));
 		testFilter(DeltaFilesFilter.newBuilder().pendingAnnotations(true).build(), pending);
 		testFilter(DeltaFilesFilter.newBuilder().pendingAnnotations(false).build(), notPending);
 	}
@@ -3374,7 +3379,7 @@ class DeltaFiCoreApplicationTests {
 		notMarkedFiltered.firstFlow().updateState();
 		notMarkedFiltered.getFlows().forEach(f -> f.setId(UUID.randomUUID()));
 
-		deltaFileRepo.batchInsert(List.of(deltaFile, tooNew, notMarkedFiltered));
+		deltaFileRepo.insertBatch(List.of(deltaFile, tooNew, notMarkedFiltered));
 
 		return List.of(deltaFile.getDid(), tooNew.getDid(), notMarkedFiltered.getDid());
 	}
@@ -3916,7 +3921,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.minusSeconds(2), NOW.minusSeconds(2));
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.plusSeconds(2), NOW.plusSeconds(1));
 		DeltaFile deltaFile3 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.plusSeconds(2), NOW.plusSeconds(2));
-		deltaFileRepo.batchInsert(List.of(deltaFile1, deltaFile2, deltaFile3));
+		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2, deltaFile3));
 
 		List<UUID> dids = new ArrayList<>();
 		dids.add(deltaFile1.getDid());
@@ -3950,7 +3955,7 @@ class DeltaFiCoreApplicationTests {
 			deltaFile.updateFlags();
 			deltaFiles.add(deltaFile);
 		}
-		deltaFileRepo.batchInsert(deltaFiles);
+		deltaFileRepo.insertBatch(deltaFiles);
 		assertEquals(1500, deltaFileRepo.count());
 		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
@@ -4202,7 +4207,7 @@ class DeltaFiCoreApplicationTests {
 			}
 			deltaFiles.add(deltaFile);
 		}
-		deltaFileRepo.batchInsert(deltaFiles);
+		deltaFileRepo.insertBatch(deltaFiles);
 
 		assertEquals(505, deltaFileRepo.count());
 		assertEquals(501, deltaFilesService.countUnacknowledgedErrors());

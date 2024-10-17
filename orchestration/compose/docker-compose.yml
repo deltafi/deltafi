@@ -15,9 +15,9 @@ networks:
     external: true
 
 services:
-  deltafi-core:
+  deltafi-core-scheduler:
     image: ${DELTAFI_CORE}
-    container_name: deltafi-core
+    container_name: deltafi-core-scheduler
     depends_on:
       deltafi-valkey:
         condition: service_healthy
@@ -29,7 +29,7 @@ services:
       - "8080"
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
-      UNIQUE_ID: deltafi-core
+      UNIQUE_ID: deltafi-core-scheduler
       SPRING_PROFILES_ACTIVE: monitor
     env_file:
       - ${ENV_DIR}/common.env
@@ -42,37 +42,9 @@ services:
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:
-      - deltafi
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${DATA_DIR}/certs:/certs
-  deltafi-ingress:
-    image: ${DELTAFI_INGRESS}
-    container_name: deltafi-ingress
-    depends_on:
-      deltafi-valkey:
-        condition: service_healthy
-      deltafi-postgres:
-        condition: service_healthy
-      deltafi-minio:
-        condition: service_started
-    environment:
-      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
-    env_file:
-      - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/valkey.env
-      - ${SECRETS_DIR}/postgres.env
-      - ${SECRETS_DIR}/minio.env
-      - ${SECRETS_DIR}/ssl.env
-    expose:
-      - "8080"
-    <<: *health-probe
-    labels:
-      deltafi-group: deltafi-core
-      <<: *logging-label
-    networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "deltafi-core"
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -98,7 +70,7 @@ services:
     image: ${DELTAFI_CORE_ACTIONS}
     container_name: deltafi-core-actions
     depends_on:
-      deltafi-core:
+      deltafi-core-scheduler:
         condition: service_healthy
     env_file:
       - ${ENV_DIR}/common.env
@@ -141,7 +113,7 @@ services:
     image: ${DELTAFI_EGRESS_SINK}
     container_name: deltafi-egress-sink-service
     depends_on:
-      deltafi-core:
+      deltafi-core-scheduler:
         condition: service_started
     env_file:
       - ${ENV_DIR}/common.env

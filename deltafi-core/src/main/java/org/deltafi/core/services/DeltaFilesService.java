@@ -118,6 +118,7 @@ public class DeltaFilesService {
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final Environment environment;
     private final UUIDGenerator uuidGenerator;
+    private final IdentityService identityService;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -307,7 +308,7 @@ public class DeltaFilesService {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
-        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.firstFlow())), true);
+        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.firstFlow())), false);
         return deltaFile;
     }
 
@@ -361,29 +362,29 @@ public class DeltaFilesService {
 
             switch (event.getType()) {
                 case TRANSFORM -> {
-                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                     transform(deltaFile, flow, action, event);
+                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                 }
                 case EGRESS -> {
+                    egress(deltaFile, flow, action, event.getStart(), event.getStop());
                     metrics.add(
                             Metric.builder()
                                     .name(EXECUTION_TIME_MS)
                                     .value(Duration.between(deltaFile.getCreated(), deltaFile.getModified()).toMillis())
                                     .build());
                     generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
-                    egress(deltaFile, flow, action, event.getStart(), event.getStop());
                     if (flow.getState() == DeltaFileFlowState.COMPLETE) {
                         analyticEventService.recordEgress(deltaFile, flow);
                     }
                 }
                 case ERROR -> {
-                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                     error(deltaFile, flow, action, event);
+                    generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                 }
                 case FILTER -> {
+                    filter(deltaFile, flow, action, event, OffsetDateTime.now());
                     metrics.add(new Metric(DeltaFiConstants.FILES_FILTERED, 1));
                     generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
-                    filter(deltaFile, flow, action, event, OffsetDateTime.now());
                 }
                 default -> throw new UnknownTypeException(event.getActionName(), deltaFile.getDid(), event.getType());
             }
@@ -453,16 +454,15 @@ public class DeltaFilesService {
         }
 
         final Counter counter = new Counter();
-        List<DeltaFile> deltaFiles = ingressEvent.getIngressItems().stream()
+        List<StateMachineInput> stateMachineInputs = ingressEvent.getIngressItems().stream()
                 .map((item) -> buildIngressDeltaFile(dataSource, event, item))
-                .toList();
-        List<StateMachineInput> stateMachineInputs = deltaFiles.stream()
                 .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.firstFlow()))
                 .toList();
 
-        advanceAndSave(stateMachineInputs, true);
+        advanceAndSave(stateMachineInputs, false);
 
-        for (DeltaFile deltaFile : deltaFiles) {
+        for (StateMachineInput stateMachineInput : stateMachineInputs) {
+            DeltaFile deltaFile = stateMachineInput.deltaFile();
             counter.byteCount += deltaFile.getIngressBytes();
             if (deltaFile.getFlows().size() == 1) {
                 ActionState lastState = deltaFile.firstFlow().lastActionState();
@@ -710,7 +710,7 @@ public class DeltaFilesService {
         collector.add(deltaFile);
 
         if (collector.size() == batchSize) {
-            deltaFileRepo.batchInsert(collector);
+            deltaFileRepo.insertBatch(collector);
             collector.clear();
         }
     }
@@ -1149,7 +1149,7 @@ public class DeltaFilesService {
 
         Set<DeltaFile> deltaFiles = inputs.stream().map(StateMachineInput::deltaFile).collect(Collectors.toSet());
         if (insertAndForget) {
-            deltaFileRepo.batchInsert(new ArrayList<>(deltaFiles));
+            deltaFileRepo.insertBatch(new ArrayList<>(deltaFiles));
         } else {
             deltaFileCacheService.saveAll(deltaFiles);
         }
@@ -1273,7 +1273,6 @@ public class DeltaFilesService {
                         .filter(action -> action.getState().equals(ActionState.QUEUED) && action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
                         .map(action -> requeueActionInput(deltaFile, flow, action)))
                 .filter(Objects::nonNull)
-                .limit(deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled() ? 1 : 9999)
                 .toList();
     }
 
@@ -1310,10 +1309,10 @@ public class DeltaFilesService {
         }
 
         if (deltaFile.getJoinId() != null) {
-            return deltaFile.buildActionInput(actionConfiguration, flow, deltaFile.getParentDids(), action, getProperties().getSystemName(), null, null);
+            return deltaFile.buildActionInput(actionConfiguration, flow, deltaFile.getParentDids(), action, getProperties().getSystemName(), identityService.getUniqueId(), null);
         }
 
-        return deltaFile.buildActionInput(actionConfiguration, flow, action, getProperties().getSystemName(), null, null);
+        return deltaFile.buildActionInput(actionConfiguration, flow, action, getProperties().getSystemName(), identityService.getUniqueId(), null);
     }
 
     public void autoResume() {
@@ -1444,29 +1443,8 @@ public class DeltaFilesService {
             for (WrappedActionInput actionInput : actionInputs) {
                 populateBatchInput(actionInput);
             }
-            if (deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled()) {
-                // if this is the initial publication of a DeltaFile, and it has multiple actions to dispatch,
-                // only send to a single action until a core or worker picks it up and claims it
-                Map<UUID, List<WrappedActionInput>> groupedInputs = actionInputs.stream()
-                        .filter(input -> input.getReturnAddress() == null)
-                        .collect(Collectors.groupingBy(input -> input.getDeltaFile().getDid()));
 
-                Set<WrappedActionInput> inputsToRemove = new HashSet<>();
-
-                groupedInputs.entrySet().stream()
-                        .filter(entry -> entry.getValue().size() > 1)
-                        .forEach(entry -> inputsToRemove.addAll(entry.getValue().subList(1, entry.getValue().size())));
-
-                if (!inputsToRemove.isEmpty()) {
-                    // ensure the collection is mutable
-                    actionInputs = new ArrayList<>(actionInputs);
-                    actionInputs.removeIf(inputsToRemove::contains);
-                }
-            }
-
-            if (!actionInputs.isEmpty()) {
-                coreEventQueue.putActions(actionInputs, checkUnique);
-            }
+            coreEventQueue.putActions(actionInputs, checkUnique);
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);
@@ -1474,9 +1452,9 @@ public class DeltaFilesService {
     }
 
     private void populateBatchInput(WrappedActionInput actionInput) throws MissingDeltaFilesException {
-        UUID did = actionInput.getActionContext().getDid();
         List<UUID> joinedDids = actionInput.getActionContext().getJoinedDids();
         if (!joinedDids.isEmpty() && actionInput.getDeltaFileMessages() == null) {
+            UUID did = actionInput.getActionContext().getDid();
             if (!deltaFileRepo.existsById(did)) {
                 deltaFileRepo.saveAndFlush(actionInput.getDeltaFile());
             }
@@ -1532,7 +1510,7 @@ public class DeltaFilesService {
     }
 
     public boolean taskTimedDataSource(TimedDataSource dataSource) throws EnqueueActionException {
-        WrappedActionInput actionInput = dataSource.buildActionInput(getProperties().getSystemName(), OffsetDateTime.now(clock));
+        WrappedActionInput actionInput = dataSource.buildActionInput(getProperties().getSystemName(), OffsetDateTime.now(clock), identityService.getUniqueId());
         try {
             if (!coreEventQueue.queueHasTaskingForAction(actionInput)) {
                 timedDataSourceService.setLastRun(dataSource.getName(), OffsetDateTime.now(clock),

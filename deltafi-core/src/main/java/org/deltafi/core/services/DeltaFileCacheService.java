@@ -60,6 +60,12 @@ public abstract class DeltaFileCacheService {
         if (deltaFile == null) {
             return;
         }
-        put(deltaFileRepo.saveAndFlush(deltaFile));
+
+        if (deltaFile.getVersion() == 0 && deltaFile.getCacheTime() == null) {
+            deltaFileRepo.insertOne(deltaFile);
+            put(deltaFile);
+        } else {
+            put(deltaFileRepo.saveAndFlush(deltaFile));
+        }
     }
 }

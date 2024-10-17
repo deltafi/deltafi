@@ -1,31 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deltafi-ingress
+  name: deltafi-core-scheduler
   labels:
-    app: deltafi-ingress
+    app: deltafi-core-scheduler
     group: deltafi-core
+    role: api
 spec:
   revisionHistoryLimit: 0
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
-      app: deltafi-ingress
+      app: deltafi-core-scheduler
       group: deltafi-core
+      role: api
   template:
     metadata:
       labels:
-        app: deltafi-ingress
+        app: deltafi-core-scheduler
         group: deltafi-core
+        role: api
     spec:
       {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       containers:
-      - name: deltafi-ingress
+      {{ if .Values.deltafi.auth.entityResolver.enabled }}
+      {{- include "entityResolverContainer" . | nindent 6 }}
+      {{ end }}
+      - name: deltafi-core
         image: {{ .Values.deltafi.core.image }}
         env:
         - name: JDK_JAVA_OPTIONS
-          value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
+          value: "-Dcom.redhat.fips=false"
+        - name: UNIQUE_ID
+          value: core-scheduler
         - name: SPRING_PROFILES_ACTIVE
-          value: kubernetes
+          value: kubernetes,monitor
         {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080
@@ -40,4 +50,4 @@ spec:
       - name: docker-secret
       serviceAccountName: deltafi-core
       nodeSelector:
-        node-role.deltafi.org/storage: "true"
+        node-role.deltafi.org/compute: "true"

@@ -60,15 +60,11 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
 
     @Override
     public DeltaFile get(UUID did) {
-        if (deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled()) {
-            DeltaFile deltaFile = deltaFileCache.computeIfAbsent(did, this::getFromRepo);
-            if (deltaFile != null && deltaFile.getCacheTime() == null) {
-                deltaFile.setCacheTime(OffsetDateTime.now(clock));
-            }
-            return deltaFile;
-        } else {
-            return getFromRepo(did);
+        DeltaFile deltaFile = deltaFileCache.computeIfAbsent(did, this::getFromRepo);
+        if (deltaFile != null && deltaFile.getCacheTime() == null) {
+            deltaFile.setCacheTime(OffsetDateTime.now(clock));
         }
+        return deltaFile;
     }
 
     @Override
@@ -113,8 +109,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
 
     @Override
     public void save(DeltaFile deltaFile) {
-        if (!deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled() ||
-                deltaFile.inactiveStage()) {
+        if (deltaFile.inactiveStage()) {
             try {
                 updateRepo(deltaFile);
             } finally {

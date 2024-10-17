@@ -815,7 +815,51 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     @Transactional
-    public void batchInsert(List<DeltaFile> deltaFiles) {
+    public void insertOne(DeltaFile deltaFile) {
+        jdbcTemplate.execute((Connection connection) -> {
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement psDeltaFile = connection.prepareStatement(INSERT_DELTA_FILES);
+                 PreparedStatement psDeltaFileFlow = connection.prepareStatement(INSERT_DELTA_FILE_FLOWS);
+                 PreparedStatement psAnnotation = connection.prepareStatement(INSERT_ANNOTATIONS)) {
+
+                setDeltaFileParameters(psDeltaFile, deltaFile);
+                psDeltaFile.executeUpdate();
+
+                for (DeltaFileFlow flow : deltaFile.getFlows()) {
+                    setDeltaFileFlowParameters(psDeltaFileFlow, flow, deltaFile);
+                    psDeltaFileFlow.addBatch();
+                }
+                psDeltaFileFlow.executeBatch();
+
+                if (!deltaFile.getAnnotations().isEmpty()) {
+                    for (Annotation annotation : deltaFile.getAnnotations()) {
+                        setAnnotationParameters(psAnnotation, annotation, deltaFile);
+                        psAnnotation.addBatch();
+                    }
+                    psAnnotation.executeBatch();
+                }
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException("Error inserting DeltaFile: %s".formatted(e.getMessage()), e);
+            }
+
+            return null;
+        });
+    }
+
+    @Override
+    @Transactional
+    public void insertBatch(List<DeltaFile> deltaFiles) {
+        if (deltaFiles.size() == 1) {
+            insertOne(deltaFiles.getFirst());
+            return;
+        } else if (deltaFiles.isEmpty()) {
+            return;
+        }
+
         jdbcTemplate.execute(new PreparedStatementCreator() {
             @NotNull
             @Override
@@ -827,6 +871,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             try (PreparedStatement psDeltaFile = ps.getConnection().prepareStatement(INSERT_DELTA_FILES);
                  PreparedStatement psDeltaFileFlow = ps.getConnection().prepareStatement(INSERT_DELTA_FILE_FLOWS);
                  PreparedStatement psAnnotation = ps.getConnection().prepareStatement(INSERT_ANNOTATIONS)) {
+
+                boolean foundAnnotation = false;
 
                 for (DeltaFile deltaFile : deltaFiles) {
                     setDeltaFileParameters(psDeltaFile, deltaFile);
@@ -841,13 +887,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                         for (Annotation annotation : deltaFile.getAnnotations()) {
                             setAnnotationParameters(psAnnotation, annotation, deltaFile);
                             psAnnotation.addBatch();
+                            foundAnnotation = true;
                         }
                     }
                 }
 
                 psDeltaFile.executeBatch();
                 psDeltaFileFlow.executeBatch();
-                if (deltaFiles.stream().anyMatch(df -> !df.getAnnotations().isEmpty())) {
+                if (foundAnnotation) {
                     psAnnotation.executeBatch();
                 }
 

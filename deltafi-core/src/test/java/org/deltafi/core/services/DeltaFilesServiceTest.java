@@ -70,8 +70,6 @@ class DeltaFilesServiceTest {
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final DeltaFilesService deltaFilesService;
-    @Captor
-    ArgumentCaptor<List<Segment>> segmentCaptor;
 
     @Captor
     ArgumentCaptor<List<UUID>> uuidListCaptor;
@@ -101,7 +99,7 @@ class DeltaFilesServiceTest {
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock RestDataSourceService restDataSourceService,
                           @Mock TimedDataSourceService timedDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
-                          @Mock Environment environment) {
+                          @Mock Environment environment, @Mock IdentityService identityService) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.egressFlowService = egressFlowService;
@@ -119,7 +117,7 @@ class DeltaFilesServiceTest {
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, timedDataSourceService,
-                queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator());
+                queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService);
     }
 
     @Test

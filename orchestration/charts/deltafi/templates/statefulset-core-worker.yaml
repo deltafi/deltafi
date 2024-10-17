@@ -3,20 +3,23 @@ kind: StatefulSet
 metadata:
   name: deltafi-core-worker
   labels:
-    app: deltafi-core
+    app: deltafi-core-worker
     group: deltafi-core
+    role: api
 spec:
   serviceName: core-worker
   revisionHistoryLimit: 0
   selector:
     matchLabels:
-      app: deltafi-core
+      app: deltafi-core-worker
       group: deltafi-core
+      role: api
   template:
     metadata:
       labels:
-        app: deltafi-core
+        app: deltafi-core-worker
         group: deltafi-core
+        role: api
     spec:
       {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       containers:

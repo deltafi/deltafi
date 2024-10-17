@@ -125,7 +125,7 @@ public class TimedDataSource extends DataSource {
      * @param systemName system name to set in context
      * @return ActionInput containing the ActionConfiguration
      */
-    public WrappedActionInput buildActionInput(String systemName, OffsetDateTime now) {
+    public WrappedActionInput buildActionInput(String systemName, OffsetDateTime now, String returnAddress) {
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(Generators.timeBasedEpochGenerator().generate())
                 .dataSource(getName())
@@ -140,6 +140,6 @@ public class TimedDataSource extends DataSource {
                 .created(now)
                 .state(ActionState.QUEUED)
                 .build();
-        return deltaFile.buildActionInput(timedIngressAction, flow, action, systemName, null, memo);
+        return deltaFile.buildActionInput(timedIngressAction, flow, action, systemName, returnAddress, memo);
     }
 }

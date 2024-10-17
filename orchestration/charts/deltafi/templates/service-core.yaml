@@ -6,7 +6,7 @@ metadata:
     deltafi-service: "deltafi-core"
 spec:
   selector:
-    app: deltafi-core
+    role: api
   type: NodePort
   ports:
   - protocol: TCP

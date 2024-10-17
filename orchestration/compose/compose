@@ -432,8 +432,6 @@ deltafi:
     image: ${repo}/deltafi-core-actions:${tag}
   core:
     image: ${repo}/deltafi-core:${tag}
-  ingress:
-    image: ${repo}/deltafi-core:${tag}
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
@@ -542,7 +540,6 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
   _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
   _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
-  _append_startup_from_values "DELTAFI_INGRESS" ".deltafi.ingress.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
@@ -566,7 +563,7 @@ DELTAFI_GRAFANA_URL=http://deltafi-grafana:3000
 DELTAFI_MODE=STANDALONE
 GRAPHITE_HOST=deltafi-graphite
 GRAPHITE_PORT="2003"
-INGRESS_URL=http://deltafi-ingress:8080
+INGRESS_URL=http://deltafi-core:8080
 PERIOD="5"
 METRICS_PERIOD_SECONDS="10"
 MINIO_PARTSIZE="5242880"

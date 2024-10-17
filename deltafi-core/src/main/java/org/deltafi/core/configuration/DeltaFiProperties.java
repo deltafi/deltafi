@@ -62,9 +62,6 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "1000")
     private int deletePolicyBatchSize = 1000;
 
-    @PropertyInfo(description = "Enables or disables local caching of DeltaFiles", defaultValue = "true")
-    private boolean cacheEnabled = true;
-
     @PropertyInfo(description = "Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
     private Duration cacheSyncDuration = Duration.ofSeconds(30);
 

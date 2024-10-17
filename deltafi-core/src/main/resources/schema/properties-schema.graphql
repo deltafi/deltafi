@@ -85,7 +85,6 @@ type DeltaFiProperties {
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!
-    cacheEnabled: Boolean!
     cacheSyncDuration: String!
     ingressEnabled: Boolean!
     ingressDiskSpaceRequirementInMb: Long!
@@ -120,7 +119,6 @@ input DeltaFiPropertiesInput {
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!
-    cacheEnabled: Boolean!
     cacheSyncDuration: String!
     ingressEnabled: Boolean!
     ingressDiskSpaceRequirementInMb: Long!

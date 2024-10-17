@@ -10,11 +10,10 @@ data:
     - deltafi-loki
     - deltafi-valkey-master
   Deployment: |
-    - deltafi-core
     - deltafi-core-actions
+    - deltafi-core-scheduler
     - deltafi-egress-sink
     - deltafi-grafana
-    - deltafi-ingress
     - deltafi-kubernetes-dashboard
     - deltafi-minio
   Ingress: |
