@@ -19,6 +19,8 @@
 import { ref } from "vue";
 import useGraphQL from "./useGraphQL";
 import { EnumType } from "json-to-graphql-query";
+import _ from "lodash";
+
 export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
@@ -41,6 +43,7 @@ export default function useErrors() {
           count: true,
           message: true,
           flow: true,
+          type: true,
           dids: true,
         },
       },
@@ -48,6 +51,7 @@ export default function useErrors() {
     await queryGraphQL(searchParams, "getErrorsByMessage");
     data.value = response.value.data.errorSummaryByMessage;
   };
+
   const fetchAllMessage = async () => {
     const searchParams = {
       errorSummaryByMessage: {
@@ -58,6 +62,22 @@ export default function useErrors() {
     };
     await queryGraphQL(searchParams, "getErrorsByMessage");
     data.value = response.value.data.errorSummaryByMessage.countPerMessage;
+  };
+
+  const fetchUniqueErrorMessages = async () => {
+    const searchParams = {
+      errorSummaryByMessage: {
+        countPerMessage: {
+          message: true,
+        },
+      },
+    };
+    await queryGraphQL(searchParams, "getErrorsByMessage");
+    return _.chain(response.value.data.errorSummaryByMessage.countPerMessage)
+      .map((o) => o.message)
+      .uniq()
+      .sort()
+      .value()
   };
 
   const fetchErrorSummaryByFlow = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
@@ -77,6 +97,7 @@ export default function useErrors() {
         countPerFlow: {
           count: true,
           flow: true,
+          type: true,
           dids: true,
         },
       },
@@ -85,5 +106,5 @@ export default function useErrors() {
     data.value = response.value.data.errorSummaryByFlow;
   };
 
-  return { data, loading, loaded, fetchByMessage, fetchErrorSummaryByFlow, fetchAllMessage, errors };
+  return { data, loading, loaded, fetchUniqueErrorMessages, fetchByMessage, fetchErrorSummaryByFlow, fetchAllMessage, errors };
 }

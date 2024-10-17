@@ -72,5 +72,10 @@ export default function useFlows() {
     egressFlows.value = response.value.data.getFlowNames.egress.sort();
   };
 
-  return { egressFlows, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, fetchEgressFlowNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, loading, loaded, errors };
+  const fetchAllFlowNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(true, true, true, true, state), "getAllFlowNames");
+    return response.value.data.getFlowNames;
+  };
+
+  return { egressFlows, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, fetchEgressFlowNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, fetchAllFlowNames, loading, loaded, errors };
 }

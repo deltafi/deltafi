@@ -222,6 +222,7 @@ input FilteredSummaryFilter {
 
 type CountPerFlow {
   flow: String!
+  type: FlowType!
   count: Int!
   dids: [UUID!]!
 }
@@ -229,6 +230,7 @@ type CountPerFlow {
 type CountPerMessage {
   message: String!
   flow: String!
+  type: FlowType!
   count: Int!
   dids: [UUID!]!
 }
@@ -275,8 +277,8 @@ input DeltaFilesFilter {
   createdAfter: DateTime
   createdBefore: DateTime
   annotations: [KeyValueInput!]
-  dataSources: [String]
-  transformFlows: [String]
+  dataSources: [String!]
+  transformFlows: [String!]
   egressFlows: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime

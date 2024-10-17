@@ -25,16 +25,19 @@ const generateData = () => {
         {
           count: 4,
           flow: "mock_stix2_1",
+          type: "TRANSFORM",
           dids: ["aea797bb-f329-4b36-ab3b-0d218158b42a", "fe8b6d9f-7833-45c2-a003-7cbfa630a0a8", "3df9b0b8-7b81-4401-9d7b-118008bbeeed", "032fdf08-adda-4d5c-9fdd-269cccaaca52"],
         },
         {
           count: 7,
           flow: "mock_stix1_x",
+          type: "TRANSFORM",
           dids: ["cae2da97-cbf0-4630-a521-376390e1cb55", "e6601190-3ee3-4d16-a5ed-f8a9f9bf582e", "463743f5-8115-4b4b-b218-70e2ece13032", "1fa21aea-a540-4676-a024-e91e6ce1e19a", "968c1b48-3b19-4468-8fee-f210f02af8d9", "b6faae99-aaae-477a-a15f-6d7275f82465", "7d5af4d4-56b9-46eb-afd1-7421aa02841d"],
         },
         {
           count: 6,
           flow: "mock_decompress-passthrough",
+          type: "TRANSFORM",
           dids: ["49fbca43-07dc-4cee-a046-0c8209ec810e", "478429ea-516b-4d36-8a9d-51cd92a59d23", "7872757b-3f69-4c16-bd78-0253f1ba5f42", "1fd33eff-ebdf-48a9-9162-221f88fb690e", "9369451c-3bbb-4af7-88d5-9a44d61f743d", "be132b2b-0bd2-4150-90c9-a3b803ebc8a2"],
         },
       ],

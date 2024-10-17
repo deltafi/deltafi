@@ -162,8 +162,8 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const props = defineProps({
-  dataSourceName: {
-    type: String,
+  flow: {
+    type: Object,
     required: false,
     default: undefined,
   },
@@ -249,10 +249,11 @@ const filters = ref({
 
 const fetchErrors = async () => {
   await getPersistedParams();
-  let dataSourceName = props.dataSourceName != null ? props.dataSourceName : null;
+  let flowName = props.flow?.name != null ? props.flow?.name : null;
+  let flowType = props.flow?.type != null ? props.flow?.type : null;
   let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   loading.value = true;
-  await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceName, errorMessage);
+  await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;
@@ -371,7 +372,7 @@ defineExpose({
 });
 const setupWatchers = () => {
   watch(
-    () => props.dataSourceName,
+    () => props.flow,
     () => {
       fetchErrors();
     }

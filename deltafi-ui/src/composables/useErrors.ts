@@ -19,22 +19,45 @@
 import { ref } from "vue";
 import useGraphQL from "./useGraphQL";
 import { EnumType } from "json-to-graphql-query";
-import _ from "lodash";
+
 export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
 
-  const fetch = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, errorCause?: string, filteredCause?: string) => {
+  const fetch = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, flowType?: string, errorCause?: string, filteredCause?: string) => {
+    const flowFilters: Record<string, Array<string>> = {
+      dataSources: [],
+      egressFlows: [],
+      transformFlows: [],
+    }
+
+    if (flowName && flowType) {
+      switch (flowType) {
+        case "egress":
+          flowFilters.egressFlows.push(flowName)
+          break;
+        case "transform":
+          flowFilters.transformFlows.push(flowName)
+          break;
+        case "timedDataSource":
+          flowFilters.dataSources.push(flowName)
+          break;
+        case "restDataSource":
+          flowFilters.dataSources.push(flowName)
+          break;
+      }
+    }
+
     const searchParams = {
       deltaFiles: {
         __args: {
           limit: perPage,
           offset: offSet,
           filter: {
-            dataSources: !_.isEmpty(flowName) ? `${flowName}` : null,
+            ...flowFilters,
             stage: new EnumType("ERROR"),
             errorAcknowledged: showAcknowledged,
-            errorCause: !_.isEmpty(errorCause) ? `${errorCause}` : null,
+            errorCause: errorCause,
             filteredCause: filteredCause,
           },
           orderBy: {

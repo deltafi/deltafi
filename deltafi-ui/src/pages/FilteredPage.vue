@@ -32,7 +32,7 @@
       <TabPanel header="All">
         <AllFilteredPanel ref="filterSummaryPanel" :data-source-name="dataSourceNameSelected" :filtered-cause-selected="filteredCauseSelected" @refresh-filters="onRefresh()" @filter-cause-changed:filtered-cause="messageSelected" />
       </TabPanel>
-      <TabPanel header="By Data Source">
+      <TabPanel header="By Flow">
         <SummaryByFlowPanel ref="filterSummaryFlowPanel" :data-source-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Cause">

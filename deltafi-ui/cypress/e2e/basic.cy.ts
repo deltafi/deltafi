@@ -65,8 +65,8 @@ describe("DeltaFile Errors Page", () => {
     cy.visit("http://localhost:8080/errors?tab=0");
     cy.get("span.p-panel-title").contains("DeltaFiles");
     cy.get("span.p-paginator-current").contains("1 - 20 of 2000");
-    cy.get("span.p-tabview-title").contains("By Data Source").click();
-    cy.get("span.p-panel-title").contains("DeltaFiles by Data Source");
+    cy.get("span.p-tabview-title").contains("By Flow").click();
+    cy.get("span.p-panel-title").contains("DeltaFiles by Flow");
     cy.get("span.p-paginator-current").contains("1 - 3 of 3");
     cy.get("span.p-tabview-title").contains("By Message").click();
     cy.get("span.p-panel-title").contains("DeltaFiles by Message");
@@ -90,11 +90,11 @@ describe("External Links Page", () => {
 });
 
 describe("DeltaFile Filtered Page", () => {
-  it("randers all three tabs - All, By Data Source, and By Cause", () => {
+  it("randers all three tabs - All, By Flow, and By Cause", () => {
     cy.visit("http://localhost:8080/deltafile/filtered?tab=0");
     cy.get("span.p-panel-title").contains("DeltaFiles");
-    cy.get("span.p-tabview-title").contains("By Data Source").click();
-    cy.get("span.p-panel-title").contains("DeltaFiles by Data Source");
+    cy.get("span.p-tabview-title").contains("By Flow").click();
+    cy.get("span.p-panel-title").contains("DeltaFiles by Flow");
     cy.get("span.p-tabview-title").contains("By Cause").click();
     cy.get("span.p-panel-title").contains("DeltaFiles by Cause");
   });

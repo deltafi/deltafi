@@ -87,6 +87,7 @@ export default function useFiltered() {
         countPerFlow: {
           count: true,
           flow: true,
+          type: true,
           dids: true,
         },
       },
@@ -124,6 +125,7 @@ export default function useFiltered() {
           count: true,
           message: true,
           flow: true,
+          type: true,
           dids: true,
         },
       },

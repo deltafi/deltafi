@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Panel header="DeltaFiles by Data Source" @contextmenu="onPanelRightClick">
+  <Panel header="DeltaFiles by Flow" @contextmenu="onPanelRightClick">
     <ContextMenu ref="menu" :model="menuItems" />
     <template #icons>
       <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
@@ -29,7 +29,12 @@
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Data Source" sortable class="filename-column" />
+      <Column field="flow" header="Flow" sortable class="filename-column">
+        <template #body="{ data }">
+          <a class="monospace" @click="showErrors(null, data.flow, data.type)">{{ data.flow }}</a>
+        </template>
+      </Column>
+      <Column field="type" header="Flow Type" sortable />
       <Column field="count" header="Count" sortable />
     </DataTable>
   </Panel>
@@ -75,7 +80,7 @@ const metadataDialogResume = ref();
 const sortDirection = ref("ASC");
 const selectedErrors = ref([]);
 const notify = useNotifications();
-const emit = defineEmits(["refreshErrors"]);
+const emit = defineEmits(["refreshErrors", "changeTab:showErrors"]);
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
 const annotateDialog = ref();
@@ -84,8 +89,8 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const props = defineProps({
-  dataSourceFlowName: {
-    type: String,
+  flow: {
+    type: Object,
     required: false,
     default: undefined,
   },
@@ -151,6 +156,10 @@ const menuItems = ref([
   },
 ]);
 
+const showErrors = (errorMessage, flowName, flowType) => {
+  emit("changeTab:showErrors", errorMessage, flowName, flowType);
+};
+
 onMounted(async () => {
   await getPersistedParams();
   fetchErrorsFlow();
@@ -166,9 +175,9 @@ const { data: response, fetchErrorSummaryByFlow } = useErrorsSummary();
 
 const fetchErrorsFlow = async () => {
   getPersistedParams();
-  let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
+  let flowName = props.flow?.name != null ? props.flow?.name : null;
   loading.value = true;
-  await fetchErrorSummaryByFlow(props.acknowledged, offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
+  await fetchErrorSummaryByFlow(props.acknowledged, offset.value, perPage.value, sortDirection.value, flowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
   loading.value = false;
@@ -202,7 +211,7 @@ const autoResumeSelected = computed(() => {
   let newResumeRule = {};
   if (!_.isEmpty(selectedErrors.value)) {
     let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
-    newResumeRule["dataSource"] = rowInfo.flow;
+    newResumeRule["Flow"] = rowInfo.flow;
     return newResumeRule;
   } else {
     return selectedErrors.value;
@@ -250,7 +259,7 @@ const getPage = computed(() => {
 
 const setupWatchers = () => {
   watch(
-    () => props.dataSourceFlowName,
+    () => props.flow,
     () => {
       fetchErrorsFlow();
     }

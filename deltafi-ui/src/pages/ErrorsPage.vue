@@ -22,21 +22,21 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-0 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
-        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
+        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" :options="uniqueErrorMessages" class="deltafi-input-field ml-3 flow-dropdown" />
         <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ml-3 ack-dropdown" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
     </PageHeader>
-    <TabView v-model:activeIndex="activeTab">
+    <TabView v-if="showTabs" v-model:activeIndex="activeTab">
       <TabPanel header="All">
-        <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :data-source-name="dataSourceNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
+        <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
-      <TabPanel header="By Data Source">
-        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :data-source-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" />
+      <TabPanel header="By Flow">
+        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :flow="flowSelected" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
       </TabPanel>
       <TabPanel header="By Message">
-        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :data-source-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
+        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :flow="flowSelected" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
       </TabPanel>
     </TabView>
   </div>
@@ -56,33 +56,32 @@ import Button from "primevue/button";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
-import AutoComplete from "primevue/autocomplete";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import Dropdown from "primevue/dropdown";
 
-const messageValues = ref();
-const filteredErrorMessages = ref([]);
-const selectedMessageValue = ref("");
+const errorMessageSelected = ref("");
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
 const errorSummaryFlowPanel = ref();
 const errorsSummaryPanel = ref();
-const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
+const { fetchAllFlowNames } = useFlows();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCountSince } = useErrorCount();
 const loading = ref(false);
 const newErrorsCount = ref(0);
 const lastServerContact = ref(new Date());
-const dataSourceNameSelected = ref(null);
-const errorMessageSelected = ref("");
+const flowSelected = ref(null);
 const activeTab = ref(0);
 const params = useUrlSearchParams("history");
 const useURLSearch = ref(false);
 const route = useRoute();
 const errorPanelState = useStorage("error-store", {}, sessionStorage, { serializer: StorageSerializers.object });
-const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
-const formattedDataSourceNames = ref([]);
+const { fetchUniqueErrorMessages } = useErrorsSummary();
+const formattedFlows = ref([]);
+const allFlowNames = ref();
+const showTabs = ref(false);
+const uniqueErrorMessages = ref([])
 
 const ackOptions = [
   { name: "Errors", value: 0 },
@@ -95,19 +94,26 @@ const acknowledged = computed(() => {
   if (selectedAckOption.value == 1) return true;
   return null;
 });
+const flowTypeMap = {
+  TRANSFORM: "transform",
+  REST_DATA_SOURCE: "restDataSource",
+  TIMED_DATA_SOURCE: "timedDataSource",
+  EGRESS: "egress",
+}
 
 const setPersistedParams = () => {
   // Session Storage
   errorPanelState.value = {
     tabs: activeTab.value,
     ack: selectedAckOption.value,
-    dataSourceNameSelected: dataSourceNameSelected.value,
+    flowSelected: flowSelected.value,
     errorMessageSelected: errorMessageSelected.value,
   };
   // URL
   params.tab = activeTab.value > 0 ? activeTab.value : null;
   params.ack = selectedAckOption.value > 0 ? selectedAckOption.value : null;
-  params.dataSource = dataSourceNameSelected.value;
+  params.flowName = flowSelected.value?.name;
+  params.flowType = flowSelected.value?.type;
   if (activeTab.value === 0) {
     params.errorMsg = errorMessageSelected.value ? encodeURIComponent(errorMessageSelected.value) : null;
   } else {
@@ -119,49 +125,38 @@ const getPersistedParams = async () => {
   if (useURLSearch.value) {
     activeTab.value = params.tab ? parseInt(params.tab) : 0;
     selectedAckOption.value = params.ack ? parseInt(params.ack) : 0;
-    dataSourceNameSelected.value = params.dataSource ? params.dataSource : null;
-    selectedMessageValue.value = errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
+    if (params.flowName && params.flowType) {
+      flowSelected.value = {
+        name: params.flowName,
+        type: params.flowType
+      }
+    }
+    errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
   } else {
     activeTab.value = errorPanelState.value.tabs ? parseInt(errorPanelState.value.tabs) : 0;
     selectedAckOption.value = _.get(errorPanelState.value, "ack", 0);
-    dataSourceNameSelected.value = _.get(errorPanelState.value, "dataSourceNameSelected", null);
-    selectedMessageValue.value = errorMessageSelected.value = _.get(errorPanelState.value, "errorMessageSelected", null);
+    flowSelected.value = _.get(errorPanelState.value, "flowSelected", null);
+    errorMessageSelected.value = _.get(errorPanelState.value, "errorMessageSelected", null);
   }
   setPersistedParams();
 };
 
-const messageSearch = (event) => {
-  setTimeout(() => {
-    if (!event.query.trim().length) {
-      filteredErrorMessages.value = [...messageValues.value];
-    } else {
-      filteredErrorMessages.value = messageValues.value.filter((message) => {
-        return message.toLowerCase().includes(event.query.toLowerCase());
-      });
-    }
-  }, 1000);
-};
 const clearOptions = () => {
-  filteredErrorMessages.value = [];
-  selectedMessageValue.value = "";
   errorMessageSelected.value = "";
-  dataSourceNameSelected.value = null;
+  flowSelected.value = null;
   selectedAckOption.value = 0;
   setPersistedParams();
 };
 
 const filterOptionsSelected = computed(() => {
-  const formDirty = _.some([selectedMessageValue.value, dataSourceNameSelected.value], (value) => !(value === "" || value === null || value === undefined));
+  const formDirty = _.some([errorMessageSelected.value, flowSelected.value], (value) => !(value === "" || value === null || value === undefined));
 
   return selectedAckOption.value > 0 || formDirty;
 });
 
 const setupWatchers = () => {
-  watch([activeTab, selectedAckOption, dataSourceNameSelected, errorMessageSelected], () => {
+  watch([activeTab, selectedAckOption, flowSelected, errorMessageSelected], () => {
     setPersistedParams();
-  });
-  watch([selectedMessageValue], () => {
-    errorMessageSelected.value = selectedMessageValue.value;
   });
 };
 
@@ -171,19 +166,14 @@ const refreshButtonIcon = computed(() => {
   return classes.join(" ");
 });
 
-const tabChange = (errorMessage, flowSelected) => {
-  dataSourceNameSelected.value = flowSelected;
+const showErrors = (errorMessage, flowName, flowType) => {
+  flowSelected.value = { name: flowName, type: flowTypeMap[flowType] };
   errorMessageSelected.value = errorMessage;
-  selectedMessageValue.value = errorMessage;
   activeTab.value = 0;
 };
 
-const messageSelected = (errorMsg) => {
-  if (errorMessageSelected.value !== errorMsg) errorMessageSelected.value = errorMsg;
-};
-
 const refreshButtonClass = computed(() => {
-  let classes = ["p-button", "deltafi-input-field", "ml-1"];
+  let classes = ["p-button", "deltafi-input-field", "ml-3"];
   if (newErrorsCount.value > 0) {
     classes.push("p-button-warning");
   } else {
@@ -231,19 +221,13 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  await fetchAllDataSourceFlowNames();
-  formatDataSourceNames();
+  allFlowNames.value = await fetchAllFlowNames();
+  formatFlowNames();
   await getPersistedParams();
   await nextTick();
+  showTabs.value = true;
   pollNewErrors();
-  await getAllErrorsMessage();
-  const uniqueMessages = [];
-  for (let i = 0; i < errorsMessages.value.length; i++) {
-    if (!uniqueMessages.includes(errorsMessages.value[i].message)) {
-      uniqueMessages.push(errorsMessages.value[i].message);
-    }
-  }
-  messageValues.value = uniqueMessages;
+  uniqueErrorMessages.value  = await fetchUniqueErrorMessages();
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !loading.value) {
       pollNewErrors();
@@ -252,12 +236,20 @@ onMounted(async () => {
   setupWatchers();
 });
 
-const formatDataSourceNames = () => {
-  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
-    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
-  }
-  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
-    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
+const formatFlowNames = () => {
+  const map = {
+    restDataSource: "Rest Data Sources",
+    timedDataSource: "Timed Data Sources",
+    transform: "Transforms",
+    egress: "Data Sinks"
+  };
+  for (const [key, label] of Object.entries(map)) {
+    if (!_.isEmpty(allFlowNames.value[key])) {
+      const flows = _.map(allFlowNames.value[key], (name) => {
+        return { name: name, type: key }
+      })
+      formattedFlows.value.push({ label: label, sources: flows });
+    }
   }
 };
 </script>

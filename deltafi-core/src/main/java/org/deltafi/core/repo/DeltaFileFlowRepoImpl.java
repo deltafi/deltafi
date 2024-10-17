@@ -77,13 +77,13 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, DeltaFileFlowState deltaFileFlowState) {
         StringBuilder sql = new StringBuilder("""
-                SELECT name, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
+                SELECT name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
                 FROM delta_file_flows
                 WHERE state = :state\s""");
 
         addFilterClauses(sql, filter);
 
-        sql.append("GROUP BY name ");
+        sql.append("GROUP BY name, type ");
 
         addFooterClauses(sql, direction, false);
 
@@ -97,7 +97,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
         List<CountPerFlow> countPerFlow = resultList.stream()
-                .map(row -> new CountPerFlow((String) row[0], ((Number) row[1]).intValue(), Arrays.stream((UUID[]) row[2]).sorted().distinct().toList()))
+                .map(row -> new CountPerFlow((String) row[0], FlowType.valueOf((String) row[1]), ((Number) row[2]).intValue(), Arrays.stream((UUID[]) row[3]).sorted().distinct().toList()))
                 .collect(Collectors.toList());
 
         Long totalCount = totalCountByFlow(filter, deltaFileFlowState);
@@ -107,13 +107,13 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
-            SELECT error_or_filter_cause, name, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
+            SELECT error_or_filter_cause, name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
             FROM delta_file_flows
             WHERE state = :state\s""");
 
         addFilterClauses(sql, filter);
 
-        sql.append("GROUP BY error_or_filter_cause, name ");
+        sql.append("GROUP BY error_or_filter_cause, name, type ");
 
         addFooterClauses(sql, direction, true);
 
@@ -127,7 +127,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
         List<CountPerMessage> countPerMessage = resultList.stream()
-                .map(row -> new CountPerMessage((String) row[0], (String) row[1], ((Number) row[2]).intValue(), Arrays.stream((UUID[]) row[3]).sorted().distinct().toList()))
+                .map(row -> new CountPerMessage((String) row[0], (String) row[1], FlowType.valueOf((String) row[2]),((Number) row[3]).intValue(), Arrays.stream((UUID[]) row[4]).sorted().distinct().toList()))
                 .collect(Collectors.toList());
 
         Long totalCount = totalCountByFlowAndMessage(filter, flowState);
