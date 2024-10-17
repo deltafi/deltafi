@@ -31,7 +31,7 @@ public class FlowFileTwoStepUnpackagerV2 implements FlowFileTwoStepUnpackager {
     private boolean haveReadSomething = false;
 
     @Override
-    public boolean hasMoreData() throws IOException {
+    public boolean hasMoreData() {
         return nextAttributes != null || !haveReadSomething;
     }
 

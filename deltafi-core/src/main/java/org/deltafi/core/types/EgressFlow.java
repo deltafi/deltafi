@@ -66,7 +66,6 @@ public class EgressFlow extends Flow implements Subscriber {
         return actionConfigurations;
     }
 
-    @Override
     public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap) {
         updateActionNamesByFamily(actionFamilyMap, ActionType.EGRESS, egressAction.getName());
     }

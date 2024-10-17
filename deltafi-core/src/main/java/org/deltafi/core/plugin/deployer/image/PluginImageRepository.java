@@ -23,7 +23,6 @@ import lombok.Data;
 import org.hibernate.annotations.Type;
 
 import java.util.List;
-import java.util.Set;
 
 @Data
 @Entity

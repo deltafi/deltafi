@@ -61,7 +61,7 @@ public class XmlEditorFilterErrorOnTagScreenOperation extends XmlEditorScreenOpe
 
         public final String label;
 
-        private Command(String label) {
+        Command(String label) {
             this.label = label;
         }
     }
@@ -79,15 +79,15 @@ public class XmlEditorFilterErrorOnTagScreenOperation extends XmlEditorScreenOpe
 
         public final String label;
 
-        private Operator(String label) {
+        Operator(String label) {
             this.label = label;
         }
     }
 
-    private Command command;
-    private Operator operator;
-    private List<XPathExpression> xpathQueryList;
-    private String message;
+    private final Command command;
+    private final Operator operator;
+    private final List<XPathExpression> xpathQueryList;
+    private final String message;
 
     /**
      * Creates a new, uninitialized XmlEditorFilterErrorOnTagScreenOperation.

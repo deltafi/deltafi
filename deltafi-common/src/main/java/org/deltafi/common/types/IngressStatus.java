@@ -19,6 +19,5 @@ package org.deltafi.common.types;
 
 public enum IngressStatus {
     HEALTHY,
-    DEGRADED,
     UNHEALTHY
 }

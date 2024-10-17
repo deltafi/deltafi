@@ -37,7 +37,6 @@ import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.ResumePolicy;
 
 import java.time.OffsetDateTime;
 import java.util.*;

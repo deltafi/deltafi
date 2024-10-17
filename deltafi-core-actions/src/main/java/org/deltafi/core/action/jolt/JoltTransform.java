@@ -48,7 +48,7 @@ public class JoltTransform extends ContentSelectingTransformAction<JoltParameter
     }
 
     @Override
-    protected ActionContent transform(ActionContext context, JoltParameters params, ActionContent content) throws Exception {
+    protected ActionContent transform(ActionContext context, JoltParameters params, ActionContent content) {
         Chainr chainr = chainrCache.computeIfAbsent(params.getJoltSpec(), key -> Chainr.fromSpec(JsonUtils.jsonToList(key)));
 
         Object transformedJson = chainr.transform(JsonUtils.jsonToObject(content.loadString()));

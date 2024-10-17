@@ -29,7 +29,7 @@ import java.util.Random;
 
 @Component
 public class SmokeTestIngress extends TimedIngressAction<SmokeTestParameters> {
-    Random random = new Random();
+    final Random random = new Random();
 
     public SmokeTestIngress() {
         super("Create smoke test DeltaFiles");

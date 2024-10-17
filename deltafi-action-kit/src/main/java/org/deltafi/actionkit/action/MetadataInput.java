@@ -49,7 +49,7 @@ public abstract class MetadataInput {
     }
 
     /**
-     * Returns the value of the last action's  metadata for the given key or a default value if the key is not found.
+     * Returns the value of the last action's metadata for the given key or a default value if the key is not found.
      * @param key the key for the metadata.
      * @param defaultValue the default value to return if the key is not found.
      * @return the value of the metadata for the given key or the default value if the key is not found.

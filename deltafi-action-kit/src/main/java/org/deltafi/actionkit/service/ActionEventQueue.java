@@ -106,10 +106,6 @@ public class ActionEventQueue {
         valkeyKeyedBlockingQueue.setHeartbeat(key);
     }
 
-    public long size(String key) {
-        return valkeyKeyedBlockingQueue.sortedSetSize(key);
-    }
-
     /**
      * Records a long-running task in Valkey.
      *

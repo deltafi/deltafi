@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -215,7 +216,7 @@ public class TestEvaluator {
                             .stream().map(Action::getName)
                             .toList();
 
-                    if (!actionNames.containsAll(ef.getActions())) {
+                    if (!new HashSet<>(actionNames).containsAll(ef.getActions())) {
                         fatalError(label + ": expected actions " +
                                 String.join(",", ef.getActions()) +
                                 " - but were " + String.join(",", actionNames)

@@ -17,15 +17,10 @@
  */
 package org.deltafi.actionkit.action;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Action input that may include content or metadata

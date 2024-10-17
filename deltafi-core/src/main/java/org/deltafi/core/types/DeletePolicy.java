@@ -26,7 +26,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.lang.String;
 import java.util.UUID;
 
 @JsonTypeInfo(

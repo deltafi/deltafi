@@ -29,6 +29,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class RestDataSourcePlanService extends FlowPlanService<RestDataSourcePlan, RestDataSource, RestDataSourceSnapshot, RestDataSourceRepo> {
     public RestDataSourcePlanService(RestDataSourcePlanValidator dataSourcePlanValidator, PluginRepository pluginRepo, RestDataSourceService flowService) {
-        super(dataSourcePlanValidator, pluginRepo, flowService, FlowType.REST_DATA_SOURCE, RestDataSourcePlan.class);
+        super(dataSourcePlanValidator, pluginRepo, flowService, FlowType.REST_DATA_SOURCE);
     }
 }

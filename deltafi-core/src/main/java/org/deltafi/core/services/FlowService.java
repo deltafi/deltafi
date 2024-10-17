@@ -305,14 +305,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return flows.stream().map(Flow::getName).toList();
     }
 
-    /**
-     * Get the name of all running flows
-     * @return list of names of the running flows
-     */
-    public List<String> getRunningFlowNames() {
-        return getAll().stream().filter(Flow::isRunning).map(Flow::getName).toList();
-    }
-
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         refreshCache();

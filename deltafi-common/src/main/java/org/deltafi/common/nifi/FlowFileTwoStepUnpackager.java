@@ -26,5 +26,5 @@ public interface FlowFileTwoStepUnpackager {
     Map<String, String> unpackageAttributes(InputStream in) throws IOException;
     void unpackageContent(InputStream in, OutputStream out) throws IOException;
 
-    boolean hasMoreData() throws IOException;
+    boolean hasMoreData();
 }

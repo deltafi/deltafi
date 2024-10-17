@@ -29,6 +29,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot, TransformFlowRepo> {
     public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, PluginRepository pluginRepo, TransformFlowService flowService) {
-        super(transformFlowPlanValidator, pluginRepo, flowService, FlowType.TRANSFORM, TransformFlowPlan.class);
+        super(transformFlowPlanValidator, pluginRepo, flowService, FlowType.TRANSFORM);
     }
 }

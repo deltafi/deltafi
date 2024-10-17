@@ -33,10 +33,6 @@ public class ActionGeneratorInput {
     private String paramsPackageName;
     private String fullClassName;
 
-    public ActionGeneratorInput() {
-
-    }
-
     public ActionGeneratorInput(String className, String fullClassName) {
         this.className = className;
         this.fullClassName = fullClassName;

@@ -22,11 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+@Getter
 @Service
 @Slf4j
 public class IdentityService {
 
-    @Getter
     private final String uniqueId;
 
     public IdentityService(@Value("${UNIQUE_ID:}") String uniqueId) {

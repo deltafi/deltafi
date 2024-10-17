@@ -76,7 +76,7 @@ public abstract class ActionTest {
                 return new ActionContent(content, contentStorageService);
             }
             catch(Throwable t) {
-                log.error("Error loading content " + ioContent.getName(), t);
+                log.error("Error loading content {}", ioContent.getName(), t);
                 return null;
             }
         }).toList();
@@ -123,7 +123,7 @@ public abstract class ActionTest {
                 .build();
     }
 
-    protected void beforeExecuteAction(DeltaFileMessage deltaFileMessage, TestCaseBase<?> testCase) {
+    protected void beforeExecuteAction(DeltaFileMessage ignored, TestCaseBase<?> ignored2) {
     }
 
     protected ResultType callAction(TestCaseBase<?> testCase) {

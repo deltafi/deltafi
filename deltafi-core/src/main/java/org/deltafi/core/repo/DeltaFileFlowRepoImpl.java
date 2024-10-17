@@ -246,6 +246,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         """;
 
         Query query = entityManager.createNativeQuery(queryStr);
+        @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
 
         return results.stream()

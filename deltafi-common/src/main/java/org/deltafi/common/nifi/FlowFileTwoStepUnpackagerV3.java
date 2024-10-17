@@ -34,7 +34,7 @@ public class FlowFileTwoStepUnpackagerV3 implements FlowFileTwoStepUnpackager {
     private final byte[] readBuffer = new byte[8192];
 
     @Override
-    public boolean hasMoreData() throws IOException {
+    public boolean hasMoreData() {
         return nextHeader != null || !haveReadSomething;
     }
 

@@ -29,9 +29,9 @@ import java.util.Map;
 /**
  * A Result that may include changes to annotations
  */
+@Getter
 @EqualsAndHashCode(callSuper = true)
 public abstract class AnnotationsResult<T extends Result<T>> extends Result<T> {
-    @Getter
     protected final Map<String, String> annotations = new HashMap<>();
 
     public AnnotationsResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {

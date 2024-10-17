@@ -32,9 +32,6 @@ public class EgressFlowSnapshot extends FlowSnapshot implements HasExpectedAnnot
 
     private Set<String> expectedAnnotations = new HashSet<>();
 
-
-    public EgressFlowSnapshot() {}
-
     public EgressFlowSnapshot(String name) {
         super(name);
     }

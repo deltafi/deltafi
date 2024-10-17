@@ -39,7 +39,7 @@ import java.util.Objects;
 
 @Slf4j
 public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction<P> {
-    protected HttpService httpService;
+    protected final HttpService httpService;
 
     public HttpEgressBase(String description, HttpService httpService) {
         super(description);

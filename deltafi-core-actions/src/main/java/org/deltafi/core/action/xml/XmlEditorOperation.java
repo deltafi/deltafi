@@ -18,6 +18,9 @@
 package org.deltafi.core.action.xml;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Defines a generic operation for editing XML.
  *
@@ -36,6 +39,8 @@ package org.deltafi.core.action.xml;
  * necessary to support the required operation.</p>
  *
  */
+@Getter
+@Setter
 public abstract class XmlEditorOperation {
 
     public enum OperationType {
@@ -45,7 +50,7 @@ public abstract class XmlEditorOperation {
 
         public final String label;
 
-        private OperationType(String label) {
+        OperationType(String label) {
             this.label = label;
         }
     }
@@ -68,13 +73,4 @@ public abstract class XmlEditorOperation {
     public XmlEditorOperation(OperationType operationType) {
         this.operationType = operationType;
     }
-
-    public OperationType getOperationType() {
-        return operationType;
-    }
-
-    public void setOperationType(OperationType operationType) {
-        this.operationType = operationType;
-    }
-
 }

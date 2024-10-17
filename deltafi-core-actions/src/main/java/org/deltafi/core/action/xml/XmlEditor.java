@@ -389,22 +389,20 @@ public class XmlEditor extends TransformAction<XmlEditorParameters> {
             throw new XmlCommandExpressionParseException("Command expression was empty");
         }
 
-        List<String> expressionList;
-
         NextExpressionElement nextExpressionElement = getNextExpressionElement(expressionString);
 
         String command = nextExpressionElement.next();
         String remainder = nextExpressionElement.remainder();
 
         return switch (command) {
-            case COMMAND_RENAME_TAG          -> expressionList = parseRenameTag(remainder);
-            case COMMAND_REMOVE_TAG          -> expressionList = parseRemoveTag(remainder);
-            case COMMAND_REPLACE_TAG         -> expressionList = parseReplaceTag(remainder);
-            case COMMAND_REPLACE_TAG_CONTENT -> expressionList = parseReplaceTagContent(remainder);
-            case COMMAND_APPEND_CHILD        -> expressionList = parseAppendChild(remainder);
-            case COMMAND_PREPEND_CHILD       -> expressionList = parsePrependChild(remainder);
-            case COMMAND_FILTER_ON_TAG       -> expressionList = parseFilterOnTag(remainder);
-            case COMMAND_ERROR_ON_TAG        -> expressionList = parseErrorOnTag(remainder);
+            case COMMAND_RENAME_TAG          -> parseRenameTag(remainder);
+            case COMMAND_REMOVE_TAG          -> parseRemoveTag(remainder);
+            case COMMAND_REPLACE_TAG         -> parseReplaceTag(remainder);
+            case COMMAND_REPLACE_TAG_CONTENT -> parseReplaceTagContent(remainder);
+            case COMMAND_APPEND_CHILD        -> parseAppendChild(remainder);
+            case COMMAND_PREPEND_CHILD       -> parsePrependChild(remainder);
+            case COMMAND_FILTER_ON_TAG       -> parseFilterOnTag(remainder);
+            case COMMAND_ERROR_ON_TAG        -> parseErrorOnTag(remainder);
             default -> throw new XmlCommandExpressionParseException("Command expression with command '" + command
                     + "' was not recognized", -1, command, -1);
         };

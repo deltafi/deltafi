@@ -48,12 +48,12 @@ public class QueueManagementService {
     @Getter
     private final ConcurrentHashMap<String, Long> allQueues = new ConcurrentHashMap<>();
 
-    CoreEventQueue coreEventQueue;
-    DeltaFileFlowRepo deltaFileFlowRepo;
-    UnifiedFlowService unifiedFlowService;
-    DeltaFilesService deltaFilesService;
-    DeltaFiPropertiesService deltaFiPropertiesService;
-    Environment env;
+    final CoreEventQueue coreEventQueue;
+    final DeltaFileFlowRepo deltaFileFlowRepo;
+    final UnifiedFlowService unifiedFlowService;
+    final DeltaFilesService deltaFilesService;
+    final DeltaFiPropertiesService deltaFiPropertiesService;
+    final Environment env;
 
     public QueueManagementService(CoreEventQueue coreEventQueue,
                                   DeltaFileFlowRepo deltaFileFlowRepo,

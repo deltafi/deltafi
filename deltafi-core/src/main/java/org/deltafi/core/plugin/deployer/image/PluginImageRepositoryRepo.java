@@ -31,7 +31,7 @@ public interface PluginImageRepositoryRepo extends JpaRepository<PluginImageRepo
 
     @Query(value = """
            SELECT EXISTS(
-               SELECT 1 
+               SELECT 1
                FROM plugin_image_repository, jsonb_array_elements_text(plugin_group_ids) AS group_id
                WHERE image_repository_base != :base 
                AND group_id = ANY(string_to_array(:groupIds, ','))

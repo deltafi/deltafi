@@ -18,6 +18,9 @@
 package org.deltafi.core.action.xml;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Defines an exception resulting from the failure of configuring an XML "modify" operation.
  *
@@ -29,6 +32,8 @@ package org.deltafi.core.action.xml;
  *     <li>index:  The index in the list of the failing transform operation, or -1 if not set.</li>
  * </ul>
  */
+@Getter
+@Setter
 public class XmlModifyOperationConfigurationException extends RuntimeException {
 
     int index;
@@ -74,15 +79,7 @@ public class XmlModifyOperationConfigurationException extends RuntimeException {
     /**
      * Initializes the member variables to default uninitialized values.
      */
-    private void init( ) {
+    private void init() {
         this.index = -1;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return this.index;
     }
 }

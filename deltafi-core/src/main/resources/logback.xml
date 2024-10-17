@@ -3,7 +3,7 @@
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
-                <mdc></mdc>
+                <mdc/>
                 <pattern>
                     <pattern>
                         {

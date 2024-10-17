@@ -210,6 +210,7 @@ public class JavaPluginGenerator {
 
     void addFileToArchive(String fullPath, byte[] content, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         ZipArchiveEntry zipArchiveEntry = new ZipArchiveEntry(fullPath);
+        //noinspection OctalInteger
         zipArchiveEntry.setUnixMode(UnixStat.FILE_FLAG | (fullPath.endsWith("gradlew") ? 0755 : UnixStat.DEFAULT_FILE_PERM));
         archiveOutputStream.putArchiveEntry(zipArchiveEntry);
         archiveOutputStream.write(content);

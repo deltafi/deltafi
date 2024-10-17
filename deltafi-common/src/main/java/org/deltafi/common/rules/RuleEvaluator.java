@@ -96,9 +96,7 @@ public class RuleEvaluator {
      * Holds a copy of the DeltaFileFlow metadata and content list to prevent
      * SpEL expressions from modifying the original DeltaFile
      */
-    public static class ImmutableDeltaFileFlow {
-        final public Map<String, String> metadata;
-        final public List<Content> content;
+    public record ImmutableDeltaFileFlow(Map<String, String> metadata, List<Content> content) {
         public ImmutableDeltaFileFlow(Map<String, String> metadata, List<Content> content) {
             this.metadata = Collections.unmodifiableMap(metadata);
             this.content = content.stream().map(Content::copy).toList();
@@ -106,6 +104,7 @@ public class RuleEvaluator {
 
         /**
          * Helper that can be used to check if DeltaFile contains content with the given mediaType
+         *
          * @param mediaType to find in the list of content
          * @return true if there is a content with the given mediaType
          */

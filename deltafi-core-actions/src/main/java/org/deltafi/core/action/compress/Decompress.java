@@ -249,7 +249,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     }
 
 
-    private DetectedFormatData detectFormat(InputStream contentInputStream) throws ArchiveException, IOException {
+    private DetectedFormatData detectFormat(InputStream contentInputStream) throws ArchiveException {
         // Wrap in a BufferedInputStream (supporting mark/reset) so the type can be detected.
         BufferedInputStream bufferedContentInputStream = new BufferedInputStream(contentInputStream);
         try {
@@ -418,7 +418,6 @@ public class Decompress extends TransformAction<DecompressParameters> {
         try (compressorInputStream) {
             String withoutSuffix = stripSuffix(content.getName());
             String newContentName = lineage.add(withoutSuffix, "", content.getName());
-
 
             result.saveContent(compressorInputStream, withoutSuffix, MediaType.APPLICATION_OCTET_STREAM);
         }

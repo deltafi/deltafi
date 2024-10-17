@@ -95,10 +95,6 @@ public class ErrorCountService {
         return null;
     }
 
-    public boolean flowErrorsExceeded(FlowType flowType, String flow) {
-        return exceededFlowErrors.containsKey(new FlowKey(flowType, flow));
-    }
-
     public void checkErrorsExceeded(FlowType flowType, String flow) throws IngressUnavailableException {
         String errorMessage = exceededFlowErrors.get(new FlowKey(flowType, flow));
         if (errorMessage != null) {
@@ -110,10 +106,5 @@ public class ErrorCountService {
         return errorCounts.getOrDefault(new FlowKey(flowType, flow), 0);
     }
 
-    @AllArgsConstructor
-    @EqualsAndHashCode
-    private static class FlowKey {
-        final FlowType flowType;
-        final String flowName;
-    }
+    private record FlowKey(FlowType flowType, String flowName) {}
 }

@@ -490,7 +490,6 @@ public class FlowPlanDatafetcher {
         actionFamilyMap.put(ActionType.INGRESS, INGRESS_FAMILY);
         egressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         transformFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
-        restDataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         timedDataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         return actionFamilyMap.values();
     }

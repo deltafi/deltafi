@@ -130,7 +130,7 @@ class TransformAction(Action, ABC):
         return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
 
     def execute_join_action(self, event):
-        if (isinstance(self, Join)):
+        if isinstance(self, Join):
             return self.execute(
                 event.context,
                 self.join([self.build_input(event.context, delta_file_message)

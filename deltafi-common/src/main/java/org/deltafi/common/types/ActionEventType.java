@@ -23,6 +23,5 @@ public enum ActionEventType {
   EGRESS,
   ERROR,
   FILTER,
-  PUBLISH,
   UNKNOWN
 }

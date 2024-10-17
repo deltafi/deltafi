@@ -18,6 +18,9 @@
 package org.deltafi.core.action.xml;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Defines an exception resulting from the parse failure of a command expression.
  *
@@ -29,6 +32,8 @@ package org.deltafi.core.action.xml;
  *     not set.</li>
  * </ul>
  */
+@Getter
+@Setter
 public class XmlCommandExpressionParseException extends RuntimeException {
 
     int index;
@@ -97,33 +102,9 @@ public class XmlCommandExpressionParseException extends RuntimeException {
     /**
      * Initializes the member variables to default uninitialized values.
      */
-    private void init( ) {
+    private void init() {
         this.index = -1;
         this.commandExpression = null;
         this.argIndex = -1;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return this.index;
-    }
-
-    public void setArgIndex(int argIndex) {
-        this.argIndex = argIndex;
-    }
-
-    public int getArgIndex() {
-        return this.argIndex;
-    }
-
-    public void setCommandExpression(String commandExpression) {
-        this.commandExpression = commandExpression;
-    }
-
-    public String getCommandExpression() {
-        return(this.commandExpression);
     }
 }

@@ -53,7 +53,7 @@ public class DeleteScheduler {
         } catch (Throwable t) {
             StringWriter stackWriter = new StringWriter();
             t.printStackTrace(new PrintWriter(stackWriter));
-            log.error("Unexpected exception while executing scheduled deletes:\n" + t.getMessage() + "\n" + stackWriter, t);
+            log.error("Unexpected exception while executing scheduled deletes:\n{}\n{}", t.getMessage(), stackWriter, t);
         }
     }
 }

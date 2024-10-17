@@ -66,7 +66,7 @@ public class DurationScalar implements Coercing<Duration, String> {
 
     @NotNull
     @Override
-    public Value valueToLiteral(@NotNull Object input) {
+    public Value<?> valueToLiteral(@NotNull Object input) {
         if (input instanceof Duration) {
             return StringValue.of(((Duration) input).toString());
         } else {

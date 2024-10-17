@@ -67,7 +67,7 @@ class RuleEvaluatorTest {
         //
         ruleEvaluator.doEvaluateCondition("content[0].setName('c')", deltaFile);
         Assertions.assertThat(originalContent.getFirst().getName()).isEqualTo("test.txt");
-        Assertions.assertThat(deltaFile.content.getFirst().getName()).isEqualTo("c");
+        Assertions.assertThat(deltaFile.content().getFirst().getName()).isEqualTo("c");
     }
 
     private Map<String, String> testMetadata() {

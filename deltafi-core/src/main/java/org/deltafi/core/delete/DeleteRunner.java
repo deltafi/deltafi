@@ -68,7 +68,7 @@ public class DeleteRunner {
             }
 
         }
-        log.debug("Preparing to execute " + policies.size());
+        log.debug("Preparing to execute {}", policies.size());
         return policies;
     }
 

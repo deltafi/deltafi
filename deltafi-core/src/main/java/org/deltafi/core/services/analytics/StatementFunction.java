@@ -17,9 +17,8 @@
  */
 package org.deltafi.core.services.analytics;
 
-import java.sql.SQLException;
 import java.sql.Statement;
 
 public interface StatementFunction {
-    void apply(Statement statement) throws SQLException;
+    void apply(Statement statement);
 }

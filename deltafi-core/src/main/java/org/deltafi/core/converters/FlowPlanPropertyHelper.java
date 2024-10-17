@@ -19,7 +19,6 @@ package org.deltafi.core.converters;
 
 import lombok.Getter;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.generated.types.FlowConfigError;
@@ -62,29 +61,6 @@ public class FlowPlanPropertyHelper {
         actionConfiguration.setParameters(maskedDelegate().orElse(this).replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
 
         actionConfiguration.setJoin(actionTemplate.getJoin());
-    }
-
-    public List<String> replaceListOfPlaceholders(List<String> values, String inActionNamed) {
-        return nonNull(values) ? values.stream()
-                .map(value -> this.replaceValueAsString(value, inActionNamed))
-                .toList() : Collections.emptyList();
-    }
-
-    public List<KeyValue> replaceKeyValuePlaceholders(List<KeyValue> keyValues, String inActionNamed) {
-        return nonNull(keyValues) ? keyValues.stream()
-                .map(keyValue -> this.replaceKeyValuePlaceholders(keyValue, inActionNamed))
-                .toList() : Collections.emptyList();
-    }
-
-    public KeyValue replaceKeyValuePlaceholders(KeyValue keyValue, String inActionNamed) {
-        if (Objects.isNull(keyValue)) {
-            return null;
-        }
-
-        KeyValue resolvedKeyValue = new KeyValue();
-        resolvedKeyValue.setKey(replaceValueAsString(keyValue.getKey(), inActionNamed));
-        resolvedKeyValue.setValue(replaceValueAsString(keyValue.getValue(), inActionNamed));
-        return resolvedKeyValue;
     }
 
     public Map<String, Object> replaceMapPlaceholders(Map<String, Object> params, String inActionNamed) {

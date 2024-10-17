@@ -22,12 +22,9 @@ import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.generated.types.ActionFamily;
 
 import java.util.List;
-import java.util.Map;
 
 @Entity
 @DiscriminatorValue("REST_DATA_SOURCE")
@@ -46,11 +43,6 @@ public class RestDataSource extends DataSource {
 
     public RestDataSource() {
         super(FlowType.REST_DATA_SOURCE);
-    }
-
-    @Override
-    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap) {
-        // nothing to do here
     }
 
     @Override

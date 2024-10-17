@@ -17,6 +17,9 @@
  */
 package org.deltafi.actionkit.exception;
 
+import lombok.Getter;
+
+@Getter
 public class MissingMetadataException extends IllegalArgumentException {
     final String key;
 
@@ -24,5 +27,4 @@ public class MissingMetadataException extends IllegalArgumentException {
         this.key = key;
     }
 
-    public String getKey() { return key; }
 }

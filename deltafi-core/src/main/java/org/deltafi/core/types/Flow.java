@@ -100,12 +100,6 @@ public abstract class Flow {
     public abstract List<ActionConfiguration> allActionConfigurations();
 
     /**
-     * Add the action names in this dataSource to the appropriate action family
-     * @param actionFamilyMap map of family type to action families
-     */
-    public abstract void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap);
-
-    /**
      * Add the given action name to an existing ActionFamily or create a
      * new ActionFamily to hold the list of action names for that family
      * @param actionFamilyMap map of family name to list of action names

@@ -379,12 +379,10 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('TopicsRead'" + OR_ADMIN)
     public @interface TopicsRead {}
 
-
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('TopicsWrite'" + OR_ADMIN)
     public @interface TopicsWrite {}
-
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

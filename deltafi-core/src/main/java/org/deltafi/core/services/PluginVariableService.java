@@ -50,10 +50,6 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
                 .orElse(Collections.emptyList());
     }
 
-    public List<PluginVariables> getAll() {
-        return pluginVariableRepo.findAll();
-    }
-
     public void validateAndSaveVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
         List<String> errors = validateVariables(variables);
         if (!errors.isEmpty()) {

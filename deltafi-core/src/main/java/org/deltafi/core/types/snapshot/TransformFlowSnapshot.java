@@ -27,8 +27,6 @@ import org.deltafi.core.types.TransformFlow;
 @EqualsAndHashCode(callSuper = true)
 public class TransformFlowSnapshot extends FlowSnapshot {
 
-    public TransformFlowSnapshot() {}
-
     public TransformFlowSnapshot(String name) {
         super(name);
     }

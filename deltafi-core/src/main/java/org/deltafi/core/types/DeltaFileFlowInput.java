@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.types;
 
-import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,11 +43,4 @@ public class DeltaFileFlowInput {
     Set<String> topics = new LinkedHashSet<>();
     @Builder.Default
     List<Integer> ancestorIds = new ArrayList<>();
-
-    public DeltaFileFlowInput(DeltaFileFlowInput other) {
-        this.metadata = new HashMap<>(other.metadata);
-        this.content = other.content == null ? null : other.content;
-        this.topics = other.topics;
-        this.ancestorIds = new ArrayList<>(other.ancestorIds);
-    }
 }

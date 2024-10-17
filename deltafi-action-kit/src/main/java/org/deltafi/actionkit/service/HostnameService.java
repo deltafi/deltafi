@@ -17,6 +17,7 @@
  */
 package org.deltafi.actionkit.service;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.properties.ActionsProperties;
 
@@ -27,6 +28,7 @@ import java.util.Map;
 /**
  * Service object that provides access to the local hostname
  */
+@Getter
 @Slf4j
 public class HostnameService {
 
@@ -42,13 +44,6 @@ public class HostnameService {
         } else {
             this.hostname = detectHostname();
         }
-    }
-
-    /**
-     * @return the local hostname where an action is running
-     */
-    public String getHostname() {
-        return hostname;
     }
 
     private String detectHostname() {

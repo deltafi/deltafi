@@ -29,6 +29,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class TimedDataSourcePlanService extends FlowPlanService<TimedDataSourcePlan, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
     public TimedDataSourcePlanService(TimedDataSourcePlanValidator dataSourcePlanValidator, PluginRepository pluginRepo, TimedDataSourceService flowService) {
-        super(dataSourcePlanValidator, pluginRepo, flowService, FlowType.TIMED_DATA_SOURCE, TimedDataSourcePlan.class);
+        super(dataSourcePlanValidator, pluginRepo, flowService, FlowType.TIMED_DATA_SOURCE);
     }
 }

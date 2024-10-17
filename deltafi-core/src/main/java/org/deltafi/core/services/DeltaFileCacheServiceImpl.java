@@ -38,15 +38,13 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     private final Map<UUID, DeltaFile> deltaFileCache;
     final DeltaFiPropertiesService deltaFiPropertiesService;
     final DidMutexService didMutexService;
-    final IdentityService identityService;
     final Clock clock;
 
-    public DeltaFileCacheServiceImpl(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService, DidMutexService didMutexService, IdentityService identityService, Clock clock) {
+    public DeltaFileCacheServiceImpl(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService, DidMutexService didMutexService, Clock clock) {
         super(deltaFileRepo);
         this.deltaFileCache = new ConcurrentHashMap<>();
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.didMutexService = didMutexService;
-        this.identityService = identityService;
         this.clock = clock;
     }
 

@@ -75,7 +75,7 @@ public class StorageConfigurationService {
         if (!bucketExists(bucketName)) {
             try {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
-                log.info("Created the bucket: " + bucketName);
+                log.info("Created the bucket: {}", bucketName);
             } catch (Exception e) {
                 log.error("Unable to create bucket");
                 throw new ObjectStorageException("Unable to create bucket", e);
@@ -99,7 +99,7 @@ public class StorageConfigurationService {
                     .bucket(bucketName)
                     .config(buildLifeCycleConfig()).build());
             expirationDayCache = getAgeOffDays();
-            log.info("Set bucket age-off days: " + getAgeOffDays());
+            log.info("Set bucket age-off days: {}", getAgeOffDays());
         } catch (Exception e) {
             log.error("Unable to set bucket lifecycle");
             throw new ObjectStorageException("Unable to set bucket lifecycle", e);

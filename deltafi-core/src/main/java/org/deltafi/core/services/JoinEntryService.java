@@ -103,10 +103,6 @@ public class JoinEntryService {
         return joinEntryRepo.unlockBefore(lockDate);
     }
 
-    public List<JoinEntry> findJoinEntriesByJoinDate() {
-        return joinEntryRepo.findAllByOrderByJoinDate();
-    }
-
     public List<UUID> findJoinedDids(UUID joinEntryId) {
         return joinEntryDidRepo.findByJoinEntryId(joinEntryId).stream().map(JoinEntryDid::getDid).toList();
     }

@@ -17,10 +17,6 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowPlan;
@@ -40,17 +36,10 @@ import java.util.*;
 @AllArgsConstructor
 @Slf4j
 public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements Snapshotter {
-
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .setSerializationInclusion(JsonInclude.Include.ALWAYS);
-
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
     private final PluginRepository pluginRepo;
     private final FlowService<FlowPlanT, FlowT, FlowSnapshotT, FlowRepoT> flowService;
     private FlowType flowType;
-    Class<FlowPlanT> flowPlanClass;
 
     public List<String> validateFlowPlans(List<FlowPlanT> flowPlans, List<FlowPlan> existingFlowPlans) {
         List<String> errors = new ArrayList<>();

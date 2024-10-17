@@ -77,7 +77,7 @@ public class XmlScreenOperationConfigurationException extends RuntimeException {
     /**
      * Initializes the member variables to default uninitialized values.
      */
-    private void init( ) {
+    private void init() {
         this.index = -1;
         this.argIndex = -1;
     }

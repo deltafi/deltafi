@@ -52,8 +52,6 @@ import static org.deltafi.common.types.ActionState.*;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
-    public static final String FILTERED = "filtered";
-
     // a magic number known by the GUI that says there are "many" total results
     private static final int MANY_RESULTS = 10_000;
 

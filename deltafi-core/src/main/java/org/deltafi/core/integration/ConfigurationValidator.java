@@ -101,7 +101,7 @@ public class ConfigurationValidator {
 
         List<String> errors = new ArrayList<>();
         for (Input input : config.getInputs()) {
-            input.validate(config.getDataSources());
+            errors.addAll(input.validate(config.getDataSources()));
         }
         return errors;
     }

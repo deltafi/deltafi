@@ -76,8 +76,7 @@ public class IngressService {
 
     public List<IngressResult> ingress(String flow, String filename, String contentType, String username,
             String headerMetadataString, InputStream dataStream, OffsetDateTime created) throws IngressMetadataException,
-            ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException,
-            InterruptedException {
+            ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException {
         if (!deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled()) {
             log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename, contentType, username,
                     "Ingress disabled for this instance of DeltaFi");
