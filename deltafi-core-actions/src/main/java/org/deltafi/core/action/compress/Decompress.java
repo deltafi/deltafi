@@ -419,7 +419,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
             String withoutSuffix = stripSuffix(content.getName());
             String newContentName = lineage.add(withoutSuffix, "", content.getName());
 
-            result.saveContent(compressorInputStream, withoutSuffix, MediaType.APPLICATION_OCTET_STREAM);
+            result.saveContent(compressorInputStream, newContentName, MediaType.APPLICATION_OCTET_STREAM);
         }
     }
 
