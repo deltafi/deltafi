@@ -53,7 +53,7 @@ public class ResumePolicyDatafetcherTestHelper {
     public static final boolean RANDOM = false;
 
     public static Result applyResumePolicies(DgsQueryExecutor dgsQueryExecutor, List<String> names) {
-        ApplyResumePoliciesProjectionRoot projection = new ApplyResumePoliciesProjectionRoot()
+        ApplyResumePoliciesProjectionRoot projection = new ApplyResumePoliciesProjectionRoot<>()
                 .success()
                 .info()
                 .errors();
@@ -70,7 +70,7 @@ public class ResumePolicyDatafetcherTestHelper {
     }
 
     public static Result resumePolicyDryRun(DgsQueryExecutor dgsQueryExecutor, String name, String dataSource, String errorSubstring) {
-        ResumePolicyDryRunProjectionRoot projection = new ResumePolicyDryRunProjectionRoot()
+        ResumePolicyDryRunProjectionRoot projection = new ResumePolicyDryRunProjectionRoot<>()
                 .success()
                 .info()
                 .errors();
@@ -89,7 +89,7 @@ public class ResumePolicyDatafetcherTestHelper {
     }
 
     public static List<ResumePolicy> getAllResumePolicies(DgsQueryExecutor dgsQueryExecutor) {
-        GetAllResumePoliciesProjectionRoot projection = new GetAllResumePoliciesProjectionRoot()
+        GetAllResumePoliciesProjectionRoot projection = new GetAllResumePoliciesProjectionRoot<>()
                 .id()
                 .name()
                 .errorSubstring()
@@ -120,7 +120,7 @@ public class ResumePolicyDatafetcherTestHelper {
     }
 
     public static ResumePolicy getResumePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
-        GetResumePolicyProjectionRoot projection = new GetResumePolicyProjectionRoot()
+        GetResumePolicyProjectionRoot projection = new GetResumePolicyProjectionRoot<>()
                 .id()
                 .name()
                 .errorSubstring()
@@ -228,7 +228,7 @@ public class ResumePolicyDatafetcherTestHelper {
 
     static private List<Result> executeLoadPolicies(DgsQueryExecutor dgsQueryExecutor, boolean replaceAll, List<ResumePolicyInput> policies) {
         LoadResumePoliciesGraphQLQuery query = LoadResumePoliciesGraphQLQuery.newRequest().replaceAll(replaceAll).policies(policies).build();
-        LoadResumePoliciesProjectionRoot projection = new LoadResumePoliciesProjectionRoot()
+        LoadResumePoliciesProjectionRoot projection = new LoadResumePoliciesProjectionRoot<>()
                 .success()
                 .errors();
 
@@ -247,7 +247,7 @@ public class ResumePolicyDatafetcherTestHelper {
         RemoveResumePolicyGraphQLQuery query = RemoveResumePolicyGraphQLQuery.newRequest().id(id).build();
 
         // the projection root is @NotNull, pass it a dummy since removeResumePolicy doesn't have a projection root
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new LoadResumePoliciesProjectionRoot(), SCALARS);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new LoadResumePoliciesProjectionRoot<>(), SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -258,7 +258,7 @@ public class ResumePolicyDatafetcherTestHelper {
         ResumePolicyInput input = makeResumePolicy(POLICY_NAME3, ERROR_SUBSTRING, DATA_SOURCE3, ACTION3, ACTION_TYPE, MAX_ATTEMPTS, 2 * DELAY);
         input.setId(id);
 
-        UpdateResumePolicyProjectionRoot projection = new UpdateResumePolicyProjectionRoot()
+        UpdateResumePolicyProjectionRoot projection = new UpdateResumePolicyProjectionRoot<>()
                 .success()
                 .errors();
 

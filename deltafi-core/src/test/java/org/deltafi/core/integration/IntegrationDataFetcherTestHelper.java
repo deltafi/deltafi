@@ -27,7 +27,7 @@ import java.util.List;
 
 public class IntegrationDataFetcherTestHelper {
 
-    private static final GetAllIntegrationTestsProjectionRoot GET_ALL_PROJECTION = new GetAllIntegrationTestsProjectionRoot()
+    private static final GetAllIntegrationTestsProjectionRoot GET_ALL_PROJECTION = new GetAllIntegrationTestsProjectionRoot<>()
             .id()
             .description()
             .start()
@@ -36,7 +36,7 @@ public class IntegrationDataFetcherTestHelper {
             .status()
             .parent();
 
-    private static final GetIntegrationTestProjectionRoot GET_UNT_TEST_PROJECTION = new GetIntegrationTestProjectionRoot()
+    private static final GetIntegrationTestProjectionRoot GET_UNT_TEST_PROJECTION = new GetIntegrationTestProjectionRoot<>()
             .id()
             .description()
             .start()
@@ -45,7 +45,7 @@ public class IntegrationDataFetcherTestHelper {
             .status()
             .parent();
 
-    private static final LaunchIntegrationTestProjectionRoot LAUNCH_INT_TEST_PROJECTION = new LaunchIntegrationTestProjectionRoot()
+    private static final LaunchIntegrationTestProjectionRoot LAUNCH_INT_TEST_PROJECTION = new LaunchIntegrationTestProjectionRoot<>()
             .id()
             .description()
             .start()
