@@ -92,7 +92,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                          FROM delta_file_flows dff
                          WHERE dff.delta_file_id = df.did
                          AND dff.state = 'IN_FLIGHT'
-                         AND dff.modified < :requeueThreshold
                          AND dff.cold_queued = false
         """);
 
@@ -766,28 +765,18 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return;
         }
 
-        jdbcTemplate.execute("DROP TABLE IF EXISTS temp_dids");
-        jdbcTemplate.execute("CREATE TEMPORARY TABLE temp_dids (did UUID PRIMARY KEY) ON COMMIT DROP");
-
-        jdbcTemplate.batchUpdate(
-                "INSERT INTO temp_dids (did) VALUES (?)",
-                dids,
-                1000,
-                (ps, did) -> ps.setObject(1, did)
-        );
-
         String sql = """
-            UPDATE delta_files df
+            UPDATE delta_files
             SET content_deleted = :now,
                 content_deleted_reason = :reason,
                 content_deletable = false
-            FROM temp_dids td
-            WHERE df.did = td.did
+            WHERE did IN (:dids)
         """;
 
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("now", now);
         query.setParameter("reason", reason);
+        query.setParameter("dids", dids);
         query.executeUpdate();
     }
 
