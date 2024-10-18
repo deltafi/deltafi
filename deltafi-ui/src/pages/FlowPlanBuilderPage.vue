@@ -607,6 +607,26 @@ const addAction = async (flowActionType, action) => {
   connectActions(flowActionType);
 };
 
+const transFormActionsChanged = () => {
+  // Get all the keys from both original and rawOutput
+  let allKeys = _.union(_.keys(originalFlowPlan.value), _.keys(rawOutput.value));
+
+  // Detect changes and deletions
+  let changedFlowValues = _.omitBy(_.pick(rawOutput.value, allKeys), function (v, k) {
+    return JSON.stringify(originalFlowPlan.value[k]) === JSON.stringify(v);
+  });
+
+  // Detect deletions (keys present in originalFlowPlan but missing in rawOutput)
+  let deletedKeys = _.difference(_.keys(originalFlowPlan.value), _.keys(rawOutput.value));
+
+  // If there are no changes or deletions, return false
+  if (_.isEmpty(changedFlowValues) && _.isEmpty(deletedKeys)) {
+    return false;
+  } else {
+    return true;
+  }
+};
+
 // Validates all parts of the Flow Plan. If invalid it disables the save button.
 const isValidFlow = computed(() => {
   // If the Flow Plans Raw Dialog or the Schema is visible disable the save
@@ -616,12 +636,8 @@ const isValidFlow = computed(() => {
 
   // If we are editing an existing flow and we haven't made any changes disable the save
   if (!_.isEmpty(originalFlowPlan.value)) {
-    // Remove any value that have not changed from the original defaultQueryParamsTemplate value it was set at
-    let changedFlowValues = _.omitBy(rawOutput.value, function (v, k) {
-      return JSON.stringify(originalFlowPlan.value[k]) === JSON.stringify(v);
-    });
-
-    if (_.isEmpty(changedFlowValues)) {
+    // If there are no changes or deletions, return false
+    if (!transFormActionsChanged()) {
       return false;
     }
   }
@@ -654,16 +670,7 @@ const isValidFlow = computed(() => {
 const flowPlanInProgress = () => {
   // If the flow plan is being edited and a value is changed return true that the flow plan should be saved
   if (!_.isEmpty(originalFlowPlan.value)) {
-    // Remove any value that have not changed from the original defaultQueryParamsTemplate value it was set at
-    let changedFlowValues = _.omitBy(rawOutput.value, function (v, k) {
-      return JSON.stringify(originalFlowPlan.value[k]) === JSON.stringify(v);
-    });
-
-    if (_.isEmpty(changedFlowValues)) {
-      return false;
-    } else {
-      return true;
-    }
+    return transFormActionsChanged();
   }
 
   return model.value.active;
