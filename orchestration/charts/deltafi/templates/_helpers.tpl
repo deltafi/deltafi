@@ -42,7 +42,16 @@ startupProbe:
     command: ["/probe.sh"]
   periodSeconds: 3
   timeoutSeconds: 10
-  failureThreshold: 30
+  failureThreshold: 100
+{{- end -}}
+
+{{- define "relaxedStartupProbe" -}}
+startupProbe:
+  exec:
+    command: ["/probe.sh"]
+  periodSeconds: 5
+  timeoutSeconds: 10
+  failureThreshold: 5000
 {{- end -}}
 
 {{- define "defaultReadinessProbe" -}}

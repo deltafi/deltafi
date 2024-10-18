@@ -39,7 +39,7 @@ spec:
         {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080
-        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "relaxedStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
         volumeMounts:

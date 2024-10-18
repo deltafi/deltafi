@@ -6,6 +6,14 @@ x-health-probe: &health-probe
     start_period: 5s
     retries: 15
 
+x-relaxed-health-probe: &relaxed-health-probe
+  healthcheck:
+    test: /probe.sh
+    interval: 15s
+    timeout: 30s
+    start_period: 5s
+    retries: 5000
+
 x-logging-label: &logging-label
   logging: "promtail"
   logging_jobname: "containerlogs"
@@ -37,7 +45,7 @@ services:
       - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
       - ${SECRETS_DIR}/ssl.env
-    <<: *health-probe
+    <<: *relaxed-health-probe
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
