@@ -804,8 +804,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Transactional
     public void insertOne(DeltaFile deltaFile) {
         jdbcTemplate.execute((Connection connection) -> {
-            connection.setAutoCommit(false);
-
             try (PreparedStatement psDeltaFile = connection.prepareStatement(INSERT_DELTA_FILES);
                  PreparedStatement psDeltaFileFlow = connection.prepareStatement(INSERT_DELTA_FILE_FLOWS);
                  PreparedStatement psAnnotation = connection.prepareStatement(INSERT_ANNOTATIONS)) {
@@ -827,13 +825,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     psAnnotation.executeBatch();
                 }
 
-                connection.commit();
+                return null;
             } catch (SQLException e) {
-                connection.rollback();
                 throw new RuntimeException("Error inserting DeltaFile: %s".formatted(e.getMessage()), e);
             }
-
-            return null;
         });
     }
 
