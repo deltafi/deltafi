@@ -109,7 +109,7 @@
       </div>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
-    <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon style="width: 25%">
+    <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" :dismissable="false" show-close-icon style="width: 25%">
       <Tree
         ref="actionsTreeRef"
         v-model:expandedKeys="expandedKeys"
@@ -132,10 +132,10 @@
                   <i :class="actionTemplateClass(element)" @click="addAction(flowActionTypeGroup, element)"></i>
                   <div>{{ element.displayName }}</div>
                 </div>
-                <div v-if="element.coordinateGrouping.startsWith('org.deltafi.core.action')">
-                  <a :href="'/docs#/core-actions/' + element.coordinateGrouping + '.' + element.displayName" target="_blank" class="align-middle">
-                    <i class="pi pi-question-circle text-muted" />
-                  </a>
+                <div v-if="element.docsMarkdown">
+                  <button class="p-panel-header-icon p-link help-button" @click="showHelp(element)">
+                    <span class="pi pi-question-circle text-muted"></span>
+                  </button>
                 </div>
               </div>
             </template>
@@ -143,6 +143,9 @@
         </template>
       </Tree>
     </OverlayPanel>
+    <Dialog v-model:visible="helpVisible" class="help-dialog" modal :style="{ width: '60vw' }" :breakpoints="{ '1400px': '80vw', '1000px': '90vw' }" :header="helpHeader" dismissable-mask @hide="hideHelp">
+      <div v-html="markdownIt.render(helpMarkdown)" />
+    </Dialog>
     <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Flow Plan" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-flow-plan="createFlowPlan">
       <span id="CreateFlowPlan" />
     </DialogTemplate>
@@ -180,6 +183,14 @@ import useTopics from "@/composables/useTopics";
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
 import { createAjv } from "@jsonforms/core";
+
+import MarkdownIt from "markdown-it";
+const markdownIt = new MarkdownIt({
+  html: true
+});
+const helpMarkdown = ref("");
+const helpVisible = ref(false);
+const helpHeader = ref("Action Help");
 
 const handleDefaultsAjv = createAjv({ useDefaults: true });
 
@@ -295,6 +306,16 @@ const viewActionTreeMenu = (event, flowActionType) => {
   // The actionsTree is the value used to dynamically provide the array of actions for each flowActionType.
   actionsTree.value = actionTypesTree.value[flowActionType];
   actionsOverlayPanel.value.toggle(event);
+};
+
+const showHelp = (action) => {
+  helpMarkdown.value = action.docsMarkdown;
+  helpHeader.value = `${action.displayName} Action Help`;
+  helpVisible.value = true;
+};
+
+const hideHelp = () => {
+  helpVisible.value = false;
 };
 
 const flowTemplate = {
@@ -824,8 +845,8 @@ const actionTypesTree = ref({});
 const flattenedActionsTypes = ref({});
 
 const getLoadedActions = () => {
-  for (const plugins of allActionsData.value) {
-    for (const action of plugins["actions"]) {
+  for (const plugin of allActionsData.value) {
+    for (const action of plugin["actions"]) {
       if (action.type === "TIMED_INGRESS") continue;
 
       // Reformatting each action.

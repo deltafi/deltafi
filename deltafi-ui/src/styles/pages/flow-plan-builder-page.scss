@@ -177,3 +177,42 @@
     color: #3753a9;
   }
 }
+
+.help-button {
+  padding: 1px 4px !important;
+}
+
+.help-dialog {
+  h2 {
+    margin: 2rem 0 1rem 0 !important;
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1.2;
+    border-bottom: 1px solid gray;
+    padding-bottom: 5px;
+  }
+
+  h3 {
+    margin: 2rem 0 1rem 0 !important;
+    font-size: 1.5rem !important;
+    font-weight: 250;
+    line-height: 1.1;
+  }
+
+  table {
+    margin-bottom: 20px;
+  }
+
+  table, th, td {
+    border-collapse: collapse;
+    border: 1px solid black;
+  }
+
+  th, td {
+    padding: 10px;
+  }
+
+  th {
+    background-color: #eee;
+  }
+}

@@ -159,13 +159,25 @@ class Plugin(object):
     def action_name(self, action):
         return f"{self.coordinates.group_id}.{action.__class__.__name__}"
 
+    def _load_action_docs(self, action):
+        docs_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'docs')
+        if not isdir(docs_path):
+            return None
+
+        action_docs_file = join(docs_path, action.__class__.__name__ + '.md')
+        if not isfile(action_docs_file):
+            return None
+
+        return open(action_docs_file).read()
+
     def _action_json(self, action):
         return {
             'name': self.action_name(action),
             'description': action.description,
             'type': action.action_type.name,
             'supportsJoin': isinstance(action, Join),
-            'schema': action.param_class().model_json_schema()
+            'schema': action.param_class().model_json_schema(),
+            'docsMarkdown': self._load_action_docs(action)
         }
 
     def registration_json(self):

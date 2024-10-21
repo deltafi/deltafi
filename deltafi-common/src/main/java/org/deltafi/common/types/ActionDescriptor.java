@@ -34,4 +34,5 @@ public class ActionDescriptor {
   private ActionType type;
   private boolean supportsJoin;
   private Map<String, Object> schema;
+  private String docsMarkdown;
 }

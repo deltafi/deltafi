@@ -72,6 +72,7 @@ type ActionDescriptor {
     type: String!
     supportsJoin: Boolean!
     schema: JSON
+    docsMarkdown: String
 }
 
 input ActionDescriptorInput {

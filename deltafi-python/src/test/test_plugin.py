@@ -148,7 +148,8 @@ def get_expected_json():
                         "a_dict",
                         "a_bool"
                     ]
-                }
+                },
+                "docsMarkdown": None
             }
         ],
         "variables": [

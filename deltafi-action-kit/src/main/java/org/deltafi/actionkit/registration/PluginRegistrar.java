@@ -108,7 +108,28 @@ public class PluginRegistrar {
                 .type(action.getActionType())
                 .supportsJoin(action instanceof Join)
                 .schema(schema)
+                .docsMarkdown(loadActionDocs(action))
                 .build();
+    }
+
+    private String loadActionDocs(Action<?, ?, ?> action) {
+        Resource docsDirectory = applicationContext.getResource("classpath:docs");
+        if (!docsDirectory.exists()) {
+            return null;
+        }
+
+        Resource actionDocResource = applicationContext.getResource(
+                "classpath:docs/" + action.getClassCanonicalName() + ".md");
+        if (!actionDocResource.exists()) {
+            return null;
+        }
+
+        try {
+            return new String(actionDocResource.getInputStream().readAllBytes());
+        } catch (IOException e) {
+            log.warn("Unable to read action documentation", e);
+            return null;
+        }
     }
 
     private List<Variable> loadVariables() {
