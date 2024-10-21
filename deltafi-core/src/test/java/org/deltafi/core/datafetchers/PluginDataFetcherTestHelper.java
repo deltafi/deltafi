@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PluginDataFetcherTestHelper {
 
-    public static final PluginsProjectionRoot PLUGINS_PROJECTION_ROOT = new PluginsProjectionRoot<>()
+    public static final PluginsProjectionRoot PLUGINS_PROJECTION_ROOT = new PluginsProjectionRoot()
             .pluginCoordinates()
             .groupId()
             .artifactId()
@@ -42,7 +42,7 @@ public class PluginDataFetcherTestHelper {
             .artifactId()
             .version().parent();
 
-    public static final UninstallPluginProjectionRoot UNINSTALL_PLUGIN_PROJECTION_ROOT = new UninstallPluginProjectionRoot<>()
+    public static final UninstallPluginProjectionRoot UNINSTALL_PLUGIN_PROJECTION_ROOT = new UninstallPluginProjectionRoot()
             .success()
             .errors();
 

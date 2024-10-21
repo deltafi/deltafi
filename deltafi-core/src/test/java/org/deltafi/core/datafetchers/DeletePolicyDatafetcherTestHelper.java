@@ -61,7 +61,7 @@ public class DeletePolicyDatafetcherTestHelper {
                     .deleteMetadata(false)
                     .build());
 
-    private static final GetDeletePoliciesProjectionRoot<?, ?> projection = new GetDeletePoliciesProjectionRoot<>()
+    private static final GetDeletePoliciesProjectionRoot projection = new GetDeletePoliciesProjectionRoot()
             .id()
             .name()
             .enabled()
@@ -92,14 +92,20 @@ public class DeletePolicyDatafetcherTestHelper {
     }
 
     public static void loadOneDeletePolicy(DgsQueryExecutor dgsQueryExecutor) {
-        executeLoad(dgsQueryExecutor, Collections.emptyList());
+        executeLoad(dgsQueryExecutor, true, Collections.emptyList());
+    }
+
+    public static Result addOnePolicy(DgsQueryExecutor dgsQueryExecutor) {
+        return executeLoad(dgsQueryExecutor, false, Collections.emptyList());
     }
 
     public static Result replaceAllDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
-        return executeLoad(dgsQueryExecutor, TIMED_POLICY_LIST);
+        return executeLoad(dgsQueryExecutor, true, TIMED_POLICY_LIST);
     }
 
-    private static Result executeLoad(DgsQueryExecutor dgsQueryExecutor, List<TimedDeletePolicy> timedPolicies) {
+    private static Result executeLoad(DgsQueryExecutor dgsQueryExecutor,
+                                      boolean replace,
+                                      List<TimedDeletePolicy> timedPolicies) {
 
         DeletePolicies input = DeletePolicies.builder()
                 .diskSpacePolicies(DISK_POLICY_LIST)
@@ -107,11 +113,11 @@ public class DeletePolicyDatafetcherTestHelper {
                 .build();
 
         LoadDeletePoliciesGraphQLQuery query = LoadDeletePoliciesGraphQLQuery.newRequest()
-                .replaceAll(true)
+                .replaceAll(replace)
                 .policies(input)
                 .build();
 
-        LoadDeletePoliciesProjectionRoot<?, ?> projection = new LoadDeletePoliciesProjectionRoot<>()
+        LoadDeletePoliciesProjectionRoot projection = new LoadDeletePoliciesProjectionRoot()
                 .success()
                 .info()
                 .errors();
@@ -130,7 +136,7 @@ public class DeletePolicyDatafetcherTestHelper {
         EnablePolicyGraphQLQuery query = EnablePolicyGraphQLQuery.newRequest()
                 .id(id).enabled(enabled).build();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new UpdateResumePolicyProjectionRoot<>(), SCALARS);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new UpdateResumePolicyProjectionRoot(), SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -140,7 +146,7 @@ public class DeletePolicyDatafetcherTestHelper {
     public static boolean removeDeletePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
         RemoveDeletePolicyGraphQLQuery query = RemoveDeletePolicyGraphQLQuery.newRequest().id(id).build();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new UpdateResumePolicyProjectionRoot<>(), SCALARS);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new UpdateResumePolicyProjectionRoot(), SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -153,7 +159,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 .policyUpdate(input)
                 .build();
 
-        UpdateDiskSpaceDeletePolicyProjectionRoot<?, ?> projection = new UpdateDiskSpaceDeletePolicyProjectionRoot<>()
+        UpdateDiskSpaceDeletePolicyProjectionRoot projection = new UpdateDiskSpaceDeletePolicyProjectionRoot()
                 .success()
                 .errors();
 
@@ -171,7 +177,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 .policyUpdate(input)
                 .build();
 
-        UpdateTimedDeletePolicyProjectionRoot<?, ?> projection = new UpdateTimedDeletePolicyProjectionRoot<>()
+        UpdateTimedDeletePolicyProjectionRoot projection = new UpdateTimedDeletePolicyProjectionRoot()
                 .success()
                 .errors();
 

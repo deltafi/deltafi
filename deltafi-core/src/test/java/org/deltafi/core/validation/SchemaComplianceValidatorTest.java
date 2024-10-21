@@ -67,7 +67,7 @@ class SchemaComplianceValidatorTest {
         FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("egressName");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_ACTION_PARAMETERS);
-        assertThat(error.getMessage()).isEqualTo("$: required property 'url' not found; $: property 'url2' is not defined in the schema and the schema does not allow additional properties");
+        assertThat(error.getMessage()).isEqualTo("$.url: is missing but it is required; $.url2: is not defined in the schema and the schema does not allow additional properties");
     }
 
     @Test
@@ -118,7 +118,7 @@ class SchemaComplianceValidatorTest {
 
         List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(Util.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
-                .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: required property 'url' not found").build());
+                .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.url: is missing but it is required").build());
     }
 
     @Test
@@ -138,7 +138,7 @@ class SchemaComplianceValidatorTest {
 
         List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(Util.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
-                .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: property 'unknownField' is not defined in the schema and the schema does not allow additional properties").build());
+                .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.unknownField: is not defined in the schema and the schema does not allow additional properties").build());
     }
 
     @Test
@@ -150,7 +150,7 @@ class SchemaComplianceValidatorTest {
         List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(Util.egressActionDescriptor(), egressConfig(params));
 
         assertThat(errors).hasSize(1)
-                .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: required property 'url' not found; $: property 'urlTypo' is not defined in the schema and the schema does not allow additional properties").build());
+                .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.url: is missing but it is required; $.urlTypo: is not defined in the schema and the schema does not allow additional properties").build());
     }
 
     Optional<ActionDescriptor> egressActionDescriptorOptional() {

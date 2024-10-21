@@ -42,7 +42,7 @@ public class DeltaFilesDatafetcherTestHelper {
     static final List<Content> CONTENT = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID)));
     public static final IngressEventItem INGRESS_INPUT = new IngressEventItem(DID, FILENAME, REST_DATA_SOURCE_NAME, METADATA, CONTENT);
 
-    public static final DeltaFilesProjectionRoot<?, ?> DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot<>()
+    public static final DeltaFilesProjectionRoot DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot()
             .deltaFiles()
                 .did()
                 .name()
@@ -123,7 +123,7 @@ public class DeltaFilesDatafetcherTestHelper {
             .count()
             .totalCount();
 
-    public static final DeltaFileProjectionRoot<?, ?> DELTA_FILE_PROJECTION_ROOT = new DeltaFileProjectionRoot<>()
+    public static final DeltaFileProjectionRoot DELTA_FILE_PROJECTION_ROOT = new DeltaFileProjectionRoot()
             .did()
             .name()
             .parentDids()
@@ -196,8 +196,8 @@ public class DeltaFilesDatafetcherTestHelper {
             .egressed()
             .filtered();
 
-    public static final ErrorSummaryByFlowProjectionRoot<?, ?> ERRORS_BY_FLOW_PROJECTION_ROOT =
-            new ErrorSummaryByFlowProjectionRoot<>()
+    public static final ErrorSummaryByFlowProjectionRoot ERRORS_BY_FLOW_PROJECTION_ROOT =
+            new ErrorSummaryByFlowProjectionRoot()
                     .count()
                     .offset()
                     .totalCount()
@@ -207,8 +207,8 @@ public class DeltaFilesDatafetcherTestHelper {
                     .dids()
                     .parent();
 
-    public static final ErrorSummaryByMessageProjectionRoot<?, ?> ERRORS_BY_MESSAGE_PROJECTION_ROOT =
-            new ErrorSummaryByMessageProjectionRoot<>()
+    public static final ErrorSummaryByMessageProjectionRoot ERRORS_BY_MESSAGE_PROJECTION_ROOT =
+            new ErrorSummaryByMessageProjectionRoot()
                     .count()
                     .offset()
                     .totalCount()
@@ -219,8 +219,8 @@ public class DeltaFilesDatafetcherTestHelper {
                     .dids()
                     .parent();
 
-    public static final FilteredSummaryByFlowProjectionRoot<?, ?> FILTERED_BY_FlOW_PROJECTION_ROOT =
-            new FilteredSummaryByFlowProjectionRoot<>()
+    public static final FilteredSummaryByFlowProjectionRoot FILTERED_BY_FlOW_PROJECTION_ROOT =
+            new FilteredSummaryByFlowProjectionRoot()
                     .count()
                     .offset()
                     .totalCount()
@@ -230,8 +230,8 @@ public class DeltaFilesDatafetcherTestHelper {
                     .dids()
                     .parent();
 
-    public static final FilteredSummaryByMessageProjectionRoot<?, ?> FILTERED_BY_MESSAGE_PROJECTION_ROOT =
-            new FilteredSummaryByMessageProjectionRoot<>()
+    public static final FilteredSummaryByMessageProjectionRoot FILTERED_BY_MESSAGE_PROJECTION_ROOT =
+            new FilteredSummaryByMessageProjectionRoot()
                     .count()
                     .offset()
                     .totalCount()
