@@ -2137,8 +2137,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testUpdateForRequeue() {
+	void testRequeue() {
 		DeltaFile oneHit = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		oneHit.firstFlow().setType(FlowType.TRANSFORM);
 		oneHit.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
 		oneHit.firstFlow().addAction("hit", ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
 		DeltaFileFlow flow2 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.firstFlow(), NOW.minusSeconds(1000));
@@ -2147,6 +2148,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile twoHits = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
 		twoHits.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
 		twoHits.setRequeueCount(5);
+		twoHits.firstFlow().setType(FlowType.TRANSFORM);
 		twoHits.firstFlow().addAction("hit", ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
 		flow2 = twoHits.addFlow("flow2", FlowType.TRANSFORM, twoHits.firstFlow(), NOW.minusSeconds(1000));
 		flow2.addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
@@ -2156,9 +2158,9 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile miss = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.plusSeconds(1000));
 		miss.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
 		miss.firstFlow().addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
-		flow2 = miss.addFlow("flow2", FlowType.TRANSFORM, miss.firstFlow(), NOW.minusSeconds(1000));
-		flow2.addAction("excluded", ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
-		flow3 = miss.addFlow("flow3", FlowType.EGRESS, miss.firstFlow(), NOW.minusSeconds(1000));
+		flow2 = miss.addFlow("flow2", FlowType.TRANSFORM, miss.firstFlow(), NOW.plusSeconds(1000));
+		flow2.addAction("excluded", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
+		flow3 = miss.addFlow("flow3", FlowType.EGRESS, miss.firstFlow(), NOW.plusSeconds(1000));
 		flow3.addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
 
 		DeltaFile excludedByDid = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
@@ -2171,10 +2173,19 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(oneHit, twoHits, miss, excludedByDid, wrongStage));
 
-		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(NOW, Duration.ofSeconds(30),
+		/*List<DeltaFile> hits = deltaFileRepo.findForRequeue(NOW, Duration.ofSeconds(30),
 				Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()), 5000);
 
-		assertEquals(2, hits.size());
+		assertEquals(2, hits.size());*/
+
+		ActionConfiguration ac = new ActionConfiguration("hit", ActionType.TRANSFORM, "type");
+		transformFlowRepo.save(buildFlow("flow1", List.of(ac), FlowState.RUNNING, false));
+		transformFlowRepo.save(buildFlow("flow2", List.of(ac), FlowState.RUNNING, false));
+		egressFlowRepo.save(buildFlow("flow3", List.of(ac), FlowState.RUNNING, false));
+		refreshFlowCaches();
+
+		deltaFiPropertiesService.getDeltaFiProperties().setRequeueDuration(Duration.ofSeconds(30));
+		deltaFilesService.requeue();
 
 		DeltaFile oneHitAfter = deltaFileRepo.findById(oneHit.getDid()).orElse(null);
 		DeltaFile twoHitsAfter = deltaFileRepo.findById(twoHits.getDid()).orElse(null);

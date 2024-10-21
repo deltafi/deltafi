@@ -39,7 +39,7 @@ public interface DeltaFileRepoCustom {
      * @param limit maximum number of results to return
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit);
+    List<DeltaFile> findForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit);
 
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names
@@ -49,7 +49,7 @@ public interface DeltaFileRepoCustom {
      * @param modified time to mark the files QUEUED
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified);
+    List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified);
 
     /**
      * Find DeltaFiles that are ready for an automatic resume after encountering an error.

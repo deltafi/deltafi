@@ -434,7 +434,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return runningFlows.isEmpty() ? null : runningFlowError(runningFlows);
     }
 
-    public ActionConfiguration findActionConfig(String flowName, String actionName) {
+    public ActionConfiguration findRunningActionConfig(String flowName, String actionName) {
         Flow flow = flowCacheService.getFlow(flowType, flowName);
 
         if (flow == null || !flow.isRunning()) {

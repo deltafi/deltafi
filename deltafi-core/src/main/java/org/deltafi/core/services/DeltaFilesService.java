@@ -69,6 +69,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
+import static org.deltafi.common.types.ActionState.COLD_QUEUED;
+import static org.deltafi.common.types.ActionState.QUEUED;
 
 @Service
 @RequiredArgsConstructor
@@ -1247,50 +1249,79 @@ public class DeltaFilesService {
             Set<UUID> longRunningDids = coreEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
             Set<String> skipActions = queueManagementService.coldQueueActions();
 
-            List<DeltaFile> filesToRequeue = deltaFileRepo.updateForRequeue(modified,
+            List<DeltaFile> filesToRequeue = deltaFileRepo.findForRequeue(modified,
                     getProperties().getRequeueDuration(), skipActions, longRunningDids, REQUEUE_BATCH_SIZE);
             numFound = filesToRequeue.size();
             if (numFound > 0) {
                 log.info("requeuing {}", numFound);
             }
 
-            List<WrappedActionInput> actionInputs = filesToRequeue.stream()
-                    .map(deltaFile -> requeuedActionInputs(deltaFile, modified))
-                    .flatMap(Collection::stream)
-                    .toList();
+            List<WrappedActionInput> actionInputs = new ArrayList<>();
+            filesToRequeue.forEach(deltaFile -> {
+                deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
+                deltaFile.setModified(modified);
+                deltaFile.getFlows().stream()
+                        .filter(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT)
+                        .forEach(flow -> {
+                            Action action = flow.lastAction();
+                            if ((action.getState() == QUEUED) &&
+                                    action.getModified().isBefore(modified.minus(getProperties().getRequeueDuration())) &&
+                                    (skipActions == null || !skipActions.contains(action.getName()))) {
+                                WrappedActionInput actionInput = requeueActionInput(deltaFile, flow, action);
+                                if (actionInput != null) {
+                                    action.setModified(modified);
+                                    action.setQueued(modified);
+                                    flow.updateState();
+                                    actionInputs.add(actionInput);
+                                }
+                            }
+                        });
+            });
+
             if (!actionInputs.isEmpty()) {
                 log.warn("{} actions exceeded requeue threshold of {} seconds, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
                 enqueueActions(actionInputs, true);
             }
+            deltaFileRepo.saveAll(filesToRequeue);
         }
-    }
-
-    List<WrappedActionInput> requeuedActionInputs(DeltaFile deltaFile, OffsetDateTime modified) {
-        return deltaFile.getFlows().stream()
-                .flatMap(flow -> flow.getActions().stream()
-                        .filter(action -> action.getState().equals(ActionState.QUEUED) && action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
-                        .map(action -> requeueActionInput(deltaFile, flow, action)))
-                .filter(Objects::nonNull)
-                .toList();
     }
 
     public void requeueColdQueueActions(List<String> actionNames, int maxFiles) {
         OffsetDateTime modified = OffsetDateTime.now(clock);
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateColdQueuedForRequeue(actionNames, maxFiles, modified);
-        List<WrappedActionInput> actionInputs = requeuedDeltaFiles.stream()
-                .map(deltaFile -> requeuedActionInputs(deltaFile, modified))
-                .flatMap(Collection::stream)
-                .toList();
+        List<DeltaFile> filesToRequeue = deltaFileRepo.findColdQueuedForRequeue(actionNames, maxFiles, modified);
+
+        List<WrappedActionInput> actionInputs = new ArrayList<>();
+        filesToRequeue.forEach(deltaFile -> {
+            deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
+            deltaFile.setModified(modified);
+            deltaFile.getFlows().stream()
+                    .filter(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT)
+                    .forEach(flow -> {
+                        Action action = flow.lastAction();
+                        if ((action.getState() == COLD_QUEUED) && actionNames.contains(action.getName())) {
+                            WrappedActionInput actionInput = requeueActionInput(deltaFile, flow, action);
+                            if (actionInput != null) {
+                                action.setState(QUEUED);
+                                action.setModified(modified);
+                                action.setQueued(modified);
+                                flow.updateState();
+                                actionInputs.add(actionInput);
+                            }
+                        }
+                    });
+        });
+
         if (!actionInputs.isEmpty()) {
             log.warn("Moving {} from the cold to warm queue", actionInputs.size());
             enqueueActions(actionInputs, true);
         }
+        deltaFileRepo.saveAll(filesToRequeue);
     }
 
     private WrappedActionInput requeueActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action) {
         ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), flow.getType(), action.getName());
 
-        if (Objects.isNull(actionConfiguration)) {
+        if (actionConfiguration == null) {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
             log.error(errorMessage);
             ActionEvent event = ActionEvent.builder()
@@ -1301,7 +1332,7 @@ public class DeltaFilesService {
                     .error(ErrorEvent.builder().cause(errorMessage).build())
                     .type(ActionEventType.UNKNOWN)
                     .build();
-            error(deltaFile, flow, action, event);
+            processErrorEvent(deltaFile, flow, action, event);
 
             return null;
         }
@@ -1362,9 +1393,9 @@ public class DeltaFilesService {
 
     private ActionConfiguration actionConfiguration(String flow, FlowType flowType, String actionName) {
         return switch (flowType) {
-            case TIMED_DATA_SOURCE -> timedDataSourceService.findActionConfig(flow, actionName);
-            case TRANSFORM -> transformFlowService.findActionConfig(flow, actionName);
-            case EGRESS -> egressFlowService.findActionConfig(flow, actionName);
+            case TIMED_DATA_SOURCE -> timedDataSourceService.findRunningActionConfig(flow, actionName);
+            case TRANSFORM -> transformFlowService.findRunningActionConfig(flow, actionName);
+            case EGRESS -> egressFlowService.findRunningActionConfig(flow, actionName);
             default -> null;
         };
     }

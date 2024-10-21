@@ -136,6 +136,7 @@ public class Util {
         deltaFile.setCreated(created);
         deltaFile.setModified(modified);
         deltaFile.getFlows().add(flow);
+        deltaFile.setVersion(1);
 
         flow.updateState();
         deltaFile.updateFlags();

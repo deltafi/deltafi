@@ -46,7 +46,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.deltafi.core.services.DeltaFilesService.REQUEUE_BATCH_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -54,7 +53,6 @@ import static org.mockito.Mockito.*;
 class DeltaFilesServiceTest {
     private static final UUID DID = UUID.randomUUID();
     private final TestClock testClock = new TestClock();
-    private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
@@ -114,6 +112,7 @@ class DeltaFilesServiceTest {
         this.queuedAnnotationRepo = queuedAnnotationRepo;
         this.restDataSourceService = restDataSourceService;
 
+        MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, timedDataSourceService,
@@ -302,41 +301,6 @@ class DeltaFilesServiceTest {
         verify(deltaFileRepo, never()).saveAll(any());
         verify(deltaFileRepo).batchedBulkDeleteByDidIn(uuidListCaptor.capture());
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
-    }
-
-    @Test
-    void testRequeue_actionFound() {
-        OffsetDateTime modified = OffsetDateTime.now();
-        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
-        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
-        deltaFileFlow.setType(FlowType.EGRESS);
-        deltaFileFlow.getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
-                .state(ActionState.QUEUED).modified(modified).build());
-
-        ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.EGRESS, null);
-        Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
-
-        List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
-        Assertions.assertThat(actionInvocations).hasSize(1);
-        Mockito.verifyNoInteractions(stateMachine);
-    }
-
-    @Test
-    void testRequeue() {
-        OffsetDateTime modified = OffsetDateTime.now();
-        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
-        deltaFile.firstFlow().setType(FlowType.EGRESS);
-        deltaFile.firstFlow().getActions().add(Action.builder().name("action").number(1).type(ActionType.EGRESS)
-                .state(ActionState.QUEUED).modified(modified).build());
-
-        ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.EGRESS, null);
-        Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
-
-        List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
-        Assertions.assertThat(actionInvocations).hasSize(1);
-        Mockito.verifyNoInteractions(stateMachine);
     }
 
     @Test
@@ -572,13 +536,12 @@ class DeltaFilesServiceTest {
         aggregate.setParentDids(List.of(parent1.getDid(), parent2.getDid()));
 
         DeltaFileFlow flow = aggregate.firstFlow();
-        flow.queueAction("join-transform", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        flow.setState(DeltaFileFlowState.IN_FLIGHT);
+        flow.queueAction("join-transform", ActionType.TRANSFORM, false, OffsetDateTime.now().minusYears(1));
 
-        testClock.setInstant(flow.actionNamed("join-transform").orElseThrow().getModified().toInstant());
+        when(coreEventQueue.getLongRunningTasks()).thenReturn(Collections.emptyList());
         when(queueManagementService.coldQueueActions()).thenReturn(Collections.emptySet());
-        when(deltaFileRepo.updateForRequeue(OffsetDateTime.now(testClock),
-                mockDeltaFiPropertiesService.getDeltaFiProperties().getRequeueDuration(), Collections.emptySet(),
-                Collections.emptySet(), REQUEUE_BATCH_SIZE))
+        when(deltaFileRepo.findForRequeue(any(), any(), any(), any(), anyInt()))
                 .thenReturn(List.of(aggregate));
         when(deltaFileRepo.findAllById(List.of(parent1.getDid(), parent2.getDid())))
                 .thenReturn(List.of(parent1, parent2));
@@ -586,11 +549,12 @@ class DeltaFilesServiceTest {
         ActionConfiguration ActionConfiguration =
                 new ActionConfiguration("join-transform", ActionType.TRANSFORM, "org.deltafi.SomeJoiningTransformAction");
         ActionConfiguration.setJoin(new JoinConfiguration(Duration.parse("PT1H"), null, 3, null));
-        when(timedDataSourceService.findActionConfig("myFlow", "join-transform"))
+        when(timedDataSourceService.findRunningActionConfig("myFlow", "join-transform"))
                 .thenReturn(ActionConfiguration);
 
         deltaFilesService.requeue();
 
+        verify(deltaFileRepo).saveAll(List.of(aggregate));
         verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
         List<WrappedActionInput> enqueuedActions = actionInputListCaptor.getValue();
         assertEquals(1, enqueuedActions.size());

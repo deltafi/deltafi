@@ -170,7 +170,7 @@ class StateMachineTest {
         ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
                 "org.deltafi.action.SomeJoiningTransformAction");
         transformAction.setJoin(new JoinConfiguration(Duration.parse("PT1S"), null, 3, null));
-        when(transformFlowService.findActionConfig(TRANSFORM_FLOW, transformAction.getName())).thenReturn(transformAction);
+        when(transformFlowService.findRunningActionConfig(TRANSFORM_FLOW, transformAction.getName())).thenReturn(transformAction);
         // add the transform action as the next action config to use in the DeltaFileFlow
         deltaFileFlow.setPendingActions(new ArrayList<>(List.of(transformAction.getName())));
 
@@ -202,7 +202,7 @@ class StateMachineTest {
         ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
                 "org.deltafi.action.SomeJoiningTransformAction");
         transformAction.setJoin(new JoinConfiguration(Duration.parse("PT1S"), null, null, null));
-        when(transformFlowService.findActionConfig(TRANSFORM_FLOW, transformAction.getName())).thenReturn(transformAction);
+        when(transformFlowService.findRunningActionConfig(TRANSFORM_FLOW, transformAction.getName())).thenReturn(transformAction);
         // add the transform action as the next action config to use in the DeltaFileFlow
         deltaFileFlow.setPendingActions(new ArrayList<>(List.of(transformAction.getName())));
 

@@ -93,7 +93,7 @@ public class StateMachine {
 
     private List<WrappedActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
         String pendingAction = input.flow().getNextPendingAction();
-        ActionConfiguration nextTransformAction = transformFlowService.findActionConfig(input.flow().getName(), pendingAction);
+        ActionConfiguration nextTransformAction = transformFlowService.findRunningActionConfig(input.flow().getName(), pendingAction);
 
         if (nextTransformAction != null && !input.flow().hasFinalAction(nextTransformAction.getName())) {
             return addNextAction(input, nextTransformAction, pendingQueued);

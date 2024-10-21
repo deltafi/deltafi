@@ -114,7 +114,7 @@ public class QueueManagementService {
         return deltaFiPropertiesService.getDeltaFiProperties().getInMemoryQueueSize();
     }
 
-    @Scheduled(fixedDelay = 2000)
+    @Scheduled(fixedDelay = 5000)
     public void scheduleColdToWarm() {
         // we cannot use a ConditionalOnProperty here because it is ignored by the @Scheduled annotation, check manually
         String scheduleMaintenance = env.getProperty("schedule.maintenance");

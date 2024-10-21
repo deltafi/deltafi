@@ -268,9 +268,9 @@ public class DeltaFileFlow {
     }
 
     public Action getPendingAction(String actionName, UUID did) {
-        Action action = getAction(actionName);
-        if (action == null || action.terminal()) {
-            throw new UnexpectedActionException(name, number, actionName, did);
+        Action action = lastAction();
+        if (action == null || !action.getName().equals(actionName) || action.terminal()) {
+            throw new UnexpectedActionException(name, number, actionName, did, action == null ? "none" : action.getName());
         }
 
         return action;

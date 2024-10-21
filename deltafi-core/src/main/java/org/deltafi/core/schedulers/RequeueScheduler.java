@@ -18,27 +18,21 @@
 package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.schedulers.trigger.RequeueTrigger;
 import org.deltafi.core.services.DeltaFilesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import jakarta.annotation.PostConstruct;
 
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
 public class RequeueScheduler {
-
     private final DeltaFilesService deltaFilesService;
-    private final TaskScheduler taskScheduler;
-    private final RequeueTrigger requeueTrigger;
 
-    @PostConstruct
+    @Scheduled(fixedDelay = 5000)
     public void requeue() {
-        taskScheduler.schedule(deltaFilesService::requeue, requeueTrigger);
+        deltaFilesService.requeue();
     }
 }

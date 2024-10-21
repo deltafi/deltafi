@@ -82,30 +82,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    @Transactional
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
+    public List<DeltaFile> findForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
         StringBuilder sqlQuery = new StringBuilder("""
-            SELECT df.did FROM delta_files df
-            WHERE df.stage = 'IN_FLIGHT'
+            SELECT DISTINCT did
+            FROM delta_file_flows dff
+            LEFT JOIN delta_files df
+            ON dff.delta_file_id = df.did
+            WHERE dff.modified < :requeueThreshold
             AND df.modified < :requeueThreshold
-            AND EXISTS ( SELECT 1
-                         FROM delta_file_flows dff
-                         WHERE dff.delta_file_id = df.did
-                         AND dff.state = 'IN_FLIGHT'
-                         AND dff.cold_queued = false
-        """);
+            AND dff.state = 'IN_FLIGHT'
+            AND df.stage = 'IN_FLIGHT'
+            AND dff.cold_queued = false""");
 
         if (skipActions != null && !skipActions.isEmpty()) {
-            sqlQuery.append("AND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'name' NOT IN (:skipActions)");
+            sqlQuery.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'name' NOT IN (:skipActions)");
         }
-
-        sqlQuery.append(") ");
 
         if (skipDids != null && !skipDids.isEmpty()) {
-            sqlQuery.append("\nAND df.did NOT IN (:skipDids)");
+            sqlQuery.append("\nAND dff.delta_file_id NOT IN (:skipDids)");
         }
 
-        sqlQuery.append("\nORDER BY df.modified LIMIT :limit");
+        sqlQuery.append("\nLIMIT :limit");
 
         OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
         Query query = entityManager.createNativeQuery(sqlQuery.toString(), UUID.class)
@@ -121,29 +118,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         @SuppressWarnings("unchecked")
         List<UUID> didsToRequeue = query.getResultList();
-        List<DeltaFile> filesToRequeue = fetchByDidIn(didsToRequeue);
-
-        filesToRequeue.forEach(deltaFile -> {
-            deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
-            deltaFile.setModified(requeueTime);
-            deltaFile.getFlows().forEach(flow -> {
-                Action action = flow.lastAction();
-                if ((action.getState() == QUEUED) &&
-                        action.getModified().isBefore(requeueThreshold) &&
-                        (skipActions == null || !skipActions.contains(action.getName()))) {
-                    action.setModified(requeueTime);
-                    action.setQueued(requeueTime);
-                    flow.updateState();
-                }
-            });
-        });
-
-        return filesToRequeue;
+        return fetchByDidIn(didsToRequeue);
     }
 
     @Override
     @Transactional
-    public List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
+    public List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
         String nativeQueryStr = """
             SELECT df.did FROM delta_files df
             WHERE df.stage = 'IN_FLIGHT'
@@ -160,7 +140,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     AND action->>'name' IN (:actionNames)
                 )
             )
-            ORDER BY df.modified
             LIMIT :limit
         """;
 
@@ -170,23 +149,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = nativeQuery.getResultList();
-        List<DeltaFile> filesToRequeue = fetchByDidIn(dids);
-
-        filesToRequeue.forEach(deltaFile -> {
-            deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
-            deltaFile.setModified(modified);
-            deltaFile.getFlows().forEach(flow -> {
-                Action action = flow.lastAction();
-                if (action.getState() == COLD_QUEUED && actionNames.contains(action.getName())) {
-                    action.setState(QUEUED);
-                    action.setModified(modified);
-                    action.setQueued(modified);
-                    flow.updateState();
-                }
-            });
-        });
-
-        return filesToRequeue;
+        return fetchByDidIn(dids);
     }
 
     @Override
