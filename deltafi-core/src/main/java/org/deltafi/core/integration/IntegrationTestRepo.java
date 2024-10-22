@@ -15,22 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.integration.config;
+package org.deltafi.core.integration;
 
-import lombok.Data;
-import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.types.integration.IntegrationTest;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.time.Duration;
-import java.util.List;
-
-@Data
-public class Configuration {
-    private String description;
-    private List<PluginCoordinates> plugins;
-    private List<String> dataSources;
-    private List<String> transformationFlows;
-    private List<String> egressFlows;
-    private List<Input> inputs;
-    private Duration timeout;
-    private List<ExpectedDeltaFile> expectedDeltaFiles;
+@Repository
+public interface IntegrationTestRepo extends JpaRepository<IntegrationTest, String> {
 }

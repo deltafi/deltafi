@@ -4,12 +4,12 @@
 
 cli_help_command() {
   echo "
-Command: integration-test
+Command: run-integration-test
 
-Run an integration test from a config/YAML file
+Run an integration test that was previously loaded
 
 Usage:
-  integration-test TEST_CONFIG_FILE
+  run-integration-test TESTNAME
 
 Options:
   -h, --help        Show help
@@ -17,7 +17,7 @@ Options:
   exit 1
 }
 
-TMPFILE="/tmp/.deltafi-integration-test.$$"
+TMPFILE="/tmp/.deltafi-run-integration-test.$$"
 
 cleanup() {
   rm -f $TMPFILE
@@ -51,18 +51,11 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
-TEST_CONFIG_FILE=${ARGS[1]}
+TESTNAME=${ARGS[1]}
 
-if [ ! -f "$TEST_CONFIG_FILE" ]; then
-  cli_log "${yellow}${TEST_CONFIG_FILE}: No such file${normal}"
-  exit 1
-fi
+VARIABLES="{\"name\": \"$TESTNAME\"}"
 
-BASENAME="$(basename $TEST_CONFIG_FILE)"
-#YAML=$(cat "$TEST_CONFIG_FILE")
-VARIABLES="{\"configYaml\": $(cat "$TEST_CONFIG_FILE" |jq -Rsa .)}"
-
-QUERY="mutation (\$configYaml: String!) { launchIntegrationTest(configYaml: \$configYaml) { id status errors } }"
+QUERY="mutation (\$name: String!) { startIntegrationTest(name: \$name) { id status errors } }"
 
 DELTAFI_DGS=$(_graphql)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
@@ -71,21 +64,21 @@ truncate -s 0 ${TMPFILE}
 RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "$DELTAFI_DGS")
 
 if [[ "$RESPONSE_CODE" != "200" ]]; then
-  cli_log "${red}${BASENAME}: Loading test configuration failed${normal}"
+  cli_log "${red}${TESTNAME}: Starting test failed${normal}"
   echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
 else
   ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
   if [[ "$ERRORS" != "" ]]; then
-    cli_log "${red}${BASENAME}: Starting test failed${normal}"
+    cli_log "${red}${TESTNAME}: Starting test failed${normal}"
     echo -e "${red}Error: ${ERRORS}${normal}"
   else
-    SUCCESS=$(cat ${TMPFILE} | jq -r '.data.launchIntegrationTest.status')
+    SUCCESS=$(cat ${TMPFILE} | jq -r '.data.startIntegrationTest.status')
     if [[ $SUCCESS == "STARTED" ]]; then
-      TESTID=$(cat ${TMPFILE} | jq -r '.data.launchIntegrationTest.id')
+      TESTID=$(cat ${TMPFILE} | jq -r '.data.startIntegrationTest.id')
       cli_log "Started test: ${TESTID}"
     else
-      ERRORS=$(cat ${TMPFILE} | jq -r '.data.launchIntegrationTest.errors | join(",")')
-      cli_log "${red}${BASENAME}: Test failure from ${BASENAME}${normal}"
+      ERRORS=$(cat ${TMPFILE} | jq -r '.data.startIntegrationTest.errors | join(",")')
+      cli_log "${red}${TESTNAME}: Test failure from ${TESTNAME}${normal}"
       if [[ $SHOWERRORS == "1" ]]; then
         echo -e "${red}${ERRORS}${normal}"
       fi

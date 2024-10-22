@@ -15,9 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.integration.config;
+package org.deltafi.core.types.integration;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.KeyValue;
@@ -30,7 +33,10 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public class Input {
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class TestCaseIngress {
     // Flow for ingress
     private String flow;
     // Optional content type
@@ -38,7 +44,7 @@ public class Input {
     // File name to use for ingress
     private String ingressFileName;
     // true:" "data: !!binary | ..."
-    private boolean base64Encoded;
+    private Boolean base64Encoded;
     private String data;
     private List<KeyValue> metadata;
 
@@ -49,15 +55,19 @@ public class Input {
         }
 
         if (StringUtils.isEmpty(flow)) {
-            errors.add("Input must specify the 'dataSource'");
+            errors.add("TestCaseIngress must specify the 'dataSource'");
         } else {
             if (flows == null || !flows.contains(flow)) {
-                errors.add("Input dataSource must exist in configuration flows");
+                errors.add("TestCaseIngress dataSource must exist in configuration flows");
             }
         }
 
         if (StringUtils.isEmpty(ingressFileName)) {
             errors.add("Missing or empty ingressFileName");
+        }
+
+        if (base64Encoded == null) {
+            base64Encoded = false;
         }
 
         if (base64Encoded) {
@@ -71,7 +81,7 @@ public class Input {
         return errors;
     }
 
-    public ByteArrayInputStream getByteArrayInputStream() {
+    public ByteArrayInputStream dataAsInputStream() {
         if (base64Encoded) {
             byte[] decodedBytes = Base64.getDecoder().decode(data);
             return new ByteArrayInputStream(decodedBytes);
@@ -80,7 +90,7 @@ public class Input {
         }
     }
 
-    public Map<String, String> getMetadataMap() {
+    public Map<String, String> metadataToMap() {
         return KeyValueConverter.convertKeyValues(metadata);
     }
 }

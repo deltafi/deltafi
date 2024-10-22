@@ -157,12 +157,12 @@ Commands:
   ingress                       ingress one or more files to a flow
   install                       install/upgrade the DeltaFi core
   install-plugin                install/upgrade a DeltaFi plugin
-  integration-test              run an integration test
   list-actions                  list the actions registered with deltafi
   list-flows                    list the flows in the system with their status
   list-plans                    list all flow plans within deltafi
   list-plugins                  list all installed plugins
   list-policies                 list delete policies
+  load-integration-test         load an integration test into the system
   load-plans                    load the flow plans and variables for the given plugin
   load-policies                 load delete policies from a JSON file
   minio-cli                     launch the minio CLI
@@ -173,6 +173,7 @@ Commands:
   postgres-eval                 run SQL in Postgres
   query                         send a query to graphql
   reenable                      reenable all DeltaFi processes
+  run-integration-test          run a previously loaded integration test
   scale                         edit the replica counts for all deployments and statefulsets
   secrets                       show k8s secrets
   serviceip                     show service IP
@@ -249,9 +250,6 @@ case "$1" in
   install-plugin)
     "$DELTAFICLI_WORKDIR/commands/install-plugin" "$@"
     ;;
-  integration-test)
-    "$DELTAFICLI_WORKDIR/commands/integration-test" "$@"
-    ;;
   list-actions)
     "$DELTAFICLI_WORKDIR/commands/list-actions" "$@"
     ;;
@@ -269,6 +267,9 @@ case "$1" in
     ;;
   list-policies)
     "$DELTAFICLI_WORKDIR/commands/list-policies" "$@"
+    ;;
+  load-integration-test)
+    "$DELTAFICLI_WORKDIR/commands/load-integration-test" "$@"
     ;;
   load-plans)
     "$DELTAFICLI_WORKDIR/commands/load-plans" "$@"
@@ -296,6 +297,9 @@ case "$1" in
     ;;
   query)
     "$DELTAFICLI_WORKDIR/commands/query" "$@"
+    ;;
+  run-integration-test)
+    "$DELTAFICLI_WORKDIR/commands/run-integration-test" "$@"
     ;;
   valkey-cli | redis-cli)
     "$DELTAFICLI_WORKDIR/commands/valkey-cli" "$@"

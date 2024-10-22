@@ -1,0 +1,23 @@
+name: test4
+description: desc
+plugins:
+  - groupId: group
+    artifactId: art
+    version: ANY
+dataSources:
+  - ds
+transformationFlows:
+  - t
+egressFlows:
+  - e
+inputs:
+  - flow: ds
+    ingressFileName: fn
+    base64Encoded: false
+    data: "data"
+timeout: PT3M
+expectedDeltaFiles:
+  - stage: COMPLETE
+    childCount: 3
+  - stage: ERROR
+    childCount: 0

@@ -22,16 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.types.*;
-import org.deltafi.core.integration.config.ContentData;
-import org.deltafi.core.integration.config.ContentList;
-import org.deltafi.core.integration.config.ExpectedDeltaFile;
-import org.deltafi.core.integration.config.ExpectedFlows;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.TestStatus;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.Action;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.core.types.TestResult;
+import org.deltafi.core.types.integration.*;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -58,7 +56,7 @@ public class TestEvaluator {
     private final List<String> errors = new ArrayList<>();
     private boolean fatalError = false;
 
-    public void waitForDeltaFile(String testId, String description, List<UUID> ingressDids, List<ExpectedDeltaFile> expectedDeltaFiles, Duration timeout) throws InterruptedException {
+    public void waitForDeltaFile(String testId, String name, List<UUID> ingressDids, List<ExpectedDeltaFile> expectedDeltaFiles, Duration timeout) throws InterruptedException {
         OffsetDateTime startTime = OffsetDateTime.now();
         Duration maxTime;
         if (timeout == null || timeout.isZero()) {
@@ -69,7 +67,7 @@ public class TestEvaluator {
         Duration timeRunning = Duration.of(0, ChronoUnit.SECONDS);
 
         if (ingressDids.size() != expectedDeltaFiles.size()) {
-            fatalSizeError("ingressDids/expectedDeltaFiles", ingressDids.size(), expectedDeltaFiles.size());
+            fatalSizeError("ingressed DeltaFiles", expectedDeltaFiles.size(), ingressDids.size());
         }
 
         boolean done = false;
@@ -91,7 +89,7 @@ public class TestEvaluator {
 
             testResult = TestResult.builder()
                     .id(testId)
-                    .description(description)
+                    .testName(name)
                     .status(TestStatus.SUCCESSFUL)
                     .start(startTime)
                     .stop(OffsetDateTime.now())
@@ -100,7 +98,7 @@ public class TestEvaluator {
 
             testResult = TestResult.builder()
                     .id(testId)
-                    .description(description)
+                    .testName(name)
                     .status(TestStatus.FAILED)
                     .start(startTime)
                     .stop(OffsetDateTime.now())
@@ -189,6 +187,8 @@ public class TestEvaluator {
         }
 
         if (deltaFile.getChildDids().size() != expected.getChildCount()) {
+            // If there are not enough children yet, give core/actions more time
+            // and see if they get created. Else: Too many is fatal.
             maybeFatalError(
                     deltaFile.getChildDids().size() > expected.getChildCount(),
                     label + ": expected " +
@@ -197,9 +197,8 @@ public class TestEvaluator {
                             + ", " + deltaFile.getDid());
             return;
         }
-
         int flowActionMatchCount = 0;
-        for (ExpectedFlows ef : expected.getExpectedFlows()) {
+        for (ExpectedFlow ef : expected.getExpectedFlows()) {
             List<DeltaFileFlow> deltaFileFlows = deltaFile.getFlows()
                     .stream()
                     .filter(f -> flowMatch(f, ef.getFlow(), ef.getType()))
@@ -254,7 +253,7 @@ public class TestEvaluator {
         return flow.getName().equals(name) && flow.getType().equals(type);
     }
 
-    private boolean contentMatches(DeltaFile deltaFile, ContentList expectedContent) {
+    private boolean contentMatches(DeltaFile deltaFile, ExpectedContentList expectedContent) {
         if (expectedContent == null) {
             // Test configuration does not want to verify output/content
             return true;
@@ -280,7 +279,7 @@ public class TestEvaluator {
         return false;
     }
 
-    private boolean allContentsForActionAreEqual(List<Content> actualContent, List<ContentData> expectedData) {
+    private boolean allContentsForActionAreEqual(List<Content> actualContent, List<ExpectedContentData> expectedData) {
         if (actualContent.size() != expectedData.size()) {
             fatalSizeError("content", expectedData.size(), actualContent.size());
             return false;
@@ -307,7 +306,7 @@ public class TestEvaluator {
         return true;
     }
 
-    private boolean contentIsEqual(Content actualContent, ContentData expectedData) {
+    private boolean contentIsEqual(Content actualContent, ExpectedContentData expectedData) {
         try {
             String loadedContent = loadContent(actualContent);
             String expectedValue = expectedData.getValue();

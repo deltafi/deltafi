@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.integration;
 
-import org.deltafi.core.types.TestResult;
+import org.deltafi.core.types.integration.TestResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

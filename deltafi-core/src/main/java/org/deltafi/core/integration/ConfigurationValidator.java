@@ -21,14 +21,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.integration.config.Configuration;
-import org.deltafi.core.integration.config.ExpectedDeltaFile;
-import org.deltafi.core.integration.config.Input;
-import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.services.*;
+import org.deltafi.core.types.PluginEntity;
+import org.deltafi.core.types.integration.ExpectedDeltaFile;
+import org.deltafi.core.types.integration.IntegrationTest;
+import org.deltafi.core.types.integration.TestCaseIngress;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,42 +48,78 @@ public class ConfigurationValidator {
     @Lazy
     private final PluginService pluginService;
 
-    public List<String> validateConfig(Configuration config) {
+    public static List<String> validateExpectedDeltaFiles(IntegrationTest config) {
+        if (config.getExpectedDeltaFiles() == null || config.getExpectedDeltaFiles().isEmpty()) {
+            return List.of("Test configuration is missing expectedDeltaFiles");
+        }
+
         List<String> errors = new ArrayList<>();
+        for (ExpectedDeltaFile expectedDeltaFile : config.getExpectedDeltaFiles()) {
+            errors.addAll(expectedDeltaFile.validate(0));
+        }
+        return errors;
+    }
+
+    public List<String> preSaveCheck(IntegrationTest config) {
+        return validateConfig(config, false);
+    }
+
+    public List<String> validateToStart(IntegrationTest config) {
+        return validateConfig(config, true);
+    }
+
+    private List<String> validateConfig(IntegrationTest config, boolean prepareToStart) {
+        List<String> errors = new ArrayList<>();
+
+        if (StringUtils.isEmpty(config.getName())) {
+            errors.add("Test configuration must specify a 'name'");
+        }
 
         if (StringUtils.isEmpty(config.getDescription())) {
             errors.add("Test configuration must specify a 'description'");
         }
 
+        if (StringUtils.isNoneEmpty(config.getTimeout())) {
+            try {
+                Duration.parse(config.getTimeout());
+            } catch (Exception e) {
+                errors.add("Invalid 'timeout'; must be a valid Duration");
+            }
+        }
+
         if (config.getPlugins() == null || config.getPlugins().isEmpty()) {
             errors.add("Test configuration must specify at least one plugin");
         } else {
-            errors.addAll(checkPlugins(config.getPlugins()));
+            if (prepareToStart) {
+                errors.addAll(checkPlugins(config.getPlugins()));
+            }
         }
 
         boolean flowsStarted = false;
-        if (config.getDataSources() != null) {
-            if (checkOrStartFlow(errors, "dataSource", restDataSourceService, config.getDataSources())) {
-                flowsStarted = true;
+        if (prepareToStart) {
+            if (config.getDataSources() != null) {
+                if (checkOrStartFlows(errors, "dataSource", restDataSourceService, config.getDataSources())) {
+                    flowsStarted = true;
+                }
             }
-        }
 
-        if (config.getTransformationFlows() != null) {
-            if (checkOrStartFlow(errors, "transformation", transformFlowService, config.getTransformationFlows())) {
-                flowsStarted = true;
+            if (config.getTransformationFlows() != null) {
+                if (checkOrStartFlows(errors, "transformation", transformFlowService, config.getTransformationFlows())) {
+                    flowsStarted = true;
+                }
             }
-        }
 
-        if (config.getEgressFlows() != null) {
-            if (checkOrStartFlow(errors, "egress", egressFlowService, config.getEgressFlows())) {
-                flowsStarted = true;
+            if (config.getEgressFlows() != null) {
+                if (checkOrStartFlows(errors, "egress", egressFlowService, config.getEgressFlows())) {
+                    flowsStarted = true;
+                }
             }
         }
 
         errors.addAll(validateInputs(config));
-        errors.addAll(validateExpectedDeltaFiless(config));
+        errors.addAll(validateExpectedDeltaFiles(config));
 
-        if (errors.isEmpty() && flowsStarted) {
+        if (errors.isEmpty() && prepareToStart && flowsStarted) {
             try {
                 // Allow core and core-workers to sync
                 Thread.sleep(FLOW_START_DELAY_MILLIS);
@@ -94,26 +131,14 @@ public class ConfigurationValidator {
         return errors;
     }
 
-    private List<String> validateInputs(Configuration config) {
+    private List<String> validateInputs(IntegrationTest config) {
         if (config.getInputs() == null || config.getInputs().isEmpty()) {
             return List.of("Test configuration is missing 'inputs''");
         }
 
         List<String> errors = new ArrayList<>();
-        for (Input input : config.getInputs()) {
+        for (TestCaseIngress input : config.getInputs()) {
             errors.addAll(input.validate(config.getDataSources()));
-        }
-        return errors;
-    }
-
-    private List<String> validateExpectedDeltaFiless(Configuration config) {
-        if (config.getExpectedDeltaFiles() == null || config.getExpectedDeltaFiles().isEmpty()) {
-            return List.of("Test configuration is missing expectedDeltaFile");
-        }
-
-        List<String> errors = new ArrayList<>();
-        for (ExpectedDeltaFile expectedDeltaFile : config.getExpectedDeltaFiles()) {
-            expectedDeltaFile.validate(0);
         }
         return errors;
     }
@@ -125,7 +150,7 @@ public class ConfigurationValidator {
             if (StringUtils.isEmpty(pluginCoordinates.getGroupId()) || StringUtils.isEmpty(pluginCoordinates.getArtifactId())) {
                 errors.add("Invalid plugin specified: " + pluginCoordinates);
             } else {
-                if (StringUtils.isEmpty(pluginCoordinates.getVersion())) {
+                if ("ANY".equals(pluginCoordinates.getVersion())) {
                     // find without version
                     if (allInstalledPlugins == null) {
                         allInstalledPlugins = pluginService.getPlugins();
@@ -149,14 +174,14 @@ public class ConfigurationValidator {
         return errors;
     }
 
-    private boolean checkOrStartFlow(List<String> errors, String type, FlowService<?, ?, ?, ?> flowService, List<String> flows) {
+    private boolean checkOrStartFlows(List<String> errors, String type, FlowService<?, ?, ?, ?> flowService, List<String> flows) {
         boolean flowStarted = false;
         for (String flow : flows) {
             if (!flowService.hasFlow(flow)) {
                 errors.add("Flow does not exist (" + type + "): " + flow);
             } else if (!flowService.hasRunningFlow(flow)) {
                 if (!flowService.startFlow(flow)) {
-                    errors.add("Could not start dataSource (" + type + "): " + flow);
+                    errors.add("Could not start flow (" + type + "): " + flow);
                 } else {
                     flowStarted = true;
                 }

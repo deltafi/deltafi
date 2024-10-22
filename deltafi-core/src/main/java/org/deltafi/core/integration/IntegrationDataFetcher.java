@@ -25,58 +25,100 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
+import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.types.TestResult;
 import org.deltafi.common.types.TestStatus;
-import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.integration.config.Configuration;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.types.Result;
+import org.deltafi.core.types.integration.IntegrationTest;
+import org.deltafi.core.types.integration.TestResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @DgsComponent
 @RequiredArgsConstructor
 public class IntegrationDataFetcher {
 
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory()).setSerializationInclusion(JsonInclude.Include.NON_NULL).registerModule(new JavaTimeModule());
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .registerModule(new JavaTimeModule());
+
     private final IntegrationService integrationService;
-    private final CoreAuditLogger auditLogger;
 
     @DgsQuery
     @NeedsPermission.IntegrationTestView
-    public TestResult getIntegrationTest(@InputArgument String id) {
-        return integrationService.get(id);
+    public IntegrationTest getIntegrationTest(@InputArgument String name) {
+        Optional<IntegrationTest> result = integrationService.getIntegrationTest(name);
+        return result.orElseThrow(() -> new DgsEntityNotFoundException("No integration test exists with the name " + name));
+
     }
 
     @DgsQuery
     @NeedsPermission.IntegrationTestView
-    public List<TestResult> getAllIntegrationTests() {
-        return integrationService.getAll();
+    public TestResult getTestResult(@InputArgument String id) {
+        Optional<TestResult> result = integrationService.getTestResult(id);
+        return result.orElseThrow(() -> new DgsEntityNotFoundException("No test result exists with the id " + id));
+    }
+
+    @DgsQuery
+    @NeedsPermission.IntegrationTestView
+    public List<IntegrationTest> getIntegrationTests() {
+        return integrationService.getAllTests();
+    }
+
+    @DgsQuery
+    @NeedsPermission.IntegrationTestView
+    public List<TestResult> getTestResults() {
+        return integrationService.getAllResults();
     }
 
     @DgsMutation
     @NeedsPermission.IntegrationTestDelete
-    public boolean removeIntegrationTest(@InputArgument String id) {
-        auditLogger.audit("removed integration test with id {}", id);
-        return integrationService.remove(id);
+    public boolean removeIntegrationTest(@InputArgument String name) {
+        return integrationService.removeTest(name);
     }
 
     @DgsMutation
-    @NeedsPermission.IntegrationTestLaunch
-    public TestResult launchIntegrationTest(@InputArgument String configYaml) {
+    @NeedsPermission.IntegrationTestDelete
+    public boolean removeTestResult(@InputArgument String id) {
+        return integrationService.removeResult(id);
+    }
+
+    @DgsMutation
+    @NeedsPermission.IntegrationTestUpdate
+    public Result loadIntegrationTest(@InputArgument String configYaml) {
         List<String> errors = new ArrayList<>();
         try {
-            Configuration config = YAML_MAPPER.readValue(configYaml, Configuration.class);
-            auditLogger.audit("launching integration test {}", config.getDescription());
-            return integrationService.runTest(config);
+            IntegrationTest testCase = YAML_MAPPER.readValue(configYaml, IntegrationTest.class);
+            return integrationService.save(testCase);
         } catch (Exception e) {
             errors.add("Unable to parse YAML: " + e.getMessage());
-            //errors.add(configYaml);
         }
+        return Result.builder()
+                .success(false)
+                .errors(errors)
+                .build();
+    }
+
+    @DgsMutation
+    @NeedsPermission.IntegrationTestUpdate
+    public Result saveIntegrationTest(@InputArgument IntegrationTest testCase) {
+        return integrationService.save(testCase);
+    }
+
+    @DgsMutation
+    @NeedsPermission.IntegrationTestUpdate
+    public TestResult startIntegrationTest(@InputArgument String name) {
+        Optional<IntegrationTest> integrationTest = integrationService.getIntegrationTest(name);
+        if (integrationTest.isPresent()) {
+            return integrationService.runTest(integrationTest.get());
+        }
+
         return TestResult.builder()
                 .status(TestStatus.INVALID)
-                .errors(errors)
+                .errors(List.of("Unable to find test: " + name))
                 .build();
     }
 }

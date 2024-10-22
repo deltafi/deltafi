@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: load-integration-test
+
+Loads an integration test from a config/YAML file
+
+Usage:
+  load-integration-test TEST_CONFIG_FILE
+
+Options:
+  -h, --help        Show help
+  -q, --quiet       Suppress detailed error messages"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-load-integration-test.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
+SHOWERRORS=1
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    -q|--quiet)
+      SHOWERRORS=0
+      shift # past argument
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+TEST_CONFIG_FILE=${ARGS[1]}
+
+if [ ! -f "$TEST_CONFIG_FILE" ]; then
+  cli_log "${yellow}${TEST_CONFIG_FILE}: No such file${normal}"
+  exit 1
+fi
+
+BASENAME="$(basename $TEST_CONFIG_FILE)"
+VARIABLES="{\"configYaml\": $(cat "$TEST_CONFIG_FILE" |jq -Rsa .)}"
+
+QUERY="mutation (\$configYaml: String!) { loadIntegrationTest(configYaml: \$configYaml) { success info errors } }"
+
+DELTAFI_DGS=$(_graphql)
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate -s 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "$DELTAFI_DGS")
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  cli_log "${red}${BASENAME}: Loading test configuration failed${normal}"
+  echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
+else
+  ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$ERRORS" != "" ]]; then
+    cli_log "${red}${BASENAME}: Saving test failed${normal}"
+    echo -e "${red}Error: ${ERRORS}${normal}"
+  else
+    SUCCESS=$(cat ${TMPFILE} | jq -r '.data.loadIntegrationTest.success')
+    if [[ $SUCCESS == "true" ]]; then
+      INFOS=$(cat ${TMPFILE} | jq -r '.data.loadIntegrationTest.info | join(",")')
+      cli_log "Loaded test: ${INFOS}"
+    else
+      ERRORS=$(cat ${TMPFILE} | jq -r '.data.loadIntegrationTest.errors | join(",")')
+      cli_log "${red}${BASENAME}: Test failure from ${BASENAME}${normal}"
+      if [[ $SHOWERRORS == "1" ]]; then
+        echo -e "${red}${ERRORS}${normal}"
+      fi
+    fi
+  fi
+fi
+
+cleanup

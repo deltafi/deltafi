@@ -25,19 +25,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.core.types.TestResult;
 import org.deltafi.common.types.TestStatus;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
-import org.deltafi.core.integration.config.Configuration;
-import org.deltafi.core.integration.config.Input;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
+import org.deltafi.core.types.Result;
+import org.deltafi.core.types.integration.IntegrationTest;
+import org.deltafi.core.types.integration.TestCaseIngress;
+import org.deltafi.core.types.integration.TestResult;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -59,6 +61,7 @@ public class IntegrationService {
     private final ConfigurationValidator configurationValidator;
     private final DeltaFilesService deltaFilesService;
     private final ContentStorageService contentStorageService;
+    private final IntegrationTestRepo integrationTestRepo;
     private final TestResultRepo testResultRepo;
 
     private boolean processIncomingRequests = true;
@@ -77,7 +80,7 @@ public class IntegrationService {
         }
     }
 
-    public TestResult runTest(Configuration config) {
+    public TestResult runTest(IntegrationTest config) {
         String testId = UUID.randomUUID().toString();
         if (!processIncomingRequests) {
             return TestResult.builder()
@@ -86,32 +89,33 @@ public class IntegrationService {
                     .build();
         }
 
-        List<String> errors = configurationValidator.validateConfig(config);
+        List<String> errors = configurationValidator.validateToStart(config);
         OffsetDateTime startTime = OffsetDateTime.now();
 
+        TestResult started = TestResult.builder()
+                .status(TestStatus.STARTED)
+                .id(testId)
+                .testName(config.getName())
+                .start(startTime)
+                .build();
+
         if (errors.isEmpty()) {
-            errors.addAll(ingressAndEvaluate(testId, startTime, config));
+            errors.addAll(ingressAndEvaluate(testId, started, config));
         } else {
             errors.addFirst("Could not validate config");
         }
 
-        TestResult testResult;
-        if (errors.isEmpty()) {
-            testResult = TestResult.builder()
-                    .id(testId)
-                    .status(TestStatus.STARTED)
-                    .start(startTime)
-                    .build();
-        } else {
-            testResult = TestResult.builder()
+        if (!errors.isEmpty()) {
+            return TestResult.builder()
                     .status(TestStatus.INVALID)
                     .errors(errors)
+                    .testName(config.getName())
                     .build();
         }
-        return testResult;
+        return started;
     }
 
-    private List<String> ingressAndEvaluate(String testId, OffsetDateTime startTime, Configuration config) {
+    private List<String> ingressAndEvaluate(String testId, TestResult started, IntegrationTest config) {
         List<String> errors = new ArrayList<>();
 
         try {
@@ -119,12 +123,6 @@ public class IntegrationService {
             if (ingressResults.isEmpty()) {
                 errors.add("Failed to ingress");
             } else {
-                TestResult started = TestResult.builder()
-                        .id(testId)
-                        .description(config.getDescription())
-                        .status(TestStatus.STARTED)
-                        .start(startTime)
-                        .build();
                 testResultRepo.save(started);
                 evaluate(testId, ingressResults, config);
             }
@@ -137,9 +135,9 @@ public class IntegrationService {
         return errors;
     }
 
-    private List<IngressResult> ingress(String testId, List<Input> inputs) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
+    private List<IngressResult> ingress(String testId, List<TestCaseIngress> inputs) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
         List<IngressResult> results = new ArrayList<>();
-        for (Input input : inputs) {
+        for (TestCaseIngress input : inputs) {
             String contentType = StringUtils.isNoneEmpty(input.getContentType()) ? input.getContentType() : DEFAULT_CONTENT_TYPE;
 
             results.addAll(ingressService.ingress(
@@ -147,17 +145,17 @@ public class IntegrationService {
                     input.getIngressFileName(),
                     contentType, USERNAME,
                     OBJECT_MAPPER.writeValueAsString(buildMetadataMap(input, testId)),
-                    input.getByteArrayInputStream(),
+                    input.dataAsInputStream(),
                     OffsetDateTime.now()));
         }
         return results;
     }
 
-    public Map<String, String> buildMetadataMap(Input input, String testId) {
+    public Map<String, String> buildMetadataMap(TestCaseIngress input, String testId) {
         String testIdPrefix = testId.substring(0, 8);
         Map<String, String> metadataMap = new HashMap<>();
 
-        for (Map.Entry<String, String> entry : input.getMetadataMap().entrySet()) {
+        for (Map.Entry<String, String> entry : input.metadataToMap().entrySet()) {
             if (entry.getValue().contains(TEST_PREFIX_MACRO)) {
                 metadataMap.put(entry.getKey(),
                         entry.getValue().replaceAll(TEST_PREFIX_MACRO, testIdPrefix));
@@ -169,7 +167,7 @@ public class IntegrationService {
         return metadataMap;
     }
 
-    public void evaluate(String testId, List<IngressResult> ingressResults, Configuration config) {
+    public void evaluate(String testId, List<IngressResult> ingressResults, IntegrationTest config) {
         List<UUID> ingressDids = ingressResults.stream()
                 .map(IngressResult::did)
                 .toList();
@@ -179,7 +177,11 @@ public class IntegrationService {
         executor.submit(() -> {
             TestEvaluator testEvaluator = new TestEvaluator(deltaFilesService, contentStorageService, testResultRepo);
             try {
-                testEvaluator.waitForDeltaFile(testId, config.getDescription(), ingressDids, config.getExpectedDeltaFiles(), config.getTimeout());
+                Duration timeout = null;
+                if (StringUtils.isNoneEmpty(config.getTimeout())) {
+                    timeout = Duration.parse(config.getTimeout());
+                }
+                testEvaluator.waitForDeltaFile(testId, config.getName(), ingressDids, config.getExpectedDeltaFiles(), timeout);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Unexpected exception caught from TestEvaluator: ", e);
@@ -187,20 +189,51 @@ public class IntegrationService {
         });
     }
 
-    public TestResult get(String id) {
-        Optional<TestResult> result = testResultRepo.findById(id);
-        return result.orElse(null);
+    public Optional<IntegrationTest> getIntegrationTest(String name) {
+        return integrationTestRepo.findById(name);
     }
 
-    public List<TestResult> getAll() {
+    public Optional<TestResult> getTestResult(String id) {
+        return testResultRepo.findById(id);
+    }
+
+    public List<TestResult> getAllResults() {
         return testResultRepo.findAll();
     }
 
-    public boolean remove(String id) {
-        if (get(id) != null) {
+    public List<IntegrationTest> getAllTests() {
+        return integrationTestRepo.findAll();
+    }
+
+    public boolean removeResult(String id) {
+        if (getTestResult(id).isPresent()) {
             testResultRepo.deleteById(id);
             return true;
         }
         return false;
+    }
+
+    public boolean removeTest(String name) {
+        if (getIntegrationTest(name).isPresent()) {
+            integrationTestRepo.deleteById(name);
+            return true;
+        }
+        return false;
+    }
+
+    public Result save(IntegrationTest config) {
+        List<String> errors = configurationValidator.preSaveCheck(config);
+        if (errors.isEmpty()) {
+
+            integrationTestRepo.save(config);
+            return Result.builder()
+                    .success(true)
+                    .info(List.of("name: " + config.getName()))
+                    .build();
+        }
+        return Result.builder()
+                .success(false)
+                .errors(errors)
+                .build();
     }
 }

@@ -15,35 +15,48 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.core.types.integration;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.common.types.TestStatus;
-import org.hibernate.annotations.Type;
+import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.FlowType;
+import org.deltafi.core.types.DeltaFileFlowState;
 
-import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "test_results")
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TestResult {
-    @Id
-    private String id;
-    private String description;
-    @Enumerated(EnumType.STRING)
-    private TestStatus status;
-    private OffsetDateTime start;
-    private OffsetDateTime stop;
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<String> errors;
+public class ExpectedFlow {
+    private String flow;
+    private FlowType type;
+    private DeltaFileFlowState state;
+    private List<String> actions;
+
+    public List<String> validate() {
+        List<String> errors = new ArrayList<>();
+
+        if (StringUtils.isEmpty(flow)) {
+            errors.add("ExpectedFlow missing dataSource");
+        }
+
+        if (type == null) {
+            errors.add("ExpectedFlow missing type");
+        }
+
+        if (state == null) {
+            state = DeltaFileFlowState.COMPLETE;
+        }
+
+        if (actions == null) {
+            actions = new ArrayList<>();
+        }
+
+        return errors;
+    }
 }

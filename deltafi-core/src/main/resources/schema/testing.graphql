@@ -1,0 +1,190 @@
+#
+#    DeltaFi - Data transformation and enrichment platform
+#
+#    Copyright 2021-2024 DeltaFi Contributors <deltafi@deltafi.org>
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+
+enum TestStatus {
+  INVALID
+  STARTED
+  SUCCESSFUL
+  FAILED
+}
+
+input ExpectedContentDataInput {
+  name: String
+  mediaType: String
+  value: String
+  contains: [String]
+}
+
+type ExpectedContentData {
+  name: String
+  mediaType: String
+  value: String
+  contains: [String]
+}
+
+input ExpectedContentListInput {
+  flow: String
+  type: FlowType
+  action: String
+  data: [ExpectedContentDataInput]
+}
+
+type ExpectedContentList {
+  flow: String
+  type: FlowType
+  action: String
+  data: [ExpectedContentData]
+}
+
+input ExpectedFlowInput {
+  flow: String
+  type: FlowType
+  state: DeltaFileFlowState
+  actions: [String]
+}
+
+type ExpectedFlow {
+  flow: String
+  type: FlowType
+  state: DeltaFileFlowState
+  actions: [String]
+}
+
+input ExpectedDeltaFileInput {
+  stage: DeltaFileStage
+  childCount: Int
+  parentCount: Int
+  expectedFlows: [ExpectedFlowInput]
+  children: [ExpectedDeltaFileInput]
+  expectedContent: ExpectedContentListInput
+}
+
+type ExpectedDeltaFile5 {
+  stage: DeltaFileStage
+  childCount: Int
+  parentCount: Int
+  expectedFlows: [ExpectedFlow]
+  "no children"
+  expectedContent: ExpectedContentList
+}
+
+type ExpectedDeltaFile4 {
+  stage: DeltaFileStage
+  childCount: Int
+  parentCount: Int
+  expectedFlows: [ExpectedFlow]
+  children: [ExpectedDeltaFile5]
+  expectedContent: ExpectedContentList
+}
+
+type ExpectedDeltaFile3 {
+  stage: DeltaFileStage
+  childCount: Int
+  parentCount: Int
+  expectedFlows: [ExpectedFlow]
+  children: [ExpectedDeltaFile4]
+  expectedContent: ExpectedContentList
+}
+
+type ExpectedDeltaFile2 {
+  stage: DeltaFileStage
+  childCount: Int
+  parentCount: Int
+  expectedFlows: [ExpectedFlow]
+  children: [ExpectedDeltaFile3]
+  expectedContent: ExpectedContentList
+}
+
+type ExpectedDeltaFile {
+  stage: DeltaFileStage
+  childCount: Int
+  parentCount: Int
+  expectedFlows: [ExpectedFlow]
+  children: [ExpectedDeltaFile2]
+  expectedContent: ExpectedContentList
+}
+
+input TestCaseIngressInput {
+  flow: String
+  contentType: String
+  ingressFileName: String
+  base64Encoded: Boolean
+  data: String
+  metadata: [KeyValueInput]
+}
+
+type TestCaseIngress {
+  flow: String
+  contentType: String
+  ingressFileName: String
+  base64Encoded: Boolean
+  data: String
+  metadata: [KeyValue]
+}
+
+input IntegrationTestInput {
+  name: String
+  description: String
+  plugins: [PluginCoordinatesInput]
+  dataSources: [String]
+  transformationFlows: [String]
+  egressFlows: [String]
+  inputs: [TestCaseIngressInput]
+  "Really a Duration type:"
+  timeout: String
+  expectedDeltaFiles: [ExpectedDeltaFileInput]
+}
+
+type IntegrationTest {
+  name: String
+  description: String
+  plugins: [PluginCoordinates]
+  dataSources: [String]
+  transformationFlows: [String]
+  egressFlows: [String]
+  inputs: [TestCaseIngress]
+  "Really a Duration type:"
+  timeout: String
+  expectedDeltaFiles: [ExpectedDeltaFile]
+}
+
+type TestResult {
+  id: String
+  testName: String
+  status: TestStatus!
+  start: DateTime
+  stop: DateTime
+  errors: [String]!
+}
+
+extend type Query {
+  getIntegrationTest(name: String!): IntegrationTest!
+  getIntegrationTests: [IntegrationTest!]
+
+  getTestResult(id: String!): TestResult!
+  getTestResults: [TestResult!]
+}
+
+extend type Mutation {
+  loadIntegrationTest(configYaml: String!): Result!
+  saveIntegrationTest(testCase: IntegrationTestInput!): Result!
+  startIntegrationTest(name: String!): TestResult!
+
+  removeIntegrationTest(name: String!): Boolean!
+  removeTestResult(id: String!): Boolean!
+}

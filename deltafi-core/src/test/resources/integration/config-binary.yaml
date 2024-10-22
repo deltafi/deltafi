@@ -1,9 +1,12 @@
+name: plugin1.test1
 description: This test shows how to pass in binary data
 plugins:
   - groupId: org.deltafi
     artifactId: deltafi-core-actions
+    version: ANY
   - groupId: org.deltafi.testjig
     artifactId: deltafi-testjig
+    version: ANY
 dataSources:
   - unarchive-passthrough-rest-data-source
 transformationFlows:

@@ -15,40 +15,48 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.integration.config;
+package org.deltafi.core.types.integration;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.types.DeltaFileFlowState;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class ExpectedFlows {
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ExpectedContentList {
     private String flow;
     private FlowType type;
-    private DeltaFileFlowState state;
-    private List<String> actions;
+    private String action;
+    private List<ExpectedContentData> data;
 
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
-
         if (StringUtils.isEmpty(flow)) {
-            errors.add("ExpectedFlows missing dataSource");
+            errors.add("ExpectedContentList missing dataSource");
         }
 
         if (type == null) {
-            errors.add("ExpectedFlows missing type");
+            errors.add("ExpectedContentList missing type");
         }
 
-        if (state == null) {
-            state = DeltaFileFlowState.COMPLETE;
+        if (StringUtils.isEmpty(action)) {
+            errors.add("ExpectedContentList missing action");
         }
 
-        if (actions == null) {
-            actions = new ArrayList<>();
+        if (data == null || data.isEmpty()) {
+            errors.add("ExpectedContentList missing data");
+        } else {
+            for (ExpectedContentData contentData : data) {
+                errors.addAll(contentData.validate());
+            }
         }
 
         return errors;

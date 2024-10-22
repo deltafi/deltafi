@@ -17,16 +17,18 @@
  */
 package org.deltafi.core.integration;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
-import org.deltafi.core.integration.config.Configuration;
+import org.deltafi.common.types.Plugin;
+import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.services.EgressFlowService;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.RestDataSourceService;
-import org.deltafi.core.services.EgressFlowService;
 import org.deltafi.core.services.TransformFlowService;
+import org.deltafi.core.types.integration.*;
+import org.deltafi.core.types.PluginEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -39,12 +41,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class ConfigurationValidatorTest {
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .registerModule(new JavaTimeModule());
 
     private final RestDataSourceService restDataSourceService;
@@ -72,8 +74,31 @@ class ConfigurationValidatorTest {
 
     @Test
     @SneakyThrows
-    void testConfigCheck() {
-        Configuration c = readConfig("config-binary.yaml");
+    void testPreSaveCheckFails() {
+        IntegrationTest testCase = readYamlTestFile("config-invalid.yaml");
+
+        List<String> actualErrors = configurationValidator.preSaveCheck(testCase);
+
+        List<String> expectedErrors = List.of(
+                "Test configuration must specify a 'description'",
+                "Invalid 'timeout'; must be a valid Duration",
+                "Test configuration is missing 'inputs''"
+        );
+        assertEquals(expectedErrors, actualErrors);
+    }
+
+    @Test
+    @SneakyThrows
+    void testPreSaveCheckSuccess() {
+        IntegrationTest testCase = readYamlTestFile("config-binary.yaml");
+        List<String> actualErrors = configurationValidator.preSaveCheck(testCase);
+        assertTrue(actualErrors.isEmpty());
+    }
+
+    @Test
+    @SneakyThrows
+    void testValidateToStartFails() {
+        IntegrationTest testCase = readYamlTestFile("config-binary.yaml");
 
         Mockito.when(pluginService.getPlugins()).thenReturn(new ArrayList<>());
         Mockito.when(restDataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(false);
@@ -81,7 +106,7 @@ class ConfigurationValidatorTest {
         Mockito.when(transformFlowService.hasFlow("passthrough-transform")).thenReturn(false);
         Mockito.when(egressFlowService.hasFlow("passthrough-egress")).thenReturn(false);
 
-        List<String> actualErrors = configurationValidator.validateConfig(c);
+        List<String> actualErrors = configurationValidator.validateToStart(testCase);
 
         List<String> expectedErrors = List.of(
                 "Plugin not found: org.deltafi:deltafi-core-actions:*",
@@ -94,8 +119,41 @@ class ConfigurationValidatorTest {
         assertEquals(expectedErrors, actualErrors);
     }
 
-    Configuration readConfig(String file) throws IOException {
+    @Test
+    @SneakyThrows
+    void testValidateToStartSuccess() {
+        IntegrationTest testCase = readYamlTestFile("config-binary.yaml");
+
+        Mockito.when(pluginService.getPlugins()).thenReturn(getPlugins());
+
+        Mockito.when(restDataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(true);
+        Mockito.when(restDataSourceService.hasRunningFlow("unarchive-passthrough-rest-data-source")).thenReturn(true);
+
+        Mockito.when(transformFlowService.hasFlow("unarchive-passthrough-transform")).thenReturn(true);
+        Mockito.when(transformFlowService.hasRunningFlow("unarchive-passthrough-transform")).thenReturn(true);
+
+        Mockito.when(transformFlowService.hasFlow("passthrough-transform")).thenReturn(true);
+        Mockito.when(transformFlowService.hasRunningFlow("passthrough-transform")).thenReturn(true);
+
+        Mockito.when(egressFlowService.hasFlow("passthrough-egress")).thenReturn(true);
+        Mockito.when(egressFlowService.hasRunningFlow("passthrough-egress")).thenReturn(true);
+
+        List<String> actualErrors = configurationValidator.validateToStart(testCase);
+        assertTrue(actualErrors.isEmpty());
+    }
+
+    private List<PluginEntity> getPlugins() {
+        Plugin p1 = new Plugin();
+        p1.setPluginCoordinates(new PluginCoordinates("org.deltafi", "deltafi-core-actions", "1.0"));
+
+        Plugin p2 = new Plugin();
+        p2.setPluginCoordinates(new PluginCoordinates("org.deltafi.testjig", "deltafi-testjig", "1.0"));
+
+        return List.of(new PluginEntity(p1), new PluginEntity(p2));
+    }
+
+    IntegrationTest readYamlTestFile(String file) throws IOException {
         byte[] bytes = new ClassPathResource("/integration/" + file).getInputStream().readAllBytes();
-        return YAML_MAPPER.readValue(bytes, Configuration.class);
+        return YAML_MAPPER.readValue(bytes, IntegrationTest.class);
     }
 }

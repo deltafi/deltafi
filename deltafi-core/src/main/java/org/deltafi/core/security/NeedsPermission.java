@@ -333,8 +333,8 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('IntegrationTestLaunch'" + OR_ADMIN)
-    public @interface IntegrationTestLaunch {}
+    @PreAuthorize(value = "hasAnyAuthority('IntegrationTestUpdate'" + OR_ADMIN)
+    public @interface IntegrationTestUpdate {}
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

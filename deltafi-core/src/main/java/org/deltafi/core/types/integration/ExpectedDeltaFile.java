@@ -15,22 +15,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.integration.config;
+package org.deltafi.core.types.integration;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.deltafi.common.types.DeltaFileStage;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ExpectedDeltaFile {
     private DeltaFileStage stage;
     private Integer childCount;
     private Integer parentCount;
-    private List<ExpectedFlows> expectedFlows;
+    private List<ExpectedFlow> expectedFlows;
     private List<ExpectedDeltaFile> children;
-    private ContentList expectedContent;
+    private ExpectedContentList expectedContent;
 
     public List<String> validate(int level) {
         List<String> errors = new ArrayList<>();
@@ -65,14 +71,13 @@ public class ExpectedDeltaFile {
             ++pos;
         }
 
-        for (ExpectedFlows ef : expectedFlows) {
+        for (ExpectedFlow ef : expectedFlows) {
             errors.addAll(ef.validate());
         }
 
         if (expectedContent != null) {
             errors.addAll(expectedContent.validate());
         }
-
         return errors;
     }
 }

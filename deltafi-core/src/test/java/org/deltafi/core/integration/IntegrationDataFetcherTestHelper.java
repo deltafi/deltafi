@@ -20,46 +20,333 @@ package org.deltafi.core.integration;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
-import org.deltafi.core.types.TestResult;
 import org.deltafi.core.generated.client.*;
+import org.deltafi.core.types.Result;
+import org.deltafi.core.types.integration.IntegrationTest;
+import org.deltafi.core.types.integration.TestResult;
 
 import java.util.List;
 
 public class IntegrationDataFetcherTestHelper {
 
-    private static final GetAllIntegrationTestsProjectionRoot GET_ALL_PROJECTION = new GetAllIntegrationTestsProjectionRoot()
-            .id()
+    private static final GetIntegrationTestsProjectionRoot GET_ALL_INT_TESTS = new GetIntegrationTestsProjectionRoot()
+            .name()
             .description()
+            .plugins()
+            .groupId()
+            .artifactId()
+            .version()
+            .parent()
+            .dataSources()
+            .transformationFlows()
+            .egressFlows()
+            .inputs()
+            .flow()
+            .contentType()
+            .ingressFileName()
+            .base64Encoded()
+            .data()
+            .metadata()
+            .key()
+            .value()
+            .parent()
+            .parent()
+            .timeout()
+            .expectedDeltaFiles()
+            // ExpectedDeltaFile (0)
+            .stage()
+            .parent()
+            .childCount()
+            .parentCount()
+
+            .expectedFlows()
+            // ExpectedFlow (0)
+            .flow()
+            .type()
+            .parent()
+            .state()
+            .parent()
+            .actions()
+            .parent()
+
+            .expectedContent()
+            // ExpectedContentList (0)
+            .flow()
+            .type()
+            .parent()
+            .action()
+            .data()
+            .name()
+            .mediaType()
+            .value()
+            .contains()
+            .parent()
+            .parent()
+
+            .children()
+            // ExpectedDeltaFile (1)
+
+            .stage()
+            .parent()
+            .childCount()
+            .parentCount()
+
+            .expectedFlows()
+            // ExpectedFlow (1)
+            .flow()
+            .type()
+            .parent()
+            .state()
+            .parent()
+            .actions()
+            .parent()
+
+            .expectedContent()
+            // ExpectedContentList (1)
+            .flow()
+            .type()
+            .parent()
+            .action()
+            .data()
+            .name()
+            .mediaType()
+            .value()
+            .contains()
+            .parent()
+
+            .parent()
+            .children()
+            // ExpectedDeltaFile (2)
+
+            .stage()
+            .parent()
+            .childCount()
+            .parentCount()
+
+            .expectedFlows()
+            // ExpectedFlow (2)
+            .flow()
+            .type()
+            .parent()
+            .state()
+            .parent()
+            .actions()
+            .parent()
+
+            .expectedContent()
+            // ExpectedContentList (2)
+            .flow()
+            .type()
+            .parent()
+            .action()
+            .data()
+            .name()
+            .mediaType()
+            .value()
+            .contains()
+            .parent()
+
+            .parent()
+
+            .parent()
+
+            .parent()
+            .parent();
+
+    private static final GetIntegrationTestProjectionRoot GET_INT_TEST = new GetIntegrationTestProjectionRoot()
+            .name()
+            .description()
+            .plugins()
+            .groupId()
+            .artifactId()
+            .version()
+            .parent()
+            .dataSources()
+            .transformationFlows()
+            .egressFlows()
+            .inputs()
+            .flow()
+            .contentType()
+            .ingressFileName()
+            .base64Encoded()
+            .data()
+            .metadata()
+            .key()
+            .value()
+            .parent()
+            .parent()
+            .timeout()
+            .expectedDeltaFiles()
+            // ExpectedDeltaFile (0)
+            .stage()
+            .parent()
+            .childCount()
+            .parentCount()
+
+            .expectedFlows()
+            // ExpectedFlow (0)
+            .flow()
+            .type()
+            .parent()
+            .state()
+            .parent()
+            .actions()
+            .parent()
+
+            .expectedContent()
+            // ExpectedContentList (0)
+            .flow()
+            .type()
+            .parent()
+            .action()
+            .data()
+            .name()
+            .mediaType()
+            .value()
+            .contains()
+            .parent()
+            .parent()
+
+            .children()
+            // ExpectedDeltaFile (1)
+
+            .stage()
+            .parent()
+            .childCount()
+            .parentCount()
+
+            .expectedFlows()
+            // ExpectedFlow (1)
+            .flow()
+            .type()
+            .parent()
+            .state()
+            .parent()
+            .actions()
+            .parent()
+
+            .expectedContent()
+            // ExpectedContentList (1)
+            .flow()
+            .type()
+            .parent()
+            .action()
+            .data()
+            .name()
+            .mediaType()
+            .value()
+            .contains()
+            .parent()
+
+            .parent()
+            .children()
+            // ExpectedDeltaFile (2)
+
+            .stage()
+            .parent()
+            .childCount()
+            .parentCount()
+
+            .expectedFlows()
+            // ExpectedFlow (2)
+            .flow()
+            .type()
+            .parent()
+            .state()
+            .parent()
+            .actions()
+            .parent()
+
+            .expectedContent()
+            // ExpectedContentList (2)
+            .flow()
+            .type()
+            .parent()
+            .action()
+            .data()
+            .name()
+            .mediaType()
+            .value()
+            .contains()
+            .parent()
+
+            .parent()
+
+            .parent()
+
+            .parent()
+            .parent();
+
+
+    private static final GetTestResultProjectionRoot GET_TEST_RESULT = new GetTestResultProjectionRoot()
+            .id()
+            .testName()
             .start()
             .stop()
             .errors()
             .status()
             .parent();
 
-    private static final GetIntegrationTestProjectionRoot GET_UNT_TEST_PROJECTION = new GetIntegrationTestProjectionRoot()
+    private static final GetTestResultsProjectionRoot GET_ALL_TEST_RESULTS = new GetTestResultsProjectionRoot()
             .id()
-            .description()
+            .testName()
             .start()
             .stop()
             .errors()
             .status()
             .parent();
 
-    private static final LaunchIntegrationTestProjectionRoot LAUNCH_INT_TEST_PROJECTION = new LaunchIntegrationTestProjectionRoot()
+    private static final LoadIntegrationTestProjectionRoot LOAD_INT_TEST_PROJECTION = new LoadIntegrationTestProjectionRoot()
+            .info()
+            .errors()
+            .success();
+
+    private static final SaveIntegrationTestProjectionRoot SAVE_INT_TEST_PROJECTION = new SaveIntegrationTestProjectionRoot()
+            .info()
+            .errors()
+            .success();
+
+    private static final StartIntegrationTestProjectionRoot START_INT_TEST_PROJECTION = new StartIntegrationTestProjectionRoot()
             .id()
-            .description()
+            .testName()
             .start()
             .stop()
             .errors()
             .status()
             .parent();
 
-    static public TestResult launchIntegrationTest(DgsQueryExecutor dgsQueryExecutor, String config) {
-        LaunchIntegrationTestGraphQLQuery query = LaunchIntegrationTestGraphQLQuery.newRequest()
-                .configYaml(config)
+    static public Result loadIntegrationTest(DgsQueryExecutor dgsQueryExecutor, String configYaml) {
+        LoadIntegrationTestGraphQLQuery query = LoadIntegrationTestGraphQLQuery.newRequest()
+                .configYaml(configYaml)
                 .build();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, LAUNCH_INT_TEST_PROJECTION);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, LOAD_INT_TEST_PROJECTION);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Result.class);
+    }
+
+    static public Result saveIntegrationTest(DgsQueryExecutor dgsQueryExecutor, IntegrationTest testCase) {
+        SaveIntegrationTestGraphQLQuery query = SaveIntegrationTestGraphQLQuery.newRequest()
+                .testCase(testCase)
+                .build();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, SAVE_INT_TEST_PROJECTION);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Result.class);
+    }
+
+    static public TestResult startIntegrationTest(DgsQueryExecutor dgsQueryExecutor, String name) {
+        StartIntegrationTestGraphQLQuery query = StartIntegrationTestGraphQLQuery.newRequest()
+                .name(name)
+                .build();
+
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, START_INT_TEST_PROJECTION);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -67,9 +354,9 @@ public class IntegrationDataFetcherTestHelper {
                 TestResult.class);
     }
 
-    static public List<TestResult> getAllIntegrationTests(DgsQueryExecutor dgsQueryExecutor) {
-        GetAllIntegrationTestsGraphQLQuery query = GetAllIntegrationTestsGraphQLQuery.newRequest().build();
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, GET_ALL_PROJECTION);
+    static public List<TestResult> getAllTestResults(DgsQueryExecutor dgsQueryExecutor) {
+        GetTestResultsGraphQLQuery query = GetTestResultsGraphQLQuery.newRequest().build();
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, GET_ALL_TEST_RESULTS);
 
         TypeRef<List<TestResult>> resultsListType = new TypeRef<>() {
         };
@@ -80,9 +367,22 @@ public class IntegrationDataFetcherTestHelper {
                 resultsListType);
     }
 
-    static public TestResult getIntegrationTest(DgsQueryExecutor dgsQueryExecutor, String id) {
-        GetIntegrationTestGraphQLQuery query = GetIntegrationTestGraphQLQuery.newRequest().id(id).build();
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, GET_UNT_TEST_PROJECTION);
+    static public List<IntegrationTest> getAllIntegrationTests(DgsQueryExecutor dgsQueryExecutor) {
+        GetIntegrationTestsGraphQLQuery query = GetIntegrationTestsGraphQLQuery.newRequest().build();
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, GET_ALL_INT_TESTS);
+
+        TypeRef<List<IntegrationTest>> resultsListType = new TypeRef<>() {
+        };
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                resultsListType);
+    }
+
+    static public TestResult getTestResult(DgsQueryExecutor dgsQueryExecutor, String id) {
+        GetTestResultGraphQLQuery query = GetTestResultGraphQLQuery.newRequest().id(id).build();
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, GET_TEST_RESULT);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -90,8 +390,27 @@ public class IntegrationDataFetcherTestHelper {
                 TestResult.class);
     }
 
-    static public boolean removeIntegrationTest(DgsQueryExecutor dgsQueryExecutor, String id) {
-        RemoveIntegrationTestGraphQLQuery query = RemoveIntegrationTestGraphQLQuery.newRequest().id(id).build();
+    static public IntegrationTest getIntegrationTest(DgsQueryExecutor dgsQueryExecutor, String name) {
+        GetIntegrationTestGraphQLQuery query = GetIntegrationTestGraphQLQuery.newRequest().name(name).build();
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, GET_INT_TEST);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                IntegrationTest.class);
+    }
+
+    static public boolean removeTestResult(DgsQueryExecutor dgsQueryExecutor, String id) {
+        RemoveTestResultGraphQLQuery query = RemoveTestResultGraphQLQuery.newRequest().id(id).build();
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(), Boolean.class);
+    }
+
+    static public boolean removeIntegrationTest(DgsQueryExecutor dgsQueryExecutor, String name) {
+        RemoveIntegrationTestGraphQLQuery query = RemoveIntegrationTestGraphQLQuery.newRequest().name(name).build();
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(

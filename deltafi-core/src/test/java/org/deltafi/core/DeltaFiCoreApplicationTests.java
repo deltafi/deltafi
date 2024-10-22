@@ -18,6 +18,9 @@
 package org.deltafi.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
@@ -43,7 +46,9 @@ import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.integration.ConfigurationValidator;
 import org.deltafi.core.integration.IntegrationDataFetcherTestHelper;
+import org.deltafi.core.integration.IntegrationTestRepo;
 import org.deltafi.core.integration.TestResultRepo;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.types.PluginEntity;
@@ -59,6 +64,10 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.integration.ExpectedDeltaFile;
+import org.deltafi.core.types.integration.IntegrationTest;
+import org.deltafi.core.types.integration.TestCaseIngress;
+import org.deltafi.core.types.integration.TestResult;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
@@ -75,6 +84,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -145,6 +155,9 @@ class DeltaFiCoreApplicationTests {
 
     @Autowired
     private ScheduledJoinService scheduledJoinService;
+
+	private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
+			.registerModule(new JavaTimeModule());
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
@@ -217,6 +230,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	TestResultRepo testResultRepo;
+
+	@Autowired
+	IntegrationTestRepo integrationTestRepo;
 
 	@Autowired
 	PluginVariableRepo pluginVariableRepo;
@@ -3014,12 +3030,135 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void launchIntegrationTest() throws IOException {
+	void testEndpointsForTestResults() {
 		testResultRepo.deleteAll();
-		TestResult testResult = IntegrationDataFetcherTestHelper.launchIntegrationTest(
-				dgsQueryExecutor,
-				Resource.read("/integration/config-binary.yaml"));
-		List<String> errors = List.of(
+		integrationTestRepo.deleteAll();
+
+		OffsetDateTime start = OffsetDateTime.of(2024, 1, 31, 12, 0, 30, 0, ZoneOffset.UTC);
+		OffsetDateTime stop = OffsetDateTime.of(2024, 1, 31, 12, 1, 30, 0, ZoneOffset.UTC);
+
+		TestResult testResult1 = new TestResult("1", "tn1", TestStatus.SUCCESSFUL, start, stop, Collections.emptyList());
+		TestResult testResult2 = new TestResult("2", "tn2", TestStatus.FAILED, start, stop, List.of("errors"));
+		testResultRepo.saveAll(List.of(testResult1, testResult2));
+
+		List<TestResult> listResult = IntegrationDataFetcherTestHelper.getAllTestResults(dgsQueryExecutor);
+		assertEquals(2, listResult.size());
+		assertTrue(listResult.containsAll(List.of(testResult1, testResult2)));
+
+		TestResult getResult = IntegrationDataFetcherTestHelper.getTestResult(dgsQueryExecutor, "1");
+		assertEquals(testResult1, getResult);
+
+		assertFalse(IntegrationDataFetcherTestHelper.removeTestResult(dgsQueryExecutor, "3"));
+		assertTrue(IntegrationDataFetcherTestHelper.removeTestResult(dgsQueryExecutor, "1"));
+
+		List<TestResult> anotherListResult = IntegrationDataFetcherTestHelper.getAllTestResults(dgsQueryExecutor);
+		assertEquals(1, anotherListResult.size());
+		assertTrue(anotherListResult.contains(testResult2));
+	}
+
+	IntegrationTest readYamlTestFile(String file) throws IOException {
+		byte[] bytes = new ClassPathResource("/integration/" + file).getInputStream().readAllBytes();
+		return YAML_MAPPER.readValue(bytes, IntegrationTest.class);
+	}
+
+	@Test
+	void testIntegrationTestSerialization() throws IOException {
+		testResultRepo.deleteAll();
+		integrationTestRepo.deleteAll();
+
+		TestCaseIngress ingress1 = TestCaseIngress.builder()
+				.flow("ds")
+				.ingressFileName("fn")
+				.base64Encoded(false)
+				.data("data")
+				.build();
+		PluginCoordinates pc = new PluginCoordinates("group", "art", "ANY");
+
+		ExpectedDeltaFile e1 = ExpectedDeltaFile.builder()
+				.stage(DeltaFileStage.COMPLETE)
+				.childCount(3)
+				.build();
+
+		ExpectedDeltaFile e2 = ExpectedDeltaFile.builder()
+				.stage(DeltaFileStage.ERROR)
+				.childCount(0)
+				.build();
+
+		// Missing plugin and expectedDeltaFile
+		IntegrationTest testCaseSimple = IntegrationTest.builder()
+				.name("test4")
+				.description("desc")
+				.inputs(List.of(ingress1))
+				.build();
+
+		Result result = IntegrationDataFetcherTestHelper.saveIntegrationTest(
+				dgsQueryExecutor, testCaseSimple);
+
+		assertFalse(result.isSuccess());
+		assertFalse(result.getErrors().isEmpty());
+
+		// N0 ExpectedDeltaFiles
+		IntegrationTest testCaseWithoutExpectedDFs = IntegrationTest.builder()
+				.name("test4")
+				.description("desc")
+				.inputs(List.of(ingress1))
+				.plugins(List.of(pc))
+				.dataSources(List.of("ds"))
+				.transformationFlows(List.of("t"))
+				.egressFlows(List.of("e"))
+				.timeout("PT3M")
+				.build();
+
+		result = IntegrationDataFetcherTestHelper.saveIntegrationTest(
+				dgsQueryExecutor, testCaseWithoutExpectedDFs);
+
+		assertFalse(result.isSuccess());
+		assertFalse(result.getErrors().isEmpty());
+
+		// FULL
+		IntegrationTest testCaseFull = IntegrationTest.builder()
+				.name("test4")
+				.description("desc")
+				.inputs(List.of(ingress1))
+				.plugins(List.of(pc))
+				.dataSources(List.of("ds"))
+				.transformationFlows(List.of("t"))
+				.egressFlows(List.of("e"))
+				.timeout("PT3M")
+				.expectedDeltaFiles(List.of(e1, e2))
+				.build();
+
+		IntegrationTest testCaseFromYaml = readYamlTestFile("/conversion-test.yaml");
+		assertEquals(testCaseFull, testCaseFromYaml);
+
+		result = IntegrationDataFetcherTestHelper.saveIntegrationTest(
+				dgsQueryExecutor, testCaseFull);
+
+		assertTrue(result.isSuccess());
+		assertTrue(result.getErrors().isEmpty());
+
+		// YAML as String
+		result = IntegrationDataFetcherTestHelper.loadIntegrationTest(
+				dgsQueryExecutor, Resource.read("/integration/conversion-test.yaml"));
+
+		assertTrue(result.isSuccess());
+		assertTrue(result.getErrors().isEmpty());
+	}
+
+	@Test
+	void testLaunchIntegrationTest() throws IOException {
+		testResultRepo.deleteAll();
+		integrationTestRepo.deleteAll();
+
+		IntegrationTest testCase = readYamlTestFile("/config-binary.yaml");
+
+		Result result = IntegrationDataFetcherTestHelper.saveIntegrationTest(
+				dgsQueryExecutor, testCase);
+
+		assertTrue(result.isSuccess());
+		assertTrue(result.getErrors().isEmpty());
+
+		List<String> startErrors = List.of(
 				"Could not validate config",
 				"Plugin not found: org.deltafi:deltafi-core-actions:*",
 				"Plugin not found: org.deltafi.testjig:deltafi-testjig:*",
@@ -3028,33 +3167,58 @@ class DeltaFiCoreApplicationTests {
 				"Flow does not exist (transformation): passthrough-transform",
 				"Flow does not exist (egress): passthrough-egress"
 		);
+
+		TestResult testResult = IntegrationDataFetcherTestHelper.startIntegrationTest(dgsQueryExecutor, "plugin1.test1");
+
 		assertEquals(TestStatus.INVALID, testResult.getStatus());
-		assertEquals(errors, testResult.getErrors());
+		assertEquals(startErrors, testResult.getErrors());
+
+		List<TestResult> listResult = IntegrationDataFetcherTestHelper.getAllTestResults(dgsQueryExecutor);
+		assertEquals(0, listResult.size());
 	}
 
 	@Test
-	void integrationTestCrud() {
+	void testEndpointsForIntegrationTests() throws IOException {
+		String testName1 = "plugin1.test1";
+		String testName2 = "test2";
+
 		testResultRepo.deleteAll();
-		OffsetDateTime start = OffsetDateTime.of(2024, 1, 31, 12, 0, 30, 0, ZoneOffset.UTC);
-		OffsetDateTime stop = OffsetDateTime.of(2024, 1, 31, 12, 1, 30, 0, ZoneOffset.UTC);
+		integrationTestRepo.deleteAll();
 
-		TestResult testResult1 = new TestResult("1", "d1", TestStatus.SUCCESSFUL, start, stop, Collections.emptyList());
-		TestResult testResult2 = new TestResult("2", "d2", TestStatus.FAILED, start, stop, List.of("errors"));
-		testResultRepo.saveAll(List.of(testResult1, testResult2));
+		IntegrationTest test1 = IntegrationTest.builder().name(testName1).description("d1").build();
+		IntegrationTest test2 = IntegrationTest.builder().name(testName2).description("d2").build();
 
-		List<TestResult> listResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
+		integrationTestRepo.saveAll(List.of(test1, test2));
+
+		List<IntegrationTest> listResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
 		assertEquals(2, listResult.size());
-		assertTrue(listResult.containsAll(List.of(testResult1, testResult2)));
+		assertTrue(listResult.containsAll(List.of(test1, test2)));
 
-		TestResult get1Result = IntegrationDataFetcherTestHelper.getIntegrationTest(dgsQueryExecutor, "1");
-		assertEquals(testResult1, get1Result);
+		IntegrationTest updatedTest1 = readYamlTestFile("/config-binary.yaml");
+
+		// Updates an existing test
+		Result result = IntegrationDataFetcherTestHelper.saveIntegrationTest(
+				dgsQueryExecutor, updatedTest1);
+
+		// validator sets some defaults for missing values
+		ConfigurationValidator.validateExpectedDeltaFiles(updatedTest1);
+
+		listResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
+		assertEquals(2, listResult.size());
+		assertTrue(listResult.containsAll(List.of(updatedTest1, test2)));
+
+		IntegrationTest getResult = IntegrationDataFetcherTestHelper.getIntegrationTest(dgsQueryExecutor, testName1);
+		assertEquals(updatedTest1, getResult);
+
+		getResult = IntegrationDataFetcherTestHelper.getIntegrationTest(dgsQueryExecutor, testName2);
+		assertEquals(test2, getResult);
 
 		assertFalse(IntegrationDataFetcherTestHelper.removeIntegrationTest(dgsQueryExecutor, "3"));
-		assertTrue(IntegrationDataFetcherTestHelper.removeIntegrationTest(dgsQueryExecutor, "1"));
+		assertTrue(IntegrationDataFetcherTestHelper.removeIntegrationTest(dgsQueryExecutor, testName1));
 
-		List<TestResult> anotherListResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
+		List<IntegrationTest> anotherListResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
 		assertEquals(1, anotherListResult.size());
-		assertTrue(anotherListResult.contains(testResult2));
+		assertTrue(anotherListResult.contains(test2));
 	}
 
 	@Test
