@@ -62,18 +62,22 @@
                     <dt>maxAge</dt>
                     <dd>
                       <InputText v-model="joinData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
+                      <small :id="join-maxAge-input-help" style="display: inline-block;">The maximum duration (ISO 8601) to wait after the first DeltaFile is received for a join group before this action is executed</small>
                     </dd>
                     <dt>minNum</dt>
                     <dd>
                       <InputNumber v-model="joinData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
+                      <small :id="join-minNum-input-help" style="display: inline-block;">The minimum number of DeltaFiles to join within maxAge. If this number is not reached, all DeltaFiles received for the join group will have this action marked in error.</small>
                     </dd>
                     <dt>maxNum</dt>
                     <dd>
                       <InputNumber v-model="joinData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
+                      <small :id="join-maxNum-input-help" style="display: inline-block;">The maximum number of DeltaFiles to join before this action is executed</small>
                     </dd>
                     <dt>metadataKey</dt>
                     <dd>
                       <InputText v-model="joinData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
+                      <small :id="join-metadataKey-input-help" style="display: inline-block;">An optional metadata key used to get the value to group joins by. If not set, DeltaFiles are not grouped when joining.</small>
                     </dd>
                   </div>
                 </div>
