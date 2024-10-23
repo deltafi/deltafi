@@ -18,10 +18,12 @@
 package org.deltafi.core.plugin.generator;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionType;
 
 @Data
+@NoArgsConstructor
 public class ActionGeneratorInput {
     private String className;
     private String description;
