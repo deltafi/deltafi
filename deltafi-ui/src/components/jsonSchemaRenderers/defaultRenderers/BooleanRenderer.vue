@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
+import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
 import { ControlElement } from "@jsonforms/core";
 import { computed, defineProps, reactive } from "vue";

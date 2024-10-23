@@ -72,7 +72,7 @@
           </template>
           <dt>Topic*</dt>
           <dd>
-            <AutoComplete v-model="model['topic']" placeholder="Publish to Topic" class="auto-complete-input-width" :suggestions="topicList" @complete="search" />
+            <AutoComplete v-model="model['topic']" placeholder="Publish to Topic" class="auto-complete-input-width" :suggestions="topicList" dropdown @complete="search" />
           </dd>
         </dl>
       </div>

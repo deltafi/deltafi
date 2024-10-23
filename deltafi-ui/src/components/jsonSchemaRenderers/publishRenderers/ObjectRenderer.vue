@@ -18,21 +18,18 @@
 
 <template>
   <div v-if="schemaData.control.visible" class="pb-2">
-    <dt>{{ computedLabel }}</dt>
-    <div class="deltafi-fieldset">
-      <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
-      <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-      <AdditionalPropertiesRenderer v-if="hasAdditionalProperties && showAdditionalProperties" :input="input"></AdditionalPropertiesRenderer>
-    </div>
+    <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
+    <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+    <AdditionalPropertiesRenderer v-if="hasAdditionalProperties && showAdditionalProperties" :input="input"></AdditionalPropertiesRenderer>
   </div>
 </template>
 
 <script setup lang="ts">
-import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
+import useSchemaComposition from "../defaultRenderers/util/useSchemaComposition";
 import { ControlElement, findUISchema, Generate } from "@jsonforms/core";
 import { computed, reactive } from "vue";
 import { DispatchRenderer, rendererProps, useJsonFormsControlWithDetail } from "@jsonforms/vue";
-import AdditionalPropertiesRenderer from "./AdditionalPropertiesRenderer.vue";
+import AdditionalPropertiesRenderer from "../defaultRenderers/AdditionalPropertiesRenderer.vue";
 import _ from "lodash";
 const { useNested } = useSchemaComposition();
 
@@ -76,14 +73,6 @@ const hasAdditionalProperties = computed(() => {
 const showAdditionalProperties = computed(() => {
   const showAdditionalProperties = schemaData.control.uischema.options?.showAdditionalProperties;
   return showAdditionalProperties === undefined || showAdditionalProperties === true;
-});
-
-const computedLabel = computed(() => {
-  if (schemaData.control.config.defaultLabels) {
-    return schemaData.control.label;
-  }
-
-  return schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 

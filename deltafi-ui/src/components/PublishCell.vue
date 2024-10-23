@@ -13,30 +13,30 @@
         <div class="mb-2 text-muted">
           <strong>Publish Rules</strong>
         </div>
-        <u>Default Rule</u>
-        <div class="ml-2">
-          <div>Default Behavior: {{ publishData.defaultRule.defaultBehavior }}</div>
-          <div v-if="!_.isEmpty(publishData.defaultRule.topic)" class="">
-            <span v-if="!_.isEmpty(publishData.defaultRule.topic)">Topic: {{ publishData.defaultRule.topic }}</span>
+        <template v-if="!_.isEmpty(publishData.rules)">
+          <div>
+            <u>Topics</u>
           </div>
-        </div>
-      </template>
-      <template v-if="!_.isEmpty(publishData.matchingPolicy)">
-        <div>
-          <u>Matching Policy</u>
-        </div>
+          <div v-for="(rule, index) in publishData.rules" :key="index" class="ml-2">
+            <div v-if="!_.isEmpty(rule.topic)">Topic Name: {{ rule.topic }}</div>
+            <div v-if="!_.isEmpty(rule.condition)">Condition: {{ rule.condition }}</div>
+            <Divider v-if="publishData.rules.length > index + 1" class="mt-1 mb-3" />
+          </div>
+        </template>
+        <template v-if="!_.isEmpty(publishData.matchingPolicy)">
+          <div>
+            <u>If multiple topics would receive data:</u>
+          </div>
+          <div class="ml-2">
+            {{ formatDisplayValue(publishData.matchingPolicy) }}
+          </div>
+        </template>
+        <u>If no topics would receive data:</u>
         <div class="ml-2">
-          {{ publishData.matchingPolicy }}
-        </div>
-      </template>
-      <template v-if="!_.isEmpty(publishData.rules)">
-        <div>
-          <u>Rules</u>
-        </div>
-        <div v-for="(rule, index) in publishData.rules" :key="index" class="ml-2">
-          <div v-if="!_.isEmpty(rule.topic)">Topic: {{ rule.topic }}</div>
-          <div v-if="!_.isEmpty(rule.condition)">Condition: {{ rule.condition }}</div>
-          <Divider v-if="publishData.rules.length > index + 1" class="mt-1 mb-3" />
+          <div>{{ formatDisplayValue(publishData.defaultRule.defaultBehavior) }}</div>
+          <div v-if="!_.isEmpty(publishData.defaultRule.topic)" class="">
+            <span v-if="!_.isEmpty(publishData.defaultRule.topic)">Topic Name: {{ publishData.defaultRule.topic }}</span>
+          </div>
         </div>
       </template>
     </OverlayPanel>
@@ -64,6 +64,16 @@ const showOverlayPanel = (event) => {
 };
 const hideOverlayPanel = (event) => {
   publishOverlayPanel.value.hide(event);
+};
+
+const formatDisplayValue = (valueToDisplay) => {
+  if (_.isEqual(valueToDisplay, "ALL_MATCHING")) {
+    return "Send to all";
+  } else if (_.isEqual(valueToDisplay, "FIRST_MATCHING")) {
+    return "Send to first";
+  } else {
+    return _.startCase(_.lowerCase(valueToDisplay));
+  }
 };
 </script>
 <style lang="scss"></style>

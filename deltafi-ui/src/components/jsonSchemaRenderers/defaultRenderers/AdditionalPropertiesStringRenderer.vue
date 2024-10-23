@@ -19,6 +19,7 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <div class="py-2 align-items-center">
+      <dt>Additional properties String renderer</dt>
       <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
       <dd>
         <template v-if="suggestions !== undefined">
@@ -36,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
+import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 import { ControlElement } from "@jsonforms/core";
 import { computed, defineProps, reactive } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";

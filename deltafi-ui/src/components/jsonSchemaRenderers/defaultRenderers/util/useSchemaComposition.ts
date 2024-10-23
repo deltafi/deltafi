@@ -17,7 +17,7 @@
 */
 
 import { computeLabel, JsonFormsSubStates } from "@jsonforms/core";
-import useStyles from "@/components/jsonSchemaRenderers/styles/useStyles";
+import useStyles from "@/components/jsonSchemaRenderers/defaultRenderers/styles/useStyles";
 import { computed, ComputedRef, inject, provide, ref, isRef } from "vue";
 import _ from "lodash";
 import Ajv from "ajv";

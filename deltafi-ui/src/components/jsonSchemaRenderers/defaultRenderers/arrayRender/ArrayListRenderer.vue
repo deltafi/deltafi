@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import ArrayListElement from "@/components/jsonSchemaRenderers/arrayRender/ArrayListElement.vue";
+import ArrayListElement from "@/components/jsonSchemaRenderers/defaultRenderers/arrayRender/ArrayListElement.vue";
 import { computed, reactive } from "vue";
 import { composePaths, createDefaultValue, ControlElement } from "@jsonforms/core";
 import { DispatchRenderer, rendererProps, useJsonFormsArrayControl } from "@jsonforms/vue";
@@ -73,7 +73,7 @@ const checkSchemaIsObject = (value: any, path: any, schemaType: any) => {
 };
 
 const addButtonClick = () => {
-  schemaData.addItem(schemaData.control.path, createDefaultValue(schemaData.control.schema))();
+  schemaData.addItem(schemaData.control.path, createDefaultValue(schemaData.control.schema, schemaData.control.rootSchema))();
 };
 
 const computedLabel = computed(() => {

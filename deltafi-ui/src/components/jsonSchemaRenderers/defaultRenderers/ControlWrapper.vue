@@ -24,7 +24,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from "vue";
-import { Styles } from "@/components/jsonSchemaRenderers/styles/useStyles";
+import { Styles } from "@/components/jsonSchemaRenderers/defaultRenderers/styles/useStyles";
 
 export default defineComponent({
   name: "ControlWrapper",

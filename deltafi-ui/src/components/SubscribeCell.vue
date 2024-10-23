@@ -13,7 +13,7 @@
         <strong>Subscriptions</strong>
       </div>
       <div v-for="(subscribe, index) in subscribeData" :key="index" class="ml-2">
-        <div v-if="!_.isEmpty(subscribe.topic)">Topic: {{ subscribe.topic }}</div>
+        <div v-if="!_.isEmpty(subscribe.topic)">Topic Name: {{ subscribe.topic }}</div>
         <div v-if="!_.isEmpty(subscribe.condition)">Condition: {{ subscribe.condition }}</div>
         <Divider v-if="subscribeData.length > index + 1" class="mt-1 mb-3" />
       </div>
@@ -43,6 +43,5 @@ const showOverlayPanel = (event) => {
 const hideOverlayPanel = (event) => {
   subscribeOverlayPanel.value.hide(event);
 };
-
 </script>
 <style lang="scss"></style>

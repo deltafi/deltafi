@@ -41,7 +41,7 @@
               <dd>
                 <div class="deltafi-fieldset">
                   <div class="px-2">
-                    <JsonForms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" :config="formsConfig" @change="onSubscribeChange" />
+                    <JsonForms :data="model['subscribe']" :renderers="subscribeRenderers" :uischema="subscribeUISchema" :schema="subscribeSchema" :config="formsConfig" :ajv="handleDefaultsAjv" @change="onSubscribeChange" />
                   </div>
                 </div>
               </dd>
@@ -99,7 +99,7 @@
               <dd>
                 <div class="deltafi-fieldset">
                   <div class="px-2">
-                    <JsonForms ref="schemaForm" :data="model['publish']" :renderers="renderers" :uischema="publishUISchema" :schema="publishSchema" :ajv="handleDefaultsAjv" :config="formsConfig" @change="onPublishChange" />
+                    <JsonForms ref="schemaForm" :data="model['publish']" :renderers="publishRenderers" :uischema="publishUISchema" :schema="publishSchema" :ajv="handleDefaultsAjv" :config="formsConfig" @change="onPublishChange" />
                   </div>
                 </div>
               </dd>
@@ -184,16 +184,6 @@ import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchem
 import { JsonForms } from "@jsonforms/vue";
 import { createAjv } from "@jsonforms/core";
 
-import MarkdownIt from "markdown-it";
-const markdownIt = new MarkdownIt({
-  html: true
-});
-const helpMarkdown = ref("");
-const helpVisible = ref(false);
-const helpHeader = ref("Action Help");
-
-const handleDefaultsAjv = createAjv({ useDefaults: true });
-
 import Badge from "primevue/badge";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
@@ -208,6 +198,14 @@ import { jsPlumb } from "jsplumb";
 import $ from "jquery";
 import _ from "lodash";
 
+import MarkdownIt from "markdown-it";
+const markdownIt = new MarkdownIt({
+  html: true,
+});
+const helpMarkdown = ref("");
+const helpVisible = ref(false);
+const helpHeader = ref("Action Help");
+const handleDefaultsAjv = createAjv({ useDefaults: true });
 const { getAllTopicNames } = useTopics();
 const { getAllFlows } = useFlowQueryBuilder();
 const { getPluginActionSchema } = useFlowActions();
@@ -220,9 +218,10 @@ const router = useRouter();
 const actionsOverlayPanel = ref();
 const actionsTreeRef = ref(null);
 const allTopics = ref(["default"]);
-const { myStyles, rendererList } = usePrimeVueJsonSchemaUIRenderers();
+const { myStyles, publishRenderList, subscribeRenderList } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
-const renderers = ref(Object.freeze(rendererList));
+const publishRenderers = ref(Object.freeze(publishRenderList));
+const subscribeRenderers = ref(Object.freeze(subscribeRenderList));
 const subscribeUISchema = ref(undefined);
 
 const schemaForm = ref(null);
@@ -307,7 +306,6 @@ const viewActionTreeMenu = (event, flowActionType) => {
   actionsTree.value = actionTypesTree.value[flowActionType];
   actionsOverlayPanel.value.toggle(event);
 };
-
 const showHelp = (action) => {
   helpMarkdown.value = action.docsMarkdown;
   helpHeader.value = `${action.displayName} Action Help`;
@@ -318,13 +316,17 @@ const hideHelp = () => {
   helpVisible.value = false;
 };
 
+const defaultTopicTemplate = [{ condition: null, topic: null }];
+
 const flowTemplate = {
   type: "TRANSFORM",
   active: false,
   name: null,
   description: null,
-  subscribe: [],
-  publish: {},
+  subscribe: defaultTopicTemplate,
+  publish: {
+    rules: defaultTopicTemplate,
+  },
 };
 
 const defaultActionKeys = {
@@ -457,7 +459,8 @@ const setFlowValues = async (flowInfo) => {
   model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
 
   if (_.has(flowInfo["selectedFlowPlan"], "subscribe")) {
-    model.value["subscribe"] = flowInfo["selectedFlowPlan"].subscribe || [];
+    console.log("subscribe", flowInfo["selectedFlowPlan"].subscribe);
+    model.value["subscribe"] = flowInfo["selectedFlowPlan"].subscribe || defaultTopicTemplate;
   }
 
   if (_.has(flowInfo["selectedFlowPlan"], "publish")) {
@@ -710,9 +713,9 @@ const items = ref([
 ]);
 
 const validateSubscribe = computed(() => {
-  // If the subscribe field is empty return "Missing subscriptions."
+  // If the subscribe field is empty return "Not Subscribing to any Topic."
   if (_.isEmpty(model.value["subscribe"])) {
-    return "Missing subscriptions.";
+    return "Not Subscribing to any Topic.";
   }
 
   let checkIfSubscribeHasTopic = (key) =>
@@ -724,11 +727,10 @@ const validateSubscribe = computed(() => {
         })
     );
 
-  // If the subscribe field isn't empty but there isn't a topic return "Missing subscription topic."
   var isKeyPresent = checkIfSubscribeHasTopic("topic");
-
+  // If the subscribe field isn't empty but there isn't a topic return "Not Subscribing to any Topic Name."
   if (!isKeyPresent) {
-    return "Missing subscription topic.";
+    return "Not Subscribing to any Topic Name.";
   }
 
   return null;
@@ -753,11 +755,11 @@ const validatePublish = computed(() => {
         })
     );
 
-  // If the Publish Rules field isn't empty but there isn't a topic return "Missing publish rule topic."
+  // If the Publish Rules field isn't empty but there isn't a topic return "Not Publishing to any Topic Name."
   var isKeyPresent = checkIfPublishRulesHasTopic("topic");
 
   if (!isKeyPresent) {
-    return "Missing publish rule topic.";
+    return "Not Publishing to any Topic Name.";
   }
 
   return null;
@@ -989,15 +991,18 @@ const onSubscribeChange = (event) => {
 
 const subscribeSchema = {
   type: "array",
+  title: "Topics",
   items: {
     type: "object",
     properties: {
-      condition: {
-        type: "string",
-      },
       topic: {
         type: "string",
+        title: "Topic Name",
         enum: allTopics.value,
+      },
+      condition: {
+        title: "Condition (Optional)",
+        type: "string",
       },
     },
   },
@@ -1010,38 +1015,44 @@ const onPublishChange = (event) => {
 const publishSchema = {
   type: "object",
   properties: {
+    rules: {
+      title: "Topics",
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          topic: {
+            type: "string",
+            title: "Topic Name",
+            enum: allTopics.value,
+          },
+          condition: {
+            title: "Condition (Optional)",
+            type: "string",
+          },
+        },
+      },
+    },
+    matchingPolicy: {
+      title: "If multiple topics would receive data:",
+      type: "string",
+      enum: ["ALL_MATCHING", "FIRST_MATCHING"],
+      default: "ALL_MATCHING",
+    },
     defaultRule: {
       type: "object",
       default: {},
       properties: {
         defaultBehavior: {
+          title: "If no topics would receive data:",
           type: "string",
           enum: ["ERROR", "FILTER", "PUBLISH"],
           default: "ERROR",
         },
         topic: {
           type: "string",
+          title: "Topic Name",
           enum: allTopics.value,
-        },
-      },
-    },
-    matchingPolicy: {
-      type: "string",
-      enum: ["ALL_MATCHING", "FIRST_MATCHING"],
-      default: "ALL_MATCHING",
-    },
-    rules: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          condition: {
-            type: "string",
-          },
-          topic: {
-            type: "string",
-            enum: allTopics.value,
-          },
         },
       },
     },
@@ -1051,6 +1062,41 @@ const publishSchema = {
 const publishUISchema = {
   type: "VerticalLayout",
   elements: [
+    {
+      type: "Control",
+      scope: "#/properties/rules",
+      options: {
+        detail: {
+          type: "VerticalLayout",
+          elements: [
+            {
+              type: "Control",
+              scope: "#/properties/topic",
+            },
+            {
+              type: "Control",
+              scope: "#/properties/condition",
+            },
+          ],
+        },
+      },
+    },
+    {
+      rule: {
+        effect: "HIDE",
+        condition: {
+          scope: "#/properties/rules",
+          schema: { minItems: 0, maxItems: 1 },
+        },
+      },
+      elements: [
+        {
+          type: "Control",
+          title: "If Multiple topics would receive data:",
+          scope: "#/properties/matchingPolicy",
+        },
+      ],
+    },
     {
       type: "Control",
       scope: "#/properties/defaultRule",
@@ -1072,29 +1118,6 @@ const publishUISchema = {
                   schema: { enum: ["ERROR", "FILTER"] },
                 },
               },
-            },
-          ],
-        },
-      },
-    },
-    {
-      type: "Control",
-      scope: "#/properties/matchingPolicy",
-    },
-    {
-      type: "Control",
-      scope: "#/properties/rules",
-      options: {
-        detail: {
-          type: "VerticalLayout",
-          elements: [
-            {
-              type: "Control",
-              scope: "#/properties/condition",
-            },
-            {
-              type: "Control",
-              scope: "#/properties/topic",
             },
           ],
         },

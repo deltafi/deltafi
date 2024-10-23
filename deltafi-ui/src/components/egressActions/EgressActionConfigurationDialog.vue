@@ -47,7 +47,7 @@
           <dd>
             <div class="deltafi-fieldset inputWidth pl-1 py-0">
               <div class="px-2">
-                <JsonForms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" :config="subscribeConfig" @change="onSubscribeChange" />
+                <JsonForms :data="model['subscribe']" :renderers="subscribeRenderers" :uischema="subscribeUISchema" :schema="subscribeSchema" :config="subscribeConfig" @change="onSubscribeChange" />
               </div>
             </div>
           </dd>
@@ -126,9 +126,10 @@ const emit = defineEmits(["reloadEgressActions"]);
 const { getPluginActionSchema } = useFlowActions();
 const { getAllEgress, saveEgressFlowPlan } = useEgressActions();
 
-const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
+const { myStyles, rendererList, subscribeRenderList } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
+const subscribeRenderers = ref(Object.freeze(subscribeRenderList));
 const subscribeUISchema = ref(undefined);
 const parametersSchema = ref(undefined);
 const allTopics = ref(["default"]);
@@ -139,7 +140,9 @@ const allActionsData = ref({});
 
 const egressActions = ref([]);
 
-const subscribeConfig = ref({"defaultLabels": true});
+const subscribeConfig = ref({ defaultLabels: true });
+
+const defaultTopicTemplate = [{ condition: null, topic: null }];
 
 const egressActionTemplate = {
   name: null,
@@ -156,7 +159,7 @@ const egressActionTemplate = {
     type: null,
   },
   variables: null,
-  subscribe: [],
+  subscribe: defaultTopicTemplate,
 };
 
 const rowData = ref(_.cloneDeepWith(props.rowDataProp || egressActionTemplate));
@@ -304,9 +307,9 @@ const scrollToErrors = async () => {
 };
 
 const validateSubscribe = computed(() => {
-  // If the subscribe field is empty return "Missing subscriptions."
+  // If the subscribe field is empty return "Not Subscribing to any Topic."
   if (_.isEmpty(model.value["subscribe"])) {
-    return "Missing subscriptions.";
+    return "Not Subscribing to any Topic.";
   }
 
   let checkIfSubscribeHasTopic = (key) =>
@@ -318,11 +321,10 @@ const validateSubscribe = computed(() => {
         })
     );
 
-  // If the subscribe field isn't empty but there isn't a topic return "Missing subscription topic."
   var isKeyPresent = checkIfSubscribeHasTopic("topic");
-
+  // If the subscribe field isn't empty but there isn't a topic return "Not Subscribing to any Topic Name."
   if (!isKeyPresent) {
-    return "Missing subscription topic.";
+    return "Not Subscribing to any Topic Name.";
   }
 
   return null;
@@ -381,15 +383,18 @@ const onSubscribeChange = (event) => {
 
 const subscribeSchema = {
   type: "array",
+  title: "Topics",
   items: {
     type: "object",
     properties: {
-      condition: {
-        type: "string",
-      },
       topic: {
         type: "string",
+        title: "Topic Name",
         enum: allTopics.value,
+      },
+      condition: {
+        type: "string",
+        title: "Condition (Optional)",
       },
     },
   },

@@ -15,9 +15,9 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.3.1",
-    "@jsonforms/core": "^3.1.0",
-    "@jsonforms/vue": "^3.1.0",
-    "@jsonforms/vue-vanilla": "^3.1.0",
+    "@jsonforms/core": "^3.4.0",
+    "@jsonforms/vue": "^3.4.0",
+    "@jsonforms/vue-vanilla": "^3.4.0",
     "@vue-js-cron/core": "^5.0.0",
     "@vue-js-cron/light": "^4.0.0",
     "@vue/cli": "^5.0.8",

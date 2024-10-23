@@ -16,12 +16,18 @@
    limitations under the License.
 */
 
-import ArrayListRenderer from '../components/jsonSchemaRenderers/arrayRender/ArrayListRenderer.vue';
-import BooleanRenderer from '../components/jsonSchemaRenderers/BooleanRenderer.vue';
-import IntegerRenderer from '../components/jsonSchemaRenderers/IntegerRenderer.vue';
-import ObjectRenderer from "../components/jsonSchemaRenderers/ObjectRenderer.vue";
-import StringRenderer from '../components/jsonSchemaRenderers/StringRenderer.vue';
-import AdditionalPropertiesStringRenderer from '../components/jsonSchemaRenderers/AdditionalPropertiesStringRenderer.vue';
+import ArrayListRenderer from '../components/jsonSchemaRenderers/defaultRenderers/arrayRender/ArrayListRenderer.vue';
+import PublishArrayListRenderer from '../components/jsonSchemaRenderers/publishRenderers/arrayRender/ArrayListRenderer.vue';
+import SubscribeArrayListRenderer from '../components/jsonSchemaRenderers/subscribeRenderers/arrayRender/ArrayListRenderer.vue';
+import BooleanRenderer from '../components/jsonSchemaRenderers/defaultRenderers/BooleanRenderer.vue';
+import IntegerRenderer from '../components/jsonSchemaRenderers/defaultRenderers/IntegerRenderer.vue';
+import ObjectRenderer from "../components/jsonSchemaRenderers/defaultRenderers/ObjectRenderer.vue";
+import PublishObjectRenderer from '../components/jsonSchemaRenderers/publishRenderers/ObjectRenderer.vue';
+import SubscribeObjectRenderer from '../components/jsonSchemaRenderers/subscribeRenderers/ObjectRenderer.vue';
+import StringRenderer from '../components/jsonSchemaRenderers/defaultRenderers/StringRenderer.vue';
+import PublishStringRenderer from '../components/jsonSchemaRenderers/publishRenderers/StringRenderer.vue';
+import SubscribeStringRenderer from '../components/jsonSchemaRenderers/subscribeRenderers/StringRenderer.vue';
+import AdditionalPropertiesStringRenderer from '../components/jsonSchemaRenderers/defaultRenderers/AdditionalPropertiesStringRenderer.vue';
 import { vanillaRenderers } from "@jsonforms/vue-vanilla";
 import { rankWith, isObjectControl, isBooleanControl, isStringControl, isIntegerControl, schemaTypeIs } from "@jsonforms/core";
 
@@ -36,5 +42,19 @@ export default function usePrimeVueJsonSchemaUIRenderers() {
     { tester: rankWith(3, schemaTypeIs("additionalPropertyString")), renderer: AdditionalPropertiesStringRenderer},
   ];
 
-  return { rendererList };
+  const publishRenderList = [
+    ...rendererList,
+    { tester: rankWith(4, isObjectControl), renderer: PublishObjectRenderer },
+    { tester: rankWith(4, schemaTypeIs("array")), renderer: PublishArrayListRenderer},
+    { tester: rankWith(4, isStringControl), renderer: PublishStringRenderer },
+  ]
+
+  const subscribeRenderList = [
+    ...rendererList,
+    { tester: rankWith(4, isObjectControl), renderer: SubscribeObjectRenderer },
+    { tester: rankWith(4, schemaTypeIs("array")), renderer: SubscribeArrayListRenderer},
+    { tester: rankWith(4, isStringControl), renderer: SubscribeStringRenderer },
+  ]
+
+  return { rendererList, publishRenderList, subscribeRenderList };
 }

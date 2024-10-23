@@ -36,7 +36,7 @@ import { defineProps, computed, reactive } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 import InputNumber from "primevue/inputnumber";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
-import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
+import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 
 import _ from "lodash";
 

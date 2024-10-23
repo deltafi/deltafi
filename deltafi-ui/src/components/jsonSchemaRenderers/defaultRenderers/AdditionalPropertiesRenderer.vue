@@ -20,6 +20,7 @@
   <div v-if="jsonSchema.control.visible" class="px-0 pb-2">
     <div class="d-flex w-100 justify-content-between">
       <div class="px-0 py-0">
+        <dt>Additional properties renderer</dt>
         <dd class="pt-3">{{ additionalPropertiesTitle }}</dd>
       </div>
       <div class="btn-group">
@@ -49,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
+import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 import { computed, PropType, ref, reactive, watch } from "vue";
 import { createControlElement, encode, Generate, getI18nKey, GroupLayout, JsonSchema, JsonSchema7, UISchemaElement, validate } from "@jsonforms/core";
 import { DispatchRenderer, useJsonFormsControlWithDetail } from "@jsonforms/vue";

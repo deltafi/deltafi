@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
+import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 import { ControlElement } from "@jsonforms/core";
 import { computed, defineProps, reactive, ref } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
