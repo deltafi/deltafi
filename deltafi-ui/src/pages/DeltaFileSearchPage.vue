@@ -182,7 +182,9 @@ import ScrollTop from "primevue/scrolltop";
 import { useConfirm } from "primevue/useconfirm";
 import ConfirmDialog from "primevue/confirmdialog";
 import useNotifications from "@/composables/useNotifications";
+import useDomains from "@/composables/useDomains";
 
+const { getAnnotationKeys } = useDomains();
 const { pluralize } = useUtilFunctions();
 const notify = useNotifications();
 const { cancelDeltaFile } = useDeltaFiles();
@@ -213,6 +215,7 @@ const totalRecords = ref(0);
 const collapsedSearchOption = ref(true);
 const tableData = ref([]);
 const formattedDataSourceNames = ref([]);
+const annotationKeys = ref([]);
 
 // Advanced Options Dropdown Variables
 const annotationsKeysOptions = ref([]);
@@ -305,10 +308,10 @@ const setupWatchers = () => {
 onBeforeMount(async () => {
   queryParamsModel.value = _.cloneDeep(defaultQueryParamsTemplate);
   useURLSearch.value = route.fullPath.includes("search?");
+  await fetchAnnotationKeys();
   getPersistedParams();
   fetchDropdownOptions();
   await nextTick();
-  // fetchAnnotationKeys();
   await fetchDeltaFilesDataNoDebounce();
   setupWatchers();
 });
@@ -464,6 +467,21 @@ const calculatedAggregateParams = computed(() => {
   };
 });
 
+const validAnnotation = (key) => {
+  return annotationKeys.value.includes(key);
+};
+
+const invalidAnnotationTooltip = (key) => {
+  return `An annotation with the key '${key}' does not currently exist in the system.`;
+};
+
+const fetchAnnotationKeys = async () => {
+  annotationKeys.value = await getAnnotationKeys();
+  annotationsKeysOptions.value = annotationKeys.value.map((key) => {
+    return { key: key };
+  });
+};
+
 const clearOptions = () => {
   model.value = JSON.parse(JSON.stringify(_.pick(defaultQueryParamsTemplate, openPanel)));
   setPersistedParams();
@@ -480,7 +498,7 @@ const removeAnnotationItem = (item) => {
 };
 
 const addAnnotationItem = (key, value) => {
-  model.value.validatedAnnotations.push({ key: key, value: value, valid: true });
+  model.value.validatedAnnotations.push({ key: key, value: value, valid: validAnnotation(key) });
 };
 
 const addAnnotationItemEvent = () => {
@@ -505,6 +523,7 @@ const fetchDeltaFilesDataNoDebounce = async () => {
 const refreshDeltaFilesData = async () => {
   await customCalendarRef.value.refreshUpdateDateTime();
   fetchDeltaFilesData();
+  fetchAnnotationKeys();
 };
 
 const fetchDeltaFilesData = async () => {
@@ -640,7 +659,7 @@ const getAnnotationsArray = (stringData) => {
     return {
       key: keyValuePair[0],
       value: keyValuePair[1],
-      valid: true,
+      valid: validAnnotation(keyValuePair[0]),
     };
   });
 };
@@ -740,7 +759,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
