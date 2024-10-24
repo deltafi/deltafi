@@ -188,8 +188,7 @@ services:
     container_name: deltafi-valkey
     environment:
       BITNAMI_DEBUG: false
-      REDIS_REPLICATION_MODE: master
-      VALKEY_REPLICATION_MODE: master
+      VALKEY_REPLICATION_MODE: primary
     env_file:
       - ${SECRETS_DIR}/valkey.env
     healthcheck:
