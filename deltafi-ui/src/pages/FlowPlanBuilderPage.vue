@@ -472,7 +472,7 @@ const setFlowValues = async (flowInfo) => {
 const cloneFlow = async (cloneFlow) => {
   for (let flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
     let clonedActionsByTypes = [];
-    let getClonedActionsByTypes = _.get(cloneFlow.selectedFlowPlan, flowActionTemplateMap.get(flowActionType).activeContainer);
+    let getClonedActionsByTypes = _.cloneDeep(_.get(cloneFlow.selectedFlowPlan, flowActionTemplateMap.get(flowActionType).activeContainer));
     if (_.isEmpty(getClonedActionsByTypes)) {
       getClonedActionsByTypes = [];
       continue;
@@ -481,13 +481,14 @@ const cloneFlow = async (cloneFlow) => {
     clonedActionsByTypes = clonedActionsByTypes.concat(getClonedActionsByTypes);
     if (!_.isEmpty(clonedActionsByTypes)) {
       for (let clonedAction of clonedActionsByTypes) {
-        let tmpMergedActionAndActionSchema = _.find(flattenedActionsTypes.value[flowActionType], { type: clonedAction.type, flowActionType: flowActionType });
+        let tmpMergedActionAndActionSchema = _.cloneDeep(_.find(flattenedActionsTypes.value[flowActionType], { type: clonedAction.type, flowActionType: flowActionType }));
         let mergedActionAndActionSchema = _.merge(tmpMergedActionAndActionSchema, clonedAction);
         addAction(flowActionType, mergedActionAndActionSchema);
       }
     }
   }
 };
+
 const removeEmptyKeyValues = (queryObj) => {
   const newObj = {};
   Object.entries(queryObj).forEach(([k, v]) => {
