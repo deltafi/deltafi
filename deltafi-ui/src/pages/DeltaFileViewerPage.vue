@@ -150,15 +150,6 @@ const staticMenuItems = reactive([
       viewRawJSON();
     },
   },
-  // TODO: Review for 2.0
-  // {
-  //   label: "View All Metadata",
-  //   icon: "fas fa-database fa-fw",
-  //   visible: () => hasMetadata.value,
-  //   command: () => {
-  //     document.getElementById("cumulativeMetadataDialog").click();
-  //   },
-  // },
   {
     label: "Replay",
     icon: "fas fa-sync fa-fw",
@@ -287,21 +278,6 @@ const menuItems = computed(() => {
   }
   return items.concat(customLinks);
 });
-// TODO: Review for 2.0
-// const allMetadata = computed(() => {
-//   if (!loaded.value) return {};
-//   return Object.entries(deltaFile.metadata).map(([key, value]) => ({ key, value }));
-// });
-
-// const deletedMetadata = computed(() => {
-//   if (!loaded.value) return {};
-//   let deletedMetadataList = _.filter(deltaFile.actions, function (o) {
-//     return o.deleteMetadataKeys.length > 0;
-//   });
-
-//   if (_.isEmpty(deletedMetadataList)) return null;
-//   return deletedMetadataList;
-// });
 
 const validDID = computed(() => {
   return uuidRegex.test(did.value);
@@ -318,10 +294,6 @@ const beenReplayed = computed(() => {
 const beenDeleted = computed(() => {
   return deltaFile.contentDeleted !== null;
 });
-// TODO: Review for 2.0
-// const hasMetadata = computed(() => {
-//   return Object.keys(allMetadata.value).length > 0;
-// });
 
 const canBeCancelled = computed(() => {
   return deltaFile.nextAutoResume !== null || !["COMPLETE", "ERROR", "CANCELLED"].includes(deltaFile.stage);

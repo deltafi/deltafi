@@ -18,6 +18,7 @@
 
 import useNotifications from "./useNotifications";
 import useUtilFunctions from './useUtilFunctions';
+import useGraphQL from "./useGraphQL";
 
 const maxSuccessDisplay = 20;
 
@@ -25,6 +26,7 @@ export default function useAnnotate() {
   const notify = useNotifications();
   const endpoint: string = '/api/v2/deltafile/annotate';
   const { pluralize } = useUtilFunctions();
+  const { response, queryGraphQL } = useGraphQL();
 
   const post = async (url: string) => {
     try {
@@ -60,5 +62,15 @@ export default function useAnnotate() {
     notify.info(`Annotated ${pluralized}`, links.join(", "))
   }
 
-  return { annotate };
+  const getAnnotationKeys = async () => {
+    const query = {
+      annotationKeys: {
+        __args: {},
+      },
+    };
+    await queryGraphQL(query, "getAnnotationKeys", "query", true);
+    return response.value.data.annotationKeys;
+  };
+
+  return { annotate, getAnnotationKeys };
 }

@@ -182,9 +182,9 @@ import ScrollTop from "primevue/scrolltop";
 import { useConfirm } from "primevue/useconfirm";
 import ConfirmDialog from "primevue/confirmdialog";
 import useNotifications from "@/composables/useNotifications";
-import useDomains from "@/composables/useDomains";
+import useAnnotate from "@/composables/useAnnotate";
 
-const { getAnnotationKeys } = useDomains();
+const { getAnnotationKeys } = useAnnotate();
 const { pluralize } = useUtilFunctions();
 const notify = useNotifications();
 const { cancelDeltaFile } = useDeltaFiles();

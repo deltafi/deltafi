@@ -459,7 +459,6 @@ const setFlowValues = async (flowInfo) => {
   model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
 
   if (_.has(flowInfo["selectedFlowPlan"], "subscribe")) {
-    console.log("subscribe", flowInfo["selectedFlowPlan"].subscribe);
     model.value["subscribe"] = flowInfo["selectedFlowPlan"].subscribe || defaultTopicTemplate;
   }
 
