@@ -54,7 +54,7 @@ input PluginVariablesInput {
   variables: [VariableInput]!
 }
 
-type EgressFlowPlan {
+type DataSinkPlan {
   name: String!
   type: String!
   description: String!
@@ -63,7 +63,7 @@ type EgressFlowPlan {
   egressAction: ActionConfiguration!
 }
 
-input EgressFlowPlanInput {
+input DataSinkPlanInput {
   name: String!
   type: String!
   description: String!
@@ -161,27 +161,27 @@ type FlowStatus {
 type Flows {
   sourcePlugin: PluginCoordinates!
   variables: [Variable]
-  egressFlows: [EgressFlow]
+  dataSinks: [DataSink]
   restDataSources: [RestDataSource]
   timedDataSources: [TimedDataSource]
   transformFlows: [TransformFlow]
 }
 
 type SystemFlows {
-  egress: [EgressFlow]!
+  dataSink: [DataSink]!
   restDataSource: [RestDataSource]!
   timedDataSource: [TimedDataSource]!
   transform: [TransformFlow]!
 }
 
 type SystemFlowPlans {
-  egressPlans: [EgressFlowPlan]!
+  dataSinkPlans: [DataSinkPlan]!
   restDataSources: [RestDataSourcePlan]!
   timedDataSources: [TimedDataSourcePlan]!
   transformPlans: [TransformFlowPlan]!
 }
 
-type EgressFlow {
+type DataSink {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinates!
@@ -256,7 +256,7 @@ type ActionFamily {
 }
 
 type FlowNames {
-  egress: [String]!
+  dataSink: [String]!
   transform: [String]!
   restDataSource: [String]!
   timedDataSource: [String]!

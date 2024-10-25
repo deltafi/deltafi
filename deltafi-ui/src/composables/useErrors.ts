@@ -27,14 +27,14 @@ export default function useErrors() {
   const fetch = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, flowType?: string, errorCause?: string, filteredCause?: string) => {
     const flowFilters: Record<string, Array<string>> = {
       dataSources: [],
-      egressFlows: [],
+      dataSinks: [],
       transformFlows: [],
     }
 
     if (flowName && flowType) {
       switch (flowType) {
-        case "egress":
-          flowFilters.egressFlows.push(flowName)
+        case "dataSink":
+          flowFilters.dataSinks.push(flowName)
           break;
         case "transform":
           flowFilters.transformFlows.push(flowName)

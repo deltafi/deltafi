@@ -124,7 +124,7 @@ const { getAllTopicNames } = useTopics();
 const { editEgressAction, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadEgressActions"]);
 const { getPluginActionSchema } = useFlowActions();
-const { getAllEgress, saveEgressFlowPlan } = useEgressActions();
+const { getAllEgress, saveDataSinkPlan } = useEgressActions();
 
 const { myStyles, rendererList, subscribeRenderList } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
@@ -361,7 +361,7 @@ const submit = async () => {
     return;
   }
 
-  let response = await saveEgressFlowPlan(egressActionObject);
+  let response = await saveDataSinkPlan(egressActionObject);
 
   if (!_.isEmpty(_.get(response, "errors", null))) {
     errors.value.push(response["errors"][0]["message"]);

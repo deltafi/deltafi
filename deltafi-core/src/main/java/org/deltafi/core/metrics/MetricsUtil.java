@@ -31,11 +31,11 @@ public class MetricsUtil {
      * @param actionType lowercased, becomes "action" tagged
      * @param actionName becomes "source" tagged
      * @param dataSource "dataSource" tagged
-     * @param egressFlow "egressFlow" tagged
+     * @param dataSink "dataSink" tagged
      * @return the map
      */
-    static public @NotNull Map<String, String> tagsFor(@NotNull ActionEventType actionType, @NotNull String actionName, String dataSource, String egressFlow) {
-        return tagsFor(actionType.name(), actionName, dataSource, egressFlow);
+    static public @NotNull Map<String, String> tagsFor(@NotNull ActionEventType actionType, @NotNull String actionName, String dataSource, String dataSink) {
+        return tagsFor(actionType.name(), actionName, dataSource, dataSink);
     }
 
     /** Helper for generating a default tag list for metrics
@@ -43,10 +43,10 @@ public class MetricsUtil {
      * @param actionType lowercased, becomes "action" tagged
      * @param actionName becomes "source" tagged
      * @param dataSource "dataSource" tagged
-     * @param egressFlow "egressFlow" tagged
+     * @param dataSink "dataSink" tagged
      * @return the map
      */
-    static public @NotNull Map<String, String> tagsFor(@NotNull String actionType, @NotNull String actionName, String dataSource, String egressFlow) {
+    static public @NotNull Map<String, String> tagsFor(@NotNull String actionType, @NotNull String actionName, String dataSource, String dataSink) {
         Map<String, String> tags = new HashMap<>();
 
         tags.put(DeltaFiConstants.ACTION, actionType.toLowerCase());
@@ -56,8 +56,8 @@ public class MetricsUtil {
             tags.put(DeltaFiConstants.DATA_SOURCE, dataSource);
         }
 
-        if (egressFlow != null) {
-            tags.put(DeltaFiConstants.EGRESS_FLOW, egressFlow);
+        if (dataSink != null) {
+            tags.put(DeltaFiConstants.DATA_SINK, dataSink);
         }
 
         return tags;

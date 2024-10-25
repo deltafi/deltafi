@@ -4,9 +4,9 @@
   "schema" : {
     "type" : "object",
     "properties" : {
-      "egressFlow" : {
+      "dataSink" : {
         "type" : "string",
-        "description" : "Name of the egress flow the DeltaFile is flowing through"
+        "description" : "Name of the dataSink the DeltaFile is flowing through"
       },
       "metadataKey" : {
         "type" : "string",
@@ -64,7 +64,7 @@
       }
     },
     "required" : [
-      "egressFlow",
+      "dataSink",
       "metadataKey",
       "someRequiredList",
       "url"

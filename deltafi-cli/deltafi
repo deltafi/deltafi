@@ -145,15 +145,15 @@ Usage: $cli_name [command]
 
 Commands:
   configure-plugin-ssl          configure SSL for plugins and the entity resolver
-  data-source                   start, stop, show or validate a data source flow
+  data-sink                     start, stop, show or validate a data sink
+  data-source                   start, stop, show or validate a data source
   did                           show did for filename
   disable                       stop all DeltaFi processes
-  egress-flow                   start, stop, show or validate an egress flow
   export-config                 export all the loaded flow configurations as yaml
-  export-egress-plan            export a single egress flow plan by name as JSON
+  export-data-sink-plan         export a single data sink plan by name as JSON
   export-rest-data-source-plan  export a single rest data source plan by name as JSON
   export-timed-data-source-plan export a single timed data source flow plan by name as JSON
-  export-transform-plan         export a single transform flow plan by name as JSON
+  export-transform-plan         export a single transform plan by name as JSON
   ingress                       ingress one or more files to a flow
   install                       install/upgrade the DeltaFi core
   install-plugin                install/upgrade a DeltaFi plugin
@@ -184,7 +184,7 @@ Commands:
   system-property               manage system properties
   timed-data-source             start, stop, show and other controls for a timed data source
   trace                         show trace data for a DID
-  transform-flow                start, stop or validate a transform flow
+  transform                     start, stop or validate a transform
   update                        (alias for install)
   upgrade                       (alias for install)
   uninstall                     uninstall the DeltaFi core
@@ -208,7 +208,10 @@ case "$1" in
   configure-plugin-ssl)
       "$DELTAFICLI_WORKDIR/commands/configure-plugin-ssl" "$@"
       ;;
-  data-source)
+  data-sink)
+      "$DELTAFICLI_WORKDIR/commands/data-sink" "$@"
+      ;;
+    data-source)
     "$DELTAFICLI_WORKDIR/commands/data-source" "$@"
     ;;
   did)
@@ -216,9 +219,6 @@ case "$1" in
     ;;
   disable)
     "$DELTAFICLI_WORKDIR/commands/disable" "$@"
-    ;;
-  egress-flow)
-    "$DELTAFICLI_WORKDIR/commands/egress-flow" "$@"
     ;;
   event)
     "$DELTAFICLI_WORKDIR/commands/event" "$@"
@@ -232,8 +232,8 @@ case "$1" in
   export-timed-data-source-plan)
     "$DELTAFICLI_WORKDIR/commands/export-timed-data-source-plan" "$@"
     ;;
-  export-egress-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-egress-plan" "$@"
+  export-data-sink-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-data-sink-plan" "$@"
     ;;
   export-transform-plan)
     "$DELTAFICLI_WORKDIR/commands/export-transform-plan" "$@"
@@ -349,8 +349,8 @@ case "$1" in
   trace)
     "$DELTAFICLI_WORKDIR/commands/trace" "$@"
     ;;
-  transform-flow)
-    "$DELTAFICLI_WORKDIR/commands/transform-flow" "$@"
+  transform)
+    "$DELTAFICLI_WORKDIR/commands/transform" "$@"
     ;;
   versions)
     "$DELTAFICLI_WORKDIR/commands/versions" "$@"

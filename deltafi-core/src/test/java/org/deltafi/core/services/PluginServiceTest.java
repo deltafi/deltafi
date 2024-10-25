@@ -63,10 +63,10 @@ class PluginServiceTest {
     PluginVariableService pluginVariableService;
 
     @Mock
-    EgressFlowPlanService egressFlowPlanService;
+    DataSinkPlanService DataSinkPlanService;
 
     @Mock
-    EgressFlowService egressFlowService;
+    DataSinkService dataSinkService;
 
     @Mock
     TransformFlowPlanService transformFlowPlanService;
@@ -102,13 +102,13 @@ class PluginServiceTest {
 
     @BeforeEach
     public void setup() {
-        List<PluginCleaner> cleaners = List.of(egressFlowService, transformFlowService, restDataSourceService,
+        List<PluginCleaner> cleaners = List.of(dataSinkService, transformFlowService, restDataSourceService,
                 timedDataSourceService, pluginVariableService, coreEventQueuePluginCleaner);
-        List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, restDataSourceService);
+        List<PluginUninstallCheck> checkers = List.of(dataSinkService, transformFlowService, restDataSourceService);
 
         pluginService = new PluginService(pluginRepository, pluginVariableService, buildProperties,
-                egressFlowService, restDataSourceService, timedDataSourceService, transformFlowService,
-                environment, pluginValidator, egressFlowPlanService, restDataSourcePlanService,
+                dataSinkService, restDataSourceService, timedDataSourceService, transformFlowService,
+                environment, pluginValidator, DataSinkPlanService, restDataSourcePlanService,
                 timedDataSourcePlanService, transformFlowPlanService, checkers, cleaners);
     }
 
@@ -125,7 +125,7 @@ class PluginServiceTest {
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
-        Mockito.verify(egressFlowService).validateAllFlows();
+        Mockito.verify(dataSinkService).validateAllFlows();
         Mockito.verify(restDataSourceService).validateAllFlows();
         Mockito.verify(timedDataSourceService).validateAllFlows();
         Mockito.verify(transformFlowService).validateAllFlows();
@@ -189,7 +189,7 @@ class PluginServiceTest {
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
         Mockito.when(restDataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
-        Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
+        Mockito.when(dataSinkService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
         List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
@@ -209,7 +209,7 @@ class PluginServiceTest {
         pluginService.uninstallPlugin(PLUGIN_COORDINATES_1);
 
         Mockito.verify(pluginRepository).delete(plugin1);
-        Mockito.verify(egressFlowService).cleanupFor(plugin1);
+        Mockito.verify(dataSinkService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
         Mockito.verify(coreEventQueuePluginCleaner).cleanupFor(plugin1);
     }

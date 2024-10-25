@@ -159,7 +159,7 @@ ALL_SNAPSHOT_FIELDS="id
               running
               testMode
             }
-            egressFlows {
+            dataSinks {
               name
               running
               testMode

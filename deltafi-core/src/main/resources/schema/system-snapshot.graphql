@@ -39,7 +39,7 @@ type TransformFlowSnapshot {
     testMode: Boolean!
 }
 
-type EgressFlowSnapshot {
+type DataSinkSnapshot {
     name: String!
     running: Boolean!
     testMode: Boolean!
@@ -58,7 +58,7 @@ type SystemSnapshot {
     restDataSources: [RestDataSourceSnapshot]
     timedDataSources: [TimedDataSourceSnapshot]
     transformFlows: [TransformFlowSnapshot]
-    egressFlows: [EgressFlowSnapshot]
+    dataSinks: [DataSinkSnapshot]
     pluginImageRepositories: [PluginImageRepository]!
     resumePolicies: [ResumePolicy]!
 }
@@ -86,7 +86,7 @@ input TransformFlowSnapshotInput {
     testMode: Boolean!
 }
 
-input EgressFlowSnapshotInput {
+input DataSinkSnapshotInput {
     name: String!
     running: Boolean!
     testMode: Boolean!
@@ -104,11 +104,11 @@ input SystemSnapshotInput {
     pluginVariables: [PluginVariablesInput]!
     testTransformFlows: [String]
     testIngressFlows: [String]
-    testEgressFlows: [String]
+    testDataSinks: [String]
     restDataSources: [RestDataSourceSnapshotInput]
     timedDataSources: [TimedDataSourceSnapshotInput]
     transformFlows: [TransformFlowSnapshotInput]
-    egressFlows: [EgressFlowSnapshotInput]
+    dataSinks: [DataSinkSnapshotInput]
     pluginImageRepositories: [PluginImageRepositoryInput]!
     resumePolicies: [ResumePolicyInput]!
 }

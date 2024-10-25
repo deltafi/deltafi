@@ -73,7 +73,7 @@ public class SystemSnapshot {
     private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private List<EgressFlowSnapshot> egressFlows = new ArrayList<>();
+    private List<DataSinkSnapshot> dataSinks = new ArrayList<>();
 
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")

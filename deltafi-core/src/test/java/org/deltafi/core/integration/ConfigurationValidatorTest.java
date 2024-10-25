@@ -23,9 +23,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.services.EgressFlowService;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.RestDataSourceService;
+import org.deltafi.core.services.DataSinkService;
 import org.deltafi.core.services.TransformFlowService;
 import org.deltafi.core.types.integration.*;
 import org.deltafi.core.types.PluginEntity;
@@ -51,24 +51,24 @@ class ConfigurationValidatorTest {
 
     private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     private final PluginService pluginService;
 
     private final ConfigurationValidator configurationValidator;
 
     ConfigurationValidatorTest(@Mock RestDataSourceService restDataSourceService,
                                @Mock TransformFlowService transformFlowService,
-                               @Mock EgressFlowService egressFlowService,
+                               @Mock DataSinkService dataSinkService,
                                @Mock PluginService pluginService) {
         this.restDataSourceService = restDataSourceService;
         this.transformFlowService = transformFlowService;
-        this.egressFlowService = egressFlowService;
+        this.dataSinkService = dataSinkService;
         this.pluginService = pluginService;
 
         this.configurationValidator = new ConfigurationValidator(
                 this.restDataSourceService,
                 this.transformFlowService,
-                this.egressFlowService,
+                this.dataSinkService,
                 this.pluginService);
     }
 
@@ -104,7 +104,7 @@ class ConfigurationValidatorTest {
         Mockito.when(restDataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(false);
         Mockito.when(transformFlowService.hasFlow("unarchive-passthrough-transform")).thenReturn(false);
         Mockito.when(transformFlowService.hasFlow("passthrough-transform")).thenReturn(false);
-        Mockito.when(egressFlowService.hasFlow("passthrough-egress")).thenReturn(false);
+        Mockito.when(dataSinkService.hasFlow("passthrough-egress")).thenReturn(false);
 
         List<String> actualErrors = configurationValidator.validateToStart(testCase);
 
@@ -114,7 +114,7 @@ class ConfigurationValidatorTest {
                 "Flow does not exist (dataSource): unarchive-passthrough-rest-data-source",
                 "Flow does not exist (transformation): unarchive-passthrough-transform",
                 "Flow does not exist (transformation): passthrough-transform",
-                "Flow does not exist (egress): passthrough-egress"
+                "Flow does not exist (dataSink): passthrough-egress"
         );
         assertEquals(expectedErrors, actualErrors);
     }
@@ -135,8 +135,8 @@ class ConfigurationValidatorTest {
         Mockito.when(transformFlowService.hasFlow("passthrough-transform")).thenReturn(true);
         Mockito.when(transformFlowService.hasRunningFlow("passthrough-transform")).thenReturn(true);
 
-        Mockito.when(egressFlowService.hasFlow("passthrough-egress")).thenReturn(true);
-        Mockito.when(egressFlowService.hasRunningFlow("passthrough-egress")).thenReturn(true);
+        Mockito.when(dataSinkService.hasFlow("passthrough-egress")).thenReturn(true);
+        Mockito.when(dataSinkService.hasRunningFlow("passthrough-egress")).thenReturn(true);
 
         List<String> actualErrors = configurationValidator.validateToStart(testCase);
         assertTrue(actualErrors.isEmpty());

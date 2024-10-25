@@ -201,7 +201,7 @@ public class DeltaFile {
   public void setPendingAnnotations(String flowName, Set<String> expectedAnnotations) {
     Set<String> pendingAnnotations = getPendingAnnotations(expectedAnnotations);
 
-    flows.stream().filter(flow -> flow.getType() == FlowType.EGRESS && flow.getName().equals(flowName))
+    flows.stream().filter(flow -> flow.getType() == FlowType.DATA_SINK && flow.getName().equals(flowName))
             .forEach(deltaFileFlow -> setPendingAnnotations(deltaFileFlow, pendingAnnotations));
 
     updateFlags();
@@ -500,8 +500,8 @@ public class DeltaFile {
   }
 
   @Transient
-  public List<String> getEgressFlows() {
-    return flows.stream().filter(f -> f.getType() == FlowType.EGRESS).map(DeltaFileFlow::getName).distinct().toList();
+  public List<String> getDataSinks() {
+    return flows.stream().filter(f -> f.getType() == FlowType.DATA_SINK).map(DeltaFileFlow::getName).distinct().toList();
   }
 
   public DeltaFileFlow firstFlow() {

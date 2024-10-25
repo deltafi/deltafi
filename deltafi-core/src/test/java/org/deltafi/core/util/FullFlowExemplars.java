@@ -177,11 +177,11 @@ public class FullFlowExemplars {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setState(DeltaFileFlowState.COMPLETE);
 
-        DeltaFileFlow egressFlow = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.EGRESS, flow, OffsetDateTime.now());
-        egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
-        egressFlow.getInput().setMetadata(flow.getMetadata());
-        egressFlow.getInput().setContent(flow.lastContent());
-        egressFlow.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK, flow, OffsetDateTime.now());
+        dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
+        dataSink.getInput().setMetadata(flow.getMetadata());
+        dataSink.getInput().setContent(flow.lastContent());
+        dataSink.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         return deltaFile;
     }
@@ -217,12 +217,12 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = withCompleteTransformFlow(did);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
 
-        DeltaFileFlow egressFlow = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.EGRESS, flow, OffsetDateTime.now());
-        egressFlow.setId(UUID_2);
-        egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
-        egressFlow.getInput().setMetadata(flow.getMetadata());
-        egressFlow.getInput().setContent(flow.lastContent());
-        egressFlow.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK, flow, OffsetDateTime.now());
+        dataSink.setId(UUID_2);
+        dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
+        dataSink.getInput().setMetadata(flow.getMetadata());
+        dataSink.getInput().setContent(flow.lastContent());
+        dataSink.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
         return deltaFile;
     }
 
@@ -279,14 +279,14 @@ public class FullFlowExemplars {
         flow.setTestMode(true);
         flow.setTestModeReason(TRANSFORM_FLOW_NAME);
 
-        DeltaFileFlow egressFlow = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.EGRESS, flow, now);
-        egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
-        Action action = egressFlow.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
+        DeltaFileFlow dataSink = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK, flow, now);
+        dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
+        Action action = dataSink.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
         action.setFilteredCause("Filtered by test mode");
         action.setFilteredContext("Filtered by test mode with a reason of - " + TRANSFORM_FLOW_NAME);
-        egressFlow.setState(DeltaFileFlowState.FILTERED);
-        egressFlow.setTestMode(true);
-        egressFlow.setTestModeReason(TRANSFORM_FLOW_NAME);
+        dataSink.setState(DeltaFileFlowState.FILTERED);
+        dataSink.setTestMode(true);
+        dataSink.setTestModeReason(TRANSFORM_FLOW_NAME);
 
         deltaFile.setEgressed(false);
         deltaFile.setStage(DeltaFileStage.COMPLETE);

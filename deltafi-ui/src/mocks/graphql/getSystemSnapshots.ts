@@ -30,10 +30,10 @@ const generateData = () => {
       resumePolicies: [
         {
           id: "65a5ab049312655fd9981526",
-          name: "System Default: No egress flow configured",
+          name: "System Default: No dataSink configured",
           errorSubstring: null,
           flow: null,
-          action: "NoEgressFlowConfiguredAction",
+          action: "NoDataSinkConfiguredAction",
           actionType: null,
           maxAttempts: 20,
           backOff: {
@@ -177,7 +177,7 @@ const generateData = () => {
           running: false
         }
       ],
-      egressFlows: [
+      dataSinks: [
         {
           name: "compress",
           running: false,

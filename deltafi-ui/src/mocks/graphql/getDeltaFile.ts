@@ -207,7 +207,7 @@ const generateData = () => {
       MockAnnotate1: "MockVal1",
       MockCnnotate2: "MockVal2"
     },
-    egressFlows: [],
+    dataSinks: [],
     created: "2024-05-30T11:31:55.653Z",
     modified: "2024-05-30T11:33:13.041Z",
     contentDeleted: null,

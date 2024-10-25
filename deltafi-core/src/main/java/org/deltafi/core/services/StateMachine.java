@@ -39,7 +39,7 @@ public class StateMachine {
     private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final IdentityService identityService;
     private final QueueManagementService queueManagementService;
@@ -81,8 +81,8 @@ public class StateMachine {
         if (lastAction == null || lastAction.getState() == ActionState.COMPLETE || lastAction.getState() == ActionState.RETRIED) {
             if (input.flow().getType() == FlowType.TRANSFORM) {
                 actionInputs.addAll(advanceTransform(input, pendingQueued));
-            } else if (input.flow().getType() == FlowType.EGRESS) {
-                actionInputs.addAll(advanceEgress(input, pendingQueued));
+            } else if (input.flow().getType() == FlowType.DATA_SINK) {
+                actionInputs.addAll(advanceDataSink(input, pendingQueued));
             }
         }
 
@@ -102,12 +102,12 @@ public class StateMachine {
         return new ArrayList<>();
     }
 
-    private List<WrappedActionInput> advanceEgress(StateMachineInput input, Map<String, Long> pendingQueued) {
-        EgressFlow egressFlow = egressFlowService.getRunningFlowByName(input.flow().getName());
-        ActionConfiguration nextEgressAction = egressFlow.getEgressAction();
+    private List<WrappedActionInput> advanceDataSink(StateMachineInput input, Map<String, Long> pendingQueued) {
+        DataSink dataSink = dataSinkService.getRunningFlowByName(input.flow().getName());
+        ActionConfiguration nextEgressAction = dataSink.getEgressAction();
 
         if (nextEgressAction == null || input.flow().hasFinalAction(nextEgressAction.getName())) {
-            Set<String> expectedAnnotations = egressFlow.getExpectedAnnotations();
+            Set<String> expectedAnnotations = dataSink.getExpectedAnnotations();
             if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
                 Set<String> pendingAnnotations = input.deltaFile().getPendingAnnotations(expectedAnnotations);
                 input.flow().setPendingAnnotations(pendingAnnotations);
@@ -146,7 +146,7 @@ public class StateMachine {
 
         Action lastAction = input.flow().lastAction();
         if (lastAction != null && lastAction.getType() != ActionType.PUBLISH &&
-                (input.flow().getType() == FlowType.EGRESS || lastAction.getState() != ActionState.COMPLETE)) {
+                (input.flow().getType() == FlowType.DATA_SINK || lastAction.getState() != ActionState.COMPLETE)) {
             return Collections.emptyList();
         }
 

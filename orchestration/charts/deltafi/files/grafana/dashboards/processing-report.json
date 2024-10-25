@@ -243,7 +243,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -352,7 +352,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Files",
@@ -489,7 +489,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSink=~${dataSink:regex}')), 'Egress')"
         }
       ],
       "title": "Aggregate Processed Files",
@@ -692,7 +692,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'dataSource')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource')"
         }
       ],
       "title": "Processed Bytes by Flow",
@@ -831,7 +831,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'dataSource')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource')"
         }
       ],
       "title": "Processed Files by Flow",
@@ -947,12 +947,12 @@
         "includeAll": true,
         "label": "Egress Flow Filter",
         "multi": true,
-        "name": "egressFlow",
+        "name": "dataSink",
         "options": [],
         "query": {
           "queryType": "Default",
           "refId": "A",
-          "target": "tag_values(egressFlow)"
+          "target": "tag_values(dataSink)"
         },
         "refresh": 1,
         "regex": "",

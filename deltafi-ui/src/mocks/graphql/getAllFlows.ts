@@ -197,14 +197,14 @@ const generateFlows = () => {
       },
 
     ],
-    egress: [
+    dataSink: [
       {
         sourcePlugin: {
           artifactId: "deltafi-core-actions",
           groupId: "org.deltafi",
           version: "2.0-beta6"
         },
-        name: "passthrough-egress",
+        name: "passthrough-data-sink",
         subscribe: [
           {
             condition: null,
@@ -325,7 +325,7 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "2.0-beta6"
         },
-        name: "smoke-test-egress",
+        name: "smoke-test-data-sink",
         subscribe: [
           {
             condition: null,

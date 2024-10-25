@@ -107,7 +107,7 @@ export default function useDeltaFiles() {
         totalBytes: true,
         stage: true,
         annotations: true,
-        egressFlows: true,
+        dataSinks: true,
         created: true,
         modified: true,
         contentDeleted: true,

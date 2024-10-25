@@ -1,5 +1,5 @@
 {
-  "egressFlow": "egressFlow",
+  "dataSink": "dataSink",
   "metadataKey": "deltafiMetadata",
   "someOptionalList": "${some.optional.list}",
   "someRequiredList": "${some.required.list}",

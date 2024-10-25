@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: transform
+
+Subcommands:
+  start
+  stop
+  validate
+  show
+Usage:
+  transform [SUBCOMMAND] TRANSFORM_NAME"
+  exit 1
+}
+
+TMPFILE="/tmp/.deltafi-transform.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+log_failed() {
+  cli_log "${red}${BASENAME}: Failed to ${SUBCOMMAND} flow ${cyan}${FLOW_NAME}${normal}"
+  echo -e "${red}Error: ${1}${normal}"
+}
+
+trap cleanup INT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -h|--help)
+      cli_help_command
+      shift # past argument
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
+SUBCOMMAND=${ARGS[1]}
+FLOW_NAME=${ARGS[2]}
+
+VARIABLES="{\"flowName\": \"$FLOW_NAME\" }"
+case "$SUBCOMMAND" in
+  start)
+    EXTRACT_PATH=".data.startTransformFlow"
+    QUERY="mutation(\$flowName: String!) { startTransformFlow(flowName: \$flowName) }"
+    ;;
+  stop)
+    EXTRACT_PATH=".data.stopTransformFlow"
+    QUERY="mutation(\$flowName: String!) { stopTransformFlow(flowName: \$flowName) }"
+    ;;
+  validate)
+    EXTRACT_PATH=".data.validateTransformFlow"
+    QUERY="query(\$flowName: String!) {validateTransformFlow(flowName: \$flowName) { flowStatus { state errors { configName errorType message } } } }"
+    ;;
+  show)
+    EXTRACT_PATH=".data.getTransformFlow"
+    QUERY="query(\$flowName: String!) {
+             getTransformFlow(flowName: \$flowName) {
+               name
+               description
+               sourcePlugin {
+                 artifactId
+                 groupId
+                 version
+               }
+               flowStatus {
+                 state
+                 errors {
+                   errorType
+                   configName
+                   message
+                 }
+               }
+               subscribe {
+                 topic
+                 condition
+               }
+               transformActions {
+                 name
+                 type
+                 join {
+                   maxAge
+                   minNum
+                   maxNum
+                   metadataKey
+                 }
+                 parameters
+               }
+               publish {
+                 matchingPolicy
+                 defaultRule {
+                   defaultBehavior
+                   topic
+                 }
+                 rules {
+                  topic
+                  condition
+                 }
+               }
+               variables {
+                 name
+                 value
+                 description
+                 defaultValue
+                 dataType
+               }
+             }
+           }"
+    ;;
+  *)
+    cli_help_command
+    ;;
+esac
+
+DELTAFI_DGS=$(_graphql)
+QUERY=$(echo $QUERY | sed 's/"/\\"/g')
+POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+truncate -s 0 ${TMPFILE}
+RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "$DELTAFI_DGS")
+
+if [[ "$RESPONSE_CODE" != "200" ]]; then
+  ERRORS=$(cat ${TMPFILE})
+  log_failed "$ERRORS"
+else
+  DGS_ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+  if [[ "$DGS_ERRORS" != "" ]]; then
+    log_failed "$DGS_ERRORS"
+  elif  [[ "$SUBCOMMAND" == "validate" || "$SUBCOMMAND" == "show" ]]; then
+    cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"
+  else
+    STARTED=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}")
+    if [[ $STARTED == "true" ]]; then
+      cli_log "Successfully executed ${SUBCOMMAND} for flow ${cyan}${FLOW_NAME}${normal}"
+    else
+      cli_log "${yellow}Flow ${FLOW_NAME} did not ${SUBCOMMAND}.${normal}"
+    fi
+  fi
+fi
+
+cleanup

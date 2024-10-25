@@ -19,7 +19,7 @@ package org.deltafi.core.monitor.checks;
 
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
-import org.deltafi.core.services.EgressFlowService;
+import org.deltafi.core.services.DataSinkService;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.TimedDataSourceService;
 import org.deltafi.core.services.TransformFlowService;
@@ -33,15 +33,15 @@ public class FlowCheck extends StatusCheck {
     private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
 
     public FlowCheck(RestDataSourceService restDataSourceService, TimedDataSourceService timedDataSourceService,
-                     TransformFlowService transformFlowService, EgressFlowService egressFlowService) {
+                     TransformFlowService transformFlowService, DataSinkService dataSinkService) {
         super("Flow Check");
         this.restDataSourceService = restDataSourceService;
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
-        this.egressFlowService = egressFlowService;
+        this.dataSinkService = dataSinkService;
     }
 
     public CheckResult check() {
@@ -49,7 +49,7 @@ public class FlowCheck extends StatusCheck {
         checkFlows(resultBuilder, "Rest Data Sources", restDataSourceService.getAllInvalidFlows());
         checkFlows(resultBuilder, "Timed Data Sources", timedDataSourceService.getAllInvalidFlows());
         checkFlows(resultBuilder, "Flows", transformFlowService.getAllInvalidFlows());
-        checkFlows(resultBuilder, "Egress", egressFlowService.getAllInvalidFlows());
+        checkFlows(resultBuilder, "Egress", dataSinkService.getAllInvalidFlows());
 
         if (resultBuilder.getCode() != 0) {
              resultBuilder.addLine("\nVisit the [Data Sources](/config/data-sources), [Flows](/config/flows)," +

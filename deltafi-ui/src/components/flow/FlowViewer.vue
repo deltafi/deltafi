@@ -113,7 +113,7 @@
         <SubscribeCell v-if="!_.isEmpty(flowData?.subscribe)" :subscribe-data="flowData?.subscribe" />
         <a v-else>No subscription information to display.</a>
       </TabPanel>
-      <template v-if="['egress'].includes(flowType)">
+      <template v-if="['dataSink'].includes(flowType)">
         <TabPanel header="Read Receipts">
           <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)"></FlowExpectedAnnotationsViewer>
         </TabPanel>
@@ -148,7 +148,7 @@ import _ from "lodash";
 const hasPermission = inject("hasPermission");
 const { buildURL } = useUtilFunctions();
 
-const { getEgressFlowByName, getTransformFlowByName } = useFlowQueryBuilder();
+const { getDataSinkByName, getTransformFlowByName } = useFlowQueryBuilder();
 
 const props = defineProps({
   header: {
@@ -179,9 +179,9 @@ const fetchFlows = async (paramFlowName, paramFlowType) => {
   if (_.isEqual(paramFlowType, "transform")) {
     response = await getTransformFlowByName(paramFlowName);
     flowData.value = response.data.getTransformFlow;
-  } else if (_.isEqual(paramFlowType, "egress")) {
-    response = await getEgressFlowByName(paramFlowName);
-    flowData.value = response.data.getEgressFlow;
+  } else if (_.isEqual(paramFlowType, "dataSink")) {
+    response = await getDataSinkByName(paramFlowName);
+    flowData.value = response.data.getDataSink;
   }
 };
 

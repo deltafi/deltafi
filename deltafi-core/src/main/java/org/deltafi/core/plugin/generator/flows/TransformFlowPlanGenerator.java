@@ -47,7 +47,7 @@ public class TransformFlowPlanGenerator {
         PublishRules publishRules = new PublishRules();
         publishRules.setMatchingPolicy(MatchingPolicy.FIRST_MATCHING);
         publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.ERROR));
-        List<Rule> publishRulesList = List.of(new Rule(baseFlowName + EgressFlowPlanGenerator.FLOW_NAME_POSTFIX));
+        List<Rule> publishRulesList = List.of(new Rule(baseFlowName + DataSinkPlanGenerator.FLOW_NAME_POSTFIX));
         publishRules.setRules(publishRulesList);
 
         flowPlans.add(generateTransformFlowPlan(planName, transformActionConfigs, Set.of(subscribeRule), publishRules));

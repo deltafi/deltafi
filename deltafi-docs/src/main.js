@@ -112,28 +112,12 @@ new Docute({
           link: '/actions'
         },
         {
+          title: 'Timed Ingress Action',
+          link: '/actions/timed_ingress'
+        },
+        {
           title: 'Transform Action',
           link: '/actions/transform'
-        },
-        {
-          title: 'Load Action',
-          link: '/actions/load'
-        },
-        {
-          title: 'Domain Action',
-          link: '/actions/domain'
-        },
-        {
-          title: 'Enrich Action',
-          link: '/actions/enrich'
-        },
-        {
-          title: 'Format Action',
-          link: '/actions/format'
-        },
-        {
-          title: 'Validate Action',
-          link: '/actions/validate'
         },
         {
           title: 'Egress Action',

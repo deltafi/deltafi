@@ -47,7 +47,7 @@ import _ from "lodash";
 
 const confirm = useConfirm();
 
-const { enableEgressTestModeByName, disableEgressTestModeByName } = useEgressActions();
+const { enableDataSinkTestModeByName, disableDataSinkTestModeByName } = useEgressActions();
 const notify = useNotifications();
 
 const props = defineProps({
@@ -98,10 +98,10 @@ const confirmationPopup = (event, name, testMode) => {
 const toggleFlowState = async (flowName, newFlowTestMode) => {
   if (!newFlowTestMode) {
     notify.info("Enabling Test Mode", `Enabling Test Mode for <b>${flowName}</b> flow.`, 3000);
-    await enableEgressTestModeByName(flowName);
+    await enableDataSinkTestModeByName(flowName);
   } else {
     notify.info("Disabling Test Mode", `Disabling Test Mode for <b>${flowName}</b> flow.`, 3000);
-    await disableEgressTestModeByName(flowName);
+    await disableDataSinkTestModeByName(flowName);
   }
   rowData.value.flowStatus.testMode = !rowData.value.flowStatus.testMode;
   tooltip.value = rowData.value.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";

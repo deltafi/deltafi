@@ -54,13 +54,13 @@ class StateMachineTest {
     private static final String EGRESS_ACTION = "TheEgressAction";
     
     private static final String TRANSFORM_FLOW = "TheTransformFlow";
-    private static final String EGRESS_FLOW = "TheEgressFlow";
+    private static final String EGRESS_FLOW = "TheDataSink";
 
     @Spy private final Clock clock = new TestClock();
 
     @Mock private RestDataSourceService restDataSourceService;
     @Mock private TransformFlowService transformFlowService;
-    @Mock private EgressFlowService egressFlowService;
+    @Mock private DataSinkService dataSinkService;
     @Mock private DeltaFiPropertiesService deltaFiPropertiesService;
     @Mock private IdentityService identityService;
     @Mock private QueueManagementService queueManagementService;
@@ -72,33 +72,33 @@ class StateMachineTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void advancesToMultipleEgressFlows() {
+    void advancesToMultipleDataSinks() {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
         when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(TransformFlowMaker.builder()
                 .name(TRANSFORM_FLOW).flowState(FlowState.RUNNING).build().makeTransformFlow());
-        EgressFlow egressFlow1 = EgressFlowMaker.builder()
-                .egressActionName(EGRESS_ACTION + "1").flowState(FlowState.RUNNING).build().makeEgressFlow();
-        when(egressFlowService.getRunningFlowByName(EGRESS_FLOW + "1")).thenReturn(egressFlow1);
-        EgressFlow egressFlow2 = EgressFlowMaker.builder()
-                .egressActionName(EGRESS_ACTION + "2").flowState(FlowState.RUNNING).build().makeEgressFlow();
-        when(egressFlowService.getRunningFlowByName(EGRESS_FLOW + "2")).thenReturn(egressFlow2);
+        DataSink dataSink1 = DataSinkMaker.builder()
+                .egressActionName(EGRESS_ACTION + "1").flowState(FlowState.RUNNING).build().makeDataSink();
+        when(dataSinkService.getRunningFlowByName(EGRESS_FLOW + "1")).thenReturn(dataSink1);
+        DataSink dataSink2 = DataSinkMaker.builder()
+                .egressActionName(EGRESS_ACTION + "2").flowState(FlowState.RUNNING).build().makeDataSink();
+        when(dataSinkService.getRunningFlowByName(EGRESS_FLOW + "2")).thenReturn(dataSink2);
 
         DeltaFileFlow deltaFileTransformFlow = deltaFile.firstFlow();
         deltaFileTransformFlow.setType(FlowType.TRANSFORM);
         // Add flows and set action configurations to simulate PublisherService
-        DeltaFileFlow deltaFileEgressFlow1 = deltaFile.addFlow(EGRESS_FLOW + "1", FlowType.EGRESS, deltaFileTransformFlow,
+        DeltaFileFlow deltaFileDataSink1 = deltaFile.addFlow(EGRESS_FLOW + "1", FlowType.DATA_SINK, deltaFileTransformFlow,
                 OffsetDateTime.now(clock));
-        deltaFileEgressFlow1.setPendingActions(List.of(egressFlow1.getEgressAction().getName()));
-        DeltaFileFlow deltaFileEgressFlow2 = deltaFile.addFlow(EGRESS_FLOW + "2", FlowType.EGRESS, deltaFileTransformFlow,
+        deltaFileDataSink1.setPendingActions(List.of(dataSink1.getEgressAction().getName()));
+        DeltaFileFlow deltaFileDataSink2 = deltaFile.addFlow(EGRESS_FLOW + "2", FlowType.DATA_SINK, deltaFileTransformFlow,
                 OffsetDateTime.now(clock));
-        deltaFileEgressFlow2.setPendingActions(List.of(egressFlow2.getEgressAction().getName()));
-        TreeSet<DeltaFileFlow> deltaFileEgressFlows = new TreeSet<>(Comparator.comparing(DeltaFileFlow::getName));
-        deltaFileEgressFlows.add(deltaFileEgressFlow1);
-        deltaFileEgressFlows.add(deltaFileEgressFlow2);
+        deltaFileDataSink2.setPendingActions(List.of(dataSink2.getEgressAction().getName()));
+        TreeSet<DeltaFileFlow> deltaFileDataSinks = new TreeSet<>(Comparator.comparing(DeltaFileFlow::getName));
+        deltaFileDataSinks.add(deltaFileDataSink1);
+        deltaFileDataSinks.add(deltaFileDataSink2);
         when(publisherService.subscribers(Mockito.any(), Mockito.any(), Mockito.any()))
-                .thenReturn(deltaFileEgressFlows, Collections.emptySet());
+                .thenReturn(deltaFileDataSinks, Collections.emptySet());
 
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
 
@@ -111,9 +111,9 @@ class StateMachineTest {
         assertThat(actionInputs.getLast().getActionContext().getFlowName()).isEqualTo(EGRESS_FLOW + "2");
         assertThat(actionInputs.getLast().getActionContext().getActionName()).isEqualTo(EGRESS_ACTION + "2");
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.IN_FLIGHT);
-        assertThat(deltaFile.getEgressFlows()).hasSize(2);
-        assertThat(deltaFile.getEgressFlows().getFirst()).isEqualTo(EGRESS_FLOW + "1");
-        assertThat(deltaFile.getEgressFlows().getLast()).isEqualTo(EGRESS_FLOW + "2");
+        assertThat(deltaFile.getDataSinks()).hasSize(2);
+        assertThat(deltaFile.getDataSinks().getFirst()).isEqualTo(EGRESS_FLOW + "1");
+        assertThat(deltaFile.getDataSinks().getLast()).isEqualTo(EGRESS_FLOW + "2");
     }
 
     @Test
@@ -131,19 +131,19 @@ class StateMachineTest {
                 .flowState(FlowState.RUNNING).build().makeTransformFlow();
         when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
 
-        EgressFlow egressFlowConfig = EgressFlowMaker.builder().build().makeEgressFlow();
-        when(egressFlowService.getRunningFlowByName("egressFlow"))
-                .thenReturn(egressFlowConfig);
+        DataSink dataSinkConfig = DataSinkMaker.builder().build().makeDataSink();
+        when(dataSinkService.getRunningFlowByName("dataSink"))
+                .thenReturn(dataSinkConfig);
 
-        DeltaFileFlow egressFlow = new DeltaFileFlow();
-        egressFlow.setName("egressFlow");
-        egressFlow.setType(FlowType.EGRESS);
-        egressFlow.setTestMode(true);
-        egressFlow.setTestModeReason("test mode reason");
-        egressFlow.setPendingActions(new ArrayList<>(egressFlowConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
-        deltaFile.getFlows().add(egressFlow);
+        DeltaFileFlow dataSink = new DeltaFileFlow();
+        dataSink.setName("dataSink");
+        dataSink.setType(FlowType.DATA_SINK);
+        dataSink.setTestMode(true);
+        dataSink.setTestModeReason("test mode reason");
+        dataSink.setPendingActions(new ArrayList<>(dataSinkConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
+        deltaFile.getFlows().add(dataSink);
         when(publisherService.subscribers(transformFlow, deltaFile, deltaFileFlow))
-                .thenReturn(Set.of(egressFlow));
+                .thenReturn(Set.of(dataSink));
 
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
 
@@ -153,8 +153,8 @@ class StateMachineTest {
 
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
         assertThat(deltaFile.getFiltered()).isTrue();
-        assertThat(egressFlow.getActions()).hasSize(1);
-        Action egressAction = egressFlow.firstAction();
+        assertThat(dataSink.getActions()).hasSize(1);
+        Action egressAction = dataSink.firstAction();
         assertThat(egressAction.getName()).isEqualTo(SYNTHETIC_EGRESS_ACTION_FOR_TEST);
         assertThat(egressAction.getState()).isEqualTo(ActionState.FILTERED);
         assertThat(egressAction.getFilteredCause()).isEqualTo("Filtered by test mode");
@@ -237,11 +237,11 @@ class StateMachineTest {
         deltaFileFlow.setType(FlowType.TRANSFORM);
         deltaFileFlow.setDepth(deltaFiProperties.getMaxFlowDepth());
 
-        DeltaFileFlow egressFlow = new DeltaFileFlow();
-        egressFlow.setName("egressFlow");
-        egressFlow.setType(FlowType.EGRESS);
-        EgressFlow egressFlowConfig = EgressFlowMaker.builder().build().makeEgressFlow();
-        egressFlow.setPendingActions(new ArrayList<>(egressFlowConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
+        DeltaFileFlow dataSink = new DeltaFileFlow();
+        dataSink.setName("dataSink");
+        dataSink.setType(FlowType.DATA_SINK);
+        DataSink dataSinkConfig = DataSinkMaker.builder().build().makeDataSink();
+        dataSink.setPendingActions(new ArrayList<>(dataSinkConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
 
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
         List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(stateMachineInput));
@@ -275,7 +275,7 @@ class StateMachineTest {
     }
 
     @Builder
-    private static class EgressFlowMaker {
+    private static class DataSinkMaker {
         @Builder.Default
         final String egressActionName = EGRESS_ACTION;
         @Builder.Default
@@ -285,13 +285,13 @@ class StateMachineTest {
         @Builder.Default
         final boolean testMode = false;
 
-        private EgressFlow makeEgressFlow() {
-            EgressFlow egressFlow = new EgressFlow();
-            egressFlow.setName(name);
+        private DataSink makeDataSink() {
+            DataSink dataSink = new DataSink();
+            dataSink.setName(name);
             ActionConfiguration ActionConfiguration = new ActionConfiguration(egressActionName, ActionType.EGRESS, null);
-            egressFlow.setEgressAction(ActionConfiguration);
-            egressFlow.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
-            return egressFlow;
+            dataSink.setEgressAction(ActionConfiguration);
+            dataSink.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
+            return dataSink;
         }
     }
 }

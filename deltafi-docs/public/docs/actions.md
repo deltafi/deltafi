@@ -1,6 +1,6 @@
 # Actions
 
-Actions are isolated units of business logic that perform functions within TimedDataSources, Transform Flows, and Egresses.
+Actions are isolated units of business logic that perform functions within Timed Data Sources, Transforms, and Data Sinks.
 Actions receive required data from the DeltaFile on a queue, perform the necessary logic, and issue a response that
 augments the DeltaFile so that it can be handed off to the next Action in the flow or published to a topic.
 

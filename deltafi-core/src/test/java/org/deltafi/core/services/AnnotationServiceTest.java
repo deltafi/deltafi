@@ -18,7 +18,7 @@
 package org.deltafi.core.services;
 
 import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
+import org.deltafi.core.types.snapshot.DataSinkSnapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,7 +41,7 @@ class AnnotationServiceTest {
     AnnotationService annotationService;
 
     @Mock
-    EgressFlowService egressFlowService;
+    DataSinkService dataSinkService;
 
     @Mock
     DeltaFilesService deltaFilesService;
@@ -49,25 +49,25 @@ class AnnotationServiceTest {
     @Test
     void testSetExpectedAnnotations_egress() {
         annotationService.setExpectedAnnotations(FLOW, ANNOTATION_KEYS);
-        Mockito.verify(egressFlowService).setExpectedAnnotations(FLOW, ANNOTATION_KEYS);
+        Mockito.verify(dataSinkService).setExpectedAnnotations(FLOW, ANNOTATION_KEYS);
     }
 
     @Test
     void testSetExpectedAnnotations_invalidFlow() {
-        Mockito.when(egressFlowService.setExpectedAnnotations(Mockito.any(), Mockito.any())).thenThrow(new IllegalArgumentException());
+        Mockito.when(dataSinkService.setExpectedAnnotations(Mockito.any(), Mockito.any())).thenThrow(new IllegalArgumentException());
         assertThatThrownBy(() -> annotationService.setExpectedAnnotations("invalidFlow", ANNOTATION_KEYS)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testClearRemovedAnnotations() {
-        Mockito.when(egressFlowService.setExpectedAnnotations(FLOW, null)).thenReturn(true);
+        Mockito.when(dataSinkService.setExpectedAnnotations(FLOW, null)).thenReturn(true);
         annotationService.setExpectedAnnotations(FLOW, Set.of());
         Mockito.verify(deltaFilesService).updatePendingAnnotationsForFlows(FLOW, null);
     }
 
     @Test
     void testClearRemovedAnnotations_skipWhenNoChange() {
-        Mockito.when(egressFlowService.setExpectedAnnotations(FLOW, null)).thenReturn(false);
+        Mockito.when(dataSinkService.setExpectedAnnotations(FLOW, null)).thenReturn(false);
         annotationService.setExpectedAnnotations(FLOW, Set.of());
         Mockito.verifyNoInteractions(deltaFilesService);
     }
@@ -75,21 +75,21 @@ class AnnotationServiceTest {
     @Test
     void resetFromSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setEgressFlows(List.of(egressFlowSnapshot("egressNoChange", ANNOTATION_KEYS),
-                egressFlowSnapshot("egressChanged", ANNOTATION_KEYS), egressFlowSnapshot("nullset", null)));
+        systemSnapshot.setDataSinks(List.of(dataSinkSnapshot("egressNoChange", ANNOTATION_KEYS),
+                dataSinkSnapshot("egressChanged", ANNOTATION_KEYS), dataSinkSnapshot("nullset", null)));
 
-        Mockito.when(egressFlowService.setExpectedAnnotations("egressNoChange", ANNOTATION_KEYS)).thenReturn(false);
-        Mockito.when(egressFlowService.setExpectedAnnotations("egressChanged", ANNOTATION_KEYS)).thenReturn(true);
-        Mockito.when(egressFlowService.setExpectedAnnotations("nullset", null)).thenReturn(true);
+        Mockito.when(dataSinkService.setExpectedAnnotations("egressNoChange", ANNOTATION_KEYS)).thenReturn(false);
+        Mockito.when(dataSinkService.setExpectedAnnotations("egressChanged", ANNOTATION_KEYS)).thenReturn(true);
+        Mockito.when(dataSinkService.setExpectedAnnotations("nullset", null)).thenReturn(true);
 
         annotationService.resetFromSnapshot(systemSnapshot, true);
 
-        Mockito.verify(egressFlowService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
+        Mockito.verify(dataSinkService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
         Mockito.verify(deltaFilesService).updatePendingAnnotationsForFlows("egressChanged", ANNOTATION_KEYS);
     }
 
-    EgressFlowSnapshot egressFlowSnapshot(String name, Set<String> expectedAnnotations) {
-        EgressFlowSnapshot flowSnapshot = new EgressFlowSnapshot(name);
+    DataSinkSnapshot dataSinkSnapshot(String name, Set<String> expectedAnnotations) {
+        DataSinkSnapshot flowSnapshot = new DataSinkSnapshot(name);
         flowSnapshot.setExpectedAnnotations(expectedAnnotations);
         return flowSnapshot;
     }

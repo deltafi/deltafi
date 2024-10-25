@@ -26,7 +26,7 @@ export default function useEgressActions() {
   const getAllEgress = () => {
     const query = {
       getAllFlows: {
-        egress: {
+        dataSink: {
           name: true,
           description: true,
           sourcePlugin: {
@@ -71,54 +71,54 @@ export default function useEgressActions() {
   };
 
   // Starts a Egress flow
-  const startEgressFlowByName = (flowName: string) => {
+  const startDataSinkByName = (flowName: string) => {
     const query = {
-      startEgressFlow: {
+      startDataSink: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "startEgressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "startDataSinkByName", "mutation");
   };
 
   // Stops a Egress flow
-  const stopEgressFlowByName = (flowName: string) => {
+  const stopDataSinkByName = (flowName: string) => {
     const query = {
-      stopEgressFlow: {
+      stopDataSink: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "stopEgressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "stopDataSinkByName", "mutation");
   };
 
   // Enable test mode for egress
-  const enableEgressTestModeByName = (flowName: string) => {
+  const enableDataSinkTestModeByName = (flowName: string) => {
     const query = {
-      enableEgressTestMode: {
+      enableDataSinkTestMode: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "enableEgressTestModeByName", "mutation");
+    return sendGraphQLQuery(query, "enableDataSinkTestModeByName", "mutation");
   };
 
   // Disable test mode for egress
-  const disableEgressTestModeByName = (flowName: string) => {
+  const disableDataSinkTestModeByName = (flowName: string) => {
     const query = {
-      disableEgressTestMode: {
+      disableDataSinkTestMode: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "disableEgressTestModeByName", "mutation");
+    return sendGraphQLQuery(query, "disableDataSinkTestModeByName", "mutation");
   };
 
-  const saveEgressFlowPlan = (egressFlowPlan: Object) => {
+  const saveDataSinkPlan = (dataSinkPlan: Object) => {
     let newObject: any = null;
     const enumKeysToKey = ["matchingPolicy", "defaultBehavior"];
     // Function to convert certain keys values to enums
@@ -141,30 +141,30 @@ export default function useEgressActions() {
       newObject = queryObject;
     }
 
-    graphqlQueryObjectConverter(egressFlowPlan);
+    graphqlQueryObjectConverter(dataSinkPlan);
 
     const formattedQuery = newObject;
 
     const query = {
-      saveEgressFlowPlan: {
+      saveDataSinkPlan: {
         __args: {
-          egressFlowPlan: formattedQuery,
+          dataSinkPlan: formattedQuery,
         },
         name: true,
       },
     };
-    return sendGraphQLQuery(query, "saveEgressFlowPlan", "mutation");
+    return sendGraphQLQuery(query, "saveDataSinkPlan", "mutation");
   };
 
-  const removeEgressFlowPlan = (flowName: string) => {
+  const removeDataSinkPlan = (flowName: string) => {
     const query = {
-      removeEgressFlowPlan: {
+      removeDataSinkPlan: {
         __args: {
           name: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "removeEgressFlowPlan", "mutation");
+    return sendGraphQLQuery(query, "removeDataSinkPlan", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
@@ -179,12 +179,12 @@ export default function useEgressActions() {
 
   return {
     getAllEgress,
-    startEgressFlowByName,
-    stopEgressFlowByName,
-    saveEgressFlowPlan,
-    removeEgressFlowPlan,
-    enableEgressTestModeByName,
-    disableEgressTestModeByName,
+    startDataSinkByName,
+    stopDataSinkByName,
+    saveDataSinkPlan,
+    removeDataSinkPlan,
+    enableDataSinkTestModeByName,
+    disableDataSinkTestModeByName,
     loaded,
     loading,
     errors,

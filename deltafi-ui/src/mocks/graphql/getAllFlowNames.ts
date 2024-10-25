@@ -17,11 +17,10 @@
 */
 
 const generateFlows = () => {
-  console.log("WTF")
   return {
     egress: [
-      "smoke-test-egress",
-      "passthrough-egress",
+      "smoke-test-data-sink",
+      "passthrough-data-sink",
     ],
     transform: [
       "smoke-test-transform",

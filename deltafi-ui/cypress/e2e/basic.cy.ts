@@ -74,10 +74,10 @@ describe("DeltaFile Errors Page", () => {
   });
 });
 
-describe("Egress Page", () => {
-  it("loads Egress Page", () => {
-    cy.visit("http://localhost:8080/config/egress");
-    cy.get("span.p-panel-title").contains("Egress Actions");
+describe("Data Sink Page", () => {
+  it("loads Data Sink Page", () => {
+    cy.visit("http://localhost:8080/config/data-sinks");
+    cy.get("span.p-panel-title").contains("Data Sinks");
   });
 });
 
@@ -100,16 +100,16 @@ describe("DeltaFile Filtered Page", () => {
   });
 });
 
-describe("Flow Plan Builder Page", () => {
-  it("loads Flow Plan Builder", () => {
-    cy.visit("http://localhost:8080/config/flow-plan-builder");
-    cy.get("title").contains("Flow Plan Builder");
+describe("Transform Builder Page", () => {
+  it("loads Transform Builder", () => {
+    cy.visit("http://localhost:8080/config/transform-builder");
+    cy.get("title").contains("Transform Builder");
   });
 });
 
-describe("Flows Page", () => {
-  it("loads Flows", () => {
-    cy.visit("http://localhost:8080/config/flows");
+describe("Transforms Page", () => {
+  it("loads Transforms", () => {
+    cy.visit("http://localhost:8080/config/transforms");
     cy.get("span.p-panel-title").contains("deltafi-testjig");
   });
 });

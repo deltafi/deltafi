@@ -124,21 +124,21 @@ load_plan() {
     local LOAD_TYPE="rest data source plan"
     local OPERATION_NAME="saveRestDataSourcePlan"
     local QUERY="mutation(\$flowPlan: RestDataSourcePlanInput!) {saveRestDataSourcePlan(dataSourcePlan: \$flowPlan) { name }}"
-  elif [[ "${JSON}" == *"\"type\": \"EGRESS\""* ]]; then
-    local LOAD_TYPE="egress flow plan"
-    local OPERATION_NAME="saveEgressFlowPlan"
-    local QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
+  elif [[ "${JSON}" == *"\"type\": \"DATA_SINK\""* ]]; then
+    local LOAD_TYPE="dataSink plan"
+    local OPERATION_NAME="saveDataSinkPlan"
+    local QUERY="mutation(\$flowPlan: DataSinkPlanInput!) {saveDataSinkPlan(DataSinkPlan: \$flowPlan) { name }}"
   elif [[ "${JSON}" == *"\"type\": \"TIMED_DATA_SOURCE\""* ]]; then
            local LOAD_TYPE="timed data source plan"
            local OPERATION_NAME="saveTimedDataSourcePlan"
            local QUERY="mutation(\$flowPlan: TimedDataSourcePlanInput!) {saveTimedDataSourcePlan(dataSourcePlan: \$flowPlan) { name }}"
   elif [[ "${JSON}" == *"\"type\": \"TRANSFORM\""* ]]; then
-      local LOAD_TYPE="transform flow plan"
+      local LOAD_TYPE="transform plan"
       local OPERATION_NAME="saveTransformFlowPlan"
       local QUERY="mutation(\$flowPlan: TransformFlowPlanInput!) {saveTransformFlowPlan(transformFlowPlan: \$flowPlan) { name }}"
   else
-    cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must be of type EGRESS, REST_DATA_SOURCE, TIMED_DATA_SOURCE, or TRANSFORM${normal}"
-    echo -e "${red}Loading flow plan failed, the plan must be of type EGRESS, REST_DATA_SOURCE, TIMED_DATA_SOURCE, or TRANSFORM${normal}"
+    cli_log "${red}${BASENAME}: Loading plan failed, the plan must be of type DATA_SINK, REST_DATA_SOURCE, TIMED_DATA_SOURCE, or TRANSFORM${normal}"
+    echo -e "${red}Loading plan failed, the plan must be of type DATA_SINK, REST_DATA_SOURCE, TIMED_DATA_SOURCE, or TRANSFORM${normal}"
     return 0
   fi
 

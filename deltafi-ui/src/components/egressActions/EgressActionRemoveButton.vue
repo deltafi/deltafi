@@ -44,7 +44,7 @@ import ConfirmPopup from "primevue/confirmpopup";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
-const { removeEgressFlowPlan } = useEgressActions();
+const { removeDataSinkPlan } = useEgressActions();
 const emit = defineEmits(["reloadEgressActions"]);
 const notify = useNotifications();
 
@@ -74,7 +74,7 @@ const confirmationPopup = (event, actionName) => {
 };
 
 const confirmedRemoveEgressAction = async (actionName) => {
-  await removeEgressFlowPlan(actionName);
+  await removeDataSinkPlan(actionName);
   emit("reloadEgressActions");
 };
 </script>

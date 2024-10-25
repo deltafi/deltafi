@@ -118,7 +118,7 @@ export default function useSystemSnapshots() {
       running: true,
       testMode: true,
     },
-    egressFlows: {
+    dataSinks: {
       name: true,
       running: true,
       testMode: true,

@@ -19,18 +19,18 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import AutoResumePage from "@/pages/AutoResumePage.vue";
 import DashboardPage from "@/pages/DashboardPage.vue";
+import DataSinkPage from "@/pages/DataSinkPage.vue";
 import DataSourcePage from "@/pages/DataSourcePage.vue";
 import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
 import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
 import DeltaFileUploadPage from "@/pages/DeltaFileUploadPage.vue";
 import DeltaFileViewerPage from "@/pages/DeltaFileViewerPage.vue";
-import EgressActionsPage from "@/pages/EgressActionsPage.vue";
 import ErrorsPage from "@/pages/ErrorsPage.vue";
 import EventsPage from "@/pages/EventsPage.vue";
 import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
 import FilteredPage from "@/pages/FilteredPage.vue";
-import FlowPlanBuilderPage from "@/pages/FlowPlanBuilderPage.vue";
-import FlowPlansPage from "@/pages/FlowPlansPage.vue";
+import TransformBuilderPage from "@/pages/TransformBuilderPage.vue";
+import TransformsPage from "@/pages/TransformsPage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
@@ -117,25 +117,25 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/config/flows",
-    name: "Flows",
-    component: FlowPlansPage,
+    path: "/config/transforms",
+    name: "Transforms",
+    component: TransformsPage,
     meta: {
       permission: "FlowView",
     },
   },
   {
-    path: "/config/flow-plan-builder",
-    name: "Flow Plan Builder",
-    component: FlowPlanBuilderPage,
+    path: "/config/transform-builder",
+    name: "Transform Builder",
+    component: TransformBuilderPage,
     meta: {
       permission: "FlowUpdate",
     },
   },
   {
-    path: "/config/egress",
-    name: "Egress",
-    component: EgressActionsPage,
+    path: "/config/data-sinks",
+    name: "Data Sinks",
+    component: DataSinkPage,
     meta: {
       permission: "FlowView",
     },

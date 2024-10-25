@@ -1,0 +1,11 @@
+name: passthrough-data-sink
+type: DATA_SINK
+description: Test flow that passes data through unchanged
+subscribe:
+  - topic: passthrough-egress
+egressAction:
+  name: PassthroughEgress
+  type: org.deltafi.core.action.egress.RestPostEgress
+  parameters:
+    metadataKey: deltafiMetadata
+    url: "${passthroughEgressUrl}"

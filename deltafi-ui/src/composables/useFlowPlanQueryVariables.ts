@@ -83,7 +83,7 @@ export const transformFlowPlanFields = {
   },
 };
 
-export const egressFlowFields = {
+export const dataSinkFields = {
   name: true,
   subscribe: {
     condition: true,
@@ -101,7 +101,7 @@ export const egressFlowFields = {
   expectedAnnotations: true,
 };
 
-export const egressFlowPlanFields = {
+export const dataSinkPlanFields = {
   name: true,
   description: true,
   type: true,
@@ -120,12 +120,12 @@ export const transformFlowPlan = {
   ...transformFlowPlanFields,
 };
 
-export const egressFlow = {
+export const dataSink = {
   ...sourcePluginFields,
-  ...egressFlowFields,
+  ...dataSinkFields,
 };
 
-export const egressFlowPlan = {
+export const dataSinkPlan = {
   ...sourcePluginFields,
-  ...egressFlowPlanFields,
+  ...dataSinkPlanFields,
 };

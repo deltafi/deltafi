@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UnifiedFlowServiceTest {
     @Mock
-    EgressFlowService egressFlowService;
+    DataSinkService dataSinkService;
     @Mock
     TransformFlowService transformFlowService;
 
@@ -68,13 +68,13 @@ class UnifiedFlowServiceTest {
 
     @Test
     void testRunningActionForEgressType() {
-        ActionConfiguration egressFlowEgressAction = mock(ActionConfiguration.class);
-        when(egressFlowEgressAction.getName()).thenReturn("testAction");
-        EgressFlow egressFlow = mock(EgressFlow.class);
-        when(egressFlow.getEgressAction()).thenReturn(egressFlowEgressAction);
-        when(egressFlowService.getRunningFlows()).thenReturn(List.of(egressFlow));
+        ActionConfiguration dataSinkEgressAction = mock(ActionConfiguration.class);
+        when(dataSinkEgressAction.getName()).thenReturn("testAction");
+        DataSink dataSink = mock(DataSink.class);
+        when(dataSink.getEgressAction()).thenReturn(dataSinkEgressAction);
+        when(dataSinkService.getRunningFlows()).thenReturn(List.of(dataSink));
 
-        assertEquals(egressFlowEgressAction, unifiedFlowService.runningAction("testAction", ActionType.EGRESS));
+        assertEquals(dataSinkEgressAction, unifiedFlowService.runningAction("testAction", ActionType.EGRESS));
     }
 
     @Test
@@ -85,11 +85,11 @@ class UnifiedFlowServiceTest {
         TransformFlow transformFlow = mock(TransformFlow.class);
         when(transformFlow.allActionConfigurations()).thenReturn(List.of(transformAction));
 
-        EgressFlow egressFlow = mock(EgressFlow.class);
-        when(egressFlow.allActionConfigurations()).thenReturn(List.of(egressAction));
+        DataSink dataSink = mock(DataSink.class);
+        when(dataSink.allActionConfigurations()).thenReturn(List.of(egressAction));
 
         when(transformFlowService.getAll()).thenReturn(List.of(transformFlow));
-        when(egressFlowService.getAll()).thenReturn(List.of(egressFlow));
+        when(dataSinkService.getAll()).thenReturn(List.of(dataSink));
 
         assertEquals(List.of(transformAction, egressAction),
                 unifiedFlowService.allActionConfigurations());

@@ -44,10 +44,6 @@ type UniqueKeyValues {
   values: [String]!
 }
 
-type Egress {
-  flow: String!
-}
-
 input NameFilter {
   name: String!
   caseSensitive: Boolean
@@ -139,7 +135,7 @@ enum FlowType {
   REST_DATA_SOURCE
   TIMED_DATA_SOURCE
   TRANSFORM
-  EGRESS
+  DATA_SINK
 }
 
 type DeltaFileFlow {
@@ -177,7 +173,7 @@ type DeltaFile {
   totalBytes: Long!
   stage: DeltaFileStage!
   annotations: Metadata
-  egressFlows: [String!]!
+  dataSinks: [String!]!
   created: DateTime!
   modified: DateTime!
   contentDeleted: DateTime
@@ -279,7 +275,7 @@ input DeltaFilesFilter {
   annotations: [KeyValueInput!]
   dataSources: [String!]
   transformFlows: [String!]
-  egressFlows: [String!]
+  dataSinks: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime
   modifiedBefore: DateTime
@@ -348,15 +344,15 @@ type TopicParticipant {
 }
 
 type Query {
-  getEgressFlowPlan(planName: String!): EgressFlowPlan!
+  getDataSinkPlan(planName: String!): DataSinkPlan!
   getRestDataSourcePlan(planName: String!): RestDataSourcePlan!
   getTimedDataSourcePlan(planName: String!): TimedDataSourcePlan!
   getTransformFlowPlan(planName: String!): TransformFlowPlan!
-  getEgressFlow(flowName: String!): EgressFlow!
+  getDataSink(flowName: String!): DataSink!
   getRestDataSource(name: String!): RestDataSource!
   getTimedDataSource(name: String!): TimedDataSource!
   getTransformFlow(flowName: String!): TransformFlow!
-  validateEgressFlow(flowName: String!): EgressFlow!
+  validateDataSink(flowName: String!): DataSink!
   validateRestDataSource(name: String!): RestDataSource!
   validateTimedDataSource(name: String!): TimedDataSource!
   validateTransformFlow(flowName: String!): TransformFlow!
@@ -404,28 +400,28 @@ type Query {
 }
 
 type Mutation {
-  saveEgressFlowPlan(egressFlowPlan: EgressFlowPlanInput!) : EgressFlow!
+  saveDataSinkPlan(DataSinkPlan: DataSinkPlanInput!) : DataSink!
   saveTimedDataSourcePlan(dataSourcePlan: TimedDataSourcePlanInput!) : TimedDataSource!
   saveRestDataSourcePlan(dataSourcePlan: RestDataSourcePlanInput!) : RestDataSource!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
-  removeEgressFlowPlan(name: String!) : Boolean!
+  removeDataSinkPlan(name: String!) : Boolean!
   removeRestDataSourcePlan(name: String!) : Boolean!
   removeTimedDataSourcePlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
 
-  startEgressFlow(flowName: String!) : Boolean!
+  startDataSink(flowName: String!) : Boolean!
   startRestDataSource(name: String!) : Boolean!
   startTimedDataSource(name: String!) : Boolean!
   startTransformFlow(flowName: String!) : Boolean!
-  stopEgressFlow(flowName: String!) : Boolean!
+  stopDataSink(flowName: String!) : Boolean!
   stopRestDataSource(name: String!) : Boolean!
   stopTimedDataSource(name: String!) : Boolean!
   stopTransformFlow(flowName: String!) : Boolean!
 
   setRestDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   setTimedDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
-  enableEgressTestMode(flowName: String!) : Boolean!
-  disableEgressTestMode(flowName: String!) : Boolean!
+  enableDataSinkTestMode(flowName: String!) : Boolean!
+  disableDataSinkTestMode(flowName: String!) : Boolean!
   setTimedDataSourceMemo(name: String!, memo: String) : Boolean!
   setTimedDataSourceCronSchedule(name: String!, cronSchedule: String!) : Boolean!
   enableRestDataSourceTestMode(name: String!) : Boolean!
@@ -434,7 +430,7 @@ type Mutation {
   disableTimedDataSourceTestMode(name: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
-  setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
+  setDataSinkExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
   taskTimedDataSource(name: String!, memo: String) : Boolean!
   resume(action: String, dids: [UUID!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!

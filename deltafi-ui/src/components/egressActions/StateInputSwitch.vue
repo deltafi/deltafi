@@ -45,7 +45,7 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startEgressFlowByName, stopEgressFlowByName } = useEgressActions();
+const { startDataSinkByName, stopDataSinkByName } = useEgressActions();
 const notify = useNotifications();
 const emit = defineEmits(["change"]);
 
@@ -94,10 +94,10 @@ const toggleFlowState = async (flowName, newFlowState) => {
   if (!configureEgressActionDialog.value) {
     if (_.isEqual(newFlowState, "STOPPED")) {
       notify.info("Starting Egress", `Starting <b>${flowName}</b> egress.`, 3000);
-      await startEgressFlowByName(flowName);
+      await startDataSinkByName(flowName);
     } else {
       notify.info("Stopping Egress", `Stopping <b>${flowName}</b> egress.`, 3000);
-      await stopEgressFlowByName(flowName);
+      await stopDataSinkByName(flowName);
     }
     emit("change");
   }

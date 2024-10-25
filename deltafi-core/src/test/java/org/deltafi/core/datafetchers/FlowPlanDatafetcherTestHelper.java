@@ -43,9 +43,9 @@ public class FlowPlanDatafetcherTestHelper {
     public static TransformFlowPlan getTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot().name().type().description().type(), TransformFlowPlan.class);
     }
-    
-    public static EgressFlowPlan getEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), EgressFlowPlan.class);
+
+    public static DataSinkPlan getDataSinkPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetDataSinkPlanGraphQLQuery.newRequest().planName("dataSinkPlan").build(), new GetDataSinkPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), DataSinkPlan.class);
     }
 
     public static TimedDataSourcePlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -63,21 +63,21 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
-                new GetFlowNamesProjectionRoot().transform().egress().timedDataSource().restDataSource(), FlowNames.class);
+                new GetFlowNamesProjectionRoot().transform().dataSink().timedDataSource().restDataSource(), FlowNames.class);
     }
 
-    public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateEgressFlowProjectionRoot().name(), EgressFlow.class);
+    public static DataSink validateDataSink(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, ValidateDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateDataSinkProjectionRoot().name(), DataSink.class);
     }
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<Flows>> typeRef = new TypeRef<>() {};
-        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().egressFlows().name().parent().restDataSources().name().type().parent().timedDataSources().name().type().root(), typeRef);
+        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().dataSinks().name().parent().restDataSources().name().type().parent().timedDataSources().name().type().root(), typeRef);
     }
 
     public static SystemFlows getRunningFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetRunningFlowsGraphQLQuery.newRequest().build(),
-                new GetRunningFlowsProjectionRoot().transform().name().parent().egress().name().root(), SystemFlows.class);
+                new GetRunningFlowsProjectionRoot().transform().name().parent().dataSink().name().root(), SystemFlows.class);
     }
 
     public static SystemFlowPlans getAllFlowPlans(DgsQueryExecutor dgsQueryExecutor) {
@@ -86,13 +86,13 @@ public class FlowPlanDatafetcherTestHelper {
                         .timedDataSources().type().name().description().topic().timedIngressAction().name().type().actionType().parent().cronSchedule().parent()
                         .restDataSources().type().name().description().topic().parent()
                         .transformPlans().name().description().parent()
-                        .egressPlans().name().description().egressAction().name().type().actionType()
+                        .dataSinkPlans().name().description().egressAction().name().type().actionType()
                         .root(), SystemFlowPlans.class);
     }
 
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
-                new GetAllFlowsProjectionRoot().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().egress().name().root(), SystemFlows.class);
+                new GetAllFlowsProjectionRoot().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().dataSink().name().root(), SystemFlows.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -124,9 +124,9 @@ public class FlowPlanDatafetcherTestHelper {
                 new GetTransformFlowProjectionRoot().name(), TransformFlow.class);
     }
 
-    public static EgressFlow getEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build(),
-                new GetEgressFlowProjectionRoot().name(), EgressFlow.class);
+    public static DataSink getDataSink(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build(),
+                new GetDataSinkProjectionRoot().name(), DataSink.class);
     }
 
     public static List<ActionFamily> getActionFamilies(DgsQueryExecutor dgsQueryExecutor) {
@@ -150,16 +150,16 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), TransformFlow.class);
     }
 
-    public static EgressFlow saveEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+    public static DataSink saveDataSinkPlan(DgsQueryExecutor dgsQueryExecutor) {
         ActionConfigurationInput egress = ActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
-        EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
+        DataSinkPlanInput input = DataSinkPlanInput.newBuilder()
                 .name("flowPlan")
-                .type("EGRESS")
+                .type("DATA_SINK")
                 .description("description")
                 .egressAction(egress)
                 .subscribe(List.of(new Rule("topic", null)))
                 .build();
-        return executeQuery(dgsQueryExecutor, SaveEgressFlowPlanGraphQLQuery.newRequest().egressFlowPlan(input).build(), new SaveEgressFlowPlanProjectionRoot().name(), EgressFlow.class);
+        return executeQuery(dgsQueryExecutor, SaveDataSinkPlanGraphQLQuery.newRequest().DataSinkPlan(input).build(), new SaveDataSinkPlanProjectionRoot().name(), DataSink.class);
     }
 
     public static TimedDataSource saveTimedDataSourcePlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -180,8 +180,8 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, RemoveTransformFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
 
-    public static boolean removeEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, RemoveEgressFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
+    public static boolean removeDataSinkPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, RemoveDataSinkPlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
 
     public static boolean removeTimedDataSourcePlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -196,12 +196,12 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, StopTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build());
     }
 
-    public static boolean startEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build());
+    public static boolean startDataSink(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StartDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build());
     }
 
-    public static boolean stopEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build());
+    public static boolean stopDataSink(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StopDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build());
     }
 
     public static boolean startTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {
@@ -241,7 +241,5 @@ public class FlowPlanDatafetcherTestHelper {
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(new GraphQLQueryRequest(query, projection, Map.of(Duration.class, new DurationScalar())).serialize(), "data." + query.getOperationName(), clazz);
     }
 
-    private static class EmptyProjection extends BaseProjectionNode {
-
-    }
+    private static class EmptyProjection extends BaseProjectionNode {}
 }

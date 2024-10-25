@@ -98,7 +98,7 @@ const flowTypeMap = {
   TRANSFORM: "transform",
   REST_DATA_SOURCE: "restDataSource",
   TIMED_DATA_SOURCE: "timedDataSource",
-  EGRESS: "egress",
+  DATA_SINK: "dataSink",
 }
 
 const setPersistedParams = () => {
@@ -241,7 +241,7 @@ const formatFlowNames = () => {
     restDataSource: "Rest Data Sources",
     timedDataSource: "Timed Data Sources",
     transform: "Transforms",
-    egress: "Data Sinks"
+    dataSink: "Data Sinks"
   };
   for (const [key, label] of Object.entries(map)) {
     if (!_.isEmpty(allFlowNames.value[key])) {

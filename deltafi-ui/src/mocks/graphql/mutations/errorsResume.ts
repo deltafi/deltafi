@@ -31,7 +31,7 @@ const generateData = () => {
         totalCount: 1,
       },
       {
-        message: "No egress flow configured",
+        message: "No dataSink configured",
         flows: [
           {
             flow: "stix1_x",

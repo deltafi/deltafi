@@ -35,7 +35,7 @@
             <div class="d-flex justify-content-between">
               <span>
                 <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType">
-                  <span v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
+                  <span v-tooltip.right="'View transform information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
                     {{ data.name }}
                   </span>
                 </DialogTemplate>
@@ -44,10 +44,10 @@
                 <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
                   <i class="ml-2 text-muted fa-solid fa-trash-can" />
                 </span>
-                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data, true)">
+                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setFlowPlanParams(data, true)">
                   <i v-tooltip.top="{ value: `Edit`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-pencil" />
                 </PermissionedRouterLink>
-                <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data)">
+                <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setFlowPlanParams(data)">
                   <i v-tooltip.top="{ value: `Clone`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-clone" />
                 </PermissionedRouterLink>
               </span>

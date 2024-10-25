@@ -47,13 +47,13 @@ public class PluginService implements Snapshotter {
     private final PluginRepository pluginRepo;
     private final PluginVariableService pluginVariableService;
     private final BuildProperties buildProperties;
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
     private final Environment environment;
     private final PluginValidator pluginValidator;
-    private final EgressFlowPlanService egressFlowPlanService;
+    private final DataSinkPlanService DataSinkPlanService;
     private final RestDataSourcePlanService restDataSourcePlanService;
     private final TimedDataSourcePlanService timedDataSourcePlanService;
     private final TransformFlowPlanService transformFlowPlanService;
@@ -141,8 +141,8 @@ public class PluginService implements Snapshotter {
         }
         systemPlugin.getFlowPlans().remove(flowPlan);
 
-        if (flowPlan.getType() == FlowType.EGRESS) {
-            egressFlowService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
+        if (flowPlan.getType() == FlowType.DATA_SINK) {
+            dataSinkService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
         } else if (flowPlan.getType() == FlowType.REST_DATA_SOURCE) {
             restDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
         } else if (flowPlan.getType() == FlowType.TIMED_DATA_SOURCE) {
@@ -183,7 +183,7 @@ public class PluginService implements Snapshotter {
         VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (update.isUpdated()) {
             List<FlowPlan> flowPlans = getPlugin(pluginCoordinates).map(PluginEntity::getFlowPlans).orElse(List.of());
-            egressFlowService.rebuildFlows(filterByType(flowPlans, FlowType.EGRESS), pluginCoordinates);
+            dataSinkService.rebuildFlows(filterByType(flowPlans, FlowType.DATA_SINK), pluginCoordinates);
             transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates);
             restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates);
             timedDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.TIMED_DATA_SOURCE), pluginCoordinates);
@@ -241,7 +241,7 @@ public class PluginService implements Snapshotter {
         errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans, existingFlowPlans));
         errors.addAll(restDataSourcePlanService.validateFlowPlans(groupedFlowPlans.restDataSourcePlans, existingFlowPlans));
         errors.addAll(timedDataSourcePlanService.validateFlowPlans(groupedFlowPlans.timedDataSourcePlans, existingFlowPlans));
-        errors.addAll(egressFlowPlanService.validateFlowPlans(groupedFlowPlans.egressFlowPlans, existingFlowPlans));
+        errors.addAll(DataSinkPlanService.validateFlowPlans(groupedFlowPlans.DataSinkPlans, existingFlowPlans));
         errors.addAll(pluginVariableService.validateVariables(variables));
 
         List<String> duplicateNames = findDuplicateDataSourceNames(groupedFlowPlans, plugin.getPluginCoordinates());
@@ -256,7 +256,7 @@ public class PluginService implements Snapshotter {
         transformFlowService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.transformFlowPlans());
         restDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.restDataSourcePlans());
         timedDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.timedDataSourcePlans());
-        egressFlowService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.egressFlowPlans());
+        dataSinkService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.DataSinkPlans());
     }
 
     /**
@@ -266,7 +266,7 @@ public class PluginService implements Snapshotter {
      */
     private GroupedFlowPlans groupPlansByFlowType(PluginRegistration pluginRegistration) {
         List<TransformFlowPlan> transformFlowPlans = new ArrayList<>();
-        List<EgressFlowPlan> egressFlowPlans = new ArrayList<>();
+        List<DataSinkPlan> DataSinkPlans = new ArrayList<>();
         List<RestDataSourcePlan> restDataSourcePlans = new ArrayList<>();
         List<TimedDataSourcePlan> timedDataSourcePlans = new ArrayList<>();
 
@@ -275,7 +275,7 @@ public class PluginService implements Snapshotter {
                 flowPlan.setSourcePlugin(pluginRegistration.getPluginCoordinates());
                 switch (flowPlan) {
                     case TransformFlowPlan plan -> transformFlowPlans.add(plan);
-                    case EgressFlowPlan plan -> egressFlowPlans.add(plan);
+                    case DataSinkPlan plan -> DataSinkPlans.add(plan);
                     case RestDataSourcePlan plan -> restDataSourcePlans.add(plan);
                     case TimedDataSourcePlan plan -> timedDataSourcePlans.add(plan);
                     default -> log.warn("Unknown flow plan type: {}", flowPlan.getClass());
@@ -283,7 +283,7 @@ public class PluginService implements Snapshotter {
             });
         }
 
-        return new GroupedFlowPlans(transformFlowPlans, egressFlowPlans, restDataSourcePlans, timedDataSourcePlans);
+        return new GroupedFlowPlans(transformFlowPlans, DataSinkPlans, restDataSourcePlans, timedDataSourcePlans);
     }
 
     public Optional<PluginEntity> getPlugin(PluginCoordinates pluginCoordinates) {
@@ -311,18 +311,18 @@ public class PluginService implements Snapshotter {
     }
 
     public List<Flows> getFlowsByPlugin() {
-        Map<PluginCoordinates, List<EgressFlow>> egressFlows = egressFlowService.getFlowsGroupedByPlugin();
+        Map<PluginCoordinates, List<DataSink>> dataSinks = dataSinkService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<TransformFlow>> transformFlows = transformFlowService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<RestDataSource>> restDataSources = restDataSourceService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<TimedDataSource>> timedDataSources = timedDataSourceService.getFlowsGroupedByPlugin();
 
         return getPluginsWithVariables().stream()
-                .map(plugin -> toPluginFlows(plugin, egressFlows, transformFlows, restDataSources, timedDataSources))
+                .map(plugin -> toPluginFlows(plugin, dataSinks, transformFlows, restDataSources, timedDataSources))
                 .toList();
     }
 
     private Flows toPluginFlows(PluginEntity plugin,
-                                Map<PluginCoordinates, List<EgressFlow>> egressFlows,
+                                Map<PluginCoordinates, List<DataSink>> dataSinks,
                                 Map<PluginCoordinates, List<TransformFlow>> transformFlows,
                                 Map<PluginCoordinates, List<RestDataSource>> restDataSources,
                                 Map<PluginCoordinates, List<TimedDataSource>> timedDataSources) {
@@ -330,7 +330,7 @@ public class PluginService implements Snapshotter {
         return Flows.newBuilder()
                 .sourcePlugin(plugin.getPluginCoordinates())
                 .variables(plugin.getVariables())
-                .egressFlows(egressFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
+                .dataSinks(dataSinks.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .transformFlows(transformFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .restDataSources(restDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .timedDataSources(timedDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
@@ -432,7 +432,7 @@ public class PluginService implements Snapshotter {
         return actionDescriptorMap.values();
     }
 
-    private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<EgressFlowPlan> egressFlowPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans){}
+    private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<DataSinkPlan> DataSinkPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans){}
 
     private List<String> findDuplicateDataSourceNames(GroupedFlowPlans groupedFlowPlans, PluginCoordinates incomingPluginCoordinates) {
         Set<String> incomingNames = new HashSet<>();
@@ -468,12 +468,12 @@ public class PluginService implements Snapshotter {
     }
 
     public void revalidateFlows() {
-        rebuildInvalidFlows(egressFlowService, FlowType.EGRESS);
+        rebuildInvalidFlows(dataSinkService, FlowType.DATA_SINK);
         rebuildInvalidFlows(restDataSourceService, FlowType.REST_DATA_SOURCE);
         rebuildInvalidFlows(timedDataSourceService, FlowType.TIMED_DATA_SOURCE);
         rebuildInvalidFlows(transformFlowService, FlowType.TRANSFORM);
 
-        egressFlowService.validateAllFlows();
+        dataSinkService.validateAllFlows();
         restDataSourceService.validateAllFlows();
         timedDataSourceService.validateAllFlows();
         transformFlowService.validateAllFlows();

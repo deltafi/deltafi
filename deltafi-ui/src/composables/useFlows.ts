@@ -22,7 +22,7 @@ import useGraphQL from "./useGraphQL";
 
 export default function useFlows() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
-  const egressFlows: Ref<Array<Record<string, string>>> = ref([]);
+  const dataSinks: Ref<Array<Record<string, string>>> = ref([]);
   const restDataSourceFlowNames: Ref<Array<Record<string, string>>> = ref([]);
   const timedDataSourceFlowNames: Ref<Array<Record<string, string>>> = ref([]);
 
@@ -36,13 +36,13 @@ export default function useFlows() {
     timedDataSource: [],
   });
 
-  const buildQuery = (egress: Boolean, transform: Boolean, restDataSource: Boolean, timedDataSource: Boolean, state?: string) => {
+  const buildQuery = (dataSink: Boolean, transform: Boolean, restDataSource: Boolean, timedDataSource: Boolean, state?: string) => {
     return {
       getFlowNames: {
         __args: {
           state: state ? new EnumType(state) : null,
         },
-        egress: egress,
+        dataSink: dataSink,
         transform: transform,
         restDataSource: restDataSource,
         timedDataSource: timedDataSource,
@@ -67,9 +67,9 @@ export default function useFlows() {
     timedDataSourceFlowNames.value = response.value.data.getFlowNames.timedDataSource.sort();
   };
 
-  const fetchEgressFlowNames = async (state?: string) => {
-    await queryGraphQL(buildQuery(true, false, false, false, state), "getEgressFlowNames");
-    egressFlows.value = response.value.data.getFlowNames.egress.sort();
+  const fetchDataSinkNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(true, false, false, false, state), "getDataSinkNames");
+    dataSinks.value = response.value.data.getFlowNames.dataSink.sort();
   };
 
   const fetchAllFlowNames = async (state?: string) => {
@@ -77,5 +77,5 @@ export default function useFlows() {
     return response.value.data.getFlowNames;
   };
 
-  return { egressFlows, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, fetchEgressFlowNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, fetchAllFlowNames, loading, loaded, errors };
+  return { dataSinks, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, fetchDataSinkNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, fetchAllFlowNames, loading, loaded, errors };
 }

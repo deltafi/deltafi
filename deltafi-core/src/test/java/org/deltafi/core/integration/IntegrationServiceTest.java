@@ -67,7 +67,7 @@ class IntegrationServiceTest {
         assertEquals(2, testCase.getPlugins().size());
         assertEquals(1, testCase.getDataSources().size());
         assertEquals(2, testCase.getTransformationFlows().size());
-        assertEquals(1, testCase.getEgressFlows().size());
+        assertEquals(1, testCase.getDataSinks().size());
 
         String data = "H4sIANXJomUAA+3TsQrCMBCA4cw+RR5ANBdzcXBSn6StS0FENMXXV1uhTkqH" +
                 "VIr/t9yQwN3y16dzk5aFyck9xBieU9bq3mdHopGg6jQEdd44kSArY13Wq16a" +
@@ -101,7 +101,7 @@ class IntegrationServiceTest {
         assertEquals(2, testCase.getPlugins().size());
         assertEquals(1, testCase.getDataSources().size());
         assertEquals(2, testCase.getTransformationFlows().size());
-        assertEquals(1, testCase.getEgressFlows().size());
+        assertEquals(1, testCase.getDataSinks().size());
 
         TestCaseIngress ingress1 = TestCaseIngress.builder()
                 .flow("unarchive-passthrough-rest-data-source")

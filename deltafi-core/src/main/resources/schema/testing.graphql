@@ -143,7 +143,7 @@ input IntegrationTestInput {
   plugins: [PluginCoordinatesInput]
   dataSources: [String]
   transformationFlows: [String]
-  egressFlows: [String]
+  dataSinks: [String]
   inputs: [TestCaseIngressInput]
   "Really a Duration type:"
   timeout: String
@@ -156,7 +156,7 @@ type IntegrationTest {
   plugins: [PluginCoordinates]
   dataSources: [String]
   transformationFlows: [String]
-  egressFlows: [String]
+  dataSinks: [String]
   inputs: [TestCaseIngress]
   "Really a Duration type:"
   timeout: String

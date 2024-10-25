@@ -1,0 +1,19 @@
+{
+  "name": "passthrough",
+  "type": "DATA_SINK",
+  "description": "Flow that passes data through unchanged",
+  "sourcePlugin": {
+    "groupId": "org.deltafi.passthrough",
+    "artifactId": "deltafi-passthrough",
+    "version": "0.17.0"
+  },
+  "egressAction": {
+    "name": "PassthroughEgressAction",
+    "type": "org.deltafi.core.action.egress.RestPostEgress",
+    "parameters": {
+      "dataSink": "dataSink",
+      "metadataKey": "deltafiMetadata",
+      "url": "${egressUrl}"
+    }
+  }
+}

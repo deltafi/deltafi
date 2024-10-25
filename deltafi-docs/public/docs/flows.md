@@ -1,11 +1,11 @@
-# Data Sources, Flows, and Egresses
+# Data Sources, Transforms, and Data Sinks
 
-DeltaFi processes data through a system of Data Sources, Flows, and Egresses. Each plays a distinct role in the data
+DeltaFi processes data through a system of Data Sources, Transforms, and Data Sinks. Each plays a distinct role in the data
 processing pipeline:
 
 1. Data Sources: These are the entry points for data into the DeltaFi system.
-1. Flows: These define sequences of Transform Actions that operate on the data.
-1. Egresses: These define how processed data is sent out of the DeltaFi system.
+1. Transforms: These define sequences of Transform Actions that operate on the data.
+1. Data Sinks: These define how processed data is sent out of the DeltaFi system.
 
 ## Data Sources
 
@@ -42,16 +42,16 @@ Timed Data Sources periodically generate or fetch data based on a defined schedu
 }
 ```
 
-## Transform Flows
+## Transforms
 
-Transform Flows consist of a series of Transform Actions that process the data. They can subscribe to topics published
-by Data Sources or other Transform Flows, and can publish to topics that other flows can subscribe to.
+Transforms consist of a series of Transform Actions that process the data. They can subscribe to topics published
+by Data Sources or other Transforms, and can publish to topics that other flows can subscribe to.
 
 ```json
 {
   "name": "example-transform",
   "type": "TRANSFORM",
-  "description": "An example transform flow",
+  "description": "An example transform",
   "subscribe": [
     {"topic": "input-topic"}
   ],
@@ -73,16 +73,16 @@ by Data Sources or other Transform Flows, and can publish to topics that other f
 }
 ```
 
-### Egresses
+### Data Sinks
 
-Egresses define how data is sent out of the DeltaFi system. They consist of a single Egress Action and can subscribe to
-topics published by Data Sources or Transform Flows.
+Data Sinks define how data is sent out of the DeltaFi system. They consist of a single Egress Action and can subscribe to
+topics published by Data Sources or Transforms.
 
 ```json
 {
-  "name": "example-egress",
-  "type": "EGRESS",
-  "description": "An example egress flow",
+  "name": "example-data-sink",
+  "type": "DATA_SINK",
+  "description": "An example data sink",
   "subscribe": [
     {"topic": "output-topic"}
   ],
@@ -129,8 +129,8 @@ Variables can be of `dataType`:
 To use a variable in a Flow, reference it like `${egressUrl}` as shown in the Egress example above.
 
 ## Publish-Subscribe Pattern
-DeltaFi uses a publish-subscribe pattern to wire Flows together. Data Sources and Transform Flows can publish to topics,
-while Transform Flows and Egresses can subscribe to topics.
+DeltaFi uses a publish-subscribe pattern to wire Flows together. Data Sources and Transforms can publish to topics,
+while Transforms and Data Sinks can subscribe to topics.
 
 ### Publishing
 Publishers declare rules that determine which topics a DeltaFile will be sent to after processing.
@@ -206,7 +206,7 @@ publish-subscribe pattern can be used to create flexible, content-aware data pip
 
 #### Example Subscriber
 
-This Transform Flow:
+This Transform:
 
 1. Subscribes to the "unknown-media-type" topic.
 1. Applies a single transform action to detect the media type.

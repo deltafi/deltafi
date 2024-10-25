@@ -205,16 +205,10 @@ class DeltaFiCoreApplicationTests {
 	PluginRepository pluginRepository;
 
 	@Autowired
-	RestDataSourceService restDataSourceService;
-
-	@Autowired
 	TimedDataSourceService timedDataSourceService;
 
 	@Autowired
 	TransformFlowService transformFlowService;
-
-	@Autowired
-	EgressFlowService egressFlowService;
 
 	@Autowired
 	TransformFlowRepo transformFlowRepo;
@@ -226,7 +220,7 @@ class DeltaFiCoreApplicationTests {
 	TimedDataSourceRepo timedDataSourceRepo;
 
 	@Autowired
-	EgressFlowRepo egressFlowRepo;
+	DataSinkRepo dataSinkRepo;
 
 	@Autowired
 	TestResultRepo testResultRepo;
@@ -274,9 +268,6 @@ class DeltaFiCoreApplicationTests {
 	RoleService roleService;
 
 	@MockBean
-	StorageConfigurationService storageConfigurationService;
-
-	@MockBean
 	DiskSpaceService diskSpaceService;
 
 	@Captor
@@ -295,16 +286,7 @@ class DeltaFiCoreApplicationTests {
 	CoreEventQueue coreEventQueue;
 
 	@MockBean
-	ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
-
-	@MockBean
-	ServerSentService serverSentService;
-
-	@MockBean
 	DeployerService deployerService;
-
-	@MockBean
-	CredentialProvider credentialProvider;
 
 	@Autowired
 	QueueManagementService queueManagementService;
@@ -314,9 +296,6 @@ class DeltaFiCoreApplicationTests {
 
     @Autowired
     Clock clock;
-
-    @MockBean
-    AnalyticEventService analyticEventService;
 
 	@Autowired
 	PluginImageRepositoryService pluginImageRepositoryService;
@@ -331,7 +310,28 @@ class DeltaFiCoreApplicationTests {
 	JdbcTemplate jdbcTemplate;
 
 	@MockBean
+	@SuppressWarnings("unused")
 	PlatformService platformService;
+
+	@MockBean
+	@SuppressWarnings("unused")
+	StorageConfigurationService storageConfigurationService;
+
+	@MockBean
+	@SuppressWarnings("unused")
+	ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
+
+	@MockBean
+	@SuppressWarnings("unused")
+	ServerSentService serverSentService;
+
+	@MockBean
+	@SuppressWarnings("unused")
+	CredentialProvider credentialProvider;
+
+	@MockBean
+	@SuppressWarnings("unused")
+	AnalyticEventService analyticEventService;
 
 	private final OffsetDateTime NOW = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
 
@@ -406,19 +406,19 @@ class DeltaFiCoreApplicationTests {
 		transformFlowRepo.batchInsert(List.of(SAMPLE_TRANSFORM_FLOW, RETRY_FLOW, CHILD_FLOW));
 	}
 
-	static final EgressFlow SAMPLE_EGRESS_FLOW;
-	static final EgressFlow ERROR_EGRESS_FLOW;
+	static final DataSink SAMPLE_EGRESS_FLOW;
+	static final DataSink ERROR_EGRESS_FLOW;
 	static {
-		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, EGRESS, false);
-		sampleEgressFlow.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
-		SAMPLE_EGRESS_FLOW = sampleEgressFlow;
+		DataSink sampleDataSink = buildRunningDataSink(EGRESS_FLOW_NAME, EGRESS, false);
+		sampleDataSink.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
+		SAMPLE_EGRESS_FLOW = sampleDataSink;
 
 		ActionConfiguration errorEgress = new ActionConfiguration("ErrorEgressAction", ActionType.EGRESS, "type");
-		ERROR_EGRESS_FLOW = buildRunningEgressFlow("error", errorEgress, false);
+		ERROR_EGRESS_FLOW = buildRunningDataSink("error", errorEgress, false);
 	}
 
 	void loadEgressConfig() {
-		egressFlowRepo.batchInsert(List.of(SAMPLE_EGRESS_FLOW, ERROR_EGRESS_FLOW));
+		dataSinkRepo.batchInsert(List.of(SAMPLE_EGRESS_FLOW, ERROR_EGRESS_FLOW));
 	}
 
 	static final RestDataSource REST_DATA_SOURCE = buildRestDataSource(FlowState.RUNNING);
@@ -656,9 +656,9 @@ class DeltaFiCoreApplicationTests {
 	private void verifyCommonMetrics(ActionEventType actionEventType,
 									 String actionName,
 									 String dataSource,
-									 String egressFlow,
+									 String dataSink,
 									 String className) {
-		Map<String, String> tags = tagsFor(actionEventType, actionName, dataSource, egressFlow);
+		Map<String, String> tags = tagsFor(actionEventType, actionName, dataSource, dataSink);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		extendTagsForAction(tags, className);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));
@@ -741,9 +741,9 @@ class DeltaFiCoreApplicationTests {
 	void testColdRequeue() {
 		UUID did = UUID.randomUUID();
 		DeltaFile postTransform = postTransformDeltaFile(did);
-		DeltaFileFlow egressFlow = postTransform.lastFlow();
-		egressFlow.lastAction().setState(ActionState.COLD_QUEUED);
-		egressFlow.updateState();
+		DeltaFileFlow dataSink = postTransform.lastFlow();
+		dataSink.lastAction().setState(ActionState.COLD_QUEUED);
+		dataSink.updateState();
 		deltaFileRepo.save(postTransform);
 
 		queueManagementService.coldToWarm();
@@ -1118,13 +1118,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testGetEgressFlowPlan() {
+	void testGetDataSinkPlan() {
 		clearForFlowTests();
-		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan("egressPlan", FlowType.EGRESS, "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
-		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan("b", FlowType.EGRESS, "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
-		savePlugin(List.of(egressFlowPlanA, egressFlowPlanB));
-		EgressFlowPlan plan = FlowPlanDatafetcherTestHelper.getEgressFlowPlan(dgsQueryExecutor);
-		assertThat(plan.getName()).isEqualTo("egressPlan");
+		DataSinkPlan DataSinkPlanA = new DataSinkPlan("dataSinkPlan", FlowType.DATA_SINK, "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
+		DataSinkPlan DataSinkPlanB = new DataSinkPlan("b", FlowType.DATA_SINK, "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
+		savePlugin(List.of(DataSinkPlanA, DataSinkPlanB));
+		DataSinkPlan plan = FlowPlanDatafetcherTestHelper.getDataSinkPlan(dgsQueryExecutor);
+		assertThat(plan.getName()).isEqualTo("dataSinkPlan");
 	}
 
 	@Test
@@ -1158,12 +1158,12 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testValidateEgressFlow() {
+	void testValidateDataSink() {
 		clearForFlowTests();
-		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		dataSinkRepo.save(buildDataSink(FlowState.STOPPED));
 		refreshFlowCaches();
-		EgressFlow egressFlow = FlowPlanDatafetcherTestHelper.validateEgressFlow(dgsQueryExecutor);
-		assertThat(egressFlow.getFlowStatus()).isNotNull();
+		DataSink dataSink = FlowPlanDatafetcherTestHelper.validateDataSink(dgsQueryExecutor);
+		assertThat(dataSink.getFlowStatus()).isNotNull();
 	}
 
 	@Test
@@ -1180,16 +1180,16 @@ class DeltaFiCoreApplicationTests {
 		transformFlow.setName("transform");
 		transformFlow.setSourcePlugin(pluginCoordinates);
 
-		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName("egress");
-		egressFlow.setSourcePlugin(pluginCoordinates);
+		DataSink dataSink = new DataSink();
+		dataSink.setName("dataSink");
+		dataSink.setSourcePlugin(pluginCoordinates);
 
 		RestDataSource restDataSource = new RestDataSource();
-		restDataSource.setName("restIngress");
+		restDataSource.setName("restDataSource");
 		restDataSource.setSourcePlugin(pluginCoordinates);
 
 		TimedDataSource timedDataSource = new TimedDataSource();
-		timedDataSource.setName("timedIngress");
+		timedDataSource.setName("timedDataSource");
 		timedDataSource.setSourcePlugin(pluginCoordinates);
 
 		PluginEntity plugin = new PluginEntity();
@@ -1197,7 +1197,7 @@ class DeltaFiCoreApplicationTests {
 		pluginRepository.save(plugin);
 		pluginVariableRepo.save(variables);
 		transformFlowRepo.save(transformFlow);
-		egressFlowRepo.save(egressFlow);
+		dataSinkRepo.save(dataSink);
 		restDataSourceRepo.save(restDataSource);
 		timedDataSourceRepo.save(timedDataSource);
 		refreshFlowCaches();
@@ -1207,15 +1207,15 @@ class DeltaFiCoreApplicationTests {
 		Flows systemFlows = flows.getFirst();
 		assertThat(systemFlows.getSourcePlugin().getArtifactId()).isEqualTo("system-plugin");
 		assertThat(systemFlows.getTransformFlows()).isEmpty();
-		assertThat(systemFlows.getEgressFlows()).isEmpty();
+		assertThat(systemFlows.getDataSinks()).isEmpty();
 		assertThat(systemFlows.getRestDataSources()).isEmpty();
 		assertThat(systemFlows.getTimedDataSources()).isEmpty();
 		Flows pluginFlows = flows.getLast();
 		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
 		assertThat(pluginFlows.getTransformFlows().getFirst().getName()).isEqualTo("transform");
-		assertThat(pluginFlows.getEgressFlows().getFirst().getName()).isEqualTo("egress");
-		assertThat(pluginFlows.getRestDataSources().getFirst().getName()).isEqualTo("restIngress");
-		assertThat(pluginFlows.getTimedDataSources().getFirst().getName()).isEqualTo("timedIngress");
+		assertThat(pluginFlows.getDataSinks().getFirst().getName()).isEqualTo("dataSink");
+		assertThat(pluginFlows.getRestDataSources().getFirst().getName()).isEqualTo("restDataSource");
+		assertThat(pluginFlows.getTimedDataSources().getFirst().getName()).isEqualTo("timedDataSource");
 	}
 
 	@Test
@@ -1245,13 +1245,13 @@ class DeltaFiCoreApplicationTests {
 
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
 		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
-		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		dataSinkRepo.save(buildDataSink(FlowState.STOPPED));
 		refreshFlowCaches();
 
 		FlowNames flows = FlowPlanDatafetcherTestHelper.getFlowNames(dgsQueryExecutor);
 		assertThat(flows.getTimedDataSource()).hasSize(1).contains(TIMED_DATA_SOURCE_NAME);
 		assertThat(flows.getTransform()).hasSize(1).contains(TRANSFORM_FLOW_NAME);
-		assertThat(flows.getEgress()).hasSize(1).contains(EGRESS_FLOW_NAME);
+		assertThat(flows.getDataSink()).hasSize(1).contains(EGRESS_FLOW_NAME);
 	}
 
 	@Test
@@ -1262,18 +1262,18 @@ class DeltaFiCoreApplicationTests {
 		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.startTransformFlow(dgsQueryExecutor));
 
-		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		dataSinkRepo.save(buildDataSink(FlowState.STOPPED));
 		refreshFlowCaches();
-		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
+		assertTrue(FlowPlanDatafetcherTestHelper.startDataSink(dgsQueryExecutor));
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
 		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
-		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.getFirst().getName()));
+		assertThat(flows.getDataSink()).hasSize(1).matches(dataSinks -> EGRESS_FLOW_NAME.equals(dataSinks.getFirst().getName()));
 
-		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
+		assertTrue(FlowPlanDatafetcherTestHelper.stopDataSink(dgsQueryExecutor));
 		SystemFlows updatedFlows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
 		assertThat(updatedFlows.getTransform()).hasSize(1);
-		assertThat(updatedFlows.getEgress()).isEmpty();
+		assertThat(updatedFlows.getDataSink()).isEmpty();
 	}
 
 	@Test
@@ -1283,15 +1283,15 @@ class DeltaFiCoreApplicationTests {
 		TransformFlowPlan transformFlow = new TransformFlowPlan(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, "desc");
 		TimedDataSourcePlan timedDataSource = new TimedDataSourcePlan(TIMED_DATA_SOURCE_NAME, FlowType.TIMED_DATA_SOURCE, "desc", "topic", new ActionConfiguration("timed", ActionType.TIMED_INGRESS, "type"), "1234");
 		RestDataSourcePlan restDataSource = new RestDataSourcePlan(REST_DATA_SOURCE_NAME, FlowType.REST_DATA_SOURCE, "desc", "topic");
-		EgressFlowPlan egressFlow = new EgressFlowPlan(EGRESS_FLOW_NAME, FlowType.EGRESS, "desc", new ActionConfiguration("egress", ActionType.EGRESS, "type2"));
+		DataSinkPlan dataSink = new DataSinkPlan(EGRESS_FLOW_NAME, FlowType.DATA_SINK, "desc", new ActionConfiguration("egress", ActionType.EGRESS, "type2"));
 
-		savePlugin(List.of(transformFlow, timedDataSource, restDataSource, egressFlow));
+		savePlugin(List.of(transformFlow, timedDataSource, restDataSource, dataSink));
 
 		SystemFlowPlans flowPlans = FlowPlanDatafetcherTestHelper.getAllFlowPlans(dgsQueryExecutor);
 		assertThat(flowPlans.getTransformPlans()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
 		assertThat(flowPlans.getTimedDataSources()).hasSize(1).matches(timedIngressFlows -> TIMED_DATA_SOURCE_NAME.equals(timedIngressFlows.getFirst().getName()));
 		assertThat(flowPlans.getRestDataSources()).hasSize(1).matches(restIngressFlows -> REST_DATA_SOURCE_NAME.equals(restIngressFlows.getFirst().getName()));
-		assertThat(flowPlans.getEgressPlans()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.getFirst().getName()));
+		assertThat(flowPlans.getDataSinkPlans()).hasSize(1).matches(dataSinks -> EGRESS_FLOW_NAME.equals(dataSinks.getFirst().getName()));
 	}
 
 	@Test
@@ -1307,20 +1307,20 @@ class DeltaFiCoreApplicationTests {
 		RestDataSource restDataSource = new RestDataSource();
 		restDataSource.setName(REST_DATA_SOURCE_NAME);
 
-		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName(EGRESS_FLOW_NAME);
+		DataSink dataSink = new DataSink();
+		dataSink.setName(EGRESS_FLOW_NAME);
 
 		transformFlowRepo.save(transformFlow);
 		timedDataSourceRepo.save(timedDataSource);
 		restDataSourceRepo.save(restDataSource);
-		egressFlowRepo.save(egressFlow);
+		dataSinkRepo.save(dataSink);
 		refreshFlowCaches();
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getAllFlows(dgsQueryExecutor);
 		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
 		assertThat(flows.getTimedDataSource()).hasSize(1).matches(timedIngressFlows -> TIMED_DATA_SOURCE_NAME.equals(timedIngressFlows.getFirst().getName()));
 		assertThat(flows.getRestDataSource()).hasSize(1).matches(restIngressFlows -> REST_DATA_SOURCE_NAME.equals(restIngressFlows.getFirst().getName()));
-		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.getFirst().getName()));
+		assertThat(flows.getDataSink()).hasSize(1).matches(dataSinks -> EGRESS_FLOW_NAME.equals(dataSinks.getFirst().getName()));
 	}
 
 	void setupTopicTest() {
@@ -1344,14 +1344,14 @@ class DeltaFiCoreApplicationTests {
 		restDataSource.setTopic("restTopic");
 		restDataSource.getFlowStatus().setState(FlowState.RUNNING);
 
-		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName(EGRESS_FLOW_NAME);
-		egressFlow.setSubscribe(Set.of(new Rule("transformPublish1", null)));
+		DataSink dataSink = new DataSink();
+		dataSink.setName(EGRESS_FLOW_NAME);
+		dataSink.setSubscribe(Set.of(new Rule("transformPublish1", null)));
 
 		transformFlowRepo.save(transformFlow);
 		timedDataSourceRepo.save(timedDataSource);
 		restDataSourceRepo.save(restDataSource);
-		egressFlowRepo.save(egressFlow);
+		dataSinkRepo.save(dataSink);
 	}
 
 	private static final Topic REST_TOPIC = Topic.newBuilder().name("restTopic")
@@ -1368,7 +1368,7 @@ class DeltaFiCoreApplicationTests {
 			.build();
 	private static final Topic TRANSFORM_1_TOPIC = Topic.newBuilder().name("transformPublish1")
 			.publishers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition("transformPublishCondition").build()))
-			.subscribers(List.of(TopicParticipant.newBuilder().name(EGRESS_FLOW_NAME).type(FlowType.EGRESS).state(FlowState.STOPPED).condition(null).build()))
+			.subscribers(List.of(TopicParticipant.newBuilder().name(EGRESS_FLOW_NAME).type(FlowType.DATA_SINK).state(FlowState.STOPPED).condition(null).build()))
 			.build();
 	private static final Topic TRANSFORM_2_TOPIC = Topic.newBuilder().name("transformPublish2")
 			.publishers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition(null).build()))
@@ -1420,13 +1420,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void getEgressFlow() {
+	void getDataSink() {
 		clearForFlowTests();
-		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName(EGRESS_FLOW_NAME);
-		egressFlowRepo.save(egressFlow);
+		DataSink dataSink = new DataSink();
+		dataSink.setName(EGRESS_FLOW_NAME);
+		dataSinkRepo.save(dataSink);
 		refreshFlowCaches();
-		EgressFlow foundFlow = FlowPlanDatafetcherTestHelper.getEgressFlow(dgsQueryExecutor);
+		DataSink foundFlow = FlowPlanDatafetcherTestHelper.getDataSink(dgsQueryExecutor);
 		assertThat(foundFlow).isNotNull();
 		assertThat(foundFlow.getName()).isEqualTo(EGRESS_FLOW_NAME);
 	}
@@ -1435,9 +1435,9 @@ class DeltaFiCoreApplicationTests {
 	void findFlowByNameAndType() {
 		clearForFlowTests();
 		String name = "dataSource-name";
-		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName(name);
-		egressFlowRepo.save(egressFlow);
+		DataSink dataSink = new DataSink();
+		dataSink.setName(name);
+		dataSinkRepo.save(dataSink);
 
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName(name);
@@ -1453,7 +1453,7 @@ class DeltaFiCoreApplicationTests {
 		timedDataSourceRepo.save(timedDataSource);
 
 		assertThat(transformFlowRepo.findByNameAndType(name, FlowType.TRANSFORM, TransformFlow.class)).isNotEmpty();
-		assertThat(egressFlowRepo.findByNameAndType(name, FlowType.EGRESS, EgressFlow.class)).isNotEmpty();
+		assertThat(dataSinkRepo.findByNameAndType(name, FlowType.DATA_SINK, DataSink.class)).isNotEmpty();
 		assertThat(restDataSourceRepo.findByNameAndType(name, FlowType.REST_DATA_SOURCE, RestDataSource.class)).isNotEmpty();
 		assertThat(timedDataSourceRepo.findByNameAndType(name, FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).isEmpty();
 		assertThat(timedDataSourceRepo.findByNameAndType(timedDataSource.getName(), FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).isNotEmpty();
@@ -1464,7 +1464,7 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 
 		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
-		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		dataSinkRepo.save(buildDataSink(FlowState.STOPPED));
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
 		refreshFlowCaches();
 
@@ -1516,10 +1516,10 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testSaveEgressFlowPlan() {
+	void testSaveDataSinkPlan() {
 		clearForFlowTests();
-		EgressFlow egressFlow = FlowPlanDatafetcherTestHelper.saveEgressFlowPlan(dgsQueryExecutor);
-		assertThat(egressFlow).isNotNull();
+		DataSink dataSink = FlowPlanDatafetcherTestHelper.saveDataSinkPlan(dgsQueryExecutor);
+		assertThat(dataSink).isNotNull();
 	}
 
 	@Test
@@ -1544,17 +1544,17 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testRemoveEgressFlowPlan() {
+	void testRemoveDataSinkPlan() {
 		clearForFlowTests();
-		EgressFlowPlan egressFlowPlan = new EgressFlowPlan("flowPlan", FlowType.EGRESS, null, null);
-		egressFlowPlan.setSourcePlugin(PLUGIN_COORDINATES);
-		savePlugin(List.of(egressFlowPlan), PLUGIN_COORDINATES);
-		assertFalse(FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor));
+		DataSinkPlan DataSinkPlan = new DataSinkPlan("flowPlan", FlowType.DATA_SINK, null, null);
+		DataSinkPlan.setSourcePlugin(PLUGIN_COORDINATES);
+		savePlugin(List.of(DataSinkPlan), PLUGIN_COORDINATES);
+		assertFalse(FlowPlanDatafetcherTestHelper.removeDataSinkPlan(dgsQueryExecutor));
 
 		clearForFlowTests();
-		egressFlowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
-		savePlugin(List.of(egressFlowPlan), pluginService.getSystemPluginCoordinates());
-		assertTrue(FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor));
+		DataSinkPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+		savePlugin(List.of(DataSinkPlan), pluginService.getSystemPluginCoordinates());
+		assertTrue(FlowPlanDatafetcherTestHelper.removeDataSinkPlan(dgsQueryExecutor));
 	}
 
 	@Test
@@ -1599,19 +1599,19 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testStartEgressFlow() {
+	void testStartDataSink() {
 		clearForFlowTests();
-		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		dataSinkRepo.save(buildDataSink(FlowState.STOPPED));
 		refreshFlowCaches();
-		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
+		assertTrue(FlowPlanDatafetcherTestHelper.startDataSink(dgsQueryExecutor));
 	}
 
 	@Test
-	void testStopEgressFlow() {
+	void testStopDataSink() {
 		clearForFlowTests();
-		egressFlowRepo.save(buildEgressFlow(FlowState.RUNNING));
+		dataSinkRepo.save(buildDataSink(FlowState.RUNNING));
 		refreshFlowCaches();
-		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
+		assertTrue(FlowPlanDatafetcherTestHelper.stopDataSink(dgsQueryExecutor));
 	}
 
 	@Test
@@ -2158,7 +2158,7 @@ class DeltaFiCoreApplicationTests {
 		oneHit.firstFlow().setType(FlowType.TRANSFORM);
 		oneHit.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
 		oneHit.firstFlow().addAction("hit", ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
-		DeltaFileFlow flow2 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.firstFlow(), NOW.minusSeconds(1000));
+		DeltaFileFlow flow2 = oneHit.addFlow("flow3", FlowType.DATA_SINK, oneHit.firstFlow(), NOW.minusSeconds(1000));
 		flow2.addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
 
 		DeltaFile twoHits = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
@@ -2168,7 +2168,7 @@ class DeltaFiCoreApplicationTests {
 		twoHits.firstFlow().addAction("hit", ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
 		flow2 = twoHits.addFlow("flow2", FlowType.TRANSFORM, twoHits.firstFlow(), NOW.minusSeconds(1000));
 		flow2.addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
-		DeltaFileFlow flow3 = twoHits.addFlow("flow3", FlowType.EGRESS, twoHits.firstFlow(), NOW.minusSeconds(1000));
+		DeltaFileFlow flow3 = twoHits.addFlow("flow3", FlowType.DATA_SINK, twoHits.firstFlow(), NOW.minusSeconds(1000));
 		flow3.addAction("hit", ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
 
 		DeltaFile miss = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.plusSeconds(1000));
@@ -2176,7 +2176,7 @@ class DeltaFiCoreApplicationTests {
 		miss.firstFlow().addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
 		flow2 = miss.addFlow("flow2", FlowType.TRANSFORM, miss.firstFlow(), NOW.plusSeconds(1000));
 		flow2.addAction("excluded", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
-		flow3 = miss.addFlow("flow3", FlowType.EGRESS, miss.firstFlow(), NOW.plusSeconds(1000));
+		flow3 = miss.addFlow("flow3", FlowType.DATA_SINK, miss.firstFlow(), NOW.plusSeconds(1000));
 		flow3.addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
 
 		DeltaFile excludedByDid = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
@@ -2197,7 +2197,7 @@ class DeltaFiCoreApplicationTests {
 		ActionConfiguration ac = new ActionConfiguration("hit", ActionType.TRANSFORM, "type");
 		transformFlowRepo.save(buildFlow("flow1", List.of(ac), FlowState.RUNNING, false));
 		transformFlowRepo.save(buildFlow("flow2", List.of(ac), FlowState.RUNNING, false));
-		egressFlowRepo.save(buildFlow("flow3", List.of(ac), FlowState.RUNNING, false));
+		dataSinkRepo.save(buildFlow("flow3", List.of(ac), FlowState.RUNNING, false));
 		refreshFlowCaches();
 
 		deltaFiPropertiesService.getDeltaFiProperties().setRequeueDuration(Duration.ofSeconds(30));
@@ -2533,7 +2533,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.firstFlow().getInput().setMetadata(Map.of("key1", "value1", "key2", "value2"));
 		deltaFile1.setName("filename1");
 		deltaFile1.setDataSource("flow1");
-		DeltaFileFlow flow1 = deltaFile1.addFlow("MyEgressFlow", FlowType.EGRESS, deltaFile1.firstFlow(), NOW);
+		DeltaFileFlow flow1 = deltaFile1.addFlow("MyDataSink", FlowType.DATA_SINK, deltaFile1.firstFlow(), NOW);
 		flow1.setErrorAcknowledged(NOW);
 		flow1.setActions(List.of(Action.builder().name("action1")
 				.state(ActionState.ERROR)
@@ -2551,8 +2551,8 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setName("filename2");
 		deltaFile2.setDataSource("flow2");
-		DeltaFileFlow flow2 = deltaFile2.addFlow("MyEgressFlow", FlowType.EGRESS, deltaFile2.firstFlow(), NOW);
-		DeltaFileFlow flow2b = deltaFile2.addFlow("MyEgressFlow2", FlowType.EGRESS, deltaFile2.firstFlow(), NOW);
+		DeltaFileFlow flow2 = deltaFile2.addFlow("MyDataSink", FlowType.DATA_SINK, deltaFile2.firstFlow(), NOW);
+		DeltaFileFlow flow2b = deltaFile2.addFlow("MyDataSink2", FlowType.DATA_SINK, deltaFile2.firstFlow(), NOW);
 		flow2.setActions(List.of(
 				Action.builder().name("action1")
 						.state(ActionState.ERROR)
@@ -2574,7 +2574,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setName("filename3");
 		deltaFile3.setDataSource("flow3");
 		DeltaFileFlow flow3 = deltaFile3.addFlow("MyTransformFlow", FlowType.TRANSFORM, deltaFile3.firstFlow(), NOW);
-		DeltaFileFlow flow3b = deltaFile3.addFlow("MyEgressFlow3", FlowType.EGRESS, deltaFile3.firstFlow(), NOW);
+		DeltaFileFlow flow3b = deltaFile3.addFlow("MyDataSink3", FlowType.DATA_SINK, deltaFile3.firstFlow(), NOW);
 		flow3.setActions(List.of(
 				Action.builder()
 						.name("action2")
@@ -2637,13 +2637,13 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"))).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"), new KeyValue("extra", "missing"))).build());
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "miss"))).build());
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlowz")).build());
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow")).build(), deltaFile1, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow2")).build(), deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow2")).build(), deltaFile1, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow3")).build(), deltaFile1, deltaFile2, deltaFile3);
-		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyTransformFlow", "MyEgressFlow")).build(), deltaFile3);
-		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyEgressFlow")).build());
+		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSinkz")).build());
+		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink")).build(), deltaFile1, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink2")).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink", "MyDataSink2")).build(), deltaFile1, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink", "MyDataSink3")).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyTransformFlow", "MyDataSink")).build(), deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyDataSink")).build());
 		testFilter(DeltaFilesFilter.newBuilder().dataSources(List.of("flow1", "flow3")).build(), deltaFile1, deltaFile3);
 	}
 
@@ -2856,24 +2856,24 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void deleteEgressFlowByPlugin() {
+	void deleteDataSinkByPlugin() {
 		clearForFlowTests();
 		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
 
-		EgressFlow egressFlowA = new EgressFlow();
-		egressFlowA.setName("a");
-		egressFlowA.setSourcePlugin(pluginToDelete);
+		DataSink dataSinkA = new DataSink();
+		dataSinkA.setName("a");
+		dataSinkA.setSourcePlugin(pluginToDelete);
 
-		EgressFlow egressFlowB = new EgressFlow();
-		egressFlowB.setName("b");
-		egressFlowB.setSourcePlugin(pluginToDelete);
+		DataSink dataSinkB = new DataSink();
+		dataSinkB.setName("b");
+		dataSinkB.setSourcePlugin(pluginToDelete);
 
-		EgressFlow egressFlowC = new EgressFlow();
-		egressFlowC.setName("c");
-		egressFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
-		egressFlowRepo.saveAll(List.of(egressFlowA, egressFlowB, egressFlowC));
-		assertThat(egressFlowRepo.deleteBySourcePluginAndType(pluginToDelete, FlowType.EGRESS)).isEqualTo(2);
-		assertThat(egressFlowRepo.count()).isEqualTo(1);
+		DataSink dataSinkC = new DataSink();
+		dataSinkC.setName("c");
+		dataSinkC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		dataSinkRepo.saveAll(List.of(dataSinkA, dataSinkB, dataSinkC));
+		assertThat(dataSinkRepo.deleteBySourcePluginAndType(pluginToDelete, FlowType.DATA_SINK)).isEqualTo(2);
+		assertThat(dataSinkRepo.count()).isEqualTo(1);
 	}
 
 	@Test
@@ -3105,7 +3105,7 @@ class DeltaFiCoreApplicationTests {
 				.plugins(List.of(pc))
 				.dataSources(List.of("ds"))
 				.transformationFlows(List.of("t"))
-				.egressFlows(List.of("e"))
+				.dataSinks(List.of("e"))
 				.timeout("PT3M")
 				.build();
 
@@ -3123,7 +3123,7 @@ class DeltaFiCoreApplicationTests {
 				.plugins(List.of(pc))
 				.dataSources(List.of("ds"))
 				.transformationFlows(List.of("t"))
-				.egressFlows(List.of("e"))
+				.dataSinks(List.of("e"))
 				.timeout("PT3M")
 				.expectedDeltaFiles(List.of(e1, e2))
 				.build();
@@ -3165,7 +3165,7 @@ class DeltaFiCoreApplicationTests {
 				"Flow does not exist (dataSource): unarchive-passthrough-rest-data-source",
 				"Flow does not exist (transformation): unarchive-passthrough-transform",
 				"Flow does not exist (transformation): passthrough-transform",
-				"Flow does not exist (egress): passthrough-egress"
+				"Flow does not exist (dataSink): passthrough-egress"
 		);
 
 		TestResult testResult = IntegrationDataFetcherTestHelper.startIntegrationTest(dgsQueryExecutor, "plugin1.test1");
@@ -3818,15 +3818,15 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void setEgressFlowExpectedAnnotations() {
+	void setDataSinkExpectedAnnotations() {
 		clearForFlowTests();
-		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName("egress-dataSource");
-		egressFlow.setExpectedAnnotations(Set.of("a", "b"));
-		egressFlowRepo.save(egressFlow);
+		DataSink dataSink = new DataSink();
+		dataSink.setName("dataSink");
+		dataSink.setExpectedAnnotations(Set.of("a", "b"));
+		dataSinkRepo.save(dataSink);
 
-		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-dataSource", Set.of("b", "a", "c"))).isGreaterThan(0);
-		assertThat(egressFlowRepo.findByNameAndType("egress-dataSource", FlowType.EGRESS, EgressFlow.class).orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+		assertThat(dataSinkRepo.updateExpectedAnnotations("dataSink", Set.of("b", "a", "c"))).isGreaterThan(0);
+		assertThat(dataSinkRepo.findByNameAndType("dataSink", FlowType.DATA_SINK, DataSink.class).orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
 	}
 
 	@Test
@@ -3879,7 +3879,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
 		deltaFileFlow.setState(DeltaFileFlowState.PENDING_ANNOTATIONS);
 		deltaFileFlow.setName(flowName);
-		deltaFileFlow.setType(FlowType.EGRESS);
+		deltaFileFlow.setType(FlowType.DATA_SINK);
 		deltaFileFlow.setPendingAnnotations(pendingAnnotations);
 	}
 
@@ -3900,7 +3900,7 @@ class DeltaFiCoreApplicationTests {
 
 	void clearForFlowTests() {
 		transformFlowRepo.deleteAllInBatch();
-		egressFlowRepo.deleteAllInBatch();
+		dataSinkRepo.deleteAllInBatch();
 		timedDataSourceRepo.deleteAllInBatch();
 		pluginVariableRepo.deleteAllInBatch();
 		pluginRepository.deleteAll();
@@ -4698,8 +4698,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	private int countRolesForUser(UUID id) {
-		Integer count = jdbcTemplate.queryForObject("select count(*) from user_roles where user_id = ?", Integer.class, id);
-		return count != null ? count : -1;
+		return jdbcTemplate.queryForObject("select count(*) from user_roles where user_id = ?", Integer.class, id);
 	}
 
 	@Test

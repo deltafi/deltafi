@@ -75,7 +75,7 @@ const props = defineProps({
 const emit = defineEmits(["reloadFlowViewer"]);
 
 const confirm = useConfirm();
-const { setTransformFlowExpectedAnnotations, setEgressFlowExpectedAnnotations } = useFlowQueryBuilder();
+const { setTransformFlowExpectedAnnotations, setDataSinkExpectedAnnotations } = useFlowQueryBuilder();
 const notify = useNotifications();
 
 const expectedAnnotationsInputRef = ref(null);
@@ -145,8 +145,8 @@ const submitNewReadReceipts = async () => {
   let response = null;
   if (_.isEqual(flowType, "transform")) {
     response = await setTransformFlowExpectedAnnotations(flowName, sortedReadReceiptsList.value);
-  } else if (_.isEqual(flowType, "egress")) {
-    response = await setEgressFlowExpectedAnnotations(flowName, sortedReadReceiptsList.value);
+  } else if (_.isEqual(flowType, "dataSink")) {
+    response = await setDataSinkExpectedAnnotations(flowName, sortedReadReceiptsList.value);
   }
 
   if (!_.isEmpty(_.get(response, "errors", null))) {

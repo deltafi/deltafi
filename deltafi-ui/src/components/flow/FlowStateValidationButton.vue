@@ -32,7 +32,7 @@ import { defineProps, nextTick, toRefs, defineEmits } from "vue";
 import Button from "primevue/button";
 import _ from "lodash";
 
-const { validateTransformFlow, validateEgressFlow } = useFlowQueryBuilder();
+const { validateTransformFlow, validateDataSink } = useFlowQueryBuilder();
 const emit = defineEmits(['updateFlows'])
 
 const props = defineProps({
@@ -49,9 +49,9 @@ const validationRetry = async (flowName, flowType) => {
   if (_.isEqual(flowType, "transform")) {
     let response = await validateTransformFlow(flowName);
     validatedFlowStatus = response.data.validateTransformFlow;
-  } else if (_.isEqual(flowType, "egress")) {
-    let response = await validateEgressFlow(flowName);
-    validatedFlowStatus = response.data.validateEgressFlow;
+  } else if (_.isEqual(flowType, "dataSink")) {
+    let response = await validateDataSink(flowName);
+    validatedFlowStatus = response.data.validateDataSink;
   }
   await nextTick();
   Object.assign(rowData.value, { ...rowData.value, ...validatedFlowStatus });

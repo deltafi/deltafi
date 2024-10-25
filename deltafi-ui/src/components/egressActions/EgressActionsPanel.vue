@@ -18,16 +18,16 @@
 
 <template>
   <div class="egress-actions-panel">
-    <CollapsiblePanel header="Egress Actions" class="table-panel pb-3">
+    <CollapsiblePanel header="Data Sinks" class="table-panel pb-3">
       <DataTable v-model:filters="filters" :loading="showLoading" :value="egressActionsList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
-        <template #empty>No Egress Actions found.</template>
-        <template #loading>Loading Egress Actions. Please wait.</template>
+        <template #empty>No Data Sinks found.</template>
+        <template #loading>Loading Data Sinks. Please wait.</template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
               <span>
                 <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" flow-type="egress" @close-dialog-template="flowViewerPopup" @open-dialog-template="flowViewerPopup">
-                  <span v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
+                  <span v-tooltip.right="'View egress information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
                     {{ data.name }}
                   </span>
                 </DialogTemplate>
@@ -143,7 +143,7 @@ const refresh = async () => {
   if (editing.value) return;
 
   const response = await getAllEgress();
-  egressActionsList.value = response.data.getAllFlows.egress;
+  egressActionsList.value = response.data.getAllFlows.dataSink;
   emit("egressActionsList", egressActionsList.value);
 };
 

@@ -17,7 +17,7 @@
 */
 
 import useGraphQL from "./useGraphQL";
-import { transformFlow, egressFlow, flowStatusFields } from "./useFlowPlanQueryVariables";
+import { transformFlow, dataSink, flowStatusFields } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
@@ -29,15 +29,15 @@ export default function useFlowQueryBuilder() {
         transform: {
           ...transformFlow,
         },
-        egress: {
-          ...egressFlow,
+        dataSink: {
+          ...dataSink,
         },
       },
     };
     return sendGraphQLQuery(query, "getAllFlows");
   };
 
-  // Get a Transform Flow - (if you want to grab a single flow, return type is TransformFlow)
+  // Get a Transform - (if you want to grab a single flow, return type is TransformFlow)
   const getTransformFlowByName = (flowName: string) => {
     const query = {
       getTransformFlow: {
@@ -50,20 +50,20 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "getTransformFlowByName");
   };
 
-  // Get an Egress Flow - (if you want to grab a single flow, return type is EgressFlow)
-  const getEgressFlowByName = (flowName: string) => {
+  // Get an Egress Flow - (if you want to grab a single flow, return type is DataSink)
+  const getDataSinkByName = (flowName: string) => {
     const query = {
-      getEgressFlow: {
+      getDataSink: {
         __args: {
           flowName: flowName,
         },
-        ...egressFlow,
+        ...dataSink,
       },
     };
-    return sendGraphQLQuery(query, "getEgressFlowByName");
+    return sendGraphQLQuery(query, "getDataSinkByName");
   };
 
-  // Validate a transform flow - return type is TransformFlow
+  // Validate a transform - return type is TransformFlow
   const validateTransformFlow = (flowName: string) => {
     const query = {
       validateTransformFlow: {
@@ -79,10 +79,10 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "validateTransformFlow");
   };
 
-  // Validate an egress flow - return type is EgressFlow
-  const validateEgressFlow = (flowName: string) => {
+  // Validate an egress flow - return type is DataSink
+  const validateDataSink = (flowName: string) => {
     const query = {
-      validateEgressFlow: {
+      validateDataSink: {
         __args: {
           flowName: flowName,
         },
@@ -92,7 +92,7 @@ export default function useFlowQueryBuilder() {
         },
       },
     };
-    return sendGraphQLQuery(query, "validateEgressFlow");
+    return sendGraphQLQuery(query, "validateDataSink");
   };
 
   // Set plugin variables
@@ -107,7 +107,7 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "setPluginVariables", "mutation");
   };
 
-  // Starts a transform flow
+  // Starts a transform
   const startTransformFlowByName = (flowName: string) => {
     const query = {
       startTransformFlow: {
@@ -119,7 +119,7 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "startTransformFlowByName", "mutation");
   };
 
-  // Stops a Transform flow
+  // Stops a Transform
   const stopTransformFlowByName = (flowName: string) => {
     const query = {
       stopTransformFlow: {
@@ -132,30 +132,30 @@ export default function useFlowQueryBuilder() {
   };
 
   // Starts an egress flow
-  const startEgressFlowByName = (flowName: string) => {
+  const startDataSinkByName = (flowName: string) => {
     const query = {
-      startEgressFlow: {
+      startDataSink: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "startEgressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "startDataSinkByName", "mutation");
   };
 
   // Stops an egress flow
-  const stopEgressFlowByName = (flowName: string) => {
+  const stopDataSinkByName = (flowName: string) => {
     const query = {
-      stopEgressFlow: {
+      stopDataSink: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "stopEgressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "stopDataSinkByName", "mutation");
   };
 
-  // sets a transform flow to test mode
+  // sets a transform to test mode
   const enableTestTransformFlowByName = (flowName: string) => {
     const query = {
       enableTransformTestMode: {
@@ -167,7 +167,7 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "enableTransformTestModeFlowByName", "mutation");
   };
 
-  // sets a transform flow to test mode
+  // sets a transform to test mode
   const disableTestTransformFlowByName = (flowName: string) => {
     const query = {
       disableTransformTestMode: {
@@ -180,40 +180,40 @@ export default function useFlowQueryBuilder() {
   };
 
   // sets an egress flow to test mode
-  const enableTestEgressFlowByName = (flowName: string) => {
+  const enableTestDataSinkByName = (flowName: string) => {
     const query = {
-      enableEgressTestMode: {
+      enableDataSinkTestMode: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "enableEgressTestModeFlowByName", "mutation");
+    return sendGraphQLQuery(query, "enableDataSinkTestModeFlowByName", "mutation");
   };
 
   // sets an egress flow to test mode
-  const disableTestEgressFlowByName = (flowName: string) => {
+  const disableTestDataSinkByName = (flowName: string) => {
     const query = {
-      disableEgressTestMode: {
+      disableDataSinkTestMode: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
+    return sendGraphQLQuery(query, "disableDataSinkTestModeFlowByName", "mutation");
   };
 
   // sets expected annotations for an egress flow
-  const setEgressFlowExpectedAnnotations = (flowName: string, expectedAnnotations: Array<string>) => {
+  const setDataSinkExpectedAnnotations = (flowName: string, expectedAnnotations: Array<string>) => {
     const query = {
-      setEgressFlowExpectedAnnotations: {
+      setDataSinkExpectedAnnotations: {
         __args: {
           flowName: flowName,
           expectedAnnotations: expectedAnnotations,
         },
       },
     };
-    return sendGraphQLQuery(query, "setEgressFlowExpectedAnnotations", "mutation");
+    return sendGraphQLQuery(query, "setDataSinkExpectedAnnotations", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
@@ -229,19 +229,19 @@ export default function useFlowQueryBuilder() {
   return {
     getAllFlows,
     getTransformFlowByName,
-    getEgressFlowByName,
+    getDataSinkByName,
     validateTransformFlow,
-    validateEgressFlow,
+    validateDataSink,
     setPluginVariables,
     startTransformFlowByName,
     stopTransformFlowByName,
-    startEgressFlowByName,
-    stopEgressFlowByName,
+    startDataSinkByName,
+    stopDataSinkByName,
     enableTestTransformFlowByName,
     disableTestTransformFlowByName,
-    enableTestEgressFlowByName,
-    disableTestEgressFlowByName,
-    setEgressFlowExpectedAnnotations,
+    enableTestDataSinkByName,
+    disableTestDataSinkByName,
+    setDataSinkExpectedAnnotations,
     loaded,
     loading,
     errors,

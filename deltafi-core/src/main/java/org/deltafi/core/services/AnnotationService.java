@@ -31,16 +31,16 @@ import java.util.Set;
 @Service
 public class AnnotationService implements Snapshotter {
 
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     private final DeltaFilesService deltaFilesService;
 
-    public AnnotationService(EgressFlowService egressFlowService, DeltaFilesService deltaFilesService) {
-        this.egressFlowService = egressFlowService;
+    public AnnotationService(DataSinkService dataSinkService, DeltaFilesService deltaFilesService) {
+        this.dataSinkService = dataSinkService;
         this.deltaFilesService = deltaFilesService;
     }
 
     /**
-     * Find the egress dataSource with the given name and update the set of expected annotations.
+     * Find the dataSink with the given name and update the set of expected annotations.
      * If the dataSource no longer has expected annotations remove the dataSource from all DeltaFiles
      * that have the dataSource in their pendingAnnotationsForFlow set.
      * @param flowName name of the dataSource to update
@@ -52,7 +52,7 @@ public class AnnotationService implements Snapshotter {
             expectedAnnotations = null;
         }
 
-        boolean updated = egressFlowService.setExpectedAnnotations(flowName, expectedAnnotations);
+        boolean updated = dataSinkService.setExpectedAnnotations(flowName, expectedAnnotations);
 
         if (updated) {
             deltaFilesService.updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
@@ -69,8 +69,8 @@ public class AnnotationService implements Snapshotter {
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         Result result = new Result();
-        if (systemSnapshot.getEgressFlows() != null) {
-            systemSnapshot.getEgressFlows().forEach(egressFlowSnapshot -> resetFromSnapshot(egressFlowSnapshot, result));
+        if (systemSnapshot.getDataSinks() != null) {
+            systemSnapshot.getDataSinks().forEach(dataSinkSnapshot -> resetFromSnapshot(dataSinkSnapshot, result));
         }
         result.setSuccess(result.getErrors().isEmpty());
         return result;

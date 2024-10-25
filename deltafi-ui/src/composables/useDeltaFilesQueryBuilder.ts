@@ -35,7 +35,7 @@ export default function useDeltaFilesQueryBuilder() {
     validatedAnnotations?: Array<object>;
     annotations?: Array<object>;
     dataSources?: Array<string>;
-    egressFlows?: Array<string>;
+    dataSinks?: Array<string>;
     filteredCause?: string | null;
     requeueMin?: string | null;
     stage?: string | null;
@@ -69,7 +69,7 @@ export default function useDeltaFilesQueryBuilder() {
             filtered: queryParams.filtered,
             testMode: queryParams.testMode,
             dataSources: queryParams.dataSources,
-            egressFlows: queryParams.egressFlows,
+            dataSinks: queryParams.dataSinks,
             stage: queryParams.stage ? new EnumType(queryParams.stage) : null,
             modifiedAfter: startDateISOString,
             modifiedBefore: endDateISOString,

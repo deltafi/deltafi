@@ -194,7 +194,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -363,7 +363,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}')), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -518,7 +518,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -717,7 +717,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -1009,7 +1009,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -1207,7 +1207,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -1362,7 +1362,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -1500,7 +1500,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}')), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -1655,7 +1655,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -1869,7 +1869,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${egressdfDataSource:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -1984,12 +1984,12 @@
         "includeAll": true,
         "label": "Egress",
         "multi": true,
-        "name": "egressFlow",
+        "name": "dataSink",
         "options": [],
         "query": {
           "queryType": "Default",
           "refId": "A",
-          "target": "tag_values(egressFlow, dataSource=~${dfDataSource:regex})"
+          "target": "tag_values(dataSink, dataSource=~${dfDataSource:regex})"
         },
         "refresh": 1,
         "regex": "",

@@ -19,13 +19,13 @@
         <mxCell id="tW5YEqoU5SFR3B9v_W6--3" value="&lt;div style=&quot;text-align: left&quot;&gt;&lt;span&gt;Tracing&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;&lt;span style=&quot;background-color: rgb(255 , 128 , 0)&quot;&gt;Zipkin&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
           <mxGeometry x="-35" y="200" width="120" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="tW5YEqoU5SFR3B9v_W6--4" value="Ingress" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
+        <mxCell id="tW5YEqoU5SFR3B9v_W6--4" value="Data Source" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
           <mxGeometry x="-435" y="280" width="120" height="40" as="geometry" />
         </mxCell>
         <mxCell id="tW5YEqoU5SFR3B9v_W6--5" value="Actions" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
           <mxGeometry x="-235" y="280" width="120" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="tW5YEqoU5SFR3B9v_W6--6" value="Egress" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
+        <mxCell id="tW5YEqoU5SFR3B9v_W6--6" value="Data Sink" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
           <mxGeometry x="-35" y="280" width="120" height="40" as="geometry" />
         </mxCell>
         <mxCell id="tW5YEqoU5SFR3B9v_W6--7" value="Graph Federation&lt;br&gt;&lt;span style=&quot;color: rgb(255 , 255 , 255) ; text-align: left ; background-color: rgb(255 , 128 , 0)&quot;&gt;Apollo Gateway&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
@@ -40,10 +40,10 @@
         <mxCell id="tW5YEqoU5SFR3B9v_W6--10" value="Storage&lt;br&gt;&lt;div style=&quot;text-align: left&quot;&gt;&lt;font color=&quot;#ffffff&quot;&gt;&lt;span style=&quot;background-color: rgb(255 , 128 , 0)&quot;&gt;MinIO&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#dae8fc;fontStyle=1;strokeColor=#B3B3B3;" parent="1" vertex="1">
           <mxGeometry x="-435" y="390" width="120" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="tW5YEqoU5SFR3B9v_W6--13" value="&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&amp;nbsp; Egress&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&lt;font color=&quot;#ffffff&quot; style=&quot;background-color: rgb(255 , 128 , 0)&quot;&gt;NiFi&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;strokeWidth=5;fontStyle=1" parent="1" vertex="1">
+        <mxCell id="tW5YEqoU5SFR3B9v_W6--13" value="&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&amp;nbsp; Data Sink&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&lt;font color=&quot;#ffffff&quot; style=&quot;background-color: rgb(255 , 128 , 0)&quot;&gt;NiFi&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;strokeWidth=5;fontStyle=1" parent="1" vertex="1">
           <mxGeometry x="155" y="256" width="170" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="Z7amd_IOvsoYKy8aNjxX-1" value="&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&amp;nbsp; Ingress&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&lt;font color=&quot;#ffffff&quot; style=&quot;background-color: rgb(255 , 128 , 0)&quot;&gt;NiFi&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;strokeWidth=5;fontStyle=1" parent="1" vertex="1">
+        <mxCell id="Z7amd_IOvsoYKy8aNjxX-1" value="&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&amp;nbsp; Data Source&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;line-height: 200%&quot;&gt;&lt;font color=&quot;#ffffff&quot; style=&quot;background-color: rgb(255 , 128 , 0)&quot;&gt;NiFi&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;strokeWidth=5;fontStyle=1" parent="1" vertex="1">
           <mxGeometry x="-669" y="260" width="170" height="80" as="geometry" />
         </mxCell>
         <mxCell id="Z7amd_IOvsoYKy8aNjxX-6" value="" style="endArrow=blockThin;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#007FFF;rounded=0;strokeWidth=4;endFill=1;" parent="1" target="tW5YEqoU5SFR3B9v_W6--5" edge="1">

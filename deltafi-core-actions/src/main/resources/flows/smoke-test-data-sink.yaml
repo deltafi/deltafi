@@ -1,0 +1,11 @@
+name: smoke-test-data-sink
+type: DATA_SINK
+description: Test flow that passes data through unchanged
+subscribe:
+  - topic: smoke-egress
+egressAction:
+  name: SmokeEgressAction
+  type: org.deltafi.core.action.egress.RestPostEgress
+  parameters:
+    metadataKey: deltafiMetadata
+    url: "${smokeEgressUrl}"

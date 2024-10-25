@@ -166,15 +166,15 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("FlowView")),
       },
       {
-        name: "Flows",
+        name: "Transforms",
         icon: "fas fa-project-diagram fa-fw",
-        path: "/config/flows",
+        path: "/config/transforms",
         visible: computed(() => hasPermission("FlowView")),
       },
       {
-        name: "Egress",
+        name: "Data Sinks",
         icon: "fas fas fa-file-export fa-fw",
-        path: "/config/egress",
+        path: "/config/data-sinks",
         visible: computed(() => hasPermission("FlowView")),
       },
       {
@@ -184,9 +184,9 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("FlowView")),
       },
       {
-        name: "Flow Plan Builder",
+        name: "Transform Builder",
         icon: "fa-solid fa-trowel-bricks fa-fw",
-        path: "/config/flow-plan-builder",
+        path: "/config/transform-builder",
         visible: computed(() => hasPermission("FlowView")),
       },
       {

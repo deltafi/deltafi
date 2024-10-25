@@ -198,7 +198,7 @@ const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { duration, shortTimezone } = useUtilFunctions();
-const { allDataSourceFlowNames, fetchAllDataSourceFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames, dataSinks: dataSinkOptions, fetchDataSinkNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
@@ -255,7 +255,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => [model.value.egressFlows, model.value.dataSources],
+    () => [model.value.dataSinks, model.value.dataSources],
     _.debounce(
       () => {
         fetchDeltaFilesData();
@@ -320,7 +320,7 @@ onBeforeMount(async () => {
 const fetchDropdownOptions = async () => {
   await fetchAllDataSourceFlowNames();
   formatDataSourceNames();
-  fetchEgressFlowNames();
+  fetchDataSinkNames();
   fetchStages();
 };
 
@@ -384,7 +384,7 @@ const defaultQueryParamsTemplate = {
   validatedAnnotations: [],
   annotations: [],
   dataSources: [],
-  egressFlows: [],
+  dataSinks: [],
   filteredCause: null,
   requeueMin: null,
   stage: null,
@@ -434,7 +434,7 @@ const advanceOptionsPanelInfo = computed(() => {
     // First Column fields
     { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
     { field: "dataSources", column: 1, order: 2, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: formattedDataSourceNames.value, optionGroupLabel: "group", optionGroupChildren: "sources", optionLabel: "label", optionValue: "label", filter: true, class: "deltafi-input-field responsive-width" },
-    { field: "egressFlows", column: 1, order: 3, componentType: "MultiSelect", label: "Egress Flow:", placeholder: "Select an Egress Flow", options: egressFlowOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "dataSinks", column: 1, order: 3, componentType: "MultiSelect", label: "Egress Flow:", placeholder: "Select an Egress Flow", options: dataSinkOptions.value, class: "deltafi-input-field responsive-width" },
     { field: "size", column: 1, order: 4, componentType: "SizeUnit", label: "Size:" },
     // 2nd Column fields
     { field: "testMode", column: 2, order: 1, componentType: "Dropdown", label: "Test Mode:", placeholder: "Select if in Test Mode", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
@@ -568,7 +568,7 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
@@ -578,7 +578,7 @@ const decodePersistedParams = (obj) =>
       r[k] = JSON.parse(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
-    } else if (["dataSources", "egressFlows"].includes(k)) {
+    } else if (["dataSources", "dataSinks"].includes(k)) {
       r[k] = v.split(",");
     } else if (["annotations"].includes(k)) {
       const annotationsArrayVal = getAnnotationsArray(v);
@@ -611,7 +611,7 @@ const encodePersistedParams = (obj) =>
       r[k] = Boolean(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
-    } else if (["dataSources", "egressFlows"].includes(k)) {
+    } else if (["dataSources", "dataSinks"].includes(k)) {
       r[k] = String(v);
     } else if (["annotations"].includes(k)) {
       r[k] = getAnnotationsString(v);

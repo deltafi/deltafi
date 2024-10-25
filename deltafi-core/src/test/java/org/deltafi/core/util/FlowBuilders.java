@@ -79,22 +79,22 @@ public class FlowBuilders {
         return publishRules;
     }
 
-    public static EgressFlow buildEgressFlow(FlowState flowState) {
+    public static DataSink buildDataSink(FlowState flowState) {
         ActionConfiguration sampleEgress = new ActionConfiguration("SampleEgressAction", ActionType.EGRESS, "type");
 
         return buildFlow(EGRESS_FLOW_NAME, sampleEgress, flowState, false);
     }
 
-    public static EgressFlow buildFlow(String name, ActionConfiguration egressAction, FlowState flowState, boolean testMode) {
-        EgressFlow egressFlow = new EgressFlow();
-        egressFlow.setName(name);
-        egressFlow.setEgressAction(egressAction);
-        egressFlow.getFlowStatus().setState(flowState);
-        egressFlow.setTestMode(testMode);
-        return egressFlow;
+    public static DataSink buildFlow(String name, ActionConfiguration egressAction, FlowState flowState, boolean testMode) {
+        DataSink dataSink = new DataSink();
+        dataSink.setName(name);
+        dataSink.setEgressAction(egressAction);
+        dataSink.getFlowStatus().setState(flowState);
+        dataSink.setTestMode(testMode);
+        return dataSink;
     }
 
-    public static EgressFlow buildRunningEgressFlow(String name, ActionConfiguration egressAction, boolean testMode) {
+    public static DataSink buildRunningDataSink(String name, ActionConfiguration egressAction, boolean testMode) {
         return buildFlow(name, egressAction, FlowState.RUNNING, testMode);
     }
 

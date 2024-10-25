@@ -44,7 +44,7 @@ public class ConfigurationValidator {
 
     private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     @Lazy
     private final PluginService pluginService;
 
@@ -109,8 +109,8 @@ public class ConfigurationValidator {
                 }
             }
 
-            if (config.getEgressFlows() != null) {
-                if (checkOrStartFlows(errors, "egress", egressFlowService, config.getEgressFlows())) {
+            if (config.getDataSinks() != null) {
+                if (checkOrStartFlows(errors, "dataSink", dataSinkService, config.getDataSinks())) {
                     flowsStarted = true;
                 }
             }

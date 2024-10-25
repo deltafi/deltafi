@@ -57,7 +57,7 @@ class DeltaFilesServiceTest {
     private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
     private final RestDataSourceService restDataSourceService;
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
     private final DeltaFileFlowRepo deltaFileFlowRepo;
@@ -88,7 +88,7 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
-                          @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
+                          @Mock DataSinkService dataSinkService, @Mock StateMachine stateMachine,
                           @Mock AnnotationRepo annotationRepo, @Mock DeltaFileRepo deltaFileRepo,
                           @Mock DeltaFileFlowRepo deltaFileFlowRepo,
                           @Mock CoreEventQueue coreEventQueue, @Mock ContentStorageService contentStorageService,
@@ -100,7 +100,7 @@ class DeltaFilesServiceTest {
                           @Mock Environment environment, @Mock IdentityService identityService) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
-        this.egressFlowService = egressFlowService;
+        this.dataSinkService = dataSinkService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
         this.deltaFileFlowRepo = deltaFileFlowRepo;
@@ -113,7 +113,7 @@ class DeltaFilesServiceTest {
         this.restDataSourceService = restDataSourceService;
 
         MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
-        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
+        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, timedDataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService);
@@ -400,14 +400,14 @@ class DeltaFilesServiceTest {
 
     @Test
     void testEgress_addPendingAnnotations() {
-        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the egress dataSource is added in the state machine
-        EgressFlow egressFlow = new EgressFlow();
-        egressFlow.setExpectedAnnotations(Set.of("a", "b"));
-        Mockito.when(egressFlowService.hasFlow("dataSource")).thenReturn(true);
-        Mockito.when(egressFlowService.getRunningFlowByName("dataSource")).thenReturn(egressFlow);
+        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the dataSink is added in the state machine
+        DataSink dataSink = new DataSink();
+        dataSink.setExpectedAnnotations(Set.of("a", "b"));
+        Mockito.when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
+        Mockito.when(dataSinkService.getRunningFlowByName("dataSource")).thenReturn(dataSink);
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.EGRESS).build();
+        DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.DATA_SINK).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
@@ -419,9 +419,9 @@ class DeltaFilesServiceTest {
 
     @Test
     void testEgress_addPendingAnnotationsIgnoreNotRunningException() {
-        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the egress dataSource is added in the state machine
-        Mockito.when(egressFlowService.hasFlow("dataSource")).thenReturn(true);
-        Mockito.when(egressFlowService.getRunningFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
+        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the dataSink is added in the state machine
+        Mockito.when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
+        Mockito.when(dataSinkService.getRunningFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = deltaFile.firstFlow();
@@ -449,7 +449,7 @@ class DeltaFilesServiceTest {
     private DeltaFileFlow deltaFileFlow(String name) {
         DeltaFileFlow flow = new DeltaFileFlow();
         flow.setName(name);
-        flow.setType(FlowType.EGRESS);
+        flow.setType(FlowType.DATA_SINK);
         flow.setPendingAnnotations(Set.of(name));
         flow.setActions(List.of(Action.builder().state(ActionState.COMPLETE).build()));
         return flow;

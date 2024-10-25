@@ -56,7 +56,7 @@ public class IntegrationTest {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<String> egressFlows;
+    private List<String> dataSinks;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

@@ -707,13 +707,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             parameters.put("transformFlows", filter.getTransformFlows());
         }
 
-        if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
+        if (filter.getDataSinks() != null && !filter.getDataSinks().isEmpty()) {
             criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
             criteria.append("WHERE dff.delta_file_id = df.did ");
-            criteria.append("AND dff.name IN (:egressFlows) ");
-            criteria.append("AND dff.type = 'EGRESS') ");
+            criteria.append("AND dff.name IN (:dataSinks) ");
+            criteria.append("AND dff.type = 'DATA_SINK') ");
 
-            parameters.put("egressFlows", filter.getEgressFlows());
+            parameters.put("dataSinks", filter.getDataSinks());
         }
 
 

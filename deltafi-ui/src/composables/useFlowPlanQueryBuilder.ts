@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 import { EnumType } from "json-to-graphql-query";
 import _ from "lodash";
-import { transformFlow, transformFlowPlan, egressFlow, egressFlowPlan } from "./useFlowPlanQueryVariables";
+import { transformFlow, transformFlowPlan, dataSink, dataSinkPlan } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
@@ -31,8 +31,8 @@ export default function useFlowQueryBuilder() {
         transformPlans: {
           ...transformFlowPlan,
         },
-        egressPlans: {
-          ...egressFlowPlan,
+        dataSinkPlans: {
+          ...dataSinkPlan,
         },
       },
     };
@@ -90,29 +90,29 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "removeTransformFlowPlanByName", "mutation");
   };
 
-  // Save an EgressFlowPlan
-  const saveEgressFlowPlan = (flowPlan: Object) => {
+  // Save a DataSinkPlan
+  const saveDataSinkPlan = (flowPlan: Object) => {
     const query = {
-      saveEgressFlowPlan: {
+      saveDataSinkPlan: {
         __args: {
-          egressFlowPlan: flowPlan,
+          dataSinkPlan: flowPlan,
         },
-        ...egressFlow,
+        ...dataSink,
       },
     };
-    return sendGraphQLQuery(query, "saveEgressFlowPlan", "mutation", true);
+    return sendGraphQLQuery(query, "saveDataSinkPlan", "mutation", true);
   };
 
-  // Remove an EgressFlowPlan
-  const removeEgressFlowPlanByName = (flowPlanName: string) => {
+  // Remove a DataSinkPlan
+  const removeDataSinkPlanByName = (flowPlanName: string) => {
     const query = {
-      removeEgressFlowPlan: {
+      removeDataSinkPlan: {
         __args: {
           name: flowPlanName,
         },
       },
     };
-    return sendGraphQLQuery(query, "removeEgressFlowPlanByName", "mutation");
+    return sendGraphQLQuery(query, "removeDataSinkPlanByName", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string, bypass?: boolean) => {
@@ -128,7 +128,7 @@ export default function useFlowQueryBuilder() {
     getAllFlowPlans,
     saveTransformFlowPlan,
     removeTransformFlowPlanByName,
-    saveEgressFlowPlan,
-    removeEgressFlowPlanByName,
+    saveDataSinkPlan,
+    removeDataSinkPlanByName,
   };
 }

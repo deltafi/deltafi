@@ -76,24 +76,23 @@ public class FlowPlanGeneratorService {
             SAMPLE_LIST_VAR, SAMPLE_MAP_VAR);
 
     private final TransformFlowPlanGenerator transformFlowPlanGenerator;
-    private final EgressFlowPlanGenerator egressFlowPlanGenerator;
-    private final RestDataSourceFlowPlanGenerator restDataSourceFlowPlanGenerator;
+    private final DataSinkPlanGenerator DataSinkPlanGenerator;
+    private final RestDataSourcePlanGenerator restDataSourcePlanGenerator;
 
     public FlowPlanGeneratorService(TransformFlowPlanGenerator transformFlowPlanGenerator,
-                                    EgressFlowPlanGenerator egressFlowPlanGenerator,
-                                    RestDataSourceFlowPlanGenerator restDataSourceFlowPlanGenerator) {
+                                    DataSinkPlanGenerator DataSinkPlanGenerator,
+                                    RestDataSourcePlanGenerator restDataSourcePlanGenerator) {
         this.transformFlowPlanGenerator = transformFlowPlanGenerator;
-        this.egressFlowPlanGenerator = egressFlowPlanGenerator;
-        this.restDataSourceFlowPlanGenerator = restDataSourceFlowPlanGenerator;
+        this.DataSinkPlanGenerator = DataSinkPlanGenerator;
+        this.restDataSourcePlanGenerator = restDataSourcePlanGenerator;
     }
 
     /**
      * Create dataSource plans using the given plugin generator input. If no actions are provided this will
-     * create a single transform dataSource plan using a default egress action. If any normalization specific actions are
-     * provided an ingress and egress dataSource plan will be created, and optionally an enrich plan if there are
-     * any domain or enrich actions provided.
-     * @param baseFlowName prefix to use in the dataSource plan names
-     * @param pluginGeneratorInput input containing the actions that should be used in the dataSource plans
+     * create a single transform plan using a default egress action. If any normalization specific actions are
+     * provided a dataSource and dataSink plan will be created
+     * @param baseFlowName prefix to use in the plan names
+     * @param pluginGeneratorInput input containing the actions that should be used in the transform and dataSink plans
      * @return a list of dataSource plans
      */
     public List<FlowPlan> generateFlowPlans(String baseFlowName, PluginGeneratorInput pluginGeneratorInput) {
@@ -102,9 +101,9 @@ public class FlowPlanGeneratorService {
         // TODO: timed ingress
         flowPlans.addAll(transformFlowPlanGenerator
                 .generateTransformFlows(baseFlowName, pluginGeneratorInput.getTransformActions()));
-        flowPlans.addAll(egressFlowPlanGenerator
-                .generateEgressFlowPlans(baseFlowName, pluginGeneratorInput.getEgressActions()));
-        flowPlans.add(restDataSourceFlowPlanGenerator
+        flowPlans.addAll(DataSinkPlanGenerator
+                .generateDataSinkPlans(baseFlowName, pluginGeneratorInput.getEgressActions()));
+        flowPlans.add(restDataSourcePlanGenerator
                 .generateRestDataSourceFlowPlan(baseFlowName));
 
         return flowPlans;

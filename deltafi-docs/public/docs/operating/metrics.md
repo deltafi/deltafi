@@ -19,8 +19,8 @@ The following metrics are generated to the Graphite time-series database by defa
 | stats_counts.files_errored | action, ingressFlow, source | Number of files errored (action='ingress' provides the ingressed files) |
 | stats_counts.files_filtered | action, ingressFlow, source | Number of files filtered (action='ingress' provides the ingressed files) |
 | stats_counts.files_dropped | action, ingressFlow, source | Number of files dropped (action='ingress' provides the ingressed files) |
-| stats_counts.bytes_out | action, ingressFlow, source, egressFlow, destination | Number of bytes egressed (only produced on action='egress') |
-| stats_counts.files_out | action, ingressFlow, source, egressFlow, destination | Number of files egressed (only produced on action='egress') |
+| stats_counts.bytes_out | action, ingressFlow, source, dataSink, destination | Number of bytes egressed (only produced on action='egress') |
+| stats_counts.files_out | action, ingressFlow, source, dataSink, destination | Number of files egressed (only produced on action='egress') |
 | gauge.action_queue.queue_size | queue_name | An instantaneous gauge for the size of an action_queue (number of DeltaFiles waiting on the queue) |
 | gauge.node.disk.limit | hostname | An instantaneous gauge for the maximum aggregate storage limit on a node (bytes) |
 | gauge.node.disk.usage | hostname | An instantaneous gauge for current storage utilization on a node (bytes) |

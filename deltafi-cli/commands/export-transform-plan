@@ -7,7 +7,7 @@ cli_help_command() {
 Command: export-transform-plan
 
 Usage:
-  export-transform-plan FLOW_PLAN_NAME"
+  export-transform-plan TRANSFORM_PLAN_NAME"
   exit 1
 }
 
@@ -58,7 +58,7 @@ QUERY="fragment ActionFields on ActionConfiguration {
 RESULT=$(deltafi query "$QUERY")
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
 if [[ "$DGS_ERRORS" != "" ]]; then
-  cli_log "${red}${BASENAME}: Failed to export transform flow plan: $PLANNAME${normal}"
+  cli_log "${red}${BASENAME}: Failed to export transform plan: $PLANNAME${normal}"
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
   echo "$RESULT" | jq '.data.getTransformFlowPlan'

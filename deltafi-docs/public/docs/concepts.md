@@ -14,14 +14,14 @@ for further processing.
 * REST Data Sources allow external systems to push data into DeltaFi via HTTP requests.
 * Timed Data Sources periodically generate or fetch data based on a defined schedule.
 
-## Transform Flows
+## Transforms
 
-Transform Flows subscribe to topics, process the DeltaFiles they receive, and publish the results to other topics.
+Transforms subscribe to topics, process the DeltaFiles they receive, and publish the results to other topics.
 They contain a list of Transform Actions that execute sequentially.
 
-## Egresses
+## Data Sinks
 
-Egresses subscribe to topics and send the processed data out of the DeltaFi system. They contain a single Egress
+Data Sinks subscribe to topics and send the processed data out of the DeltaFi system. They contain a single Egress
 Action that defines how the data is sent to external systems.
 
 ## Actions
@@ -46,7 +46,7 @@ to external systems or storage.
 ## Publish-Subscribe Pattern
 
 DeltaFi uses a publish-subscribe pattern to move DeltaFiles between different components of the system. Data Sources and
-Transform Flows can publish DeltaFiles to topics, while Transform Flows and Egress Flows can subscribe to these topics
+Transforms can publish DeltaFiles to topics, while Transforms and Data Sinks can subscribe to these topics
 to receive DeltaFiles for processing.
 
 ## Plugins

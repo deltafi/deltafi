@@ -103,7 +103,7 @@ const pubsubIcon = (type) => {
     return 'fas fas fa-file-import fa-fw';
   case 'TRANSFORM':
     return 'fas fa-project-diagram fa-fw';
-  case 'EGRESS':
+  case 'DATA_SINK':
     return 'fas fas fa-file-export fa-fw';
   }
 };

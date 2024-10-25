@@ -5,15 +5,15 @@ Usage: deltafi [command]
 
 Commands:
   configure-plugin-ssl    configure SSL for plugins and the entity resolver
+  data-sink               start, stop, show or validate a data sink
   data-source             start, stop, show or validate a data source flow
   did                     show did for filename
   disable                 stop all DeltaFi processes
-  egress-flow             start, stop, show or validate an egress flow
   export-config           export all the loaded flow configurations as yaml
-  export-data-source-plan export a single egress flow plan by name as JSON
-  export-egress-plan      export a single egress flow plan by name as JSON
-  export-transform-plan   export a single transform flow plan by name as JSON
-  ingress                 ingress one or more files to a flow
+  export-data-source-plan export a single data source plan by name as JSON
+  export-data-sink-plan   export a single data sink plan by name as JSON
+  export-transform-plan   export a single transform plan by name as JSON
+  ingress                 ingress one or more files
   install                 install/upgrade the DeltaFi core
   install-plugin          install/upgrade a DeltaFi plugin
   integration-test        run an integration test
@@ -44,7 +44,7 @@ Commands:
   system-property         manage system properties
   timed-data-source       start, stop, show and other controls for a timed data source
   trace                   show trace data for a DID
-  transform-flow          start, stop or validate a transform flow
+  transform               start, stop or validate a transform
   update                  (alias for install)
   upgrade                 (alias for install)
   uninstall               uninstall the DeltaFi core

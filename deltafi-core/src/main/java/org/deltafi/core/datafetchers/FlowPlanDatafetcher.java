@@ -35,7 +35,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.*;
-import org.deltafi.core.validation.EgressFlowPlanValidator;
+import org.deltafi.core.validation.DataSinkPlanValidator;
 import org.deltafi.core.validation.RestDataSourcePlanValidator;
 import org.deltafi.core.validation.TimedDataSourcePlanValidator;
 import org.deltafi.core.validation.TransformFlowPlanValidator;
@@ -53,7 +53,7 @@ public class FlowPlanDatafetcher {
 
     private static final ObjectMapper YAML_EXPORTER = new ObjectMapper(new YAMLFactory()).registerModule(new JavaTimeModule());
 
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
     private final AnnotationService annotationService;
@@ -62,7 +62,7 @@ public class FlowPlanDatafetcher {
     private final CoreAuditLogger auditLogger;
     private final FlowCacheService flowCacheService;
     private final PluginService pluginService;
-    private final EgressFlowPlanValidator egressFlowPlanValidator;
+    private final DataSinkPlanValidator DataSinkPlanValidator;
     private final RestDataSourcePlanValidator restDataSourcePlanValidator;
     private final TimedDataSourcePlanValidator timedDataSourcePlanValidator;
     private final TransformFlowPlanValidator transformFlowPlanValidator;
@@ -91,23 +91,23 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setEgressFlowExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
+    public boolean setDataSinkExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
         auditLogger.audit("set expected annotations for dataSource {} to {}", flowName, expectedAnnotations);
         return annotationService.setExpectedAnnotations(flowName, expectedAnnotations);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean enableEgressTestMode(@InputArgument String flowName) {
-        auditLogger.audit("enabled egress test mode for dataSource {}", flowName);
-        return egressFlowService.enableTestMode(flowName);
+    public boolean enableDataSinkTestMode(@InputArgument String flowName) {
+        auditLogger.audit("enabled test mode for dataSink {}", flowName);
+        return dataSinkService.enableTestMode(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean disableEgressTestMode(@InputArgument String flowName) {
-        auditLogger.audit("disabled egress test mode for dataSource {}", flowName);
-        return egressFlowService.disableTestMode(flowName);
+    public boolean disableDataSinkTestMode(@InputArgument String flowName) {
+        auditLogger.audit("disabled test mode for dataSink {}", flowName);
+        return dataSinkService.disableTestMode(flowName);
     }
 
     @DgsMutation
@@ -126,34 +126,34 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public EgressFlow saveEgressFlowPlan(@InputArgument EgressFlowPlanInput egressFlowPlan) {
-        auditLogger.audit("saved egress flow plan {}", egressFlowPlan.getName());
-        EgressFlowPlan flowPlan = OBJECT_MAPPER.convertValue(egressFlowPlan, EgressFlowPlan.class);
+    public DataSink saveDataSinkPlan(@InputArgument DataSinkPlanInput DataSinkPlan) {
+        auditLogger.audit("saved data sink plan {}", DataSinkPlan.getName());
+        DataSinkPlan flowPlan = OBJECT_MAPPER.convertValue(DataSinkPlan, DataSinkPlan.class);
         flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
-        egressFlowPlanValidator.validate(flowPlan);
+        DataSinkPlanValidator.validate(flowPlan);
         pluginService.addFlowPlanToSystemPlugin(flowPlan);
-        return egressFlowService.buildAndSaveFlow(flowPlan);
+        return dataSinkService.buildAndSaveFlow(flowPlan);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
-    public boolean removeEgressFlowPlan(@InputArgument String name) {
-        auditLogger.audit("removed egress flow plan {}", name);
-        return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.EGRESS);
+    public boolean removeDataSinkPlan(@InputArgument String name) {
+        auditLogger.audit("removed data sink plan {}", name);
+        return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.DATA_SINK);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
-    public boolean startEgressFlow(@InputArgument String flowName) {
-        auditLogger.audit("started egress dataSource {}", flowName);
-        return egressFlowService.startFlow(flowName);
+    public boolean startDataSink(@InputArgument String flowName) {
+        auditLogger.audit("started dataSink {}", flowName);
+        return dataSinkService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
-    public boolean stopEgressFlow(@InputArgument String flowName) {
-        auditLogger.audit("stopped egress dataSource {}", flowName);
-        return egressFlowService.stopFlow(flowName);
+    public boolean stopDataSink(@InputArgument String flowName) {
+        auditLogger.audit("stopped dataSink {}", flowName);
+        return dataSinkService.stopFlow(flowName);
     }
 
     @DgsMutation
@@ -251,7 +251,7 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
-        auditLogger.audit("saved transform flow plan {}", transformFlowPlan.getName());
+        auditLogger.audit("saved transform plan {}", transformFlowPlan.getName());
         TransformFlowPlan flowPlan = OBJECT_MAPPER.convertValue(transformFlowPlan, TransformFlowPlan.class);
         flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
         transformFlowPlanValidator.validate(flowPlan);
@@ -262,7 +262,7 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeTransformFlowPlan(@InputArgument String name) {
-        auditLogger.audit("removed transform flow plan {}", name);
+        auditLogger.audit("removed transform plan {}", name);
         return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.TRANSFORM);
     }
 
@@ -319,8 +319,8 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EgressFlow getEgressFlow(@InputArgument String flowName) {
-        return egressFlowService.getFlowOrThrow(flowName);
+    public DataSink getDataSink(@InputArgument String flowName) {
+        return dataSinkService.getFlowOrThrow(flowName);
     }
 
     @DgsQuery
@@ -343,8 +343,8 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowValidate
-    public EgressFlow validateEgressFlow(@InputArgument String flowName) {
-        return egressFlowService.validateAndSaveFlow(flowName);
+    public DataSink validateDataSink(@InputArgument String flowName) {
+        return dataSinkService.validateAndSaveFlow(flowName);
     }
 
     @DgsQuery
@@ -367,8 +367,8 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EgressFlowPlan getEgressFlowPlan(@InputArgument String planName) {
-        return (EgressFlowPlan) pluginService.getPlanByName(planName, FlowType.EGRESS);
+    public DataSinkPlan getDataSinkPlan(@InputArgument String planName) {
+        return (DataSinkPlan) pluginService.getPlanByName(planName, FlowType.DATA_SINK);
     }
 
     @DgsQuery
@@ -393,7 +393,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowView
     public String exportConfigAsYaml() throws JsonProcessingException {
         Map<String, List<? extends Flow>> flowMap = new HashMap<>();
-        flowMap.put("egressFlows", egressFlowService.getAll());
+        flowMap.put("dataSinks", dataSinkService.getAll());
         flowMap.put("transformFlows", transformFlowService.getAll());
         flowMap.put("dataSources", restDataSourceService.getAll());
 
@@ -404,7 +404,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowView
     public SystemFlows getRunningFlows() {
         return SystemFlows.newBuilder()
-                .egress(egressFlowService.getRunningFlows())
+                .dataSink(dataSinkService.getRunningFlows())
                 .transform(transformFlowService.getRunningFlows())
                 .restDataSource(restDataSourceService.getRunningFlows())
                 .timedDataSource(timedDataSourceService.getRunningFlows()).build();
@@ -414,7 +414,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.UIAccess
     public FlowNames getFlowNames(@InputArgument FlowState state) {
         return FlowNames.newBuilder()
-                .egress(egressFlowService.getFlowNamesByState(state))
+                .dataSink(dataSinkService.getFlowNamesByState(state))
                 .transform(transformFlowService.getFlowNamesByState(state))
                 .restDataSource(restDataSourceService.getFlowNamesByState(state))
                 .timedDataSource(timedDataSourceService.getFlowNamesByState(state)).build();
@@ -425,7 +425,7 @@ public class FlowPlanDatafetcher {
     public SystemFlows getAllFlows() {
         flowCacheService.refreshCache();
         return SystemFlows.newBuilder()
-                .egress(egressFlowService.getAll())
+                .dataSink(dataSinkService.getAll())
                 .transform(transformFlowService.getAll())
                 .restDataSource(restDataSourceService.getAll())
                 .timedDataSource(timedDataSourceService.getAll()).build();
@@ -463,7 +463,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowView
     public SystemFlowPlans getAllFlowPlans() {
         return SystemFlowPlans.newBuilder()
-                .egressPlans(getFlowPlansByType(FlowType.EGRESS, EgressFlowPlan.class))
+                .dataSinkPlans(getFlowPlansByType(FlowType.DATA_SINK, DataSinkPlan.class))
                 .transformPlans(getFlowPlansByType(FlowType.TRANSFORM, TransformFlowPlan.class))
                 .restDataSources(getFlowPlansByType(FlowType.REST_DATA_SOURCE, RestDataSourcePlan.class))
                 .timedDataSources(getFlowPlansByType(FlowType.TIMED_DATA_SOURCE, TimedDataSourcePlan.class))
@@ -488,7 +488,7 @@ public class FlowPlanDatafetcher {
     public Collection<ActionFamily> getActionNamesByFamily() {
         EnumMap<ActionType, ActionFamily> actionFamilyMap = new EnumMap<>(ActionType.class);
         actionFamilyMap.put(ActionType.INGRESS, INGRESS_FAMILY);
-        egressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
+        dataSinkService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         transformFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         timedDataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         return actionFamilyMap.values();

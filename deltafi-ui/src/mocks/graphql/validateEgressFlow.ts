@@ -46,7 +46,7 @@ const flowStatusMap = new Map([
 ]);
 
 export default {
-  validateEgressFlow: {
+  validateDataSink: {
     flowStatus: flowStatusMap.get(flowStatus[Math.floor(Math.random() * flowStatus.length)]),
   },
 };

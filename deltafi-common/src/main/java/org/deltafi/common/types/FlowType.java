@@ -18,5 +18,5 @@
 package org.deltafi.common.types;
 
 public enum FlowType {
-    REST_DATA_SOURCE, TIMED_DATA_SOURCE, TRANSFORM, EGRESS
+    REST_DATA_SOURCE, TIMED_DATA_SOURCE, TRANSFORM, DATA_SINK
 }

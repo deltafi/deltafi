@@ -1,4 +1,4 @@
-FROM node:20-alpine3.19 as deltafi-ui-build-stage
+FROM node:20-alpine3.19 AS deltafi-ui-build-stage
 WORKDIR /ui
 # Cache package installation
 COPY ui/package.json /ui/package.json
@@ -7,7 +7,7 @@ RUN npm install
 COPY ui .
 RUN npm run build
 
-FROM node:20-alpine3.19 as deltafi-docs-build-stage
+FROM node:20-alpine3.19 AS deltafi-docs-build-stage
 WORKDIR /docs
 # Cache package installation
 COPY docs/package.json /docs/package.json

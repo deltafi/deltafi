@@ -9,7 +9,7 @@ dataSources:
 transformationFlows:
   - unarchive-passthrough-transform
   - passthrough-transform
-egressFlows:
+dataSinks:
   - passthrough-egress
 timeout: BLAH
 expectedDeltaFiles:
@@ -30,12 +30,12 @@ expectedDeltaFiles:
             state: COMPLETE
             actions: [ Passthrough ]
           - flow: passthrough-egress
-            type: EGRESS
+            type: DATA_SINK
             state: COMPLETE
             actions: [ PassthroughEgress ]
         expectedContent:
           flow: passthrough-egress
-          type: EGRESS
+          type: DATA_SINK
           action: PassthroughEgress
           data:
             - name: input/a
@@ -50,11 +50,11 @@ expectedDeltaFiles:
             type: TRANSFORM
             actions: [ Passthrough ]
           - flow: passthrough-egress
-            type: EGRESS
+            type: DATA_SINK
             actions: [ PassthroughEgress ]
         expectedContent:
           flow: passthrough-egress
-          type: EGRESS
+          type: DATA_SINK
           action: PassthroughEgress
           data:
             - name: input/b
@@ -69,11 +69,11 @@ expectedDeltaFiles:
             type: TRANSFORM
             actions: [ Passthrough ]
           - flow: passthrough-egress
-            type: EGRESS
+            type: DATA_SINK
             actions: [ PassthroughEgress ]
         expectedContent:
           flow: passthrough-egress
-          type: EGRESS
+          type: DATA_SINK
           action: PassthroughEgress
           data:
             - name: input/c

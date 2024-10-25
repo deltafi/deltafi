@@ -177,7 +177,7 @@ class SchemaComplianceValidatorTest {
         Map<String, Object> params = new HashMap<>();
         params.put("url", "https://egress");
         params.put("name", "RestEgress");
-        params.put("egressFlow", "out");
+        params.put("dataSink", "out");
         return params;
     }
 

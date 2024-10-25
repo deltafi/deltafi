@@ -100,7 +100,7 @@ public class DeltaFilesService {
 
     private final Clock clock;
     private final TransformFlowService transformFlowService;
-    private final EgressFlowService egressFlowService;
+    private final DataSinkService dataSinkService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final StateMachine stateMachine;
     private final AnnotationRepo annotationRepo;
@@ -400,9 +400,9 @@ public class DeltaFilesService {
 
     private void generateMetrics(boolean actionExecuted, List<Metric> metrics, ActionEvent event, DeltaFile deltaFile,
                                  DeltaFileFlow flow, Action action, ActionConfiguration actionConfiguration) {
-        String egressFlow = flow.getType() == FlowType.EGRESS ? flow.getName() : null;
+        String dataSink = flow.getType() == FlowType.DATA_SINK ? flow.getName() : null;
         Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), action.getName(),
-                deltaFile.getDataSource(), egressFlow);
+                deltaFile.getDataSource(), dataSink);
         for (Metric metric : metrics) {
             metric.addTags(defaultTags);
             metricService.increment(metric);
@@ -1019,8 +1019,8 @@ public class DeltaFilesService {
             if (!addConfig) {
                 throw new IllegalStateException("Flow " + aggregateFlow.getName() + " no longer has a join action named " + joinActionName);
             }
-        } else if (firstFlow.getType() == FlowType.EGRESS) {
-            EgressFlow flowConfig = egressFlowService.getFlowOrThrow(firstFlow.getName());
+        } else if (firstFlow.getType() == FlowType.DATA_SINK) {
+            DataSink flowConfig = dataSinkService.getFlowOrThrow(firstFlow.getName());
             nextActions.add(flowConfig.getEgressAction());
         }
 
@@ -1113,7 +1113,7 @@ public class DeltaFilesService {
         for (DeltaFileFlow flow : deltaFileFlows) {
             for (Action action : flow.getActions()) {
                 if (action.getType() == ActionType.UNKNOWN || action.getState() != ActionState.ERROR) {
-                    // ignore synthetic actions like NoEgressFlowConfigured
+                    // ignore synthetic actions like NoDataSinkConfigured
                     continue;
                 }
                 if (!actionKeyValues.containsKey(Pair.of(flow.getName(), action.getName()))) {
@@ -1395,7 +1395,7 @@ public class DeltaFilesService {
         return switch (flowType) {
             case TIMED_DATA_SOURCE -> timedDataSourceService.findRunningActionConfig(flow, actionName);
             case TRANSFORM -> transformFlowService.findRunningActionConfig(flow, actionName);
-            case EGRESS -> egressFlowService.findRunningActionConfig(flow, actionName);
+            case DATA_SINK -> dataSinkService.findRunningActionConfig(flow, actionName);
             default -> null;
         };
     }
@@ -1734,7 +1734,7 @@ public class DeltaFilesService {
     }
 
     public void queueTimedOutJoin(JoinEntry joinEntry, List<UUID> joinDids) {
-        ActionConfiguration actionConfiguration = actionConfiguration(joinEntry.getJoinDefinition().getFlow(), joinEntry.getJoinDefinition().getActionType() == ActionType.TRANSFORM ? FlowType.TRANSFORM : FlowType.EGRESS,
+        ActionConfiguration actionConfiguration = actionConfiguration(joinEntry.getJoinDefinition().getFlow(), joinEntry.getJoinDefinition().getActionType() == ActionType.TRANSFORM ? FlowType.TRANSFORM : FlowType.DATA_SINK,
                 joinEntry.getJoinDefinition().getAction());
 
         if (actionConfiguration == null) {

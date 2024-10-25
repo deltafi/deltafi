@@ -18,7 +18,7 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 FIELDS="{ name flowStatus {state}}"
-QUERY="query { getAllFlows { restDataSource $FIELDS timedDataSource $FIELDS transform $FIELDS egress $FIELDS}}"
+QUERY="query { getAllFlows { restDataSource $FIELDS timedDataSource $FIELDS transform $FIELDS dataSink $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_flows() {
@@ -37,5 +37,5 @@ else
     echo
   print_flows "transform"
   echo
-  print_flows "egress"
+  print_flows "dataSink"
 fi

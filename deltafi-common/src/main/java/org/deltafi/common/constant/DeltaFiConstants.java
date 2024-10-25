@@ -50,7 +50,7 @@ public class DeltaFiConstants {
 
     // Tag names
     public static final String ACTION = "action";
-    public static final String EGRESS_FLOW = "egressFlow";
+    public static final String DATA_SINK = "dataSink";
     public static final String DATA_SOURCE = "dataSource";
     public static final String SOURCE = "source";
     public static final String CLASS = "class";
