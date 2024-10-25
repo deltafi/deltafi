@@ -26,6 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.TestStatus;
+import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.types.integration.TestCaseIngress;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
@@ -34,8 +36,7 @@ import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.integration.IntegrationTest;
-import org.deltafi.core.types.integration.TestCaseIngress;
+import org.deltafi.core.types.integration.IntegrationTestEntity;
 import org.deltafi.core.types.integration.TestResult;
 import org.springframework.stereotype.Service;
 
@@ -189,7 +190,8 @@ public class IntegrationService {
     }
 
     public Optional<IntegrationTest> getIntegrationTest(String name) {
-        return integrationTestRepo.findById(name);
+        Optional<IntegrationTestEntity> found = integrationTestRepo.findById(name);
+        return found.map(IntegrationTestEntity::toIntegrationTest);
     }
 
     public Optional<TestResult> getTestResult(String id) {
@@ -201,7 +203,10 @@ public class IntegrationService {
     }
 
     public List<IntegrationTest> getAllTests() {
-        return integrationTestRepo.findAll();
+        return integrationTestRepo.findAll()
+                .stream()
+                .map(IntegrationTestEntity::toIntegrationTest)
+                .toList();
     }
 
     public boolean removeResult(String id) {
@@ -220,14 +225,14 @@ public class IntegrationService {
         return false;
     }
 
-    public Result save(IntegrationTest config) {
-        List<String> errors = configurationValidator.preSaveCheck(config);
+    public Result save(IntegrationTest integrationTest) {
+        List<String> errors = configurationValidator.preSaveCheck(integrationTest);
         if (errors.isEmpty()) {
 
-            integrationTestRepo.save(config);
+            integrationTestRepo.save(new IntegrationTestEntity(integrationTest));
             return Result.builder()
                     .success(true)
-                    .info(List.of("name: " + config.getName()))
+                    .info(List.of("name: " + integrationTest.getName()))
                     .build();
         }
         return Result.builder()

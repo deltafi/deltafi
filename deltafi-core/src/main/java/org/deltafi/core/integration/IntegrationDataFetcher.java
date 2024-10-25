@@ -28,9 +28,9 @@ import com.netflix.graphql.dgs.InputArgument;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.TestStatus;
+import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.integration.IntegrationTest;
 import org.deltafi.core.types.integration.TestResult;
 
 import java.util.ArrayList;
@@ -91,8 +91,8 @@ public class IntegrationDataFetcher {
     public Result loadIntegrationTest(@InputArgument String configYaml) {
         List<String> errors = new ArrayList<>();
         try {
-            IntegrationTest testCase = YAML_MAPPER.readValue(configYaml, IntegrationTest.class);
-            return integrationService.save(testCase);
+            IntegrationTest integrationTest = YAML_MAPPER.readValue(configYaml, IntegrationTest.class);
+            return integrationService.save(integrationTest);
         } catch (Exception e) {
             errors.add("Unable to parse YAML: " + e.getMessage());
         }

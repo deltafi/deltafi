@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.integration;
 
-import org.deltafi.core.types.integration.IntegrationTest;
+import org.deltafi.core.types.integration.IntegrationTestEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface IntegrationTestRepo extends JpaRepository<IntegrationTest, String> {}
+public interface IntegrationTestRepo extends JpaRepository<IntegrationTestEntity, String> {}

@@ -21,11 +21,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.integration.ExpectedDeltaFile;
+import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.types.integration.TestCaseIngress;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.PluginEntity;
-import org.deltafi.core.types.integration.ExpectedDeltaFile;
-import org.deltafi.core.types.integration.IntegrationTest;
-import org.deltafi.core.types.integration.TestCaseIngress;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 

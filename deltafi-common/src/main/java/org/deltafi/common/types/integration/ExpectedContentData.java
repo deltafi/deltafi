@@ -15,48 +15,42 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types.integration;
+package org.deltafi.common.types.integration;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.FlowType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExpectedContentList {
-    private String flow;
-    private FlowType type;
-    private String action;
-    private List<ExpectedContentData> data;
+public class ExpectedContentData {
+    // required
+    private String name;
+    // optional
+    private String mediaType;
+    // exactly one of value or contains is required
+    private String value;
+    private List<String> contains;
 
-    public List<String> validate() {
+    public Collection<String> validate() {
         List<String> errors = new ArrayList<>();
-        if (StringUtils.isEmpty(flow)) {
-            errors.add("ExpectedContentList missing dataSource");
+        if (StringUtils.isEmpty(name)) {
+            errors.add("ExpectedContentData missing 'name'");
         }
-
-        if (type == null) {
-            errors.add("ExpectedContentList missing type");
-        }
-
-        if (StringUtils.isEmpty(action)) {
-            errors.add("ExpectedContentList missing action");
-        }
-
-        if (data == null || data.isEmpty()) {
-            errors.add("ExpectedContentList missing data");
-        } else {
-            for (ExpectedContentData contentData : data) {
-                errors.addAll(contentData.validate());
-            }
+        if (StringUtils.isEmpty(value) &&
+                (contains == null || contains.isEmpty())) {
+            errors.add("ExpectedContentData missing 'value' or 'contains'");
+        } else if (!StringUtils.isEmpty(value) &&
+                contains != null && !contains.isEmpty()) {
+            errors.add("ExpectedContentData must contain only one of 'value' or 'contains'");
         }
 
         return errors;

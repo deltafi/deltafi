@@ -20,9 +20,9 @@ package org.deltafi.core.integration;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.integration.IntegrationTest;
 import org.deltafi.core.types.integration.TestResult;
 
 import java.util.List;

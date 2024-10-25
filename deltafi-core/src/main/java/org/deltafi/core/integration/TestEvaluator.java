@@ -25,11 +25,15 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.TestStatus;
+import org.deltafi.common.types.integration.ExpectedContentData;
+import org.deltafi.common.types.integration.ExpectedContentList;
+import org.deltafi.common.types.integration.ExpectedDeltaFile;
+import org.deltafi.common.types.integration.ExpectedFlow;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.Action;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.core.types.integration.*;
+import org.deltafi.core.types.integration.TestResult;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;

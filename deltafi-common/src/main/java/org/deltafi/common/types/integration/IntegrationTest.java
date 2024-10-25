@@ -15,48 +15,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types.integration;
+package org.deltafi.common.types.integration;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.FlowType;
-import org.deltafi.core.types.DeltaFileFlowState;
+import org.deltafi.common.types.PluginCoordinates;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExpectedFlow {
-    private String flow;
-    private FlowType type;
-    private DeltaFileFlowState state;
-    private List<String> actions;
-
-    public List<String> validate() {
-        List<String> errors = new ArrayList<>();
-
-        if (StringUtils.isEmpty(flow)) {
-            errors.add("ExpectedFlow missing dataSource");
-        }
-
-        if (type == null) {
-            errors.add("ExpectedFlow missing type");
-        }
-
-        if (state == null) {
-            state = DeltaFileFlowState.COMPLETE;
-        }
-
-        if (actions == null) {
-            actions = new ArrayList<>();
-        }
-
-        return errors;
-    }
+public class IntegrationTest {
+    private String name;
+    private String description;
+    private List<PluginCoordinates> plugins;
+    private List<String> dataSources;
+    private List<String> transformationFlows;
+    private List<String> dataSinks;
+    private List<TestCaseIngress> inputs;
+    private String timeout;
+    private List<ExpectedDeltaFile> expectedDeltaFiles;
 }

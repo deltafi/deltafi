@@ -20,6 +20,7 @@ package org.deltafi.core.repo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.CountPerFlow;
 import org.deltafi.core.generated.types.CountPerMessage;

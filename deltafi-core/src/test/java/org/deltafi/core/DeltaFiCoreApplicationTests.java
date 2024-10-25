@@ -64,10 +64,8 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.integration.ExpectedDeltaFile;
-import org.deltafi.core.types.integration.IntegrationTest;
-import org.deltafi.core.types.integration.TestCaseIngress;
-import org.deltafi.core.types.integration.TestResult;
+import org.deltafi.common.types.integration.*;
+import org.deltafi.core.types.integration.*;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
@@ -3185,10 +3183,13 @@ class DeltaFiCoreApplicationTests {
 		testResultRepo.deleteAll();
 		integrationTestRepo.deleteAll();
 
-		IntegrationTest test1 = IntegrationTest.builder().name(testName1).description("d1").build();
-		IntegrationTest test2 = IntegrationTest.builder().name(testName2).description("d2").build();
+		IntegrationTestEntity test1Entity = IntegrationTestEntity.builder().name(testName1).description("d1").build();
+		IntegrationTestEntity test2Entity = IntegrationTestEntity.builder().name(testName2).description("d2").build();
 
-		integrationTestRepo.saveAll(List.of(test1, test2));
+		integrationTestRepo.saveAll(List.of(test1Entity, test2Entity));
+
+		IntegrationTest test1 = test1Entity.toIntegrationTest();
+		IntegrationTest test2 = test2Entity.toIntegrationTest();
 
 		List<IntegrationTest> listResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
 		assertEquals(2, listResult.size());

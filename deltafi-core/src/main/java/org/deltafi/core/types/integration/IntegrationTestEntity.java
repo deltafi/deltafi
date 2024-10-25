@@ -26,6 +26,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.integration.ExpectedDeltaFile;
+import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.types.integration.TestCaseIngress;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -37,7 +40,7 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class IntegrationTest {
+public class IntegrationTestEntity {
     @Id
     private String name;
     private String description;
@@ -67,4 +70,30 @@ public class IntegrationTest {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private List<ExpectedDeltaFile> expectedDeltaFiles;
+
+    public IntegrationTestEntity(IntegrationTest integrationTest) {
+        this.name = integrationTest.getName();
+        this.description = integrationTest.getDescription();
+        this.plugins = integrationTest.getPlugins();
+        this.dataSources = integrationTest.getDataSources();
+        this.transformationFlows = integrationTest.getTransformationFlows();
+        this.dataSinks = integrationTest.getDataSinks();
+        this.inputs = integrationTest.getInputs();
+        this.timeout = integrationTest.getTimeout();
+        this.expectedDeltaFiles = integrationTest.getExpectedDeltaFiles();
+    }
+
+    public IntegrationTest toIntegrationTest() {
+        IntegrationTest integrationTest = new IntegrationTest();
+        integrationTest.setName(this.getName());
+        integrationTest.setDescription(this.getDescription());
+        integrationTest.setPlugins(this.getPlugins());
+        integrationTest.setDataSources(this.getDataSources());
+        integrationTest.setTransformationFlows(this.getTransformationFlows());
+        integrationTest.setDataSinks(this.getDataSinks());
+        integrationTest.setInputs(this.getInputs());
+        integrationTest.setTimeout(this.getTimeout());
+        integrationTest.setExpectedDeltaFiles(this.getExpectedDeltaFiles());
+        return integrationTest;
+    }
 }

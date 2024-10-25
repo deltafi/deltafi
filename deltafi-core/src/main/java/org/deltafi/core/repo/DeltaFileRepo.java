@@ -19,7 +19,7 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.generated.types.DeltaFileStats;
 import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.DeltaFileFlowState;
+import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;

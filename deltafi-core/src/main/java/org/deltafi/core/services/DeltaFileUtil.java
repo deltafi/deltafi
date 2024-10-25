@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.core.types.*;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DeltaFileStage;
