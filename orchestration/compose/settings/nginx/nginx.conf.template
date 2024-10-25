@@ -93,7 +93,7 @@ http {
     }
 
     server {
-        listen 8888;
+        listen 8042;
 
         proxy_set_header   Host $host;
         proxy_set_header   X-Real-IP $remote_addr;

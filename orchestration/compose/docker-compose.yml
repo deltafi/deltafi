@@ -350,7 +350,7 @@ services:
       - ${DATA_DIR}/certs:/certs
     ports:
       - "80:80"
-      - "8888:8888"
+      - "8042:8042"
     healthcheck:
       test: ["CMD-SHELL", "curl -so /dev/null http://localhost/ || exit 1"]
       interval: 20s
