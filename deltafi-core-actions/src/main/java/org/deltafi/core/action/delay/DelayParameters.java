@@ -19,16 +19,13 @@ package org.deltafi.core.action.delay;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 public class DelayParameters extends ActionParameters {
     @JsonProperty(defaultValue = "0")
     @JsonPropertyDescription("Minimum time to delay processing in ms. Set equal to maxDelayMS for a fixed delay.")

@@ -26,7 +26,6 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@AllArgsConstructor
 public class HttpEgressParameters extends ActionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("The URL to post the DeltaFile to")

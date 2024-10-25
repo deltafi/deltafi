@@ -25,7 +25,6 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class ErrorParameters extends ActionParameters {
     private static final String DEFAULT_MESSAGE = "Errored by fiat";

@@ -17,9 +17,7 @@
  */
 package org.deltafi.core.action.jolt;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.fasterxml.jackson.annotation.*;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.deltafi.core.action.ContentSelectionParameters;

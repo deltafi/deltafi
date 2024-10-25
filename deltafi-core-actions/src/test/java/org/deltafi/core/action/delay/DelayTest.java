@@ -41,7 +41,11 @@ public class DelayTest {
 
         long startTimeMs = System.currentTimeMillis();
 
-        TransformResultType transformResultType = action.transform(context, new DelayParameters(500, 1000),
+        DelayParameters delayParameters = new DelayParameters();
+        delayParameters.setMinDelayMS(500);
+        delayParameters.setMaxDelayMS(1000);
+
+        TransformResultType transformResultType = action.transform(context, delayParameters,
                 TransformInput.builder().content(content).metadata(metadata).build());
 
         long elapsedTimeMs = System.currentTimeMillis() - startTimeMs;

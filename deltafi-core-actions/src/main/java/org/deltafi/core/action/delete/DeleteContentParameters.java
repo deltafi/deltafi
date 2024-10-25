@@ -25,7 +25,6 @@ import org.deltafi.core.action.ContentSelectionParameters;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class DeleteContentParameters extends ContentSelectionParameters {
     @JsonProperty(defaultValue = "false")

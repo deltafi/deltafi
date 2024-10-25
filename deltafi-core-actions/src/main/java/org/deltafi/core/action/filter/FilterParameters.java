@@ -29,7 +29,6 @@ import static org.deltafi.core.action.filter.FilterBehavior.ANY;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class FilterParameters extends ActionParameters {
     @JsonPropertyDescription("List of Spring Expression Language (SpEL) expressions used to filter")

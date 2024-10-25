@@ -19,10 +19,7 @@ package org.deltafi.core.action.convert;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import org.deltafi.core.action.ContentSelectionParameters;
 
 @Data

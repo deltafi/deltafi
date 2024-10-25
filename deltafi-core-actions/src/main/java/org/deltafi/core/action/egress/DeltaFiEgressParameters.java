@@ -18,13 +18,12 @@
 package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 public class DeltaFiEgressParameters extends HttpEgressParameters {
     @JsonPropertyDescription("Name of the flow on the receiving DeltaFi")
     private String flow;

@@ -21,15 +21,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class ModifyMetadataParameters extends ActionParameters {
     @JsonPropertyDescription("Key value pairs of metadata to be added or modified")

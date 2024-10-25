@@ -27,7 +27,6 @@ import java.util.List;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class MetadataToContentParameters extends ActionParameters {
     @JsonProperty(defaultValue = "metadata.json")

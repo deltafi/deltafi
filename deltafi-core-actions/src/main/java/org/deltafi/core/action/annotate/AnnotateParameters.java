@@ -27,7 +27,6 @@ import java.util.Map;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class AnnotateParameters extends ActionParameters {
     @JsonPropertyDescription("Key value pairs of annotations to be added")

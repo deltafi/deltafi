@@ -41,8 +41,11 @@ public class CompressTest {
 
     @Test
     public void errorResultOnNoContent() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(Format.TAR, "compressed", null), TransformInput.builder().build());
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.TAR);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters,
+                TransformInput.builder().build());
 
         assertInstanceOf(ErrorResult.class, result);
     }
@@ -75,8 +78,10 @@ public class CompressTest {
     private void runTest(Format format) {
         TransformInput transformInput = input("thing1.txt", "thing2.txt");
 
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(format, "compressed", null), transformInput);
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(format);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, transformInput);
 
         verifyFormat(result, format, transformInput, "compressed." + format.getValue(),
                 format.getMediaType());
@@ -86,8 +91,11 @@ public class CompressTest {
     public void archivesTarWithMediaType() {
         TransformInput transformInput = input("thing1.txt", "thing2.txt");
 
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(Format.TAR, "compressed", MediaType.APPLICATION_OCTET_STREAM), transformInput);
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.TAR);
+        compressParameters.setMediaType(MediaType.APPLICATION_OCTET_STREAM);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, transformInput);
 
         verifyFormat(result, Format.TAR, transformInput, "compressed.tar", MediaType.APPLICATION_OCTET_STREAM);
     }
@@ -119,24 +127,31 @@ public class CompressTest {
 
     @Test
     public void compressesSingleGzip() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(Format.GZIP, "compressed", null), input("fileA"));
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.GZIP);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA"));
 
         verifySingleResult(result, Format.GZIP, "fileA.gz", Format.GZIP.getMediaType());
     }
 
     @Test
     public void compressesSingleXz() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(Format.XZ, "compressed", null), input("fileA"));
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.XZ);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA"));
 
         verifySingleResult(result, Format.XZ, "fileA.xz", Format.XZ.getMediaType());
     }
 
     @Test
     public void compressesSingleGzipWithMediaType() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(Format.GZIP, "compressed", MediaType.APPLICATION_OCTET_STREAM), input("fileA"));
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.GZIP);
+        compressParameters.setMediaType(MediaType.APPLICATION_OCTET_STREAM);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA"));
 
         verifySingleResult(result, Format.GZIP, "fileA.gz", MediaType.APPLICATION_OCTET_STREAM);
     }
@@ -154,16 +169,20 @@ public class CompressTest {
 
     @Test
     public void compressesMultipleGzip() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(Format.GZIP, "compressed", null), input("fileA", "fileB"));
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.GZIP);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA", "fileB"));
 
         verifyMultipleResults(result, Format.GZIP, "fileA.gz", "fileB.gz");
     }
 
     @Test
     public void compressesMultipleXz() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(Format.XZ, "compressed", null), input("fileA", "fileB"));
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.XZ);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA", "fileB"));
 
         verifyMultipleResults(result, Format.XZ, "fileA.xz", "fileB.xz");
     }

@@ -19,13 +19,12 @@ package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 public class RestPostEgressParameters extends HttpEgressParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Send metadata as JSON in this HTTP header field")

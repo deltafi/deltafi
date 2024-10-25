@@ -179,9 +179,12 @@ public class DecompressTest {
 
     private void runTest(Format archiveType, boolean detected, boolean retainExistingContent) {
         String inputName = "compressed." + archiveType.getValue();
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(detected ? null : archiveType, retainExistingContent, null, 0),
-                input(inputName));
+
+        DecompressParameters decompressParameters = new DecompressParameters();
+        decompressParameters.setFormat(detected ? null : archiveType);
+        decompressParameters.setRetainExistingContent(retainExistingContent);
+
+        ResultType result = action.transform(runner.actionContext(), decompressParameters, input(inputName));
 
         verifyTransform(result, archiveType, retainExistingContent, inputName);
     }
@@ -563,7 +566,11 @@ public class DecompressTest {
     }
 
     private void runTest(Format compressFormat, boolean retainExistingContent, TransformInput input, String... outputFiles) {
-        runTest(new DecompressParameters(compressFormat, retainExistingContent, null, 0), compressFormat, input, outputFiles);
+        DecompressParameters decompressParameters = new DecompressParameters();
+        decompressParameters.setFormat(compressFormat);
+        decompressParameters.setRetainExistingContent(retainExistingContent);
+
+        runTest(decompressParameters, compressFormat, input, outputFiles);
     }
 
     private ResultType runRecursiveTest(DecompressParameters parameters, TransformInput input) {

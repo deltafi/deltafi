@@ -17,21 +17,12 @@
  */
 package org.deltafi.core.action.xml;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import com.fasterxml.jackson.annotation.*;
+import lombok.*;
 import org.deltafi.core.action.ContentSelectionParameters;
 
 import java.util.List;
 
-
-/**
- * Defines the parameters for the XmlEditor action.
- */
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)

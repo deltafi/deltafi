@@ -19,10 +19,7 @@ package org.deltafi.core.action;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
@@ -30,9 +27,9 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 @Data
-@NoArgsConstructor
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 public class ContentSelectionParameters extends ActionParameters {
     @JsonPropertyDescription("List of content indexes to include or exclude")
     private List<Integer> contentIndexes;

@@ -24,7 +24,6 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class MergeParameters extends ActionParameters {
     @JsonPropertyDescription("Name of the merged file. Embed {{filename}} to have it replaced with the filename of the first file merged. If not set, will use the filename of the first file merged.")

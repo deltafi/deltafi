@@ -34,8 +34,12 @@ public class MergeTest {
         Merge merge = new Merge();
         DeltaFiTestRunner runner = DeltaFiTestRunner.setup("MergeTest");
 
+        MergeParameters mergeParameters = new MergeParameters();
+        mergeParameters.setMergedFilename("merged");
+        mergeParameters.setMediaType(MediaType.TEXT_PLAIN);
+
         TransformResultType transformResultType = merge.transform(runner.actionContext(),
-                new MergeParameters("merged", MediaType.TEXT_PLAIN), TransformInput.builder().content(
+                mergeParameters, TransformInput.builder().content(
                         runner.saveContentFromResource("thing1.txt", "thing2.txt")).build());
 
         byte[] expectedOutput = Arrays.concatenate(runner.readResourceAsBytes("thing1.txt"),

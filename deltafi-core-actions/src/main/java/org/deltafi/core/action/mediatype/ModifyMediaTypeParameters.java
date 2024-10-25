@@ -27,7 +27,6 @@ import java.util.Map;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
 public class ModifyMediaTypeParameters extends ActionParameters {
     @JsonPropertyDescription("Map of old to new media types, supporting wildcards (*) in the old media types")
