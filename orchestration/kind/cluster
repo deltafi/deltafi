@@ -236,6 +236,8 @@ PV_STORAGE=$(yq '.persistent_volume.storage' "${CONFIG}")
 readarray -t FQDNS < <(yq '.fqdns[]' "${CONFIG}")
 readarray -t PLUGINS < <(yq '.plugins[].name' "${CONFIG}")
 
+echo $CONFIG
+
 _url_for_plugin() {
   local plugin=$1
   yq ".plugins[] | select(.name == \"$plugin\") | .url" "${CONFIG}"
@@ -261,7 +263,7 @@ _are_you_sure() {
 
 describe config "Edit cluster command configuration"
 config() {
-  ${EDITOR:-vim} "$ROOT/deltafi/kind/cluster.yaml"
+  ${EDITOR:-vim} "$CONFIG"
 }
 
 _check_deltafi_cli() {
@@ -1148,12 +1150,12 @@ plugin() {
 
 _plugin_add() {
   _attention "Adding plugin $1"
-  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2\", \"url\": \"$3\"}]" "$ROOT/deltafi/kind/cluster.yaml"
+  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2\", \"url\": \"$3\"}]" "$CONFIG"
 }
 
 _plugin_add_local() {
   _attention "Adding plugin $1"
-  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2:$1:latest\", \"image_repository_base\": \"localhost:5000\"}]" "$ROOT/deltafi/kind/cluster.yaml"
+  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2:$1:latest\", \"image_repository_base\": \"localhost:5000\"}]" "$CONFIG"
 }
 
 _plugin_build() {
