@@ -30,7 +30,10 @@ import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.URISyntaxException;
@@ -59,8 +62,8 @@ public class ActionKitAutoConfiguration {
     }
 
     @Bean
-    public PluginRegistrar pluginRegistrar() {
-        return new PluginRegistrar();
+    public PluginRegistrar pluginRegistrar(List<Action<?, ?, ?>> actions, BuildProperties buildProperties, ApplicationContext applicationContext, Environment environment) {
+        return new PluginRegistrar(actions, buildProperties, applicationContext, environment);
     }
 
     @Bean

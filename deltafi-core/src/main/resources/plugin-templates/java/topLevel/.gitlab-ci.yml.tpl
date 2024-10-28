@@ -6,6 +6,9 @@ stages:
 default:
   timeout: 45m
 
+variables:
+  PROJECT_NAME: {{projectName}}
+
 services:
   - name: docker:18.09.7-dind
     entrypoint: ["dockerd-entrypoint.sh"]
@@ -39,8 +42,7 @@ docker:
     - job: "build"
   image: docker:latest
   variables:
-    PROJECT_NAME: {{projectName}}
-    DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHA}
+    DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_ID}
   script:
     - export DOCKER_NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME//\//_}
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
@@ -68,29 +70,30 @@ docker:
       - main
   image: badouralix/curl-jq
   variables:
-    PROJECT_NAME: {{projectName}}
     DELTAFI_CD_SYSTEM: deltafi-cd-system
-    GROUP_ID: {{packageName}}
+    DOCKER_TAG: ${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_ID}
   script: |-
-    echo "Installing $GROUP_ID:$PROJECT_NAME:$CI_COMMIT_SHA as $DELTAFI_USERNAME on https://$DELTAFI_CD_SYSTEM"
+    echo "Installing $DOCKER_TAG as $DELTAFI_USERNAME on https://$DELTAFI_CD_SYSTEM"
 
     TMPFILE="/tmp/.deltafi-install-plugin"
-    POST_QUERY='{ "query": "mutation { installPlugin(pluginCoordinates: { groupId: \"'$GROUP_ID'\" artifactId: \"'$PROJECT_NAME'\" version: \"'${CI_COMMIT_SHA}'\"}) { success info errors }}","variables":null}'
-    RESPONSE_CODE=$(curl -s -u "$DELTAFI_USERNAME:$DELTAFI_PASSWORD" -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" https://$DELTAFI_CD_SYSTEM/api/v2/graphql)
+    POST_QUERY='{ "query": "mutation { installPlugin(image: \"'$DOCKER_TAG'\") { success info errors }}","variables":null}'
+    echo ${POST_QUERY} | jq
+    RESPONSE_CODE=$(curl -s -u "$DELTAFI_USERNAME:$DELTAFI_PASSWORD" --retry 5 -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" https://$DELTAFI_CD_SYSTEM/api/v2/graphql)
 
     if [[ "$RESPONSE_CODE" != "200" ]]; then
-      echo -e "${RESPONSE_CODE} Error: $(cat ${TMPFILE})"
+      echo -e "${RESPONSE_CODE} Error:"
+      [[ -f ${TMPFILE} ]] && cat ${TMPFILE}
+      [[ -f ${TMPFILE} ]] || echo "No output"
       exit 1
     fi
 
     SUCCESS=$(cat ${TMPFILE} | jq '.data.installPlugin.success // false')
     if [[ $SUCCESS == "true" ]]; then
-      echo -e "Successfully upgrade to $GROUP_ID:$PROJECT_NAME:$CI_COMMIT_SHA"
+      echo -e "Successfully upgraded to ${DOCKER_TAG}"
       exit 0
     else
       ERRORS=$(cat ${TMPFILE} | jq '.errors // .data.installPlugin.errors')
-      ERRORS=$(cat ${TMPFILE} | jq '.errors // .data.installPlugin.errors')
-      echo "Failed to upgrade to $GROUP_ID:$PROJECT_NAME:$CI_COMMIT_SHA"
+      echo "Failed to upgrade to ${DOCKER_TAG}"
       echo "$ERRORS"
       exit 1
     fi

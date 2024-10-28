@@ -28,6 +28,8 @@ export default function usePlugins() {
         displayName: true,
         description: true,
         actionKitVersion: true,
+        image: true,
+        imagePullSecret: true,
         pluginCoordinates: {
           artifactId: true,
           groupId: true,
@@ -58,15 +60,12 @@ export default function usePlugins() {
     return sendGraphQLQuery(query, "updatePluginVariable", "mutation");
   };
 
-  const installPlugin = async (groupId: String, artifactId: String, version: String) => {
+  const installPlugin = async (image: String, imagePullSecret: String) => {
     const query = {
       installPlugin: {
         __args: {
-          pluginCoordinates: {
-            groupId: groupId,
-            artifactId: artifactId,
-            version: version,
-          },
+          image: image,
+          imagePullSecret: imagePullSecret,
         },
         success: true,
         info: true,
@@ -74,27 +73,6 @@ export default function usePlugins() {
       },
     };
     return sendGraphQLQuery(query, "installPlugin", "mutation");
-  };
-
-  const installPluginWithSettings = async (groupId: String, artifactId: String, version: String, imageRepositoryOverride: String, imagePullSecretOverride: String, customDeploymentYaml: String) => {
-    const query = {
-      installPluginWithSettings: {
-        __args: {
-          pluginCoordinates: {
-            groupId: groupId,
-            artifactId: artifactId,
-            version: version,
-          },
-          imageRepositoryOverride: imageRepositoryOverride,
-          imagePullSecretOverride: imagePullSecretOverride,
-          customDeploymentYaml: customDeploymentYaml,
-        },
-        success: true,
-        info: true,
-        errors: true,
-      },
-    };
-    return sendGraphQLQuery(query, "installPluginWithSettings", "mutation");
   };
 
   const uninstallPlugin = async (groupId: String, artifactId: String, version: String) => {
@@ -115,49 +93,6 @@ export default function usePlugins() {
     return sendGraphQLQuery(query, "uninstallPlugin", "mutation");
   };
 
-  const getPluginImageRepositories = async () => {
-    const query = {
-      getPluginImageRepositories: {
-        imageRepositoryBase: true,
-        pluginGroupIds: true,
-        imagePullSecret: true,
-      },
-    };
-    return sendGraphQLQuery(query, "getPluginImageRepositories");
-  };
-
-  const savePluginImageRepository = async (imageRepoBase: String, pluginGroupIdsList: Array<String>, newImagePullSecret: String | null) => {
-    const query = {
-      savePluginImageRepository: {
-        __args: {
-          pluginImageRepository: {
-            imageRepositoryBase: imageRepoBase,
-            pluginGroupIds: pluginGroupIdsList,
-            imagePullSecret: newImagePullSecret,
-          },
-        },
-        imageRepositoryBase: true,
-        pluginGroupIds: true,
-        imagePullSecret: true,
-      },
-    };
-    return sendGraphQLQuery(query, "savePluginImageRepository", "mutation");
-  };
-
-  const removePluginImageRepository = async (pluginImageRepositoryId: String) => {
-    const query = {
-      removePluginImageRepository: {
-        __args: {
-          id: pluginImageRepositoryId,
-        },
-        success: true,
-        info: true,
-        errors: true,
-      },
-    };
-    return sendGraphQLQuery(query, "removePluginImageRepository", "mutation");
-  };
-
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
@@ -175,12 +110,8 @@ export default function usePlugins() {
     loaded,
     response,
     installPlugin,
-    installPluginWithSettings,
     uninstallPlugin,
     fetch,
     setPluginVariableValues,
-    getPluginImageRepositories,
-    savePluginImageRepository,
-    removePluginImageRepository,
   };
 }

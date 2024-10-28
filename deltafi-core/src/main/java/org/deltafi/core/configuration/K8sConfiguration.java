@@ -25,7 +25,6 @@ import org.deltafi.core.plugin.deployer.K8sDeployerService;
 import org.deltafi.core.plugin.deployer.PodService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.credential.SecretCredentialProvider;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
@@ -59,8 +58,8 @@ public class K8sConfiguration {
     }
 
     @Bean
-    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient kubernetesClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        return new K8sDeployerService(deltaFiPropertiesService, pluginImageRepositoryService, kubernetesClient, podService, pluginService, systemSnapshotService, eventService);
+    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient kubernetesClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        return new K8sDeployerService(deltaFiPropertiesService, kubernetesClient, podService, pluginService, systemSnapshotService, eventService);
     }
 
 }

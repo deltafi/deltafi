@@ -93,6 +93,8 @@ class Plugin(object):
         self.queue = None
         self.actions = []
         self.core_url = os.getenv('CORE_URL')
+        self.image = os.getenv('IMAGE')
+        self.image_pull_secret = os.getenv('IMAGE_PULL_SECRET')
         action_classes = []
         if actions is not None and len(actions):
             action_classes.extend(actions)
@@ -201,6 +203,8 @@ class Plugin(object):
             'displayName': self.display_name,
             'description': self.description,
             'actionKitVersion': metadata.version('deltafi'),
+            'image': self.image,
+            'imagePullSecret': self.image_pull_secret,
             'dependencies': [],
             'actions': actions,
             'variables': variables,

@@ -20,14 +20,14 @@ package org.deltafi.core.types;
 public record Image(String name, String tag) {
 
     public static Image image(String image) {
-        int tagIndex = image.lastIndexOf(":");
+        int lastColon = image.lastIndexOf(':');
+        int lastSlash = image.lastIndexOf('/');
 
-        if (tagIndex == -1) {
-            return new Image(image, "latest");
+        // make sure the colon was for the tag and not the registry port
+        if (lastColon > lastSlash) {
+            return new Image(image.substring(0, lastColon), image.substring(lastColon + 1));
         }
 
-        String tag = image.substring(tagIndex + 1);
-        image = image.substring(0, tagIndex);
-        return new Image(image, tag);
+        return new Image(image, "latest");
     }
 }

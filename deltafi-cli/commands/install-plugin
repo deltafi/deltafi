@@ -7,13 +7,11 @@ cli_help_command() {
 Command: install-plugin
 
 Usage:
-  install-plugin [GROUP_ID:ARTIFACT_ID:VERSION] [OPTIONS]
+  install-plugin [image] [OPTIONS]
 
 Options:
-  -h, --help                     Show help
-  -i, --image-repository-base    Image repository base to use instead of using configured base repository
-  -s, --pull-secret              Pull secret to use instead of using the configured pull secret
-  -d, --deployment-extras-file   Path to a file containing extra containers to include in the deployment"
+  -h, --help           Show help
+  -s, --pull-secret    Pull secret to use instead of using the pluginImagePullSecret system property"
 
   exit 1
 }
@@ -27,38 +25,14 @@ cleanup() {
 
 trap cleanup INT
 
-IMAGE_REPO="null"
-PULL_SECRET="null"
-DEPLOYMENT_YAML="null"
-IS_CUSTOM=false
-VARIABLES="{\"deploymentExtras\": null}"
-
+PULL_SECRET=
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
-    -i|--image-repository-base)
-      IS_CUSTOM=true
-      shift
-      IMAGE_REPO="\"$1\""
-      shift
-      ;;
     -s|--pull-secret)
-      IS_CUSTOM=true
       shift
-      PULL_SECRET="\"$1\""
-      shift
-      ;;
-    -d|--deployment-extras-file)
-      IS_CUSTOM=true
-      shift
-      DEPLOYMENT_FILE=$1
-      if [ ! -f "$DEPLOYMENT_FILE" ]; then
-        cli_log "${red}${DEPLOYMENT_FILE}: No such file${normal}"
-        exit 1
-      fi
-
-      VARIABLES="{\"deploymentExtras\": $(cat "$DEPLOYMENT_FILE" |jq -Rsa .)}"
+      PULL_SECRET="$1"
       shift
       ;;
     -h|--help)
@@ -76,70 +50,49 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
-GROUP_ID=$(echo "$2" | cut -d ":" -f 1)
-ARTIFACT_ID=$(echo "$2" | cut -d ":" -f 2)
-VERSION=$(echo "$2" | cut -d ":" -f 3)
+IMAGE="$2"
 
-if [[ -z "$GROUP_ID" || -z "$ARTIFACT_ID" || -z "$VERSION" ]]; then
-  cli_log "${red}Invalid plugin coordinates: $2${normal}"
+if [[ -z "$IMAGE" ]]; then
+  cli_log "${red}The image must be provided${normal}"
   exit
 fi
 
-if [[ $IS_CUSTOM != true ]]; then
-  EXTRACT_PATH=".data.installPlugin"
-  QUERY="mutation {
-           installPlugin(pluginCoordinates: {
-             groupId: \"${GROUP_ID}\"
-             artifactId: \"${ARTIFACT_ID}\"
-             version: \"${VERSION}\"
-           }) {
-             success
-             info
-             errors
-           }
-         }"
-else
-  EXTRACT_PATH=".data.installPluginWithSettings"
-  QUERY="mutation(\$deploymentExtras: String) {
-           installPluginWithSettings(pluginCoordinates: {
-             groupId: \"${GROUP_ID}\"
-             artifactId: \"${ARTIFACT_ID}\"
-             version: \"${VERSION}\"
-           },
-           imageRepositoryOverride: ${IMAGE_REPO}
-           imagePullSecretOverride: ${PULL_SECRET}
-           customDeploymentYaml: \$deploymentExtras) {
-             success
-             info
-             errors
-           }
-         }"
-fi
+EXTRACT_PATH=".data.installPlugin"
+QUERY="mutation {
+         installPlugin(
+           image: \"${IMAGE}\"
+           imagePullSecret: \"${PULL_SECRET}\"
+         ) {
+           success
+           info
+           errors
+         }
+       }"
 
 DELTAFI_DGS=$(_graphql)
 QUERY=$(echo $QUERY | sed 's/"/\\"/g')
-POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+POST_QUERY="{ \"query\": \"$QUERY\"}"
 
 truncate -s 0 ${TMPFILE}
 RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "$DELTAFI_DGS")
 
 if [[ "$RESPONSE_CODE" != "200" ]]; then
-  cli_log "${red}Installing "$2" failed${normal}"
+  cli_log "${red}Installing "$IMAGE" failed${normal}"
   echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
   exit 1
 else
   ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
   if [[ "$ERRORS" != "" ]]; then
-    cli_log "${red}Installing $2 failed${normal}"
+    cli_log "${red}Installing $IMAGE failed${normal}"
     echo -e "${red}Error: ${ERRORS}${normal}"
     exit 1
   else
     SUCCESS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.success")
     if [[ $SUCCESS == "true" ]]; then
-      cli_log "${green}Plugin ${bold}$ARTIFACT_ID${normal}${green} was successfully installed${normal}"
+      cli_log "${green}Plugin ${bold}$IMAGE${normal}${green} was successfully installed${normal}"
     else
       ERRORS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.errors | join(\"\n\")")
-      cli_log "${red}Installing $2 failed:"
+      cli_log "${red}Installing $IMAGE failed:"
       echo -e "${red}$ERRORS${normal}"
       exit 1
     fi

@@ -26,9 +26,7 @@ import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
@@ -39,7 +37,6 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +44,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class K8sDeployerService extends BaseDeployerService {
     static final String APP_LABEL_KEY = "app";
-    static final String PLUGIN_GROUP_LABEL_KEY = "pluginGroup";
     static final String CONFIG_MOUNT_NAME = "config";
     private static final String CONFIG_MAP_NAME_TPL = "%s-config";
     public static final String PROGRESSING = "Progressing";
@@ -56,46 +52,34 @@ public class K8sDeployerService extends BaseDeployerService {
 
     private final KubernetesClient k8sClient;
     private final PodService podService;
-    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     @Setter
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient k8sClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        super(pluginImageRepositoryService, pluginService, systemSnapshotService, eventService);
+    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient k8sClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        super(pluginService, systemSnapshotService, eventService, deltaFiPropertiesService);
         this.k8sClient = k8sClient;
-        this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.podService = podService;
     }
 
     @Override
-    public DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, ArrayList<String> info) {
+    public DeployResult deploy(InstallDetails installDetails) {
         try {
-            Deployment deployment = buildDeployment(pluginCoordinates, pluginImageRepository);
-            DeployResult result = createOrReplace(deployment, pluginCoordinates);
-
-            if(result.getInfo() != null) {
-                result.getInfo().addAll(info);
-            }
-            else {
-                result.setInfo(info);
-            }
-            return result;
+            return createOrReplace(buildDeployment(installDetails), installDetails);
         } catch (IOException e) {
-            return DeployResult.builder().success(false).info(info).errors(List.of("Could not create the deployment: " + e.getMessage())).build();
+            return DeployResult.builder().success(false).errors(List.of("Could not create the deployment: " + e.getMessage())).build();
         }
     }
 
     @Override
-    Result removePluginResources(PluginCoordinates pluginCoordinates) {
+    Result removePluginResources(String appName) {
         Result result = new Result();
-        deleteDeployment(pluginCoordinates, result);
-        deleteService(pluginCoordinates, result);
+        deleteDeployment(appName, result);
         return result;
     }
 
-    private DeployResult createOrReplace(Deployment deployment, PluginCoordinates pluginCoordinates) {
+    private DeployResult createOrReplace(Deployment deployment, InstallDetails installDetails) {
         Deployment existingDeployment = k8sClient.apps().deployments().withName(deployment.getMetadata().getName()).get();
 
         boolean isUpgrade = existingDeployment != null;
@@ -111,13 +95,13 @@ public class K8sDeployerService extends BaseDeployerService {
         } catch (KubernetesClientTimeoutException | IllegalStateException exception) {
             DeployResult deployResult = new DeployResult();
             deployResult.setSuccess(false);
-            Pod pod = podService.findNotReadyPluginPod(pluginCoordinates).orElse(null);
+            Pod pod = podService.findNotReadyPluginPod(installDetails).orElse(null);
 
             if (pod == null) {
                 deployResult.getErrors().add(MISSING_POD);
             } else {
                 List<Event> events = podService.podEvents(pod);
-                String logs = podService.podLogs(pod, pluginCoordinates.getArtifactId());
+                String logs = podService.podLogs(pod, installDetails.appName());
 
                 deployResult.setEvents(events.stream().map(K8sEventUtil::formatEvent).toList());
                 deployResult.setLogs(logs);
@@ -137,11 +121,11 @@ public class K8sDeployerService extends BaseDeployerService {
         return new DeployResult();
     }
 
-    Deployment buildDeployment(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository) throws IOException {
+    Deployment buildDeployment(InstallDetails installDetails) throws IOException {
         Deployment deployment = loadBaseDeployment();
 
-        String applicationName = pluginCoordinates.getArtifactId();
-        Map<String, String> labels = Map.of(APP_LABEL_KEY, applicationName, PLUGIN_GROUP_LABEL_KEY, pluginCoordinates.getGroupId());
+        String applicationName = installDetails.appName();
+        Map<String, String> labels = Map.of(APP_LABEL_KEY, applicationName);
 
         deployment.getMetadata().setName(applicationName);
         deployment.getMetadata().getLabels().putAll(labels);
@@ -152,10 +136,13 @@ public class K8sDeployerService extends BaseDeployerService {
 
         Container container = deployment.getSpec().getTemplate().getSpec().getContainers().getFirst();
         container.setName(applicationName);
-        container.setImage(pluginImageRepository.getImageRepositoryBase() + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion());
+        container.setImage(installDetails.image());
+        List<EnvVar> envVars = container.getEnv();
+        envVars.add(new EnvVar(IMAGE, installDetails.image(), null));
 
-        if (null != pluginImageRepository.getImagePullSecret()) {
-            LocalObjectReference localObjectReference = new LocalObjectReferenceBuilder().withName(pluginImageRepository.getImagePullSecret()).build();
+        if (StringUtils.isNotBlank(installDetails.imagePullSecret())) {
+            envVars.add(new EnvVar(IMAGE_PULL_SECRET, installDetails.imagePullSecret(), null));
+            LocalObjectReference localObjectReference = new LocalObjectReferenceBuilder().withName(installDetails.imagePullSecret()).build();
             deployment.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(localObjectReference));
         }
 
@@ -164,34 +151,20 @@ public class K8sDeployerService extends BaseDeployerService {
         return deployment;
     }
 
-    void deleteDeployment(PluginCoordinates pluginCoordinates, Result result) {
-        List<StatusDetails> details = k8sClient.apps().deployments().withName(pluginCoordinates.getArtifactId()).delete();
+    void deleteDeployment(String appName, Result result) {
+        List<StatusDetails> details = k8sClient.apps().deployments().withName(appName).delete();
 
         if (details.isEmpty()) {
             result.setSuccess(false);
-            result.getErrors().add("No deployment exists for " + pluginCoordinates.groupAndArtifact());
+            result.getErrors().add("No deployment exists for " + appName);
             return;
         } else if(details.size() > 1) {
             result.setSuccess(false);
-            result.getErrors().add("Unexpected delete results for deployment " + pluginCoordinates.getArtifactId() + " " + details);
+            result.getErrors().add("Unexpected delete results for deployment " + appName + " " + details);
             return;
         }
 
         checkStatusDetail(details.getFirst(), result);
-    }
-
-    void deleteService(PluginCoordinates pluginCoordinates, Result result) {
-        // try to delete a service, ignore the case where it does not exist (in most cases it won't)
-        List<StatusDetails> details = k8sClient.apps().deployments().withName(pluginCoordinates.getArtifactId()).delete();
-
-        if(details.size() > 1) {
-            result.setSuccess(false);
-            result.getErrors().add("Unexpected delete results for service " + pluginCoordinates.getArtifactId() + " " + details);
-        }
-
-        if (!details.isEmpty()) {
-            checkStatusDetail(details.getFirst(), result);
-        }
     }
 
     void checkStatusDetail(StatusDetails statusDetails, Result result) {

@@ -5,7 +5,6 @@ metadata:
   labels:
     group: deltafi-plugins
     app: plugin
-    pluginGroup: org.deltafi
 spec:
   revisionHistoryLimit: 0
   selector:
@@ -17,7 +16,6 @@ spec:
       labels:
         group: deltafi-plugins
         app: plugin
-        pluginGroup: org.deltafi
     spec:
       containers:
         - name: plugin
@@ -41,6 +39,10 @@ spec:
                 secretKeyRef:
                   key: rootPassword
                   name: minio-keys
+            - name: IMAGE
+              value: docker.io/plugin:1.0.0
+            - name: IMAGE_PULL_SECRET
+              value: docker-cred
           envFrom:
             - secretRef:
                 name: keystore-password-secret

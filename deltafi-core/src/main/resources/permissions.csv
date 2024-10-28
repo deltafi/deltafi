@@ -28,9 +28,6 @@ Plugins,PluginsView,Grants the ability to view installed Plugins
 Plugins,PluginInstall,Grants the ability to install Plugins
 Plugins,PluginUninstall,Grants the ability to uninstall Plugins
 Plugins,PluginVariableUpdate,Grants the ability to edit plugin variables
-Plugins,PluginImageRepoView,Grants the ability to view Plugin Image Repo Configuration
-Plugins,PluginImageRepoWrite,Grants the ability to create or update Plugin Image Repo Configuration
-Plugins,PluginImageRepoDelete,Grants the ability to delete Plugin Image Repo Configuration
 System Properties,SystemPropertiesRead,Grants the ability to view System Properties
 System Properties,SystemPropertiesUpdate,Grants the ability to edit System Properties
 Delete Policies,DeletePolicyCreate,Grants the ability to create Delete Policies

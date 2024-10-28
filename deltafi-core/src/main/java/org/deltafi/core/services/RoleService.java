@@ -57,7 +57,7 @@ public class RoleService {
                     Role.builder().id(Generators.timeBasedEpochGenerator().generate()).name("Ingress Only").permission("DeltaFileIngress").createdAt(now).updatedAt(now).build(),
                     Role.builder().id(Generators.timeBasedEpochGenerator().generate()).name("Read Only").permissions(
                             List.of("DashboardView", "DeletePolicyRead", "DeltaFileContentView", "DeltaFileMetadataView",
-                                    "EventRead", "FlowView", "IngressRoutingRuleRead", "MetricsView", "PluginImageRepoView", "PluginsView",
+                                    "EventRead", "FlowView", "IngressRoutingRuleRead", "MetricsView", "PluginsView",
                                     "SnapshotRead", "StatusView", "SystemPropertiesRead", "UIAccess", "VersionsView"))
                             .createdAt(now).updatedAt(now).build());
             roleRepo.saveAll(defaultRoles);

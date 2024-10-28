@@ -20,8 +20,6 @@ package org.deltafi.core.plugin.deployer;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.assertj.core.api.Assertions;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -30,14 +28,10 @@ import java.io.IOException;
 
 class K8sDeployerServiceTest {
 
-    private static final PluginCoordinates PLUGIN_COORDINATES = PluginCoordinates.builder()
-            .groupId("org.deltafi")
-            .artifactId("plugin")
-            .version("1.0.0")
-            .build();
+    private static final InstallDetails INSTALL_DETAILS = InstallDetails.from("docker.io/plugin:1.0.0", "docker-cred");
 
 
-    final K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null, null);
+    final K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null);
 
     @BeforeEach
     public void setDeploymentTemplate() {
@@ -46,9 +40,7 @@ class K8sDeployerServiceTest {
 
     @Test
     void testCreateDeployment() throws IOException {
-        PluginImageRepository pluginImageRepository = getPluginImageRepository();
-
-        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, pluginImageRepository);
+        Deployment deployment = k8sDeployerService.buildDeployment(INSTALL_DETAILS);
 
         Assertions.assertThat(deployment).isEqualTo(expectedDeployment());
     }
@@ -58,7 +50,7 @@ class K8sDeployerServiceTest {
         Deployment withReplicas = expectedDeployment();
         withReplicas.getSpec().setReplicas(2);
 
-        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, getPluginImageRepository());
+        Deployment deployment = k8sDeployerService.buildDeployment(INSTALL_DETAILS);
 
         Assertions.assertThat(deployment.getSpec().getReplicas()).isNull();
         k8sDeployerService.preserveValues(deployment, withReplicas);
@@ -72,12 +64,5 @@ class K8sDeployerServiceTest {
             Assertions.fail("Could not read the file", exception);
             return null;
         }
-    }
-
-    private static PluginImageRepository getPluginImageRepository() {
-        PluginImageRepository pluginImageRepository = new PluginImageRepository();
-        pluginImageRepository.setImageRepositoryBase("docker.io/");
-        pluginImageRepository.setImagePullSecret("docker-cred");
-        return pluginImageRepository;
     }
 }

@@ -23,9 +23,6 @@ import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
@@ -53,59 +50,62 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     private final DockerClient dockerClient;
 
     private final List<String> environmentVariables;
-    private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final String dataDir;
 
-    public DockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginService pluginService,
+    public DockerDeployerService(DockerClient dockerClient,PluginService pluginService,
                                  SystemSnapshotService systemSnapshotService, EventService eventService,
                                  EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(pluginImageRepositoryService, pluginService, systemSnapshotService, eventService);
+        super(pluginService, systemSnapshotService, eventService, deltaFiPropertiesService);
         this.dockerClient = dockerClient;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
-        this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.dataDir = environmentVariableHelper.getDataDir();
     }
 
     @Override
-    DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, ArrayList<String> info) {
+    DeployResult deploy(InstallDetails installDetails) {
         List<Container> existing;
         try {
-            existing = findExisting(pluginCoordinates);
+            existing = findExisting(installDetails.appName());
             if (existing.size() > 1) {
-                return DeployResult.builder().success(false).info(info).errors(List.of("Multiple containers found for this plugin")).build();
+                return DeployResult.builder().success(false).errors(List.of("Multiple containers found for this plugin")).build();
             }
         } catch (Exception e) {
             log.error("Failed to start plugin", e);
-            return DeployResult.builder().success(false).info(info).errors(List.of("Failed to list running plugins " + e.getMessage())).build();
+            return DeployResult.builder().success(false).errors(List.of("Failed to list running plugins " + e.getMessage())).build();
         }
 
-        String imageName = pluginImageRepository.getImageRepositoryBase() + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion();
-        String imageCheckError = ensureImageExists(imageName);
+        String imageCheckError = ensureImageExists(installDetails.image());
         if (imageCheckError != null) {
-            return DeployResult.builder().success(false).info(info).errors(List.of(imageCheckError)).build();
+            return DeployResult.builder().success(false).errors(List.of(imageCheckError)).build();
         }
 
         try {
             if (isEmpty(existing)) {
-                install(pluginCoordinates, imageName);
+                install(installDetails);
             } else {
-                upgrade(existing.getFirst(), pluginCoordinates, imageName);
+                upgrade(existing.getFirst(), installDetails);
             }
 
             return new DeployResult();
         } catch (Exception e) {
-            log.error("Failed to install the  plugin with image: {}", imageName, e);
-            return DeployResult.builder().success(false).info(info).errors(List.of(e.getMessage())).build();
+            log.error("Failed to install the  plugin with image: {}", installDetails.image(), e);
+            return DeployResult.builder().success(false).errors(List.of(e.getMessage())).build();
         }
     }
 
-    private void install(PluginCoordinates pluginCoordinates, String image) {
+    private void install(InstallDetails installDetails) {
         Map<String, String> containerLabels = Map.of(DELTAFI_GROUP, "deltafi-plugins", "logging", "promtail", "logging_jobname", "containerlogs");
 
+        List<String> envVars = new ArrayList<>(environmentVariables);
+        envVars.add(IMAGE + "=" + installDetails.image());
+        if (StringUtils.isNotBlank(installDetails.imagePullSecret())) {
+            envVars.add(IMAGE_PULL_SECRET + "=" + installDetails.imagePullSecret());
+        }
+
         CreateContainerResponse containerResponse = null;
-        try (CreateContainerCmd containerCmd = dockerClient.createContainerCmd(image)
-                .withName(pluginCoordinates.getArtifactId())
-                .withEnv(environmentVariables)
+        try (CreateContainerCmd containerCmd = dockerClient.createContainerCmd(installDetails.image())
+                .withName(installDetails.appName())
+                .withEnv(envVars)
                 .withLabels(containerLabels)
                 .withHealthcheck(PLUGIN_HEALTH_CHECK)
                 .withHostConfig(hostConfig())) {
@@ -121,12 +121,12 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         }
     }
 
-    private void upgrade(Container toUpgrade, PluginCoordinates pluginCoordinates, String imageName) {
+    private void upgrade(Container toUpgrade, InstallDetails installDetails) {
         String originalName = toUpgrade.getNames().length > 0 ? toUpgrade.getNames()[0] : toUpgrade.getId();
         String newName = originalName + "-upgrading";
         dockerClient.renameContainerCmd(toUpgrade.getId()).withName(newName).exec();
         try {
-            install(pluginCoordinates, imageName);
+            install(installDetails);
             stopAndRemoveContainer(toUpgrade.getId());
         } catch (Exception e) {
             if (deltaFiPropertiesService.getDeltaFiProperties().isPluginAutoRollback()) {
@@ -137,11 +137,11 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     }
 
     @Override
-    Result removePluginResources(PluginCoordinates pluginCoordinates) {
-        List<Container> containers = findExisting(pluginCoordinates);
+    Result removePluginResources(String appName) {
+        List<Container> containers = findExisting(appName);
 
         if (isEmpty(containers)) {
-            return Result.builder().success(false).errors(List.of("No container was found for " + pluginCoordinates.groupAndArtifact())).build();
+            return Result.builder().success(false).errors(List.of("No container was found for " + appName)).build();
         }
 
         containers.stream().map(Container::getId).forEach(this::stopAndRemoveContainer);
@@ -197,10 +197,10 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         dockerClient.removeContainerCmd(containerId).exec();
     }
 
-    private List<Container> findExisting(PluginCoordinates pluginCoordinates) {
+    private List<Container> findExisting(String appName) {
         return dockerClient.listContainersCmd()
                 .withShowAll(true)
-                .withNameFilter(Set.of(pluginCoordinates.getArtifactId()))
+                .withNameFilter(Set.of(appName))
                 .exec();
     }
 

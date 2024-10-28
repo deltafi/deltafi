@@ -384,47 +384,28 @@ _create_registry() {
 
 _install_plugins() {
   for plugin in "${PLUGINS[@]}"; do
-    local version
-    version=$(_plugin_field "$plugin" "version")
-    local coordinates
-    coordinates=$(_plugin_field "$plugin" "plugin_coordinates")
-    local imageRepo
-    imageRepo=$(_plugin_field "$plugin" "image_repository_base")
+    local image
+    image=$(_plugin_field "$plugin" "image")
+
+    if [[ $image == null ]]; then
+      image="localhost:5000/$plugin"
+    fi
+
     local imagePullSecret
     imagePullSecret=$(_plugin_field "$plugin" "pull_secret")
-    local deploymentExtras
-    deploymentExtras=$(_plugin_field "$plugin" "deployment_extras_file")
 
     local options=()
-
-    if [[ $version == null ]]; then
-      version=latest
-    fi
-
-    if [[ $coordinates == null ]]; then
-      coordinates="org.deltafi:$plugin:$version"
-    fi
-
-    if [[ $imageRepo != null ]]; then
-      options=("${options[@]}" "--image-repository-base $imageRepo")
-    else
-      options=("${options[@]}" "--image-repository-base localhost:5000")
-    fi
 
     if [[ $imagePullSecret != null ]]; then
       options=("${options[@]}" "--pull-secret $imagePullSecret")
     fi
 
-    if [[ $deploymentExtras != null ]]; then
-      options=("${options[@]}" "--deployment-extras-file $plugin/$deploymentExtras")
-    fi
-
     _attention "Installing $plugin"
     _info -s "Plugin $plugin"
-    _info -a "Coordinates: $coordinates"
+    _info -a "Image: $image"
     _info -a "Options:     \"${options[*]}\""
 
-    _conditional "$plugin plugin" _annotated_subshell _kind_deltafi install-plugin "$coordinates" "${options[@]}"
+    _conditional "$plugin plugin" _annotated_subshell _kind_deltafi install-plugin "$image" "${options[@]}"
   done
 }
 

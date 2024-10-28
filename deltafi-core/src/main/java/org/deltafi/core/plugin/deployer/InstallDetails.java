@@ -17,23 +17,22 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.types.Result;
+public record InstallDetails(String image, String appName, String imagePullSecret) {
 
-public interface DeployerService {
+    public static InstallDetails from(String image) {
+        return from(image, null);
+    }
 
-    /**
-     * Install the plugin using the given image and imagePullSecret
-     * @param image used to install the plugin
-     * @param imagePullSecret optional - name of the secret holding the credentials needed to pull the image
-     * @return result of the installation or upgrade process
-     */
-    Result installOrUpgradePlugin(String image, String imagePullSecret);
+    public static InstallDetails from(String image, String imagePullSecret) {
+        int lastColon = image.lastIndexOf(':');
+        int lastSlash = image.lastIndexOf('/');
 
-    /**
-     * Uninstall the plugin with the given coordinates
-     * @param pluginCoordinates coordinates of the plugin to uninstall
-     * @return result of the uninstallation process
-     */
-    Result uninstallPlugin(PluginCoordinates pluginCoordinates);
+        String imageNoTag = image;
+        if (lastColon > lastSlash) {
+            imageNoTag = image.substring(0, lastColon);
+        }
+
+        String appName = lastSlash != -1 ? imageNoTag.substring(lastSlash + 1) : imageNoTag;
+        return new InstallDetails(image, appName, imagePullSecret);
+    }
 }

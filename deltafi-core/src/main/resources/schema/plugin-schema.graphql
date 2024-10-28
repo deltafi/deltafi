@@ -22,6 +22,10 @@ A Plugin is a collection of actions. It may depend on other Plugins.
 type Plugin {
     "The identifying coordinates"
     pluginCoordinates: PluginCoordinates!
+    "The image used to install this plugin"
+    image: String
+    "The name of the secret containing the registry credentials to pull the image"
+    imagePullSecret: String
     "A user-friendly name"
     displayName: String!
     "A description of the functionality provided"
@@ -83,41 +87,10 @@ input ActionDescriptorInput {
     schema: JSON
 }
 
-type PluginImageRepository {
-    "The base of the image repository to pull from for one or more plugin groups (i.e. docker.io/deltafi)"
-    imageRepositoryBase: String!
-    "The plugin groups whose images are hosted in this repository"
-    pluginGroupIds: [String]!
-    "An optional secret used to pull from this repository"
-    imagePullSecret: String
-}
-
-input PluginImageRepositoryInput {
-    "The base of the image repository to pull from for one or more plugin groups (i.e. docker.io/deltafi)"
-    imageRepositoryBase: String!
-    "The plugin groups whose images are hosted in this repository"
-    pluginGroupIds: [String]!
-    "An optional secret used to pull from this repository"
-    imagePullSecret: String
-}
-
-extend type Query {
-    "Get all of the configured plugin image repositories"
-    getPluginImageRepositories: [PluginImageRepository]!
-}
-
 extend type Mutation {
-    "Add an image repository for one or more groups of plugins"
-    savePluginImageRepository(pluginImageRepository: PluginImageRepositoryInput!): PluginImageRepository!
 
-    "Remove an image repository for one or more groups of plugins"
-    removePluginImageRepository(id: String!): Result!
-
-    "Install the plugin with the given coordinates"
-    installPlugin(pluginCoordinates: PluginCoordinatesInput!): Result!
-
-    "Install the plugin with optional overrides for stored fields"
-    installPluginWithSettings(pluginCoordinates: PluginCoordinatesInput!, imageRepositoryOverride: String, imagePullSecretOverride: String, customDeploymentYaml: String): Result!
+    "Install the plugin from the given image name"
+    installPlugin(image: String!, imagePullSecret: String): Result!
 
     "Uninstall the plugin with the given coordinates"
     uninstallPlugin(pluginCoordinates: PluginCoordinatesInput!): Result!

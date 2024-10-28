@@ -27,21 +27,17 @@ import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.plugin.deployer.DeployerService;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.Result;
 
 import java.util.Collection;
-import java.util.List;
 
 @DgsComponent
 @RequiredArgsConstructor
 public class PluginDataFetcher {
     private final PluginService pluginService;
-    private final PluginImageRepositoryService pluginImageRepositoryService;
     private final DeployerService deployerService;
     private final CoreAuditLogger auditLogger;
 
@@ -51,31 +47,11 @@ public class PluginDataFetcher {
         return pluginService.getPluginsWithVariables().stream().map(PluginEntity::toPlugin).toList();
     }
 
-    @DgsQuery
-    @NeedsPermission.PluginImageRepoView
-    public List<PluginImageRepository> getPluginImageRepositories() {
-        return pluginImageRepositoryService.getPluginImageRepositories();
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginImageRepoWrite
-    public PluginImageRepository savePluginImageRepository(@InputArgument PluginImageRepository pluginImageRepository) {
-        auditLogger.audit("saved plugin image repository {}", pluginImageRepository);
-        return pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
-    }
-
     @DgsMutation
     @NeedsPermission.PluginInstall
-    public Result installPlugin(@InputArgument PluginCoordinates pluginCoordinates) {
-        auditLogger.audit("installed plugin {}", pluginCoordinates);
-        return deployerService.installOrUpgradePlugin(pluginCoordinates, null, null, null);
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginInstall
-    public Result installPluginWithSettings(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument String imageRepositoryOverride, @InputArgument String imagePullSecretOverride, @InputArgument String customDeploymentYaml) {
-        auditLogger.audit("installed plugin {} with image repo {}, pull secret name {}, and customization of {}", pluginCoordinates, imageRepositoryOverride, imagePullSecretOverride, customDeploymentYaml);
-        return deployerService.installOrUpgradePlugin(pluginCoordinates, imageRepositoryOverride, imagePullSecretOverride, customDeploymentYaml);
+    public Result installPlugin(@InputArgument String image, @InputArgument String imagePullSecret) {
+        auditLogger.audit("installed plugin {}", image);
+        return deployerService.installOrUpgradePlugin(image, imagePullSecret);
     }
 
     @DgsMutation
@@ -83,13 +59,6 @@ public class PluginDataFetcher {
     public Result uninstallPlugin(@InputArgument PluginCoordinates pluginCoordinates) {
         auditLogger.audit("uninstalled plugin {}", pluginCoordinates);
         return deployerService.uninstallPlugin(pluginCoordinates);
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginImageRepoDelete
-    public Result removePluginImageRepository(@InputArgument String id) {
-        auditLogger.audit("removed plugin image repository {}", id);
-        return pluginImageRepositoryService.removePluginImageRepository(id);
     }
 
     @DgsQuery

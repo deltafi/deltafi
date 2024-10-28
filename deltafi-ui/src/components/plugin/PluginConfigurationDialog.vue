@@ -30,17 +30,15 @@
           </Message>
         </div>
         <dl>
-          <dt>{{ pluginConfigurationMap.get("groupId").header }}</dt>
+          <dt>{{ pluginConfigurationMap.get("image").header }}</dt>
           <dd>
-            <InputText v-model.trim="model.groupId" :placeholder="pluginConfigurationMap.get('groupId').placeholder" :disabled="pluginConfigurationMap.get('groupId').disabled" class="inputWidth" />
+            <InputText v-model.trim="model.image" :placeholder="pluginConfigurationMap.get('image').placeholder" :disabled="pluginConfigurationMap.get('image').disabled" class="inputWidth" />
           </dd>
-          <dt>{{ pluginConfigurationMap.get("artifactId").header }}</dt>
+          <dt>{{ pluginConfigurationMap.get("imagePullSecret").header }}
+            <i v-tooltip="pluginConfigurationMap.get('imagePullSecret').tooltip" class="ml-0 text-muted fas fa-info-circle fa-fw" />
+          </dt>
           <dd>
-            <InputText v-model.trim="model.artifactId" :placeholder="pluginConfigurationMap.get('artifactId').placeholder" :disabled="pluginConfigurationMap.get('artifactId').disabled" class="inputWidth" />
-          </dd>
-          <dt>{{ pluginConfigurationMap.get("version").header }}</dt>
-          <dd>
-            <InputText v-model.trim="model.version" :placeholder="pluginConfigurationMap.get('version').placeholder" :disabled="pluginConfigurationMap.get('version').disabled" class="inputWidth" />
+            <InputText v-model.trim="model.imagePullSecret" :placeholder="pluginConfigurationMap.get('imagePullSecret').placeholder" :disabled="pluginConfigurationMap.get('imagePullSecret').disabled" class="inputWidth" />
           </dd>
         </dl>
       </div>
@@ -76,17 +74,16 @@ const props = defineProps({
   },
 });
 
-const pluginCoordinates = {
-  groupId: null,
-  artifactId: null,
-  version: null,
+const pluginInstallDetails = {
+  image: null,
+  imagePullSecret: null
 };
 
 const notify = useNotifications();
 const submitLoad = ref(false);
-const { errors, installPlugin, uninstallPlugin } = usePlugins();
+const { errors, installPlugin } = usePlugins();
 const { closeDialogCommand } = reactive(props);
-const rowData = ref(Object.assign({}, props.rowDataProp || pluginCoordinates));
+const rowData = ref(Object.assign({}, props.rowDataProp || pluginInstallDetails));
 const emit = defineEmits(["reloadPlugins"]);
 const isMounted = ref(useMounted());
 const errorsList = ref([]);
@@ -109,9 +106,8 @@ const model = computed({
 const originalModel = Object.assign({}, model.value);
 
 const pluginConfigurationMap = new Map([
-  ["groupId", { header: "Group Id*", placeholder: "e.g. org.deltafi.passthrough" }],
-  ["artifactId", { header: "Artifact Id*", placeholder: "e.g. passthrough" }],
-  ["version", { header: "Version*", placeholder: "e.g. 1.0.1, <commit hash>" }],
+  ["image", { header: "Image*", placeholder: "e.g. docker.io/deltafi/deltafi-passthrough:1.0.1" }],
+  ["imagePullSecret", { header: "Image Pull Secret", placeholder: "e.g. docker-secret", tooltip: "Optional - the name of the secret that holds the credentials necessary to pull this image" }],
 ]);
 
 const clearErrors = () => {
@@ -132,35 +128,17 @@ const submit = async () => {
 const pluginUpdateFlow = async () => {
   clearErrors();
   // Check to see if all required fields have values, is not return out
-  if (!Object.values(model.value).every((x) => x)) {
-    errorsList.value.push("You must provide a Group Id, Artifact Id, and Version");
+
+  if (_.isEmpty(model.value.image)) {
+    errorsList.value.push("You must provide an image");
     await nextTick();
     return;
   }
 
-  // Check to see if this is a new plugin or if updating an existing plugins groupId or artifactId. If its a new plugin continue, if it's an existing plugin uninstall the plugin and continue
-  if (Object.values(originalModel).every((x) => x) && (!_.isEqual(originalModel.groupId, model.value.groupId) || !_.isEqual(originalModel.artifactId, model.value.artifactId))) {
-    notify.info(`Existing Plugin update ${originalModel.artifactId}`, `Attempting to uninstall ${originalModel.artifactId}.`, 4000);
-    let response = await uninstallPlugin(originalModel.groupId, originalModel.artifactId, originalModel.version);
-    let responseErrors = _.get(response?.uninstallPlugin, "errors", null) ?? errors.value;
-    if (!_.isEmpty(responseErrors)) {
-      for (let errorMessage of responseErrors) {
-        if (Object.hasOwn(errorMessage, "message")) {
-          errorsList.value.push(errorMessage.message);
-        } else {
-          errorsList.value.push(_.trim(errorMessage));
-        }
-      }
-      notify.error(`Removing plugin ${originalModel.artifactId} failed`, `Plugin ${originalModel.artifactId} was not removed.`, 4000);
-      return;
-    } else {
-      notify.success(`Removed ${originalModel.artifactId}`, `Successfully removed ${originalModel.artifactId}.`, 4000);
-    }
-  }
-  notify.info(`Installing plugin ${model.value.artifactId}`, `Attempting to install ${model.value.artifactId}.`, 4000);
+  notify.info(`Installing plugin ${model.value.image}`, `Attempting to install ${model.value.image}.`, 4000);
 
   // Install the plugin
-  let response = await installPlugin(model.value.groupId, model.value.artifactId, model.value.version);
+  let response = await installPlugin(model.value.image, model.value.imagePullSecret);
   let responseErrors = _.get(response?.installPlugin, "errors", null) ?? errors.value;
   if (!_.isEmpty(responseErrors)) {
     for (let errorMessage of responseErrors) {
@@ -170,15 +148,15 @@ const pluginUpdateFlow = async () => {
         errorsList.value.push(_.trim(errorMessage));
       }
     }
-    notify.error(`Installing ${model.value.artifactId} failed`, `Plugin ${model.value.artifactId} was not installed.`, 4000);
+    notify.error(`Installing ${model.value.image} failed`, `Plugin ${model.value.image} was not installed.`, 4000);
     return;
   } else {
-    notify.success(`Installed ${model.value.artifactId}`, `Successfully installed ${model.value.artifactId}.`, 4000);
+    notify.success(`Installed ${model.value.image}`, `Successfully installed ${model.value.image}.`, 4000);
   }
 };
 
 const disableSubmit = computed(() => {
-  return _.isEqual(model.value, originalModel) || !Object.values(model.value).every((x) => x);
+  return _.isEqual(model.value, originalModel) || _.isEmpty(model.value.image);
 });
 </script>
 

@@ -24,16 +24,13 @@ from deltafi.plugin import Plugin, PluginCoordinates
 from .sample.actions import SampleTransformAction
 
 
-def test_plugin_registration_json():
+def test_plugin_registration_json(monkeypatch):
+    set_mock_env(monkeypatch)
     plugin_coordinates = PluginCoordinates("plugin-group", "project-name", "1.0.0")
     plugin = Plugin("plugin-description", plugin_name="project-name",
                     plugin_coordinates=plugin_coordinates,
                     actions=[SampleTransformAction])
 
-    print("NARDO")
-    print(get_expected_json())
-    print("NARDO 2")
-    print(plugin.registration_json())
     assert get_expected_json() == plugin.registration_json()
 
 
@@ -41,13 +38,15 @@ def test_plugin_registration_json_from_env(monkeypatch):
     monkeypatch.setenv("PROJECT_GROUP", "plugin-group")
     monkeypatch.setenv("PROJECT_NAME", "project-name")
     monkeypatch.setenv("PROJECT_VERSION", "1.0.0")
+    set_mock_env(monkeypatch)
 
     plugin = Plugin("plugin-description", actions=[SampleTransformAction])
 
     assert get_expected_json() == plugin.registration_json()
 
 
-def test_plugin_find_actions():
+def test_plugin_find_actions(monkeypatch):
+    set_mock_env(monkeypatch)
     plugin_coordinates = PluginCoordinates("plugin-group", "project-name", "1.0.0")
     plugin = Plugin("plugin-description", plugin_name="project-name",
                     plugin_coordinates=plugin_coordinates,
@@ -57,7 +56,7 @@ def test_plugin_find_actions():
 
 
 def test_plugin_register(monkeypatch):
-    monkeypatch.setenv("CORE_URL", "http://core")
+    set_mock_env(monkeypatch)
     plugin_coordinates = PluginCoordinates("plugin-group", "project-name", "1.0.0")
     plugin = Plugin("plugin-description", plugin_name="project-name",
                     plugin_coordinates=plugin_coordinates,
@@ -68,6 +67,11 @@ def test_plugin_register(monkeypatch):
     mock_post.assert_called_once_with("http://core/plugins",
                                       headers={'Content-type': 'application/json'},
                                       json=get_expected_json())
+
+def set_mock_env(monkeypatch):
+    monkeypatch.setenv("CORE_URL", "http://core")
+    monkeypatch.setenv("IMAGE", "docker.io/group/plugin:1.0.0")
+    monkeypatch.setenv("IMAGE_PULL_SECRET", "docker-creds")
 
 
 def get_expected_json():
@@ -81,6 +85,8 @@ def get_expected_json():
         "displayName": "project-name",
         "description": "plugin-description",
         "actionKitVersion": expected_kit_version,
+        "image": "docker.io/group/plugin:1.0.0",
+        "imagePullSecret": "docker-creds",
         "dependencies": [
 
         ],

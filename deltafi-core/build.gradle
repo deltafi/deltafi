@@ -104,8 +104,6 @@ generateJava {
 			"Plugin": "org.deltafi.common.types.Plugin",
 			"PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
 			"PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
-			"PluginImageRepository": "org.deltafi.core.plugin.deployer.image.PluginImageRepository",
-			"PluginImageRepositoryInput": "org.deltafi.core.plugin.deployer.image.PluginImageRepository",
 			"PluginProperties": "org.deltafi.core.configuration.PluginProperties",
 			"PluginPropertiesInput": "org.deltafi.core.configuration.PluginProperties",
 			"PluginVariables": "org.deltafi.core.types.PluginVariables",

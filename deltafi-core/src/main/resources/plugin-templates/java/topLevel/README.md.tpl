@@ -4,11 +4,11 @@
 
 Install Steps:
 
-1. Add the image repository for the {{groupId}} or set the default system property to point to the image repository where this image will be published
-2. Run the following
+1. Build and publish the image (`./gradlew dockerPushLocal` if you are using the org.deltafi.plugin-convention convention)
+2. Run the following (pass the image created above as the argument for the install)
 
 ```bash
-deltafi install-plugin {{groupId}}:{{artifactId}}:<IMAGE-TAG>
+deltafi install-plugin localhost:5000/{{artifactId}}:latest
 ```
 
 Local KinD Setup
@@ -18,7 +18,5 @@ Local KinD Setup
 ```yaml
 plugins:
   - name: {{artifactId}}
-    plugin_coordinates: "{{groupId}}:{{artifactId}}:latest"
-    image_repository_base: "localhost:5000/"
     url: 'git@<plugin-git-repo>'
 ```

@@ -390,13 +390,12 @@ public class PluginService implements Snapshotter {
         return getPlugins().stream().map(PluginEntity::getPluginCoordinates).collect(Collectors.toSet());
     }
 
-    public List<String> canBeUninstalled(PluginCoordinates pluginCoordinates) {
-        PluginEntity plugin = getPlugin(pluginCoordinates).orElse(null);
-
-        if (Objects.isNull(plugin)) {
+    public List<String> canBeUninstalled(PluginEntity plugin) {
+        if (plugin == null) {
             return List.of("Plugin not found");
         }
 
+        PluginCoordinates pluginCoordinates = plugin.getPluginCoordinates();
         List<String> blockers = pluginUninstallChecks.stream()
                 .map(pluginUninstallCheck -> pluginUninstallCheck.uninstallBlockers(plugin))
                 .filter(Objects::nonNull)

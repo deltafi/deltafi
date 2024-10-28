@@ -31,10 +31,9 @@ import org.deltafi.actionkit.action.transform.Join;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.*;
 import org.deltafi.common.util.ResourceMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -46,19 +45,20 @@ public class PluginRegistrar {
             .registerModule(new JavaTimeModule())
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-    @Autowired(required = false)
-    private final List<Action<?, ?, ?>> actions = Collections.emptyList();
+    private final List<Action<?, ?, ?>> actions;
+    private final BuildProperties buildProperties;
+    private final ApplicationContext applicationContext;
+    private final Environment environment;
 
-    @Autowired
-    BuildProperties buildProperties;
-
-    @Autowired
-    ApplicationContext applicationContext;
-
-    @Value("${CORE_URL}")
-    private String coreUrl;
+    public PluginRegistrar(List<Action<?, ?, ?>> actions, BuildProperties buildProperties, ApplicationContext applicationContext, Environment environment) {
+        this.actions = actions;
+        this.buildProperties = buildProperties;
+        this.applicationContext = applicationContext;
+        this.environment = environment;
+    }
 
     public void register() {
+        String coreUrl = Objects.requireNonNull(environment.getProperty("CORE_URL"));
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
@@ -75,6 +75,8 @@ public class PluginRegistrar {
                 .build();
 
         PluginRegistration.PluginRegistrationBuilder pluginRegistrationBuilder = PluginRegistration.builder()
+                .image(environment.getProperty("IMAGE"))
+                .imagePullSecret(environment.getProperty("IMAGE_PULL_SECRET"))
                 .pluginCoordinates(pluginCoordinates)
                 .displayName(buildProperties.getName())
                 .description(buildProperties.get("description"))
@@ -136,7 +138,7 @@ public class PluginRegistrar {
         Resource variablesResource = findVariables();
         if (variablesResource == null) {
             log.info("No flow variables have been defined");
-            return null;
+            return Collections.emptyList();
         }
 
         try {

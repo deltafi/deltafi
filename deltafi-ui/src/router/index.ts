@@ -32,7 +32,6 @@ import FilteredPage from "@/pages/FilteredPage.vue";
 import TransformBuilderPage from "@/pages/TransformBuilderPage.vue";
 import TransformsPage from "@/pages/TransformsPage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
-import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
 import RolesPage from "@/pages/RolesPage.vue";
 import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
@@ -154,14 +153,6 @@ const routes: Array<RouteRecordRaw> = [
     component: PluginsPage,
     meta: {
       permission: "PluginsView",
-    },
-  },
-  {
-    path: "/config/plugin-repositories",
-    name: "Repositories",
-    component: PluginRepositoryPage,
-    meta: {
-      permission: "PluginImageRepoView",
     },
   },
   {

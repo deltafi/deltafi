@@ -222,24 +222,6 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('PluginVariableUpdate'" + OR_ADMIN)
     public @interface PluginVariableUpdate {}
 
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('PluginImageRepoView'" + OR_ADMIN)
-    public @interface PluginImageRepoView {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('PluginImageRepoWrite'" + OR_ADMIN)
-    public @interface PluginImageRepoWrite {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('PluginImageRepoDelete'" + OR_ADMIN)
-    public @interface PluginImageRepoDelete {}
-
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('PluginRegistration'" + OR_ADMIN)

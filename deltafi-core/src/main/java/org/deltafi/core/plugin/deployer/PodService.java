@@ -21,13 +21,11 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.PluginCoordinates;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.deltafi.core.plugin.deployer.K8sDeployerService.APP_LABEL_KEY;
-import static org.deltafi.core.plugin.deployer.K8sDeployerService.PLUGIN_GROUP_LABEL_KEY;
 
 /**
  * Service to retrieve k8s events and logs for a given pod
@@ -38,10 +36,9 @@ public class PodService {
     public static final String DELTAFI_PLUGINS_GROUP = "deltafi-plugins";
     private final KubernetesClient k8sClient;
 
-    Optional<Pod> findNotReadyPluginPod(PluginCoordinates pluginCoordinates) {
+    Optional<Pod> findNotReadyPluginPod(InstallDetails installDetails) {
         return k8sClient.pods()
-                .withLabel(APP_LABEL_KEY, pluginCoordinates.getArtifactId())
-                .withLabel(PLUGIN_GROUP_LABEL_KEY, pluginCoordinates.getGroupId())
+                .withLabel(APP_LABEL_KEY, installDetails.appName())
                 .withLabel(GROUP, DELTAFI_PLUGINS_GROUP)
                 .resources()
                 .filter(podResource -> !podResource.isReady())

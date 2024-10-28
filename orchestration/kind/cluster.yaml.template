@@ -10,7 +10,6 @@ persistent_volume:
   storage: '1G'
 plugins:
   # - name: deltafi-something
-  #   version: latest                                                      # Not required - default is 'latest'
-  #   plugin_coordinates: "org.deltafi.something:deltafi-something:latest" # Not required - default is 'org.deltafi:<plugin name>:<version>'
-  #   image_repository_base: localhost:5000                                # Not required - default is localhost:5000
-  #   url: 'https://gitlab.com/deltafi/plugins/deltafi-something'          # Not required if repo is already cloned
+  #   image: localhost:5000/deltafi-something:latest                 # Not required - defaults localhost:5000/{name}
+  #   pull_secret: docker-creds                                      # Not required - name of the secret containing credentials needed to pull the image
+  #   url: 'https://gitlab.com/deltafi/plugins/deltafi-something'    # Not required if repo is already cloned

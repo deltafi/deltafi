@@ -196,12 +196,6 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("PluginsView")),
       },
       {
-        name: "Repositories",
-        icon: "fas fa-code-branch fa-fw",
-        path: "/config/plugin-repositories",
-        visible: computed(() => hasPermission("PluginImageRepoView")),
-      },
-      {
         name: "Delete Policies",
         icon: "fas fa-landmark fa-fw",
         path: "/config/delete-policies",

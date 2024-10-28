@@ -21,7 +21,6 @@ import com.networknt.schema.utils.StringUtils;
 import lombok.Data;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Holds the system properties. To add a new property that will be exposed
@@ -70,9 +69,6 @@ public class DeltaFiProperties {
 
     @PropertyInfo(description = "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", defaultValue = "1000")
     private long ingressDiskSpaceRequirementInMb = 1000;
-
-    @PropertyInfo(description = "Base of the default image repository used for plugins", defaultValue = "docker.io/deltafi/")
-    private String pluginImageRepositoryBase = "docker.io/deltafi/";
 
     @PropertyInfo(description = "Default imagePullSecret used in plugin deployments")
     private String pluginImagePullSecret;
@@ -184,10 +180,6 @@ public class DeltaFiProperties {
     public void setIngressDiskSpaceRequirementInMb(long ingressDiskSpaceRequirementInMb) {
         positiveLongCheck(ingressDiskSpaceRequirementInMb, "ingressDiskSpaceRequirementInMb");
         this.ingressDiskSpaceRequirementInMb = ingressDiskSpaceRequirementInMb;
-    }
-
-    public void setPluginImageRepositoryBase(String pluginImageRepositoryBase) {
-        this.pluginImageRepositoryBase = Objects.requireNonNullElse(pluginImageRepositoryBase, "");
     }
 
     public void setPluginDeployTimeout(Duration pluginDeployTimeout) {

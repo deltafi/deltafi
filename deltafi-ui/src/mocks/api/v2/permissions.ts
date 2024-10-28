@@ -129,21 +129,6 @@ const generateData = () => {
       description: "Grants the ability to edit plugin variables"
     },
     {
-      category: "Plugins",
-      name: "PluginImageRepoView",
-      description: "Grants the ability to view Plugin Image Repo Configuration"
-    },
-    {
-      category: "Plugins",
-      name: "PluginImageRepoWrite",
-      description: "Grants the ability to create or update Plugin Image Repo Configuration"
-    },
-    {
-      category: "Plugins",
-      name: "PluginImageRepoDelete",
-      description: "Grants the ability to delete Plugin Image Repo Configuration"
-    },
-    {
       category: "System Properties",
       name: "SystemPropertiesRead",
       description: "Grants the ability to view System Properties"

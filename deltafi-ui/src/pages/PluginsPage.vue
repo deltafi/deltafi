@@ -39,7 +39,7 @@
             <Column :style="{ width: '5%' }" class="plugin-actions-column" :hidden="!$hasSomePermissions('PluginInstall', 'PluginUninstall')">
               <template #body="{ data }">
                 <div class="d-flex justify-content-between">
-                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="data.pluginCoordinates" @reload-plugins="loadPlugins()">
+                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="data" @reload-plugins="loadPlugins()">
                     <Button v-has-permission:PluginInstall v-tooltip.top="`Update Plugin`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
                   </DialogTemplate>
                   <PluginRemoveButton v-has-permission:PluginUninstall :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" />

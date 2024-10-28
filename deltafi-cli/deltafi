@@ -167,7 +167,6 @@ Commands:
   load-policies                 load delete policies from a JSON file
   minio-cli                     launch the minio CLI
   performance-test              run performance tests against DeltaFi
-  plugin-image-repo             manage the image repositories that hold plugin images
   plugin-init                   create a new plugin project
   postgres-cli                  launch the Postgres CLI
   postgres-eval                 run SQL in Postgres
@@ -282,9 +281,6 @@ case "$1" in
     ;;
   performance-test)
     BUNDLE_GEMFILE=$DELTAFICLI_WORKDIR/Gemfile bundle exec "$DELTAFICLI_WORKDIR/commands/performance-test" "$@"
-    ;;
-  plugin-image-repo)
-    "$DELTAFICLI_WORKDIR/commands/plugin-image-repo" "$@"
     ;;
   plugin-init)
     "$DELTAFICLI_WORKDIR/commands/plugin-init" "$@"

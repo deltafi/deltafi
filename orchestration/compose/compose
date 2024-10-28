@@ -658,9 +658,6 @@ _install_plugins() {
 }
 
 _post_install() {
-
-  _apply_settings
-
   while [[ $# -gt 0 ]]; do
     file="$1"
     shift
@@ -680,24 +677,7 @@ _create_data_dirs() {
   fi
 }
 
-_set_state() {
-  local compose_projects
-  compose_projects=$(docker compose ls -q)
-  if [[ $compose_projects == *"deltafi"* ]]; then
-    PREVIOUS_COMPOSE_RUNNING=true
-  else
-    PREVIOUS_COMPOSE_RUNNING=false
-  fi
-}
-
-_apply_settings() {
-  if [ "$PREVIOUS_COMPOSE_RUNNING" = "false" ]; then
-    deltafi system-property set pluginImageRepositoryBase "" >/dev/null
-  fi
-}
-
 start_compose() {
-  _set_state
   _create_data_dirs
   _create_network
   _check_local_fqdns

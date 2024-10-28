@@ -23,7 +23,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
 import org.deltafi.core.generated.types.BackOff;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.intellij.lang.annotations.Language;
@@ -36,15 +35,11 @@ import java.util.UUID;
 public class SystemSnapshotDatafetcherTestHelper {
 
     public static SystemSnapshot importSystemSnapshot(DgsQueryExecutor dgsQueryExecutor) {
-
-        TypeRef<SystemSnapshot> systemSnapshotTypeRef = new TypeRef<>() {
-        };
-
         @Language("GraphQL") String mutation = IMPORT_SNAPSHOT.replace("$projection", PROJECTION);
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 mutation,
                 "data.importSnapshot",
-                systemSnapshotTypeRef);
+                new TypeRef<>() {});
     }
 
     public static Result restoreSnapshot(DgsQueryExecutor dgsQueryExecutor) {
@@ -67,7 +62,6 @@ public class SystemSnapshotDatafetcherTestHelper {
         setDeletePolicies(systemSnapshot);
         setDeltaFiProperties(systemSnapshot);
         setPluginVariables(systemSnapshot);
-        setPluginImageRepositories(systemSnapshot);
         setInstalledPlugins(systemSnapshot);
         return systemSnapshot;
     }
@@ -143,30 +137,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                 .value("test, test").build();
         pluginVariables.setVariables(List.of(annotations, sampleList));
         systemSnapshot.setPluginVariables(List.of(pluginVariables));
-    }
-
-    private static void setPluginImageRepositories(SystemSnapshot systemSnapshot) {
-        PluginImageRepository passthrough = new PluginImageRepository();
-        passthrough.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-passthrough/");
-        passthrough.setPluginGroupIds(List.of("org.deltafi.passthrough"));
-        passthrough.setImagePullSecret("docker-secret");
-
-        PluginImageRepository json = new PluginImageRepository();
-        json.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-json-validation/");
-        json.setPluginGroupIds(List.of("org.deltafi.jsonvalidations"));
-        json.setImagePullSecret("docker-secret");
-
-        PluginImageRepository stix = new PluginImageRepository();
-        stix.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-stix/");
-        stix.setPluginGroupIds(List.of("org.deltafi.stix"));
-        stix.setImagePullSecret("docker-secret");
-
-        PluginImageRepository pythonPoc = new PluginImageRepository();
-        pythonPoc.setImageRepositoryBase("registry.gitlab.com/deltafi/deltafi-python-poc/");
-        pythonPoc.setPluginGroupIds(List.of("org.deltafi.python-poc"));
-        pythonPoc.setImagePullSecret("docker-secret");
-
-        systemSnapshot.setPluginImageRepositories(List.of(passthrough, json, stix, pythonPoc));
     }
 
     private static void setInstalledPlugins(SystemSnapshot systemSnapshot) {
@@ -263,28 +233,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 linkType: EXTERNAL
                             }
                         ]
-                        pluginImageRepositories: [
-                            {
-                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-passthrough/"
-                                pluginGroupIds: ["org.deltafi.passthrough"]
-                                imagePullSecret: "docker-secret"
-                            }
-                            {
-                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-json-validation/"
-                                pluginGroupIds: ["org.deltafi.jsonvalidations"]
-                                imagePullSecret: "docker-secret"
-                            }
-                            {
-                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-stix/"
-                                pluginGroupIds: ["org.deltafi.stix"]
-                                imagePullSecret: "docker-secret"
-                            }
-                            {
-                                imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-python-poc/"
-                                pluginGroupIds: ["org.deltafi.python-poc"]
-                                imagePullSecret: "docker-secret"
-                            }
-                        ]
                         installedPlugins: [
                             {
                                 groupId: "org.deltafi.python-poc"
@@ -373,11 +321,6 @@ public class SystemSnapshotDatafetcherTestHelper {
               url
               description
               linkType
-            }
-            pluginImageRepositories {
-              imageRepositoryBase
-              pluginGroupIds
-              imagePullSecret
             }
             installedPlugins {
               groupId

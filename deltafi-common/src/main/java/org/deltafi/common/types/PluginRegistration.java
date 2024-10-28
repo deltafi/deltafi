@@ -26,6 +26,8 @@ import java.util.List;
 @Data
 @Builder
 public class PluginRegistration {
+    private String image;
+    private String imagePullSecret;
     private PluginCoordinates pluginCoordinates;
     private String displayName;
     private String description;
@@ -38,6 +40,8 @@ public class PluginRegistration {
 
     public Plugin toPlugin() {
         Plugin plugin = new Plugin();
+        plugin.setImage(image);
+        plugin.setImagePullSecret(imagePullSecret);
         plugin.setPluginCoordinates(pluginCoordinates);
         plugin.setDisplayName(displayName);
         plugin.setDescription(description);

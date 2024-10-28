@@ -17,14 +17,12 @@
  */
 package org.deltafi.core.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.repo.PluginRepository;
-import org.deltafi.core.types.GroupIdArtifactId;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
@@ -149,49 +147,43 @@ class PluginServiceTest {
 
     @Test
     void uninstallNotFound() {
-        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.empty());
-        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
-
+        List<String> errors = pluginService.canBeUninstalled(null);
         assertThat(errors).hasSize(1).contains("Plugin not found");
     }
 
     @Test
     void uninstallFlowRunning() {
         PluginEntity plugin1 = makePlugin();
-
-        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
 
-        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
+        List<String> errors = pluginService.canBeUninstalled(plugin1);
 
         assertThat(errors).hasSize(1).contains("The plugin has created the following ingress flows which are still running: mockIngress");
     }
 
     @Test
-    void uninstallIsADependency() throws JsonProcessingException {
+    void uninstallIsADependency() {
         PluginEntity plugin1 = makePlugin();
         PluginEntity plugin2 = makeDependencyPlugin();
 
-        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
 
-        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
+        List<String> errors = pluginService.canBeUninstalled(plugin1);
 
         assertThat(errors).hasSize(1).contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
     }
 
     @Test
-    void uninstallRunningAndADependency() throws JsonProcessingException {
+    void uninstallRunningAndADependency() {
         PluginEntity plugin1 = makePlugin();
         PluginEntity plugin2 = makeDependencyPlugin();
 
-        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
         Mockito.when(restDataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
         Mockito.when(dataSinkService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
-        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
+        List<String> errors = pluginService.canBeUninstalled(plugin1);
 
         assertThat(errors).hasSize(4)
                 .contains("The plugin has created the following ingress flows which are still running: mockIngress")

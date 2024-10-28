@@ -51,13 +51,8 @@ import org.deltafi.core.integration.IntegrationDataFetcherTestHelper;
 import org.deltafi.core.integration.IntegrationTestRepo;
 import org.deltafi.core.integration.TestResultRepo;
 import org.deltafi.core.metrics.MetricService;
-import org.deltafi.core.types.PluginEntity;
-import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.rest.AuthRest;
 import org.deltafi.core.services.*;
@@ -121,9 +116,9 @@ import static org.deltafi.common.types.ActionState.*;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
+import static org.deltafi.core.datafetchers.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.metrics.MetricsUtil.extendTagsForAction;
 import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
-import static org.deltafi.core.datafetchers.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.services.DeletePolicyService.TTL_SYSTEM_POLICY;
 import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
 import static org.deltafi.core.util.Constants.*;
@@ -242,9 +237,6 @@ class DeltaFiCoreApplicationTests {
 	DeltaFiPropertiesRepo deltaFiPropertiesRepo;
 
 	@Autowired
-	PluginImageRepositoryRepo pluginImageRepositoryRepo;
-
-	@Autowired
 	SystemSnapshotRepo systemSnapshotRepo;
 
 	@Autowired
@@ -294,9 +286,6 @@ class DeltaFiCoreApplicationTests {
 
     @Autowired
     Clock clock;
-
-	@Autowired
-	PluginImageRepositoryService pluginImageRepositoryService;
 
 	@Autowired
 	FlowCacheService flowCacheService;
@@ -4077,36 +4066,6 @@ class DeltaFiCoreApplicationTests {
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getStatusCode().value());
-	}
-
-	@Test
-	void testPluginImageRepository() {
-		pluginImageRepositoryRepo.deleteAll();
-		PluginImageRepository pluginImageRepository = new PluginImageRepository();
-		pluginImageRepository.setImageRepositoryBase("base");
-		pluginImageRepository.setPluginGroupIds(List.of("a", "b"));
-
-		pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
-
-		assertThat(pluginImageRepositoryRepo.findByPluginGroupId("a")).isPresent().contains(pluginImageRepository);
-		assertThat(pluginImageRepositoryRepo.findByPluginGroupId("b")).isPresent().contains(pluginImageRepository);
-		assertThat(pluginImageRepositoryRepo.findByPluginGroupId("c")).isEmpty();
-	}
-
-	@Test
-	void testPluginImageRepository_duplicateGroupId() {
-		pluginImageRepositoryRepo.deleteAll();
-		PluginImageRepository pluginImageRepository = new PluginImageRepository();
-		pluginImageRepository.setImageRepositoryBase("docker");
-		pluginImageRepository.setPluginGroupIds(List.of("a", "b"));
-
-		pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
-
-		PluginImageRepository pluginGroupB = new PluginImageRepository();
-		pluginGroupB.setImageRepositoryBase("gitlab");
-		pluginGroupB.setPluginGroupIds(List.of("b"));
-
-		assertThatThrownBy(() -> pluginImageRepositoryService.savePluginImageRepository(pluginGroupB));
 	}
 
 	@Test

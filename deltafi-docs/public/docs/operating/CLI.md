@@ -27,7 +27,6 @@ Commands:
   minio-cli               launch the minio CLI
   postgres-cli            launch the postgres CLI
   performance-test        run performance tests against DeltaFi
-  plugin-image-repo       manage the image repositories that hold plugin images
   plugin-init             create a new plugin project
   postgres-cli            launch the Postgres CLI
   postgres-eval           run SQL in Postgres

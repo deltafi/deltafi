@@ -19,15 +19,12 @@ package org.deltafi.core.plugin.deployer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
-import org.deltafi.core.services.DeltaFiUserService;
-import org.deltafi.core.services.EventService;
-import org.deltafi.core.services.PluginService;
-import org.deltafi.core.services.SystemSnapshotService;
+import org.deltafi.core.services.*;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
+import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.MarkdownBuilder;
 
@@ -37,37 +34,38 @@ import java.util.List;
 
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BaseDeployerService implements DeployerService {
+    protected static final String IMAGE = "IMAGE";
+    protected static final String IMAGE_PULL_SECRET = "IMAGE_PULL_SECRET";
 
-    final PluginImageRepositoryService pluginImageRepositoryService;
     private final PluginService pluginService;
     private final SystemSnapshotService systemSnapshotService;
     private final EventService eventService;
+    protected final DeltaFiPropertiesService deltaFiPropertiesService;
 
     @Override
-    public Result installOrUpgradePlugin(PluginCoordinates pluginCoordinates, String imageRepoOverride, String imagePullSecretOverride, String customDeploymentOverride) {
-        systemSnapshotService.createSnapshot(preUpgradeMessage(pluginCoordinates));
-
-        PluginImageRepository pluginImageRepository = pluginImageRepositoryService.findByGroupId(pluginCoordinates);
-
-        ArrayList<String> info = new ArrayList<>();
-
-        if (imageRepoOverride != null) {
-            pluginImageRepository.setImageRepositoryBase(imageRepoOverride);
-            info.add("Image repo override: " + imageRepoOverride);
+    public Result installOrUpgradePlugin(String image, String imagePullSecret) {
+        if (StringUtils.isBlank(imagePullSecret)) {
+            imagePullSecret = deltaFiPropertiesService.getDeltaFiProperties().getPluginImagePullSecret();
         }
 
-        if (imagePullSecretOverride != null) {
-            pluginImageRepository.setImagePullSecret(imagePullSecretOverride);
-            info.add("Image pull secret override: " + imagePullSecretOverride);
+        InstallDetails installDetails = InstallDetails.from(image, imagePullSecret);
+        systemSnapshotService.createSnapshot(preUpgradeMessage(image));
+
+        List<String> info = new ArrayList<>();
+        info.add("Installing from image: " + image);
+
+        if (StringUtils.isNotBlank(imagePullSecret)) {
+            info.add("Using image pull secret: " + imagePullSecret);
         }
 
-        DeployResult deployResult = deploy(pluginCoordinates, pluginImageRepository, info);
-        publishEvent(pluginCoordinates, deployResult);
+        DeployResult deployResult = deploy(installDetails);
+        deployResult.setInfo(info);
+        publishEvent(installDetails, deployResult);
         return deployResult.detailedResult();
     }
 
-    private void publishEvent(PluginCoordinates pluginCoordinates, DeployResult retval) {
-        MarkdownBuilder markdownBuilder = new MarkdownBuilder(pluginCoordinates + "\n\n");
+    private void publishEvent(InstallDetails installDetails, DeployResult retval) {
+        MarkdownBuilder markdownBuilder = new MarkdownBuilder(installDetails.appName() + "\n\n");
         if (retval.hasEvents()) {
             markdownBuilder.addTable("#### Events:", K8sEventUtil.EVENT_COLUMNS, retval.getEvents());
         }
@@ -76,30 +74,37 @@ public abstract class BaseDeployerService implements DeployerService {
             markdownBuilder.addJsonBlock("#### Plugin Logs:", retval.getLogs());
         }
 
-        eventService.createEvent(event(pluginCoordinates, "Plugin installed: ", retval.isSuccess(), markdownBuilder));
+        String summary = "Plugin installed from image: " + installDetails.image();
+        eventService.createEvent(event(summary, retval.isSuccess(), markdownBuilder));
     }
 
     @Override
     public Result uninstallPlugin(PluginCoordinates pluginCoordinates) {
-        List<String> uninstallPreCheckErrors = pluginService.canBeUninstalled(pluginCoordinates);
+        PluginEntity plugin = pluginService.getPlugin(pluginCoordinates).orElse(null);
+        List<String> uninstallPreCheckErrors = pluginService.canBeUninstalled(plugin);
         if (!uninstallPreCheckErrors.isEmpty()) {
             return Result.builder().success(false).errors(uninstallPreCheckErrors).build();
         }
 
         pluginService.uninstallPlugin(pluginCoordinates);
-        Result retval = removePluginResources(pluginCoordinates);
+        String appName = pluginCoordinates.getArtifactId();
+        if (plugin != null && StringUtils.isNotBlank(plugin.getImage())) {
+            appName = InstallDetails.from(plugin.getImage()).appName();
+        }
+        Result retval = removePluginResources(appName);
 
         MarkdownBuilder markdownBuilder = new MarkdownBuilder(pluginCoordinates + "\n\n")
                 .addList("Additional information:", retval.getInfo())
                 .addList("Errors:", retval.getErrors());
 
-        eventService.createEvent(event(pluginCoordinates, "Plugin uninstalled: ", retval.isSuccess(), markdownBuilder));
+        String summary = "Plugin uninstalled: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion();
+        eventService.createEvent(event(summary, retval.isSuccess(), markdownBuilder));
         return retval;
     }
 
-    private Event event(PluginCoordinates pluginCoordinates, String summary, boolean success, MarkdownBuilder markdownBuilder) {
+    private Event event(String summary, boolean success, MarkdownBuilder markdownBuilder) {
         return Event.builder()
-                .summary(summary + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
+                .summary(summary)
                 .timestamp(OffsetDateTime.now())
                 .source("core")
                 .notification(true)
@@ -108,13 +113,13 @@ public abstract class BaseDeployerService implements DeployerService {
                 .build();
     }
 
-    abstract DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, ArrayList<String> info);
+    abstract DeployResult deploy(InstallDetails installDetails);
 
-    abstract Result removePluginResources(PluginCoordinates pluginCoordinates);
+    abstract Result removePluginResources(String appName);
 
-    private String preUpgradeMessage(PluginCoordinates pluginCoordinates) {
+    private String preUpgradeMessage(String imageName) {
         String username = getUsername();
-        String reason = "Deploying plugin: " + pluginCoordinates.toString();
+        String reason = "Deploying plugin from image: " + imageName;
         if (username != null) {
             reason += " triggered by " + username;
         }

@@ -114,14 +114,6 @@ describe("Transforms Page", () => {
   });
 });
 
-describe("Plugin Repositories Page", () => {
-  it("loads Plugin Repositories", () => {
-    cy.visit("http://localhost:8080/config/plugin-repositories");
-    cy.get("span.p-panel-title").contains("Plugin Repositories");
-    cy.get("span.p-button-label").contains("Add Image Repository").click();
-  });
-});
-
 describe("Plugins Page", () => {
   it("loads Plugins", () => {
     cy.visit("http://localhost:8080/config/plugins");
