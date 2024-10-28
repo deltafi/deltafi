@@ -95,7 +95,7 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
             return new ErrorResult(context, "Service post failure", e).logErrorTo(log);
         }
 
-        return new EgressResult(context, input.getContent().getSize());
+        return new EgressResult(context);
     }
 
     protected InputStream openInputStream(@NotNull ActionContext context, @NotNull EgressInput input)

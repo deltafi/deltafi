@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.Builder;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.generated.types.FlowState;
@@ -67,6 +68,7 @@ class StateMachineTest {
     @Mock private JoinEntryService joinEntryService;
     @Mock private PublisherService publisherService;
     @Mock private AnalyticEventService analyticEventService;
+    @Mock private MetricService metricService;
 
     @InjectMocks private StateMachine stateMachine;
 

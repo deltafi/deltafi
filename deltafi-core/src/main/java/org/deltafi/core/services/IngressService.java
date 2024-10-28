@@ -110,8 +110,6 @@ public class IngressService {
 
         ingressResults.forEach(ingressResult -> {
             Map<String, String> tags = tagsFor(ingressResult.dataSource());
-            metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
-            metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.content().getSize());
             analyticEventService.recordIngress(ingressResult.did(), created, ingressResult.dataSource(), ingressResult.content().getSize(), Collections.emptyMap());
         });
 

@@ -58,9 +58,9 @@ const getInitialDates = async () => timeFrame.value = state.value.timeFrame ? st
 const setPersistedParams = async () => state.value = { timeFrame: timeFrame.value };
 
 const grafanaPanelIdMap = {
-  "Ingress Flows": 1,
+  "Bytes Ingressed by Data Source": 1,
   "Content Storage": 3,
-  "Egress Flows": 2,
+  "Bytes Egressed by Data Sink": 2,
   "Content Removed": 4,
 }
 

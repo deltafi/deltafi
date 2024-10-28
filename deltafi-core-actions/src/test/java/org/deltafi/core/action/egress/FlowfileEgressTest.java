@@ -114,10 +114,5 @@ public class FlowfileEgressTest {
         assertEquals("test-flow-name", flowfileAttributes.get("flow"));
         assertEquals("test-delta-file", flowfileAttributes.get("originalFilename"));
         assertEquals("test-content", flowfileAttributes.get("filename"));
-
-        assertEquals(FILES_OUT, ((EgressResult) egressResultType).getMetrics().getFirst().getName());
-        assertEquals(1, ((EgressResult) egressResultType).getMetrics().getFirst().getValue());
-        assertEquals(BYTES_OUT, ((EgressResult) egressResultType).getMetrics().getLast().getName());
-        assertEquals(CONTENT.length(), ((EgressResult) egressResultType).getMetrics().getLast().getValue());
     }
 }

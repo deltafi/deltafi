@@ -34,14 +34,12 @@ def verify_no_metrics(result):
 
 
 def test_egress_result():
-    result = EgressResult(make_context(), 123)
+    result = EgressResult(make_context())
     assert result.result_key is None
     assert result.result_type == "EGRESS"
     assert result.response() is None
     metrics = [metric.json() for metric in result.metrics]
-    assert len(metrics) == 2
-    verify_metric(metrics[0], "files_out", 1, {})
-    verify_metric(metrics[1], "bytes_out", 123, {})
+    verify_no_metrics(result)
 
 
 def test_error_result():

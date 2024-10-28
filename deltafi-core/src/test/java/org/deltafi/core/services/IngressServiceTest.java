@@ -149,9 +149,7 @@ class IngressServiceTest {
     private void verifyNormalExecution(List<IngressResult> ingressResults) throws IOException, ObjectStorageException {
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress",
                 DeltaFiConstants.SOURCE, DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
-        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_IN, metricTags, 1);
-        Mockito.verify(metricService).increment(DeltaFiConstants.BYTES_IN, metricTags, "content".length());
-
+        Mockito.verifyNoMoreInteractions(metricService);
         String content;
         try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResults.getFirst().content())) {
             content = new String(contentInputStream.readAllBytes());

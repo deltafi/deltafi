@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 57,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -65,10 +65,15 @@
       },
       "id": 22,
       "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
         "content": "<center>\n  <h2>DeltaFi System Processing Report</h2>\n  <div style=\"margin-top:-10px\">${__from:date:YYYY-MM-DD} to ${__to:date:YYYY-MM-DD}</div>\n</center>\n",
         "mode": "html"
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "11.2.2+security-01",
       "transparent": true,
       "type": "text"
     },
@@ -115,6 +120,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "sum"
@@ -122,9 +128,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value"
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -134,10 +142,10 @@
           "hide": false,
           "refCount": 0,
           "refId": "Flows",
-          "target": "alias(countSeries(seriesByTag('action=ingress', 'name=stats_counts.files_in')), 'Flows')"
+          "target": "alias(countSeries(groupByTags(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), 'countSeries', 'dataSource')), 'Data Sources')"
         }
       ],
-      "title": "Total Flows",
+      "title": "Total Data Sources",
       "transparent": true,
       "type": "stat"
     },
@@ -215,6 +223,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "sum"
@@ -222,9 +231,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name"
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -324,6 +335,7 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "sum"
@@ -331,9 +343,11 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name"
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -342,7 +356,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -352,7 +366,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Files",
@@ -370,11 +384,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 50,
             "gradientMode": "opacity",
@@ -383,6 +399,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
@@ -479,7 +496,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_from_source')), 'Ingress')"
         },
         {
           "datasource": {
@@ -489,7 +506,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSink=~${dataSink:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}')), 'Egress')"
         }
       ],
       "title": "Aggregate Processed Files",
@@ -497,6 +514,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -506,11 +524,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 50,
             "gradientMode": "opacity",
@@ -519,6 +539,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
@@ -600,7 +621,7 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
         "tooltip": {
           "mode": "multi",
@@ -615,7 +636,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress'), 'dataSource')"
+          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), 'sum', 'dataSource'), 'dataSource')"
         }
       ],
       "title": "Processed Files by Flow",
@@ -623,9 +644,11 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -633,7 +656,9 @@
           },
           "custom": {
             "align": "left",
-            "displayMode": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
             "filterable": true,
             "inspect": false
           },
@@ -663,7 +688,9 @@
       "interval": "10s",
       "maxDataPoints": 99999,
       "options": {
+        "cellHeight": "sm",
         "footer": {
+          "countRows": false,
           "fields": "",
           "reducer": [
             "sum"
@@ -673,7 +700,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -682,7 +709,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '1d', 'sum'), 'dataSource')"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource!='), '1d', 'sum'), 'dataSource'))"
         },
         {
           "datasource": {
@@ -692,10 +719,10 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource')"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource!=', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource'))"
         }
       ],
-      "title": "Processed Bytes by Flow",
+      "title": "Processed Bytes by Data Source",
       "transformations": [
         {
           "id": "reduce",
@@ -732,7 +759,8 @@
               "name": {
                 "aggregations": [
                   "last"
-                ]
+                ],
+                "operation": "groupby"
               }
             }
           }
@@ -740,7 +768,7 @@
         {
           "id": "groupingToMatrix",
           "options": {
-            "columnField": "action",
+            "columnField": "name",
             "rowField": "dataSource",
             "valueField": "Total (sum)"
           }
@@ -749,11 +777,15 @@
           "id": "organize",
           "options": {
             "excludeByName": {},
+            "includeByName": {},
             "indexByName": {},
             "renameByName": {
+              "dataSource\\action": "Flow",
+              "dataSource\\name": "Data Source",
               "egress": "Egress Bytes",
               "ingress": "Ingress Bytes",
-              "dataSource\\action": "Flow"
+              "stats_counts.bytes_from_source": "Ingress Bytes",
+              "stats_counts.bytes_to_sink": "Egress Bytes"
             }
           }
         }
@@ -762,6 +794,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -772,7 +805,9 @@
           },
           "custom": {
             "align": "left",
-            "displayMode": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
             "filterable": true,
             "inspect": false
           },
@@ -802,7 +837,9 @@
       "interval": "10s",
       "maxDataPoints": 99999,
       "options": {
+        "cellHeight": "sm",
         "footer": {
+          "countRows": false,
           "fields": "",
           "reducer": [
             "sum"
@@ -812,7 +849,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.1.7",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -821,7 +858,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum'), 'dataSource')"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource!='), '1d', 'sum'), 'dataSource'))"
         },
         {
           "datasource": {
@@ -831,10 +868,10 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource')"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource'))"
         }
       ],
-      "title": "Processed Files by Flow",
+      "title": "Processed Files by Data Source",
       "transformations": [
         {
           "id": "reduce",
@@ -871,7 +908,8 @@
               "name": {
                 "aggregations": [
                   "last"
-                ]
+                ],
+                "operation": "groupby"
               }
             }
           }
@@ -879,7 +917,7 @@
         {
           "id": "groupingToMatrix",
           "options": {
-            "columnField": "action",
+            "columnField": "name",
             "rowField": "dataSource",
             "valueField": "Total (sum)"
           }
@@ -888,11 +926,15 @@
           "id": "organize",
           "options": {
             "excludeByName": {},
+            "includeByName": {},
             "indexByName": {},
             "renameByName": {
+              "dataSource\\action": "Flow",
+              "dataSource\\name": "Data Source",
               "egress": "Egress Files",
               "ingress": "Ingress Files",
-              "dataSource\\action": "Flow"
+              "stats_counts.bytes_from_source": "Ingress Files",
+              "stats_counts.bytes_to_sink": "Egress Files"
             }
           }
         }
@@ -901,8 +943,7 @@
     }
   ],
   "refresh": "1d",
-  "schemaVersion": 37,
-  "style": "dark",
+  "schemaVersion": 39,
   "tags": [
     "DeltaFi"
   ],
@@ -912,11 +953,11 @@
         "current": {
           "selected": false,
           "text": "Graphite",
-          "value": "Graphite"
+          "value": "deltafi-graphite"
         },
         "hide": 0,
         "includeAll": false,
-        "label": "Data Source",
+        "label": "Database",
         "multi": false,
         "name": "datasource",
         "options": [],
@@ -929,7 +970,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -941,11 +982,11 @@
           "type": "graphite",
           "uid": "deltafi-graphite"
         },
-        "definition": "",
-        "description": "Include only these egress flows in egress metrics",
+        "definition": "tag_values(dataSink)",
+        "description": "Include only these data sinks",
         "hide": 0,
         "includeAll": true,
-        "label": "Egress Flow Filter",
+        "label": "Data Sink",
         "multi": true,
         "name": "dataSink",
         "options": [],
@@ -974,6 +1015,6 @@
   "timezone": "",
   "title": "Processing Report",
   "uid": "processing-report",
-  "version": 20,
+  "version": 21,
   "weekStart": ""
 }

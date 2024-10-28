@@ -47,7 +47,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 12032,
+  "id": 11,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -106,6 +106,7 @@
         "graphMode": "area",
         "justifyMode": "center",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -113,10 +114,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "value_and_name",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -150,6 +152,7 @@
             "axisPlacement": "left",
             "axisWidth": -6,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 50,
             "gradientMode": "hue",
@@ -165,7 +168,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -246,6 +249,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 21,
             "gradientMode": "none",
@@ -261,7 +265,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -293,102 +297,6 @@
         "w": 12,
         "x": 12,
         "y": 1
-      },
-      "id": 5,
-      "interval": "1m",
-      "maxDataPoints": 99999,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action!=ingress'), 'sum', 'source'), 'source')"
-        }
-      ],
-      "title": "Action Execution Count",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 21,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 7
       },
       "id": 17,
       "interval": "10s",
@@ -422,6 +330,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -437,7 +346,9 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 21,
             "gradientMode": "none",
@@ -453,7 +364,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -463,7 +374,9 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -483,11 +396,11 @@
       "gridPos": {
         "h": 6,
         "w": 12,
-        "x": 12,
+        "x": 0,
         "y": 7
       },
-      "id": 84,
-      "interval": "10s",
+      "id": 388,
+      "interval": "1m",
       "maxDataPoints": 99999,
       "options": {
         "legend": {
@@ -510,10 +423,426 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.action_execution_time_ms', 'action!=ingress'), 'sum', 'source'), 'source')"
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '$__interval', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')",
+          "textEditor": false
         }
       ],
-      "title": "Action Execution Time (ms)",
+      "title": "DeltaFiles Egressed by Data Source",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 21,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 5,
+      "interval": "1m",
+      "maxDataPoints": 99999,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "A",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')",
+          "textEditor": true
+        }
+      ],
+      "title": "Action Execution Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 21,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Overall"
+            },
+            "properties": [
+              {
+                "id": "custom.gradientMode",
+                "value": "none"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    3,
+                    3
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 389,
+      "interval": "1m",
+      "maxDataPoints": 9999,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "A",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "B",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '$__interval', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "aliasByMetric(divideSeriesLists(#A, #B))",
+          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '$__interval', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')))"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "D",
+          "target": "alias(sum(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '$__interval', 'sum', 'minutes')), 'Overall')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "E",
+          "target": "alias(sum(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '$__interval', 'sum', 'minutes')), 'Overall')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "aliasByMetric(movingAverage(divideSeriesLists(#D, #E), '30min'))",
+          "targetFull": "aliasByMetric(movingAverage(divideSeriesLists(alias(sum(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '$__interval', 'sum', 'minutes')), 'Overall'), alias(sum(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '$__interval', 'sum', 'minutes')), 'Overall')), '30min'))"
+        }
+      ],
+      "title": "Average DeltaFile Latency by Data Source",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 21,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 84,
+      "interval": "1m",
+      "maxDataPoints": 99999,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "A",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "B",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "aliasByMetric(divideSeriesLists(#A, #B))",
+          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')))"
+        }
+      ],
+      "title": "Action Execution Latency (Average Action Execution Time)",
       "type": "timeseries"
     },
     {
@@ -534,6 +863,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -549,7 +879,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -606,7 +936,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 19
       },
       "id": 78,
       "options": {
@@ -663,6 +993,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -678,7 +1009,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -735,7 +1066,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 19
       },
       "id": 77,
       "options": {
@@ -792,6 +1123,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -807,7 +1139,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -864,7 +1196,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 28
       },
       "id": 80,
       "interval": "10s",
@@ -915,6 +1247,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -930,7 +1263,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -987,7 +1320,7 @@
         "h": 12,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 28
       },
       "id": 81,
       "interval": "10s",
@@ -1038,6 +1371,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -1053,7 +1387,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1110,7 +1444,7 @@
         "h": 6,
         "w": 9,
         "x": 0,
-        "y": 34
+        "y": 40
       },
       "hideTimeOverride": true,
       "id": 345,
@@ -1188,7 +1522,7 @@
         "h": 6,
         "w": 3,
         "x": 9,
-        "y": 34
+        "y": 40
       },
       "id": 344,
       "interval": "10s",
@@ -1270,7 +1604,7 @@
         "h": 6,
         "w": 3,
         "x": 12,
-        "y": 34
+        "y": 40
       },
       "id": 347,
       "interval": "10s",
@@ -1326,6 +1660,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -1341,7 +1676,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1398,7 +1733,7 @@
         "h": 6,
         "w": 9,
         "x": 15,
-        "y": 34
+        "y": 40
       },
       "hideTimeOverride": true,
       "id": 346,
@@ -1450,6 +1785,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -1465,7 +1801,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1498,7 +1834,7 @@
         "h": 12,
         "w": 12,
         "x": 0,
-        "y": 40
+        "y": 46
       },
       "id": 20,
       "options": {
@@ -1546,6 +1882,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 75,
             "gradientMode": "none",
@@ -1588,25 +1925,50 @@
           },
           "unit": "decbytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "boop-1-hour-after-completion"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 40
+        "y": 46
       },
       "id": 45,
       "options": {
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
+          "placement": "right",
           "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
-          "sort": "none"
+          "sort": "desc"
         }
       },
       "pluginVersion": "8.5.3",
@@ -1643,6 +2005,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 75,
             "gradientMode": "none",
@@ -1658,7 +2021,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1688,19 +2051,19 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 46
+        "y": 52
       },
       "id": 44,
       "options": {
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
+          "placement": "right",
           "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
-          "sort": "none"
+          "sort": "desc"
         }
       },
       "pluginVersion": "8.5.3",
@@ -1728,7 +2091,7 @@
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 52
+        "y": 58
       },
       "id": 348,
       "options": {
@@ -1740,7 +2103,7 @@
         "content": "<hr/>\n<h1><center>Processing Node Breakdown</center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "11.2.2+security-01",
       "transparent": true,
       "type": "text"
     },
@@ -1750,7 +2113,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 61
       },
       "id": 85,
       "panels": [],
@@ -1761,6 +2124,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -1840,7 +2204,7 @@
         "h": 9,
         "w": 3,
         "x": 0,
-        "y": 56
+        "y": 62
       },
       "id": 250,
       "maxDataPoints": 2,
@@ -1856,9 +2220,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -1867,7 +2232,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "alias(maxSeries(sortByName(seriesByTag('name=~gauge.node.memory.limit', 'hostname=${nodes:regex}'), true, true)), 'limit')"
+          "target": "alias(maxSeries(sortByName(seriesByTag('name=~gauge.node.memory.limit', 'hostname=~${nodes:regex}'), true, true)), 'limit')"
         },
         {
           "datasource": {
@@ -1876,7 +2241,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "alias(sortByMaxima(sortByName(seriesByTag('name=~gauge.node.memory.usage', 'hostname=${nodes:regex}'), true, true)), 'Total RAM')"
+          "target": "alias(sortByMaxima(sortByName(seriesByTag('name=~gauge.node.memory.usage', 'hostname=~${nodes:regex}'), true, true)), 'Total RAM')"
         }
       ],
       "transparent": true,
@@ -1884,6 +2249,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -1900,6 +2266,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 18,
             "gradientMode": "scheme",
@@ -1915,7 +2282,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2022,7 +2389,7 @@
         "h": 9,
         "w": 9,
         "x": 3,
-        "y": 56
+        "y": 62
       },
       "id": 372,
       "options": {
@@ -2046,7 +2413,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.memory.limit', 'hostname=${nodes:regex}')), 'Limit')"
+          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.memory.limit', 'hostname=~${nodes:regex}')), 'Limit')"
         },
         {
           "datasource": {
@@ -2055,7 +2422,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "alias(sortByMaxima(seriesByTag('name=~gauge.node.memory.usage', 'hostname=${nodes:regex}')), 'Total RAM')"
+          "target": "alias(sortByMaxima(seriesByTag('name=~gauge.node.memory.usage', 'hostname=~${nodes:regex}')), 'Total RAM')"
         },
         {
           "datasource": {
@@ -2065,7 +2432,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "C",
-          "target": "alias(sum(scale(seriesByTag('name=gauge.app.memory', 'node=${nodes:regex}'), 1000000)), 'App RAM')"
+          "target": "alias(sum(scale(seriesByTag('name=gauge.app.memory', 'node=~${nodes:regex}'), 1000000)), 'App RAM')"
         },
         {
           "datasource": {
@@ -2074,7 +2441,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "trend",
-          "target": "alias(movingAverage(seriesByTag('name=~gauge.node.memory.usage', 'hostname=${nodes:regex}'), 200), 'Trend')"
+          "target": "alias(movingAverage(seriesByTag('name=~gauge.node.memory.usage', 'hostname=~${nodes:regex}'), 200), 'Trend')"
         }
       ],
       "title": "Memory utilization over time (${nodes:regex})",
@@ -2082,6 +2449,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -2098,6 +2466,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -2113,7 +2482,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2170,7 +2539,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 56
+        "y": 62
       },
       "id": 156,
       "interval": "10s",
@@ -2197,7 +2566,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~gauge.app.memory', 'node=${nodes:regex}'), 'sum', 'app'), 'app'))"
+          "target": "removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=gauge.app.memory', 'node=~${nodes:regex}'), 'sum', 'app'), 'app'))"
         }
       ],
       "title": "App RAM utilization over time (${nodes:regex})",
@@ -2205,6 +2574,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -2253,7 +2623,7 @@
         "h": 9,
         "w": 3,
         "x": 0,
-        "y": 65
+        "y": 71
       },
       "id": 387,
       "maxDataPoints": 2,
@@ -2269,9 +2639,10 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -2280,7 +2651,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "alias(maxSeries(sortByName(scale(seriesByTag('name=~gauge.node.cpu.limit', 'hostname=${nodes:regex}'), 0.001), true, true)), 'limit')"
+          "target": "alias(maxSeries(sortByName(scale(seriesByTag('name=~gauge.node.cpu.limit', 'hostname=~${nodes:regex}'), 0.001), true, true)), 'limit')"
         },
         {
           "datasource": {
@@ -2289,7 +2660,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "alias(sortByMaxima(sortByName(scale(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=${nodes:regex}'), 0.001), true, true)), 'Total CPU')"
+          "target": "alias(sortByMaxima(sortByName(scale(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=~${nodes:regex}'), 0.001), true, true)), 'Total CPU')"
         }
       ],
       "transparent": true,
@@ -2297,6 +2668,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -2313,6 +2685,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "scheme",
@@ -2328,7 +2701,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2435,7 +2808,7 @@
         "h": 9,
         "w": 9,
         "x": 3,
-        "y": 65
+        "y": 71
       },
       "id": 343,
       "options": {
@@ -2459,7 +2832,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Limit",
-          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.cpu.limit', 'hostname=${nodes:regex}')), 'Limit')"
+          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.cpu.limit', 'hostname=~${nodes:regex}')), 'Limit')"
         },
         {
           "datasource": {
@@ -2468,7 +2841,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "alias(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=${nodes:regex}'), 'Total CPU')"
+          "target": "alias(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=~${nodes:regex}'), 'Total CPU')"
         },
         {
           "datasource": {
@@ -2478,7 +2851,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "C",
-          "target": "alias(sum(seriesByTag('name=gauge.app.cpu', 'node=${nodes:regex}')), 'App CPU')"
+          "target": "alias(sum(seriesByTag('name=gauge.app.cpu', 'node=~${nodes:regex}')), 'App CPU')"
         },
         {
           "datasource": {
@@ -2487,7 +2860,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "alias(seriesByTag('name=~gauge.node.cpu.iowait', 'hostname=${nodes:regex}'), 'IO Wait')"
+          "target": "alias(seriesByTag('name=~gauge.node.cpu.iowait', 'hostname=~${nodes:regex}'), 'IO Wait')"
         },
         {
           "datasource": {
@@ -2496,7 +2869,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Trend",
-          "target": "alias(movingAverage(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=${nodes:regex}'), 100), 'Trend')"
+          "target": "alias(movingAverage(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=~${nodes:regex}'), 100), 'Trend')"
         }
       ],
       "title": "CPU utilization over time (${nodes:regex})",
@@ -2504,6 +2877,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -2521,6 +2895,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -2536,7 +2911,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -2593,7 +2968,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 65
+        "y": 71
       },
       "id": 180,
       "interval": "10s",
@@ -2620,16 +2995,16 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(seriesByTag('name=~gauge.app.cpu', 'node=${nodes:regex}'), 'app'))"
+          "target": "removeEmptySeries(aliasByTags(seriesByTag('name=gauge.app.cpu', 'node=~${nodes:regex}'), 'app'))"
         }
       ],
       "title": "App CPU utilization over time (${nodes:regex})",
       "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "revision": 1,
-  "schemaVersion": 38,
+  "schemaVersion": 39,
   "tags": [
     "DeltaFi"
   ],
@@ -2740,6 +3115,6 @@
   "timezone": "",
   "title": "System Performance",
   "uid": "system-performance",
-  "version": 2,
+  "version": 4,
   "weekStart": ""
 }

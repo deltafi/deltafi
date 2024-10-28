@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 13724,
+  "id": 7,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -70,6 +70,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -192,6 +193,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -288,6 +290,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -319,7 +322,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -415,6 +419,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -446,7 +451,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -520,6 +526,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -535,6 +542,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 30,
             "gradientMode": "none",
@@ -566,7 +574,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -604,13 +613,14 @@
           "hide": false,
           "refCount": 0,
           "refId": "Bytes In",
-          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "type": "timeseries"
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -626,6 +636,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 30,
             "gradientMode": "none",
@@ -658,7 +669,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -673,7 +685,7 @@
         "y": 40
       },
       "id": 2,
-      "interval": "10s",
+      "interval": "1m",
       "maxDataPoints": 99999,
       "options": {
         "legend": {
@@ -696,7 +708,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Bytes Out",
-          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSink'), 'dataSink'), true, false)"
         }
       ],
       "type": "timeseries"
@@ -719,6 +731,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 30,
             "gradientMode": "scheme",
@@ -750,7 +763,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "semi-dark-green"
+                "color": "semi-dark-green",
+                "value": null
               },
               {
                 "color": "green",
@@ -869,6 +883,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 75,
             "gradientMode": "none",
@@ -900,7 +915,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -964,6 +980,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -995,7 +1012,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1075,7 +1093,7 @@
     }
   ],
   "refresh": "5m",
-  "schemaVersion": 38,
+  "schemaVersion": 39,
   "tags": [
     "DeltaFi-UI"
   ],
@@ -1085,7 +1103,7 @@
         "current": {
           "selected": false,
           "text": "Graphite",
-          "value": "Graphite"
+          "value": "deltafi-graphite"
         },
         "hide": 0,
         "includeAll": false,
@@ -1154,6 +1172,6 @@
   "timezone": "",
   "title": "UI Charts",
   "uid": "ui-charts",
-  "version": 18,
+  "version": 19,
   "weekStart": ""
 }

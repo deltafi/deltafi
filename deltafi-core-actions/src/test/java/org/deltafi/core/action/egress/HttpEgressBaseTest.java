@@ -96,10 +96,6 @@ public class HttpEgressBaseTest {
         EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(EgressResult.class, egressResultType);
-        assertEquals(FILES_OUT, ((EgressResult) egressResultType).getMetrics().getFirst().getName());
-        assertEquals(1, ((EgressResult) egressResultType).getMetrics().getFirst().getValue());
-        assertEquals(BYTES_OUT, ((EgressResult) egressResultType).getMetrics().getLast().getName());
-        assertEquals(CONTENT.length(), ((EgressResult) egressResultType).getMetrics().getLast().getValue());
     }
 
     @Test
@@ -135,10 +131,6 @@ public class HttpEgressBaseTest {
         EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(EgressResult.class, egressResultType);
-        assertEquals(FILES_OUT, ((EgressResult) egressResultType).getMetrics().getFirst().getName());
-        assertEquals(1, ((EgressResult) egressResultType).getMetrics().getFirst().getValue());
-        assertEquals(BYTES_OUT, ((EgressResult) egressResultType).getMetrics().getLast().getName());
-        assertEquals(CONTENT.length(), ((EgressResult) egressResultType).getMetrics().getLast().getValue());
     }
 
     @Test

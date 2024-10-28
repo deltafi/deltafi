@@ -47,11 +47,13 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 5,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -61,11 +63,14 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 20,
             "gradientMode": "none",
@@ -74,12 +79,13 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "log": 10,
-              "type": "log"
+              "type": "symlog"
             },
             "showPoints": "auto",
             "spanNulls": false,
@@ -92,6 +98,7 @@
             }
           },
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -135,8 +142,9 @@
             "type": "graphite",
             "uid": "${datasource}"
           },
+          "refCount": 0,
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), 'average', 'dataSource'), 'dataSource'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_from_source', 'dataSource=~${dfDataSource:regex}'), 'average', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files In",
@@ -144,6 +152,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -153,11 +162,14 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 1,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 20,
             "gradientMode": "none",
@@ -166,6 +178,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
@@ -184,6 +197,7 @@
             }
           },
           "mappings": [],
+          "min": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -231,7 +245,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Bytes In",
@@ -239,6 +253,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -248,11 +263,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 20,
             "gradientMode": "none",
@@ -261,12 +278,13 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "log": 10,
-              "type": "log"
+              "type": "symlog"
             },
             "showPoints": "auto",
             "spanNulls": false,
@@ -310,7 +328,7 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
         "tooltip": {
           "mode": "multi",
@@ -326,7 +344,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_to_sink', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files Out",
@@ -334,6 +352,7 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -343,11 +362,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 20,
             "gradientMode": "none",
@@ -356,6 +377,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
@@ -422,7 +444,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Bytes Out",
@@ -430,156 +452,7 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "axisSoftMin": 1,
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 10,
-              "type": "log"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "decimals": 0,
-          "mappings": [],
-          "min": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "overall"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#ffffffc7",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 16
-      },
-      "id": 44,
-      "interval": "10s",
-      "maxDataPoints": 99999,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": true,
-          "refCount": 0,
-          "refId": "A",
-          "target": "aliasByTags(removeEmptySeries(groupByTags(seriesByTag('name=~stats_counts.files_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource')), 'dataSource')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "aliasByNode(divideSeriesLists(removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource')), #A), 0)",
-          "targetFull": "aliasByNode(divideSeriesLists(removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource')), aliasByTags(removeEmptySeries(groupByTags(seriesByTag('name=~stats_counts.files_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource')), 'dataSource')), 0)"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": true,
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(removeEmptySeries(sum(seriesByTag('name=~stats_counts.files_out'))), 'files')"
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": false,
-          "refCount": 0,
-          "refId": "E",
-          "target": "alias(divideSeriesLists(removeEmptySeries(alias(sum(seriesByTag('name=~stats_counts.execution_time_ms')), 'exec')), #C), 'overall')",
-          "targetFull": "alias(divideSeriesLists(removeEmptySeries(alias(sum(seriesByTag('name=~stats_counts.execution_time_ms')), 'exec')), alias(removeEmptySeries(sum(seriesByTag('name=~stats_counts.files_out'))), 'files')), 'overall')"
-        }
-      ],
-      "title": "Average Latency (ms)",
-      "transformations": [],
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
+        "default": false,
         "type": "graphite",
         "uid": "${datasource}"
       },
@@ -590,11 +463,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 21,
             "gradientMode": "none",
@@ -603,6 +478,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
@@ -632,6 +508,185 @@
                 "value": 80
               }
             ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Overall"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 5
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#f9f9f9",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 45,
+      "interval": "1m",
+      "maxDataPoints": 99999,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "A",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "B",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "C",
+          "target": "aliasByMetric(divideSeriesLists(#A, #B))",
+          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')))"
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "D",
+          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": true,
+          "refCount": 1,
+          "refId": "E",
+          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
+          "textEditor": false
+        },
+        {
+          "datasource": {
+            "type": "graphite",
+            "uid": "${datasource}"
+          },
+          "hide": false,
+          "refCount": 0,
+          "refId": "F",
+          "target": "aliasByMetric(divideSeriesLists(#D, #E))",
+          "targetFull": "aliasByMetric(divideSeriesLists(alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall'), alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')))"
+        }
+      ],
+      "title": "Action Execution Latency (Average Action Execution Time)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 21,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
           }
         },
         "overrides": []
@@ -643,7 +698,7 @@
         "y": 16
       },
       "id": 5,
-      "interval": "10s",
+      "interval": "1m",
       "maxDataPoints": 99999,
       "options": {
         "legend": {
@@ -666,7 +721,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action!=ingress'), 'sum', 'source'), 'source')"
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')"
         }
       ],
       "title": "Action Executions",
@@ -684,11 +739,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 35,
             "gradientMode": "opacity",
@@ -697,6 +754,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -778,11 +836,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 21,
             "gradientMode": "none",
@@ -791,6 +851,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
@@ -862,8 +923,7 @@
     }
   ],
   "refresh": "5m",
-  "schemaVersion": 37,
-  "style": "dark",
+  "schemaVersion": 39,
   "tags": [
     "DeltaFi"
   ],
@@ -873,7 +933,7 @@
         "current": {
           "selected": false,
           "text": "Graphite",
-          "value": "Graphite"
+          "value": "deltafi-graphite"
         },
         "hide": 0,
         "includeAll": false,
@@ -942,6 +1002,6 @@
   "timezone": "",
   "title": "Diagnostic",
   "uid": "diagnostic",
-  "version": 20,
+  "version": 23,
   "weekStart": ""
 }

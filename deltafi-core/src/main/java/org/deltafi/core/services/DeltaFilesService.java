@@ -358,7 +358,6 @@ public class DeltaFilesService {
             }
 
             List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
-            metrics.add(new Metric(DeltaFiConstants.FILES_IN, 1));
 
             switch (event.getType()) {
                 case TRANSFORM -> {
@@ -432,13 +431,17 @@ public class DeltaFilesService {
         if (event.getType() != ActionEventType.UNKNOWN && event.getStart() != null && event.getStop() != null) {
             MetricsUtil.extendTagsForAction(tags, actionClass);
 
-            Metric actionMetric = Metric.builder()
+            metricService.increment(Metric.builder()
                     .name(ACTION_EXECUTION_TIME_MS)
                     .value(Duration.between(event.getStart(), event.getStop()).toMillis())
-                    .build();
+                    .tags(tags)
+                    .build());
 
-            actionMetric.addTags(tags);
-            metricService.increment(actionMetric);
+            metricService.increment(Metric.builder()
+                    .name(ACTION_EXECUTION)
+                    .value(1)
+                    .tags(tags)
+                    .build());
         }
     }
 
@@ -483,8 +486,6 @@ public class DeltaFilesService {
                         : null;
 
         List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
-        metrics.add(new Metric(DeltaFiConstants.FILES_IN, ingressEvent.getIngressItems().size()));
-        metrics.add(new Metric(DeltaFiConstants.BYTES_IN, counter.byteCount));
 
         if (counter.erroredFiles > 0) {
             metrics.add(new Metric(FILES_ERRORED, counter.erroredFiles));
@@ -554,6 +555,13 @@ public class DeltaFilesService {
         action.setStop(stop);
 
         advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
+        Map<String, String> tags = Map.of(
+                "dataSource", deltaFile.getDataSource(),
+                "dataSink", flow.getName());
+        long bytes = Segment.calculateTotalSize(flow.lastAction().getContent().stream().flatMap(s -> s.getSegments().stream()).collect(Collectors.toSet()));
+        metricService.increment(new Metric(BYTES_TO_SINK, bytes, tags));
+        metricService.increment(new Metric(FILES_TO_SINK, 1, tags));
+
     }
 
     public void filter(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event, OffsetDateTime now) {
@@ -1156,7 +1164,7 @@ public class DeltaFilesService {
         enqueueActions(actionInputs);
     }
 
-    private void handleMissingFlow(DeltaFile deltaFile, DeltaFileFlow flow, String errorContext) {
+    void handleMissingFlow(DeltaFile deltaFile, DeltaFileFlow flow, String errorContext) {
         OffsetDateTime now = OffsetDateTime.now(clock);
         Action action = flow.queueNewAction(MISSING_FLOW_ACTION, ActionType.UNKNOWN, false, now);
         processErrorEvent(deltaFile, flow, action, buildMissingFlowErrorEvent(deltaFile, now, errorContext));

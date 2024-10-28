@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.Metric;
 import org.junit.jupiter.api.Test;
 
@@ -25,24 +26,19 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.*;
 
 public class EgressResultTest {
 
-    final long BYTES_EGRESSED = 42;
-
     final ActionContext actionContext = new ActionContext(UUID.randomUUID(), "mySourceFilename", "dataSource", "myFlow", UUID.randomUUID(), "myName",
             "myHostName", "myActionVersion", null, null, null, null, null, null);
-    final EgressResult sut = new EgressResult(actionContext, BYTES_EGRESSED);
+    final EgressResult sut = new EgressResult(actionContext);
     
     @Test
-    void testDefaultCustomMetrics() {
+    void testNoCustomMetrics() {
         List<Metric> metrics = sut.getCustomMetrics();
-
-        assertThat(metrics, containsInAnyOrder(
-                Metric.builder().name("files_out").value(1).build(),
-                Metric.builder().name("bytes_out").value(BYTES_EGRESSED).build()
-        ));
+        assertThat(metrics, emptyCollectionOf(Metric.class));
+        assertThat(sut.getActionEventType(), equalTo(ActionEventType.EGRESS));
     }
 
     @Test
@@ -52,10 +48,9 @@ public class EgressResultTest {
         List<Metric> metrics = sut.getCustomMetrics();
 
         assertThat(metrics, containsInAnyOrder(
-                Metric.builder().name("files_out").value(1).build(),
-                Metric.builder().name("bytes_out").value(BYTES_EGRESSED).build(),
                 additionalMetric
         ));
+        assertThat(sut.getActionEventType(), equalTo(ActionEventType.EGRESS));
     }
 
 }

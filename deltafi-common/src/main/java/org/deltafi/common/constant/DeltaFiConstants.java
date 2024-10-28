@@ -37,12 +37,17 @@ public class DeltaFiConstants {
     // Metric names
     public static final String BYTES_IN = "bytes_in";
     public static final String BYTES_OUT = "bytes_out";
+    public static final String BYTES_FROM_SOURCE = "bytes_from_source";
+    public static final String BYTES_TO_SINK = "bytes_to_sink";
+    public static final String FILES_FROM_SOURCE = "files_from_source";
+    public static final String FILES_TO_SINK = "files_to_sink";
     public static final String FILES_AUTO_RESUMED = "files_auto_resumed";
     public static final String FILES_DROPPED = "files_dropped";
     public static final String FILES_ERRORED = "files_errored";
     public static final String FILES_FILTERED = "files_filtered";
     public static final String FILES_IN = "files_in";
     public static final String FILES_OUT = "files_out";
+    public static final String ACTION_EXECUTION = "action_execution";
     public static final String ACTION_EXECUTION_TIME_MS = "action_execution_time_ms";
     public static final String EXECUTION_TIME_MS = "execution_time_ms";
     public static final String DELETED_FILES = "deleted.files";

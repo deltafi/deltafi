@@ -96,9 +96,5 @@ public class RestPostEgressTest {
                 restPostEgressParameters, egressInput);
 
         assertInstanceOf(EgressResult.class, egressResultType);
-        assertEquals(FILES_OUT, ((EgressResult) egressResultType).getMetrics().getFirst().getName());
-        assertEquals(1, ((EgressResult) egressResultType).getMetrics().getFirst().getValue());
-        assertEquals(BYTES_OUT, ((EgressResult) egressResultType).getMetrics().getLast().getName());
-        assertEquals(CONTENT.length(), ((EgressResult) egressResultType).getMetrics().getLast().getValue());
     }
 }

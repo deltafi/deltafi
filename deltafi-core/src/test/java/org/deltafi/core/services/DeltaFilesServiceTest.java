@@ -20,12 +20,14 @@ package org.deltafi.core.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -33,6 +35,7 @@ import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.util.Util;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -68,6 +71,7 @@ class DeltaFilesServiceTest {
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final DeltaFilesService deltaFilesService;
+    private final MetricService metricService;
 
     @Captor
     ArgumentCaptor<List<UUID>> uuidListCaptor;
@@ -111,12 +115,18 @@ class DeltaFilesServiceTest {
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
         this.restDataSourceService = restDataSourceService;
+        this.metricService = metricService;
 
         MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, timedDataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService);
+    }
+
+    @AfterEach
+    void finalizeMetrics() {
+        Mockito.verifyNoMoreInteractions(metricService);
     }
 
     @Test
@@ -282,6 +292,8 @@ class DeltaFilesServiceTest {
         assertEquals(List.of(content1.getSegments().getFirst().objectName(), content2.getSegments().getFirst().objectName()), stringListCaptor.getValue());
         verify(deltaFileRepo).setContentDeletedByDidIn(uuidListCaptor.capture(), any(), eq("policy"));
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policy"));
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 0).addTag("policy", "policy"));
     }
 
     @Test
@@ -301,6 +313,8 @@ class DeltaFilesServiceTest {
         verify(deltaFileRepo, never()).saveAll(any());
         verify(deltaFileRepo).batchedBulkDeleteByDidIn(uuidListCaptor.capture());
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policy"));
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 0).addTag("policy", "policy"));
     }
 
     @Test
@@ -415,6 +429,13 @@ class DeltaFilesServiceTest {
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).hasSize(1);
         Assertions.assertThat(deltaFile.pendingAnnotationFlows().getFirst().getName()).isEqualTo("dataSource");
+
+        Map<String, String> flowTags = Map.of(
+                "dataSource", "myFlow",
+                "dataSink", "dataSource");
+
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_TO_SINK, 1).addTags(flowTags));
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_TO_SINK, 0).addTags(flowTags));
     }
 
     @Test
@@ -429,6 +450,13 @@ class DeltaFilesServiceTest {
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).isEmpty();
+
+        Map<String, String> flowTags = Map.of(
+                "dataSource", "myFlow",
+                "dataSink", "myFlow");
+
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_TO_SINK, 1).addTags(flowTags));
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_TO_SINK, 0).addTags(flowTags));
     }
 
     @Test
@@ -727,6 +755,61 @@ class DeltaFilesServiceTest {
         RetryResult result = results.getFirst();
         assertFalse(result.getSuccess());
         assertEquals("The dataSource dataSource no longer contains an action named splitActionOld where the replay would be begin", result.getError());
+    }
+
+    @Test
+    void testHandleMissingFlow() {
+        UUID did = UUID.randomUUID();
+        DeltaFile deltaFile = Util.buildDeltaFile(did);
+        DeltaFileFlow flow = deltaFile.firstFlow();
+
+        deltaFilesService.handleMissingFlow(deltaFile, flow, "Flow configuration not found");
+
+        assertEquals(DeltaFileStage.ERROR, deltaFile.getStage());
+        Action errorAction = flow.lastAction();
+        assertEquals("MissingRunningFlow", errorAction.getName());
+        assertEquals(ActionType.UNKNOWN, errorAction.getType());
+        assertEquals(ActionState.ERROR, errorAction.getState());
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(Map.of("action", "unknown", "source", "MissingRunningFlow", "dataSource", "myFlow")));
+    }
+
+    @Test
+    void testProcessErrorEvent() {
+        UUID did = UUID.randomUUID();
+        DeltaFile deltaFile = Util.buildDeltaFile(did);
+        DeltaFileFlow flow = deltaFile.firstFlow();
+        Action action = flow.firstAction();
+
+        ActionEvent event = ActionEvent.builder()
+                .did(did)
+                .flowName(flow.getName())
+                .actionName(action.getName())
+                .type(ActionEventType.ERROR)
+                .error(ErrorEvent.builder()
+                        .cause("Test error")
+                        .context("Error context")
+                        .annotations(Map.of("error", "true"))
+                        .build())
+                .start(OffsetDateTime.now(testClock))
+                .stop(OffsetDateTime.now(testClock))
+                .build();
+
+        Optional<ResumePolicyService.ResumeDetails> resumeDetails =
+                Optional.of(new ResumePolicyService.ResumeDetails("policy1", 60));
+        when(resumePolicyService.getAutoResumeDelay(eq(deltaFile), eq(action), eq("Test error")))
+                .thenReturn(resumeDetails);
+
+        deltaFilesService.processErrorEvent(deltaFile, flow, action, event);
+
+        assertEquals(DeltaFileStage.ERROR, deltaFile.getStage());
+        assertEquals(ActionState.ERROR, action.getState());
+        assertNotNull(action.getNextAutoResume());
+        assertEquals("policy1", action.getNextAutoResumeReason());
+
+        verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1)
+                .addTag("source", action.getName())
+                .addTag("action", "error")
+                .addTag("dataSource", deltaFile.getDataSource()));
     }
 
     private List<ActionConfiguration> mockActions(String... names) {

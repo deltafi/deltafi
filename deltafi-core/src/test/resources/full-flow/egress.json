@@ -7,7 +7,5 @@
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "EGRESS",
     "metrics": [
-        { "name": "files_out", "value": 1, "tags": { "destination": "final" } },
-        { "name": "bytes_out", "value": 42, "tags": { "destination": "final" } }
     ]
 }

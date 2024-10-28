@@ -19,8 +19,11 @@ package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.JoinException;
+import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
@@ -28,8 +31,9 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
+import static org.deltafi.common.constant.DeltaFiConstants.*;
 
 @Service
 @AllArgsConstructor
@@ -45,6 +49,7 @@ public class StateMachine {
     private final QueueManagementService queueManagementService;
     private final JoinEntryService joinEntryService;
     private final PublisherService publisherService;
+    private final MetricService metricService;
 
     /**
      * Advance a set of DeltaFiles to the next step using the state machine. Call if advancing multiple deltaFiles
@@ -157,6 +162,8 @@ public class StateMachine {
 
         Set<DeltaFileFlow> subscriberFlows = publisherService.subscribers(getFlow(input.flow()), input.deltaFile(), input.flow());
 
+        generatePubSubMetrics(input.deltaFile(), input.flow(), subscriberFlows);
+
         for (DeltaFileFlow newFlow : subscriberFlows) {
             StateMachineInput newInput = new StateMachineInput(input.deltaFile(), newFlow);
             actionInputs.addAll(advance(newInput, pendingQueued));
@@ -167,6 +174,36 @@ public class StateMachine {
         }
 
         return actionInputs;
+    }
+
+    private void generatePubSubMetrics(DeltaFile deltafile, DeltaFileFlow publisher, Set<DeltaFileFlow> subscribers) {
+
+        long bytes;
+        if (publisher.getType() == FlowType.TRANSFORM) {
+            bytes = Segment.calculateTotalSize(publisher.lastAction().getContent().stream().flatMap(s -> s.getSegments().stream()).collect(Collectors.toSet()));
+            Map<String, String> publishTags = Map.of(
+                    "dataSource", deltafile.getDataSource(),
+                    "flowName", publisher.getName());
+
+            metricService.increment(new Metric(BYTES_OUT, bytes, publishTags));
+            metricService.increment(new Metric(FILES_OUT, 1, publishTags));
+        } else {
+            bytes = deltafile.getIngressBytes();
+            Map<String, String> publishTags = Map.of("dataSource", deltafile.getDataSource());
+
+            metricService.increment(new Metric(BYTES_FROM_SOURCE, bytes, publishTags));
+            metricService.increment(new Metric(FILES_FROM_SOURCE, 1, publishTags));
+        }
+
+        for (DeltaFileFlow subscriber : subscribers) {
+            // Egress flow metrics are skipped here and produced when the egress flow execution is completed
+            if (subscriber.getType() != FlowType.TRANSFORM) continue;
+            Map<String, String> subscribeTags = Map.of(
+                    "dataSource", deltafile.getDataSource(),
+                    "flowName", subscriber.getName());
+            metricService.increment(new Metric(BYTES_IN, bytes, subscribeTags));
+            metricService.increment(new Metric(FILES_IN, 1, subscribeTags));
+        }
     }
 
     private void markFlowAsCircular(DeltaFileFlow flow) {

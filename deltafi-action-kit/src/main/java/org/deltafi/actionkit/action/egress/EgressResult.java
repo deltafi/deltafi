@@ -23,11 +23,7 @@ import lombok.Getter;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.Metric;
 import org.jetbrains.annotations.NotNull;
-
-import static org.deltafi.common.constant.DeltaFiConstants.BYTES_OUT;
-import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
 
 /**
  * Specialized result class for EGRESS actions
@@ -37,13 +33,9 @@ import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
 public class EgressResult extends Result<EgressResult> implements EgressResultType {
     /**
      * @param context Context of the executed action
-     * @param bytesEgressed Number of bytes egressed in the action
      */
     @Builder
-    public EgressResult(@NotNull ActionContext context, long bytesEgressed) {
+    public EgressResult(@NotNull ActionContext context) {
         super(context, ActionEventType.EGRESS);
-
-        add(new Metric(FILES_OUT, 1));
-        add(new Metric(BYTES_OUT, bytesEgressed));
     }
 }
