@@ -72,11 +72,6 @@ export default function useSystemSnapshots() {
       description: true,
       linkType: true
     },
-    pluginImageRepositories: {
-      imageRepositoryBase: true,
-      pluginGroupIds: true,
-      imagePullSecret: true
-    },
     installedPlugins: {
       groupId: true,
       artifactId: true,

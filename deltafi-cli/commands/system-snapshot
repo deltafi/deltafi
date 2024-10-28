@@ -97,11 +97,6 @@ ALL_SNAPSHOT_FIELDS="id
               url
               linkType
             }
-            pluginImageRepositories {
-              imageRepositoryBase
-              pluginGroupIds
-              imagePullSecret
-            }
             installedPlugins {
               groupId
               artifactId
