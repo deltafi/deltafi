@@ -664,6 +664,23 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testResumeVersion0() throws IOException {
+		UUID did = UUID.randomUUID();
+		DeltaFile insertVersion0 = postTransformHadErrorDeltaFile(did);
+		insertVersion0.setVersion(0);
+		deltaFileRepo.insertOne(insertVersion0);
+
+		List<RetryResult> resumeResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("resumeTransform"), did),
+				"data." + DgsConstants.MUTATION.Resume,
+				new TypeRef<>() {});
+
+		assertEquals(1, resumeResults.size());
+		assertEquals(did, resumeResults.getFirst().getDid());
+		assertTrue(resumeResults.getFirst().getSuccess());
+	}
+
+	@Test
 	void testResumeTransform() throws IOException {
 		UUID did = UUID.randomUUID();
 		deltaFileRepo.save(postTransformHadErrorDeltaFile(did));

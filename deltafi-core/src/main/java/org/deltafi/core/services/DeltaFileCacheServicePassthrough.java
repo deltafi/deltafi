@@ -22,14 +22,20 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "false")
 public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
-    public DeltaFileCacheServicePassthrough(DeltaFileRepo deltaFileRepo) {
+    final Clock clock;
+
+    public DeltaFileCacheServicePassthrough(DeltaFileRepo deltaFileRepo, Clock clock) {
         super(deltaFileRepo);
+        this.clock = clock;
     }
 
     @Override
@@ -37,7 +43,18 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
 
     @Override
     public DeltaFile get(UUID did) {
-        return getFromRepo(did);
+        DeltaFile deltaFile = getFromRepo(did);
+        if (deltaFile != null && deltaFile.getCacheTime() == null) {
+            deltaFile.setCacheTime(OffsetDateTime.now(clock));
+        }
+        return deltaFile;
+    }
+
+    @Override
+    public List<DeltaFile> get(List<UUID> dids) {
+        List<DeltaFile> deltaFiles = getFromRepo(dids);
+        deltaFiles.forEach(d -> d.setCacheTime(OffsetDateTime.now(clock)));
+        return deltaFiles;
     }
 
     @Override

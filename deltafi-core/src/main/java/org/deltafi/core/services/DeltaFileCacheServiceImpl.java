@@ -26,10 +26,10 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -63,6 +63,31 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
             deltaFile.setCacheTime(OffsetDateTime.now(clock));
         }
         return deltaFile;
+    }
+
+    @Override
+    public List<DeltaFile> get(List<UUID> dids) {
+        List<DeltaFile> fromCache = dids.stream()
+                .map(deltaFileCache::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (fromCache.size() == dids.size()) {
+            return fromCache;
+        }
+
+        Set<UUID> foundDids = fromCache.stream()
+                .map(DeltaFile::getDid)
+                .collect(Collectors.toSet());
+
+        List<UUID> missingDids = dids.stream()
+                .filter(did -> !foundDids.contains(did))
+                .toList();
+
+        List<DeltaFile> fromRepo = getFromRepo(missingDids);
+        fromRepo.forEach(this::put);
+        return Stream.concat(fromCache.stream(), fromRepo.stream())
+                .toList();
     }
 
     @Override

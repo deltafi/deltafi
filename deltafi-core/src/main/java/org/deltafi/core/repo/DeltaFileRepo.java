@@ -47,6 +47,12 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
             "WHERE df.did = :did")
     Optional<DeltaFile> findById(@NotNull UUID did);
 
+    @Query("SELECT df FROM DeltaFile df " +
+            "LEFT JOIN FETCH df.annotations " +
+            "LEFT JOIN FETCH df.flows f " +
+            "WHERE df.did IN (:dids)")
+    List<DeltaFile> findByIdsIn(@NotNull List<UUID> dids);
+
     /**
      * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
      * @param flowName name of dataSource to search for

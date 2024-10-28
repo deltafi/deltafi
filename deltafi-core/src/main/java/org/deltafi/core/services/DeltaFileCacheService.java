@@ -24,6 +24,7 @@ import org.deltafi.core.repo.DeltaFileRepo;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -35,6 +36,8 @@ public abstract class DeltaFileCacheService {
     public abstract void flush();
 
     public abstract DeltaFile get(UUID did);
+
+    public abstract List<DeltaFile> get(List<UUID> dids);
 
     public abstract boolean isCached(UUID did);
 
@@ -52,6 +55,10 @@ public abstract class DeltaFileCacheService {
 
     protected DeltaFile getFromRepo(UUID did) {
         return deltaFileRepo.findById(did).orElse(null);
+    }
+
+    protected List<DeltaFile> getFromRepo(List<UUID> dids) {
+        return deltaFileRepo.findByIdsIn(dids);
     }
 
     protected void put(DeltaFile deltaFile) {}

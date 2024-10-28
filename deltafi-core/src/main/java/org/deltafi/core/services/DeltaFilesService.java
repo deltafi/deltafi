@@ -780,11 +780,11 @@ public class DeltaFilesService {
     }
 
     public List<RetryResult> resume(@NotNull List<UUID> dids, @NotNull List<ResumeMetadata> resumeMetadata) {
-        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
+        List<DeltaFile> deltaFiles = deltaFileCacheService.get(dids);
+        Map<UUID, DeltaFile> deltaFilesMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, Function.identity()));
         return resumeDeltaFiles(dids.stream()
-                        // Collectors.toMap does not allow null values, so build a Map manually
                         .collect(LinkedHashMap::new,
-                                (map, did) -> map.put(did, deltaFiles.getOrDefault(did, null)),
+                                (map, did) -> map.put(did, deltaFilesMap.get(did)),
                                 HashMap::putAll),
                 resumeMetadata);
     }
