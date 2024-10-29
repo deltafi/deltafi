@@ -20,7 +20,7 @@
   <div class="plugins-page">
     <PageHeader heading="Plugins">
       <div class="d-flex mb-2">
-        <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="25vw" @reload-plugins="loadPlugins()">
+        <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="40vw" @reload-plugins="loadPlugins()">
           <Button v-has-permission:PluginInstall label="Install Plugin" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
@@ -38,8 +38,8 @@
             <Column header="Action Kit Version" field="actionKitVersion" />
             <Column :style="{ width: '5%' }" class="plugin-actions-column" :hidden="!$hasSomePermissions('PluginInstall', 'PluginUninstall')">
               <template #body="{ data }">
-                <div class="d-flex justify-content-between">
-                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="25vw" :row-data-prop="data" @reload-plugins="loadPlugins()">
+                <div v-if="!data.readOnly" class="d-flex justify-content-between">
+                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="40vw" :row-data-prop="data" @reload-plugins="loadPlugins()">
                     <Button v-has-permission:PluginInstall v-tooltip.top="`Update Plugin`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
                   </DialogTemplate>
                   <PluginRemoveButton v-has-permission:PluginUninstall :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" />
@@ -116,14 +116,23 @@ const showLoading = computed(() => !loaded.value && loading.value);
 const pluginsList = computed(() => {
   if (plugins.value) {
     plugins.value.plugins.forEach((plugin) => {
-      let combinedPluginCoordinates = "";
-      plugin["combinedPluginCoordinates"] = combinedPluginCoordinates.concat(plugin.pluginCoordinates.groupId, ":", plugin.pluginCoordinates.artifactId, ":", plugin.pluginCoordinates.version);
+      plugin["combinedPluginCoordinates"] = plugin.pluginCoordinates.groupId.concat(":", plugin.pluginCoordinates.artifactId, ":", plugin.pluginCoordinates.version);
+      plugin["readOnly"] = isReadOnly(plugin);
+      if (!plugin["readOnly"]) {
+        const imageParts = plugin.image.split(":");
+        plugin["imageName"] = imageParts[0];
+        plugin["imageTag"] = imageParts[1];
+      }
     });
     return plugins.value.plugins;
   } else {
     return [];
   }
 });
+
+const isReadOnly = (plugin) => {
+  return plugin.pluginCoordinates.groupId === "org.deltafi" && ["deltafi-core-actions", "system-plugin"].includes(plugin.pluginCoordinates.artifactId);
+}
 
 const loadPlugins = async () => {
   await fetchPlugins();

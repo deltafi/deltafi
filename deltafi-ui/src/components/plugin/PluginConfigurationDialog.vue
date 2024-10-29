@@ -30,15 +30,19 @@
           </Message>
         </div>
         <dl>
-          <dt>{{ pluginConfigurationMap.get("image").header }}</dt>
+          <dt>{{ pluginConfigurationMap.get("imageName").header }}</dt>
           <dd>
-            <InputText v-model.trim="model.image" :placeholder="pluginConfigurationMap.get('image').placeholder" :disabled="pluginConfigurationMap.get('image').disabled" class="inputWidth" />
+            <InputText v-model.trim="model.imageName" :placeholder="pluginConfigurationMap.get('imageName').placeholder" class="inputWidth" />
+          </dd>
+          <dt>{{ pluginConfigurationMap.get("imageTag").header }}</dt>
+          <dd>
+            <InputText v-model.trim="model.imageTag" :placeholder="pluginConfigurationMap.get('imageTag').placeholder" class="inputWidth" />
           </dd>
           <dt>{{ pluginConfigurationMap.get("imagePullSecret").header }}
             <i v-tooltip="pluginConfigurationMap.get('imagePullSecret').tooltip" class="ml-0 text-muted fas fa-info-circle fa-fw" />
           </dt>
           <dd>
-            <InputText v-model.trim="model.imagePullSecret" :placeholder="pluginConfigurationMap.get('imagePullSecret').placeholder" :disabled="pluginConfigurationMap.get('imagePullSecret').disabled" class="inputWidth" />
+            <InputText v-model.trim="model.imagePullSecret" :placeholder="pluginConfigurationMap.get('imagePullSecret').placeholder" class="inputWidth" />
           </dd>
         </dl>
       </div>
@@ -99,14 +103,16 @@ const model = computed({
   set(newValue) {
     Object.assign(
       rowData.value,
-      _.mapValues(newValue, (v) => (v === "" ? null : v))
+      _.mapValues(newValue, (v) => (v === "" ? null : v)),
+      { image: `${newValue.imageName}:${newValue.imageTag || "latest"}` }
     );
   },
 });
 const originalModel = Object.assign({}, model.value);
 
 const pluginConfigurationMap = new Map([
-  ["image", { header: "Image*", placeholder: "e.g. docker.io/deltafi/deltafi-passthrough:1.0.1" }],
+  ["imageName", { header: "Image Name*", placeholder: "e.g. docker.io/deltafi/deltafi-passthrough" }],
+  ["imageTag", { header: "Image Tag*", placeholder: "e.g. latest" }],
   ["imagePullSecret", { header: "Image Pull Secret", placeholder: "e.g. docker-secret", tooltip: "Optional - the name of the secret that holds the credentials necessary to pull this image" }],
 ]);
 
