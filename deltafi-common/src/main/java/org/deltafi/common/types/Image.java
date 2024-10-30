@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.common.types;
 
 public record Image(String name, String tag) {
 

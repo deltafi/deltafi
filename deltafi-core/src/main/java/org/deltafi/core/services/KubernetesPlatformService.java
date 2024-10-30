@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.AllArgsConstructor;
 import org.deltafi.core.types.AppInfo;
 import org.deltafi.core.types.AppName;
-import org.deltafi.core.types.Image;
+import org.deltafi.common.types.Image;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 

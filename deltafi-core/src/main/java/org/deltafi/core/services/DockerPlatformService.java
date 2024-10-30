@@ -22,7 +22,7 @@ import com.github.dockerjava.api.model.Container;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.AppInfo;
 import org.deltafi.core.types.AppName;
-import org.deltafi.core.types.Image;
+import org.deltafi.common.types.Image;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;

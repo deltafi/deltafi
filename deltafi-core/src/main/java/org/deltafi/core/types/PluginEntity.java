@@ -37,7 +37,8 @@ public class PluginEntity {
     private GroupIdArtifactId key;
     private String version;
 
-    private String image;
+    private String imageName;
+    private String imageTag;
     private String imagePullSecret;
     private String displayName;
     private String description;
@@ -76,7 +77,8 @@ public class PluginEntity {
     public PluginEntity(Plugin plugin) {
         this.key = new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
         this.version = plugin.getPluginCoordinates().getVersion();
-        this.image = plugin.getImage();
+        this.imageName = plugin.getImageName();
+        this.imageTag = plugin.getImageTag();
         this.imagePullSecret = plugin.getImagePullSecret();
         this.displayName = plugin.getDisplayName();
         this.description = plugin.getDescription();
@@ -89,7 +91,8 @@ public class PluginEntity {
 
     public Plugin toPlugin() {
         Plugin plugin = new Plugin();
-        plugin.setImage(image);
+        plugin.setImageName(imageName);
+        plugin.setImageTag(imageTag);
         plugin.setImagePullSecret(imagePullSecret);
         plugin.setPluginCoordinates(this.getPluginCoordinates());
         plugin.setDisplayName(this.displayName);

@@ -28,7 +28,8 @@ export default function usePlugins() {
         displayName: true,
         description: true,
         actionKitVersion: true,
-        image: true,
+        imageName: true,
+        imageTag: true,
         imagePullSecret: true,
         pluginCoordinates: {
           artifactId: true,

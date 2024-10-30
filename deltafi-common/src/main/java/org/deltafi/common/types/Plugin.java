@@ -24,7 +24,8 @@ import java.util.List;
 @Data
 public class Plugin {
   private PluginCoordinates pluginCoordinates;
-  private String image;
+  private String imageName;
+  private String imageTag;
   private String imagePullSecret;
   private String displayName;
   private String description;

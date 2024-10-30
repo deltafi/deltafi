@@ -53,7 +53,7 @@ public class PluginService implements Snapshotter {
     private final TransformFlowService transformFlowService;
     private final Environment environment;
     private final PluginValidator pluginValidator;
-    private final DataSinkPlanService DataSinkPlanService;
+    private final DataSinkPlanService dataSinkPlanService;
     private final RestDataSourcePlanService restDataSourcePlanService;
     private final TimedDataSourcePlanService timedDataSourcePlanService;
     private final TransformFlowPlanService transformFlowPlanService;
@@ -241,7 +241,7 @@ public class PluginService implements Snapshotter {
         errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans, existingFlowPlans));
         errors.addAll(restDataSourcePlanService.validateFlowPlans(groupedFlowPlans.restDataSourcePlans, existingFlowPlans));
         errors.addAll(timedDataSourcePlanService.validateFlowPlans(groupedFlowPlans.timedDataSourcePlans, existingFlowPlans));
-        errors.addAll(DataSinkPlanService.validateFlowPlans(groupedFlowPlans.DataSinkPlans, existingFlowPlans));
+        errors.addAll(dataSinkPlanService.validateFlowPlans(groupedFlowPlans.DataSinkPlans, existingFlowPlans));
         errors.addAll(pluginVariableService.validateVariables(variables));
 
         List<String> duplicateNames = findDuplicateDataSourceNames(groupedFlowPlans, plugin.getPluginCoordinates());
@@ -266,7 +266,7 @@ public class PluginService implements Snapshotter {
      */
     private GroupedFlowPlans groupPlansByFlowType(PluginRegistration pluginRegistration) {
         List<TransformFlowPlan> transformFlowPlans = new ArrayList<>();
-        List<DataSinkPlan> DataSinkPlans = new ArrayList<>();
+        List<DataSinkPlan> dataSinkPlans = new ArrayList<>();
         List<RestDataSourcePlan> restDataSourcePlans = new ArrayList<>();
         List<TimedDataSourcePlan> timedDataSourcePlans = new ArrayList<>();
 
@@ -275,7 +275,7 @@ public class PluginService implements Snapshotter {
                 flowPlan.setSourcePlugin(pluginRegistration.getPluginCoordinates());
                 switch (flowPlan) {
                     case TransformFlowPlan plan -> transformFlowPlans.add(plan);
-                    case DataSinkPlan plan -> DataSinkPlans.add(plan);
+                    case DataSinkPlan plan -> dataSinkPlans.add(plan);
                     case RestDataSourcePlan plan -> restDataSourcePlans.add(plan);
                     case TimedDataSourcePlan plan -> timedDataSourcePlans.add(plan);
                     default -> log.warn("Unknown flow plan type: {}", flowPlan.getClass());
@@ -283,7 +283,7 @@ public class PluginService implements Snapshotter {
             });
         }
 
-        return new GroupedFlowPlans(transformFlowPlans, DataSinkPlans, restDataSourcePlans, timedDataSourcePlans);
+        return new GroupedFlowPlans(transformFlowPlans, dataSinkPlans, restDataSourcePlans, timedDataSourcePlans);
     }
 
     public Optional<PluginEntity> getPlugin(PluginCoordinates pluginCoordinates) {

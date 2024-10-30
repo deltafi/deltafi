@@ -22,8 +22,10 @@ A Plugin is a collection of actions. It may depend on other Plugins.
 type Plugin {
     "The identifying coordinates"
     pluginCoordinates: PluginCoordinates!
-    "The image used to install this plugin"
-    image: String
+    "The name of the image used to install this plugin"
+    imageName: String
+    "The tag of the image used to install this plugin"
+    imageTag: String
     "The name of the secret containing the registry credentials to pull the image"
     imagePullSecret: String
     "A user-friendly name"

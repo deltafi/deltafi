@@ -118,11 +118,6 @@ const pluginsList = computed(() => {
     plugins.value.plugins.forEach((plugin) => {
       plugin["combinedPluginCoordinates"] = plugin.pluginCoordinates.groupId.concat(":", plugin.pluginCoordinates.artifactId, ":", plugin.pluginCoordinates.version);
       plugin["readOnly"] = isReadOnly(plugin);
-      if (!plugin["readOnly"]) {
-        const imageParts = plugin.image.split(":");
-        plugin["imageName"] = imageParts[0];
-        plugin["imageTag"] = imageParts[1];
-      }
     });
     return plugins.value.plugins;
   } else {

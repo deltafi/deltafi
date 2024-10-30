@@ -88,8 +88,8 @@ public abstract class BaseDeployerService implements DeployerService {
 
         pluginService.uninstallPlugin(pluginCoordinates);
         String appName = pluginCoordinates.getArtifactId();
-        if (plugin != null && StringUtils.isNotBlank(plugin.getImage())) {
-            appName = InstallDetails.from(plugin.getImage()).appName();
+        if (plugin != null && StringUtils.isNotBlank(plugin.getImageName())) {
+            appName = InstallDetails.from(plugin.getImageName()).appName();
         }
         Result retval = removePluginResources(appName);
 

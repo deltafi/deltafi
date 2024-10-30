@@ -19,6 +19,7 @@ package org.deltafi.common.types;
 
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,11 @@ public class PluginRegistration {
 
     public Plugin toPlugin() {
         Plugin plugin = new Plugin();
-        plugin.setImage(image);
+        if (StringUtils.isNotBlank(image)) {
+            Image imageObj = Image.image(image);
+            plugin.setImageName(imageObj.name());
+            plugin.setImageTag(imageObj.tag());
+        }
         plugin.setImagePullSecret(imagePullSecret);
         plugin.setPluginCoordinates(pluginCoordinates);
         plugin.setDisplayName(displayName);
