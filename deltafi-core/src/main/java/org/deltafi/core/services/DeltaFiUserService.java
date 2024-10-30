@@ -82,10 +82,13 @@ public class DeltaFiUserService {
             user.setUsername(username);
         }
 
-        // not a direct call and the user does not exist
         if (user == null) {
-            String field = authProperties.certMode() ? DN : USERNAME;
-            throw new UsernameNotFoundException("No user exists with a " + field + " of " + username);
+            if (authProperties.basicMode()) {
+                // authentication will always fail in basic anyway so short circuit to avoid extra lookups
+                throw new UsernameNotFoundException("No user exists with a username of " + username);
+            }
+            // create an empty user that can be passed to the entity resolver
+            user = emptyUser(username);
         }
 
         // if the authorities were not in the permissions header of the request look them up
@@ -99,6 +102,21 @@ public class DeltaFiUserService {
                 .password(user.getPassword())
                 .permissionSet(authorities)
                 .build();
+    }
+
+    private DeltaFiUser emptyUser(String identifier) {
+        DeltaFiUser user = new DeltaFiUser();
+        user.setUsername(identifier);
+
+        if (authProperties.certMode()) {
+            user.setDn(identifier);
+            try {
+                user.setUsername(DnUtil.extractCommonName(identifier));
+            } catch (Exception e) {
+                // ignore this just use the DN as the username
+            }
+        }
+        return user;
     }
 
     public List<DeltaFiUserDTO> getAllUsers() {

@@ -130,8 +130,6 @@ class DeltaFiUserServiceTest {
 
         // verify we only searched by DN in cert mode
         Mockito.verify(deltaFiUserRepo, Mockito.never()).findByUsername(BOB_NAME);
-        // verify we don't make extra DB calls when there is only one identity
-        Mockito.verify(deltaFiUserRepo, Mockito.never()).findByUsernameIn(Mockito.anyList());
 
         assertThat(user).isNotNull();
         assertThat(user.getUsername()).isEqualTo(BOB_NAME);
@@ -212,25 +210,49 @@ class DeltaFiUserServiceTest {
     }
 
     @Test
-    void loadUserByUsernameMissingUsername() {
+    void loadUserByUsernameMissingUserResolvedByEntityResolver() {
         setupRequestHolder();
-        Mockito.when(deltaFiUserRepo.findByUsername(BOB_NAME)).thenReturn(Optional.empty());
-
-        authProperties.setMode("basic");
-        assertThatThrownBy(this::load)
-                .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("No user exists with a username of bob");
-
+        Set<String> identities = Set.of(BOB.getDn(), "super-bob");
         authProperties.setMode("cert");
-        assertThatThrownBy(this::load)
-                .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("No user exists with a dn of bob");
+        Mockito.when(deltaFiUserRepo.findByDn(BOB.getDn())).thenReturn(Optional.empty());
+        Mockito.when(entityResolver.resolve(BOB.getDn())).thenReturn(identities);
+        Mockito.when(deltaFiUserRepo.findByDnIn(identities)).thenReturn(List.of(SUPER_BOB));
 
-        // user must exist in disabled mode (unless the permissions header is present)
-        authProperties.setMode("disabled");
-        assertThatThrownBy(this::load)
-                .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("No user exists with a username of bob");
+        Set<String> expectedPermissions = Set.of("UIView", "Admin");
+        DeltaFiUserDetails user = load(BOB.getDn());
+
+        assertThat(user).isNotNull();
+        assertThat(user.getUsername()).isEqualTo("Bob"); // extracted from the DN
+        assertThat(user.getPassword()).isNull();
+        assertThat(user.getAuthorities()).isEqualTo(Set.of(new SimpleGrantedAuthority("UIView"), new SimpleGrantedAuthority("Admin")));
+        assertThat(user.isAdmin()).isTrue();
+        assertThat(user.getPermissions()).contains("UIView", "Admin");
+        assertThat(user.getMetricsRole()).isEqualTo("Admin");
+        assertThat(user.getPermissionSet()).isEqualTo(expectedPermissions);
+    }
+
+    @Test
+    void loadUserByUsernameMissingUserUnresolvedByEntityResolver() {
+        setupRequestHolder();
+        Set<String> identities = Set.of(BOB.getDn());
+        authProperties.setMode("cert");
+        Mockito.when(deltaFiUserRepo.findByDn(BOB.getDn())).thenReturn(Optional.empty());
+        Mockito.when(entityResolver.resolve(BOB.getDn())).thenReturn(identities);
+        Mockito.when(deltaFiUserRepo.findByDnIn(identities)).thenReturn(List.of());
+
+        DeltaFiUserDetails user = load(BOB.getDn());
+
+        // no extra lookups when the entity resolver didn't find any other identities
+        Mockito.verify(deltaFiUserRepo, Mockito.never()).findByDnIn(Mockito.anySet());
+
+        assertThat(user).isNotNull();
+        assertThat(user.getUsername()).isEqualTo("Bob"); // extracted from the DN
+        assertThat(user.getPassword()).isNull();
+        assertThat(user.getAuthorities()).isEmpty();
+        assertThat(user.isAdmin()).isFalse();
+        assertThat(user.getPermissions()).isBlank();
+        assertThat(user.getMetricsRole()).isBlank();
+        assertThat(user.getPermissionSet()).isEmpty();
     }
 
     @Test
