@@ -176,7 +176,7 @@ public class PluginRegistrar {
         List<FlowPlan> flowPlans = new ArrayList<>();
         for (Resource flowPlanResource : flowPlanResources) {
             String filename = flowPlanResource.getFilename();
-            if (filename == null || filename.startsWith("variables.")) {
+            if (filename == null || filename.startsWith("variables.") || !validExtension(filename)) {
                 continue;
             }
             try {
@@ -186,5 +186,9 @@ public class PluginRegistrar {
             }
         }
         return flowPlans;
+    }
+
+    private boolean validExtension(String filename) {
+        return filename.endsWith(".json") || filename.endsWith(".yaml") || filename.endsWith(".yml");
     }
 }
