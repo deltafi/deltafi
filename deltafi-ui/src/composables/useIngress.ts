@@ -38,7 +38,7 @@ export default function useIngress() {
     const buildHeader = () => {
       const headerObject: any = {};
       headerObject["Content-Type"] = file.type || "application/octet-stream";
-      headerObject["Flow"] = dataSource; // TODO: Will need to be renamed once the backend is updated.
+      headerObject["DataSource"] = dataSource;
       headerObject["Filename"] = file.name;
       headerObject["Metadata"] = JSON.stringify({
         ...metadata,

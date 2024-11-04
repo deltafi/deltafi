@@ -3961,7 +3961,7 @@ class DeltaFiCoreApplicationTests {
 		if (filename != null) {
 			headers.add("Filename", filename);
 		}
-		headers.add("Flow", TRANSFORM_FLOW_NAME);
+		headers.add("DataSource", TRANSFORM_FLOW_NAME);
 		headers.add("Metadata", METADATA);
 		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
 		headers.add(USER_NAME_HEADER, USERNAME);

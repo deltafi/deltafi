@@ -51,14 +51,14 @@ public class IngressRest {
     @PostMapping(consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
     public ResponseEntity<String> ingressData(InputStream dataStream,
             @RequestHeader(value = "Filename", required = false) String filename,
-            @RequestHeader(value = "Flow", required = false) String flow,
+            @RequestHeader(value = "DataSource", required = false) String dataSource,
             @RequestHeader(value = "Metadata", required = false) String metadata,
             @RequestHeader(HttpHeaders.CONTENT_TYPE) String contentType,
             @RequestHeader(value = DeltaFiConstants.USER_NAME_HEADER, defaultValue = "system") String username) {
         username = StringUtils.isNotBlank(username) ? username : "system";
 
         try {
-            List<IngressResult> ingressResults = ingressService.ingress(flow, filename, contentType, username, metadata,
+            List<IngressResult> ingressResults = ingressService.ingress(dataSource, filename, contentType, username, metadata,
                     dataStream, OffsetDateTime.now());
             return ResponseEntity.ok(String.join(",", ingressResults.stream().map(r -> r.did().toString()).toList()));
         } catch (IngressUnavailableException e) {
