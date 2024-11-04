@@ -219,13 +219,6 @@ public class PluginService implements Snapshotter {
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlows(plugin, groupedFlowPlans);
 
-        try {
-            revalidateFlows();
-        } catch (Exception ignored) {
-            // this mimics the old behavior where this happened asynchronously
-            // presumably we don't want to error if a flow from another plugin no longer validates, or if we hit an exception
-        }
-
         return Result.builder().success(true).build();
     }
 

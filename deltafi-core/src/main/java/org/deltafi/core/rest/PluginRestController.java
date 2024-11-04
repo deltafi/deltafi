@@ -44,7 +44,14 @@ public class PluginRestController {
         try {
             Result result = pluginService.register(pluginRegistration);
 
-            if (!result.isSuccess()) {
+            if (result.isSuccess()) {
+                try {
+                    pluginService.revalidateFlows();
+                } catch (Exception ignored) {
+                    // log an error if anything goes wrong revalidating flows, but do not prevent a successful registration
+                    log.error("Problem");
+                }
+            } else {
                 return ResponseEntity.badRequest().body(String.join("\n", result.getErrors()));
             }
         } catch (Exception e) {

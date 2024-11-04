@@ -123,10 +123,6 @@ class PluginServiceTest {
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
-        Mockito.verify(dataSinkService).validateAllFlows();
-        Mockito.verify(restDataSourceService).validateAllFlows();
-        Mockito.verify(timedDataSourceService).validateAllFlows();
-        Mockito.verify(transformFlowService).validateAllFlows();
     }
 
     @Test
