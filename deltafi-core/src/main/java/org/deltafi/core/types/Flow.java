@@ -152,7 +152,9 @@ public abstract class Flow {
      * @param sourceFlow to copy state and settings from
      */
     public final void copyFlowState(Flow sourceFlow) {
-        this.flowStatus.setState(sourceFlow.getFlowStatus().getState());
+        if (this.isStopped() && sourceFlow.isRunning()) {
+            this.flowStatus.setState(sourceFlow.getFlowStatus().getState());
+        }
         this.flowStatus.setTestMode(sourceFlow.getFlowStatus().getTestMode());
         copyFlowSpecificState(sourceFlow);
     }

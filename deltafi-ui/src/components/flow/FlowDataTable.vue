@@ -85,7 +85,7 @@
         </Column>
         <Column header="Active" class="flow-state-column">
           <template #body="{ data }">
-            <template v-if="!_.isEmpty(data.flowStatus.errors)">
+            <template v-if="_.isEqual(data.flowStatus.state, 'INVALID')">
               <FlowStateValidationButton :row-data-prop="data" @update-flows="emit('updateFlows')" />
             </template>
             <template v-else>

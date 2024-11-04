@@ -138,7 +138,7 @@ ROOT="$( cd "$DELTAFI_PATH/.." &> /dev/null && pwd)"
 CLUSTER_NAME=deltafi
 PV_DIR=$ORCHESTRATION_PATH/data
 SUDO=$(which sudo)
-KIND_DIR="${ROOT}/deltafi/kind"
+KIND_DIR="${ROOT}/deltafi/orchestration/kind"
 
 _base64() {
   local TEMPFILE

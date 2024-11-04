@@ -52,8 +52,8 @@ public class FlowCheck extends StatusCheck {
         checkFlows(resultBuilder, "Egress", dataSinkService.getAllInvalidFlows());
 
         if (resultBuilder.getCode() != 0) {
-             resultBuilder.addLine("\nVisit the [Data Sources](/config/data-sources), [Flows](/config/flows)," +
-                     " or [Egress](/config/egress) page for more info.");
+             resultBuilder.addLine("\nVisit the [Data Sources](/config/data-sources), [Transforms](/config/transforms)," +
+                     " or [Data Sinks](/config/data-sinks) page for more info.");
         }
 
         return result(resultBuilder);
