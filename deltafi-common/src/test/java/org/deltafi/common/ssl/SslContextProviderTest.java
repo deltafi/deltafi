@@ -20,7 +20,6 @@ package org.deltafi.common.ssl;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.ssl.PemSslBundleProperties;
 
-import java.io.UncheckedIOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -81,8 +80,8 @@ class SslContextProviderTest {
         properties.getKeystore().setCertificate("classpath:cert.pem");
         properties.getTruststore().setCertificate("classpath:ca_chain.pem");
         assertThatThrownBy(() -> new SslContextProvider(properties))
-                .isInstanceOf(UncheckedIOException.class)
-                .hasMessage("Error reading certificate or key from file 'missingkey.pem'");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Unable to create key store: Error reading certificate or key from file 'missingkey.pem'");
     }
 
     @Test
@@ -95,7 +94,7 @@ class SslContextProviderTest {
         properties.getTruststore().setCertificate("classpath:ca_chain.pem");
         assertThatThrownBy(() -> new SslContextProvider(properties))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Error loading private key file: Error decrypting private key");
+                .hasMessage("Unable to create key store: Error loading private key file: Error decrypting private key");
     }
 
     @Test
@@ -107,6 +106,6 @@ class SslContextProviderTest {
         properties.getTruststore().setCertificate("classpath:ca_chain.pem");
         assertThatThrownBy(() -> new SslContextProvider(properties))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Error loading private key file: Password is required for an encrypted private key");
+                .hasMessage("Unable to create key store: Error loading private key file: Password is required for an encrypted private key");
     }
 }

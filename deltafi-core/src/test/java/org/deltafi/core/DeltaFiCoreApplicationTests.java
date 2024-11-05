@@ -1908,7 +1908,7 @@ class DeltaFiCoreApplicationTests {
 				new ResumeGraphQLQuery.Builder()
 						.dids(List.of(input.getDid(), second.getDid(), badDid))
 						.build(),
-				new ResumeProjectionRoot().did().success().error(),
+				new ResumeProjectionRoot<>().did().success().error(),
 				SCALARS
 		);
 
@@ -2919,7 +2919,7 @@ class DeltaFiCoreApplicationTests {
 						.offset(null)
 						.orderBy(null)
 						.build(),
-				new DeltaFilesProjectionRoot().count().totalCount().offset().deltaFiles().did()
+				new DeltaFilesProjectionRoot<>().count().totalCount().offset().deltaFiles().did()
 						.flows().id().publishTopics().name().type().parent().state().getParent().created().modified()
 						.actions().name().type().parent().state().parent().created().modified().attempt());
 

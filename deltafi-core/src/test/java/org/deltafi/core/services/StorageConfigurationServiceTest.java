@@ -22,6 +22,7 @@ import io.minio.MinioClient;
 import io.minio.SetBucketLifecycleArgs;
 import io.minio.errors.*;
 import io.minio.messages.LifecycleRule;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ class StorageConfigurationServiceTest {
         SetBucketLifecycleArgs args = captureArgs.getValue();
         assertThat(args.bucket()).isEqualTo(BUCKET);
 
-        assertThat(args.config().rules()).asList().hasSize(1);
+        assertThat(args.config().rules()).asInstanceOf(InstanceOfAssertFactories.LIST).hasSize(1);
         LifecycleRule rule = args.config().rules().getFirst();
         assertThat(rule.expiration().days()).isEqualTo(13);
     }

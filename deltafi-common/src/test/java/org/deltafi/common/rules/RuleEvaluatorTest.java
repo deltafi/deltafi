@@ -23,6 +23,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Test;
+import org.springframework.expression.spel.SpelEvaluationException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -59,12 +60,11 @@ class RuleEvaluatorTest {
         RuleEvaluator.ImmutableDeltaFileFlow deltaFile = new RuleEvaluator.ImmutableDeltaFileFlow(originalMetadata, originalContent);
         // cannot rewrite value for key 'a'
         Assertions.assertThatThrownBy(() -> ruleEvaluator.doEvaluateCondition("metadata['a'] = 'c'", deltaFile))
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(SpelEvaluationException.class);
         // cannot add a new metadata key/value
         Assertions.assertThatThrownBy(() -> ruleEvaluator.doEvaluateCondition("metadata['b'] = 'c'", deltaFile))
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(SpelEvaluationException.class);
 
-        //
         ruleEvaluator.doEvaluateCondition("content[0].setName('c')", deltaFile);
         Assertions.assertThat(originalContent.getFirst().getName()).isEqualTo("test.txt");
         Assertions.assertThat(deltaFile.content().getFirst().getName()).isEqualTo("c");

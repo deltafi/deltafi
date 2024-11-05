@@ -35,7 +35,8 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-logging'
     api 'org.springframework.boot:spring-boot-autoconfigure'
     api "org.springframework.retry:spring-retry"
-    api 'org.apache.nifi:nifi-flowfile-packager:1.25.0'
+    api 'org.apache.nifi:nifi-flowfile-packager:1.27.0'
+    // moving to 5.4 breaks the core's ability to communicate with docker when running in compose
     api 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
 
     implementation 'io.jackey:jackey:5.2.0'
@@ -66,5 +67,5 @@ dependencies {
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    testImplementation 'org.wiremock:wiremock-standalone:3.5.2'
+    testImplementation 'org.wiremock:wiremock-standalone:3.9.1'
 }

@@ -41,48 +41,48 @@ public class FlowPlanDatafetcherTestHelper {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static TransformFlowPlan getTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot().name().type().description().type(), TransformFlowPlan.class);
+        return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot<>().name().type().description().type(), TransformFlowPlan.class);
     }
 
     public static DataSinkPlan getDataSinkPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetDataSinkPlanGraphQLQuery.newRequest().planName("dataSinkPlan").build(), new GetDataSinkPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), DataSinkPlan.class);
+        return executeQuery(dgsQueryExecutor, GetDataSinkPlanGraphQLQuery.newRequest().planName("dataSinkPlan").build(), new GetDataSinkPlanProjectionRoot<>().name().type().description().egressAction().name().actionType().type(), DataSinkPlan.class);
     }
 
     public static TimedDataSourcePlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetTimedDataSourcePlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedDataSourcePlanProjectionRoot().name().type().description().topic()
+        return executeQuery(dgsQueryExecutor, GetTimedDataSourcePlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedDataSourcePlanProjectionRoot<>().name().type().description().topic()
                 .name().timedIngressAction().name().actionType().type().parent().cronSchedule(), TimedDataSourcePlan.class);
     }
 
     public static TransformFlow validateTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(), new ValidateTransformFlowProjectionRoot().name(), TransformFlow.class);
+        return executeQuery(dgsQueryExecutor, ValidateTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(), new ValidateTransformFlowProjectionRoot<>().name(), TransformFlow.class);
     }
 
     public static TimedDataSource validateTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build(), new ValidateTimedDataSourceProjectionRoot().name().type(), TimedDataSource.class);
+        return executeQuery(dgsQueryExecutor, ValidateTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build(), new ValidateTimedDataSourceProjectionRoot<>().name().type(), TimedDataSource.class);
     }
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
-                new GetFlowNamesProjectionRoot().transform().dataSink().timedDataSource().restDataSource(), FlowNames.class);
+                new GetFlowNamesProjectionRoot<>().transform().dataSink().timedDataSource().restDataSource(), FlowNames.class);
     }
 
     public static DataSink validateDataSink(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateDataSinkProjectionRoot().name(), DataSink.class);
+        return executeQuery(dgsQueryExecutor, ValidateDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateDataSinkProjectionRoot<>().name(), DataSink.class);
     }
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<Flows>> typeRef = new TypeRef<>() {};
-        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().dataSinks().name().parent().restDataSources().name().type().parent().timedDataSources().name().type().root(), typeRef);
+        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot<>().sourcePlugin().artifactId().parent().transformFlows().name().parent().dataSinks().name().parent().restDataSources().name().type().parent().timedDataSources().name().type().root(), typeRef);
     }
 
     public static SystemFlows getRunningFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetRunningFlowsGraphQLQuery.newRequest().build(),
-                new GetRunningFlowsProjectionRoot().transform().name().parent().dataSink().name().root(), SystemFlows.class);
+                new GetRunningFlowsProjectionRoot<>().transform().name().parent().dataSink().name().root(), SystemFlows.class);
     }
 
     public static SystemFlowPlans getAllFlowPlans(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowPlansGraphQLQuery.newRequest().build(),
-                new GetAllFlowPlansProjectionRoot()
+                new GetAllFlowPlansProjectionRoot<>()
                         .timedDataSources().type().name().description().topic().timedIngressAction().name().type().actionType().parent().cronSchedule().parent()
                         .restDataSources().type().name().description().topic().parent()
                         .transformPlans().name().description().parent()
@@ -92,13 +92,13 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
-                new GetAllFlowsProjectionRoot().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().dataSink().name().root(), SystemFlows.class);
+                new GetAllFlowsProjectionRoot<>().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().dataSink().name().root(), SystemFlows.class);
     }
 
     @SuppressWarnings("unchecked")
     public static List<Topic> getAllTopics(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllTopicsGraphQLQuery.newRequest().build(),
-                new GetAllTopicsProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
+                new GetAllTopicsProjectionRoot<>().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
                 List.class).stream()
                 .map(map -> OBJECT_MAPPER.convertValue(map, Topic.class))
                 .toList();
@@ -107,7 +107,7 @@ public class FlowPlanDatafetcherTestHelper {
     @SuppressWarnings("unchecked")
     public static List<Topic> getTopics(DgsQueryExecutor dgsQueryExecutor, List<String> topics) {
         return executeQuery(dgsQueryExecutor, GetTopicsGraphQLQuery.newRequest().names(topics).build(),
-                new GetTopicsProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
+                new GetTopicsProjectionRoot<>().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
                 List.class).stream()
                 .map(map -> OBJECT_MAPPER.convertValue(map, Topic.class))
                 .toList();
@@ -115,23 +115,23 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static Topic getTopic(DgsQueryExecutor dgsQueryExecutor, String topic) {
         return executeQuery(dgsQueryExecutor, GetTopicGraphQLQuery.newRequest().name(topic).build(),
-                new GetTopicProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
+                new GetTopicProjectionRoot<>().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
                 Topic.class);
     }
 
     public static TransformFlow getTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(),
-                new GetTransformFlowProjectionRoot().name(), TransformFlow.class);
+                new GetTransformFlowProjectionRoot<>().name(), TransformFlow.class);
     }
 
     public static DataSink getDataSink(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build(),
-                new GetDataSinkProjectionRoot().name(), DataSink.class);
+                new GetDataSinkProjectionRoot<>().name(), DataSink.class);
     }
 
     public static List<ActionFamily> getActionFamilies(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<ActionFamily>> typeRef = new TypeRef<>() {};
-        return executeQuery(dgsQueryExecutor, GetActionNamesByFamilyGraphQLQuery.newRequest().build(), new GetActionNamesByFamilyProjectionRoot().family().actionNames(), typeRef);
+        return executeQuery(dgsQueryExecutor, GetActionNamesByFamilyGraphQLQuery.newRequest().build(), new GetActionNamesByFamilyProjectionRoot<>().family().actionNames(), typeRef);
     }
 
     public static TransformFlow saveTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -147,7 +147,7 @@ public class FlowPlanDatafetcherTestHelper {
                 .publish(publishRules)
                 .build();
 
-        return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), TransformFlow.class);
+        return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot<>().name().flowStatus().state().parent().parent(), TransformFlow.class);
     }
 
     public static DataSink saveDataSinkPlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -159,7 +159,7 @@ public class FlowPlanDatafetcherTestHelper {
                 .egressAction(egress)
                 .subscribe(List.of(new Rule("topic", null)))
                 .build();
-        return executeQuery(dgsQueryExecutor, SaveDataSinkPlanGraphQLQuery.newRequest().DataSinkPlan(input).build(), new SaveDataSinkPlanProjectionRoot().name(), DataSink.class);
+        return executeQuery(dgsQueryExecutor, SaveDataSinkPlanGraphQLQuery.newRequest().DataSinkPlan(input).build(), new SaveDataSinkPlanProjectionRoot<>().name(), DataSink.class);
     }
 
     public static TimedDataSource saveTimedDataSourcePlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -173,7 +173,7 @@ public class FlowPlanDatafetcherTestHelper {
                 .cronSchedule("*/5 * * * * *")
                 .topic("topic")
                 .build();
-        return executeQuery(dgsQueryExecutor, SaveTimedDataSourcePlanGraphQLQuery.newRequest().dataSourcePlan(input).build(), new SaveTimedDataSourcePlanProjectionRoot().name().description().type(), TimedDataSource.class);
+        return executeQuery(dgsQueryExecutor, SaveTimedDataSourcePlanGraphQLQuery.newRequest().dataSourcePlan(input).build(), new SaveTimedDataSourcePlanProjectionRoot<>().name().description().type(), TimedDataSource.class);
     }
 
     public static boolean removeTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {

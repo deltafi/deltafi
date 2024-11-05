@@ -29,7 +29,7 @@ import java.util.List;
 
 public class IntegrationDataFetcherTestHelper {
 
-    private static final GetIntegrationTestsProjectionRoot GET_ALL_INT_TESTS = new GetIntegrationTestsProjectionRoot()
+    private static final GetIntegrationTestsProjectionRoot<?, ?>  GET_ALL_INT_TESTS = new GetIntegrationTestsProjectionRoot<>()
             .name()
             .description()
             .plugins()
@@ -153,7 +153,7 @@ public class IntegrationDataFetcherTestHelper {
             .parent()
             .parent();
 
-    private static final GetIntegrationTestProjectionRoot GET_INT_TEST = new GetIntegrationTestProjectionRoot()
+    private static final GetIntegrationTestProjectionRoot<?, ?>  GET_INT_TEST = new GetIntegrationTestProjectionRoot<>()
             .name()
             .description()
             .plugins()
@@ -278,7 +278,7 @@ public class IntegrationDataFetcherTestHelper {
             .parent();
 
 
-    private static final GetTestResultProjectionRoot GET_TEST_RESULT = new GetTestResultProjectionRoot()
+    private static final GetTestResultProjectionRoot<?, ?> GET_TEST_RESULT = new GetTestResultProjectionRoot<>()
             .id()
             .testName()
             .start()
@@ -287,7 +287,7 @@ public class IntegrationDataFetcherTestHelper {
             .status()
             .parent();
 
-    private static final GetTestResultsProjectionRoot GET_ALL_TEST_RESULTS = new GetTestResultsProjectionRoot()
+    private static final GetTestResultsProjectionRoot<?, ?>  GET_ALL_TEST_RESULTS = new GetTestResultsProjectionRoot<>()
             .id()
             .testName()
             .start()
@@ -296,17 +296,17 @@ public class IntegrationDataFetcherTestHelper {
             .status()
             .parent();
 
-    private static final LoadIntegrationTestProjectionRoot LOAD_INT_TEST_PROJECTION = new LoadIntegrationTestProjectionRoot()
+    private static final LoadIntegrationTestProjectionRoot<?, ?>  LOAD_INT_TEST_PROJECTION = new LoadIntegrationTestProjectionRoot<>()
             .info()
             .errors()
             .success();
 
-    private static final SaveIntegrationTestProjectionRoot SAVE_INT_TEST_PROJECTION = new SaveIntegrationTestProjectionRoot()
+    private static final SaveIntegrationTestProjectionRoot<?, ?>  SAVE_INT_TEST_PROJECTION = new SaveIntegrationTestProjectionRoot<>()
             .info()
             .errors()
             .success();
 
-    private static final StartIntegrationTestProjectionRoot START_INT_TEST_PROJECTION = new StartIntegrationTestProjectionRoot()
+    private static final StartIntegrationTestProjectionRoot<?, ?>  START_INT_TEST_PROJECTION = new StartIntegrationTestProjectionRoot<>()
             .id()
             .testName()
             .start()

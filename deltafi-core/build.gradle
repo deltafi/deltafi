@@ -16,28 +16,28 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 
-	implementation 'com.networknt:json-schema-validator:1.1.0'
+	implementation 'com.networknt:json-schema-validator:1.5.2'
 
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
-	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter'
-	implementation 'org.apache.commons:commons-text:1.11.0'
-	implementation 'io.dropwizard.metrics:metrics-core:4.2.25'
-	implementation 'io.dropwizard.metrics:metrics-graphite:4.2.25'
-	implementation 'io.fabric8:kubernetes-client:6.10.0'
-	implementation 'com.github.docker-java:docker-java-core:3.3.4'
-	implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.3.4'
+	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter'
+	implementation 'org.apache.commons:commons-text:1.12.0'
+	implementation 'io.dropwizard.metrics:metrics-core:4.2.28'
+	implementation 'io.dropwizard.metrics:metrics-graphite:4.2.28'
+	implementation 'io.fabric8:kubernetes-client:6.13.4'
+	implementation 'com.github.docker-java:docker-java-core:3.4.0'
+	implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.4.0'
 	implementation 'org.lz4:lz4-java:1.8.0'
-	implementation 'org.postgresql:postgresql:42.7.3'
-	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.2'
+	implementation 'org.postgresql:postgresql:42.7.4'
+	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.3'
 	implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
-	implementation 'org.flywaydb:flyway-core:10.18.0'
-	implementation 'org.flywaydb:flyway-database-postgresql:10.18.0'
+	implementation 'org.flywaydb:flyway-core:10.20.0'
+	implementation 'org.flywaydb:flyway-database-postgresql:10.20.0'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.24.0'
-	testImplementation 'org.awaitility:awaitility:4.2.0'
+	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.27.0'
+	testImplementation 'org.awaitility:awaitility:4.2.2'
 
 	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
 	testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
@@ -47,6 +47,7 @@ dependencies {
 generateJava {
 	packageName = 'org.deltafi.core.generated'
 	generateClient = true
+	skipEntityQueries = true
 	typeMapping = [
 			"Duration": "java.time.Duration",
 			"JSON": "java.util.Map<String, Object>",
