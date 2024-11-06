@@ -75,7 +75,7 @@ export default function useTopics() {
   };
 
   const getAllTopicNames = async () => {
-    if (topics.value.length === 0) await getAllTopics();
+    await getAllTopics();
 
     return _.map(topics.value, "name");
   };
