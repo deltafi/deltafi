@@ -225,8 +225,16 @@ public class IntegrationService {
         return false;
     }
 
+    public List<String> validate(List<IntegrationTest> integrationTests) {
+        List<String> errors = new ArrayList<>();
+        for (IntegrationTest integrationTest : integrationTests) {
+            errors.addAll(configurationValidator.preSaveCheck(integrationTest));
+        }
+        return errors;
+    }
+
     public Result save(IntegrationTest integrationTest) {
-        List<String> errors = configurationValidator.preSaveCheck(integrationTest);
+        List<String> errors = validate(List.of(integrationTest));
         if (errors.isEmpty()) {
 
             integrationTestRepo.save(new IntegrationTestEntity(integrationTest));

@@ -182,6 +182,18 @@ class Plugin(object):
             'docsMarkdown': self._load_action_docs(action)
         }
 
+    def _integration_tests(self):
+        tests_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'integration')
+
+        test_files = []
+        if isdir(tests_path):
+            test_files = [f for f in os.listdir(tests_path) if isfile(join(tests_path, f))]
+        else:
+            self.logger.warning(f"tests directory ({tests_path}) does not exist. No tests will be installed.")
+
+        tests = [json.load(open(join(tests_path, f))) for f in test_files]
+        return tests
+
     def registration_json(self):
         flows_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'flows')
 
@@ -208,7 +220,8 @@ class Plugin(object):
             'dependencies': [],
             'actions': actions,
             'variables': variables,
-            'flowPlans': flows
+            'flowPlans': flows,
+            'integrationTests': self._integration_tests()
         }
 
     def _register(self):

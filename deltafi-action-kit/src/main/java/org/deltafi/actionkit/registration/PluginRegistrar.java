@@ -30,6 +30,7 @@ import org.deltafi.actionkit.action.parameters.ActionParametersSchemaGenerator;
 import org.deltafi.actionkit.action.transform.Join;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.*;
+import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.util.ResourceMapper;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
@@ -89,6 +90,13 @@ public class PluginRegistrar {
             pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
         } else {
             log.info("No flows directory exists to load variables or flows");
+        }
+
+        Resource testsDirectory = applicationContext.getResource("classpath:integration");
+        if (testsDirectory.exists()) {
+            pluginRegistrationBuilder.integrationTests(loadIntegrationTests());
+        } else {
+            log.info("No tests directory exists to load integration tests");
         }
 
         return pluginRegistrationBuilder.build();
@@ -186,6 +194,35 @@ public class PluginRegistrar {
             }
         }
         return flowPlans;
+    }
+
+    private List<IntegrationTest> loadIntegrationTests() {
+        Resource[] testResources;
+        try {
+            testResources = applicationContext.getResources("classpath:integration/*");
+        } catch (IOException e) {
+            log.warn("Unable to load tests", e);
+            return Collections.emptyList();
+        }
+
+        if (testResources.length == 0) {
+            log.info("No tests exist in the tests directory");
+            return Collections.emptyList();
+        }
+
+        List<IntegrationTest> tests = new ArrayList<>();
+        for (Resource testResource : testResources) {
+            String filename = testResource.getFilename();
+            if (filename == null || !validExtension(filename)) {
+                continue;
+            }
+            try {
+                tests.add(ResourceMapper.readValue(testResource, IntegrationTest.class));
+            } catch (IOException e) {
+                log.warn("Unable to load test ({})", testResource.getFilename(), e);
+            }
+        }
+        return tests;
     }
 
     private boolean validExtension(String filename) {

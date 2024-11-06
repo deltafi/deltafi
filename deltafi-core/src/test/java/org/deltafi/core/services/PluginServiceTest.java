@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.ActionDescriptor;
-import org.deltafi.common.types.Plugin;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.PluginRegistration;
-import org.deltafi.common.types.Variable;
+import org.deltafi.common.types.*;
+import org.deltafi.common.types.integration.ExpectedDeltaFile;
+import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.types.integration.TestCaseIngress;
+import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
@@ -98,6 +98,9 @@ class PluginServiceTest {
     @Mock
     BuildProperties buildProperties;
 
+    @Mock
+    IntegrationService integrationService;
+
     @BeforeEach
     public void setup() {
         List<PluginCleaner> cleaners = List.of(dataSinkService, transformFlowService, restDataSourceService,
@@ -117,12 +120,33 @@ class PluginServiceTest {
         PluginEntity plugin = new PluginEntity();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
-        Result result = pluginService.register(pluginRegistration);
+        Result result = pluginService.register(pluginRegistration, integrationService);
 
         assertTrue(result.isSuccess());
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
+    }
+
+    @Test
+    void addPluginWithIntegrationTest() {
+        Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of());
+        Mockito.when(integrationService.validate(Mockito.any())).thenReturn(List.of());
+
+        PluginEntity plugin = new PluginEntity();
+        plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(plugin.getPluginCoordinates())
+                .integrationTests(List.of(makeIntegrationTest()))
+                .build();
+        Result result = pluginService.register(pluginRegistration, integrationService);
+
+        assertTrue(result.isSuccess());
+        ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
+        assertEquals(plugin, pluginArgumentCaptor.getValue());
+
+        Mockito.verify(integrationService).save(Mockito.any());
     }
 
     @Test
@@ -132,12 +156,34 @@ class PluginServiceTest {
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
-        Result result = pluginService.register(pluginRegistration);
+        Result result = pluginService.register(pluginRegistration, integrationService);
 
         assertFalse(result.isSuccess());
         assertEquals(2, result.getErrors().size());
         assertEquals("error1", result.getErrors().get(0));
         assertEquals("error2", result.getErrors().get(1));
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    void addPluginHasIntegrationTestErrors() {
+        Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of("error1", "error2"));
+        Mockito.when(integrationService.validate(Mockito.any())).thenReturn(List.of("error3", "error4"));
+
+        Plugin plugin = new Plugin();
+        plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(plugin.getPluginCoordinates())
+                .integrationTests(List.of(IntegrationTest.builder().name("name").build()))
+                .build();
+        Result result = pluginService.register(pluginRegistration, integrationService);
+
+        assertFalse(result.isSuccess());
+        assertEquals(4, result.getErrors().size());
+        assertEquals("error1", result.getErrors().get(0));
+        assertEquals("error2", result.getErrors().get(1));
+        assertEquals("error3", result.getErrors().get(2));
+        assertEquals("error4", result.getErrors().get(3));
         Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
     }
 
@@ -309,5 +355,38 @@ class PluginServiceTest {
         Variable setValueAndMasked = Util.buildVariable("setValueAndMasked", "value", "default");
         setValueAndMasked.setMasked(true);
         return List.of(notSet, notSetAndMasked, setValue, setValueAndMasked);
+    }
+
+    IntegrationTest makeIntegrationTest() {
+        TestCaseIngress ingress1 = TestCaseIngress.builder()
+                .flow("ds")
+                .ingressFileName("fn")
+                .base64Encoded(false)
+                .data("data")
+                .build();
+        PluginCoordinates pc = new PluginCoordinates("group", "art", "ANY");
+
+        ExpectedDeltaFile e1 = ExpectedDeltaFile.builder()
+                .stage(DeltaFileStage.COMPLETE)
+                .childCount(3)
+                .build();
+
+        ExpectedDeltaFile e2 = ExpectedDeltaFile.builder()
+                .stage(DeltaFileStage.ERROR)
+                .childCount(0)
+                .build();
+
+        return IntegrationTest.builder()
+                .name("test4")
+                .description("desc")
+                .inputs(List.of(ingress1))
+                .plugins(List.of(pc))
+                .dataSources(List.of("ds"))
+                .transformationFlows(List.of("t"))
+                .dataSinks(List.of("e"))
+                .timeout("PT3M")
+                .expectedDeltaFiles(List.of(e1, e2))
+                .build();
+
     }
 }

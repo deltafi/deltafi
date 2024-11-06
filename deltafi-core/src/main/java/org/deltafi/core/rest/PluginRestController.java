@@ -20,6 +20,7 @@ package org.deltafi.core.rest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginRegistration;
+import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.Result;
 import org.springframework.http.ResponseEntity;
@@ -36,13 +37,14 @@ import javax.ws.rs.core.MediaType;
 @Slf4j
 public class PluginRestController {
     private final PluginService pluginService;
+    private final IntegrationService integrationService;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON)
     public ResponseEntity<String> createPlugin(@RequestBody PluginRegistration pluginRegistration) {
         log.info("Received plugin registration for {}", pluginRegistration.getPluginCoordinates());
 
         try {
-            Result result = pluginService.register(pluginRegistration);
+            Result result = pluginService.register(pluginRegistration, integrationService);
 
             if (result.isSuccess()) {
                 try {

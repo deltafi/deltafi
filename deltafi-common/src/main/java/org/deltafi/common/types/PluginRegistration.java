@@ -20,6 +20,7 @@ package org.deltafi.common.types;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.integration.IntegrationTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,8 @@ public class PluginRegistration {
     private List<Variable> variables;
     @Builder.Default
     private List<FlowPlan> flowPlans = new ArrayList<>();
+    @Builder.Default
+    private List<IntegrationTest> integrationTests = new ArrayList<>();
 
     public Plugin toPlugin() {
         Plugin plugin = new Plugin();

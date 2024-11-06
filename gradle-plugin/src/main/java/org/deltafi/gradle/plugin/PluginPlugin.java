@@ -24,6 +24,7 @@ import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.common.types.Variable;
+import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.util.ResourceMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -53,6 +54,7 @@ import java.util.List;
  * <pre>
  * deltafiPlugin {
  *   flowsDir = "flows" (optional, defaults to "src/main/resources/flows")
+ *   testsDir = "integration" (optional, defaults to "src/main/resources/integration")
  * }
  * </pre>
  */
@@ -60,6 +62,7 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
 
     public static class DeltafiPluginExtension {
         String flowsDir;
+        String testsDir;
     }
 
     @Setter
@@ -76,6 +79,13 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             } else {
                 checkVariables(flowsDirectory);
                 checkFlowPlans(flowsDirectory);
+            }
+
+            File testsDirectory = new File(getProject().getProjectDir(), deltafiPluginExtension.testsDir);
+            if (!testsDirectory.exists()) {
+                getLogger().warn("Tests directory ({}) does not exist. No tests will be installed.", testsDirectory);
+            } else {
+                checkTests(testsDirectory);
             }
         }
 
@@ -148,6 +158,31 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
 
             return !errors.isEmpty() ? "Errors in flow plan named `" + flowPlan.getName() + "` (file: " + fileName + "): " + String.join("; ", errors) : null;
         }
+
+        private void checkTests(File testsDirectory) {
+            File[] testFiles = testsDirectory.listFiles(this::isTestFile);
+
+            if (testFiles == null) {
+                throw new GradleException(testsDirectory + " is not a directory");
+            }
+
+            if (testFiles.length == 0) {
+                getLogger().warn("No tests exist in the tests directory ({})", testsDirectory);
+            }
+
+            for (File testFile : testFiles) {
+                try {
+                    ResourceMapper.readValue(testFile, IntegrationTest.class);
+                } catch (IOException e) {
+                    throw new GradleException("Unable to load test (" + testFile + "): " + e.getMessage(), e);
+                }
+            }
+        }
+
+        private boolean isTestFile(File file) {
+            String name = file.getName();
+            return (name.endsWith(".json") || name.endsWith(".yaml") || name.endsWith(".yml"));
+        }
     }
 
     @Override
@@ -157,6 +192,10 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
 
         if (extension.flowsDir == null) {
             extension.flowsDir = "src/main/resources/flows";
+        }
+
+        if (extension.testsDir == null) {
+            extension.testsDir = "src/main/resources/integration";
         }
 
         project.getTasks().register("checkDeltafiPlugin", CheckDeltafiPluginTask.class,

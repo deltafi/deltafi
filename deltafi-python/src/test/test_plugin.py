@@ -163,5 +163,8 @@ def get_expected_json():
         ],
         "flowPlans": [
 
+        ],
+        "integrationTests": [
+
         ]
     }

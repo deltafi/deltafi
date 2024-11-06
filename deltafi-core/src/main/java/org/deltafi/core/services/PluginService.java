@@ -23,7 +23,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
+import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.core.generated.types.Flows;
+import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
@@ -197,13 +199,14 @@ public class PluginService implements Snapshotter {
     }
 
     @Transactional
-    public Result register(PluginRegistration pluginRegistration) {
+    public Result register(PluginRegistration pluginRegistration, IntegrationService integrationService) {
         log.info("{}", pluginRegistration);
         PluginEntity plugin = new PluginEntity(pluginRegistration.toPlugin());
         GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);
 
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
         List<String> validationErrors = validate(plugin, groupedFlowPlans, pluginRegistration.getVariables());
+        validationErrors.addAll(integrationService.validate(pluginRegistration.getIntegrationTests()));
         if (!validationErrors.isEmpty()) {
             return Result.builder().success(false).errors(validationErrors).build();
         }
@@ -218,6 +221,10 @@ public class PluginService implements Snapshotter {
         updateActionDescriptors();
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlows(plugin, groupedFlowPlans);
+
+        for (IntegrationTest integrationTest : pluginRegistration.getIntegrationTests()) {
+            integrationService.save(integrationTest);
+        }
 
         return Result.builder().success(true).build();
     }
