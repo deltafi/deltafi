@@ -90,13 +90,9 @@ input ActionDescriptorInput {
 }
 
 extend type Mutation {
-
     "Install the plugin from the given image name"
     installPlugin(image: String!, imagePullSecret: String): Result!
 
     "Uninstall the plugin with the given coordinates"
     uninstallPlugin(pluginCoordinates: PluginCoordinatesInput!): Result!
-
-    "Helper to create a basic opaque secret"
-    addBasicCredential(sourceName: String!, username: String!, password: String!): Result!
 }

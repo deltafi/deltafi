@@ -34,7 +34,7 @@ public class PropertiesDatafetcherTestHelper {
     @Language("GraphQL")
     private static final String UPDATE_PROPERTIES = "mutation($updates: [KeyValueInput]!) {updateProperties(updates: $updates)}";
     @Language("GraphQL")
-    private static final String GET_PROPERTIES = "query { getDeltaFiProperties { systemName requeueDuration coreServiceThreads scheduledServiceThreads checkActionQueueSizeThreshold checkContentStoragePercentThreshold deleteFrequency ageOffDays deletePolicyBatchSize ingressEnabled ingressDiskSpaceRequirementInMb pluginImageRepositoryBase pluginImagePullSecret  metricsEnabled}}";
+    private static final String GET_PROPERTIES = "query { getDeltaFiProperties { systemName requeueDuration coreServiceThreads scheduledServiceThreads checkActionQueueSizeThreshold checkContentStoragePercentThreshold deleteFrequency ageOffDays deletePolicyBatchSize ingressEnabled ingressDiskSpaceRequirementInMb pluginImagePullSecret  metricsEnabled}}";
     @Language("GraphQL")
     private static final String UNSET_PROPERTY = "mutation($ids: [String]!) { removePropertyOverrides(propertyNames: $ids)}";
     @Language("GraphQL")
