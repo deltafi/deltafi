@@ -837,7 +837,15 @@ public class DeltaFilesService {
                 })
                 .toList();
 
-        advanceAndSave(advanceAndSaveInputs, false);
+        if (!advanceAndSaveInputs.isEmpty()) {
+            // force the cache to persist the deltaFile
+            advanceAndSaveInputs.stream().map(StateMachineInput::deltaFile).forEach(deltaFile -> {
+               deltaFile.setCacheTime(OffsetDateTime.MIN);
+            });
+
+            advanceAndSave(advanceAndSaveInputs, false);
+        }
+
         return retryResults;
     }
 

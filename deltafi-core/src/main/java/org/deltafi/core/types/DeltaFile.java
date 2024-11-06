@@ -389,6 +389,7 @@ public class DeltaFile {
   public boolean canBeCancelled() {
     return !inactiveStage() || flows.stream().anyMatch(DeltaFileFlow::hasAutoResume);
   }
+
   public boolean inactiveStage() {
     return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
   }

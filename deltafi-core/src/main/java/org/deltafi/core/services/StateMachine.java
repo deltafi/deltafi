@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.JoinException;
