@@ -225,7 +225,7 @@ public class StateMachine {
         action.setErrorContext("Circular flows detected. Processing stopped at maximum depth of " +
                 deltaFiPropertiesService.getDeltaFiProperties().getMaxFlowDepth());
         action.setContent(lastActionContent);
-        flow.setState(DeltaFileFlowState.ERROR);
+        flow.updateState();
     }
 
     private void markMissingAction(DeltaFileFlow flow, String context) {
