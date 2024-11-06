@@ -297,8 +297,10 @@ _confirm() {
 BASE_PATH="$( cd "$( dirname "$(_readlink -f "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
 export BASE_PATH
 COMPOSE_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
-DELTAFI_PATH="$( cd "$COMPOSE_PATH/.." &> /dev/null && pwd)"
+DELTAFI_PATH="$( cd "$COMPOSE_PATH/../.." &> /dev/null && pwd)"
 AIRGAP_DISTRO_TREE=$BASE_PATH/deltafi
+AIRGAP_ORCHESTRATION_PATH=$AIRGAP_DISTRO_TREE/orchestration
+AIRGAP_COMPOSE_PATH=$AIRGAP_ORCHESTRATION_PATH/compose
 
 DELTAFI_VERSION=$(cat "${DELTAFI_PATH}/deltafi-cli/VERSION")
 
@@ -386,25 +388,27 @@ function create_distro() {
   _info -s "Creating air-gapped distro"
   pushd "$BASE_PATH" > /dev/null
   echo "$DELTAFI_VERSION" > "${AIRGAP_DISTRO_TREE}/VERSION"
+  mkdir -p "$AIRGAP_COMPOSE_PATH"
   cp -rLf "$DELTAFI_PATH/deltafi-cli" "$AIRGAP_DISTRO_TREE"
   rm -rf "$AIRGAP_DISTRO_TREE/deltafi-cli/logs"
   rm -rf "$AIRGAP_DISTRO_TREE/deltafi-cli/build"
   rm -f "$AIRGAP_DISTRO_TREE/deltafi-cli/build.gradle"
   rm -rf "$AIRGAP_DISTRO_TREE/deltafi-cli/lib"
   rm -rf "$AIRGAP_DISTRO_TREE/deltafi-cli/commands/performance-test"
-  cp -f "$COMPOSE_PATH/compose" "$AIRGAP_DISTRO_TREE/compose"
-  cp -rLf "$COMPOSE_PATH/settings" "$AIRGAP_DISTRO_TREE/compose"
-  rm -f "$AIRGAP_DISTRO_TREE/compose/settings/secrets/*.env"
-  rm -f "$AIRGAP_DISTRO_TREE/compose/settings/env/*.env"
-  rm -f "$AIRGAP_DISTRO_TREE/compose/settings/env/*.yaml"
-  cp -f "$COMPOSE_PATH/docker-compose.yml" "$AIRGAP_DISTRO_TREE/compose"
+  cp -f "$COMPOSE_PATH/compose" "$AIRGAP_COMPOSE_PATH"
+  cp -rLf "$COMPOSE_PATH/settings" "$AIRGAP_COMPOSE_PATH"
+  rm -f "$AIRGAP_COMPOSE_PATH/settings/secrets/*.env"
+  rm -f "$AIRGAP_COMPOSE_PATH/settings/env/*.env"
+  rm -f "$AIRGAP_COMPOSE_PATH/settings/env/*.yaml"
+  cp -f "$COMPOSE_PATH/docker-compose.yml" "$AIRGAP_COMPOSE_PATH"
   cp -f "$BASE_PATH/airgap.delete-policy.json" "$AIRGAP_DISTRO_TREE"
   cp -f "$AIRGAP_INSTALL_TEMPLATE" "$AIRGAP_DISTRO_TREE/install.sh"
   cp -f "$DELTAFI_PATH/LICENSE" "$AIRGAP_DISTRO_TREE"
-  rm -rf "$AIRGAP_DISTRO_TREE/*/*/logs" "$AIRGAP_DISTRO_TREE/*/logs" "$AIRGAP_DISTRO_TREE/compose/data"
+  rm -rf "$AIRGAP_DISTRO_TREE/*/*/logs" "$AIRGAP_DISTRO_TREE/*/logs"
   cp -f "$PLUGIN_LIST_FILE" "$AIRGAP_DISTRO_TREE"
   mv "$SNAPSHOT_FILE" "$AIRGAP_DISTRO_TREE"
   cp -f "$VALUES_FILE" "$AIRGAP_DISTRO_TREE/values.yaml"
+  rm -rf "$AIRGAP_COMPOSE_PATH/data" || sudo rm -rf "$AIRGAP_COMPOSE_PATH/data" || echo "Unable to remove $AIRGAP_COMPOSE_PATH/data..."
   _annotated_subshell tree -CA "$AIRGAP_DISTRO_TREE"
   _ok_annotated "Air-gapped distro created"
 
@@ -434,12 +438,9 @@ function install_plugins() {
     # Dark incantation.  Matches everything after the last '/'
     image_tag=${line##*/}
     registry=${line%/"$image_tag"}
-    if [[ "$registry" == "$line" ]]; then
-      registry="docker.io"
-    fi
 
     _info -s "Installing plugin: $line"
-    _annotated_subshell deltafi install-plugin -i "$registry" "org.deltafi:$image_tag"
+    _annotated_subshell deltafi install-plugin "$line"
     while ! deltafi list-plugins | grep "$image_tag" > /dev/null; do
       sleep 1
       _info -a "Waiting for ${image_tag} plugin"
@@ -491,7 +492,7 @@ function initial_setup() {
   rm -rf "$AIRGAP_DISTRO_TREE"
   rm -rf "$AIRGAP_DISTRO_ARCHIVE"
   rm -rf "$AIRGAP_DISTRO_INSTALL"
-  mkdir -p "$AIRGAP_DISTRO_TREE/compose"
+  mkdir -p "$AIRGAP_COMPOSE_PATH"
 
   _attention "Air-gapped DeltaFi Distribution Generator (AirGapInator)"
   _info "Version: ${DELTAFI_VERSION}"

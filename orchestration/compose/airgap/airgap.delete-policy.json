@@ -5,7 +5,6 @@
       "enabled": true,
       "afterCreate": "PT1H",
       "afterComplete": null,
-      "flow": null,
       "minBytes": null,
       "deleteMetadata": false
     }
@@ -14,8 +13,7 @@
     {
       "name": "over80Percent",
       "enabled": true,
-      "maxPercent": 80,
-      "flow": null
+      "maxPercent": 80
     }
   ]
 }

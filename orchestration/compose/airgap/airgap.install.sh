@@ -176,9 +176,11 @@ done < "$PLUGIN_LIST_FILE"
 
 sleep 5
 
-${DELTAFI_CLI} system-snapshot import "$SNAPSHOT_FILE"
-SNAPSHOT_ID=$(${DELTAFI_CLI} system-snapshot list | grep -B2 air-gap | sed 's|.*\"\(.*\)\",|\1|g' | sed 1q)
-${DELTAFI_CLI} system-snapshot restore "$SNAPSHOT_ID"
+if [[ -f "$SNAPSHOT_FILE" ]]; then
+  ${DELTAFI_CLI} system-snapshot import "$SNAPSHOT_FILE"
+  SNAPSHOT_ID=$(${DELTAFI_CLI} system-snapshot list | grep -B2 air-gap | sed 's|.*\"\(.*\)\",|\1|g' | sed 1q)
+  ${DELTAFI_CLI} system-snapshot restore "$SNAPSHOT_ID"
+fi
 
 _confirm "Do you want to install 'deltafi' in /usr/local/bin?" && "${DELTAFI_PATH}/deltafi-cli/install.sh"
 
