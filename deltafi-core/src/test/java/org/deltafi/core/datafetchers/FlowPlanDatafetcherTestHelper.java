@@ -159,7 +159,7 @@ public class FlowPlanDatafetcherTestHelper {
                 .egressAction(egress)
                 .subscribe(List.of(new Rule("topic", null)))
                 .build();
-        return executeQuery(dgsQueryExecutor, SaveDataSinkPlanGraphQLQuery.newRequest().DataSinkPlan(input).build(), new SaveDataSinkPlanProjectionRoot<>().name(), DataSink.class);
+        return executeQuery(dgsQueryExecutor, SaveDataSinkPlanGraphQLQuery.newRequest().dataSinkPlan(input).build(), new SaveDataSinkPlanProjectionRoot<>().name(), DataSink.class);
     }
 
     public static TimedDataSource saveTimedDataSourcePlan(DgsQueryExecutor dgsQueryExecutor) {

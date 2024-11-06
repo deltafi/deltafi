@@ -400,7 +400,7 @@ type Query {
 }
 
 type Mutation {
-  saveDataSinkPlan(DataSinkPlan: DataSinkPlanInput!) : DataSink!
+  saveDataSinkPlan(dataSinkPlan: DataSinkPlanInput!) : DataSink!
   saveTimedDataSourcePlan(dataSourcePlan: TimedDataSourcePlanInput!) : TimedDataSource!
   saveRestDataSourcePlan(dataSourcePlan: RestDataSourcePlanInput!) : RestDataSource!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!

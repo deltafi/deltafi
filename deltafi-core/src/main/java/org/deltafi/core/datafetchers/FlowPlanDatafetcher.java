@@ -126,9 +126,9 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public DataSink saveDataSinkPlan(@InputArgument DataSinkPlanInput DataSinkPlan) {
-        auditLogger.audit("saved data sink plan {}", DataSinkPlan.getName());
-        DataSinkPlan flowPlan = OBJECT_MAPPER.convertValue(DataSinkPlan, DataSinkPlan.class);
+    public DataSink saveDataSinkPlan(@InputArgument DataSinkPlanInput dataSinkPlan) {
+        auditLogger.audit("saved data sink plan {}", dataSinkPlan.getName());
+        DataSinkPlan flowPlan = OBJECT_MAPPER.convertValue(dataSinkPlan, DataSinkPlan.class);
         flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
         DataSinkPlanValidator.validate(flowPlan);
         pluginService.addFlowPlanToSystemPlugin(flowPlan);

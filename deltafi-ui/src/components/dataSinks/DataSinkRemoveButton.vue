@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import useEgressActions from "@/composables/useEgressActions";
+import useEgressActions from "@/composables/useDataSink";
 import useNotifications from "@/composables/useNotifications";
 import { defineEmits, defineProps, reactive } from "vue";
 

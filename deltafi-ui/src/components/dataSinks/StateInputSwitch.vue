@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import useEgressActions from "@/composables/useEgressActions";
+import useEgressActions from "@/composables/useDataSink";
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineProps, toRefs } from "vue";
 

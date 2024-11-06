@@ -20,10 +20,10 @@ import useGraphQL from "./useGraphQL";
 import { EnumType } from "json-to-graphql-query";
 import _ from "lodash";
 
-export default function useEgressActions() {
+export default function useDataSink() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
 
-  const getAllEgress = () => {
+  const getAllDataSinks = () => {
     const query = {
       getAllFlows: {
         dataSink: {
@@ -178,7 +178,7 @@ export default function useEgressActions() {
   };
 
   return {
-    getAllEgress,
+    getAllDataSinks,
     startDataSinkByName,
     stopDataSinkByName,
     saveDataSinkPlan,

@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import useEgressActions from "@/composables/useEgressActions";
+import useDataSink from "@/composables/useDataSink";
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineProps, toRefs, ref } from "vue";
 
@@ -47,7 +47,7 @@ import _ from "lodash";
 
 const confirm = useConfirm();
 
-const { enableDataSinkTestModeByName, disableDataSinkTestModeByName } = useEgressActions();
+const { enableDataSinkTestModeByName, disableDataSinkTestModeByName } = useDataSink();
 const notify = useNotifications();
 
 const props = defineProps({

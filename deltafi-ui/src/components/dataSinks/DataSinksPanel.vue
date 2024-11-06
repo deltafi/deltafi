@@ -35,10 +35,10 @@
               <span>
                 <span class="d-flex align-items-center">
                   <EgressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-egress-actions="refresh" />
-                  <DialogTemplate ref="updateEgressDialog" component-name="egressActions/EgressActionConfigurationDialog" header="Edit Egress Action" dialog-width="50vw" :row-data-prop="data" edit-egress-action @reload-egress-actions="refresh">
+                  <DialogTemplate ref="updateEgressDialog" component-name="dataSinks/DataSinkConfigurationDialog" header="Edit Egress Action" dialog-width="50vw" :row-data-prop="data" edit-egress-action @reload-egress-actions="refresh">
                     <i v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
                   </DialogTemplate>
-                  <DialogTemplate ref="updateEgressDialog" component-name="egressActions/EgressActionConfigurationDialog" header="Create Egress Action" dialog-width="50vw" :row-data-prop="cloneEgressAction(data)" @reload-egress-actions="refresh">
+                  <DialogTemplate ref="updateEgressDialog" component-name="dataSinks/DataSinkConfigurationDialog" header="Create Egress Action" dialog-width="50vw" :row-data-prop="cloneEgressAction(data)" @reload-egress-actions="refresh">
                     <i v-tooltip.top="`Clone`" icon="pi pi-clone" class="ml-2 text-muted pi pi-clone cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
                   </DialogTemplate>
                   <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
@@ -75,12 +75,12 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import EgressActionRemoveButton from "@/components/egressActions/EgressActionRemoveButton.vue";
-import StateInputSwitch from "@/components/egressActions/StateInputSwitch.vue";
-import EgressTestModeInputSwitch from "@/components/egressActions/EgressTestModeInputSwitch.vue";
+import EgressActionRemoveButton from "@/components/dataSinks/DataSinkRemoveButton.vue";
+import StateInputSwitch from "@/components/dataSinks/StateInputSwitch.vue";
+import EgressTestModeInputSwitch from "@/components/dataSinks/DataSinkTestModeInputSwitch.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import useEgressActions from "@/composables/useEgressActions";
+import useDataSink from "@/composables/useDataSink";
 import { computed, defineEmits, defineProps, inject, onMounted, ref, watch } from "vue";
 
 import _ from "lodash";
@@ -91,7 +91,7 @@ import DataTable from "primevue/datatable";
 
 const emit = defineEmits(["egressActionsList"]);
 const editing = inject("isEditing");
-const { getAllEgress, loaded, loading } = useEgressActions();
+const { getAllDataSinks, loaded, loading } = useDataSink();
 const showLoading = computed(() => loading.value && !loaded.value);
 const egressActionsList = ref([]);
 const updateEgressDialog = ref(null);
@@ -142,7 +142,7 @@ const refresh = async () => {
   // Do not refresh data while editing.
   if (editing.value) return;
 
-  const response = await getAllEgress();
+  const response = await getAllDataSinks();
   egressActionsList.value = response.data.getAllFlows.dataSink;
   emit("egressActionsList", egressActionsList.value);
 };

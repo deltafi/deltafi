@@ -32,14 +32,14 @@
         <dl>
           <dt>Name*</dt>
           <dd>
-            <InputText v-model="model['name']" placeholder="Egress Action Name." :disabled="editEgressAction" class="inputWidth" />
+            <InputText v-model="model['name']" placeholder="Data Sink Name" :disabled="editEgressAction" class="inputWidth" />
           </dd>
           <dt>Description*</dt>
           <dd>
-            <TextArea v-model="model['description']" placeholder="Egress Action Description." class="inputWidth" rows="5" />
+            <TextArea v-model="model['description']" placeholder="Data Sink Description" class="inputWidth" rows="5" />
           </dd>
           <dt class="d-flex inputWidth justify-content-between">
-            <div>Subcribe*</div>
+            <div>Subscribe*</div>
             <div>
               <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
             </div>
@@ -51,7 +51,7 @@
               </div>
             </div>
           </dd>
-          <dt>Action*</dt>
+          <dt>Egress Action*</dt>
           <dd>
             <Dropdown v-model="model['egressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
           </dd>
@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import useEgressActions from "@/composables/useEgressActions";
+import useDataSink from "@/composables/useDataSink";
 import useFlowActions from "@/composables/useFlowActions";
 import useTopics from "@/composables/useTopics";
 import { useMounted } from "@vueuse/core";
@@ -124,7 +124,7 @@ const { getAllTopicNames } = useTopics();
 const { editEgressAction, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadEgressActions"]);
 const { getPluginActionSchema } = useFlowActions();
-const { getAllEgress, saveDataSinkPlan } = useEgressActions();
+const { getAllDataSinks, saveDataSinkPlan } = useDataSink();
 
 const { myStyles, rendererList, subscribeRenderList } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
@@ -138,16 +138,16 @@ const errors = ref([]);
 
 const allActionsData = ref({});
 
-const egressActions = ref([]);
+const dataSinks = ref([]);
 
 const subscribeConfig = ref({ defaultLabels: true });
 
 const defaultTopicTemplate = [{ condition: null, topic: null }];
 
-const egressActionTemplate = {
+const dataSinkTemplate = {
   name: null,
+  type: "DATA_SINK",
   description: null,
-  type: "EGRESS",
   flowStatus: {
     state: "STOPPED",
   },
@@ -162,7 +162,7 @@ const egressActionTemplate = {
   subscribe: defaultTopicTemplate,
 };
 
-const rowData = ref(_.cloneDeepWith(props.rowDataProp || egressActionTemplate));
+const rowData = ref(_.cloneDeepWith(props.rowDataProp || dataSinkTemplate));
 
 const model = computed({
   get() {
@@ -209,8 +209,8 @@ onBeforeMount(async () => {
   let responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
-  const response = await getAllEgress();
-  egressActions.value = response.data.getAllFlows.Egress;
+  const response = await getAllDataSinks();
+  dataSinks.value = response.data.getAllFlows.Egress;
 
   flattenedActionsTypes.value = await getEgressActions();
 
@@ -242,48 +242,9 @@ const schemaProvided = (schema) => {
   return !_.isEmpty(_.get(schema, "properties", null));
 };
 
-const removeEmptyKeyValues = (queryObj) => {
-  const newObj = {};
-  Object.entries(queryObj).forEach(([k, v]) => {
-    if (v instanceof Array) {
-      newObj[k] = queryObj[k];
-    } else if (v === Object(v)) {
-      newObj[k] = removeEmptyKeyValues(v);
-    } else if (v != null) {
-      newObj[k] = queryObj[k];
-    }
-  });
-  return newObj;
-};
-
-const clearEmptyObjects = (queryObj) => {
-  for (const objKey in queryObj) {
-    if (_.isArray(queryObj[objKey])) {
-      if (Object.keys(queryObj[objKey]).length === 0) {
-        delete queryObj[objKey];
-      } else {
-        if (!_.every(queryObj[objKey], _.isString)) {
-          queryObj[objKey].forEach(function (item, index) {
-            queryObj[objKey][index] = removeEmptyKeyValues(item);
-          });
-        }
-      }
-    }
-
-    if (_.isObject(queryObj[objKey])) {
-      clearEmptyObjects(queryObj[objKey]);
-    }
-
-    if (_.isEmpty(queryObj[objKey])) {
-      delete queryObj[objKey];
-    }
-  }
-  return queryObj;
-};
-
 const formatData = (formattingData) => {
-  formattingData = _.pick(formattingData, Object.keys(egressActionTemplate));
-  let tmpEgressActionTemplate = _.cloneDeepWith(egressActionTemplate);
+  formattingData = _.pick(formattingData, Object.keys(dataSinkTemplate));
+  let tmpEgressActionTemplate = JSON.parse(JSON.stringify(dataSinkTemplate));
   formattingData = _.merge(tmpEgressActionTemplate, formattingData);
   if (!_.isEmpty(model.value.egressActionOption?.name)) {
     formattingData["egressAction"]["name"] = formattingData["egressActionOption"]["name"];
@@ -292,8 +253,6 @@ const formatData = (formattingData) => {
   if (!_.isEmpty(model.value.egressActionOption?.parameters)) {
     formattingData["egressAction"]["parameters"] = formattingData["egressActionOption"]["parameters"];
   }
-
-  formattingData = clearEmptyObjects(formattingData);
 
   formattingData = _.omit(formattingData, ["flowStatus", "egressActionOption", "egressAction.actionType"]);
 
@@ -348,7 +307,7 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(egressActionObject["name"])) {
-    let activeSystemEgressActionNames = _.map(egressActions.value, "name");
+    let activeSystemEgressActionNames = _.map(dataSinks.value, "name");
     let isFlowNamedUsed = _.includes(activeSystemEgressActionNames, egressActionObject["name"]);
 
     if (isFlowNamedUsed && !editEgressAction) {

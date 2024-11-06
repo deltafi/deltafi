@@ -29,14 +29,14 @@
         </DialogTemplate>
       </div>
     </PageHeader>
-    <EgressActionsPanel ref="egressActionsPanel" :filter-flows-text-prop="filterFlowsText" @egress-actions-list="exportableEgressActions" />
+    <DataSinksPanel ref="dataSinksPanel" :filter-flows-text-prop="filterFlowsText" @egress-actions-list="exportableDataSinks" />
   </div>
 </template>
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import EgressActionsPanel from "@/components/egressActions/EgressActionsPanel.vue";
+import DataSinksPanel from "@/components/dataSinks/DataSinksPanel.vue";
 import { ref, inject, onMounted, provide, onUnmounted } from "vue";
 
 import Button from "primevue/button";
@@ -44,14 +44,14 @@ import InputText from "primevue/inputtext";
 
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
-const egressActionsPanel = ref(null);
+const dataSinksPanel = ref(null);
 const editing = ref(false);
 provide("isEditing", editing);
 const filterFlowsText = ref("");
 let autoRefresh;
 
 const refresh = async () => {
-  egressActionsPanel.value.refresh();
+  dataSinksPanel.value.refresh();
 };
 
 onMounted(() => {
@@ -66,9 +66,9 @@ onUnmounted(() => {
   clearInterval(autoRefresh);
 });
 
-const egressActionsList = ref(null);
+const dataSinksList = ref(null);
 
-const exportableEgressActions = (value) => {
-  egressActionsList.value = value;
+const exportableDataSinks = (value) => {
+  dataSinksList.value = value;
 };
 </script>

@@ -184,12 +184,6 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("FlowView")),
       },
       {
-        name: "Transform Builder",
-        icon: "fa-solid fa-trowel-bricks fa-fw",
-        path: "/config/transform-builder",
-        visible: computed(() => hasPermission("FlowView")),
-      },
-      {
         name: "Plugins",
         icon: "fas fa-plug fa-rotate-90 fa-fw",
         path: "/config/plugins",
