@@ -63,13 +63,28 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 
     @Query(value = """
-        SELECT CAST(
-          (SELECT reltuples FROM pg_class WHERE relname = 'delta_files') AS BIGINT) AS estimate,
-        COUNT(*) AS count,
-        COALESCE(SUM(referenced_bytes), 0) AS total_bytes
-        FROM delta_files
-        WHERE stage = 'IN_FLIGHT'
-        """, nativeQuery = true)
+        WITH table_stats AS (
+          SELECT CAST(reltuples AS BIGINT) as estimated_count
+          FROM pg_class
+          WHERE relname = 'delta_files'
+        ),
+        in_flight_stats AS (
+          SELECT
+            COUNT(*) as in_flight_count,
+            COALESCE(SUM(referenced_bytes), 0) as in_flight_bytes
+          FROM delta_files
+          WHERE stage = 'IN_FLIGHT'
+        )
+        SELECT
+          CASE
+            WHEN ts.estimated_count < 100000 THEN (SELECT COUNT(*) FROM delta_files)
+            ELSE ts.estimated_count
+          END as estimate,
+          ifs.in_flight_count as count,
+          ifs.in_flight_bytes as total_bytes
+        FROM table_stats ts
+        CROSS JOIN in_flight_stats ifs
+    """, nativeQuery = true)
     List<Object[]> getRawDeltaFileStats();
 
     /**
