@@ -19,12 +19,14 @@ package org.deltafi.core.types.snapshot;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.deltafi.core.types.TransformFlow;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 public class TransformFlowSnapshot extends FlowSnapshot {
 
     public TransformFlowSnapshot(String name) {
