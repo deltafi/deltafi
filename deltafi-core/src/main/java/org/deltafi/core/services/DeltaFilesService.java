@@ -1177,6 +1177,7 @@ public class DeltaFilesService {
         Action action = flow.queueNewAction(MISSING_FLOW_ACTION, ActionType.UNKNOWN, false, now);
         processErrorEvent(deltaFile, flow, action, buildMissingFlowErrorEvent(deltaFile, now, errorContext));
         deltaFile.setStage(DeltaFileStage.ERROR);
+        deltaFileCacheService.save(deltaFile);
     }
 
     public void deleteContentAndMetadata(UUID did, Content content) {

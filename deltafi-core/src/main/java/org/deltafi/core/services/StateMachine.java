@@ -97,7 +97,18 @@ public class StateMachine {
 
     private List<WrappedActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
         String pendingAction = input.flow().getNextPendingAction();
-        ActionConfiguration nextTransformAction = transformFlowService.findRunningActionConfig(input.flow().getName(), pendingAction);
+        ActionConfiguration nextTransformAction;
+
+        if (pendingAction == null) {
+            return new ArrayList<>();
+        }
+
+        try {
+            nextTransformAction = transformFlowService.findRunningActionConfigOrError(input.flow().getName(), pendingAction);
+        } catch (Exception e) {
+            markMissingAction(input.flow(), e.getMessage());
+            return new ArrayList<>();
+        }
 
         if (nextTransformAction != null && !input.flow().hasFinalAction(nextTransformAction.getName())) {
             return addNextAction(input, nextTransformAction, pendingQueued);
@@ -215,6 +226,12 @@ public class StateMachine {
                 deltaFiPropertiesService.getDeltaFiProperties().getMaxFlowDepth());
         action.setContent(lastActionContent);
         flow.setState(DeltaFileFlowState.ERROR);
+    }
+
+    private void markMissingAction(DeltaFileFlow flow, String context) {
+        Action action = flow.lastAction();
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        action.error(null, null, now, "Action configuration not found", context);
     }
 
     private Flow getFlow(DeltaFileFlow flow) {

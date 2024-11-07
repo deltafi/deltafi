@@ -21,13 +21,14 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
+import org.deltafi.core.exceptions.MissingActionConfigException;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 import org.deltafi.core.repo.FlowRepo;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 
@@ -442,6 +443,17 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         }
 
         return flow.findActionConfigByName(actionName);
+    }
+
+    public ActionConfiguration findRunningActionConfigOrError(String flowName, String actionName) {
+        Flow flow = getRunningFlowByName(flowName);
+
+        ActionConfiguration actionConfiguration = flow.findActionConfigByName(actionName);
+        if (actionConfiguration == null) {
+            throw new MissingActionConfigException("Flow of type " + flowType + " named " + flowName + " no longer contains an action named " + actionName);
+        }
+
+        return actionConfiguration;
     }
 
     /**
