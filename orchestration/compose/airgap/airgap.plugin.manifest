@@ -1,4 +1,4 @@
 # vim: set ft=conf:
 # This is the list of plugins that should be installed on the airgapped system
 # {{VERSION}} will resolve to the current version of DeltaFi core
-deltafi/deltafi-passthrough:{{VERSION}}
+# deltafi/deltafi-xml:{{VERSION}}

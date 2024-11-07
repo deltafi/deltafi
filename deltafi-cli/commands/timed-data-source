@@ -15,7 +15,7 @@ Expert-only Subcommands:
   clear-memo
   set-memo
 Usage:
-  timed-data-source [SUBCOMMAND] FLOW_NAME [MEMO]
+  timed-data-source [SUBCOMMAND] DATA_SOURCE_NAME [MEMO]
   Only set-memo uses MEMO argument"
   exit 1
 }
@@ -28,7 +28,7 @@ cleanup() {
 }
 
 log_failed() {
-  cli_log "${red}${BASENAME}: Failed to ${SUBCOMMAND} flow ${cyan}${FLOW_NAME}${normal}"
+  cli_log "${red}${BASENAME}: Failed to ${SUBCOMMAND} timedDataSource: ${DATA_SOURCE_NAME}${normal}"
   echo -e "${red}Error: ${1}${normal}"
 }
 
@@ -55,11 +55,9 @@ ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
 SUBCOMMAND=${ARGS[1]}
-FLOW_NAME=${ARGS[2]}
-MEMO=${ARGS[3]}
+DATA_SOURCE_NAME=${ARGS[2]}
 
-
-VARIABLES="{\"name\": \"$FLOW_NAME\", \"memo\": \"$MEMO\" }"
+VARIABLES="{\"name\": \"$DATA_SOURCE_NAME\", \"memo\": \"$MEMO\" }"
 case "$SUBCOMMAND" in
   clear-memo)
     echo -e "${yellow}Warning: ${SUBCOMMAND} for experts only${normal}"
@@ -75,20 +73,68 @@ case "$SUBCOMMAND" in
     QUERY="mutation(\$name: String!, \$memo: String) { setTimedDataSourceMemo(name: \$name, memo: \$memo) }"
     ;;
   start)
-    deltafi data-source start "$FLOW_NAME"
-    exit 0
+    EXTRACT_PATH=".data.startTimedDataSource"
+    QUERY="mutation(\$name: String!) { startTimedDataSource(name: \$name) }"
     ;;
   stop)
-    deltafi data-source stop "$FLOW_NAME"
-    exit 0
+    EXTRACT_PATH=".data.stopTimedDataSource"
+    QUERY="mutation(\$name: String!) { stopTimedDataSource(name: \$name) }"
     ;;
   validate)
-    deltafi data-source validate "$FLOW_NAME"
-    exit 0
+    EXTRACT_PATH=".data.validateTimedDataSource"
+    QUERY="query(\$name: String!) {validateTimedDataSource(name: \$name) { flowStatus { state errors { configName errorType message } } } }"
     ;;
   show)
-    deltafi data-source show "$FLOW_NAME"
-    exit 0
+    EXTRACT_PATH=".data.getTimedDataSource"
+    QUERY="query(\$name: String!) {
+             getTimedDataSource(name: \$name) {
+                 name
+                 type
+                 description
+                 sourcePlugin {
+                   groupId
+                   artifactId
+                   version
+                 }
+                 flowStatus {
+                   state
+                   errors {
+                     configName
+                     errorType
+                     message
+                   }
+                   testMode
+                 }
+                 maxErrors
+                 topic
+                 ... on TimedDataSource {
+                   cronSchedule
+                   lastRun
+                   nextRun
+                   memo
+                   currentDid
+                   executeImmediate
+                   ingressStatus
+                   ingressStatusMessage
+                   timedIngressAction {
+                     name
+                     apiVersion
+                     actionType
+                     type
+                     parameters
+                   }
+                   variables {
+                     name
+                     description
+                     dataType
+                     required
+                     defaultValue
+                     value
+                     masked
+                   }
+                 }
+             }
+           }"
     ;;
   *)
     cli_help_command
@@ -112,12 +158,11 @@ else
   elif  [[ "$SUBCOMMAND" == "validate" || "$SUBCOMMAND" == "show" ]]; then
     cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"
   else
-    cat ${TMPFILE}
     STARTED=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}")
     if [[ $STARTED == "true" ]]; then
-      cli_log "Successfully executed ${SUBCOMMAND} for flow ${cyan}${FLOW_NAME}${normal}"
+      cli_log "Successfully executed ${SUBCOMMAND} for data source ${cyan}${DATA_SOURCE_NAME}${normal}"
     else
-      cli_log "${yellow}Flow ${FLOW_NAME} did not ${SUBCOMMAND}.${normal}"
+      cli_log "${yellow}Data source ${DATA_SOURCE_NAME} did not ${SUBCOMMAND}.${normal}"
     fi
   fi
 fi

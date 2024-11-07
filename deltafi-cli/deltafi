@@ -146,7 +146,6 @@ Usage: $cli_name [command]
 Commands:
   configure-plugin-ssl          configure SSL for plugins and the entity resolver
   data-sink                     start, stop, show or validate a data sink
-  data-source                   start, stop, show or validate a data source
   did                           show did for filename
   disable                       stop all DeltaFi processes
   export-config                 export all the loaded flow configurations as yaml
@@ -172,6 +171,7 @@ Commands:
   postgres-eval                 run SQL in Postgres
   query                         send a query to graphql
   reenable                      reenable all DeltaFi processes
+  rest-data-source              start, stop, show and other controls for a rest data source
   run-integration-test          run a previously loaded integration test
   scale                         edit the replica counts for all deployments and statefulsets
   secrets                       show k8s secrets
@@ -210,9 +210,6 @@ case "$1" in
   data-sink)
       "$DELTAFICLI_WORKDIR/commands/data-sink" "$@"
       ;;
-    data-source)
-    "$DELTAFICLI_WORKDIR/commands/data-source" "$@"
-    ;;
   did)
     "$DELTAFICLI_WORKDIR/commands/did" "$@"
     ;;
@@ -240,9 +237,6 @@ case "$1" in
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" "$@"
     ;;
-  ingress-action)
-    "$DELTAFICLI_WORKDIR/commands/ingress-action" "$@"
-    ;;
   install|update|upgrade|start)
     "$DELTAFICLI_WORKDIR/commands/install" "$@"
     ;;
@@ -254,9 +248,6 @@ case "$1" in
     ;;
   list-flows)
     "$DELTAFICLI_WORKDIR/commands/list-flows" "$@"
-    ;;
-  list-ingress-actions)
-    "$DELTAFICLI_WORKDIR/commands/list-ingress-actions" "$@"
     ;;
   list-plans)
     "$DELTAFICLI_WORKDIR/commands/list-plans" "$@" | less -XSE
@@ -341,6 +332,9 @@ case "$1" in
     ;;
   timed-data-source)
     "$DELTAFICLI_WORKDIR/commands/timed-data-source" "$@"
+    ;;
+  rest-data-source)
+    "$DELTAFICLI_WORKDIR/commands/rest-data-source" "$@"
     ;;
   trace)
     "$DELTAFICLI_WORKDIR/commands/trace" "$@"
