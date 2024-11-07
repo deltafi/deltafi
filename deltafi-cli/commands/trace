@@ -26,7 +26,7 @@ Usage:
   exit 1
 }
 
-ARGS=($@)
+ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 

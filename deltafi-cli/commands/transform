@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL[@]}" # restore positional parameters
-ARGS=($@)
+ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
 SUBCOMMAND=${ARGS[1]}

@@ -11,7 +11,7 @@ Usage:
   exit 1
 }
 
-ARGS=($@)
+ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 VALKEY_PASSWORD_ENV='$REDIS_PASSWORD'
 

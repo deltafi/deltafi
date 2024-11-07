@@ -226,7 +226,7 @@ else
 fi
 
 set -- "${POSITIONAL[@]}" # restore positional parameters
-ARGS=($@)
+ARGS=("$@")
 
 outfile="$DELTAFI_DIR/../plugin.zip"
 if [ -n "$ZIP" ]; then

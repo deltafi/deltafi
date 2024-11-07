@@ -53,7 +53,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL[@]}" # restore positional parameters
-ARGS=($@)
+ARGS=("$@")
 [[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
 
 DATA_SOURCE=$2

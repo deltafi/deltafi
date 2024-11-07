@@ -32,7 +32,7 @@ ${@}
   fi
 }
 
-ARGS=($@)
+ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
 API_V2=$(_api_v2)

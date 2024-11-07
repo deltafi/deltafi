@@ -11,7 +11,7 @@ Usage:
   exit 1
 }
 
-ARGS=($@)
+ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 if _is_standalone; then
