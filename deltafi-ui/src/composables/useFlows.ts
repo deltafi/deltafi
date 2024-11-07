@@ -23,6 +23,7 @@ import useGraphQL from "./useGraphQL";
 export default function useFlows() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const dataSinks: Ref<Array<Record<string, string>>> = ref([]);
+  const transforms: Ref<Array<Record<string, string>>> = ref([]);
   const restDataSourceFlowNames: Ref<Array<Record<string, string>>> = ref([]);
   const timedDataSourceFlowNames: Ref<Array<Record<string, string>>> = ref([]);
 
@@ -72,10 +73,15 @@ export default function useFlows() {
     dataSinks.value = response.value.data.getFlowNames.dataSink.sort();
   };
 
+  const fetchTransformNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(false, true, false, false, state), "getTransformNames");
+    transforms.value = response.value.data.getFlowNames.transform.sort();
+  };
+
   const fetchAllFlowNames = async (state?: string) => {
     await queryGraphQL(buildQuery(true, true, true, true, state), "getAllFlowNames");
     return response.value.data.getFlowNames;
   };
 
-  return { dataSinks, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, fetchDataSinkNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, fetchAllFlowNames, loading, loaded, errors };
+  return { dataSinks, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, transforms, fetchDataSinkNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, fetchAllFlowNames, fetchTransformNames, loading, loaded, errors };
 }
