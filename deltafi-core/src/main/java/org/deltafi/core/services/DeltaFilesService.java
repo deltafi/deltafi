@@ -509,7 +509,7 @@ public class DeltaFilesService {
         deltaFile.setModified(now);
         flow.setModified(now);
 
-        if (transformEvents.size() == 1 && transformEvents.getFirst().getName() == null) {
+        if (transformEvents.size() == 1 && deltaFile.getDid().equals(transformEvents.getFirst().getDid())) {
             TransformEvent transformEvent = transformEvents.getFirst();
             deltaFile.addAnnotations(transformEvent.getAnnotations());
             action.complete(event.getStart(), event.getStop(), transformEvent.getContent(),
@@ -768,7 +768,7 @@ public class DeltaFilesService {
 
         DeltaFile child = DeltaFile.builder()
                 .version(0)
-                .did(uuidGenerator.generate())
+                .did(transformEvent.getDid())
                 .dataSource(deltaFile.getDataSource())
                 .parentDids(List.of(deltaFile.getDid()))
                 .childDids(new ArrayList<>())

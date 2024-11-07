@@ -18,6 +18,7 @@
 package org.deltafi.test.asserters;
 
 import org.assertj.core.api.Assertions;
+import org.deltafi.actionkit.action.transform.ChildTransformResult;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResults;
 
@@ -46,7 +47,7 @@ public class TransformResultsAssert extends ResultAssert<TransformResultsAssert,
      */
     public TransformResultsAssert hasChildrenSize(int count) {
         isNotNull();
-        Assertions.assertThat(actual.getTransformResults()).hasSize(count);
+        Assertions.assertThat(actual.getChildResults()).hasSize(count);
         return this;
     }
 
@@ -59,13 +60,13 @@ public class TransformResultsAssert extends ResultAssert<TransformResultsAssert,
      */
     public TransformResultsAssert hasChildResultAt(int index, Predicate<TransformResult> childMatcher) {
         isNotNull();
-        if (actual.getTransformResults() == null || index >= actual.getTransformResults().size()) {
-            String contentSize = actual.getTransformResults() == null ? "content list  is null" :
-                    "content list has size " + actual.getTransformResults().size();
+        if (actual.getChildResults() == null || index >= actual.getChildResults().size()) {
+            String contentSize = actual.getChildResults() == null ? "content list  is null" :
+                    "content list has size " + actual.getChildResults().size();
             failWithMessage("There is no content at index %s (%s)", index, contentSize);
             return myself;
         }
-        TransformResult transformResult = actual.getTransformResults().get(index).getLeft();
+        ChildTransformResult transformResult = actual.getChildResults().get(index);
         Assertions.assertThat(transformResult).matches(childMatcher);
         return myself;
     }

@@ -36,10 +36,10 @@ public class Split extends TransformAction<ActionParameters> {
         TransformResults results = new TransformResults(context);
 
         for (ActionContent content : input.content()) {
-            TransformResult transformResult = new TransformResult(context);
-            transformResult.addContent(content);
-            transformResult.addMetadata(input.getMetadata());
-            results.add(transformResult, content.getName());
+            ChildTransformResult childResult = new ChildTransformResult(context, content.getName());
+            childResult.addContent(content);
+            childResult.addMetadata(input.getMetadata());
+            results.add(childResult);
         }
 
         return results;

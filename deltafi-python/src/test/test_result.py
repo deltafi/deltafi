@@ -17,7 +17,7 @@
 #
 
 from deltafi.domain import Content
-from deltafi.result import EgressResult, ErrorResult, TransformResult, TransformResults
+from deltafi.result import EgressResult, ErrorResult, TransformResult, ChildTransformResult, TransformResults
 
 from .helperutils import make_context, make_segment
 
@@ -90,7 +90,7 @@ def test_transform_result():
     response = result.response()
     assert len(response) == 1
     first = response[0]
-    assert len(first) == 4
+    assert len(first) == 5
     verify_all_metadata(first)
     content = first.get("content")
     assert len(content) == 2
@@ -103,22 +103,23 @@ def test_transform_result():
     assert "123/123did/id1" in result.get_segment_names();
     assert "123/123did/id2" in result.get_segment_names();
 
-
-def test_transform_many_result():
-    context = make_context()
-    many_result = TransformResults(context)
-
-    child1 = TransformResult(context)
+def make_child(context, name = None):
+    child1 = ChildTransformResult(context, name)
     add_canned_metadata(child1)
     child1.add_content(make_content(None, "content1", "id1"))
     child1.add_content(make_content(None, "content2", "id2"))
     child1.annotate('a', 'b')
     child1.delete_metadata_key('delete1')
     child1.delete_metadata_key('delete2')
+    return child1
 
-    many_result.add_result(child1, "name1")
-    many_result.add_result(child1, )
-    many_result.add_result(child1, "name3")
+def test_transform_many_result():
+    context = make_context()
+    many_result = TransformResults(context)
+
+    many_result.add_result(make_child(context, "name1"))
+    many_result.add_result(make_child(context))
+    many_result.add_result(make_child(context, "name3"))
 
     assert many_result.result_key == "transform"
     assert many_result.result_type == "TRANSFORM"
@@ -131,7 +132,7 @@ def test_transform_many_result():
     assert len(response) == 3
 
     first = response[0]
-    assert len(first) == 5
+    assert len(first) == 6
     assert "name" in first
     assert first.get("name") == "name1"
 
@@ -144,11 +145,11 @@ def test_transform_many_result():
     assert first.get('deleteMetadataKeys') == ['delete1', 'delete2']
 
     second = response[1]
-    assert len(second) == 4
+    assert len(second) == 5
     assert "name" not in second
 
     third = response[2]
-    assert len(third) == 5
+    assert len(third) == 6
     assert "name" in third
     assert third.get("name") == "name3"
 

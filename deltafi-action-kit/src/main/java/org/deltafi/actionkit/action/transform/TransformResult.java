@@ -50,6 +50,7 @@ public class TransformResult extends ContentResult<TransformResult> implements T
 
     public final TransformEvent toTransformEvent() {
         return TransformEvent.builder()
+                .did(context.getDid())
                 .content(ContentConverter.convert(content))
                 .annotations(annotations)
                 .metadata(metadata)

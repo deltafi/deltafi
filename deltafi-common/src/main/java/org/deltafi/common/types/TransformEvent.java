@@ -33,6 +33,8 @@ public class TransformEvent {
     // optional name, used to rename children when splitting
     private String name;
 
+    private UUID did;
+
     @Builder.Default
     private List<Content> content = new ArrayList<>();
 

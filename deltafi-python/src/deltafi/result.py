@@ -239,6 +239,7 @@ class TransformResult(Result):
 
     def json(self):
         return {
+            'did': self.context.did,
             'content': [content.json() for content in self.content],
             'annotations': self.annotations,
             'metadata': self.metadata,
@@ -249,38 +250,38 @@ class TransformResult(Result):
         return [self.json()]
 
 
-class NamedTransformResult(NamedTuple):
-    result: TransformResult
-    name: str
+class ChildTransformResult(TransformResult):
+    delta_file_name: str
 
-    def get_segment_names(self):
-        return self.result.get_segment_names()
+    def __init__(self, context: Context, delta_file_name: str = None):
+        super().__init__(context.child_context())
+        self.delta_file_name = delta_file_name
 
     def json(self):
-        j = self.result.json()
-        if self.name is not None:
-            j['name'] = self.name
+        j = super().json()
+        if self.delta_file_name is not None:
+            j['name'] = self.delta_file_name
         return j
 
 
 class TransformResults(Result):
     def __init__(self, context: Context):
         super().__init__('transform', 'TRANSFORM', context)
-        self.named_results = []
+        self.child_results = []
 
-    def add_result(self, result: TransformResult, name: str = None):
-        self.named_results.append(NamedTransformResult(result, name))
+    def add_result(self, result: ChildTransformResult):
+        self.child_results.append(result)
         return self
 
     def get_segment_names(self):
         segment_names = {}
-        for named_result in self.named_results:
-            segment_names.update(named_result.get_segment_names())
+        for child_result in self.child_results:
+            segment_names.update(child_result.get_segment_names())
         return segment_names
 
     def response(self):
         transform_events = []
-        for named_result in self.named_results:
-            json_dict = named_result.json()
+        for child_result in self.child_results:
+            json_dict = child_result.json()
             transform_events.append(json_dict)
         return transform_events

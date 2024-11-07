@@ -19,7 +19,6 @@ package org.deltafi.actionkit.action.transform;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +33,7 @@ import java.util.List;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class TransformResults extends Result<TransformResults> implements TransformResultType {
-    final List<Pair<TransformResult, String>> transformResults = new ArrayList<>();
+    final List<ChildTransformResult> childResults = new ArrayList<>();
 
     /**
      * @param context Execution context for the current action
@@ -44,33 +43,19 @@ public class TransformResults extends Result<TransformResults> implements Transf
     }
 
     /**
-     * Add a new named child to the results
-     *
-     * @param transformResult The result to write to the new file
-     * @param name Name for the new DeltaFile
-     */
-    public void add(@NotNull TransformResult transformResult, String name) {
-        transformResults.add(Pair.of(transformResult, name));
-    }
-
-    /**
      * Add a new child to the results
      *
-     * @param transformResult The result to write to the new file
+     * @param childResult The result to write to the new file
      */
-    public void add(@NotNull TransformResult transformResult) {
-        add(transformResult, null);
+    public void add(@NotNull ChildTransformResult childResult) {
+        childResults.add(childResult);
     }
 
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setTransform(transformResults.stream()
-                .map(pair -> {
-                    TransformEvent te = pair.getLeft().toTransformEvent();
-                    te.setName(pair.getRight());
-                    return te;
-                })
+        event.setTransform(childResults.stream()
+                .map(ChildTransformResult::toChildTransformEvent)
                 .toList());
         return event;
     }

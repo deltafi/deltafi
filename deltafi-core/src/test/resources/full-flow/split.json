@@ -8,6 +8,7 @@
     "type": "TRANSFORM",
     "transform": [
         {
+            "did": "%2$s",
             "name": "child1",
             "content": [
                 {
@@ -29,6 +30,7 @@
             }
         },
         {
+            "did": "%3$s",
             "name": "child2",
             "content": [
                 {

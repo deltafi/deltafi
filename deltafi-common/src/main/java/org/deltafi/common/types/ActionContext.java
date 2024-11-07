@@ -49,11 +49,12 @@ public class ActionContext {
 
     private String memo;
 
-    /** Create a copy of this ActionContext with a different did
-     * @param newDid the new DID
-     * */
-    public ActionContext copy(UUID newDid) {
-        return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName,
+    /**
+     * Create a copy of this ActionContext with a new random did
+     * @return the copied context
+     */
+    public ActionContext childContext() {
+        return new ActionContext(UUID.randomUUID(), deltaFileName, dataSource, flowName, flowId, actionName,
                 actionVersion, hostname, startTime, systemName, contentStorageService, join, joinedDids, memo);
     }
 }

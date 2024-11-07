@@ -20,6 +20,7 @@ import copy
 from datetime import datetime, timedelta, timezone
 from logging import Logger
 from typing import Dict, List, NamedTuple
+from uuid import uuid4
 
 from deltafi.storage import ContentService, Segment
 
@@ -118,6 +119,9 @@ class Context(NamedTuple):
                        content_service=content_service,
                        saved_content=[],
                        logger=logger)
+
+    def child_context(self):
+        return self._replace(did=str(uuid4()))
 
 
 class Content:

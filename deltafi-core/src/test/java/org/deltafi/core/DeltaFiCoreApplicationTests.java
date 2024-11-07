@@ -4341,10 +4341,12 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testSplit() throws IOException {
 		UUID did = UUID.randomUUID();
+		UUID childOne = UUID.randomUUID();
+		UUID childTwo = UUID.randomUUID();
 		DeltaFile postUtf8Transform = postTransformUtf8DeltaFile(did);
 		deltaFileRepo.save(postUtf8Transform);
 
-		deltaFilesService.handleActionEvent(actionEvent("split", did));
+		deltaFilesService.handleActionEvent(actionEvent("split", did, childOne, childTwo));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
@@ -4356,12 +4358,14 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(List.of("child1", "child2"), children.stream().map(DeltaFile::getName).sorted().toList());
 
 		DeltaFile child1 = children.stream().filter(d -> d.getName().equals("child1")).findFirst().orElseThrow();
+		assertThat(child1.getDid()).isEqualTo(childOne);
 		assertEquals(DeltaFileStage.IN_FLIGHT, child1.getStage());
 		assertNull(child1.firstFlow().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals(0, child1.firstFlow().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
 
 		DeltaFile child2 = children.stream().filter(d -> d.getName().equals("child2")).findFirst().orElseThrow();
+		assertThat(child2.getDid()).isEqualTo(childTwo);
 		assertEquals(DeltaFileStage.IN_FLIGHT, child2.getStage());
 		assertNull(child2.firstFlow().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());

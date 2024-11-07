@@ -74,12 +74,12 @@ class TransformActionTest(ActionTest):
         self.assert_transform_results(test_case, result)
 
     def assert_transform_results(self, test_case: TransformTestCase, result: TransformResults):
-        assert_equal_len(test_case.results, result.named_results)
-        for index, named_result in enumerate(result.named_results):
-            self.compare_one_transform_result(test_case, named_result.result, index)
+        assert_equal_len(test_case.results, result.child_results)
+        for index, child_result in enumerate(result.child_results):
+            self.compare_one_transform_result(test_case, child_result, index)
             expected = test_case.results[index]
             if 'name' in expected:
-                assert_equal_with_label(expected["name"], named_result.name, f"name[{index}]")
+                assert_equal_with_label(expected["name"], child_result.delta_file_name, f"name[{index}]")
 
     def assert_transform_result(self, test_case: TransformTestCase, result: TransformResult):
         # Check metrics

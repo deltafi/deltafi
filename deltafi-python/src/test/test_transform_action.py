@@ -134,6 +134,7 @@ def test_action_returns_transform():
     assert type(result) == TransformResult
 
     expected_response = [{
+        'did': '123did',
         'content': [
             {
                 'mediaType': 'text.plain',

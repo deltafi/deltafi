@@ -34,7 +34,7 @@ import java.util.UUID;
 public class IngressResultItem extends ContentResult<IngressResultItem> {
     String deltaFileName;
     public IngressResultItem(@NotNull ActionContext context, @NotNull String deltaFileName) {
-        super(context.copy(UUID.randomUUID()), ActionEventType.INGRESS);
+        super(context.childContext(), ActionEventType.INGRESS);
         this.deltaFileName = deltaFileName;
     }
 

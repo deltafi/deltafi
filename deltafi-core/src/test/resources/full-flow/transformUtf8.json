@@ -8,6 +8,7 @@
     "type": "TRANSFORM",
     "transform": [
         {
+            "did": "%1$s",
             "content": [
                 {
                     "name": "file.json",
