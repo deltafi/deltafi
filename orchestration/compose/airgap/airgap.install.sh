@@ -163,11 +163,8 @@ while IFS= read -r line; do
 
     image_tag=${line##*/}  #<-- Dark incantation.  Matches everything after the last '/'
     registry=${line%/"$image_tag"}
-    if [[ "$registry" == "$line" ]]; then
-        registry="docker.io"
-    fi
 
-    ${DELTAFI_CLI} install-plugin -i "$registry" "org.deltafi:$image_tag"
+    ${DELTAFI_CLI} install-plugin "$line"
 
     PLUGIN_NAME=$(echo $line | sed 's|.*/\(.*\):.*|\1|g')
     while ! ${DELTAFI_CLI} list-plugins | grep "$PLUGIN_NAME" > /dev/null; do sleep 1; echo Waiting for ${PLUGIN_NAME} plugin; done
