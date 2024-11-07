@@ -27,6 +27,8 @@ public class WebConfiguration implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry viewControllerRegistry) {
         viewControllerRegistry.addRedirectViewController("/docs", "/docs/index.html");
         viewControllerRegistry.addRedirectViewController("/docs/", "/docs/index.html");
+        viewControllerRegistry.addRedirectViewController("/graphiql", "/graphiql/index.html");
+        viewControllerRegistry.addRedirectViewController("/graphiql/", "/graphiql/index.html");
 
         // Forward routes handled by single-page app to "/" to handle fully-specified URLs
         viewControllerRegistry.addViewController("/deltafile/**").setViewName("forward:/");

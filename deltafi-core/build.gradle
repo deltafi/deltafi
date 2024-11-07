@@ -209,8 +209,13 @@ task copyUi(type: Copy) {
 	include 'tsconfig.json'
 }
 
+task copyGraphiql(type: Copy) {
+	from '../deltafi-graphiql'
+	into 'build/docker/graphiql'
+}
+
 dockerPrepare {
-	finalizedBy copyDocs, copyCoreActionsDocs, copyChangelog, copyUi
+	finalizedBy copyDocs, copyCoreActionsDocs, copyChangelog, copyUi, copyGraphiql
 }
 
 docker {

@@ -15,10 +15,19 @@ RUN npm install
 COPY docs .
 RUN npm run build
 
+FROM node:20-alpine3.19 AS deltafi-graphiql-build-stage
+WORKDIR /graphiql
+# Cache package installation
+COPY graphiql/package.json /graphiql/package.json
+RUN yarn install
+COPY graphiql .
+RUN yarn build
+
 FROM deltafi/deltafi-java-jre:21.0.4-alpine-0
 VOLUME /tmp
 COPY deltafi-*.jar deltafi-app.jar
 COPY probe.sh .
 COPY --from=deltafi-ui-build-stage /ui/dist /deltafi
 COPY --from=deltafi-docs-build-stage /docs/dist /deltafi/docs
+COPY --from=deltafi-graphiql-build-stage /graphiql/build /deltafi/graphiql
 ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/deltafi-app.jar"]

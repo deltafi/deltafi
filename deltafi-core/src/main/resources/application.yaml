@@ -39,7 +39,7 @@ dgs:
   graphql:
     path: "/api/v2/graphql"
     graphiql:
-      title: "DeltaFi GraphiQL"
+      enabled: false
 management:
   endpoint:
     health:
