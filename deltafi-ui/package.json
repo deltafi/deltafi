@@ -1,6 +1,6 @@
 {
   "name": "deltafi-ui",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "serve-app": "vue-cli-service serve",
@@ -61,7 +61,7 @@
     "vue": "^3.4.14",
     "vue-class-component": "^8.0.0-0",
     "vue-router": "^4.2.5",
-    "vue-time-date-range-picker": "^2.1.2",
+    "vue-time-date-range-picker": "2.1.2",
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
