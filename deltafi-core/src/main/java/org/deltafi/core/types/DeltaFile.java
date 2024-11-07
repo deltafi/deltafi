@@ -18,12 +18,12 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.uuid.Generators;
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
+import org.deltafi.core.types.hibernate.UUIDArrayType;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -56,13 +56,13 @@ public class DeltaFile {
   private UUID did = Generators.timeBasedEpochGenerator().generate();
   private String name;
   private String dataSource;
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
+  @Type(UUIDArrayType.class)
+  @Column(columnDefinition = "uuid[]")
   @Builder.Default
   private List<UUID> parentDids = new ArrayList<>();
   private UUID joinId;
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
+  @Type(UUIDArrayType.class)
+  @Column(columnDefinition = "uuid[]")
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
@@ -97,8 +97,8 @@ public class DeltaFile {
   @Builder.Default
   private boolean contentDeletable = false;
 
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
+  @Type(UUIDArrayType.class)
+  @Column(columnDefinition = "uuid[]")
   @Builder.Default
   private List<UUID> contentObjectIds = new ArrayList<>();
 

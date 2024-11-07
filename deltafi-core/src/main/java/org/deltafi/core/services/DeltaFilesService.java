@@ -526,7 +526,11 @@ public class DeltaFilesService {
             List<StateMachineInput> childInputs =
                     createChildren(transformEvents, event.getStart(), event.getStop(), deltaFile, flow);
             inputs.addAll(childInputs);
-            deltaFile.getChildDids().addAll(childInputs.stream().map(input -> input.deltaFile().getDid()).toList());
+            List<UUID> updatedChildDids = new ArrayList<>(deltaFile.getChildDids());
+            updatedChildDids.addAll(childInputs.stream()
+                    .map(input -> input.deltaFile().getDid())
+                    .toList());
+            deltaFile.setChildDids(updatedChildDids);
             advanceAndSave(inputs, false);
         }
     }
@@ -933,6 +937,8 @@ public class DeltaFilesService {
                             deltaFile.setReplayDid(child.getDid());
                             if (Objects.isNull(deltaFile.getChildDids())) {
                                 deltaFile.setChildDids(new ArrayList<>());
+                            } else {
+                                deltaFile.setChildDids(new ArrayList<>(deltaFile.getChildDids()));
                             }
                             deltaFile.getChildDids().add(child.getDid());
                             parents.add(deltaFile);

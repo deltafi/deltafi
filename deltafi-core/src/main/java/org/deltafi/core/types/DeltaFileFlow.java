@@ -24,6 +24,7 @@ import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedActionException;
+import org.deltafi.core.types.hibernate.StringArrayType;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
@@ -62,20 +63,20 @@ public class DeltaFileFlow {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private List<Action> actions = new ArrayList<>();
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
+    @Type(StringArrayType.class)
+    @Column(columnDefinition = "text[]")
     @Builder.Default
     private List<String> publishTopics = new ArrayList<>();
     private int depth;
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
+    @Type(StringArrayType.class)
+    @Column(columnDefinition = "text[]")
     @Builder.Default
-    private Set<String> pendingAnnotations = new HashSet<>();
+    private List<String> pendingAnnotations = new ArrayList<>();
     boolean testMode;
     String testModeReason;
     private UUID joinId;
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
+    @Type(StringArrayType.class)
+    @Column(columnDefinition = "text[]")
     @Builder.Default
     private List<String> pendingActions = new ArrayList<>();
     private OffsetDateTime errorAcknowledged;
@@ -100,7 +101,7 @@ public class DeltaFileFlow {
         this.actions = other.actions == null ? null : other.actions.stream().map(Action::new).toList();
         this.publishTopics = new ArrayList<>(other.publishTopics);
         this.depth = other.depth;
-        this.pendingAnnotations = new HashSet<>(other.pendingAnnotations);
+        this.pendingAnnotations = new ArrayList<>(other.pendingAnnotations);
         this.testMode = other.testMode;
         this.testModeReason = other.testModeReason;
         this.joinId = other.joinId;
@@ -347,7 +348,7 @@ public class DeltaFileFlow {
     }
 
     public void removePendingAnnotations(Set<String> receivedAnnotations) {
-        this.pendingAnnotations = this.pendingAnnotations != null ? new HashSet<>(pendingAnnotations) : new HashSet<>();
+        this.pendingAnnotations = this.pendingAnnotations != null ? new ArrayList<>(pendingAnnotations) : new ArrayList<>();
         this.pendingAnnotations.removeAll(receivedAnnotations);
     }
 
@@ -373,5 +374,9 @@ public class DeltaFileFlow {
 
     public List<Content> lastActionContent() {
         return !actions.isEmpty() ? lastAction().getContent() : List.of();
+    }
+
+    public void setPendingAnnotations(Set<String> expectedAnnotations) {
+        this.pendingAnnotations = expectedAnnotations.stream().toList();
     }
 }

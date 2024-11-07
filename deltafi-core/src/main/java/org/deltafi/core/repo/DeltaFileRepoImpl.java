@@ -18,7 +18,6 @@
 package org.deltafi.core.repo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -45,8 +44,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
-
-import static org.deltafi.common.types.ActionState.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -418,19 +415,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
                 : null;
         long totalBytes = ((Number) row[2]).longValue();
-        List<UUID> contentObjectIds = new ArrayList<>();
-        String contentJson = (String) row[3];
 
-        if (contentJson != null && !contentJson.equals("[]")) {
-            try {
-                JsonNode uuidArray = OBJECT_MAPPER.readTree(contentJson);
-                for (JsonNode uuidNode : uuidArray) {
-                    if (uuidNode.isTextual()) {
-                        contentObjectIds.add(UUID.fromString(uuidNode.asText()));
-                    }
-                }
-            } catch (JsonProcessingException ignored) {}
-        }
+        List<UUID> contentObjectIds = row[3] != null
+                ? Arrays.asList((UUID[]) row[3])
+                : new ArrayList<>();
 
         return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentObjectIds);
     }
@@ -655,11 +643,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             if (filter.getPendingAnnotations()) {
                 criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
                 criteria.append("WHERE dff.delta_file_id = df.did ");
-                criteria.append("AND jsonb_array_length(dff.pending_annotations) > 0) ");
+                criteria.append("AND array_length(dff.pending_annotations, 1) > 0) ");
             } else {
                 criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
                 criteria.append("WHERE dff.delta_file_id = df.did ");
-                criteria.append("AND jsonb_array_length(dff.pending_annotations) = 0) ");
+                criteria.append("AND (dff.pending_annotations IS NULL OR array_length(dff.pending_annotations, 1) IS NULL)) ");
             }
         }
 
@@ -749,7 +737,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
                                      content_deletable, content_object_ids, version)
-            VALUES (?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)""";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, input,
@@ -757,7 +745,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                           join_id, pending_actions, delta_file_id, version, actions,
                                           error_acknowledged, error_acknowledged_reason, cold_queued, error_or_filter_cause,
                                           next_auto_resume)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_ANNOTATIONS = """
             INSERT INTO annotations (id, key, value, delta_file_id)
@@ -849,12 +837,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private void setDeltaFileParameters(PreparedStatement ps, DeltaFile deltaFile) throws SQLException {
+        Connection conn = ps.getConnection();
+
         ps.setObject(1, deltaFile.getDid());
         ps.setString(2, deltaFile.getName());
         ps.setString(3, deltaFile.getDataSource());
-        ps.setString(4, toJson(deltaFile.getParentDids()));
+        ps.setObject(4, conn.createArrayOf("uuid", deltaFile.getParentDids().toArray(new UUID[0])));
         ps.setObject(5, deltaFile.getJoinId());
-        ps.setString(6, toJson(deltaFile.getChildDids()));
+        ps.setObject(6, conn.createArrayOf("uuid", deltaFile.getChildDids().toArray(new UUID[0])));
         ps.setInt(7, deltaFile.getRequeueCount());
         ps.setLong(8, deltaFile.getIngressBytes());
         ps.setLong(9, deltaFile.getReferencedBytes());
@@ -870,11 +860,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setObject(19, deltaFile.getReplayDid());
         ps.setBoolean(20, deltaFile.isTerminal());
         ps.setBoolean(21, deltaFile.isContentDeletable());
-        ps.setString(22, toJson(deltaFile.getContentObjectIds()));
+        ps.setObject(22, conn.createArrayOf("uuid", deltaFile.getContentObjectIds().toArray(new UUID[0])));
         ps.setLong(23, deltaFile.getVersion());
     }
 
     private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {
+        Connection conn = ps.getConnection();
+
         ps.setObject(1, flow.getId());
         ps.setString(2, flow.getName());
         ps.setInt(3, flow.getNumber());
@@ -883,13 +875,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setTimestamp(6, toTimestamp(flow.getCreated()));
         ps.setTimestamp(7, toTimestamp(flow.getModified()));
         ps.setString(8, toJson(flow.getInput()));
-        ps.setString(9, toJson(flow.getPublishTopics()));
+        ps.setArray(9, conn.createArrayOf("text", flow.getPublishTopics().toArray(new String[0])));
         ps.setInt(10, flow.getDepth());
-        ps.setString(11, toJson(flow.getPendingAnnotations()));
+        ps.setArray(11, conn.createArrayOf("text", flow.getPendingAnnotations().toArray(new String[0])));
         ps.setBoolean(12, flow.isTestMode());
         ps.setString(13, flow.getTestModeReason());
         ps.setObject(14, flow.getJoinId());
-        ps.setString(15, toJson(flow.getPendingActions()));
+        ps.setArray(15, conn.createArrayOf("text", flow.getPendingActions().toArray(new String[0])));
         ps.setObject(16, deltaFile.getDid());
         ps.setLong(17, flow.getVersion());
         ps.setString(18, toJson(flow.getActions()));
