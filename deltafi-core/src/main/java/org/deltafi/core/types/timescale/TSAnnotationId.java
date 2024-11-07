@@ -17,23 +17,25 @@
  */
 package org.deltafi.core.types.timescale;
 
-import jakarta.persistence.*;
+import com.fasterxml.uuid.Generators;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "ts_errors")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TSError {
-    @EmbeddedId
-    private TSId key;
+import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
-    private String cause;
-    private String flow;
-    private String action;
+@Embeddable
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+public class TSAnnotationId implements Serializable {
+    @Column(nullable = false)
+    private UUID entityId;
+
+    @Column(nullable = false)
+    private String key;
 }

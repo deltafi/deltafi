@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 30,
+  "id": 14,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -73,7 +73,7 @@
         "content": "<h1><center>Error Analysis by <span style='font-family: monospace; color: yellow'>${annotation_key}</span></center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.2.2+security-01",
       "transparent": true,
       "type": "text"
     },
@@ -108,6 +108,7 @@
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 25,
             "gradientMode": "opacity",
@@ -187,7 +188,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT data_source FROM data\n),\nall_combinations AS (\n  SELECT time, data_source\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  COALESCE(SUM(d.files),0) AS errors\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.data_source = d.data_source\nGROUP BY 1\nORDER BY ac.time\n",
+          "rawSql": "WITH params AS (\n SELECT\n   $__from::bigint AS start_time_ms,\n   $__to::bigint AS end_time_ms,\n   $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n SELECT\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     e.timestamp\n   ) AS time,\n   e.data_source,\n   COUNT(*) AS files\n FROM ts_errors e\n LEFT JOIN LATERAL (\n   SELECT value \n   FROM ts_annotations \n   WHERE entity_id = e.id \n   AND key = '$annotation_key'\n   LIMIT 1\n ) a ON true\n WHERE\n   e.timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   AND e.timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   AND e.data_source IN ($datasources)\n   AND (\n     (a.value IS NOT NULL AND a.value IN ($annotation_value))\n     OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n   )\n GROUP BY 1, 2\n),\ntime_series AS (\n SELECT generate_series(\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   ),\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   ),\n   (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n ) AS time\n),\nall_series AS (\n SELECT DISTINCT data_source FROM data\n),\nall_combinations AS (\n SELECT time, data_source\n FROM time_series\n CROSS JOIN all_series\n)\nSELECT\n ac.time,\n COALESCE(SUM(d.files), 0) AS errors\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.data_source = d.data_source\nGROUP BY 1\nORDER BY ac.time;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -308,7 +309,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -351,6 +352,7 @@
             "axisPlacement": "left",
             "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 25,
             "gradientMode": "opacity",
@@ -431,7 +433,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "rawSql": "WITH params AS (\n SELECT\n   $__from::bigint AS start_time_ms,\n   $__to::bigint AS end_time_ms,\n   $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n SELECT\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     e.timestamp\n   ) AS time,\n   e.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n   COUNT(*) AS files\n FROM ts_errors e\n LEFT JOIN LATERAL (\n   SELECT value \n   FROM ts_annotations \n   WHERE entity_id = e.id \n   AND key = '$annotation_key'\n   LIMIT 1\n ) a ON true\n WHERE\n   e.timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   AND e.timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   AND e.data_source IN ($datasources)\n   AND (\n     (a.value IS NOT NULL AND a.value IN ($annotation_value))\n     OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n   )\n GROUP BY 1, 2\n),\ntime_series AS (\n SELECT generate_series(\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   ),\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   ),\n   (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n ) AS time\n),\nall_series AS (\n SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n SELECT time, series_name\n FROM time_series\n CROSS JOIN all_series\n)\nSELECT\n ac.time,\n ac.series_name,\n COALESCE(d.files, 0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -499,6 +501,7 @@
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 25,
             "gradientMode": "opacity",
@@ -579,7 +582,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT data_source FROM data\n),\nall_combinations AS (\n  SELECT time, data_source\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.data_source,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.data_source = d.data_source\nORDER BY ac.time, ac.data_source",
+          "rawSql": "WITH params AS (\n SELECT\n   $__from::bigint AS start_time_ms,\n   $__to::bigint AS end_time_ms,\n   $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n SELECT\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     e.timestamp\n   ) AS time,\n   e.data_source,\n   COUNT(*) AS files\n FROM ts_errors e\n LEFT JOIN LATERAL (\n   SELECT value \n   FROM ts_annotations \n   WHERE entity_id = e.id \n   AND key = '$annotation_key'\n   LIMIT 1\n ) a ON true\n WHERE\n   e.timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   AND e.timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   AND e.data_source IN ($datasources)\n   AND (\n     (a.value IS NOT NULL AND a.value IN ($annotation_value))\n     OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n   )\n GROUP BY 1, 2\n),\ntime_series AS (\n SELECT generate_series(\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   ),\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   ),\n   (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n ) AS time\n),\nall_series AS (\n SELECT DISTINCT data_source FROM data\n),\nall_combinations AS (\n SELECT time, data_source\n FROM time_series\n CROSS JOIN all_series\n)\nSELECT\n ac.time,\n ac.data_source,\n COALESCE(d.files, 0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.data_source = d.data_source\nORDER BY ac.time, ac.data_source;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -647,6 +650,7 @@
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 25,
             "gradientMode": "opacity",
@@ -727,7 +731,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    COALESCE(cause, 'None Given') AS series_name,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "rawSql": "WITH params AS (\n SELECT\n   $__from::bigint AS start_time_ms,\n   $__to::bigint AS end_time_ms,\n   $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n SELECT\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     e.timestamp\n   ) AS time,\n   COALESCE(e.cause, 'None Given') AS series_name,\n   COUNT(*) AS files\n FROM ts_errors e\n LEFT JOIN LATERAL (\n   SELECT value \n   FROM ts_annotations \n   WHERE entity_id = e.id \n   AND key = '$annotation_key'\n   LIMIT 1\n ) a ON true\n WHERE\n   e.timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   AND e.timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   AND e.data_source IN ($datasources)\n   AND (\n     (a.value IS NOT NULL AND a.value IN ($annotation_value))\n     OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n   )\n GROUP BY 1, 2\n),\ntime_series AS (\n SELECT generate_series(\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT start_time_ms FROM params) / 1000)\n   ),\n   time_bucket(\n     (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n     to_timestamp((SELECT end_time_ms FROM params) / 1000)\n   ),\n   (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n ) AS time\n),\nall_series AS (\n SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n SELECT time, series_name\n FROM time_series\n CROSS JOIN all_series\n)\nSELECT\n ac.time,\n ac.series_name,\n COALESCE(d.files, 0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -847,7 +851,7 @@
           }
         ]
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -857,7 +861,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\ndata_source,\nSUM(causes) AS causes\nFROM\n(SELECT\ndata_source, \nCOALESCE(annotations->>'$annotation_key', 'Not Present') AS key,\nCOUNT(DISTINCT cause) AS causes\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2)\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n data_source,\n SUM(causes) AS causes\nFROM (\n SELECT\n   e.data_source,\n   COALESCE(a.value, 'Not Present') AS key,\n   COUNT(DISTINCT cause) AS causes\n FROM ts_errors e\n LEFT JOIN LATERAL (\n   SELECT value \n   FROM ts_annotations \n   WHERE entity_id = e.id \n   AND key = '$annotation_key'\n   LIMIT 1\n ) a ON true\n WHERE\n   $__timeFilter(e.timestamp)\n   AND e.data_source IN ($datasources)\n   AND COALESCE(a.value, 'Not Present') IN ($annotation_value)\n GROUP BY 1, 2\n ORDER BY 1, 2\n) sub\nGROUP BY 1\nORDER BY 1;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -978,7 +982,7 @@
           }
         ]
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -988,7 +992,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\ndata_source,\nCOUNT(DISTINCT key) as keys\nFROM\n(SELECT\ndata_source, \nCOALESCE(annotations->>'$annotation_key', 'Not Present') AS key,\nCOUNT(DISTINCT cause) AS causes\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2)\nGROUP BY 1\nORDER BY 1",
+          "rawSql": "SELECT\n data_source,\n COUNT(DISTINCT key) as keys\nFROM (\n SELECT\n   e.data_source,\n   COALESCE(a.value, 'Not Present') AS key,\n   COUNT(DISTINCT cause) AS causes\n FROM ts_errors e\n LEFT JOIN LATERAL (\n   SELECT value \n   FROM ts_annotations \n   WHERE entity_id = e.id \n   AND key = '$annotation_key'\n   LIMIT 1\n ) a ON true\n WHERE\n   $__timeFilter(e.timestamp)\n   AND e.data_source IN ($datasources)\n   AND COALESCE(a.value, 'Not Present') IN ($annotation_value)\n GROUP BY 1, 2\n ORDER BY 1, 2\n) sub\nGROUP BY 1\nORDER BY 1;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1109,7 +1113,7 @@
           }
         ]
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -1119,7 +1123,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\ndata_source, \ncause,\ncount(*) as frequency\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2\n",
+          "rawSql": "SELECT\n e.data_source,\n e.cause,\n count(*) as frequency\nFROM ts_errors e\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = e.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE\n $__timeFilter(e.timestamp)\n AND e.data_source IN ($datasources)\n AND COALESCE(a.value, 'Not Present') IN ($annotation_value)\nGROUP BY 1, 2\nORDER BY 1, 2;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1205,8 +1209,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1249,7 +1252,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\ndata_source, \nCOALESCE(annotations->>'$annotation_key', 'Not Present') as annotation_value,\ncount(*) as frequency\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2\n",
+          "rawSql": "SELECT\n e.data_source,\n COALESCE(a.value, 'Not Present') as annotation_value,\n count(*) as frequency\nFROM ts_errors e\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = e.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE\n $__timeFilter(e.timestamp)\n AND e.data_source IN ($datasources)\n AND COALESCE(a.value, 'Not Present') IN ($annotation_value)\nGROUP BY 1, 2\nORDER BY 1, 2;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1373,14 +1376,14 @@
       {
         "current": {
           "selected": false,
-          "text": "language",
-          "value": "language"
+          "text": "dataType",
+          "value": "dataType"
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "${database}"
         },
-        "definition": "WITH all_keys AS (\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_keys AS (\n  SELECT DISTINCT key\n  FROM all_keys\n)\nSELECT key\nFROM (\n  SELECT key FROM distinct_keys\n  UNION ALL\n  SELECT 'No Annotations' AS key\n) subquery\nWHERE \n  key = 'No Annotations' AND NOT EXISTS (SELECT 1 FROM distinct_keys)\n  OR\n  key != 'No Annotations'\nORDER BY \n  CASE WHEN key = 'No Annotations' THEN 0 ELSE 1 END,\n  key",
+        "definition": "SELECT key\nFROM(\nSELECT DISTINCT key\nFROM ts_annotations\nUNION ALL\nSELECT 'No Annotations'\n  WHERE NOT EXISTS (\nSELECT 1\nFROM ts_annotations \nLIMIT 1\n)\n) all_keys\nORDER BY key;",
         "description": "",
         "hide": 0,
         "includeAll": false,
@@ -1388,7 +1391,7 @@
         "multi": false,
         "name": "annotation_key",
         "options": [],
-        "query": "WITH all_keys AS (\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_keys AS (\n  SELECT DISTINCT key\n  FROM all_keys\n)\nSELECT key\nFROM (\n  SELECT key FROM distinct_keys\n  UNION ALL\n  SELECT 'No Annotations' AS key\n) subquery\nWHERE \n  key = 'No Annotations' AND NOT EXISTS (SELECT 1 FROM distinct_keys)\n  OR\n  key != 'No Annotations'\nORDER BY \n  CASE WHEN key = 'No Annotations' THEN 0 ELSE 1 END,\n  key",
+        "query": "SELECT key\nFROM(\nSELECT DISTINCT key\nFROM ts_annotations\nUNION ALL\nSELECT 'No Annotations'\n  WHERE NOT EXISTS (\nSELECT 1\nFROM ts_annotations \nLIMIT 1\n)\n) all_keys\nORDER BY key;",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1409,18 +1412,18 @@
           "type": "grafana-postgresql-datasource",
           "uid": "${database}"
         },
-        "definition": "WITH all_values AS (\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_ingresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_egresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_errors\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_filters\n  WHERE $__timeFilter(timestamp)\n),\ndistinct_values AS (\n  SELECT DISTINCT value\n  FROM all_values\n  WHERE value IS NOT NULL\n)\nSELECT value\nFROM (\n  SELECT value FROM distinct_values\n  UNION ALL\n  SELECT 'Not Present'\n) subquery\nORDER BY \n  CASE \n    WHEN value = 'Not Present' THEN 1\n    ELSE 0 \n  END,\n  value",
+        "definition": "SELECT value\nFROM (\n  SELECT DISTINCT value\n  FROM ts_annotations\n  WHERE $__timeFilter(entity_timestamp)\n    AND data_source IN ($datasources)\n    AND key = '$annotation_key'\n  \n  UNION ALL\n  SELECT 'Not Present'\n) all_values\nORDER BY \n  CASE WHEN value = 'Not Present' THEN 0 ELSE 1 END,\n  value;",
         "hide": 0,
         "includeAll": true,
         "label": "Annotation Value",
         "multi": true,
         "name": "annotation_value",
         "options": [],
-        "query": "WITH all_values AS (\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_ingresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_egresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_errors\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_filters\n  WHERE $__timeFilter(timestamp)\n),\ndistinct_values AS (\n  SELECT DISTINCT value\n  FROM all_values\n  WHERE value IS NOT NULL\n)\nSELECT value\nFROM (\n  SELECT value FROM distinct_values\n  UNION ALL\n  SELECT 'Not Present'\n) subquery\nORDER BY \n  CASE \n    WHEN value = 'Not Present' THEN 1\n    ELSE 0 \n  END,\n  value",
+        "query": "SELECT value\nFROM (\n  SELECT DISTINCT value\n  FROM ts_annotations\n  WHERE $__timeFilter(entity_timestamp)\n    AND data_source IN ($datasources)\n    AND key = '$annotation_key'\n  \n  UNION ALL\n  SELECT 'Not Present'\n) all_values\nORDER BY \n  CASE WHEN value = 'Not Present' THEN 0 ELSE 1 END,\n  value;",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 5,
+        "sort": 0,
         "type": "query"
       }
     ]
@@ -1440,6 +1443,6 @@
   "timezone": "",
   "title": "Error Analysis",
   "uid": "error-analysis",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }

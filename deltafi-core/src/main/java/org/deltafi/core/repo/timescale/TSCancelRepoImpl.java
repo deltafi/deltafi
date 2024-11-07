@@ -19,7 +19,6 @@ package org.deltafi.core.repo.timescale;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.timescale.TSCancel;
-import org.json.JSONObject;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -29,8 +28,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TSCancelRepoImpl implements TSCancelRepoCustom {
     private static final String INSERT_TS_CANCEL = """
-        INSERT INTO ts_cancels (id, timestamp, data_source, annotations)
-        VALUES (?, ?, ?, ?::jsonb)""";
+        INSERT INTO ts_cancels (id, timestamp, data_source)
+        VALUES (?, ?, ?)
+        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -44,8 +44,7 @@ public class TSCancelRepoImpl implements TSCancelRepoCustom {
                 .map(event -> new Object[]{
                         event.getKey().getId(),
                         event.getKey().getTimestamp(),
-                        event.getKey().getDataSource(),
-                        new JSONObject(event.getAnnotations()).toString()
+                        event.getKey().getDataSource()
                 })
                 .toList();
 

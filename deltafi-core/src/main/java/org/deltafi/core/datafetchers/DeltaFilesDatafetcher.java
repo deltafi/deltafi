@@ -25,8 +25,10 @@ import com.netflix.graphql.dgs.*;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.Segment;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
@@ -36,28 +38,25 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @DgsComponent
+@RequiredArgsConstructor
 @Slf4j
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   final ContentStorageService contentStorageService;
   final RestDataSourceService restDataSourceService;
+  final AnalyticEventService analyticEventService;
   private final CoreAuditLogger auditLogger;
 
   static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-
-  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, RestDataSourceService restDataSourceService, CoreAuditLogger auditLogger) {
-    this.deltaFilesService = deltaFilesService;
-    this.contentStorageService = contentStorageService;
-    this.restDataSourceService = restDataSourceService;
-    this.auditLogger = auditLogger;
-  }
 
   @DgsData(parentType = "DeltaFile", field = "annotations")
   public Object getAnnotations(DgsDataFetchingEnvironment dfe) {
@@ -250,6 +249,7 @@ public class DeltaFilesDatafetcher {
   public List<UniqueKeyValues> sourceMetadataUnion(@InputArgument List<UUID> dids) {
     return deltaFilesService.sourceMetadataUnion(dids);
   }
+
   @DgsMutation
   @NeedsPermission.StressTest
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException, IngressException {
@@ -297,6 +297,117 @@ public class DeltaFilesDatafetcher {
     }
 
     return numFiles;
+  }
+
+  @DgsMutation
+  @NeedsPermission.StressTest
+  public int stressTestAnalyticEvents(@InputArgument Integer numRecords, @InputArgument Integer hours) {
+    auditLogger.audit("started analytics events stress test for {} records over {} hours", numRecords, hours);
+
+    Random random = new Random();
+
+    OffsetDateTime endTime = OffsetDateTime.now();
+    OffsetDateTime startTime = endTime.minusHours(hours);
+    long timeRangeSeconds = ChronoUnit.SECONDS.between(startTime, endTime);
+
+    String[] flows = {"flow1", "flow2", "flow3", "flow4"};
+    String[] actions = {"LoadAction", "NormalizeAction", "EnrichAction", "ValidateAction"};
+    String[] dataSources = {"stressTestAIn", "stressTestBIn", "stressTestCIn", "stressTestDIn"};
+    String[] dataSinks = {"stressTestAOut", "stressTestBOut", "stressTestCOut", "stressTestDOut"};
+
+    String[][] annotationValues = {
+            {"csv", "json", "xml", "binary"},
+            {"raw", "normalized", "enriched"},
+            {"high", "medium", "low"},
+            {"system1", "system2", "system3"},
+            {"valid", "invalid", "partial"},
+            {"batch", "streaming", "interactive"}
+    };
+    String[] annotationKeys = {"dataType", "format", "priority", "source", "status", "processingType"};
+
+    // Reusable objects
+    Map<String, String> annotations = new HashMap<>();
+    DeltaFile deltaFile = new DeltaFile();
+    Content content = new Content("d", "x", new ArrayList<>());
+    Segment segment = new Segment();
+    Action egressAction = new Action();
+    egressAction.setState(ActionState.COMPLETE);
+    egressAction.setContent(List.of(content));
+    DeltaFileFlow egressFlow = new DeltaFileFlow();
+    egressFlow.setActions(List.of(egressAction));
+
+    for (int i = 0; i < numRecords; i++) {
+      OffsetDateTime baseTimestamp = startTime.plusSeconds(random.nextLong(timeRangeSeconds));
+
+      annotations.clear();
+      int numAnnotations = 2 + random.nextInt(3);
+      for (int j = 0; j < numAnnotations; j++) {
+        int keyIndex = random.nextInt(6);
+        annotations.put(annotationKeys[keyIndex],
+                annotationValues[keyIndex][random.nextInt(annotationValues[keyIndex].length)]);
+      }
+
+      // Setup base objects
+      UUID did = UUID.randomUUID();
+      String dataSource = dataSources[random.nextInt(dataSources.length)];
+      String flow = flows[random.nextInt(flows.length)];
+
+      deltaFile.setDid(did);
+      deltaFile.setDataSource(dataSource);
+      deltaFile.addAnnotations(annotations);
+
+      // Record ingress
+      long ingressBytes = 1024L + random.nextLong(10 * 1024 * 1024);
+      analyticEventService.recordIngress(did, baseTimestamp, dataSource, ingressBytes, annotations);
+
+      // Most files should have 1-3 result paths
+      int numBranches = random.nextInt(100) < 80 ? 1 : 2 + random.nextInt(2); // 80% single branch, 20% 2-3 branches
+
+      for (int branch = 0; branch < numBranches; branch++) {
+        OffsetDateTime branchTime = baseTimestamp.plusSeconds(random.nextInt(60));
+
+        // 90% success path (egress), 5% error, 4% filter, 1% cancel
+        int outcome = random.nextInt(100);
+
+        if (outcome < 90) {
+          // Egress
+          segment.setDid(did);
+          segment.setUuid(did);
+          segment.setSize(Math.max(1024L, ingressBytes - random.nextLong(ingressBytes / 2)));
+          content.setSegments(List.of(segment));
+
+          egressAction.setModified(branchTime);
+          egressFlow.setModified(branchTime);
+          String dataSink = dataSinks[random.nextInt(dataSinks.length)];
+          egressFlow.setName(dataSink);
+
+          analyticEventService.recordEgress(deltaFile, egressFlow);
+        } else if (outcome < 95) {
+          // Error
+          String actionName = actions[random.nextInt(actions.length)];
+          analyticEventService.recordError(
+                  deltaFile,
+                  flow,
+                  actionName,
+                  "Test error: Invalid data format in field " + random.nextInt(10),
+                  branchTime);
+        } else if (outcome < 99) {
+          // Filter
+          String actionName = actions[random.nextInt(actions.length)];
+          analyticEventService.recordFilter(
+                  deltaFile,
+                  flow,
+                  actionName,
+                  "Filtered by " + actionName,
+                  branchTime);
+        } else {
+          // Cancel
+          analyticEventService.recordCancel(deltaFile, branchTime);
+        }
+      }
+    }
+
+    return numRecords;
   }
 
   @DgsQuery

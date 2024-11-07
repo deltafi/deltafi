@@ -19,7 +19,6 @@ package org.deltafi.core.repo.timescale;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.timescale.TSFilter;
-import org.json.JSONObject;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -29,8 +28,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TSFilterRepoImpl implements TSFilterRepoCustom {
     private static final String INSERT_TS_FILTER = """
-        INSERT INTO ts_filters (id, timestamp, data_source, annotations, message, flow, action)
-        VALUES (?, ?, ?, ?::jsonb, ?, ?, ?)""";
+        INSERT INTO ts_filters (id, timestamp, data_source, message, flow, action)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -45,7 +45,6 @@ public class TSFilterRepoImpl implements TSFilterRepoCustom {
                         event.getKey().getId(),
                         event.getKey().getTimestamp(),
                         event.getKey().getDataSource(),
-                        new JSONObject(event.getAnnotations()).toString(),
                         event.getMessage(),
                         event.getFlow(),
                         event.getAction()

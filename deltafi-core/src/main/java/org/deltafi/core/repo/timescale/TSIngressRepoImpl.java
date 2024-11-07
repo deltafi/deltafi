@@ -19,39 +19,38 @@ package org.deltafi.core.repo.timescale;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.timescale.TSIngress;
-import org.json.JSONObject;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.sql.PreparedStatement;
 import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
 public class TSIngressRepoImpl implements TSIngressRepoCustom {
-    private static final String UPSERT_TS_INGRESS = """
-        INSERT INTO ts_ingresses (id, timestamp, data_source, annotations, ingress_bytes, count, survey)
-        VALUES (?, ?, ?, ?::jsonb, ?, ?, ?)
-        ON CONFLICT (id, timestamp, data_source) DO UPDATE SET
-        annotations = ts_ingresses.annotations || EXCLUDED.annotations""";
+    private static final String INSERT_TS_INGRESS = """
+        INSERT INTO ts_ingresses (id, timestamp, data_source, ingress_bytes, count, survey)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public void batchUpsert(List<TSIngress> ingressEvents) {
+    public void batchInsert(List<TSIngress> ingressEvents) {
         if (ingressEvents.isEmpty()) {
             return;
         }
 
-        jdbcTemplate.batchUpdate(UPSERT_TS_INGRESS, ingressEvents, ingressEvents.size(),
-                (PreparedStatement ps, TSIngress event) -> {
-                    ps.setObject(1, event.getKey().getId());
-                    ps.setObject(2, event.getKey().getTimestamp());
-                    ps.setString(3, event.getKey().getDataSource());
-                    ps.setString(4, new JSONObject(event.getAnnotations()).toString());
-                    ps.setLong(5, event.getIngressBytes());
-                    ps.setInt(6, event.getCount());
-                    ps.setBoolean(7, event.isSurvey());
-                });
+        List<Object[]> batchArgs = ingressEvents.stream()
+                .map(event -> new Object[]{
+                        event.getKey().getId(),
+                        event.getKey().getTimestamp(),
+                        event.getKey().getDataSource(),
+                        event.getIngressBytes(),
+                        event.getCount(),
+                        event.isSurvey()
+                })
+                .toList();
+
+        jdbcTemplate.batchUpdate(INSERT_TS_INGRESS, batchArgs);
     }
 }

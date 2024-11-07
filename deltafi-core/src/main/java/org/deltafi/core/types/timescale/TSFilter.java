@@ -17,8 +17,6 @@
  */
 package org.deltafi.core.types.timescale;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
-import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -26,9 +24,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
-
-import java.util.Map;
 
 @Entity
 @Table(name = "ts_filters")
@@ -43,8 +38,4 @@ public class TSFilter {
     private String message;
     private String flow;
     private String action;
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, String> annotations;
 }

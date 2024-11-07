@@ -23,6 +23,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,7 +40,7 @@ import java.util.concurrent.Callable;
 
 @EnableMethodSecurity
 @SpringBootTest(classes = {DeltaFilesDatafetcher.class}, webEnvironment = WebEnvironment.NONE)
-@MockBean({DeltaFilesService.class, RestDataSourceService.class, ContentStorageService.class, CoreAuditLogger.class})
+@MockBean({DeltaFilesService.class, RestDataSourceService.class, ContentStorageService.class, CoreAuditLogger.class, AnalyticEventService.class})
 class DeltaFilesDatafetcherSecurityTest {
     
     private static final UUID DID = UUID.randomUUID();

@@ -47,6 +47,7 @@ public class AnalyticEventService {
     private final TSErrorRepo tsErrorRepo;
     private final TSIngressRepo tsIngressRepo;
     private final TSFilterRepo tsFilterRepo;
+    private final TSAnnotationRepo tsAnnotationRepo;
     private final Clock clock;
 
     private final ConcurrentLinkedQueue<TSEgress> egressQueue = new ConcurrentLinkedQueue<>();
@@ -54,10 +55,16 @@ public class AnalyticEventService {
     private final ConcurrentLinkedQueue<TSError> errorQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TSFilter> filterQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TSCancel> cancelQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<TSAnnotation> annotationQueue = new ConcurrentLinkedQueue<>();
 
     private boolean isDisabled() {
         return !deltaFiPropertiesService.getDeltaFiProperties().isMetricsEnabled();
     }
+
+    private final static int BATCH_SIZE = 1000;
+    // this limit is only applied when database inserts fail
+    // determines whether metrics are requeued or dropped
+    private final static int MAX_QUEUE_SIZE = 10000;
 
     /**
      * Generate an analytic event for DeltaFile egress
@@ -71,8 +78,17 @@ public class AnalyticEventService {
                         .key(new TSId(flow.getModified(), deltaFile.getDataSource()))
                         .egressor(flow.getName())
                         .egressBytes(flow.lastContentSize())
-                        .annotations(deltaFile.annotationMap())
                         .build();
+
+        deltaFile.annotationMap().forEach((k, v) -> {
+            TSAnnotation tsAnnotation = TSAnnotation.builder()
+                    .id(new TSAnnotationId(tsEgress.getKey().getId(), k))
+                    .dataSource(deltaFile.getDataSource())
+                    .entityTimestamp(flow.getModified())
+                    .value(v)
+                    .build();
+            annotationQueue.offer(tsAnnotation);
+        });
 
         egressQueue.offer(tsEgress);
     }
@@ -92,10 +108,19 @@ public class AnalyticEventService {
         TSIngress tsIngress = TSIngress.builder()
                 .key(new TSId(did, created, dataSource))
                 .ingressBytes(ingressBytes)
-                .annotations(annotations)
                 .count(1)
                 .survey(false)
                 .build();
+
+        annotations.forEach((k, v) -> {
+            TSAnnotation tsAnnotation = TSAnnotation.builder()
+                    .id(new TSAnnotationId(tsIngress.getKey().getId(), k))
+                    .dataSource(dataSource)
+                    .entityTimestamp(created)
+                    .value(v)
+                    .build();
+            annotationQueue.offer(tsAnnotation);
+        });
 
         ingressQueue.offer(tsIngress);
     }
@@ -110,8 +135,16 @@ public class AnalyticEventService {
      * @param ingressBytes bytes ingressed
      * @param annotations map of annotations
      */
-    public void recordAnnotations(UUID did, OffsetDateTime created, String dataSource, long ingressBytes, Map<String, String> annotations) {
-        recordIngress(did, created, dataSource, ingressBytes, annotations);
+    public void recordAnnotations(UUID did, OffsetDateTime created, String dataSource, Map<String, String> annotations) {
+        annotations.forEach((k, v) -> {
+            TSAnnotation tsAnnotation = TSAnnotation.builder()
+                    .id(new TSAnnotationId(did, k))
+                    .dataSource(dataSource)
+                    .entityTimestamp(created)
+                    .value(v)
+                    .build();
+            annotationQueue.offer(tsAnnotation);
+        });
     }
 
     /**
@@ -130,10 +163,19 @@ public class AnalyticEventService {
         TSIngress tsIngress = TSIngress.builder()
                 .key(new TSId(id, created, dataSource))
                 .ingressBytes(ingressBytes)
-                .annotations(annotations)
                 .count(count)
                 .survey(true)
                 .build();
+
+        annotations.forEach((k, v) -> {
+            TSAnnotation tsAnnotation = TSAnnotation.builder()
+                    .id(new TSAnnotationId(tsIngress.getKey().getId(), k))
+                    .dataSource(dataSource)
+                    .entityTimestamp(created)
+                    .value(v)
+                    .build();
+            annotationQueue.offer(tsAnnotation);
+        });
 
         ingressQueue.offer(tsIngress);
     }
@@ -154,8 +196,17 @@ public class AnalyticEventService {
                 .cause(cause)
                 .flow(flow)
                 .action(action)
-                .annotations(deltaFile.annotationMap())
                 .build();
+
+        deltaFile.annotationMap().forEach((k, v) -> {
+            TSAnnotation tsAnnotation = TSAnnotation.builder()
+                    .id(new TSAnnotationId(tsError.getKey().getId(), k))
+                    .dataSource(deltaFile.getDataSource())
+                    .entityTimestamp(timestamp)
+                    .value(v)
+                    .build();
+            annotationQueue.offer(tsAnnotation);
+        });
 
         errorQueue.offer(tsError);
     }
@@ -176,8 +227,17 @@ public class AnalyticEventService {
                 .flow(flow)
                 .action(action)
                 .message(message)
-                .annotations(deltaFile.annotationMap())
                 .build();
+
+        deltaFile.annotationMap().forEach((k, v) -> {
+            TSAnnotation tsAnnotation = TSAnnotation.builder()
+                    .id(new TSAnnotationId(tsFilter.getKey().getId(), k))
+                    .dataSource(deltaFile.getDataSource())
+                    .entityTimestamp(timestamp)
+                    .value(v)
+                    .build();
+            annotationQueue.offer(tsAnnotation);
+        });
 
         filterQueue.offer(tsFilter);
     }
@@ -192,8 +252,17 @@ public class AnalyticEventService {
 
         TSCancel tsCancel = TSCancel.builder()
                 .key(new TSId(timestamp, deltaFile.getDataSource()))
-                .annotations(deltaFile.annotationMap())
                 .build();
+
+        deltaFile.annotationMap().forEach((k, v) -> {
+            TSAnnotation tsAnnotation = TSAnnotation.builder()
+                    .id(new TSAnnotationId(tsCancel.getKey().getId(), k))
+                    .dataSource(deltaFile.getDataSource())
+                    .entityTimestamp(timestamp)
+                    .value(v)
+                    .build();
+            annotationQueue.offer(tsAnnotation);
+        });
 
         cancelQueue.offer(tsCancel);
     }
@@ -241,31 +310,40 @@ public class AnalyticEventService {
     public void processBatch() {
         if (isDisabled()) return;
 
-        processQueue(egressQueue, tsEgressRepo::batchInsert);
-        processQueue(ingressQueue, tsIngressRepo::batchUpsert);
-        processQueue(errorQueue, tsErrorRepo::batchInsert);
-        processQueue(filterQueue, tsFilterRepo::batchInsert);
-        processQueue(cancelQueue, tsCancelRepo::batchInsert);
+        boolean fullBatchProcessed;
+        do {
+            fullBatchProcessed = processQueue(egressQueue, tsEgressRepo::batchInsert) ||
+                    processQueue(ingressQueue, tsIngressRepo::batchInsert) ||
+                    processQueue(errorQueue, tsErrorRepo::batchInsert) ||
+                    processQueue(filterQueue, tsFilterRepo::batchInsert) ||
+                    processQueue(cancelQueue, tsCancelRepo::batchInsert) ||
+                    processQueue(annotationQueue, tsAnnotationRepo::batchUpsert);
+        } while (fullBatchProcessed);
     }
 
-    private <T> void processQueue(Queue<T> queue, Consumer<List<T>> saveFunction) {
+    private <T> boolean processQueue(Queue<T> queue, Consumer<List<T>> saveFunction) {
         List<T> batch = new ArrayList<>();
-        int batchSize = 1000;
 
         T item;
-        while ((item = queue.poll()) != null && batch.size() < batchSize) {
+        while (batch.size() < BATCH_SIZE && (item = queue.poll()) != null) {
             batch.add(item);
         }
 
         if (batch.isEmpty()) {
-            return;
+            return false;
         }
 
         try {
             saveFunction.accept(batch);
+            return batch.size() == BATCH_SIZE;
         } catch (Exception e) {
-            log.error("Error processing batch. Re-queueing items.", e);
-            queue.addAll(batch);
+            if (queue.size() < MAX_QUEUE_SIZE) {
+                log.error("Error processing batch. Re-queueing items.", e);
+                queue.addAll(batch);
+            } else {
+                log.error("Error processing batch. Max queue size exceeded, dropping items.", e);
+            }
+            return false;
         }
     }
 }

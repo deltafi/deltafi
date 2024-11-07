@@ -444,4 +444,5 @@ type Mutation {
   setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
 
   stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!
+  stressTestAnalyticEvents(numRecords: Int!, hours: Int!) : Int!
 }

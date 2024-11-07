@@ -19,7 +19,6 @@ package org.deltafi.core.repo.timescale;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.timescale.TSError;
-import org.json.JSONObject;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -29,8 +28,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TSErrorRepoImpl implements TSErrorRepoCustom {
     private static final String INSERT_TS_ERROR = """
-        INSERT INTO ts_errors (id, timestamp, data_source, annotations, cause, flow, action)
-        VALUES (?, ?, ?, ?::jsonb, ?, ?, ?)""";
+        INSERT INTO ts_errors (id, timestamp, data_source, cause, flow, action)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -45,7 +45,6 @@ public class TSErrorRepoImpl implements TSErrorRepoCustom {
                         event.getKey().getId(),
                         event.getKey().getTimestamp(),
                         event.getKey().getDataSource(),
-                        new JSONObject(event.getAnnotations()).toString(),
                         event.getCause(),
                         event.getFlow(),
                         event.getAction()

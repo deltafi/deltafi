@@ -18,38 +18,37 @@
 package org.deltafi.core.repo.timescale;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.types.timescale.TSEgress;
+import org.deltafi.core.types.timescale.TSAnnotation;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class TSEgressRepoImpl implements TSEgressRepoCustom {
-    private static final String INSERT_TS_EGRESS = """
-        INSERT INTO ts_egresses (id, timestamp, data_source, egressor, egress_bytes)
+public class TSAnnotationRepoImpl implements TSAnnotationRepoCustom {
+    private static final String UPSERT_ANNOTATION = """
+        INSERT INTO ts_annotations (entity_timestamp, entity_id, data_source, key, value)
         VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
+        ON CONFLICT (entity_timestamp, entity_id, key) DO UPDATE SET
+        value = EXCLUDED.value""";
 
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public void batchInsert(List<TSEgress> egressEvents) {
-        if (egressEvents.isEmpty()) {
+    public void batchUpsert(List<TSAnnotation> annotations) {
+        if (annotations.isEmpty()) {
             return;
         }
 
-        List<Object[]> batchArgs = egressEvents.stream()
-                .map(event -> new Object[]{
-                        event.getKey().getId(),
-                        event.getKey().getTimestamp(),
-                        event.getKey().getDataSource(),
-                        event.getEgressor(),
-                        event.getEgressBytes()
-                })
-                .toList();
-
-        jdbcTemplate.batchUpdate(INSERT_TS_EGRESS, batchArgs);
+        jdbcTemplate.batchUpdate(UPSERT_ANNOTATION, annotations, annotations.size(),
+                (PreparedStatement ps, TSAnnotation annotation) -> {
+                    ps.setObject(1, annotation.getEntityTimestamp());
+                    ps.setObject(2, annotation.getId().getEntityId());
+                    ps.setString(3, annotation.getDataSource());
+                    ps.setString(4, annotation.getId().getKey());
+                    ps.setString(5, annotation.getValue());
+                });
     }
 }

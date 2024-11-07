@@ -15,25 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types.timescale;
+package org.deltafi.core.repo.timescale;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.deltafi.core.types.timescale.TSAnnotation;
+import org.deltafi.core.types.timescale.TSAnnotationId;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-@Entity
-@Table(name = "ts_errors")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TSError {
-    @EmbeddedId
-    private TSId key;
-
-    private String cause;
-    private String flow;
-    private String action;
+@Repository
+public interface TSAnnotationRepo extends JpaRepository<TSAnnotation, TSAnnotationId>, TSAnnotationRepoCustom {
 }

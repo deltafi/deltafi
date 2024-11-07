@@ -23,17 +23,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.OffsetDateTime;
+
 @Entity
-@Table(name = "ts_errors")
+@Table(name = "ts_annotations")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TSError {
+public class TSAnnotation {
     @EmbeddedId
-    private TSId key;
+    private TSAnnotationId id;
 
-    private String cause;
-    private String flow;
-    private String action;
+    @Column(nullable = false)
+    private OffsetDateTime entityTimestamp;
+
+    @Column(nullable = false)
+    private String dataSource;
+
+    @Column(nullable = false)
+    private String value;
 }

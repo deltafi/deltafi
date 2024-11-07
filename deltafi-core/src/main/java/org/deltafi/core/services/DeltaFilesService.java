@@ -517,7 +517,7 @@ public class DeltaFilesService {
             advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
             if (!transformEvent.getAnnotations().isEmpty()) {
                 analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
-                        deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
+                        deltaFile.getDataSource(), deltaFile.annotationMap());
             }
         } else {
             action.changeState(ActionState.SPLIT, event.getStart(), event.getStop(), now);
@@ -615,7 +615,7 @@ public class DeltaFilesService {
         analyticEventService.recordFilter(deltaFile, event.getFlowName(), event.getActionName(), event.getFilter().getMessage(), event.getStop());
         if (!event.getFilter().getAnnotations().isEmpty()) {
             analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
-                    deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
+                    deltaFile.getDataSource(), deltaFile.annotationMap());
         }
     }
 
@@ -623,7 +623,7 @@ public class DeltaFilesService {
         analyticEventService.recordError(deltaFile, event.getFlowName(), event.getActionName(), event.getError().getCause(), event.getStop());
         if (!event.getError().getAnnotations().isEmpty()) {
             analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
-                    deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
+                    deltaFile.getDataSource(), deltaFile.annotationMap());
         }
     }
 
@@ -691,7 +691,7 @@ public class DeltaFilesService {
         deltaFileCacheService.save(deltaFile);
 
         analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
-                deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
+                deltaFile.getDataSource(), deltaFile.annotationMap());
     }
 
     /**

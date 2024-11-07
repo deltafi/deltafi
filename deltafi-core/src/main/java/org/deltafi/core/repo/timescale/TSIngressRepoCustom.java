@@ -24,5 +24,5 @@ import java.util.List;
 
 @Repository
 public interface TSIngressRepoCustom {
-    void batchUpsert(List<TSIngress> ingressEvents);
+    void batchInsert(List<TSIngress> ingressEvents);
 }
