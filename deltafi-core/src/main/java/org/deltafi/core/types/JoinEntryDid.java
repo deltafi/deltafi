@@ -35,6 +35,10 @@ public class JoinEntryDid {
     @Column(nullable = false)
     private UUID did;
 
+    private String errorReason;
+    private boolean orphan = false;
+    private String actionName;
+
     public JoinEntryDid() {
         id = Generators.timeBasedEpochGenerator().generate();
     }

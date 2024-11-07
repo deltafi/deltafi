@@ -1756,14 +1756,15 @@ public class DeltaFilesService {
         return dids.stream().map(deltaFileMap::get).toList();
     }
 
-    public void queueTimedOutJoin(JoinEntry joinEntry, List<UUID> joinDids) {
+    public List<UUID> queueTimedOutJoin(JoinEntry joinEntry, List<UUID> joinDids) {
         ActionConfiguration actionConfiguration = actionConfiguration(joinEntry.getJoinDefinition().getFlow(), joinEntry.getJoinDefinition().getActionType() == ActionType.TRANSFORM ? FlowType.TRANSFORM : FlowType.DATA_SINK,
                 joinEntry.getJoinDefinition().getAction());
 
         if (actionConfiguration == null) {
-            log.warn("Time-based join action couldn't run because action {} in dataSource {} is no longer running",
-                    joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
-            return;
+            String reason = "Time-based join action couldn't run because action %s in transform %s is no longer running"
+                    .formatted(joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
+            log.warn(reason);
+            return handleQueueTimedJoinError(joinEntry, joinDids, reason);
         }
 
         DeltaFile parent = getDeltaFile(joinDids.getLast());
@@ -1771,37 +1772,63 @@ public class DeltaFilesService {
         if (deltaFileFlow == null) {
             log.warn("Time-based join action couldn't run because a dataSource with a joinId of {} was not found in the parent with a did of {}. Failed executing action {} from dataSource dataSource {}",
                     joinEntry.getId(), parent.getDid(), joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
-            return;
+            String reason = "Timed-based join action couldn't run due to an invalid parent state (parent with did %s was missing the join flow)".formatted(parent.getDid());
+            log.warn(reason);
+            return handleQueueTimedJoinError(joinEntry, joinDids, reason);
         }
 
         WrappedActionInput input = DeltaFileUtil.createAggregateInput(actionConfiguration, deltaFileFlow, joinEntry, joinDids, ActionState.QUEUED, getProperties().getSystemName(),  null);
 
         enqueueActions(List.of(input));
+        return joinDids;
     }
 
-    public void failTimedOutJoin(JoinEntry joinEntry, List<UUID> joinedDids, String reason) {
+    private List<UUID> handleQueueTimedJoinError(JoinEntry joinEntry, List<UUID> joinDids, String reason) {
+        List<DeltaFile> deltaFiles = deltaFileCacheService.get(joinDids);
+        deltaFiles.forEach(deltaFile -> deltaFile.errorJoinAction(joinEntry.getId(), joinEntry.getJoinDefinition().getAction(), OffsetDateTime.now(clock), reason));
+        deltaFileCacheService.saveAll(deltaFiles);
+        return joinDids;
+    }
+
+    public List<UUID> failTimedOutJoin(JoinEntry joinEntry, List<UUID> joinedDids, String reason) {
         log.debug("Failing join action");
 
-        List<UUID> missingDids = new ArrayList<>();
+        List<UUID> processed = new ArrayList<>();
 
         for (UUID did : joinedDids) {
             try {
                 DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
                 if (deltaFile == null) {
-                    missingDids.add(did);
                     continue;
                 }
 
-                deltaFile.timeoutJoinAction(joinEntry.getId(), joinEntry.getJoinDefinition().getAction(),  OffsetDateTime.now(clock), reason);
+                deltaFile.errorJoinAction(joinEntry.getId(), joinEntry.getJoinDefinition().getAction(),  OffsetDateTime.now(clock), reason);
                 deltaFileRepo.save(deltaFile);
+                processed.add(did);
             } catch (OptimisticLockingFailureException e) {
                 log.warn("Unable to save DeltaFile with failed join action", e);
             }
         }
 
-        if (!missingDids.isEmpty()) {
-            log.warn("DeltaFiles with the following ids were missing during failed join: {}", missingDids);
+        return processed;
+    }
+
+    public List<UUID> handleOrphanedJoins(List<JoinEntryDid> orphans) {
+        List<DeltaFile> updatedDeltaFiles = new ArrayList<>();
+        List<UUID> completedJoinIds = new ArrayList<>();
+        Map<UUID, DeltaFile> deltaFiles = deltaFiles(orphans.stream().map(JoinEntryDid::getDid).toList());
+        for (JoinEntryDid orphan : orphans) {
+            DeltaFile deltaFile = deltaFiles.get(orphan.getDid());
+            if (deltaFile == null) {
+                continue;
+            }
+
+            deltaFile.errorJoinAction(orphan.getJoinEntryId(), orphan.getActionName(), OffsetDateTime.now(clock), orphan.getErrorReason());
+            updatedDeltaFiles.add(deltaFile);
+            completedJoinIds.add(orphan.getId());
         }
+        deltaFileRepo.saveAll(updatedDeltaFiles);
+        return completedJoinIds;
     }
 
     private void completeJoin(ActionEvent event, DeltaFile deltaFile, Action action, ActionConfiguration actionConfiguration) {

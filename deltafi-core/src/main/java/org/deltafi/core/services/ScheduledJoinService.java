@@ -20,11 +20,12 @@ package org.deltafi.core.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.JoinEntry;
+import org.deltafi.core.types.JoinEntryDid;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -42,17 +43,35 @@ public class ScheduledJoinService {
         Optional<JoinEntry> maybeJoinEntry = joinEntryService.lockOneBefore(OffsetDateTime.now(clock));
         while (maybeJoinEntry.isPresent()) {
             JoinEntry joinEntry = maybeJoinEntry.get();
+
+            List<UUID> joinedDids = joinEntryService.findJoinedDids(joinEntry.getId());
             if ((joinEntry.getMinNum() != null) && (joinEntry.getCount() < joinEntry.getMinNum())) {
-                deltaFilesService.failTimedOutJoin(joinEntry, joinEntryService.findJoinedDids(joinEntry.getId()),
-                        String.format("Join incomplete: Timed out after receiving %s of %s files",
-                                joinEntry.getCount(), joinEntry.getMinNum()));
+                String errorReason = String.format("Join incomplete: Timed out after receiving %s of %s files",
+                        joinEntry.getCount(), joinEntry.getMinNum());
+
+                List<UUID> processed = deltaFilesService.failTimedOutJoin(joinEntry, joinedDids, errorReason);
+                joinEntryService.handleProcessedJoinEntry(joinEntry, processed, errorReason, joinedDids.size() > processed.size());
             } else {
-                deltaFilesService.queueTimedOutJoin(joinEntry, joinEntryService.findJoinedDids(joinEntry.getId()));
+                List<UUID> processed = deltaFilesService.queueTimedOutJoin(joinEntry, joinedDids);
+                joinEntryService.handleProcessedJoinEntry(joinEntry, processed, null,joinedDids.size() > processed.size());
             }
-            joinEntryService.delete(joinEntry.getId());
+
             maybeJoinEntry = joinEntryService.lockOneBefore(OffsetDateTime.now(clock));
         }
+    }
 
+    public void handleOrphanedJoins() {
+        log.debug("Handling orphaned joins");
+        List<JoinEntryDid> orphans = joinEntryService.findOrphans();
+
+        Set<UUID> processedUuids = new HashSet<>();
+        while (!orphans.isEmpty()) {
+            List<UUID> complete = deltaFilesService.handleOrphanedJoins(orphans);
+            joinEntryService.delete(complete);
+            orphans.forEach(orphan -> processedUuids.add(orphan.getId()));
+            orphans = joinEntryService.findOrphans();
+            orphans.removeIf(orphan -> processedUuids.contains(orphan.getId()));
+        }
     }
 
     public void unlockTimedOutJoinEntryLocks() {

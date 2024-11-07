@@ -28,7 +28,9 @@ import org.deltafi.core.repo.JoinEntryRepo;
 import org.deltafi.core.types.JoinDefinition;
 import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.types.JoinEntryDid;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -40,6 +42,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class JoinEntryService {
+    public static final int ORPHAN_BATCH_SIZE = 5000;
     private final Clock clock;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final JoinEntryRepo joinEntryRepo;
@@ -107,8 +110,42 @@ public class JoinEntryService {
         return joinEntryDidRepo.findByJoinEntryId(joinEntryId).stream().map(JoinEntryDid::getDid).toList();
     }
 
+    public List<JoinEntryDid> findOrphans() {
+        return joinEntryDidRepo.findByOrphanIsTrue(Limit.of(ORPHAN_BATCH_SIZE));
+    }
+
+    @Transactional
+    public void handleProcessedJoinEntry(JoinEntry joinEntry, List<UUID> processed, String reason, boolean hadOrphans) {
+        UUID joinId = joinEntry.getId();
+        if (hadOrphans) {
+            // delete entries that were successfully processed first
+            delete(joinId, processed);
+            // mark anything left with that joinId as errored
+            markOrphans(joinId, reason, joinEntry.getJoinDefinition().getAction());
+        } else {
+            // if there are no orphans remove everything with the joinId
+            delete(joinId);
+        }
+    }
+
+    public void markOrphans(UUID joinId, String errorReason, String actionName) {
+        joinEntryDidRepo.setOrphanState(joinId, errorReason, actionName);
+    }
+
+    public void delete(UUID joinEntryId, List<UUID> dids) {
+        joinEntryRepo.deleteById(joinEntryId);
+        joinEntryDidRepo.deleteAllByJoinEntryIdAndDidIn(joinEntryId, dids);
+    }
+
     public void delete(UUID joinEntryId) {
         joinEntryRepo.deleteById(joinEntryId);
         joinEntryDidRepo.deleteByJoinEntryId(joinEntryId);
+    }
+
+    public void delete(List<UUID> ids) {
+        if (ids == null) {
+            return;
+        }
+        joinEntryRepo.deleteAllById(ids);
     }
 }

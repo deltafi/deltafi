@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.repo;
 
+import org.springframework.data.domain.Limit;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.core.types.JoinEntryDid;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,4 +35,14 @@ public interface JoinEntryDidRepo extends JpaRepository<JoinEntryDid, UUID> {
     @Modifying
     @Transactional
     void deleteByJoinEntryId(UUID joinEntryId);
+
+    @Modifying
+    @Transactional
+    void deleteAllByJoinEntryIdAndDidIn(UUID joinEntryId, List<UUID> dids);
+
+    @Modifying
+    @Query(value = "UPDATE JoinEntryDid j SET j.orphan = true, j.errorReason = :errorReason, j.actionName = :actionName WHERE j.id = :joinEntryId")
+    void setOrphanState(UUID joinEntryId, String errorReason, String actionName);
+
+    List<JoinEntryDid> findByOrphanIsTrue(Limit limit);
 }

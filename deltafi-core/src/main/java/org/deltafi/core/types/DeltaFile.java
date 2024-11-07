@@ -265,12 +265,12 @@ public class DeltaFile {
     deltaFileFlow.updateState();
   }
 
-  public void timeoutJoinAction(UUID joinId, String actionName, OffsetDateTime now, String reason) {
-    joiningFlows(joinId).forEach(f -> timeoutJoinAction(f, actionName, now, reason));
+  public void errorJoinAction(UUID joinId, String actionName, OffsetDateTime now, String reason) {
+    joiningFlows(joinId).forEach(f -> errorJoinAction(f, actionName, now, reason));
     updateState(now);
   }
 
-  private void timeoutJoinAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime now, String reason) {
+  private void errorJoinAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime now, String reason) {
     deltaFileFlow.getActions().stream()
             .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.JOINING)
             .forEach(a -> a.error(now, now, now, "Failed join", reason));

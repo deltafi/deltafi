@@ -47,4 +47,9 @@ public class JoinScheduler {
     public void processOverdueJoins() {
         joinEntryService.handleTimedOutJoins();
     }
+
+    @Scheduled(fixedDelay = 5L, timeUnit = TimeUnit.SECONDS)
+    public void processOrphanedJoins() {
+        joinEntryService.handleOrphanedJoins();
+    }
 }
