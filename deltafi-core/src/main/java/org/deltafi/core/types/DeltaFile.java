@@ -23,6 +23,7 @@ import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
+import org.deltafi.core.types.hibernate.StringArrayType;
 import org.deltafi.core.types.hibernate.UUIDArrayType;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Fetch;
@@ -101,6 +102,21 @@ public class DeltaFile {
   @Column(columnDefinition = "uuid[]")
   @Builder.Default
   private List<UUID> contentObjectIds = new ArrayList<>();
+
+  @Type(StringArrayType.class)
+  @Column(columnDefinition = "text[]")
+  @Builder.Default
+  private List<String> topics = new ArrayList<>();
+
+  @Type(StringArrayType.class)
+  @Column(columnDefinition = "text[]")
+  @Builder.Default
+  private List<String> transforms = new ArrayList<>();
+
+  @Type(StringArrayType.class)
+  @Column(columnDefinition = "text[]")
+  @Builder.Default
+  private List<String> dataSinks = new ArrayList<>();
 
   @Version
   @EqualsAndHashCode.Exclude
@@ -414,6 +430,26 @@ public class DeltaFile {
     recalculateBytes();
     updateFlags();
     updateContentObjectIds();
+    updateFlowArrays();
+  }
+
+  public void updateFlowArrays() {
+    topics = flows.stream()
+            .flatMap(f -> f.getPublishTopics().stream())
+            .distinct()
+            .toList();
+
+    transforms = flows.stream()
+            .filter(f -> f.getType() == FlowType.TRANSFORM)
+            .map(DeltaFileFlow::getName)
+            .distinct()
+            .toList();
+
+    dataSinks = flows.stream()
+            .filter(f -> f.getType() == FlowType.DATA_SINK)
+            .map(DeltaFileFlow::getName)
+            .distinct()
+            .toList();
   }
 
   public DeltaFileFlow addFlow(String name, FlowType type, DeltaFileFlow previousFlow, OffsetDateTime now) {
@@ -439,6 +475,7 @@ public class DeltaFile {
             .testModeReason(previousFlow.getTestModeReason())
             .build();
     flows.add(flow);
+    updateFlowArrays();
 
     return flow;
   }
@@ -498,11 +535,6 @@ public class DeltaFile {
 
   public Map<String, String> annotationMap() {
     return annotations.stream().collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
-  }
-
-  @Transient
-  public List<String> getDataSinks() {
-    return flows.stream().filter(f -> f.getType() == FlowType.DATA_SINK).map(DeltaFileFlow::getName).distinct().toList();
   }
 
   public DeltaFileFlow firstFlow() {

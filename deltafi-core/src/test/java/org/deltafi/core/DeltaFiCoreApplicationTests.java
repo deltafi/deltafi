@@ -2190,6 +2190,7 @@ class DeltaFiCoreApplicationTests {
 		flow2.addAction("excluded", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
 		flow3 = miss.addFlow("flow3", FlowType.DATA_SINK, miss.firstFlow(), NOW.plusSeconds(1000));
 		flow3.addAction("miss", ActionType.TRANSFORM, QUEUED, NOW.plusSeconds(1000));
+		miss.updateFlowArrays();
 
 		DeltaFile excludedByDid = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
 		excludedByDid.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
@@ -2552,10 +2553,12 @@ class DeltaFiCoreApplicationTests {
 				.content(List.of(new Content("formattedFilename1", "mediaType")))
 				.metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2"))
 				.build()));
+		flow1.setPublishTopics(List.of("topic1"));
 		flow1.updateState();
 		flow1.setTestModeReason("TestModeReason");
 		flow1.setTestMode(true);
 		deltaFile1.incrementRequeueCount();
+		deltaFile1.updateFlowArrays();
 
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.ERROR, NOW.plusSeconds(2), NOW.minusSeconds(2));
 		deltaFile2.setIngressBytes(200L);
@@ -2570,6 +2573,7 @@ class DeltaFiCoreApplicationTests {
 						.state(ActionState.ERROR)
 						.errorCause("Cause")
 						.build()));
+		flow2.setPublishTopics(List.of("topic2", "topic3"));
 		flow2.updateState();
 		flow2b.setActions(List.of(Action.builder().name("action2")
 						.state(ActionState.COMPLETE)
@@ -2578,6 +2582,7 @@ class DeltaFiCoreApplicationTests {
 		flow2b.updateState();
 		deltaFile2.setEgressed(true);
 		deltaFile2.setFiltered(true);
+		deltaFile2.updateFlowArrays();
 
 		DeltaFile deltaFile3 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, NOW.plusSeconds(3), NOW.minusSeconds(3));
 		deltaFile3.setIngressBytes(300L);
@@ -2603,6 +2608,7 @@ class DeltaFiCoreApplicationTests {
 		flow3b.updateState();
 		deltaFile3.setEgressed(true);
 		deltaFile3.setFiltered(true);
+		deltaFile3.updateFlowArrays();
 		deltaFileRepo.insertBatch(List.of(deltaFile1, deltaFile2, deltaFile3));
 
 		testFilter(DeltaFilesFilter.newBuilder().testMode(true).build(), deltaFile1);
@@ -2654,9 +2660,13 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink2")).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink", "MyDataSink2")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink", "MyDataSink3")).build(), deltaFile1, deltaFile2, deltaFile3);
-		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyTransformFlow", "MyDataSink")).build(), deltaFile3);
-		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyDataSink")).build());
+		testFilter(DeltaFilesFilter.newBuilder().transforms(List.of("MyTransformFlow", "MyDataSink")).build(), deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().transforms(List.of("MyDataSink")).build());
 		testFilter(DeltaFilesFilter.newBuilder().dataSources(List.of("flow1", "flow3")).build(), deltaFile1, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("topic1")).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("topic2")).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("topic1", "topic2")).build(), deltaFile1, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("fake")).build());
 	}
 
 	@Test
@@ -2668,6 +2678,7 @@ class DeltaFiCoreApplicationTests {
 		acknowledgedError.firstFlow().setErrorAcknowledged(time);
 		acknowledgedError.firstFlow().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time).setErrorCause(reason);
 		acknowledgedError.firstFlow().updateState();
+		acknowledgedError.updateFlowArrays();
 
 		time = time.minusMinutes(1);
 		DeltaFile unacknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
@@ -2675,6 +2686,7 @@ class DeltaFiCoreApplicationTests {
 		Action unacknowledgedAction = unacknowledgedError.firstFlow().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
 		unacknowledgedAction.setErrorCause(reason);
 		unacknowledgedError.firstFlow().updateState();
+		unacknowledgedError.updateFlowArrays();
 
 		time = time.minusMinutes(2);
 		DeltaFile filtered = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
@@ -2682,6 +2694,7 @@ class DeltaFiCoreApplicationTests {
 		Action filteredAction = filtered.firstFlow().addAction("FilteredAction", ActionType.TRANSFORM, FILTERED, time);
 		filteredAction.setFilteredCause(reason);
 		filtered.firstFlow().updateState();
+		filtered.updateFlowArrays();
 
 		time = time.minusMinutes(3);
 		DeltaFile filteredAndErrored = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
@@ -2693,6 +2706,7 @@ class DeltaFiCoreApplicationTests {
 		Action unacknowledgedAction2 = filteredAndErrored.lastFlow().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
 		unacknowledgedAction2.setErrorCause(reason);
 		filteredAndErrored.lastFlow().updateState();
+		filteredAndErrored.updateFlowArrays();
 
 		deltaFileRepo.insertBatch(List.of(unacknowledgedError, acknowledgedError, filtered, filteredAndErrored));
 

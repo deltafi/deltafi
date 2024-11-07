@@ -28,7 +28,7 @@ export default function useErrors() {
     const flowFilters: Record<string, Array<string>> = {
       dataSources: [],
       dataSinks: [],
-      transformFlows: [],
+      transforms: [],
     }
 
     if (flowName && flowType) {
@@ -37,7 +37,7 @@ export default function useErrors() {
           flowFilters.dataSinks.push(flowName)
           break;
         case "transform":
-          flowFilters.transformFlows.push(flowName)
+          flowFilters.transforms.push(flowName)
           break;
         case "timedDataSource":
           flowFilters.dataSources.push(flowName)

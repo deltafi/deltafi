@@ -163,6 +163,9 @@ type DeltaFile {
   # optional name assigned by the data source
   name: String
   dataSource: String!
+  transforms: [String!]!
+  dataSinks: [String!]!
+  topics: [String!]!
   parentDids: [UUID!]!
   childDids: [UUID!]!
   flows: [DeltaFileFlow!]!
@@ -172,7 +175,6 @@ type DeltaFile {
   totalBytes: Long!
   stage: DeltaFileStage!
   annotations: Metadata
-  dataSinks: [String!]!
   created: DateTime!
   modified: DateTime!
   contentDeleted: DateTime
@@ -273,8 +275,9 @@ input DeltaFilesFilter {
   createdBefore: DateTime
   annotations: [KeyValueInput!]
   dataSources: [String!]
-  transformFlows: [String!]
+  transforms: [String!]
   dataSinks: [String!]
+  topics: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime
   modifiedBefore: DateTime

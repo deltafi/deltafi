@@ -686,25 +686,20 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
-            criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
-            criteria.append("WHERE dff.delta_file_id = df.did ");
-            criteria.append("AND dff.name IN (:transformFlows) ");
-            criteria.append("AND dff.type = 'TRANSFORM') ");
-
-            parameters.put("transformFlows", filter.getTransformFlows());
+        if (filter.getTransforms() != null && !filter.getTransforms().isEmpty()) {
+            criteria.append("AND df.transforms && CAST(:transforms AS text[]) ");
+            parameters.put("transforms", filter.getTransforms().toArray(new String[0]));
         }
 
         if (filter.getDataSinks() != null && !filter.getDataSinks().isEmpty()) {
-            criteria.append("AND EXISTS (SELECT 1 FROM delta_file_flows dff ");
-            criteria.append("WHERE dff.delta_file_id = df.did ");
-            criteria.append("AND dff.name IN (:dataSinks) ");
-            criteria.append("AND dff.type = 'DATA_SINK') ");
-
-            parameters.put("dataSinks", filter.getDataSinks());
+            criteria.append("AND df.data_sinks && CAST(:dataSinks AS text[]) ");
+            parameters.put("dataSinks", filter.getDataSinks().toArray(new String[0]));
         }
 
-
+        if (filter.getTopics() != null && !filter.getTopics().isEmpty()) {
+            criteria.append("AND df.topics && CAST(:topics AS text[]) ");
+            parameters.put("topics", filter.getTopics().toArray(new String[0]));
+        }
 
         return criteria.toString();
     }
@@ -736,8 +731,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                      requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
-                                     content_deletable, content_object_ids, version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                     content_deletable, content_object_ids, topics, transforms, data_sinks, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, input,
@@ -861,7 +856,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setBoolean(20, deltaFile.isTerminal());
         ps.setBoolean(21, deltaFile.isContentDeletable());
         ps.setObject(22, conn.createArrayOf("uuid", deltaFile.getContentObjectIds().toArray(new UUID[0])));
-        ps.setLong(23, deltaFile.getVersion());
+        ps.setArray(23, conn.createArrayOf("text", deltaFile.getTopics().toArray(new String[0])));
+        ps.setArray(24, conn.createArrayOf("text", deltaFile.getTransforms().toArray(new String[0])));
+        ps.setArray(25, conn.createArrayOf("text", deltaFile.getDataSinks().toArray(new String[0])));
+        ps.setLong(26, deltaFile.getVersion());
     }
 
     private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {

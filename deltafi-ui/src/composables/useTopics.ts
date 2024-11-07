@@ -20,6 +20,24 @@ import { ref, Ref, readonly } from 'vue';
 import useGraphQL from "./useGraphQL";
 import _ from "lodash"
 
+const getAllTopicsQuery = {
+  getAllTopics: {
+    name: true,
+    publishers: {
+      name: true,
+      type: true,
+      state: true,
+      condition: true
+    },
+    subscribers: {
+      name: true,
+      type: true,
+      state: true,
+      condition: true
+    }
+  },
+}
+
 export type Topic = {
   name?: String,
   publishers?: Array<{
@@ -37,6 +55,7 @@ export type Topic = {
 };
 
 const topics: Ref<Array<Topic>> = ref([]);
+const topicNames: Ref<Array<String | undefined>> = ref([]);
 
 export default function useTopics() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
@@ -50,26 +69,10 @@ export default function useTopics() {
   };
 
   const getAllTopics = async () => {
-    const query = {
-      getAllTopics: {
-        name: true,
-        publishers: {
-          name: true,
-          type: true,
-          state: true,
-          condition: true
-        },
-        subscribers: {
-          name: true,
-          type: true,
-          state: true,
-          condition: true
-        }
-      },
-    }
-    await queryGraphQL(query, "getAllTopics");
+    await queryGraphQL(getAllTopicsQuery, "getAllTopics");
 
     topics.value = response.value.data.getAllTopics;
+    topicNames.value = _.map(topics.value, "name");
 
     return topics.value;
   };
@@ -77,8 +80,8 @@ export default function useTopics() {
   const getAllTopicNames = async () => {
     await getAllTopics();
 
-    return _.map(topics.value, "name");
+    return topicNames.value;
   };
 
-  return { topics: readonly(topics), response, hasActiveSubscribers, getAllTopics, getAllTopicNames, loading, loaded, errors };
+  return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getAllTopics, getAllTopicNames, loading, loaded, errors };
 }
