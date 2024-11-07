@@ -44,6 +44,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Repository
 @RequiredArgsConstructor
@@ -444,6 +445,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
+        // TODO: make includeFields work. The dataFetcher parses out these requested graphql fields and includes flow.* and flow.action.*,
+        //  which no longer make sense here since we're not fetching the flows and actions are in jsonb
+        //  we should either handle this or adjust the object that is returned by the deltaFiles query to not be a full deltaFile
+        /* String fields = (includeFields == null || includeFields.isEmpty()) ? "*" : includeFields.stream()
+                .map(DeltaFileRepoImpl::toSnakeCase)
+                .collect(Collectors.joining(", ")); */
         StringBuilder sqlQuery = new StringBuilder("SELECT * FROM delta_files df WHERE TRUE\n");
         Map<String, Object> parameters = new HashMap<>();
         String criteria = buildDeltaFilesCriteria(parameters, filter);
@@ -452,7 +459,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (orderBy != null) {
             sqlQuery.append("ORDER BY df.")
-                    .append(orderBy.getField())
+                    .append(toSnakeCase(orderBy.getField()))
                     .append(" ")
                     .append(orderBy.getDirection() == DeltaFileDirection.ASC ? "ASC" : "DESC")
                     .append(" ");
@@ -493,6 +500,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return deltaFiles;
+    }
+
+    private static final Pattern CAMEL_CASE_PATTERN = Pattern.compile("([a-z])([A-Z])");
+
+    private static String toSnakeCase(String str) {
+        if (str == null || str.isEmpty()) {
+            return "";
+        }
+
+        return CAMEL_CASE_PATTERN
+                .matcher(str)
+                .replaceAll("$1_$2")
+                .toLowerCase();
     }
 
     private String buildDeltaFilesCriteria(Map<String, Object> parameters, DeltaFilesFilter filter) {
