@@ -190,7 +190,8 @@ public class StateMachine {
 
         long bytes;
         if (publisher.getType() == FlowType.TRANSFORM) {
-            bytes = Segment.calculateTotalSize(publisher.lastAction().getContent().stream().flatMap(s -> s.getSegments().stream()).collect(Collectors.toSet()));
+            List<Content> content = (publisher.lastAction() != null) ? publisher.lastActionContent() : publisher.lastContent();
+            bytes = Segment.calculateTotalSize(content.stream().flatMap(s -> s.getSegments().stream()).collect(Collectors.toSet()));
             Map<String, String> publishTags = Map.of(
                     "dataSource", deltafile.getDataSource(),
                     "flowName", publisher.getName());
