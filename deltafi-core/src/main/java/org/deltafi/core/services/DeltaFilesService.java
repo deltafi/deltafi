@@ -843,9 +843,9 @@ public class DeltaFilesService {
 
         if (!advanceAndSaveInputs.isEmpty()) {
             // force the cache to persist the deltaFile
-            advanceAndSaveInputs.stream().map(StateMachineInput::deltaFile).forEach(deltaFile -> {
-               deltaFile.setCacheTime(OffsetDateTime.MIN);
-            });
+            advanceAndSaveInputs.stream()
+                    .map(StateMachineInput::deltaFile)
+                    .forEach(deltaFile -> deltaFile.setCacheTime(OffsetDateTime.MIN));
 
             advanceAndSave(advanceAndSaveInputs, false);
         }
@@ -935,7 +935,7 @@ public class DeltaFilesService {
 
                             deltaFile.setReplayed(now);
                             deltaFile.setReplayDid(child.getDid());
-                            if (Objects.isNull(deltaFile.getChildDids())) {
+                            if (deltaFile.getChildDids() == null) {
                                 deltaFile.setChildDids(new ArrayList<>());
                             } else {
                                 deltaFile.setChildDids(new ArrayList<>(deltaFile.getChildDids()));
@@ -1065,7 +1065,7 @@ public class DeltaFilesService {
                     try {
                         DeltaFile deltaFile = deltaFiles.get(did);
 
-                        if (Objects.isNull(deltaFile)) {
+                        if (deltaFile == null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
                         } else {
@@ -1098,7 +1098,7 @@ public class DeltaFilesService {
                     try {
                         DeltaFile deltaFile = deltaFiles.get(did);
 
-                        if (Objects.isNull(deltaFile)) {
+                        if (deltaFile == null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
                         } else if (!deltaFile.canBeCancelled()) {
@@ -1837,6 +1837,11 @@ public class DeltaFilesService {
             List<DeltaFile> parentDeltaFiles = deltaFileRepo.findAllById(deltaFile.getParentDids());
             OffsetDateTime now = OffsetDateTime.now(clock);
             for (DeltaFile parentDeltaFile : parentDeltaFiles) {
+                if (parentDeltaFile.getChildDids() == null) {
+                    parentDeltaFile.setChildDids(new ArrayList<>());
+                } else {
+                    parentDeltaFile.setChildDids(new ArrayList<>(parentDeltaFile.getChildDids()));
+                }
                 parentDeltaFile.getChildDids().add(deltaFile.getDid());
                 parentDeltaFile.joinedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);
             }

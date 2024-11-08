@@ -169,9 +169,9 @@ public class DeltaFile {
   }
 
   public void setStage(DeltaFileStage stage) {
-      this.stage = stage;
-      updateFlags();
-      updateContentObjectIds();
+    this.stage = stage;
+    updateFlags();
+    updateContentObjectIds();
   }
 
   public void updateFlags() {
