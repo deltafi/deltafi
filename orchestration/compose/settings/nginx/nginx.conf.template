@@ -1,5 +1,5 @@
 events {
-  worker_connections  1024;
+    worker_connections  1024;
 }
 
 http {
@@ -11,9 +11,9 @@ http {
     }
 
     map $host $internal_upstream_mapping {
-      "deltafi-core-service" "deltafi-core";
-      "deltafi-ingress-service" "deltafi-core";
-      "ingress" "deltafi-core";
+        "deltafi-core-service" "deltafi-core";
+        "deltafi-ingress-service" "deltafi-core";
+        "ingress" "deltafi-core";
     }
 
     upstream deltafi-core {
@@ -57,8 +57,9 @@ http {
 
         server_name ${DOMAIN};
 
-        location /api/v2/auth  {
+        location /api/v2/auth {
             internal;
+            client_max_body_size    10G;
             proxy_pass              http://deltafi-core;
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
@@ -66,11 +67,13 @@ http {
         }
 
         location / {
-          proxy_pass http://deltafi-core;
+            client_max_body_size 10G;
+            proxy_pass           http://deltafi-core;
         }
 
         location /visualization {
-          proxy_pass http://deltafi-grafana;
+            client_max_body_size 10G;
+            proxy_pass           http://deltafi-grafana;
         }
     }
 
@@ -80,11 +83,13 @@ http {
         server_name *.${DOMAIN};
 
         location / {
-          proxy_pass http://$upstream_mapping;
+            client_max_body_size 10G;
+            proxy_pass           http://$upstream_mapping;
         }
 
-        location /api/v2/auth  {
+        location /api/v2/auth {
             internal;
+            client_max_body_size    10G;
             proxy_pass              http://deltafi-core;
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
@@ -103,7 +108,8 @@ http {
         auth_request "off";
 
         location / {
-          proxy_pass http://$internal_upstream_mapping;
+            client_max_body_size 10G;
+            proxy_pass           http://$internal_upstream_mapping;
         }
     }
 }
