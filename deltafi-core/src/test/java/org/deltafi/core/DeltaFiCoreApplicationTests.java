@@ -344,6 +344,11 @@ class DeltaFiCoreApplicationTests {
 		public ScheduledJoinService scheduledJoinService(DeltaFiPropertiesService deltaFiPropertiesService, JoinEntryService joinEntryService, DeltaFilesService deltaFilesService) {
 			return new ScheduledJoinService(TEST_CLOCK, deltaFiPropertiesService, joinEntryService, deltaFilesService);
 		}
+
+		@Bean
+		public RoleService roleService(RoleRepo roleRepo, PermissionsService permissionsService) {
+			return new RoleService(roleRepo, permissionsService, true);
+		}
 	}
 
 	@BeforeEach

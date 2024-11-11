@@ -66,7 +66,9 @@ public class DeltaFiUserService {
 
     @PostConstruct
     public void init() {
-        deltaFiUserRepo.createAdmin(ADMIN_ID, OffsetDateTime.now());
+        if (roleService.isScheduledMaintenance()) {
+            deltaFiUserRepo.createAdmin(ADMIN_ID, OffsetDateTime.now());
+        }
     }
 
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

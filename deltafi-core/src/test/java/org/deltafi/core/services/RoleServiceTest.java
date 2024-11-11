@@ -55,7 +55,7 @@ class RoleServiceTest {
     ArgumentCaptor<List<Role>> rolesCaptor;
 
     public RoleServiceTest(@Mock RoleRepo roleRepo) throws IOException {
-        this.roleService = new RoleService(roleRepo, new PermissionsService(new ClassPathResource("permissions.csv")));
+        this.roleService = new RoleService(roleRepo, new PermissionsService(new ClassPathResource("permissions.csv")), true);
         this.roleRepo = roleRepo;
     }
 

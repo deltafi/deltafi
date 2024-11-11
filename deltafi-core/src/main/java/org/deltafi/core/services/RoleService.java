@@ -19,7 +19,7 @@ package org.deltafi.core.services;
 
 import com.fasterxml.uuid.Generators;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
@@ -30,6 +30,7 @@ import org.deltafi.core.repo.RoleRepo;
 import org.deltafi.core.types.ErrorHolder;
 import org.deltafi.core.types.Role;
 import org.deltafi.core.types.Role.Input;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -42,15 +43,22 @@ import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RoleService {
 
     private final RoleRepo roleRepo;
     private final PermissionsService permissionsService;
+    @Getter
+    private final boolean scheduledMaintenance;
+
+    public RoleService(RoleRepo roleRepo, PermissionsService permissionsService, @Value("${schedule.maintenance:true}") boolean scheduledMaintenance) {
+        this.roleRepo = roleRepo;
+        this.permissionsService = permissionsService;
+        this.scheduledMaintenance = scheduledMaintenance;
+    }
 
     @PostConstruct
     public void init() {
-        if (roleRepo.count() == 0) {
+        if (scheduledMaintenance && roleRepo.count() == 0) {
             OffsetDateTime now = OffsetDateTime.now();
             List<Role> defaultRoles = List.of(
                     Role.builder().id(ADMIN_ID).name("Admin").permission(DeltaFiConstants.ADMIN_PERMISSION).createdAt(now).updatedAt(now).build(),
