@@ -19,16 +19,17 @@ package org.deltafi.core.types;
 
 import com.fasterxml.uuid.Generators;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
 import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
 import org.deltafi.core.types.hibernate.StringArrayType;
 import org.deltafi.core.types.hibernate.UUIDArrayType;
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.*;
+import org.hibernate.type.SqlTypes;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
@@ -77,6 +78,8 @@ public class DeltaFile {
   private long referencedBytes;
   private long totalBytes;
   @Enumerated(EnumType.STRING)
+  @Column(columnDefinition = "df_stage_enum", nullable = false)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Builder.Default
   private DeltaFileStage stage = DeltaFileStage.IN_FLIGHT;
   @Builder.Default

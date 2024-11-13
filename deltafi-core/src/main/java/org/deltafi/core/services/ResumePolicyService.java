@@ -106,11 +106,10 @@ public class ResumePolicyService implements Snapshotter {
      * @param excludeDids A set of DeltaFile dids to ignore
      * @return List of DeltaFiles that can be resumed
      */
-    public List<UUID> canBeApplied(ResumePolicy policy, List<DeltaFile> deltaFiles, Set<UUID> excludeDids) {
+    public List<DeltaFile> canBeApplied(ResumePolicy policy, List<DeltaFile> deltaFiles, Set<UUID> excludeDids) {
         return deltaFiles.stream()
                 .filter(d -> !excludeDids.contains(d.getDid()))
                 .filter(d -> matchesActionError(policy, d))
-                .map(DeltaFile::getDid)
                 .toList();
     }
 

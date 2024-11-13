@@ -239,12 +239,14 @@ class ResumePolicyServiceTest {
 
         assertTrue(resumePolicyService.findByName("name1").isPresent());
         List<UUID> dids = resumePolicyService.canBeApplied(
-                resumePolicyService.findByName("name1").get(), deltaFiles, excludes);
+                resumePolicyService.findByName("name1").get(), deltaFiles, excludes).stream()
+                        .map(DeltaFile::getDid).toList();
         assertEquals(List.of(deltaFiles.getFirst().getDid(), deltaFiles.get(3).getDid()), dids);
 
         assertTrue(resumePolicyService.findByName("name3").isPresent());
         List<UUID> noMatchese = resumePolicyService.canBeApplied(
-                resumePolicyService.findByName("name3").get(), deltaFiles, excludes);
+                resumePolicyService.findByName("name3").get(), deltaFiles, excludes).stream()
+                .map(DeltaFile::getDid).toList();;
         assertTrue(noMatchese.isEmpty());
     }
 

@@ -1,1 +1,0 @@
-alter table delta_file_flows drop column flow_plan;

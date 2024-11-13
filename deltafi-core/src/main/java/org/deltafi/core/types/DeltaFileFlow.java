@@ -26,7 +26,9 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedActionException;
 import org.deltafi.core.types.hibernate.StringArrayType;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
@@ -49,9 +51,13 @@ public class DeltaFileFlow {
     private String name;
     private int number;
     @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "dff_type_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private FlowType type;
     @Builder.Default
     @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "dff_state_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private DeltaFileFlowState state = DeltaFileFlowState.IN_FLIGHT;
     private OffsetDateTime created;
     private OffsetDateTime modified;

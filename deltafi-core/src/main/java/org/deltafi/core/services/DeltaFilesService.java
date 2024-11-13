@@ -1693,14 +1693,22 @@ public class DeltaFilesService {
                     checkFiles = deltaFileRepo.findResumePolicyCandidates(resumePolicy.getDataSource());
                 }
 
-                List<UUID> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, previousDids);
-                if (dids.isEmpty()) {
+                List<DeltaFile> deltaFiles = resumePolicyService.canBeApplied(resumePolicy, checkFiles, previousDids);
+                if (deltaFiles.isEmpty()) {
                     information.add("No DeltaFile errors can be resumed by policy " + resumePolicy.getName());
                 } else {
-                    deltaFileRepo.updateForAutoResume(dids, resumePolicy.getName(),
-                            now.plusSeconds(resumePolicy.getBackOff().getDelay()));
-                    previousDids.addAll(dids);
-                    information.add("Applied " + resumePolicy.getName() + " policy to " + dids.size() + " DeltaFiles");
+                    OffsetDateTime nextResume = now.plusSeconds(resumePolicy.getBackOff().getDelay());
+                    deltaFiles.stream()
+                            .map(DeltaFile::erroredFlows)
+                            .flatMap(List::stream)
+                            .map(DeltaFileFlow::lastAction)
+                            .forEach(action -> {
+                                action.setNextAutoResume(nextResume);
+                                action.setNextAutoResumeReason(resumePolicy.getName());
+                            });
+                    deltaFileRepo.saveAll(deltaFiles);
+                    previousDids.addAll(deltaFiles.stream().map(DeltaFile::getDid).toList());
+                    information.add("Applied " + resumePolicy.getName() + " policy to " + deltaFiles.size() + " DeltaFiles");
                 }
             }
         }
@@ -1728,11 +1736,11 @@ public class DeltaFilesService {
             List<DeltaFile> checkFiles =
                     deltaFileRepo.findResumePolicyCandidates(resumePolicy.getDataSource());
 
-            List<UUID> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, Collections.emptySet());
-            if (dids.isEmpty()) {
+            List<DeltaFile> deltaFiles = resumePolicyService.canBeApplied(resumePolicy, checkFiles, Collections.emptySet());
+            if (deltaFiles.isEmpty()) {
                 information.add("No DeltaFile errors can be resumed by policy " + resumePolicy.getName());
             } else {
-                information.add("Can apply " + resumePolicy.getName() + " policy to " + dids.size() + " DeltaFiles");
+                information.add("Can apply " + resumePolicy.getName() + " policy to " + deltaFiles.size() + " DeltaFiles");
             }
         }
 

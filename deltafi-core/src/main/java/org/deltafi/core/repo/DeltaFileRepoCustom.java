@@ -69,16 +69,6 @@ public interface DeltaFileRepoCustom {
     List<DeltaFile> findResumePolicyCandidates(String flowName);
 
     /**
-     *  Schedule a list of DeltaFiles for auto resume, by setting
-     *  the next resume properties.
-     *
-     * @param dids A list of dids which should be updated
-     * @param policyName The auto resume policy name which prompted the update
-     * @param nextAutoResume The time the DeltaFile(s) should be scheduled for auto resume
-     */
-    void updateForAutoResume(List<UUID> dids, String policyName, OffsetDateTime nextAutoResume);
-
-    /**
      * Delete DeltaFiles that match the given criteria if they have no content.
      *
      * @param createdBefore - if non-null find DeltaFiles created before this date

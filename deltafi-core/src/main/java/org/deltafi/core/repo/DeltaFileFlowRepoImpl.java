@@ -80,7 +80,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         StringBuilder sql = new StringBuilder("""
                 SELECT name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
                 FROM delta_file_flows
-                WHERE state = :state\s""");
+                WHERE state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
@@ -89,7 +89,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         addFooterClauses(sql, direction, false);
 
         Query query = entityManager.createNativeQuery(sql.toString())
-                .setParameter("state", deltaFileFlowState.toString())
+                .setParameter("state", deltaFileFlowState.name())
                 .setParameter("limit", limit)
                 .setParameter("offset", offset != null ? offset : 0);
 
@@ -110,7 +110,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         StringBuilder sql = new StringBuilder("""
             SELECT error_or_filter_cause, name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
             FROM delta_file_flows
-            WHERE state = :state\s""");
+            WHERE state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
@@ -184,7 +184,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
             FROM (
               SELECT DISTINCT name
               FROM delta_file_flows
-              WHERE state = :state\s""");
+              WHERE state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
@@ -205,7 +205,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
               SELECT DISTINCT error_or_filter_cause, name
               FROM delta_file_flows
               WHERE error_or_filter_cause IS NOT NULL
-              AND state = :state\s""");
+              AND state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
@@ -237,13 +237,13 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
         String queryStr = """
             SELECT
-                (actions->(jsonb_array_length(actions) - 1))->>'name' as actionName,
+                (actions->(jsonb_array_length(actions) - 1))->>'n' as actionName,
                 type as type,
                 COUNT(*) as count
             FROM delta_file_flows
             WHERE state = 'IN_FLIGHT'
             AND cold_queued = TRUE
-            GROUP BY (actions->(jsonb_array_length(actions) - 1))->>'name', type
+            GROUP BY (actions->(jsonb_array_length(actions) - 1))->>'n', type
         """;
 
         Query query = entityManager.createNativeQuery(queryStr);

@@ -1,3 +1,0 @@
-create table if not exists roles (id uuid not null, created_at timestamp(6) with time zone, name varchar(255) unique, permissions jsonb, updated_at timestamp(6) with time zone, primary key (id));
-create table if not exists users (id uuid not null, created_at timestamp(6) with time zone, dn character varying(255) unique, name character varying(255) unique, password character varying(255), updated_at timestamp(6) with time zone, username character varying(255) unique, primary key (id));
-create table if not exists user_roles (user_id uuid not null references users, role_id uuid not null references roles, primary key (user_id, role_id));

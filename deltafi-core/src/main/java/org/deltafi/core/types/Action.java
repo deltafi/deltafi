@@ -17,6 +17,9 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.ActionState;
@@ -33,31 +36,73 @@ import java.util.*;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class Action {
   static final private int MAX_CAUSE_SIZE = 100_000;
 
+  @JsonProperty("n")
+  @JsonAlias("name")
   private String name;
+  @JsonProperty("nu")
+  @JsonAlias("number")
   private int number;
   @Builder.Default
+  @JsonProperty("t")
+  @JsonAlias("type")
   private ActionType type = ActionType.UNKNOWN;
+  @JsonProperty("s")
+  @JsonAlias("state")
   private ActionState state;
+  @JsonProperty("c")
+  @JsonAlias("created")
   private OffsetDateTime created;
+  @JsonProperty("q")
+  @JsonAlias("queued")
   private OffsetDateTime queued;
+  @JsonProperty("st")
+  @JsonAlias("start")
   private OffsetDateTime start;
+  @JsonProperty("sp")
+  @JsonAlias("stop")
   private OffsetDateTime stop;
+  @JsonProperty("m")
+  @JsonAlias("modified")
   private OffsetDateTime modified;
+  @JsonProperty("ec")
+  @JsonAlias("errorCause")
   private String errorCause;
-  private String errorContext;
+  @JsonProperty("ex")
+  @JsonAlias("errorContext")
+  @Builder.Default
+  private String errorContext = "";
+  @JsonProperty("nr")
+  @JsonAlias("nextAutoResume")
   private OffsetDateTime nextAutoResume;
+  @JsonProperty("nrr")
+  @JsonAlias("nextAutoResumeReason")
   private String nextAutoResumeReason;
+  @JsonProperty("fc")
+  @JsonAlias("filteredCause")
   private String filteredCause;
+  @JsonProperty("fx")
+  @JsonAlias("filteredContext")
   private String filteredContext;
   @Builder.Default
+  @JsonProperty("a")
+  @JsonAlias("attempt")
   private int attempt = 1;
+  @JsonProperty("ct")
+  @JsonAlias("content")
   private List<Content> content;
   @Builder.Default
+  @JsonProperty("md")
+  @JsonAlias("metadata")
   private Map<String, String> metadata = new HashMap<>();
+  @JsonProperty("dk")
+  @JsonAlias("deleteMetadataKeys")
   private List<String> deleteMetadataKeys;
+  @JsonProperty("rs")
+  @JsonAlias("replayStart")
   private boolean replayStart; // marker for the starting point of a replay
 
   public Action(Action other) {

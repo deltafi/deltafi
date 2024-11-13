@@ -199,7 +199,7 @@ class PublisherServiceTest {
         Action action = deltaFileFlow.firstAction();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.FILTERED);
         Assertions.assertThat(action.getErrorCause()).isNull();
-        Assertions.assertThat(action.getErrorContext()).isNull();
+        Assertions.assertThat(action.getErrorContext()).isEmpty();
         Assertions.assertThat(action.getFilteredCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
     }
 

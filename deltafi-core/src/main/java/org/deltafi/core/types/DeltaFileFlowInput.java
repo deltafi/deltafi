@@ -17,6 +17,9 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,13 +37,22 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class DeltaFileFlowInput {
     @Builder.Default
+    @JsonProperty("m")
+    @JsonAlias("metadata")
     Map<String, String> metadata = new HashMap<>();
     @Builder.Default
+    @JsonProperty("c")
+    @JsonAlias("content")
     List<Content> content = new ArrayList<>();
     @Builder.Default
+    @JsonProperty("t")
+    @JsonAlias("topics")
     Set<String> topics = new LinkedHashSet<>();
     @Builder.Default
+    @JsonProperty("a")
+    @JsonAlias("ancestorIds")
     List<Integer> ancestorIds = new ArrayList<>();
 }

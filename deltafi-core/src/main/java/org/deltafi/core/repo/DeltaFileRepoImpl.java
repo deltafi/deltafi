@@ -93,7 +93,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             AND dff.cold_queued = false""");
 
         if (skipActions != null && !skipActions.isEmpty()) {
-            sqlQuery.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'name' NOT IN (:skipActions)");
+            sqlQuery.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' NOT IN (:skipActions)");
         }
 
         if (skipDids != null && !skipDids.isEmpty()) {
@@ -134,8 +134,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 AND EXISTS (
                     SELECT 1
                     FROM jsonb_array_elements(dff.actions) AS action
-                    WHERE action->>'state' = 'COLD_QUEUED'
-                    AND action->>'name' IN (:actionNames)
+                    WHERE action->>'s' = 'COLD_QUEUED'
+                    AND action->>'n' IN (:actionNames)
                 )
             )
             LIMIT :limit
@@ -190,7 +190,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     AND EXISTS (
                         SELECT 1
                         FROM jsonb_array_elements(flow.actions) action
-                        WHERE action->>'nextAutoResume' IS NULL
+                        WHERE (action->>'nr')::text IS NULL
                     )
                 )
             """);
@@ -208,55 +208,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         @SuppressWarnings("unchecked")
         List<UUID> dids = query.getResultList();
         return fetchByDidIn(dids);
-    }
-
-    @Override
-    @Transactional
-    public void updateForAutoResume(List<UUID> dids, String policyName, OffsetDateTime nextAutoResume) {
-        if (dids == null || dids.isEmpty()) {
-            return;
-        }
-
-        String nextAutoResumeJson;
-        String policyNameJson;
-        try {
-            nextAutoResumeJson = OBJECT_MAPPER.writeValueAsString(nextAutoResume);
-            policyNameJson = OBJECT_MAPPER.writeValueAsString(policyName);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException(e);
-        }
-
-        for (List<UUID> batch : Lists.partition(dids, 500)) {
-            String queryStr = """
-                UPDATE delta_file_flows
-                SET actions = jsonb_set(
-                    jsonb_set(
-                        actions,
-                        CAST(ARRAY[jsonb_array_length(actions) - 1, 'nextAutoResume'] AS text[]),
-                        CAST(? AS jsonb),
-                        false
-                    ),
-                    CAST(ARRAY[jsonb_array_length(actions) - 1, 'nextAutoResumeReason'] AS text[]),
-                    CAST(? AS jsonb),
-                    false
-                )
-                FROM delta_files df
-                WHERE delta_file_flows.delta_file_id = df.did
-                AND df.did IN (?)
-                AND EXISTS (
-                    SELECT 1
-                    FROM jsonb_array_elements(delta_file_flows.actions) AS action
-                    WHERE action->>'state' = 'ERROR'
-                )
-            """;
-
-            Query query = entityManager.createNativeQuery(queryStr)
-                    .setParameter(1, nextAutoResumeJson)
-                    .setParameter(2, policyNameJson)
-                    .setParameter(3, batch);
-
-            query.executeUpdate();
-        }
     }
 
     @Override
@@ -554,7 +505,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             parameters.put("terminal", filter.getTerminalStage());
         }
         if (filter.getStage() != null) {
-            criteria.append("AND df.stage = :stage ");
+            criteria.append("AND df.stage = CAST(:stage as df_stage_enum) ");
             parameters.put("stage", filter.getStage().name());
         }
         if (filter.getFiltered() != null) {
@@ -687,7 +638,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 criteria.append("WHERE dff.delta_file_id = df.did ");
                 criteria.append("AND EXISTS ( ");
                 criteria.append("SELECT 1 FROM jsonb_array_elements(dff.actions) AS action ");
-                criteria.append("WHERE action->>'name' = :actionName_");
+                criteria.append("WHERE action->>'n' = :actionName_");
                 criteria.append(actionName.replace(" ", "_"));
                 criteria.append(")) ");
 
@@ -752,7 +703,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
                                      content_deletable, content_object_ids, topics, transforms, data_sinks, version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, input,
@@ -760,7 +711,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                           join_id, pending_actions, delta_file_id, version, actions,
                                           error_acknowledged, error_acknowledged_reason, cold_queued, error_or_filter_cause,
                                           next_auto_resume)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
+            VALUES (?, ?, ?, CAST(? AS dff_type_enum), CAST(? AS dff_state_enum), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_ANNOTATIONS = """
             INSERT INTO annotations (id, key, value, delta_file_id)
