@@ -141,7 +141,8 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         List<Container> containers = findExisting(appName);
 
         if (isEmpty(containers)) {
-            return Result.builder().success(false).errors(List.of("No container was found for " + appName)).build();
+            log.warn("No container found with name: {}", appName);
+            return Result.builder().success(true).info(List.of("No container was found for " + appName)).build();
         }
 
         containers.stream().map(Container::getId).forEach(this::stopAndRemoveContainer);
@@ -200,7 +201,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     private List<Container> findExisting(String appName) {
         return dockerClient.listContainersCmd()
                 .withShowAll(true)
-                .withNameFilter(Set.of(appName))
+                .withNameFilter(Set.of("^/" + appName + "$"))
                 .exec();
     }
 
