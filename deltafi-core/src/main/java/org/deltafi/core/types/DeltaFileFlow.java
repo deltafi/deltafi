@@ -190,6 +190,13 @@ public class DeltaFileFlow {
                 .orElse(null);
     }
 
+    public void enableAutoResume(OffsetDateTime nextResume, String nextResumeReason) {
+        Action action = lastAction();
+        action.setNextAutoResume(nextResume);
+        action.setNextAutoResumeReason(nextResumeReason);
+        setNextAutoResume(nextResume);
+    }
+
     public boolean hasUnacknowledgedError() {
         Action lastAction = lastAction();
         return lastAction != null && lastAction.getState() == ActionState.ERROR && errorAcknowledged == null;

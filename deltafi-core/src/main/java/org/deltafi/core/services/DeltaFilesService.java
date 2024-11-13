@@ -1701,10 +1701,8 @@ public class DeltaFilesService {
                     deltaFiles.stream()
                             .map(DeltaFile::erroredFlows)
                             .flatMap(List::stream)
-                            .map(DeltaFileFlow::lastAction)
-                            .forEach(action -> {
-                                action.setNextAutoResume(nextResume);
-                                action.setNextAutoResumeReason(resumePolicy.getName());
+                            .forEach(deltaFileFlow -> {
+                                deltaFileFlow.enableAutoResume(nextResume, resumePolicy.getName());
                             });
                     deltaFileRepo.saveAll(deltaFiles);
                     previousDids.addAll(deltaFiles.stream().map(DeltaFile::getDid).toList());
