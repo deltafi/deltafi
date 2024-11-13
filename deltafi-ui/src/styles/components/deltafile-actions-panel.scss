@@ -50,4 +50,14 @@
   .timestamp-column {
     width: 16rem;
   }
+  .flow-name-column {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    .branch {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.5rem;
+      color: #6c757d;
+      margin-right: 0.25rem;
+    }
+  }
 }

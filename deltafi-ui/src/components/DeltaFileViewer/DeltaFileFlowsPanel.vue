@@ -21,7 +21,12 @@
     <CollapsiblePanel header="Flows" class="actions-panel table-panel">
       <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" data-key="name" @row-click="rowClick">
         <Column class="expander-column" :expander="true" />
-        <Column field="name" header="Name" :sortable="true" />
+        <Column field="name" header="Name" class="flow-name-column" :sortable="true">
+          <template #body="{ data }">
+            <span class="branch">{{ branchIcons(data.depth) }}</span>
+            <span v-tooltip.top="topicsTooltip(data)">{{ data.name }}</span>
+          </template>
+        </Column>
         <Column field="type" header="Type" :sortable="true" />
         <Column field="state" header="State" class="state-column" :sortable="true" />
         <Column field="created" header="Created" class="timestamp-column" :sortable="true">
@@ -109,11 +114,80 @@ const errorViewer = reactive({
   visible: false,
   action: {},
 });
+
 const metadataAsArray = (metadataObject) => {
   return Object.entries(metadataObject).map(([key, value]) => ({ key, value }));
 };
+
+const topicsTooltip = (flow) => {
+  const tooltip = []
+  if (flow.input.topics.length) {
+    tooltip.push("From:")
+    flow.input.topics.forEach((topic) => {
+      tooltip.push(`• ${topic}`)
+    })
+  }
+
+  if (flow.publishTopics.length) {
+    tooltip.push("To:")
+    flow.publishTopics.forEach((topic) => {
+      tooltip.push(`• ${topic}`)
+    })
+  }
+  return tooltip.join("\n")
+}
+
+const branchIcons = (depth) => {
+  if (depth < 1) return;
+  const result = [];
+  _.times(depth -1, () => {
+    result.push("│ ");
+  });
+  result.push("├─");
+  return result.join("");
+}
+
+function flattenTree(tree) {
+  const result = [];
+  function traverse(node) {
+    result.push(node);
+    for (const child of node.children) {
+      traverse(child);
+    }
+  }
+  for (const root of tree) {
+    traverse(root);
+  }
+  return result;
+}
+
+function generateTree(flows) {
+  const nodeMap = new Map();
+  flows.forEach(flow => {
+    nodeMap.set(flow.number, {
+      ...flow,
+      children: []
+    });
+  });
+  const roots = [];
+  flows.forEach(flow => {
+    const node = nodeMap.get(flow.number);
+    const ancestorIds = flow.input.ancestorIds;
+    if (ancestorIds.length === 0) {
+      roots.push(node);
+    } else {
+      const immediateParentId = ancestorIds[0];
+      const parent = nodeMap.get(immediateParentId);
+      if (parent) {
+        parent.children.push(node);
+      }
+    }
+  });
+  return roots;
+}
+
 const flows = computed(() => {
-  return deltaFile.flows.map((flow) => {
+  const deltaFileFlows = deltaFile.flows.map((flow) => {
     const timeElapsed = new Date(flow.modified) - new Date(flow.created);
     flow.created = new Date(flow.created).toISOString();
     flow.modified = new Date(flow.modified).toISOString();
@@ -122,7 +196,9 @@ const flows = computed(() => {
       elapsed: duration(timeElapsed),
     };
   });
+  return flattenTree(generateTree(deltaFileFlows));
 });
+
 const contentDeleted = computed(() => {
   return deltaFile.contentDeleted !== null ? deltaFile.contentDeleted : false;
 });

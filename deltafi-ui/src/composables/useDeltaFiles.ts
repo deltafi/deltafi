@@ -38,6 +38,7 @@ export default function useDeltaFiles() {
         flows: {
           name: true,
           id: true,
+          number: true,
           type: true,
           state: true,
           created: true,
@@ -119,7 +120,7 @@ export default function useDeltaFiles() {
       },
     };
   };
-  
+
   const getDeltaFile = async (did: string) => {
     await queryGraphQL(buildGetDeltaFileQuery(did), "getDeltaFile");
     Object.assign(data, response.value.data.deltaFile);
