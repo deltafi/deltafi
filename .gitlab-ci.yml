@@ -14,7 +14,7 @@ image: deltafi/deltafi-build:jdk21.0.5-python3.12-0
 
 .gradle:
   variables:
-    GRADLE_USER_HOME: /cache/.gradle
+    GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
     GRADLE: "./gradlew -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
