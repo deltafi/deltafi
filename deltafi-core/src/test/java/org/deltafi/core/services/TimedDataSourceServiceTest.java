@@ -189,9 +189,8 @@ class TimedDataSourceServiceTest {
         assertThat(updatedInvalid.getCronSchedule()).isEqualTo("0 */3 * * * *");
         assertThat(updatedInvalid.getMaxErrors()).isEqualTo(1);
 
-        assertThat(result.isSuccess()).isFalse();
-        assertThat(result.getInfo()).isEmpty();
-        assertThat(result.getErrors()).hasSize(2)
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInfo()).hasSize(2)
                 .contains("Flow missing is no longer installed")
                 .contains("Flow: invalid is invalid and cannot be started");
     }

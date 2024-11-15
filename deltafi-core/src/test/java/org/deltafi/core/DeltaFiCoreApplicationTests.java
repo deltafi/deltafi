@@ -3845,6 +3845,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void restoreSnapshot() {
+		pluginService.doUpdateSystemPlugin();
 		systemSnapshotRepo.save(SystemSnapshotDatafetcherTestHelper.expectedSnapshot());
 		Result result = SystemSnapshotDatafetcherTestHelper.restoreSnapshot(dgsQueryExecutor);
 

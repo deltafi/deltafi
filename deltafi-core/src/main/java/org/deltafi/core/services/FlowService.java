@@ -347,7 +347,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
             FlowT existing = allFlows.get(snapshot.getName());
 
             if (existing == null) {
-                result.getErrors().add("Flow " + snapshot.getName() + " is no longer installed");
+                result.getInfo().add("Flow " + snapshot.getName() + " is no longer installed");
             } else if (updateFromSnapshot(existing, snapshot, result)) {
                 updatedFlows.put(existing.getName(), existing);
             }
@@ -372,7 +372,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 flow.getFlowStatus().setState(FlowState.RUNNING);
                 changed = true;
             } else if (flow.isInvalid()) {
-                result.getErrors().add("Flow: " + flow.getName() + " is invalid and cannot be started");
+                result.getInfo().add("Flow: " + flow.getName() + " is invalid and cannot be started");
             }
         }
 

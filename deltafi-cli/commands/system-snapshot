@@ -159,7 +159,73 @@ ALL_SNAPSHOT_FIELDS="id
               running
               testMode
               expectedAnnotations
-            }"
+            }
+            systemFlowPlans {
+              restDataSources {
+                name
+                type
+                description
+                topic
+              }
+              timedDataSources {
+                name
+                type
+                description
+                topic
+                timedIngressAction {
+                  name
+                  type
+                  parameters
+                }
+                cronSchedule
+              }
+              transformPlans {
+                name
+                description
+                type
+                subscribe {
+                  condition
+                  topic
+                }
+                transformActions {
+                  name
+                  type
+                  parameters
+                  join {
+                    maxAge
+                    minNum
+                    maxNum
+                    metadataKey
+                  }
+                }
+                publish {
+                  matchingPolicy
+                  defaultRule {
+                    defaultBehavior
+                    topic
+                  }
+                  rules {
+                    condition
+                    topic
+                  }
+                }
+              }
+              dataSinkPlans {
+                name
+                description
+                type
+                subscribe {
+                  condition
+                  topic
+                }
+                egressAction {
+                  name
+                  type
+                  parameters
+                }
+              }
+            }
+          "
 
 ALL_RESULT_FIELDS="success info errors"
 

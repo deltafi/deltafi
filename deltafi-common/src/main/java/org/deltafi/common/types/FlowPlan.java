@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Objects;
 
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -39,4 +40,8 @@ public abstract class FlowPlan {
     private PluginCoordinates sourcePlugin;
 
     public abstract List<ActionConfiguration> allActionConfigurations();
+
+    public boolean nameAndTypeMatch(FlowPlan otherPlan) {
+        return otherPlan != null && Objects.equals(otherPlan.getName(), this.name) && Objects.equals(otherPlan.getType(), this.type);
+    }
 }

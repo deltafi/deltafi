@@ -79,8 +79,8 @@ public class AnnotationService implements Snapshotter {
     public void resetFromSnapshot(HasExpectedAnnotations flowSnapshot, Result result) {
         try {
             setExpectedAnnotations(flowSnapshot.getName(), flowSnapshot.getExpectedAnnotations());
-        } catch (DgsEntityNotFoundException e) {
-            result.getErrors().add("Flow " + flowSnapshot.getName() + " is no longer installed");
+        } catch (IllegalArgumentException | DgsEntityNotFoundException e) {
+            result.getInfo().add("Flow " + flowSnapshot.getName() + " is no longer installed");
         }
     }
 

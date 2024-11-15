@@ -175,10 +175,17 @@ type SystemFlows {
 }
 
 type SystemFlowPlans {
-  dataSinkPlans: [DataSinkPlan]!
-  restDataSources: [RestDataSourcePlan]!
-  timedDataSources: [TimedDataSourcePlan]!
-  transformPlans: [TransformFlowPlan]!
+  dataSinkPlans: [DataSinkPlan]
+  restDataSources: [RestDataSourcePlan]
+  timedDataSources: [TimedDataSourcePlan]
+  transformPlans: [TransformFlowPlan]
+}
+
+input SystemFlowPlansInput {
+  dataSinkPlans: [DataSinkPlanInput]
+  restDataSources: [RestDataSourcePlanInput]
+  timedDataSources: [TimedDataSourcePlanInput]
+  transformPlans: [TransformFlowPlanInput]
 }
 
 type DataSink {

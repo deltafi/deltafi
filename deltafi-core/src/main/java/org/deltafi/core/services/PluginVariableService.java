@@ -21,18 +21,17 @@ import lombok.AllArgsConstructor;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.types.PluginEntity;
+import org.deltafi.core.types.*;
 import org.deltafi.core.repo.PluginVariableRepo;
-import org.deltafi.core.types.VariableUpdate;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.deltafi.core.types.PluginVariables;
-import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ID;
 
 @Service
 @AllArgsConstructor
@@ -214,8 +213,14 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
 
     PluginVariables filterSetValuesOnly(PluginVariables pluginVariables) {
         PluginVariables result = new PluginVariables();
+        PluginCoordinates pluginCoordinates = pluginVariables.getSourcePlugin();
         result.setSourcePlugin(pluginVariables.getSourcePlugin());
-        result.setVariables(filterSetValuesOnly(pluginVariables.getVariables()));
+
+        if (SYSTEM_PLUGIN_ID.equals(new GroupIdArtifactId(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId()))) {
+            result.setVariables(pluginVariables.getVariables());
+        } else {
+            result.setVariables(filterSetValuesOnly(pluginVariables.getVariables()));
+        }
 
         return !result.getVariables().isEmpty() ? result : null;
     }

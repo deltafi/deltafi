@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.ui.Link;
+import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
@@ -80,4 +81,8 @@ public class SystemSnapshot {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private List<ResumePolicy> resumePolicies = new ArrayList<>();
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private SystemFlowPlans systemFlowPlans = new SystemFlowPlans();
 }

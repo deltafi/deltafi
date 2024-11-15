@@ -21,6 +21,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.ExpectedDeltaFile;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.types.integration.TestCaseIngress;
+import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.PluginEntity;
@@ -39,13 +40,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,7 +60,7 @@ class PluginServiceTest {
     PluginVariableService pluginVariableService;
 
     @Mock
-    DataSinkPlanService DataSinkPlanService;
+    DataSinkPlanService dataSinkPlanService;
 
     @Mock
     DataSinkService dataSinkService;
@@ -109,7 +108,7 @@ class PluginServiceTest {
 
         pluginService = new PluginService(pluginRepository, pluginVariableService, buildProperties,
                 dataSinkService, restDataSourceService, timedDataSourceService, transformFlowService,
-                environment, pluginValidator, DataSinkPlanService, restDataSourcePlanService,
+                environment, pluginValidator, dataSinkPlanService, restDataSourcePlanService,
                 timedDataSourcePlanService, transformFlowPlanService, checkers, cleaners);
     }
 
@@ -270,12 +269,11 @@ class PluginServiceTest {
         PluginEntity newVersion = makePlugin();
         newVersion.setPluginCoordinates( new PluginCoordinates("org.mock", "plugin-2", "1.1.0"));
 
-
         PluginEntity inBoth = makePlugin();
         PluginCoordinates inSnapshotOnly = new PluginCoordinates("org.unique", "custom-plugin", "1.0.0");
 
-
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(installedOnly, newVersion, inBoth));
+        Mockito.when(pluginRepository.findById(SYSTEM_PLUGIN_ID)).thenReturn(Optional.of(new PluginEntity()));
 
         systemSnapshot.setInstalledPlugins(Set.of(inBoth.getPluginCoordinates(), PLUGIN_COORDINATES_2, inSnapshotOnly));
 
@@ -285,6 +283,24 @@ class PluginServiceTest {
                 .contains("Installed plugin org.mock:plugin-2:1.1.0 was a different version at the time of the snapshot: org.mock:plugin-2:1.0.0")
                 .contains("Plugin org.unique:custom-plugin:1.0.0 was installed at the time of the snapshot but is no longer installed")
                 .contains("Installed plugin org.installed:installed-plugin:1.0.0 was not installed at the time of the snapshot");
+    }
+
+    @Test
+    void testSystemPluginRestore() {
+        TransformFlowPlan keep = new TransformFlowPlan("keep", "");
+        TransformFlowPlan replace = new TransformFlowPlan("replace", "");
+        PluginEntity systemPlugin = new PluginEntity();
+        systemPlugin.setFlowPlans(new ArrayList<>(List.of(keep, replace)));
+
+        TransformFlowPlan snapshot = new TransformFlowPlan("snapshot", "");
+        TransformFlowPlan replacement = new TransformFlowPlan("replace", "changed");
+        SystemFlowPlans systemFlowPlans = new SystemFlowPlans();
+        systemFlowPlans.setTransformPlans(List.of(snapshot, replacement));
+
+        Mockito.when(pluginRepository.findById(SYSTEM_PLUGIN_ID)).thenReturn(Optional.of(systemPlugin));
+        pluginService.restoreSystemPlugin(systemFlowPlans, false);
+
+        assertThat(systemPlugin.getFlowPlans()).hasSize(3).contains(keep, replacement, snapshot);
     }
 
     @Test

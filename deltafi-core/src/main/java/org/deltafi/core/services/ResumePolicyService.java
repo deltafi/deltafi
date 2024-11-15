@@ -239,8 +239,7 @@ public class ResumePolicyService implements Snapshotter {
             if (errors.isEmpty()) {
                 valid.add(policy);
             } else {
-                result.setSuccess(false);
-                result.getErrors().addAll(errors);
+                result.getInfo().addAll(errors);
             }
         }
 

@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.core.generated.types.Flows;
+import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
@@ -66,6 +67,7 @@ public class PluginService implements Snapshotter {
 
     public static final String SYSTEM_PLUGIN_GROUP_ID = "org.deltafi";
     public static final String SYSTEM_PLUGIN_ARTIFACT_ID = "system-plugin";
+    public static final GroupIdArtifactId SYSTEM_PLUGIN_ID = new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID);
     private static final String SYSTEM_PLUGIN_DISPLAY_NAME = "System Plugin";
     private static final String SYSTEM_PLUGIN_DESCRIPTION = "System Plugin that holds flows created within the system";
 
@@ -77,7 +79,7 @@ public class PluginService implements Snapshotter {
     }
 
     public void doUpdateSystemPlugin() {
-        Optional<PluginEntity> maybeSystemPlugin = pluginRepo.findById(new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID));
+        Optional<PluginEntity> maybeSystemPlugin = pluginRepo.findById(SYSTEM_PLUGIN_ID);
 
         if (maybeSystemPlugin.isPresent()) {
             PluginEntity systemPlugin = maybeSystemPlugin.get();
@@ -106,7 +108,7 @@ public class PluginService implements Snapshotter {
     }
 
     public PluginEntity getSystemPlugin() {
-        return pluginRepo.findById(new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID)).orElse(null);
+        return pluginRepo.findById(SYSTEM_PLUGIN_ID).orElse(null);
     }
 
     public PluginEntity createSystemPlugin() {
@@ -344,6 +346,23 @@ public class PluginService implements Snapshotter {
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         systemSnapshot.setInstalledPlugins(getInstalledPluginCoordinates());
+
+        SystemFlowPlans systemFlowPlans = new SystemFlowPlans(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        PluginEntity pluginEntity = getSystemPlugin();
+
+        if (pluginEntity != null && pluginEntity.getFlowPlans() != null) {
+            for (FlowPlan flowPlan : pluginEntity.getFlowPlans()) {
+                switch (flowPlan) {
+                    case RestDataSourcePlan p -> systemFlowPlans.getRestDataSources().add(p);
+                    case TimedDataSourcePlan p -> systemFlowPlans.getTimedDataSources().add(p);
+                    case TransformFlowPlan p -> systemFlowPlans.getTransformPlans().add(p);
+                    case DataSinkPlan p -> systemFlowPlans.getDataSinkPlans().add(p);
+                    default -> throw new IllegalStateException("Unexpected value: " + flowPlan);
+                }
+            }
+        }
+
+        systemSnapshot.setSystemFlowPlans(systemFlowPlans);
     }
 
     @Override
@@ -378,7 +397,31 @@ public class PluginService implements Snapshotter {
 
         result.getInfo().addAll(missing.stream().map(snapshotPlugin -> "Plugin " + snapshotPlugin + " was installed at the time of the snapshot but is no longer installed").toList());
 
+        restoreSystemPlugin(systemSnapshot.getSystemFlowPlans(), hardReset);
         return result;
+    }
+
+    protected void restoreSystemPlugin(SystemFlowPlans flowPlans, boolean hardReset) {
+        PluginEntity systemPlugin = getSystemPlugin();
+        if (hardReset) {
+            restDataSourceService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
+            timedDataSourceService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
+            transformFlowService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
+            dataSinkService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
+            pluginVariableService.removeVariables(systemPlugin.getPluginCoordinates());
+            systemPlugin.setFlowPlans(new ArrayList<>());
+        }
+
+        systemPlugin.addOrReplaceFlowPlans(flowPlans.getRestDataSources());
+        systemPlugin.addOrReplaceFlowPlans(flowPlans.getTimedDataSources());
+        systemPlugin.addOrReplaceFlowPlans(flowPlans.getTransformPlans());
+        systemPlugin.addOrReplaceFlowPlans(flowPlans.getDataSinkPlans());
+
+        pluginRepo.save(systemPlugin);
+        restDataSourcePlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
+        timedDataSourcePlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
+        transformFlowPlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
+        dataSinkPlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
     }
 
     @Override

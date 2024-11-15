@@ -109,4 +109,16 @@ public class PluginEntity {
         return Objects.nonNull(getActions()) ?
                 getActions().stream().map(ActionDescriptor::getName).toList() : List.of();
     }
+
+    public void addOrReplaceFlowPlans(List<? extends FlowPlan> flowPlans) {
+        if (flowPlans == null) {
+            return;
+        }
+
+        for (FlowPlan flowPlan : flowPlans) {
+            this.flowPlans.removeIf(flowPlan::nameAndTypeMatch);
+            flowPlan.setSourcePlugin(this.getPluginCoordinates());
+            this.flowPlans.add(flowPlan);
+        }
+    }
 }

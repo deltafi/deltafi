@@ -122,9 +122,8 @@ class DataSinkServiceTest {
         assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
         assertThat(updatedFlows.get("stopped").isTestMode()).isTrue();
 
-        assertThat(result.isSuccess()).isFalse();
-        assertThat(result.getInfo()).isEmpty();
-        assertThat(result.getErrors()).hasSize(2)
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInfo()).hasSize(2)
                 .contains("Flow missing is no longer installed")
                 .contains("Flow: invalid is invalid and cannot be started");
     }

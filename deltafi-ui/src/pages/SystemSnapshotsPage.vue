@@ -227,6 +227,16 @@ const cleanUpSnapshot = (snapShotData) => {
       link.linkType = new EnumType(link.linkType);
     });
   }
+  if (snap.systemFlowPlans) {
+    snap.systemFlowPlans.transformPlans.forEach(transformFlow => {
+      if (transformFlow.publish.matchingPolicy) {
+        transformFlow.publish.matchingPolicy = new EnumType(transformFlow.publish.matchingPolicy);
+      }
+      if (transformFlow.publish.defaultRule && transformFlow.publish.defaultRule.defaultBehavior) {
+        transformFlow.publish.defaultRule.defaultBehavior = new EnumType(transformFlow.publish.defaultRule.defaultBehavior);
+      }
+    });
+  }
   return snap;
 };
 

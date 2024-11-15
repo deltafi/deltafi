@@ -60,6 +60,7 @@ type SystemSnapshot {
     transformFlows: [TransformFlowSnapshot]
     dataSinks: [DataSinkSnapshot]
     resumePolicies: [ResumePolicy]!
+    systemFlowPlans: SystemFlowPlans!
 }
 
 input TimedDataSourceSnapshotInput {
@@ -109,6 +110,7 @@ input SystemSnapshotInput {
     transformFlows: [TransformFlowSnapshotInput]
     dataSinks: [DataSinkSnapshotInput]
     resumePolicies: [ResumePolicyInput]!
+    systemFlowPlans: SystemFlowPlansInput
 }
 
 extend type Query {

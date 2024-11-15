@@ -18,6 +18,7 @@
 
 import { ref } from 'vue'
 import useGraphQL from './useGraphQL'
+import {defaultActionFields, joinFields} from "@/composables/useFlowPlanQueryVariables";
 export default function useSystemSnapshots() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
@@ -119,6 +120,60 @@ export default function useSystemSnapshots() {
       testMode: true,
       expectedAnnotations: true
     },
+    systemFlowPlans: {
+      restDataSources: {
+        name: true,
+        type: true,
+        description: true,
+        topic: true
+      },
+      timedDataSources: {
+        name: true,
+        type: true,
+        description: true,
+        topic: true,
+        timedIngressAction: {
+          ...defaultActionFields
+        },
+        cronSchedule: true
+      },
+      transformPlans: {
+        name: true,
+        description: true,
+        type: true,
+        subscribe: {
+          condition: true,
+          topic: true
+        },
+        transformActions: {
+          ...defaultActionFields,
+          ...joinFields,
+        },
+        publish: {
+          matchingPolicy: true,
+          defaultRule: {
+            defaultBehavior: true,
+            topic: true
+          },
+          rules: {
+            condition: true,
+            topic: true
+          }
+        }
+      },
+      dataSinkPlans: {
+        name: true,
+        description: true,
+        type: true,
+        subscribe: {
+          condition: true,
+          topic: true
+        },
+        egressAction: {
+          ...defaultActionFields
+        }
+      }
+    }
   }
 
   const fetch = async () => {
