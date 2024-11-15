@@ -70,7 +70,7 @@ public class DeltaFile {
   @Builder.Default
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @Fetch(FetchMode.SELECT)
-  @JoinColumn(name = "delta_file_id")
+  @JoinColumn(name = "delta_file_id", nullable = false, updatable = false)
   @OrderBy("number ASC")
   private Set<DeltaFileFlow> flows = new LinkedHashSet<>();
   private int requeueCount;
@@ -85,7 +85,7 @@ public class DeltaFile {
   @Builder.Default
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @Fetch(FetchMode.SELECT)
-  @JoinColumn(name = "delta_file_id")
+  @JoinColumn(name = "delta_file_id", nullable = false, updatable = false)
   private Set<Annotation> annotations = new LinkedHashSet<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
