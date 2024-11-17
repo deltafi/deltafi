@@ -55,6 +55,45 @@ def test_plugin_find_actions(monkeypatch):
     assert get_expected_json() == plugin.registration_json()
 
 
+def check_results(results: list):
+    found = 0
+    for r in results:
+        if r['name'] == "name1":
+            assert r['description'] == 'd1'
+            found += 1000
+        elif r['name'] == "name2":
+            assert r['description'] == 'd2'
+            found += 100
+        elif r['name'] == "name3":
+            assert r['description'] == 'd3'
+            found += 10
+        elif r['name'] == "name4":
+            assert r['description'] == 'd4'
+            found += 1
+    return found
+
+
+def test_plugin_load_variables_single_doc(monkeypatch):
+    set_mock_env(monkeypatch)
+    variables = Plugin.load_variables("test/plugin_data/flows", ["variables.yaml"])
+    assert len(variables) == 3
+    assert check_results(variables) == 1110
+
+
+def test_plugin_load_variables_multi_doc(monkeypatch):
+    set_mock_env(monkeypatch)
+    variables = Plugin.load_variables("test/plugin_data/flows", ["variables.yml"])
+    assert len(variables) == 3
+    assert check_results(variables) == 1110
+
+
+def test_plugin_integration_tests(monkeypatch):
+    set_mock_env(monkeypatch)
+    results = Plugin.load_integration_tests("test/plugin_data/tests")
+    assert len(results) == 4
+    assert check_results(results) == 1111
+
+
 def test_plugin_register(monkeypatch):
     set_mock_env(monkeypatch)
     plugin_coordinates = PluginCoordinates("plugin-group", "project-name", "1.0.0")
@@ -67,6 +106,7 @@ def test_plugin_register(monkeypatch):
     mock_post.assert_called_once_with("http://core/plugins",
                                       headers={'Content-type': 'application/json'},
                                       json=get_expected_json())
+
 
 def set_mock_env(monkeypatch):
     monkeypatch.setenv("CORE_URL", "http://core")

@@ -25,7 +25,6 @@ import sys
 import threading
 import time
 import traceback
-import yaml
 from datetime import datetime, timezone, timedelta
 from importlib import metadata
 from os.path import isdir, isfile, join
@@ -33,6 +32,7 @@ from pathlib import Path
 from typing import List
 
 import requests
+import yaml
 from deltafi.action import Action, Join
 from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event, ActionExecution
@@ -44,6 +44,75 @@ from deltafi.storage import ContentService
 
 def _coordinates():
     return PluginCoordinates(os.getenv('PROJECT_GROUP'), os.getenv('PROJECT_NAME'), os.getenv('PROJECT_VERSION'))
+
+
+def _valid_file(filename: str):
+    return isfile(filename) and \
+        (filename.endswith(".json")
+         or filename.endswith(".yaml")
+         or filename.endswith(".yml"))
+
+
+def _read_valid_files(path: str):
+    """
+    Read the contents of a directory, and returns a filtered list of files
+    that can be read/parsed for plugin usage, and ignores everything else.
+    :param path: name of the directory to scan
+    :return: list of filtered, parsable files
+    """
+    files = []
+    if isdir(path):
+        files = [f for f in os.listdir(path) if _valid_file(join(path, f))]
+    return files
+
+
+def _load_resource(path: str, filename: str):
+    """
+    Read the content of a JSON or YAML file, and return a Python
+    object of its contents, typically as a dict or list.
+    To avoid exceptions, use only files returned by _read_valid_files().
+    :param path: directory which contains the file to load
+    :param filename: name of the file to load
+    :return: dict or list of file contents
+    """
+    with open(join(path, filename)) as file_in:
+        if filename.endswith(".json"):
+            return json.load(file_in)
+        elif filename.endswith(".yaml") or filename.endswith(".yml"):
+            results = []
+            yaml_docs = yaml.safe_load_all(file_in)
+            for doc_iter in yaml_docs:
+                # yaml_docs must be iterated
+                results.append(doc_iter)
+            if len(results) == 1:
+                # Single document YAML file
+                return results[0]
+            else:
+                # Multi-document YAML file
+                return results
+    raise RuntimeError(f"File type not supported: {filename}")
+
+
+def _load__all_resource(path: str, file_list: List[str]):
+    resources = []
+    for f in file_list:
+        r = _load_resource(path, f)
+        if isinstance(r, list):
+            resources.extend(r)
+        else:
+            resources.append(r)
+    return resources
+
+
+def _find_variables_filename(names: List[str]):
+    if 'variables.json' in names:
+        return 'variables.json'
+    elif 'variables.yaml' in names:
+        return 'variables.yaml'
+    elif 'variables.yml' in names:
+        return 'variables.yml'
+    else:
+        return None
 
 
 def _setup_queue(max_connections):
@@ -183,33 +252,39 @@ class Plugin(object):
             'docsMarkdown': self._load_action_docs(action)
         }
 
-    def _integration_tests(self):
-        tests_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'integration')
+    @staticmethod
+    def load_integration_tests(tests_path: str):
+        test_files = _read_valid_files(tests_path)
+        return _load__all_resource(tests_path, test_files)
 
-        test_files = []
-        if isdir(tests_path):
-            test_files = [f for f in os.listdir(tests_path) if isfile(join(tests_path, f))]
-        else:
-            self.logger.warning(f"tests directory ({tests_path}) does not exist. No tests will be installed.")
-
-        tests = [json.load(open(join(tests_path, f))) for f in test_files]
-        return tests
+    @staticmethod
+    def load_variables(flows_path: str, flow_files: List[str]):
+        variables = []
+        variables_filename = _find_variables_filename(flow_files)
+        if variables_filename is not None:
+            flow_files.remove(variables_filename)
+            variables = _load__all_resource(flows_path, [variables_filename])
+        return variables
 
     def registration_json(self):
         flows_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'flows')
+        tests_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'integration')
 
-        flow_files = []
         variables = []
-        if isdir(flows_path):
-            flow_files = [f for f in os.listdir(flows_path) if isfile(join(flows_path, f))]
-            if 'variables.json' in flow_files:
-                flow_files.remove('variables.json')
-                variables = json.load(open(join(flows_path, 'variables.json')))
+        flow_files = _read_valid_files(flows_path)
+        if len(flow_files) == 0:
+            self.logger.warning(
+                f"Flows directory ({flows_path}) does not exist or contains no valid files. No flows will be installed.")
         else:
-            self.logger.warning(f"Flows directory ({flows_path}) does not exist. No flows will be installed.")
+            variables = self.load_variables(flows_path, flow_files)
 
-        flows = [json.load(open(join(flows_path, f))) for f in flow_files]
+        flows = _load__all_resource(flows_path, flow_files)
         actions = [self._action_json(action) for action in self.actions]
+
+        test_files = self.load_integration_tests(tests_path)
+        if len(test_files) == 0:
+            self.logger.warning(
+                f"tests directory ({tests_path}) does not exist or contains no valid files. No tests will be installed.")
 
         return {
             'pluginCoordinates': self.coordinates.__json__(),
@@ -222,7 +297,7 @@ class Plugin(object):
             'actions': actions,
             'variables': variables,
             'flowPlans': flows,
-            'integrationTests': self._integration_tests()
+            'integrationTests': test_files
         }
 
     def _register(self):
