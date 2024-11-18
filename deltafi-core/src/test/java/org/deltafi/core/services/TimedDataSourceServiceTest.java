@@ -17,10 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.FlowType;
-import org.deltafi.common.types.TimedDataSourcePlan;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -42,6 +39,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
+import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_GROUP_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,19 +72,27 @@ class TimedDataSourceServiceTest {
     void buildFlow() {
         TimedDataSource running = timedDataSource("running", FlowState.RUNNING, true,"0 */10 * * * *", 10);
         TimedDataSource stopped = timedDataSource("stopped", FlowState.STOPPED, false, "*/1 * * * * *", -1);
+        TimedDataSource system = timedDataSource("system", FlowState.RUNNING, false, "*/1 * * * * *", -1);
+        system.setSourcePlugin(PluginCoordinates.builder().artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).groupId(SYSTEM_PLUGIN_GROUP_ID).version("1.2.2").build());
         Mockito.when(timedDataSourceRepo.findByNameAndType("running", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(running));
         Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("system", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(system));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TimedDataSourcePlan runningFlowPlan = new TimedDataSourcePlan("running", FlowType.TIMED_DATA_SOURCE, "yep", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
-                "0 */10 * * * *");
+                "0 */8 * * * *");
         TimedDataSourcePlan stoppedFlowPlan = new TimedDataSourcePlan("stopped", FlowType.TIMED_DATA_SOURCE, "naw", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
-                "*/1 * * * * *");
+                "*/2 * * * * *");
+        TimedDataSourcePlan systemFlowPlan = new TimedDataSourcePlan("system", FlowType.TIMED_DATA_SOURCE, "naw", "topic",
+                new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
+                "*/2 * * * * *");
+        systemFlowPlan.setSourcePlugin(PluginCoordinates.builder().artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).groupId(SYSTEM_PLUGIN_GROUP_ID).version("1.2.3").build());
 
         TimedDataSource runningDataSource = timedDataSourceService.buildFlow(runningFlowPlan, Collections.emptyList());
         TimedDataSource stoppedDataSource = timedDataSourceService.buildFlow(stoppedFlowPlan, Collections.emptyList());
+        TimedDataSource systemDataSource = timedDataSourceService.buildFlow(systemFlowPlan, Collections.emptyList());
 
         assertThat(runningDataSource).isInstanceOf(TimedDataSource.class);
         assertThat(runningDataSource.isRunning()).isTrue();
@@ -94,6 +101,8 @@ class TimedDataSourceServiceTest {
         assertThat(runningDataSource.getMaxErrors()).isEqualTo(10);
         assertThat(stoppedDataSource.isRunning()).isFalse();
         assertThat(stoppedDataSource.isTestMode()).isFalse();
+        assertThat(stoppedDataSource.getCronSchedule()).isEqualTo("*/2 * * * * *");
+        assertThat(systemDataSource.getCronSchedule()).isEqualTo("*/2 * * * * *");
     }
 
     @Test
@@ -238,6 +247,7 @@ class TimedDataSourceServiceTest {
         flowStatus.setTestMode(testMode);
         dataSource.setFlowStatus(flowStatus);
         dataSource.setCronSchedule(cronSchedule);
+        dataSource.setSourcePlugin(PluginCoordinates.builder().artifactId("art").groupId("group").version("ver").build());
         return dataSource;
     }
 

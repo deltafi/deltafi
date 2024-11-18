@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.deltafi.core.services.PluginService.*;
+
 @Entity
 @DiscriminatorValue("TIMED_DATA_SOURCE")
 @EqualsAndHashCode(callSuper = true)
@@ -85,6 +87,12 @@ public class TimedDataSource extends DataSource {
             setCurrentDid(timedDataSource.getCurrentDid());
             setExecuteImmediate(timedDataSource.isExecuteImmediate());
             setMaxErrors(timedDataSource.getMaxErrors());
+
+            PluginCoordinates sourcePlugin = timedDataSource.getSourcePlugin();
+            if (timedDataSource.isRunning() &&
+                    !(sourcePlugin.getArtifactId().equals(SYSTEM_PLUGIN_ARTIFACT_ID) && sourcePlugin.getGroupId().equals(SYSTEM_PLUGIN_GROUP_ID))) {
+                setCronSchedule(timedDataSource.getCronSchedule());
+            }
         }
     }
 
