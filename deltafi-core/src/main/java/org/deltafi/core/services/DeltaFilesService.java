@@ -1492,15 +1492,44 @@ public class DeltaFilesService {
         }
 
         try {
-            for (WrappedActionInput actionInput : actionInputs) {
-                populateBatchInput(actionInput);
-            }
-
-            coreEventQueue.putActions(actionInputs, checkUnique);
+            List<WrappedActionInput> toQueue = populateBatchInputs(actionInputs);
+            coreEventQueue.putActions(toQueue, checkUnique);
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);
         }
+    }
+
+    // populate joined content, only return actionInput where batched input was successfully populated
+    private List<WrappedActionInput> populateBatchInputs(List<WrappedActionInput> actionInputs) {
+        List<WrappedActionInput> filteredList = new ArrayList<>();
+        for (WrappedActionInput actionInput : actionInputs) {
+            try {
+                populateBatchInput(actionInput);
+                filteredList.add(actionInput);
+            } catch (MissingDeltaFilesException e) {
+                handleMissingParent(actionInput, e.getMessage());
+            }
+        }
+        return filteredList;
+    }
+
+    private void handleMissingParent(WrappedActionInput input, String errorContext) {
+        // pull latest version to avoid StaleObject exception
+        DeltaFile deltaFile = deltaFileRepo.findById(input.getDeltaFile().getDid()).orElse(null);
+        if (deltaFile == null) {
+            return;
+        }
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlow(input.getActionContext().getFlowId());
+        Action failedAction = deltaFileFlow.getAction(input.getActionContext().getActionName());
+
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        failedAction.error(now, now, now, "Missing one or more parent DeltaFiles", errorContext);
+        deltaFileFlow.updateState();
+        deltaFile.updateState(now);
+
+        deltaFileCacheService.remove(deltaFile.getDid());
+        deltaFileRepo.saveAndFlush(deltaFile);
     }
 
     private void populateBatchInput(WrappedActionInput actionInput) throws MissingDeltaFilesException {
@@ -1773,12 +1802,13 @@ public class DeltaFilesService {
             return handleQueueTimedJoinError(joinEntry, joinDids, reason);
         }
 
-        DeltaFile parent = getDeltaFile(joinDids.getLast());
-        DeltaFileFlow deltaFileFlow = parent.getFlows().stream().filter(flow -> joinEntry.getId().equals(flow.getJoinId())).findFirst().orElse(null);
+        UUID lastParent = joinDids.getLast();
+        DeltaFile parent = getDeltaFile(lastParent);
+        DeltaFileFlow deltaFileFlow = parent != null ? parent.getFlows().stream().filter(flow -> joinEntry.getId().equals(flow.getJoinId())).findFirst().orElse(null) : null;
         if (deltaFileFlow == null) {
             log.warn("Time-based join action couldn't run because a dataSource with a joinId of {} was not found in the parent with a did of {}. Failed executing action {} from dataSource dataSource {}",
-                    joinEntry.getId(), parent.getDid(), joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
-            String reason = "Timed-based join action couldn't run due to an invalid parent state (parent with did %s was missing the join flow)".formatted(parent.getDid());
+                    joinEntry.getId(), lastParent, joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
+            String reason = "Timed-based join action couldn't run due to an invalid parent state (parent with did %s was missing the join flow)".formatted(lastParent);
             log.warn(reason);
             return handleQueueTimedJoinError(joinEntry, joinDids, reason);
         }
