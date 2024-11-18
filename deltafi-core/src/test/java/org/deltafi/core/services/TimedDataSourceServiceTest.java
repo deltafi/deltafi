@@ -79,7 +79,7 @@ class TimedDataSourceServiceTest {
 
         TimedDataSourcePlan runningFlowPlan = new TimedDataSourcePlan("running", FlowType.TIMED_DATA_SOURCE, "yep", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
-                "0 */10 * * * *");
+                "0 */8 * * * *");
         TimedDataSourcePlan stoppedFlowPlan = new TimedDataSourcePlan("stopped", FlowType.TIMED_DATA_SOURCE, "naw", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "*/1 * * * * *");
