@@ -52,7 +52,7 @@ _drop_postgres_tables() {
   fi
 }
 
-read -r -p "☢️  Uninstalling DeltafFi is a destructive operation that will remove configuration and anything in the database.
+read -r -p "☢️  Uninstalling DeltaFi is a destructive operation that will remove configuration and anything in the database.
 ☠️  This could make your day go badly.
 Are you really, really sure? [y/N] " response
 case "$response" in
