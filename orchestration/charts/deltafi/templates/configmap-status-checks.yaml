@@ -5,13 +5,13 @@ metadata:
   namespace: deltafi
 data:
   StatefulSet: |
-    - deltafi-core-worker
     - deltafi-graphite
     - deltafi-loki
     - deltafi-valkey-master
   Deployment: |
     - deltafi-core-actions
     - deltafi-core-scheduler
+    - deltafi-core-worker
     - deltafi-egress-sink
     - deltafi-grafana
     - deltafi-kubernetes-dashboard
