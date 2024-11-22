@@ -23,7 +23,7 @@
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
         <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
-        <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" :options="uniqueErrorMessages" class="deltafi-input-field ml-3 flow-dropdown" />
+        <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" class="deltafi-input-field ml-3 flow-dropdown" />
         <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ml-3 ack-dropdown" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>

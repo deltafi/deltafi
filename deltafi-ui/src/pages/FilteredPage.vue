@@ -23,20 +23,20 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mx-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
-        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
+        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <Dropdown v-model="causeSelected" placeholder="Select an Filter Cause" show-clear :options="uniqueMessages" class="deltafi-input-field ml-3 flow-dropdown" />
         <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-3 p-button-outlined" @click="onRefresh" />
       </div>
     </PageHeader>
     <TabView v-model:activeIndex="activeTab">
       <TabPanel header="All">
-        <AllFilteredPanel ref="filterSummaryPanel" :data-source-name="dataSourceNameSelected" :filtered-cause-selected="filteredCauseSelected" @refresh-filters="onRefresh()" @filter-cause-changed:filtered-cause="messageSelected" />
+        <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" @refresh-filters="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Flow">
-        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :data-source-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" />
+        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
       </TabPanel>
       <TabPanel header="By Cause">
-        <SummaryByMessagePanel ref="filterSummaryMessagePanel" :data-source-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" @change-tab:filtered-cause:flow-selected="tabChange" />
+        <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
       </TabPanel>
     </TabView>
   </div>
@@ -45,7 +45,7 @@
 <script setup>
 import AllFilteredPanel from "@/components/filtered/AllPanel.vue";
 import SummaryByFlowPanel from "@/components/filtered/SummaryByFlowPanel.vue";
-import SummaryByMessagePanel from "@/components/filtered/SummaryByMessagePanel.vue";
+import SummaryByCausePanel from "@/components/filtered/SummaryByCausePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlows from "@/composables/useFlows";
 import { ref, computed, onMounted, watch, onBeforeMount, nextTick } from "vue";
@@ -55,87 +55,97 @@ import Button from "primevue/button";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
-import AutoComplete from "primevue/autocomplete";
 import useFiltered from "@/composables/useFiltered";
 
 const filterSummaryMessagePanel = ref();
 const filterSummaryFlowPanel = ref();
 const filterSummaryPanel = ref();
-const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
-const formattedDataSourceNames = ref([]);
+const { fetchAllFlowNames } = useFlows();
 const loading = ref(false);
-const dataSourceNameSelected = ref(null);
-const filteredCauseSelected = ref(null);
+const flowSelected = ref();
+const causeSelected = ref();
 const activeTab = ref(0);
 const params = useUrlSearchParams("history");
 const useURLSearch = ref(false);
 const route = useRoute();
 const filteredPanelState = useStorage("filtered-store", {}, sessionStorage, { serializer: StorageSerializers.object });
-const { fetchAllMessage, allCauses: filteredCauses } = useFiltered();
-const filteredMessages = ref([]);
-const selectedMessageValue = ref("");
-const messageValues = ref();
+const { fetchUniqueMessages } = useFiltered();
+const uniqueMessages = ref([]);
+const formattedFlows = ref([]);
+const allFlowNames = ref([])
+const flowTypeMap = {
+  TRANSFORM: "transform",
+  REST_DATA_SOURCE: "restDataSource",
+  TIMED_DATA_SOURCE: "timedDataSource",
+  DATA_SINK: "dataSink",
+}
 
 const setPersistedParams = () => {
   // Session Storage
   filteredPanelState.value = {
     tabs: activeTab.value,
-    dataSourceNameSelected: dataSourceNameSelected.value,
-    filteredCauseSelected: filteredCauseSelected.value,
+    flowSelected: flowSelected.value,
+    causeSelected: causeSelected.value,
   };
   // URL
   params.tab = activeTab.value;
-  params.dataSource = dataSourceNameSelected.value;
+  params.flowName = flowSelected.value?.name;
+  params.flowType = flowSelected.value?.type;
   if (activeTab.value === 0) {
-    params.filtered = filteredCauseSelected.value ? encodeURIComponent(filteredCauseSelected.value) : null;
+    params.cause = causeSelected.value ? encodeURIComponent(causeSelected.value) : null;
   } else {
-    params.filtered = null;
+    params.cause = null;
   }
 };
 
-const messageSearch = (event) => {
-  setTimeout(() => {
-    if (!event.query.trim().length) {
-      filteredMessages.value = [...messageValues.value];
-    } else {
-      filteredMessages.value = messageValues.value.filter((message) => {
-        return message.toLowerCase().includes(event.query.toLowerCase());
-      });
+const formatFlowNames = () => {
+  const map = {
+    restDataSource: "Rest Data Sources",
+    timedDataSource: "Timed Data Sources",
+    transform: "Transforms",
+    egress: "Data Sinks"
+  };
+  for (const [key, label] of Object.entries(map)) {
+    if (!_.isEmpty(allFlowNames.value[key])) {
+      const flows = _.map(allFlowNames.value[key], (name) => {
+        return { name: name, type: key }
+      })
+      formattedFlows.value.push({ label: label, sources: flows });
     }
-  }, 1000);
+  }
 };
 
 const clearOptions = () => {
-  filteredMessages.value = [];
-  selectedMessageValue.value = "";
-  filteredCauseSelected.value = "";
-  dataSourceNameSelected.value = null;
+  causeSelected.value = null;
+  flowSelected.value = null;
   setPersistedParams();
 };
 
 const filterOptionsSelected = computed(() => {
-  return _.some([selectedMessageValue.value, dataSourceNameSelected.value], (value) => !(value === "" || value === null || value === undefined));
+  return _.some([causeSelected.value, flowSelected.value], (value) => !(value === "" || value === null || value === undefined));
 });
 
 const getPersistedParams = async () => {
   if (useURLSearch.value) {
     activeTab.value = params.tab ? parseInt(params.tab) : 0;
-    dataSourceNameSelected.value = params.dataSource ? params.dataSource : null;
-    selectedMessageValue.value = filteredCauseSelected.value = params.filtered ? decodeURIComponent(params.filtered) : filteredPanelState.value.filteredCauseSelected;
+    if (params.flowName && params.flowType) {
+      flowSelected.value = {
+        name: params.flowName,
+        type: params.flowType
+      }
+    }
+    causeSelected.value = causeSelected.value = params.cause ? decodeURIComponent(params.cause) : filteredPanelState.value.causeSelected;
   } else {
     activeTab.value = filteredPanelState.value.tabs ? parseInt(filteredPanelState.value.tabs) : 0;
-    dataSourceNameSelected.value = _.get(filteredPanelState.value, "dataSourceNameSelected", null);
-    selectedMessageValue.value = filteredCauseSelected.value = _.get(filteredPanelState.value, "filteredCauseSelected", null);
+    flowSelected.value = _.get(filteredPanelState.value, "flowSelected", null);
+    causeSelected.value = causeSelected.value = _.get(filteredPanelState.value, "causeSelected", null);
   }
   setPersistedParams();
 };
 
 const setupWatchers = () => {
-  watch([activeTab, dataSourceNameSelected, filteredCauseSelected], () => {
+  watch([activeTab, flowSelected, causeSelected], () => {
     setPersistedParams();
-  });
-  watch([selectedMessageValue], () => {
-    filteredCauseSelected.value = selectedMessageValue.value;
   });
 };
 
@@ -145,23 +155,24 @@ const refreshButtonIcon = computed(() => {
   return classes.join(" ");
 });
 
-const tabChange = (filteredCause, flowSelected) => {
-  dataSourceNameSelected.value = flowSelected;
-  filteredCauseSelected.value = filteredCause;
-  selectedMessageValue.value = filteredCause;
+const showAllTab = (flowName, flowType, cause) => {
+  if (flowName && flowType) {
+    flowSelected.value = {
+      name: flowName,
+      type: flowTypeMap[flowType]
+    };
+  }
+
+  if (cause) causeSelected.value = cause;
 
   activeTab.value = 0;
-};
-
-const messageSelected = (cause) => {
-  if (filteredCauseSelected.value !== cause) filteredCauseSelected.value = cause;
 };
 
 const onRefresh = () => {
   loading.value = true;
   filterSummaryPanel.value.fetchFiltered();
   filterSummaryFlowPanel.value.fetchFilteredFlow();
-  filterSummaryMessagePanel.value.fetchFilteresMessages();
+  filterSummaryMessagePanel.value.fetchFilteredMessages();
   loading.value = false;
 };
 
@@ -170,30 +181,14 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  await fetchAllDataSourceFlowNames();
-  formatDataSourceNames();
+  allFlowNames.value = await fetchAllFlowNames();
+  formatFlowNames();
   await getPersistedParams();
+  uniqueMessages.value = await fetchUniqueMessages();
   await nextTick();
-  await fetchAllMessage();
-  const uniqueMessages = [];
-  for (let i = 0; i < filteredCauses.value.length; i++) {
-    if (!uniqueMessages.includes(filteredCauses.value[i].message)) {
-      uniqueMessages.push(filteredCauses.value[i].message);
-    }
-  }
-  messageValues.value = uniqueMessages;
-
   setupWatchers();
 });
 
-const formatDataSourceNames = () => {
-  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
-    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
-  }
-  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
-    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
-  }
-};
 </script>
 
 <style lang="scss">

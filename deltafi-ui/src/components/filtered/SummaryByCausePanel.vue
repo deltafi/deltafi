@@ -33,8 +33,8 @@
       <Column field="type" header="Flow Type" :sortable="true"> </Column>
       <Column field="count" header="Count" :sortable="true" />
       <Column field="message" header="Cause" :sortable="true">
-        <template #body="msg">
-          <a class="monospace" @click="showAll(msg.data.message, msg.data.flow)">{{ msg.data.message }}</a>
+        <template #body="{ data }">
+          <a class="monospace" @click="showAllTab(data.flow, data.type, data.message)">{{ data.message }}</a>
         </template>
       </Column>
     </DataTable>
@@ -66,12 +66,12 @@ const offset = ref(0);
 const perPage = ref();
 const sortDirection = ref("DESC");
 const selectedFilters = ref([]);
-const emit = defineEmits(["refreshFilters", "changeTab:filteredCause:flowSelected"]);
+const emit = defineEmits(["refreshFilters", "showAllTab"]);
 const props = defineProps({
-  dataSourceFlowName: {
-    type: String,
+  flow: {
+    type: Object,
     required: false,
-    default: undefined,
+    default: undefined
   },
 });
 
@@ -107,14 +107,14 @@ const menuItems = ref([
 
 onMounted(async () => {
   await getPersistedParams();
-  fetchFilteresMessages();
+  fetchFilteredMessages();
   setupWatchers();
 });
 
 const { data: response, fetchFilteredSummaryByMessage } = useFiltered();
 
-const showAll = (filteredMessage, flowSelected) => {
-  emit("changeTab:filteredCause:flowSelected", filteredMessage, flowSelected);
+const showAllTab = (flowName, flowType, cause) => {
+  emit("showAllTab", flowName, flowType, cause);
 };
 
 const filterSelectedDids = computed(() => {
@@ -126,11 +126,10 @@ const filterSelectedDids = computed(() => {
   return [...new Set(allDids)];
 });
 
-const fetchFilteresMessages = async () => {
+const fetchFilteredMessages = async () => {
   getPersistedParams();
-  let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
+  await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortDirection.value, props.flow?.name);
   filteredCause.value = response.value.countPerMessage;
   totalFilteredMessage.value = response.value.totalCount;
   loading.value = false;
@@ -151,21 +150,21 @@ const onPanelRightClick = (event) => {
 };
 
 defineExpose({
-  fetchFilteresMessages,
+  fetchFilteredMessages,
 });
 
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
-  fetchFilteresMessages();
+  fetchFilteredMessages();
 };
 
 const setupWatchers = () => {
   watch(
-    () => props.dataSourceFlowName,
+    () => props.flow,
     () => {
-      fetchFilteresMessages();
+      fetchFilteredMessages();
     }
   );
 
@@ -173,7 +172,7 @@ const setupWatchers = () => {
     () => props.acknowledged,
     () => {
       selectedFilters.value = [];
-      fetchFilteresMessages();
+      fetchFilteredMessages();
     }
   );
 };
@@ -182,7 +181,7 @@ const onPage = async (event) => {
   perPage.value = event.rows;
   setPersistedParams();
   await nextTick();
-  fetchFilteresMessages();
+  fetchFilteredMessages();
   emit("refreshFilters");
 };
 

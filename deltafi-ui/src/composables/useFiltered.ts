@@ -23,18 +23,40 @@ import _ from "lodash";
 export default function useFiltered() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
-  const allCauses = ref(null);
 
-  const fetchAllFiltered = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, filteredCause?: string) => {
+  const fetchAllFiltered = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, flowType?: string, filteredCause?: string) => {
+
+    const flowFilters: Record<string, Array<string>> = {
+      dataSources: [],
+      dataSinks: [],
+      transforms: [],
+    }
+
+    if (flowName && flowType) {
+      switch (flowType) {
+        case "dataSink":
+          flowFilters.dataSinks.push(flowName)
+          break;
+        case "transform":
+          flowFilters.transforms.push(flowName)
+          break;
+        case "timedDataSource":
+          flowFilters.dataSources.push(flowName)
+          break;
+        case "restDataSource":
+          flowFilters.dataSources.push(flowName)
+          break;
+      }
+    }
     const searchParams = {
       deltaFiles: {
         __args: {
           limit: perPage,
           offset: offSet,
           filter: {
-            dataSources: !_.isEmpty(flowName) ? [flowName] : null,
+            ...flowFilters,
             filtered: true,
-            filteredCause: !_.isEmpty(filteredCause) ? `\\Q${filteredCause}\\E` : null,
+            filteredCause: filteredCause,
           },
           orderBy: {
             direction: new EnumType(sortDirection),
@@ -96,18 +118,6 @@ export default function useFiltered() {
     data.value = response.value.data.filteredSummaryByFlow;
   };
 
-  const fetchAllMessage = async () => {
-    const searchParams = {
-      filteredSummaryByMessage: {
-        countPerMessage: {
-          message: true,
-        },
-      },
-    };
-    await queryGraphQL(searchParams, "getFilteredByMessage");
-    allCauses.value = response.value.data.filteredSummaryByMessage.countPerMessage;
-  };
-
   const fetchFilteredSummaryByMessage = async (offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
     const searchParams = {
       filteredSummaryByMessage: {
@@ -134,5 +144,21 @@ export default function useFiltered() {
     data.value = response.value.data.filteredSummaryByMessage;
   };
 
-  return { data, allCauses, loading, loaded, fetchAllFiltered, fetchFilteredSummaryByFlow, fetchFilteredSummaryByMessage, fetchAllMessage, errors };
+  const fetchUniqueMessages = async () => {
+    const searchParams = {
+      filteredSummaryByMessage: {
+        countPerMessage: {
+          message: true,
+        },
+      },
+    };
+    await queryGraphQL(searchParams, "fetchUniqueMessages");
+    return _.chain(response.value.data.filteredSummaryByMessage.countPerMessage)
+      .map((o) => o.message)
+      .uniq()
+      .sort()
+      .value()
+  };
+
+  return { data, loading, loaded, fetchAllFiltered, fetchFilteredSummaryByFlow, fetchFilteredSummaryByMessage, fetchUniqueMessages, errors };
 }

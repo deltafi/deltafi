@@ -27,7 +27,7 @@
         <Menu ref="menu" :model="menuItems" :popup="true" />
         <Paginator v-if="filtered.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFiltered" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
-      <DataTable id="filteredTable" v-model:expandedRows="expandedRows" v-model:selection="selectedDids" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filtered" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFiltered" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+      <DataTable id="filteredTable" v-model:expandedRows="expandedRows" v-model:selection="selectedDids" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filtered" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFiltered" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty>No results to display.</template>
         <template #loading>Loading. Please wait...</template>
         <Column class="expander-column" :expander="true" />
@@ -64,7 +64,7 @@
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
-              <Column field="filtered_cause" header="Filtered Reason">
+              <Column field="filtered_cause" header="Filtered Cause">
                 <template #body="{ data }">
                   {{ filteredActions(data.actions) }}
                 </template>
@@ -121,7 +121,6 @@ import Paginator from "primevue/paginator";
 import DidLink from "@/components/DidLink.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useFiltered from "@/composables/useFiltered";
-import { FilterMatchMode } from "primevue/api";
 
 import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
@@ -143,12 +142,12 @@ const sortDirection = ref("DESC");
 const selectedDids = ref([]);
 
 const props = defineProps({
-  dataSourceName: {
-    type: String,
+  flow: {
+    type: Object,
     required: false,
     default: undefined,
   },
-  filteredCauseSelected: {
+  cause: {
     type: String,
     required: false,
     default: undefined,
@@ -185,10 +184,7 @@ const menuItems = ref([
   },
 ]);
 
-const { data: response, fetchAllFiltered: getFiltered, fetchAllMessage } = useFiltered();
-const filters = ref({
-  last_filter_cause: { value: null, matchMode: FilterMatchMode.EQUALS },
-});
+const { data: response, fetchAllFiltered: getFiltered } = useFiltered();
 
 const actionRowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";
@@ -217,11 +213,10 @@ const actionRowClick = (event) => {
 
 const fetchFiltered = async () => {
   await getPersistedParams();
-  let dataSourceName = props.dataSourceName != null ? props.dataSourceName : null;
-  let filteredMessage = filters.value.last_filter_cause.value != null ? filters.value.last_filter_cause.value.message : null;
+  let flowName = props.flow?.name != null ? props.flow?.name : null;
+  let flowType = props.flow?.type != null ? props.flow?.type : null;
   loading.value = true;
-  await getFiltered(offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceName, filteredMessage);
-  await fetchAllMessage();
+  await getFiltered(offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, props.cause);
   filtered.value = response.value.deltaFiles.deltaFiles;
   totalFiltered.value = response.value.deltaFiles.totalCount;
   loading.value = false;
@@ -287,41 +282,18 @@ const onSort = (event) => {
 defineExpose({
   fetchFiltered,
 });
+
 const setupWatchers = () => {
   watch(
-    () => props.dataSourceName,
+    () => [props.flow, props.cause],
     () => {
       fetchFiltered();
-    }
-  );
-
-  watch(
-    () => props.filteredCauseSelected,
-    () => {
-      filters.value.last_filter_cause.value = props.filteredCauseSelected ? { message: props.filteredCauseSelected } : null;
-    }
-  );
-
-  watch(
-    () => props.acknowledged,
-    () => {
-      selectedDids.value = [];
-      fetchFiltered();
-    }
-  );
-
-  watch(
-    () => filters.value.last_filter_cause.value,
-    () => {
-      let filterCause = filters.value.last_filter_cause.value != null ? filters.value.last_filter_cause.value.message : null;
-      fetchFiltered();
-      emit("filterCauseChanged:filteredCause", filterCause);
     }
   );
 };
+
 onMounted(async () => {
   await getPersistedParams();
-  filters.value.last_filter_cause.value = props.filteredCauseSelected ? { message: props.filteredCauseSelected } : null;
   await fetchFiltered();
   setupWatchers();
 });

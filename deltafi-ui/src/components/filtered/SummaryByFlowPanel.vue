@@ -29,7 +29,11 @@
     <DataTable id="filteredSummaryTable" v-model:selection="selectedFiltered" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Flow" :sortable="true" class="filename-column" />
+      <Column field="flow" header="Flow" :sortable="true" class="filename-column">
+        <template #body="{ data }">
+          <a class="monospace" @click="showAllTab(data.flow, data.type)">{{ data.flow }}</a>
+        </template>
+      </Column>
       <Column field="type" header="Flow Type" :sortable="true" />
       <Column field="count" header="Count" :sortable="true" />
     </DataTable>
@@ -54,7 +58,7 @@ import useFiltered from "@/composables/useFiltered";
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
 
-const emit = defineEmits(["refreshFilters"]);
+const emit = defineEmits(["refreshFilters", "showAllTab"]);
 const { data: response, fetchFilteredSummaryByFlow } = useFiltered();
 const retryResumeDialog = ref();
 const loading = ref(true);
@@ -67,10 +71,10 @@ const sortDirection = ref("DESC");
 const selectedFiltered = ref([]);
 
 const props = defineProps({
-  dataSourceFlowName: {
-    type: String,
+  flow: {
+    type: Object,
     required: false,
-    default: undefined,
+    default: undefined
   },
 });
 
@@ -112,9 +116,8 @@ onMounted(async () => {
 
 const fetchFilteredFlow = async () => {
   getPersistedParams();
-  let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await fetchFilteredSummaryByFlow(offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
+  await fetchFilteredSummaryByFlow(offset.value, perPage.value, sortDirection.value, props.flow?.name);
   filteredFlow.value = response.value.countPerFlow;
   totalFilteredFlow.value = response.value.totalCount;
   loading.value = false;
@@ -147,6 +150,10 @@ defineExpose({
   fetchFilteredFlow,
 });
 
+const showAllTab = (flowName, flowType, cause) => {
+  emit("showAllTab", flowName, flowType, cause);
+};
+
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
@@ -164,16 +171,8 @@ const onPage = async (event) => {
 };
 const setupWatchers = () => {
   watch(
-    () => props.dataSourceFlowName,
+    () => props.flow,
     () => {
-      fetchFilteredFlow();
-    }
-  );
-
-  watch(
-    () => props.acknowledged,
-    () => {
-      selectedFiltered.value = [];
       fetchFilteredFlow();
     }
   );
