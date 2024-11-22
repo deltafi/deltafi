@@ -225,6 +225,29 @@ ALL_SNAPSHOT_FIELDS="id
                 }
               }
             }
+            users {
+              id
+              name
+              username
+              password
+              dn
+              roles {
+                id
+                name
+                permissions
+                createdAt
+                updatedAt
+              }
+              createdAt
+              updatedAt
+            }
+            roles {
+              id
+              name
+              permissions
+              createdAt
+              updatedAt
+            }
           "
 
 ALL_RESULT_FIELDS="success info errors"

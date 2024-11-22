@@ -173,6 +173,29 @@ export default function useSystemSnapshots() {
           ...defaultActionFields
         }
       }
+    },
+    users: {
+      id: true,
+      name: true,
+      username: true,
+      password: true,
+      dn: true,
+      roles: {
+        id: true,
+        name: true,
+        permissions: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      createdAt: true,
+      updatedAt: true,
+    },
+    roles: {
+      id: true,
+      name: true,
+      permissions: true,
+      createdAt: true,
+      updatedAt: true
     }
   }
 

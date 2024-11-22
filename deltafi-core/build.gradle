@@ -143,6 +143,8 @@ generateJava {
             "ExpectedFlowInput": "org.deltafi.common.types.integration.ExpectedFlow",
             "ExpectedContentData": "org.deltafi.common.types.integration.ExpectedContentData",
             "ExpectedContentDataInput": "org.deltafi.common.types.integration.ExpectedContentData",
+            "Role": "org.deltafi.core.types.snapshot.RoleSnapshot",
+            "RoleInput": "org.deltafi.core.types.snapshot.RoleSnapshot",
             "TestResult": "org.deltafi.core.types.integration.integration.TestResult",
             "TestStatus": "org.deltafi.common.types.TestStatus",
             "TimedDataSource": "org.deltafi.core.types.TimedDataSource",
@@ -165,6 +167,8 @@ generateJava {
             "UiProperties": "org.deltafi.core.configuration.ui.UiProperties",
             "UiPropertiesInput": "org.deltafi.core.configuration.ui.UiProperties",
             "UniqueKeyValues": "org.deltafi.core.types.UniqueKeyValues",
+            "User": "org.deltafi.core.types.snapshot.UserSnapshot",
+            "UserInput": "org.deltafi.core.types.snapshot.UserSnapshot",
             "Variable": "org.deltafi.common.types.Variable",
             "VariableInput": "org.deltafi.common.types.Variable"
     ]

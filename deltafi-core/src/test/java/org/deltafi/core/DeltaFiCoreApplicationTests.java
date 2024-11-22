@@ -60,8 +60,11 @@ import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.types.*;
 import org.deltafi.common.types.integration.*;
+import org.deltafi.core.types.Role.Input;
 import org.deltafi.core.types.integration.*;
+import org.deltafi.core.types.snapshot.RoleSnapshot;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.UserSnapshot;
 import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
@@ -4894,6 +4897,63 @@ class DeltaFiCoreApplicationTests {
 
 		transformFlowRepo.deleteAllById(Stream.of(plugin1Running1, plugin1Running2, plugin1Stopped, plugin2Running)
 						.map(Flow::getId).toList());
+	}
+
+	@Test
+	void testUserRolesSoftReset() {
+		Role unchangedRole = role("noChange", "UIAccess", "StatusView");
+		Role roleToReplace = role("replace", "StatusView", "SurveyCreate");
+		roleRepo.saveAll(List.of(unchangedRole, roleToReplace));
+
+		DeltaFiUser unchangedUser = user("noChange", unchangedRole);
+		DeltaFiUser userToChangeRoles = user("changeRoles", unchangedRole, roleToReplace);
+		DeltaFiUser userToReplace = user("replace", unchangedRole, roleToReplace);
+		userRepo.saveAll(List.of(unchangedUser, userToChangeRoles, userToReplace));
+
+		RoleSnapshot snapReplacementRole = new RoleSnapshot(role("replace", "DeltaFileMetadataView"));
+		RoleSnapshot snapshotOnlyRole = new RoleSnapshot(role("fromSnap", "Admin", "OldPermission"));
+
+		UserSnapshot snapshotReplacementUser = new UserSnapshot(userToReplace);
+		snapshotReplacementUser.setName("changed");
+		snapshotReplacementUser.setRoles(Set.of(snapshotOnlyRole));
+		UserSnapshot snapshotOnlyUser = new UserSnapshot(user("snap", snapshotOnlyRole.toRole()));
+
+		SystemSnapshot snapshot = new SystemSnapshot();
+		snapshot.setRoles(List.of(snapReplacementRole, snapshotOnlyRole));
+		snapshot.setUsers(List.of(snapshotReplacementUser, snapshotOnlyUser));
+
+		userService.resetFromSnapshot(snapshot, false);
+
+		assertThat(userRepo.findById(unchangedUser.getId()).orElseThrow()).isEqualTo(unchangedUser);
+
+		Set<String> changePermissions = new DeltaFiUserDTO(userRepo.findById(userToChangeRoles.getId()).orElseThrow()).permissions();
+		assertThat(changePermissions).contains("UIAccess", "StatusView", "DeltaFileMetadataView");
+
+		DeltaFiUser replacedUser = userRepo.findById(userToReplace.getId()).orElseThrow();
+		assertThat(replacedUser.getUsername()).isEqualTo(userToReplace.getUsername());
+		assertThat(replacedUser.getName()).isEqualTo("changed");
+		assertThat(replacedUser.getRoles()).hasSize(1);
+		assertThat(replacedUser.getRoles().iterator().next().getPermissions()).hasSize(1).contains("Admin");
+
+		assertThat(roleRepo.findById(unchangedRole.getId()).orElseThrow()).isEqualTo(unchangedRole);
+		assertThat(roleRepo.findById(roleToReplace.getId()).orElseThrow().getPermissions()).isEqualTo(snapReplacementRole.toRole().getPermissions());
+		// new role was added from the snapshot, and the invalid permission was pruned
+		assertThat(roleRepo.findById(snapshotOnlyRole.getId()).orElseThrow().getPermissions()).hasSize(1).contains("Admin");
+	}
+
+	private Role role(String name, String ... permissions) {
+		Role role = new Role(new Role.Input(name, List.of(permissions)));
+		role.setUpdatedAt(NOW);
+		role.setCreatedAt(NOW);
+		return role;
+	}
+
+	private DeltaFiUser user(String name, Role ... roles) {
+		DeltaFiUser user = new DeltaFiUser(DeltaFiUser.Input.builder().name(name).username(name).build());
+		user.setRoles(Set.of(roles));
+		user.setCreatedAt(NOW);
+		user.setUpdatedAt(NOW);
+		return user;
 	}
 
 	Link link() {

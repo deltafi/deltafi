@@ -83,9 +83,9 @@ class DeltaFiUserServiceTest {
     private ArgumentCaptor<DeltaFiUser> userCaptor;
 
     public DeltaFiUserServiceTest(@Mock DeltaFiUserRepo deltaFiUserRepo, @Mock EntityResolver entityResolver,
-                                  @Mock RoleService roleService, @Mock PasswordEncoder passwordEncoder) {
+                                  @Mock RoleService roleService, @Mock PasswordEncoder passwordEncoder, @Mock PermissionsService permissionsService) {
         this.authProperties = new AuthProperties(null);
-        this.userService = new DeltaFiUserService(deltaFiUserRepo, entityResolver, roleService, passwordEncoder, authProperties);
+        this.userService = new DeltaFiUserService(deltaFiUserRepo, entityResolver, roleService, passwordEncoder, authProperties, permissionsService);
         this.deltaFiUserRepo = deltaFiUserRepo;
         this.entityResolver = entityResolver;
         this.roleService = roleService;

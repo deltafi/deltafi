@@ -53,6 +53,10 @@ public class PermissionsService {
         return permissions == null || permissionNames.containsAll(permissions);
     }
 
+    public List<String> filterValidPermissions(List<String> permissions) {
+        return permissions.stream().filter(permissionNames::contains).toList();
+    }
+
     public record Permission(String category, String name, String description) {
         public static Permission permission(String line) {
             String[] row = line.split(",");

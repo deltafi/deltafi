@@ -28,16 +28,11 @@ import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.generated.types.SystemFlowPlans;
-import org.deltafi.core.types.DeletePolicies;
-import org.deltafi.core.types.PluginVariables;
-import org.deltafi.core.types.ResumePolicy;
+import org.deltafi.core.types.*;
 import org.hibernate.annotations.Type;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Data
 @Entity
@@ -85,4 +80,13 @@ public class SystemSnapshot {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private SystemFlowPlans systemFlowPlans = new SystemFlowPlans();
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<UserSnapshot> users = new ArrayList<>();
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<RoleSnapshot> roles = new ArrayList<>();
+
 }

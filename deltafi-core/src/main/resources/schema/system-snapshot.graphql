@@ -46,6 +46,25 @@ type DataSinkSnapshot {
     expectedAnnotations: [String]
 }
 
+type User {
+    id: UUID!
+    name: String!
+    username: String!
+    password: String
+    dn: String
+    roles: [Role]!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Role {
+    id: UUID!
+    name: String!
+    permissions: [String]!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
 type SystemSnapshot {
     id: UUID!
     reason: String
@@ -61,6 +80,8 @@ type SystemSnapshot {
     dataSinks: [DataSinkSnapshot]
     resumePolicies: [ResumePolicy]!
     systemFlowPlans: SystemFlowPlans!
+    users: [User]!
+    roles: [Role]!
 }
 
 input TimedDataSourceSnapshotInput {
@@ -93,6 +114,25 @@ input DataSinkSnapshotInput {
     expectedAnnotations: [String]
 }
 
+input UserInput {
+    id: UUID!
+    name: String!
+    username: String!
+    password: String
+    dn: String
+    roles: [RoleInput]!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+input RoleInput {
+    id: UUID!
+    name: String!
+    permissions: [String]!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
 input SystemSnapshotInput {
     id: String!
     reason: String
@@ -111,6 +151,8 @@ input SystemSnapshotInput {
     dataSinks: [DataSinkSnapshotInput]
     resumePolicies: [ResumePolicyInput]!
     systemFlowPlans: SystemFlowPlansInput
+    users: [UserInput]
+    roles: [RoleInput]
 }
 
 extend type Query {

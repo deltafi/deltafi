@@ -113,6 +113,15 @@ public class RoleService {
                 .orElseThrow(() -> new EntityNotFound("Role with ID " + roleId + " not found."));
     }
 
+    public void deleteAllRoles() {
+        roleRepo.deleteAll();
+        roleRepo.flush();
+    }
+
+    public void saveAll(List<Role> roles) {
+        roleRepo.saveAll(roles);
+    }
+
     private void validateRole(Role role) {
         ErrorHolder errors = new ErrorHolder();
 

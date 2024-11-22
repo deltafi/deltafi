@@ -29,6 +29,7 @@ public class SnapshotRestoreOrder {
     public static final int FLOW_PLAN_ORDER = Ordered.HIGHEST_PRECEDENCE + 40;
     public static final int FLOW_ORDER = Ordered.HIGHEST_PRECEDENCE + 50;
     public static final int EXPECTED_ANNOTATIONS_ORDER = Ordered.HIGHEST_PRECEDENCE + 60;
+    public static final int USER_ROLE_ORDER = Ordered.HIGHEST_PRECEDENCE + 60;
 
     private SnapshotRestoreOrder() {}
 }

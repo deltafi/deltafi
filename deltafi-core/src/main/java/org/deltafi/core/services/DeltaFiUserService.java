@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +31,10 @@ import org.deltafi.core.repo.DeltaFiUserRepo;
 import org.deltafi.core.security.DnUtil;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.DeltaFiUser.Input;
+import org.deltafi.core.types.snapshot.RoleSnapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.UserSnapshot;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -50,7 +55,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DeltaFiUserService {
+public class DeltaFiUserService implements Snapshotter {
 
     private static final Set<String> DEFAULT_ADMIN = Set.of(DeltaFiConstants.ADMIN_PERMISSION);
     public static final String MUST_BE_UNIQUE = "must be unique";
@@ -63,6 +68,7 @@ public class DeltaFiUserService {
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
     private final AuthProperties authProperties;
+    private final PermissionsService permissionsService;
 
     @PostConstruct
     public void init() {
@@ -173,6 +179,115 @@ public class DeltaFiUserService {
         }
 
         return authentication.getAuthorities().stream().anyMatch(DeltaFiUserService::hasPluginVariableUpdate);
+    }
+
+    /**
+     * Update the SystemSnapshot with current system state
+     *
+     * @param systemSnapshot system snapshot that holds the current system state
+     */
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        systemSnapshot.setUsers(deltaFiUserRepo.findAll().stream().map(UserSnapshot::new).toList());
+        systemSnapshot.setRoles(roleService.getRoles().stream().map(RoleSnapshot::new).toList());
+    }
+
+    /**
+     * Reset the system to the state in the SystemSnapshot
+     *
+     * @param systemSnapshot system snapshot that holds the state at the time of the snapshot
+     * @param hardReset      when true reset all other custom settings before applying the system snapshot values
+     * @return the Result of the reset that will hold any errors or information about the reset
+     */
+    @Override
+    @Transactional
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        if (isEmpty(systemSnapshot.getUsers()) && isEmpty(systemSnapshot.getRoles())) {
+            return Result.builder().info(List.of("Skipped missing users and roles section")).build();
+        }
+        removeInvalidPermissions(systemSnapshot);
+        return hardReset ? hardReset(systemSnapshot) : softReset(systemSnapshot);
+    }
+
+    private boolean isEmpty(List<?> list) {
+        return list == null || list.isEmpty();
+    }
+
+    private void removeInvalidPermissions(SystemSnapshot systemSnapshot) {
+        for (RoleSnapshot roleSnapshot : systemSnapshot.getRoles()) {
+            roleSnapshot.setPermissions(permissionsService.filterValidPermissions(roleSnapshot.getPermissions()));
+        }
+
+        for (UserSnapshot userSnapshot : systemSnapshot.getUsers()) {
+            for (RoleSnapshot roleSnapshot : userSnapshot.getRoles()) {
+                roleSnapshot.setPermissions(permissionsService.filterValidPermissions(roleSnapshot.getPermissions()));
+            }
+        }
+    }
+
+    private Result hardReset(SystemSnapshot systemSnapshot) {
+        deltaFiUserRepo.deleteAll();
+        deltaFiUserRepo.flush();
+        roleService.deleteAllRoles();
+        roleService.saveAll(getSnapshotRoles(systemSnapshot));
+        deltaFiUserRepo.saveAll(getSnapshotUsers(systemSnapshot));
+        return new Result();
+    }
+
+    private Result softReset(SystemSnapshot systemSnapshot) {
+        List<DeltaFiUser> existingUsers = deltaFiUserRepo.findAll();
+        List<Role> existingRoles = roleService.getRoles();
+
+        Map<String, Role> existingRoleMap = existingRoles.stream()
+                .collect(Collectors.toMap(Role::getName, r -> r));
+
+        Map<String, DeltaFiUser> existingUserMap = existingUsers.stream()
+                .collect(Collectors.toMap(DeltaFiUser::getUsername, u -> u));
+
+        List<DeltaFiUser> snapshotUsers = getSnapshotUsers(systemSnapshot);
+        List<Role> snapshotRoles = getSnapshotRoles(systemSnapshot);
+
+        Map<UUID, UUID> remappedRoles = new HashMap<>();
+        for (Role snapshotRole : snapshotRoles) {
+            Role existingRole = existingRoleMap.get(snapshotRole.getName());
+            // if the role exists replace it by using the existing roles id
+            if (existingRole != null) {
+                remappedRoles.put(snapshotRole.getId(), existingRole.getId());
+                snapshotRole.setId(existingRole.getId());
+            }
+        }
+
+        for (DeltaFiUser snapshotUser : snapshotUsers) {
+            DeltaFiUser existingUser = existingUserMap.get(snapshotUser.getUsername());
+            // if the user exists replace it by using the existing users id
+            if (existingUser != null) {
+                snapshotUser.setId(existingUser.getId());
+            }
+
+            for (Role role : snapshotUser.getRoles()) {
+                // if the snapshot role has an updated id, make the change here as well
+                if (remappedRoles.containsKey(role.getId())) {
+                    role.setId(remappedRoles.get(role.getId()));
+                }
+            }
+        }
+
+        roleService.saveAll(snapshotRoles);
+        deltaFiUserRepo.saveAll(snapshotUsers);
+        return new Result();
+    }
+
+    private List<DeltaFiUser> getSnapshotUsers(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getUsers().stream().map(UserSnapshot::toDeltaFiUser).toList();
+    }
+
+    private List<Role> getSnapshotRoles(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getRoles().stream().map(RoleSnapshot::toRole).toList();
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.USER_ROLE_ORDER;
     }
 
     private Set<String> grantedAuthoritiesFromRequest() {
