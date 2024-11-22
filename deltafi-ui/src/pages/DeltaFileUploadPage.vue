@@ -45,7 +45,7 @@
               <InputText type="text" value="Data Source" disabled />
             </div>
             <div class="col-5">
-              <Dropdown v-model="selectedDataSource" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" placeholder="Select a Data Source" show-clear :class="dataSourceDropdownClass" />
+              <Dropdown v-model="selectedDataSource" :options="formattedDataSourceNames" placeholder="Select a REST Data Source" show-clear :class="dataSourceDropdownClass" />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -343,16 +343,11 @@ onMounted(async () => {
 });
 
 const formatDataSourceNames = () => {
-  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
-    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
-  }
-  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
-    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
-  }
+  formattedDataSourceNames.value = allDataSourceFlowNames.value.restDataSource
 };
 
 const checkActiveFlows = () => {
-  selectedDataSource.value = _.flattenDeep([allDataSourceFlowNames.value.restDataSource, allDataSourceFlowNames.value.timedDataSource ]).includes(selectedDataSource.value) ? selectedDataSource.value : null;
+  selectedDataSource.value = allDataSourceFlowNames.value.restDataSource.includes(selectedDataSource.value) ? selectedDataSource.value : null;
 };
 
 const formatMetadataForViewer = (filename, uploadedMetadata) => {
@@ -415,7 +410,7 @@ const uploadMetadataFile = async (file) => {
   let dataSourceSelected = {};
   if (!_.isEmpty(_.get(parseMetadataUpload, "dataSource"))) {
     dataSourceSelected = _.get(parseMetadataUpload, "dataSource");
-    if (allDataSourceFlowNames.value.includes(dataSourceSelected)) {
+    if (allDataSourceFlowNames.value.restDataSource.includes(dataSourceSelected)) {
       selectedDataSource.value = dataSourceSelected;
     } else {
       notify.warn("Ignoring Invalid Data Source", `The uploaded metadata included an invalid Data Source: ${dataSourceSelected}`);
