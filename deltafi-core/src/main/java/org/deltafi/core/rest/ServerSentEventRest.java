@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.rest;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.ServerSentService;
@@ -33,7 +34,8 @@ public class ServerSentEventRest {
 
     @NeedsPermission.UIAccess
     @GetMapping(produces = "text/event-stream")
-    public SseEmitter sse() {
+    public SseEmitter sse(HttpServletResponse response) {
+        response.setHeader("X-Accel-Buffering", "no");
         return serverSentService.createSseEmitter();
     }
 }
