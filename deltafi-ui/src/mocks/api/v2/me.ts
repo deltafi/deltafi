@@ -35,8 +35,6 @@ const generateData = () => {
       // "DeltaFileResume",
       // "FlowPlanCreate",
       // "FlowPlanDelete",
-      // "FlowStart",
-      // "FlowStop",
       // "FlowUpdate",
       // "FlowValidate",
       // "FlowView",

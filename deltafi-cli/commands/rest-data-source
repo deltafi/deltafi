@@ -57,12 +57,12 @@ DATA_SOURCE_NAME=${ARGS[2]}
 VARIABLES="{\"name\": \"$DATA_SOURCE_NAME\" }"
 case "$SUBCOMMAND" in
   start)
-    EXTRACT_PATH=".data.startRestDataSource"
-    QUERY="mutation(\$name: String!) { startRestDataSource(name: \$name) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$name: String!) { setFlowState(flowType: REST_DATA_SOURCE, flowName: \$name, flowState: RUNNING) }"
     ;;
   stop)
-    EXTRACT_PATH=".data.stopRestDataSource"
-    QUERY="mutation(\$name: String!) { stopRestDataSource(name: \$name) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$name: String!) { setFlowState(flowType: REST_DATA_SOURCE, flowName: \$name, flowState: STOPPED) }"
     ;;
   validate)
     EXTRACT_PATH=".data.validateRestDataSource"

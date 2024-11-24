@@ -143,17 +143,23 @@ public class FlowPlanDatafetcher {
     }
 
     @DgsMutation
-    @NeedsPermission.FlowStart
-    public boolean startDataSink(@InputArgument String flowName) {
-        auditLogger.audit("started dataSink {}", flowName);
-        return dataSinkService.startFlow(flowName);
-    }
+    @NeedsPermission.FlowUpdate
+    public boolean setFlowState(FlowType flowType, String flowName, FlowState flowState) {
+        auditLogger.audit("set {} {} to state {}", flowType, flowName, flowState);
 
-    @DgsMutation
-    @NeedsPermission.FlowStop
-    public boolean stopDataSink(@InputArgument String flowName) {
-        auditLogger.audit("stopped dataSink {}", flowName);
-        return dataSinkService.stopFlow(flowName);
+        FlowService<?, ?, ?, ?> flowService = switch(flowType) {
+            case FlowType.REST_DATA_SOURCE -> restDataSourceService;
+            case FlowType.TIMED_DATA_SOURCE -> timedDataSourceService;
+            case FlowType.TRANSFORM -> transformFlowService;
+            case FlowType.DATA_SINK -> dataSinkService;
+        };
+        if (flowState == FlowState.RUNNING) {
+            return flowService.startFlow(flowName);
+        } else if (flowState == FlowState.STOPPED){
+            return flowService.stopFlow(flowName);
+        } else {
+            throw new IllegalArgumentException("Unsupported flow state: " + flowState);
+        }
     }
 
     @DgsMutation
@@ -190,34 +196,6 @@ public class FlowPlanDatafetcher {
     public boolean removeTimedDataSourcePlan(@InputArgument String name) {
         auditLogger.audit("removed timedDataSource plan {}", name);
         return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.TIMED_DATA_SOURCE);
-    }
-
-    @DgsMutation
-    @NeedsPermission.FlowStart
-    public boolean startRestDataSource(@InputArgument String name) {
-        auditLogger.audit("started restDataSource {}", name);
-        return restDataSourceService.startFlow(name);
-    }
-
-    @DgsMutation
-    @NeedsPermission.FlowStart
-    public boolean startTimedDataSource(@InputArgument String name) {
-        auditLogger.audit("started timedDataSource {}", name);
-        return timedDataSourceService.startFlow(name);
-    }
-
-    @DgsMutation
-    @NeedsPermission.FlowStop
-    public boolean stopRestDataSource(@InputArgument String name) {
-        auditLogger.audit("stopped restDataSource {}", name);
-        return restDataSourceService.stopFlow(name);
-    }
-
-    @DgsMutation
-    @NeedsPermission.FlowStop
-    public boolean stopTimedDataSource(@InputArgument String name) {
-        auditLogger.audit("stopped timedDataSource {}", name);
-        return timedDataSourceService.stopFlow(name);
     }
 
     @DgsMutation
@@ -264,20 +242,6 @@ public class FlowPlanDatafetcher {
     public boolean removeTransformFlowPlan(@InputArgument String name) {
         auditLogger.audit("removed transform plan {}", name);
         return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.TRANSFORM);
-    }
-
-    @DgsMutation
-    @NeedsPermission.FlowStart
-    public boolean startTransformFlow(@InputArgument String flowName) {
-        auditLogger.audit("started transform dataSource {}", flowName);
-        return transformFlowService.startFlow(flowName);
-    }
-
-    @DgsMutation
-    @NeedsPermission.FlowStop
-    public boolean stopTransformFlow(@InputArgument String flowName) {
-        auditLogger.audit("stopped transform dataSource {}", flowName);
-        return transformFlowService.stopFlow(flowName);
     }
 
     @DgsMutation

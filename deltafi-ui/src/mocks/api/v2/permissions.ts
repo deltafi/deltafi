@@ -90,23 +90,13 @@ const generateData = () => {
     },
     {
       category: "Flows",
-      name: "FlowStart",
-      description: "Grants the ability to start flows"
-    },
-    {
-      category: "Flows",
-      name: "FlowStop",
-      description: "Grants the ability to stop flows"
-    },
-    {
-      category: "Flows",
       name: "FlowValidate",
       description: "Grants the ability to validate flows"
     },
     {
       category: "Flows",
       name: "FlowUpdate",
-      description: "Grants the ability to update flows"
+      description: "Grants the ability to change flow state and update flows"
     },
     {
       category: "Plugins",

@@ -56,12 +56,12 @@ FLOW_NAME=${ARGS[2]}
 VARIABLES="{\"flowName\": \"$FLOW_NAME\" }"
 case "$SUBCOMMAND" in
   start)
-    EXTRACT_PATH=".data.startTransformFlow"
-    QUERY="mutation(\$flowName: String!) { startTransformFlow(flowName: \$flowName) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$flowName: String!) { setFlowState(flowType: TRANSFORM, flowName: \$flowName, flowState: RUNNING) }"
     ;;
   stop)
-    EXTRACT_PATH=".data.stopTransformFlow"
-    QUERY="mutation(\$flowName: String!) { stopTransformFlow(flowName: \$flowName) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$flowName: String!) { setFlowState(flowType: TRANSFORM, flowName: \$flowName, flowState: STOPPED) }"
     ;;
   validate)
     EXTRACT_PATH=".data.validateTransformFlow"

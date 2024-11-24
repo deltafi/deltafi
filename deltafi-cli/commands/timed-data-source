@@ -73,12 +73,12 @@ case "$SUBCOMMAND" in
     QUERY="mutation(\$name: String!, \$memo: String) { setTimedDataSourceMemo(name: \$name, memo: \$memo) }"
     ;;
   start)
-    EXTRACT_PATH=".data.startTimedDataSource"
-    QUERY="mutation(\$name: String!) { startTimedDataSource(name: \$name) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$name: String!) { setFlowState(flowType: TIMED_DATA_SOURCE, flowName: \$name, flowState: RUNNING) }"
     ;;
   stop)
-    EXTRACT_PATH=".data.stopTimedDataSource"
-    QUERY="mutation(\$name: String!) { stopTimedDataSource(name: \$name) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$name: String!) { setFlowState(flowType: TIMED_DATA_SOURCE, flowName: \$name, flowState: STOPPED) }"
     ;;
   validate)
     EXTRACT_PATH=".data.validateTimedDataSource"

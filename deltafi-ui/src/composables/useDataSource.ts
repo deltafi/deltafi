@@ -17,6 +17,7 @@
 */
 
 import useGraphQL from "./useGraphQL";
+import { EnumType } from "json-to-graphql-query";
 
 export default function useDataSource() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
@@ -112,9 +113,11 @@ export default function useDataSource() {
   // Starts a Rest Data Source by name
   const startRestDataSourceByName = (name: string) => {
     const query = {
-      startRestDataSource: {
+      setFlowState: {
         __args: {
-          name: name,
+          flowType: new EnumType('REST_DATA_SOURCE'),
+          flowName: name,
+          flowState: new EnumType('RUNNING'),
         },
       },
     };
@@ -124,9 +127,11 @@ export default function useDataSource() {
   // Starts a Timed Data Source by name
   const startTimedDataSourceByName = (name: string) => {
     const query = {
-      startTimedDataSource: {
+      setFlowState: {
         __args: {
-          name: name,
+          flowType: new EnumType('TIMED_DATA_SOURCE'),
+          flowName: name,
+          flowState: new EnumType('RUNNING'),
         },
       },
     };
@@ -136,9 +141,11 @@ export default function useDataSource() {
   // Stops a Rest Data Source by name
   const stopRestDataSourceByName = (name: string) => {
     const query = {
-      stopRestDataSource: {
+      setFlowState: {
         __args: {
-          name: name,
+          flowType: new EnumType('REST_DATA_SOURCE'),
+          flowName: name,
+          flowState: new EnumType('STOPPED'),
         },
       },
     };
@@ -148,9 +155,11 @@ export default function useDataSource() {
   // Stops a Timed Data Source by name
   const stopTimedDataSourceByName = (name: string) => {
     const query = {
-      stopTimedDataSource: {
+      setFlowState: {
         __args: {
-          name: name,
+          flowType: new EnumType('TIMED_DATA_SOURCE'),
+          flowName: name,
+          flowState: new EnumType('STOPPED'),
         },
       },
     };

@@ -189,27 +189,27 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static boolean startTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build());
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.TRANSFORM).flowName("sampleTransform").flowState(FlowState.RUNNING).build());
     }
 
     public static boolean stopTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build());
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.TRANSFORM).flowName("sampleTransform").flowState(FlowState.STOPPED).build());
     }
 
     public static boolean startDataSink(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build());
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.DATA_SINK).flowName("sampleEgress").flowState(FlowState.RUNNING).build());
     }
 
     public static boolean stopDataSink(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopDataSinkGraphQLQuery.newRequest().flowName("sampleEgress").build());
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.DATA_SINK).flowName("sampleEgress").flowState(FlowState.STOPPED).build());
     }
 
     public static boolean startTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.TIMED_DATA_SOURCE).flowName(TIMED_DATA_SOURCE_NAME).flowState(FlowState.RUNNING).build());
     }
 
     public static boolean stopTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.TIMED_DATA_SOURCE).flowName(TIMED_DATA_SOURCE_NAME).flowState(FlowState.STOPPED).build());
     }
 
     public static boolean setTimedDataSourceMemo(DgsQueryExecutor dgsQueryExecutor, String memo) {

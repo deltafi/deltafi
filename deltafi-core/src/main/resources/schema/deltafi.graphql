@@ -411,14 +411,7 @@ type Mutation {
   removeTimedDataSourcePlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
 
-  startDataSink(flowName: String!) : Boolean!
-  startRestDataSource(name: String!) : Boolean!
-  startTimedDataSource(name: String!) : Boolean!
-  startTransformFlow(flowName: String!) : Boolean!
-  stopDataSink(flowName: String!) : Boolean!
-  stopRestDataSource(name: String!) : Boolean!
-  stopTimedDataSource(name: String!) : Boolean!
-  stopTransformFlow(flowName: String!) : Boolean!
+  setFlowState(flowType: FlowType!, flowName: String!, flowState: FlowState!) : Boolean!
 
   setRestDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   setTimedDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!

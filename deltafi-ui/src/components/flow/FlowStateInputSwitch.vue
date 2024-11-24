@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowStop')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowStart'))">
+  <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowUpdate')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowUpdate'))">
     <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">

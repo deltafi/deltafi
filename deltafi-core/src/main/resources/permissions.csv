@@ -20,10 +20,8 @@ DeltaFiles,DeltaFileAcknowledge,Grants the ability to acknowledge DeltaFiles in 
 DeltaFiles,DeltaFileCancel,Grants the ability to cancel processing a DeltaFile
 DeltaFiles,DeltaFileIngress,Grants the ability to ingress DeltaFiles
 Flows,FlowView,Grants the ability to view flows
-Flows,FlowStart,Grants the ability to start flows
-Flows,FlowStop,Grants the ability to stop flows
 Flows,FlowValidate,Grants the ability to validate flows
-Flows,FlowUpdate,Grants the ability to update flows
+Flows,FlowUpdate,Grants the ability to change flow state and update flows
 Plugins,PluginsView,Grants the ability to view installed Plugins
 Plugins,PluginInstall,Grants the ability to install Plugins
 Plugins,PluginUninstall,Grants the ability to uninstall Plugins

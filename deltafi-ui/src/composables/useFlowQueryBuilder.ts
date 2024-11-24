@@ -17,6 +17,7 @@
 */
 
 import useGraphQL from "./useGraphQL";
+import { EnumType } from "json-to-graphql-query";
 import { transformFlow, dataSink, flowStatusFields } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
@@ -110,9 +111,11 @@ export default function useFlowQueryBuilder() {
   // Starts a transform
   const startTransformFlowByName = (flowName: string) => {
     const query = {
-      startTransformFlow: {
+      setFlowState: {
         __args: {
+          flowType: new EnumType('TRANSFORM'),
           flowName: flowName,
+          flowState: new EnumType('RUNNING'),
         },
       },
     };
@@ -122,9 +125,11 @@ export default function useFlowQueryBuilder() {
   // Stops a Transform
   const stopTransformFlowByName = (flowName: string) => {
     const query = {
-      stopTransformFlow: {
+      setFlowState: {
         __args: {
+          flowType: new EnumType('TRANSFORM'),
           flowName: flowName,
+          flowState: new EnumType('STOPPED'),
         },
       },
     };

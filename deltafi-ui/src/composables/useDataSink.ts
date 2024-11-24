@@ -70,24 +70,28 @@ export default function useDataSink() {
     return sendGraphQLQuery(query, "getAllFlows");
   };
 
-  // Starts a Egress flow
+  // Starts a data sink
   const startDataSinkByName = (flowName: string) => {
     const query = {
-      startDataSink: {
+      setFlowState: {
         __args: {
+          flowType: new EnumType('DATA_SINK'),
           flowName: flowName,
+          flowState: new EnumType('RUNNING'),
         },
       },
     };
     return sendGraphQLQuery(query, "startDataSinkByName", "mutation");
   };
 
-  // Stops a Egress flow
+  // Stops a data sink
   const stopDataSinkByName = (flowName: string) => {
     const query = {
-      stopDataSink: {
+      setFlowState: {
         __args: {
+          flowType: new EnumType('DATA_SINK'),
           flowName: flowName,
+          flowState: new EnumType('STOPPED'),
         },
       },
     };

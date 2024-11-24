@@ -57,12 +57,12 @@ FLOW_NAME=${ARGS[2]}
 VARIABLES="{\"flowName\": \"$FLOW_NAME\" }"
 case "$SUBCOMMAND" in
   start)
-    EXTRACT_PATH=".data.startDataSink"
-    QUERY="mutation(\$flowName: String!) { startDataSink(flowName: \$flowName) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$flowName: String!) { setFlowState(flowType: DATA_SINK, flowName: \$flowName, flowState: RUNNING) }"
     ;;
   stop)
-    EXTRACT_PATH=".data.stopDataSink"
-    QUERY="mutation(\$flowName: String!) { stopDataSink(flowName: \$flowName) }"
+    EXTRACT_PATH=".data.setFlowState"
+    QUERY="mutation(\$flowName: String!) { setFlowState(flowType: DATA_SINK, flowName: \$flowName, flowState: STOPPED) }"
     ;;
   validate)
     EXTRACT_PATH=".data.validateDataSink"

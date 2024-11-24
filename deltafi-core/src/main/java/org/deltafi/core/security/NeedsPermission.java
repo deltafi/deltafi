@@ -148,18 +148,6 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('FlowStart'" + OR_ADMIN)
-    public @interface FlowStart {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('FlowStop'" + OR_ADMIN)
-    public @interface FlowStop {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('FlowUpdate'" + OR_ADMIN)
     public @interface FlowUpdate {}
 
