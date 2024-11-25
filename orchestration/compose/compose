@@ -688,7 +688,11 @@ uninstall() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" down
 
   # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
-  docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
+  if [[ $(docker ps -a --filter label=deltafi-group -q) ]]; then
+    _info "Removing plugin containers"
+    docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
+    _ok "Plugins removed"
+  fi
 
   rm -rf "${DATA_DIR}"/postgres
 }
