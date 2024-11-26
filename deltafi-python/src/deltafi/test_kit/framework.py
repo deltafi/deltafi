@@ -137,6 +137,7 @@ class TestCaseBase(ABC):
         - compare_tool: (optional) CompareHelper instanced for comparing output content
         - inputs: (optional) List[IOContent]: input content to action
         - parameters: (optional) Dict: map of action input parameters
+        - in_memo: (optional) str: Input 'memo' value for a TimedIngress context
         - in_meta: (optional) Dict: map of metadata as input to action
         - join_meta: (optional): List[Dict]: When a List is provided, this enables the JOIN portion of an action.
         When using JOIN, join_meta must match the size of inputs, though the Dict can be empty
@@ -161,6 +162,7 @@ class TestCaseBase(ABC):
         self.file_name = data["file_name"] if "file_name" in data else "filename"
         self.parameters = data["parameters"] if "parameters" in data else {}
         self.in_meta = data["in_meta"] if "in_meta" in data else {}
+        self.in_memo = data["in_memo"] if "in_memo" in data else None
         self.use_did = data["did"] if "did" in data else None
         self.expected_result_type = None
         self.err_or_filt_cause = None
@@ -280,6 +282,7 @@ class ActionTest(ABC):
             content_service=self.content_service,
             saved_content=[],
             join=join,
+            memo=test_case.in_memo,
             logger=get_logger())
         return self.context
 
