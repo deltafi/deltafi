@@ -552,6 +552,14 @@ _write_startup_file() {
   _append_startup_from_values "REDIS" ".dependencies.valkey"
   _append_startup_from_values "DOCKER_WEB_GUI" ".dependencies.docker_web_gui"
   _append_startup_from_values "ENTITY_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
+
+  extra_conf_dir="http"
+  if [[ -f "${DATA_DIR}/certs/tls.crt" && -f "${DATA_DIR}/certs/tls.key" ]]; then
+      extra_conf_dir="https"
+  fi
+
+  _append "NGINX_CONF_DIR" "${extra_conf_dir}" "${NGINX_SETTINGS}"
+
   _append_compose_profiles
 }
 
@@ -610,8 +618,22 @@ _write_env_files() {
       exit 1
   fi
 
-  _append "AUTH_REQUEST" "/api/v2/auth" "${NGINX_SETTINGS}"
+  include_cert_auth=''
+  proxy_cache_key='no-auth'
+  if [[ $auth_mode == 'basic' ]]; then
+    proxy_cache_key='$$remote_user$$http_authorization'
+  elif [[ $auth_mode == 'cert' ]]; then
+    if [[ ! -f "${DATA_DIR}/certs/ca.crt" || ! -f "${DATA_DIR}/certs/tls.crt" || ! -f "${DATA_DIR}/certs/tls.key" ]]; then
+        echo "Cannot run in cert mode without the ca.crt, tls.crt, and tls.key files in the '${DATA_DIR}/certs' directory."
+        exit 1
+    fi
+    include_cert_auth='include /opt/nginx/https/ssl_verify.conf;'
+    proxy_cache_key='$$ssl_client_s_dn$$http_authorization'
+  fi
+
   _append "DOMAIN" "${domain}" "${NGINX_SETTINGS}"
+  _append "PROXY_CACHE_KEY" "${proxy_cache_key}" "${NGINX_SETTINGS}"
+  _append "INCLUDE_CERT_AUTH" "${include_cert_auth}" "${NGINX_SETTINGS}"
 }
 
 _entity_resolver_config() {

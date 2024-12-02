@@ -346,10 +346,12 @@ services:
           - "ingress"
     restart: unless-stopped
     volumes:
-      - ${SETTINGS_DIR}/nginx:/etc/nginx/templates
+      - ${SETTINGS_DIR}/nginx/conf:/opt/nginx
       - ${DATA_DIR}/certs:/certs
+      - ${SETTINGS_DIR}/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
     ports:
       - "80:80"
+      - "443:443"
       - "8042:8042"
     healthcheck:
       test: ["CMD-SHELL", "curl -so /dev/null http://localhost/ || exit 1"]

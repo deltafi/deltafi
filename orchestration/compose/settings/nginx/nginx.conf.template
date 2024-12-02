@@ -3,6 +3,8 @@ events {
 }
 
 http {
+    proxy_cache_path /tmp/nginx-cache-auth levels=1:2 keys_zone=auth_cache:10m max_size=128m inactive=30m use_temp_path=off;
+
     map $host $upstream_mapping {
         "~^orchestration.*" "deltafi-docker-ui";
         "~^ingress.*" "deltafi-core";
@@ -41,7 +43,7 @@ http {
     proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header   X-Forwarded-Host $server_name;
 
-    auth_request ${AUTH_REQUEST};
+    auth_request /api/v2/auth;
     auth_request_set $auth_status $upstream_status;
     auth_request_set $user_id $upstream_http_x_user_id;
     auth_request_set $user_name $upstream_http_x_user_name;
@@ -51,9 +53,13 @@ http {
     proxy_set_header X-User-Name $user_name;
     proxy_set_header X-User-Permissions $user_permissions;
     proxy_set_header X-Metrics-Role $user_metrics_role;
+    proxy_set_header Upgrade $http_upgrade;
+
+    include /opt/nginx/${NGINX_CONF_DIR}/redirect_http.conf*;
 
     server {
-        listen 80;
+        include /opt/nginx/${NGINX_CONF_DIR}/listen.conf;
+        ${INCLUDE_CERT_AUTH}
 
         server_name ${DOMAIN};
 
@@ -63,7 +69,11 @@ http {
             proxy_pass              http://deltafi-core;
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
-            proxy_set_header        X-Original-URL http://$http_host;
+            proxy_set_header        X-Original-URL $scheme://$http_host$request_uri;
+            proxy_set_header        ssl-client-subject-dn  $ssl_client_s_dn;
+            proxy_cache_key ${PROXY_CACHE_KEY};
+            proxy_cache auth_cache;
+            proxy_cache_valid 200 1m;
         }
 
         location / {
@@ -78,7 +88,8 @@ http {
     }
 
     server {
-        listen 80;
+        include /opt/nginx/${NGINX_CONF_DIR}/listen.conf;
+        ${INCLUDE_CERT_AUTH}
 
         server_name *.${DOMAIN};
 
@@ -94,6 +105,9 @@ http {
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
             proxy_set_header        X-Original-URL http://$http_host;
+            proxy_cache_key ${PROXY_CACHE_KEY};
+            proxy_cache auth_cache;
+            proxy_cache_valid 200 1m;
         }
     }
 
