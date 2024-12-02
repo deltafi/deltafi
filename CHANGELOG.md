@@ -150,7 +150,7 @@ viewed by selecting the help icon next to the action name on the Flow Plan Build
 - Made deltafi-core host the UI and docs
 - Add goroutine workers to the egress sink
 - Replaced the entity resolver PVC mount with a ConfigMap mount
-- DeltaFileStats endpoint sends an exact count of total DeltaFiles if the estimate is < 100k, else it uses the estimate
+- DeltaFileStats endpoint sends an exact count of total DeltaFiles for less than 100k files, else it uses the estimate
 - Improve query performance by allowing batch fetches
 - No longer guarantee order deltaFiles are deleted in.  Previously the removals were sorted by modified date, now deletes will happen in random order, to improve performance.
 - [deltafi-core] Update generated plugin's gitlab-ci.yml template
@@ -183,7 +183,7 @@ viewed by selecting the help icon next to the action name on the Flow Plan Build
 - Create the child DeltaFile `did` from the action kits so the child `did` can be used within the child result
 - Metrics: Redesigned and retagged ingress and egress bytes/files metrics
 - Convert postgresql varchar fields to text
-- Log a warning when no container is found on plugin uninstall instead of returning an error result 
+- Log a warning when no container is found on plugin uninstall instead of returning an error result
 - When reverting to a snapshot treat missing flows as informational instead of errors
 - Always include system plugin variables in the variables section of the system snapshot
 - Only attempt to seed the admin user and roles when `schedule.maintenance` is true
@@ -275,9 +275,9 @@ viewed by selecting the help icon next to the action name on the Flow Plan Build
 - Immediately update a DeltaFile's status in the database when it is resumed. This fixes cases where it would not show up as resumed while actions were still being performed and cached locally.
 - Fixed bug preventing snapshots from being imported
 - Track DeltaFiles that fail to update during timed join processing and retry them later to prevent them from becoming stuck in flight
-- Fixed a bug where uninstalling a plugin while running in compose could return the incorrect container id to remove due to a regex name filter 
+- Fixed a bug where uninstalling a plugin while running in compose could return the incorrect container id to remove due to a regex name filter
 - When using the "Save and Run Now" option for resume policies, roll the `nextAutoResume` time up to the DeltaFileFlow
-- Fix dataSource sorting and other camelCase fields when using the graphQL deltaFiles endpoint's orderBy 
+- Fix dataSource sorting and other camelCase fields when using the graphQL deltaFiles endpoint's orderBy
 - Fix bug where immutable childDids collection was returned from the database
 
 ### Removed
@@ -339,11 +339,11 @@ viewed by selecting the help icon next to the action name on the Flow Plan Build
 - improve data source created before delete policy performance
 - remove temp table when marking content deleted
 - Clean up warnings and dead code paths throughout the codebase
-- Change delta_files and delta_file_flows postgres jsonb columns to arrays where possible  
+- Change delta_files and delta_file_flows postgres jsonb columns to arrays where possible
 - Change postgres toast compression algorithm from pglz to lz4 for quicker jsonb access
 - Squash flyway migrations
-- Reduce storage size of tables in postgres. Reorder fields for byte alignment, use postgres enums, exclude nulls and blanks in jsonb, and abbreviate jsonb field names. 
-- Improve performance of transforms and dataSinks filters 
+- Reduce storage size of tables in postgres. Reorder fields for byte alignment, use postgres enums, exclude nulls and blanks in jsonb, and abbreviate jsonb field names.
+- Improve performance of transforms and dataSinks filters
 
 ### Upgrade and Migration
 - Updated Java dependencies
@@ -377,7 +377,7 @@ viewed by selecting the help icon next to the action name on the Flow Plan Build
 - Plugins must be recompiled with the latest action kit
 - KinD: due to orchestration file relocation, execution of `orchestration/kind/install.sh` will be
   necessary to re-configure tooling
-- TransformResults now collect a new type, `ChildTransformResult`, in both java and python instead of collecting objects of type TransformResult. 
+- TransformResults now collect a new type, `ChildTransformResult`, in both java and python instead of collecting objects of type TransformResult.
 Java Sample:
 ```java
 TransformResults manyResults = new TransformResults(context);
@@ -389,6 +389,7 @@ Python Sample:
 transform_many_result = TransformResults(context)
 child = ChildTransformResult(context, name)
 transform_many_result.add_result(child)
+```
 - Upgraded GraphiQL UI to 3.4.0
 - Upgrade to Valkey 8.0.1
 - Upgrade to Java 21.0.5
@@ -399,7 +400,24 @@ transform_many_result.add_result(child)
     - redis: 5.2.0
     - urllib3: 2.2.3
     - pytest: 8.3.3
-- Seamless upgrade is not possible since Flyway will remember the old migrations. In postgres run `delete from flyway_schema_history;` before upgrading.
+- Seamless upgrade from release candidates is not possible since Flyway will remember the old migrations. In postgres run `delete from flyway_schema_history;` before upgrading from an RC to 2.0.0.
+
+## [1.2.20] - 2024-09-27
+
+### Added
+- Added 7Z support to decompress actions
+
+## [1.2.19] - 2024-09-09
+
+- No changes for this release
+
+## [1.2.18] - 2024-09-09
+
+### Added
+- Compose - added additional health checks for Loki and Grafana
+
+### Changed
+- Increased HTTP body size for compose NGINX
 
 ## [1.2.17] - 2024-09-03
 
@@ -411,7 +429,7 @@ transform_many_result.add_result(child)
 - Renamed chart header on dashboard from "Delete Policy Activity" to "Content Removed"
 
 ### Fixed
-- Added DataKey to all DataTables. 
+- Added DataKey to all DataTables.
 - RecursiveDecompress action now  batches saves to MinIO
 - Lock down Python dependency version to match those found in deltafi/python:3.12.1-1
 - Fixed potential bug related to default SSL ciphers used in Kubernetes ingress.
@@ -433,7 +451,7 @@ transform_many_result.add_result(child)
 ## [1.2.15] - 2024-08-12
 
 ### Added
-- Added Helper buttons calender refresh to Events page 
+- Added Helper buttons calender refresh to Events page
 - New RecursiveDecompress transform action, which recursively decompresses content, drops compression file suffixes, and catalogs file lineage
 
 ### Changed
@@ -442,7 +460,7 @@ transform_many_result.add_result(child)
 
 ### Fixed
 - Fixed issue in search page calendar looking for data not available on prod builds
-- Arrays of integers are no longer being removed from flows on save. 
+- Arrays of integers are no longer being removed from flows on save.
 
 ### Upgrade and Migration
 - Grafana -> 11.1.3
@@ -477,7 +495,7 @@ transform_many_result.add_result(child)
 ### Fixed
 - Search Page Calendar Helper now base times off of current time not the time when the calendar dialog was opened.
 - Search Page Calendar now shows the time being used every time the dialog is reopened instead of whatever values it was previously closed with. 
-- Values selected in the dropdowns in the JSON Renderers can now be cleared out 
+- Values selected in the dropdowns in the JSON Renderers can now be cleared out
 - Improved clickhouse CPU/RAM performance on compose stack
 - Disable redis persistence on compose stack
 - Compose: Timeouts on startup fixed for slower VMs
@@ -536,22 +554,22 @@ transform_many_result.add_result(child)
     - nginx: docker.io/nginx:1.27.0-alpine
     - promtail: docker.io/grafana/promtail:2.9.3
     - mongodb: docker.io/bitnami/mongodb:5.0.17
-    - redis: docker.io/bitnami/redis:7.2.4 
+    - redis: docker.io/bitnami/redis:7.2.4
     - clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
 
 ## [1.2.9] - 2024-06-14
 
 ### Changed
-- Auto Resume remove confirmation should show Name instead of Id 
+- Auto Resume remove confirmation should show Name instead of Id
 
 ### Fixed
 - Fixed errors displayed when installing a plugin on the Plugins page
 - Trim groupId, artifactId, and version on Plugins page
-- Sorted plugin list in "Select a Plugin" dropdown on Flows page 
-- Fixed default boolean and integer values not being set in Actions in Flow Builder 
+- Sorted plugin list in "Select a Plugin" dropdown on Flows page
+- Fixed default boolean and integer values not being set in Actions in Flow Builder
 
 ### Upgrade and Migration
-- Minio: RELEASE.2024-06-11T03-13-30Z 
+- Minio: RELEASE.2024-06-11T03-13-30Z
 - Upgrade to Grafana 11.0.0
 - Upgrade to Clickhouse 24.3.3
 
@@ -576,7 +594,7 @@ transform_many_result.add_result(child)
 - Grafana runs in kubernetes as a stateful set
 
 ### Fixed
-- Fixed Boolean values being removed on Flow Builder saves 
+- Fixed Boolean values being removed on Flow Builder saves
 - Removed asterisks from two non-mandatory fields on the Auto Resume Rule form.
 
 ## [1.2.6] - 2024-04-25
@@ -699,28 +717,28 @@ systemSnapshot Mongo database collections with the following:
 ### Fixed
 - Fixed panel header height on Ingress Routing page.
 - Fixed a bug when viewing content containing multiple files of different file types.
-- Fixed the handling of carriage returns in the BoundedLineReader 
+- Fixed the handling of carriage returns in the BoundedLineReader
 
 ## [1.2.1] - 2024-02-23
 
 ### Added
-- Added the ability to add and update Ingress Actions to UI. 
-- Added scrollToTop on the actionConfigurationDialog when there are errors 
+- Added the ability to add and update Ingress Actions to UI.
+- Added scrollToTop on the actionConfigurationDialog when there are errors
 - UI: Clicking on an action in a `RETRIED` state on the DeltaFile Viewer now shows the error cause and context.
 - UI: Display local git branch in UI when running in development mode.
 
 ### Changed
 - Consolidated metrics chart panels on the dashboard into a single Metrics panel and incorporated a timeframe dropdown.
 - Changed default chart refresh interval from 5 minutes to 1 minute.
-- Description is now an editable field for existing flows in the flow plan builder 
+- Description is now an editable field for existing flows in the flow plan builder
 - UI: Content Viewer now detects JSON and XML content regardless of `mediaType`.
 - Replaced "Show Acknowledged" button on Errors page with a dropdown of Errors, Acknowledged, and All.
 
 ### Fixed
-- Fixed bugs with Flow Plan Builder collect fields 
-- Fixed headers on all dialogs and in the Flow Plan Builder 
-- Fixed issue when you have a property that uses the boolean json schema renderer the initial value put into the renderer is held on even if you try to change it. 
-- Fixed issue where our Integer Json Renderer wasnt able to support string forms of numbers. 
+- Fixed bugs with Flow Plan Builder collect fields
+- Fixed headers on all dialogs and in the Flow Plan Builder
+- Fixed issue when you have a property that uses the boolean json schema renderer the initial value put into the renderer is held on even if you try to change it.
+- Fixed issue where our Integer Json Renderer wasnt able to support string forms of numbers.
 - Fixed a bug on the search page that was causing the back button to not behave as expected.
 
 ### Tech-Debt/Refactor
@@ -763,7 +781,7 @@ systemSnapshot Mongo database collections with the following:
 ## [1.1.18] - 2024-01-13
 
 ### Changed
-- UI: Rearranged sidebar menu by moving DeltaFiles above Metrics for improved navigation. 
+- UI: Rearranged sidebar menu by moving DeltaFiles above Metrics for improved navigation.
 - `cluster destroy` command will optionally destroy all docker registry containers and volumes associated with the cluster
 
 ### Fixed
@@ -812,10 +830,10 @@ systemSnapshot Mongo database collections with the following:
 - Added a mutation to task a `TimedIngressFlow` on demand with the option to override the `memo` value
 
 ### Changed
--Add better indication of required field throughout web UI. 
+-Add better indication of required field throughout web UI.
 
 ### Fixed
-- Fixed a bug when cloning a flow from the flows page the "Clone From: (Optional)" not populated correctly. 
+- Fixed a bug when cloning a flow from the flows page the "Clone From: (Optional)" not populated correctly.
 - Regression in content API endpoint causing issues with missing content.
 - Fixed collected DeltaFiles not completing when aggregate stage changes.
 - Updated the `uninstall` CLI command to properly parse the latest `mongo-eval` output format when attempting to drop collections
@@ -854,7 +872,7 @@ systemSnapshot Mongo database collections with the following:
 - New mutation `setTimedIngressMemo` allows the `memo` of a TimedIngressAction to be set (or cleared if `null`). The TimedIngress must not be RUNNING. Requires the ADMIN role
 
 ### Changed
-- Improved error message and cause filtering on Errors and Filtered pages. 
+- Improved error message and cause filtering on Errors and Filtered pages.
 - Improved `Clickhouse flows by annotation` dashboard with improved flow detail and summaries
 - System Performance dashboard has gauges for CPU/RAM on each node
 - System Overview has similar layout to the Flow By Annotation dashboard
@@ -879,15 +897,15 @@ systemSnapshot Mongo database collections with the following:
 
 ### Tech-Debt/Refactor
 - Query current action queue sizes from redis instead of graphite
-- Move error acknowledged from partial index criteria to index field in mongo error index 
+- Move error acknowledged from partial index criteria to index field in mongo error index
 - Batched metrics in nodemonitor and clustermonitor to improve graphite performance
-- Improve performance of the deltafi-monitor 
+- Improve performance of the deltafi-monitor
 - Refactored collect (primarily by removing the READY_TO_COLLECT action state) to stop additional Mongo writes
 - Reduce API memory footprint and CPU usage
 - Decrease API response times for metrics/content requests
 - Reduce delay before seeing initial status report when the UI is first loaded
 - Change default number of API workers from 8 to 4
-- API: Reduce memory usage and latency for content endpoint 
+- API: Reduce memory usage and latency for content endpoint
 - API: Reduce memory allocation in survey endpoint
 - Improve rebuild velocity for deltafi-api docker images
 
@@ -926,8 +944,8 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 
 ### Changed
 - A DeltaFile that has been scheduled for an auto-resume attempt can now be cancelled
-- Restore "created before" mongo index 
-- Rewrite egress sink in go 
+- Restore "created before" mongo index
+- Rewrite egress sink in go
 
 ### Fixed
 - Fixed Json Schema configuring maps issues
@@ -949,46 +967,46 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 - Added validation to flow builder to prevent saving if the flow won't be accepted.
 - Added visual indicators to panels to alert if there is a required action not provided.
 - Added overlay dismissal of the new action popup tree when the maximum number of actions added has been reached.
-- Added raw json view to view flow plan json and schema. Dialog is triggered by pressing "d+e+v". 
-- Add ingressBytes index 
-- Add log message when timed delete starts, mirroring existing disk space delete message 
+- Added raw json view to view flow plan json and schema. Dialog is triggered by pressing "d+e+v".
+- Add ingressBytes index
+- Add log message when timed delete starts, mirroring existing disk space delete message
 - New CLI command `timed-ingress` to start/stop a timed ingress
 
 ### Changed
-- Use a lower cost bcrypt hash for passwords in basic auth to improve performance 
+- Use a lower cost bcrypt hash for passwords in basic auth to improve performance
 - Disk space delete policies sort by modified date instead of created date
-- Flush DeltaFileCache to disk on core shutdown 
+- Flush DeltaFileCache to disk on core shutdown
 - Ensure the old core pod is stopped before starting the new one during an upgrade
 
 ### Fixed
 - ETL was syncing to the most recent deltafile in the clickhouse database for the timestamp for beginning Mongo deltafile queries.  In the case where surveys were added while the ETL job was down, it woould catch up from the latest survey timestamp instead of the latest regular deltafile timestamp.
 - Fix logic error in delete rerun loop
-- Increment DeltaFile mongo object version on all updates 
-- Only add the `filtered` flag to the search criteria once when `filteredCause` criteria is included  
-- Ensure sort is by modified time when running a complete-time delete policy, sorting correctly and using the index more efficiently 
+- Increment DeltaFile mongo object version on all updates
+- Only add the `filtered` flag to the search criteria once when `filteredCause` criteria is included
+- Ensure sort is by modified time when running a complete-time delete policy, sorting correctly and using the index more efficiently
 - Fixed flow builder configuration pop up saving selected "Clone From" data when "Type" is changed or removed.
 - Refresh the resume policy cache before attempting to apply policies in case they were just updated by another core pod
 - Fix a null pointer exception when building ActionInput for timed ingress actions
 
 ### Tech-Debt/Refactor
 - Added missing UI mocks for __Filtered__ and __Ingress Actions__ pages.
-- Cluster monitor sends metrics to graphite in one batch 
+- Cluster monitor sends metrics to graphite in one batch
 - When possible, only update fields that have changed when updating DeltaFiles
 - Optimize indexes to improve performance of Mongo deltafile delete queries
-- Reduce number of mongo queries from clickhouse ETL job 
-- Cleaned up HoverSaveButton.vue file that the Flow Builder uses. 
+- Reduce number of mongo queries from clickhouse ETL job
+- Cleaned up HoverSaveButton.vue file that the Flow Builder uses.
 - Reduce FlowfileEgressAction memory usage by streaming data
 - Reduce Flowfile Ingress memory usage by streaming data
 - set Minio scanner speed to slow to prioritize reads and writes over lifecycle events
 - turn Minio browser off
-- Performance improvements for AUDIT logging 
+- Performance improvements for AUDIT logging
 - Pydantic Python API/interface updated to v2
-- Queue management service was querying the database for action types, use cached data instead 
+- Queue management service was querying the database for action types, use cached data instead
 
 ### Upgrade and Migration
-- If using basic auth, resave your password on the Users screen so that it is stored at the new cost setting. 
+- If using basic auth, resave your password on the Users screen so that it is stored at the new cost setting.
 - Ensure ingress is disabled and all files are at rest before beginning upgrade, as the migration is slow and must update all DeltaFiles
-- Minio RELEASE.2023-11-15T20-43-25Z 
+- Minio RELEASE.2023-11-15T20-43-25Z
 - Python plugins must be updated to use the Python Pydantic v2 API/interface
 
 ## [1.1.11] - 2023-11-08
@@ -1002,24 +1020,24 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 
 ### Fixed
 - Resolved a bug that was causing slow selection of DeltaFiles on the Search page.
-- Allow strings up to 16 MB to be serialized into ActionInputs in the Java action kit 
-- Ensure reinjected child actions are cold queued if needed 
+- Allow strings up to 16 MB to be serialized into ActionInputs in the Java action kit
+- Ensure reinjected child actions are cold queued if needed
 - Improve core memory use when too many files are flowing through the system. Introduce a semaphore to limit how many messages will be pulled off the queue, configurable with the `coreInternalQueueSize` property.
 - Do not start unnecessary processing threads in ingress.
 - UI: Timestamp component now renders "-" instead of "Invalid Date" if passed a null/undefined.
 - Fixed bug in egress-sink causing no files to be written to disk.
 - Include `SCHEMA_VERSION` field in all partial DeltaFile queries so that up conversion is not attempted.
-- Fix memory issue: Replace Metric tag string concatenation with StringBuilder 
+- Fix memory issue: Replace Metric tag string concatenation with StringBuilder
 
 ### Tech-Debt/Refactor
-- Do not create empty arrays and maps when initializing DeltaFile and Action objects, since they will be overwritten upon serialization 
+- Do not create empty arrays and maps when initializing DeltaFile and Action objects, since they will be overwritten upon serialization
 - Refactor DeltaFileImpl mongo queries using fluent interfaces.  Creates cleaner code and queries sent to the DB.
-- Reduce minio partSize from 100,000,000 to 10,000,000 to reduce memory allocations 
+- Reduce minio partSize from 100,000,000 to 10,000,000 to reduce memory allocations
 
 ## [1.1.10] - 2023-11-06
 
 ### Fixed
-- Avoid extra calls to minio delete if content has already been deleted. 
+- Avoid extra calls to minio delete if content has already been deleted.
 
 ### Removed
 - Clickhouse related INFO logging on every write (ETL and API)
@@ -1030,35 +1048,35 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 - Cleaned up rubocop warnings in deltafi-api
 - Refactored clickhouse client to its own module
 - When mongo or the core are busy for long periods of time due to bursts of traffic, timed delete policies can fall behind. Ensure that disk delete policies rerun in between batches of timed deletes.
-- Move the `DeltaFiPropertiesService` initialization from a @PostConstruct method to the constructor.  
+- Move the `DeltaFiPropertiesService` initialization from a @PostConstruct method to the constructor.
 - Remove stray DeltaFilesService @MongoRetryable annotations. OptimisticLockingFailureExceptions are handled in one place in processResult().
 - Spread processing of requeued DeltaFiles to all core workers instead of just the core.
 
 ## [1.1.9] - 2023-11-03
 
 ### Added
-- Implemented page routing guard that can be used to prevent navigating to another page if certain conditions are met. 
+- Implemented page routing guard that can be used to prevent navigating to another page if certain conditions are met.
 - Added validation of timed ingress cron schedule.
 
 ### Changed
 - Added collect configuration in flows.
 - Removed JOIN action type from Auto Resume page.
 - Updated Headings on errors page tabs.
-- Change helm chart `nodemonitor` name to `deltafi-nodemonitor` for consistency with other apps 
+- Change helm chart `nodemonitor` name to `deltafi-nodemonitor` for consistency with other apps
 - Replaced interval with cron expression in timed ingress
 - Update documentation to reflect supported OS/configurations, consolidate pre-reqs/usage of KinD environment, and bring pages for KinD usage and Contributors to the top-level.
 - Changed default value for `smokeEgressUrl` to `http://deltafi-egress-sink-service/blackhole`.
 - Changed interval to cron schedule in timed ingress docs.
 
 ### Fixed
-- Fixed flow plan builder redirect catch always firing on save while editing an existing flow plan 
+- Fixed flow plan builder redirect catch always firing on save while editing an existing flow plan
 - Fixed a bug that prevented the API from rendering content for filenames containing commas.
-- Prevent memory growth in core-actions by saving non-streaming archives to minio in batches 
+- Prevent memory growth in core-actions by saving non-streaming archives to minio in batches
 - UI: Resolved a CSS bug that was impacting the menu in the content viewer.
-- Core should heartbeat queue names, not identity.  Queue name is prepended with dgs-.  These were showing up as orphaned queues. 
+- Core should heartbeat queue names, not identity.  Queue name is prepended with dgs-.  These were showing up as orphaned queues.
 - Allocate two additional threads to the core jedis thread pool to account for the incoming action event threads
 - Core and workers emit heartbeat for the non-affinitized dgs topic so it is not reported as an orphan
-- Fix race where deltaFile cache cleanup could remove a deltaFile in process from the cache 
+- Fix race where deltaFile cache cleanup could remove a deltaFile in process from the cache
 - Mongo excessive CPU usage caused by @ConditionalOnProperty annotation being ignored when used in conjunction with @Scheduled in QueueManagementService
 
 ### Removed
@@ -1066,21 +1084,21 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 - Removed smoke file creation from egress-sync in favor of `smoke-test-ingress` timed ingress action.
 
 ### Tech-Debt/Refactor
-- Restructure deltaFileStats to reduce mongo CPU load.  Total bytes is no longer displayed on the top bar of the dashboard. 
+- Restructure deltaFileStats to reduce mongo CPU load.  Total bytes is no longer displayed on the top bar of the dashboard.
 - Improve DeltaFile cache flushing.  Flush to the database at the configured deltaFileCache.syncSeconds interval.  Previously it was only flushing if the modified time was greater than this interval, but now it checks against the last database sync time.  This fixes a race with requeues that would often cause Mongo OptimisticLockingExceptions and duplicated work.
-- Adjusted deltaFile collection indexes for better performance 
+- Adjusted deltaFile collection indexes for better performance
 - Small DeltaFilesService optimizations and cleanups
 - Change ConfigurableFixedDelayTrigger semantics so that there is a fixed delay between executions, as opposed to running at a fixed rate
-- Optimize deltaFileStats query 
+- Optimize deltaFileStats query
 
 ## [1.1.8] - 2023-10-28
 
 ### Added
-- Added new Filtered page similar to Errors page. 
-- Added the ability to import existing flow plans into the flow builder. 
+- Added new Filtered page similar to Errors page.
+- Added the ability to import existing flow plans into the flow builder.
 - Added the ability to edit existing system plugin flow plans in the flow builder.
 - Added Ingress Actions page.
-- Added validation to make sure new flow plans being created dont have name that match names of existing flow plans within our system 
+- Added validation to make sure new flow plans being created dont have name that match names of existing flow plans within our system
 - New metric `action_execution_time_ms` tracks action execution time in millisecond per action, and includes class name tag
 - New Action Execution Time graph on System Overview
 - New `MetadataToAnnotationTransformAction` allows metadata to be filtered, and stored as annotations, with optional key modification
@@ -1099,8 +1117,8 @@ kubectl scale deploy deltafi-mongodb --replicas=1
   - Add python implementation
 
 ### Fixed
-- Removed focus on the last action name rendered when importing from existing or editing existing flow plans 
-- Fix bug where cold queued egress actions in an transform flow would not be requeued. 
+- Removed focus on the last action name rendered when importing from existing or editing existing flow plans
+- Fix bug where cold queued egress actions in an transform flow would not be requeued.
 - Gradle dependency issue with action-kit test
 - Test framework missing Annotation test methods in `ContentResultAssert`
 
@@ -1109,7 +1127,7 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 ### Added
 - Added a `system-plugin` where flows and variables can be added and removed without a full plugin install
 - Added a mutation, `removePluginVariables`, to remove variables from the system-plugin
-- Implemented new Flow Plan Builder 
+- Implemented new Flow Plan Builder
 - Added new core action, `DeltaFiEgressAction`, for egressing data directly to another DeltaFi instance.
 - Added a query, `filteredSummaryByFlow`, to get a summary of filtered DeltaFiles grouped by flow
   ```graphql

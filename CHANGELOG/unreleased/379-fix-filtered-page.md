@@ -7,7 +7,7 @@ Document any changes on this branch here.
 -
 
 ### Fixed
-- Fixed filtering by flow on Filtered page.
+- Fixed filtering by flow on Filtered page. (#379)
 
 ### Removed
 -

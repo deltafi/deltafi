@@ -7,7 +7,7 @@ Document any changes on this branch here.
 - 
 
 ### Fixed
-- Fixed the connection to the SSE endpoint when running in compose
+- Fixed the connection to the SSE endpoint when running in compose (#378)
 
 ### Removed
 - 

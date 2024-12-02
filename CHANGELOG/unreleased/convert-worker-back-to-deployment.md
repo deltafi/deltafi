@@ -19,7 +19,10 @@ Document any changes on this branch here.
 - 
 
 ### Tech-Debt/Refactor
-- Change core-worker from a statefulSet to a deployment in k8s 
+- Change core-worker from a statefulSet to a deployment in k8s
 
 ### Upgrade and Migration
-- 
+- Kubernetes upgrade to this version will require removing the core worker statefulset prior to upgrade:
+```
+kubectl delete statefulset deltafi-core-worker
+```
