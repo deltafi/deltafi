@@ -109,42 +109,50 @@
       </div>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
-    <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" :dismissable="false" show-close-icon style="width: 25%">
-      <Tree
-        ref="actionsTreeRef"
-        v-model:expandedKeys="expandedKeys"
-        :value="actionsTree"
-        :filter="true"
-        filter-mode="strict"
-        filter-by="filterField"
-        :pt="{
-          container: { class: 'tree-panel-content-height' },
-        }"
-      >
-        <template #default="slotProps">
-          <b>{{ slotProps.node.label }}</b>
-        </template>
-        <template #actions="slotProps">
-          <draggable v-model="slotProps.node.data" item-key="name" :sort="false" :group="{ name: flowActionTypeGroup, pull: 'clone', put: false }" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action" class="list-group mb-0">
-            <template #item="{ element }">
-              <div class="list-group-item h-100 d-flex action-item-width justify-content-between">
-                <div class="btn-group">
-                  <i :class="actionTemplateClass(element)" @click="addAction(flowActionTypeGroup, element)"></i>
-                  <div>{{ element.displayName }}</div>
-                </div>
-                <div v-if="element.docsMarkdown">
-                  <button class="p-panel-header-icon p-link help-button" @click="showHelp(element)">
-                    <span class="pi pi-question-circle text-muted"></span>
-                  </button>
-                </div>
+    <Dialog ref="actionsOverlayPanel" v-model:visible="actionPickerVisible" header="Available Actions" class="flow-plan-builder-page-overlay" :dismissable-mask="false" style="width: 50%" position="right">
+      <Splitter style="height: 80vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
+        <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
+          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedTransformAction" v-model:filters="filters" :value="actionsTree" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" :global-filter-fields="['displayName', 'pluginCoordinate.groupId', 'pluginCoordinate.version']" data-key="id">
+            <template #header>
+              <div class="flex justify-content-end">
+                <span class="p-input-icon-right">
+                  <i class="pi pi-search" />
+                  <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+                </span>
               </div>
             </template>
-          </draggable>
-        </template>
-      </Tree>
-    </OverlayPanel>
-    <Dialog v-model:visible="helpVisible" class="help-dialog" modal :style="{ width: '60vw' }" :breakpoints="{ '1400px': '80vw', '1000px': '90vw' }" :header="helpHeader" dismissable-mask @hide="hideHelp">
-      <div v-html="markdownIt.render(helpMarkdown)" />
+            <template #empty>No Actions found.</template>
+            <template #loading>Loading Actions. Please wait.</template>
+            <Column header-style="width: 3em">
+              <template #body="{ data }">
+                <draggable ref="draggableRef" class="dragArea list-group align-items-center" :list="[data]" :group="{ name: flowActionTypeGroup, pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
+                  <template #item="{ element }">
+                    <span class="d-flex align-items-center"> <i v-tooltip.top="`Grabbing ${element.displayName}`" :class="['p-datatable-reorderablerow-handle', 'pi pi-bars']"></i></span>
+                  </template>
+                </draggable>
+              </template>
+            </Column>
+            <Column field="displayName" header="Name"></Column>
+            <Column field="pluginCoordinate.groupId" header="Group Id" :sortable="true" class="truncate-column">
+              <template #body="{ data }">
+                <div v-if="data.pluginCoordinate.groupId > 16" v-tooltip.top="data.pluginCoordinate.groupId" class="truncate">{{ data.pluginCoordinate.groupId }}</div>
+                <div v-else>{{ data.pluginCoordinate.groupId }}</div>
+              </template>
+            </Column>
+            <Column field="pluginCoordinate.version" header="Version" :sortable="true" class="truncate-column">
+              <template #body="{ data }">
+                <div v-if="data.pluginCoordinate.version > 16" v-tooltip.top="data.pluginCoordinate.version" class="truncate">{{ data.pluginCoordinate.version }}</div>
+                <div v-else>{{ data.pluginCoordinate.version }}</div>
+              </template>
+            </Column>
+          </DataTable>
+        </SplitterPanel>
+        <SplitterPanel :size="startingPanelTwoSize" :style="`overflow-y: auto; ${panelTwoSize}`">
+          <div v-if="helpVisible" class="help-dialog">
+            <div class="p-3" v-html="markdownIt.render(helpMarkdown)" />
+          </div>
+        </SplitterPanel>
+      </Splitter>
     </Dialog>
     <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Transform" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-flow-plan="createFlowPlan">
       <span id="CreateFlowPlan" />
@@ -167,18 +175,19 @@
 </template>
 
 <script setup>
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import HoverSaveButton from "@/components/flowBuilder/HoverSaveButton.vue";
 import LeavePageConfirmationDialog from "@/components/LeavePageConfirmationDialog.vue";
-import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowActions from "@/composables/useFlowActions";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
+import useTopics from "@/composables/useTopics";
 import { computed, nextTick, onBeforeMount, provide, ref, watch } from "vue";
+import { FilterMatchMode } from "primevue/api";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
 import { useRouter } from "vue-router";
-import useTopics from "@/composables/useTopics";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
@@ -186,12 +195,15 @@ import { createAjv } from "@jsonforms/core";
 
 import Badge from "primevue/badge";
 import Button from "primevue/button";
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import Divider from "primevue/divider";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
-import OverlayPanel from "primevue/overlaypanel";
-import Tree from "primevue/tree";
+import Splitter from "primevue/splitter";
+import SplitterPanel from "primevue/splitterpanel";
+
 import draggable from "vuedraggable";
 
 import { jsPlumb } from "jsplumb";
@@ -204,6 +216,7 @@ const markdownIt = new MarkdownIt({
 });
 const helpMarkdown = ref("");
 const helpVisible = ref(false);
+const actionPickerVisible = ref(false);
 const helpHeader = ref("Action Help");
 const handleDefaultsAjv = createAjv({ useDefaults: true });
 const { getAllTopicNames } = useTopics();
@@ -215,7 +228,6 @@ const devKey = keys["d+e+v"];
 const { copy } = useClipboard();
 const notify = useNotifications();
 const router = useRouter();
-const actionsOverlayPanel = ref();
 const actionsTreeRef = ref(null);
 const allTopics = ref(["default"]);
 const { myStyles, publishRenderList, subscribeRenderList } = usePrimeVueJsonSchemaUIRenderers();
@@ -225,6 +237,7 @@ const subscribeRenderers = ref(Object.freeze(subscribeRenderList));
 const subscribeUISchema = ref(undefined);
 
 const schemaForm = ref(null);
+const draggableRef = ref(null);
 
 const allActionsData = ref({});
 
@@ -241,6 +254,39 @@ const displayRawJsonDialog = ref(false);
 const allFlowPlanData = ref({});
 
 const formsConfig = ref({ defaultLabels: true });
+
+const selectedTransformAction = ref(null);
+const startingPanelOneSize = ref(99);
+const startingPanelTwoSize = ref(1);
+const panelOneSize = ref(null);
+const panelTwoSize = ref(null);
+const userResized = ref(false);
+
+watch(selectedTransformAction, async (newItem) => {
+  if (newItem === null || newItem === undefined) {
+    panelOneSize.value = !userResized.value ? splitterSize(99) : panelOneSize.value;
+    panelTwoSize.value = !userResized.value ? splitterSize(1) : panelTwoSize.value;
+  } else {
+    showHelp(newItem);
+    panelOneSize.value = !userResized.value ? splitterSize(50) : panelOneSize.value;
+    panelTwoSize.value = !userResized.value ? splitterSize(50) : panelTwoSize.value;
+  }
+});
+
+const splitterSize = (slitSize) => {
+  return `flex-basis: calc(${slitSize}% - 10px);`;
+};
+
+const customSpitterSize = async (event) => {
+  userResized.value = true;
+  await nextTick();
+  panelOneSize.value = splitterSize(event.sizes[0]);
+  panelTwoSize.value = splitterSize(event.sizes[1]);
+};
+
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+});
 
 // The useResizeObserver determines if the sidebar has been collapsed or expanded.
 // If either has occurred we redo the connections between all actions.
@@ -303,17 +349,16 @@ const viewActionTreeMenu = (event, flowActionType) => {
   // for linking the draggable actions to their respective flowActionType.
   flowActionTypeGroup.value = flowActionType;
   // The actionsTree is the value used to dynamically provide the array of actions for each flowActionType.
-  actionsTree.value = actionTypesTree.value[flowActionType];
-  actionsOverlayPanel.value.toggle(event);
-};
-const showHelp = (action) => {
-  helpMarkdown.value = action.docsMarkdown;
-  helpHeader.value = `${action.displayName} Action Help`;
-  helpVisible.value = true;
+  actionsTree.value = flattenedActionsTypes.value[flowActionType];
+  console.log("actionsTree", actionsTree.value);
+  actionPickerVisible.value = true;
 };
 
-const hideHelp = () => {
-  helpVisible.value = false;
+const showHelp = (action) => {
+  console.log("action", action);
+  helpMarkdown.value = action.docsMarkdown || "# No Docs Available";
+  helpHeader.value = `${action.displayName} Action Help`;
+  helpVisible.value = true;
 };
 
 const defaultTopicTemplate = [{ condition: null, topic: null }];
@@ -568,6 +613,8 @@ const connectActions = async (flowActionType) => {
   }
 
   let plumbIns = flowActionSpecificJsPlumbInstance.value[flowActionType];
+
+  console.log("plumbIns", plumbIns);
 
   plumbIns.ready(function () {
     // Reset the action connects so we can redraw them.
@@ -857,8 +904,10 @@ const getLoadedActions = () => {
       action["type"] = action["name"];
       let displayName = action.name.split(".").pop();
       action["displayName"] = displayName;
+      action["id"] = _.uniqueId(`${displayName}_`);
       let coordinateGrouping = action.name.split(".").slice(0, -1).join(".");
       action["coordinateGrouping"] = coordinateGrouping;
+      action["pluginCoordinate"] = plugin.pluginCoordinates;
       action["name"] = "";
 
       action["parameters"] = {};
@@ -940,10 +989,6 @@ const rawOutput = computed(() => {
 
   return displayOutput;
 });
-
-const actionTemplateClass = (element) => {
-  return ["pi pi-plus-circle", "pr-2", "pt-1", { "added-action-color": !(_.findIndex(flowActionTemplateObject.value[flowActionTemplateMap.get(element.flowActionType).activeContainer], element) == -1) }];
-};
 
 const showSchema = () => {
   schemaVisible.value = !schemaVisible.value;
@@ -1129,4 +1174,15 @@ const publishUISchema = {
 
 <style lang="scss">
 @import "@/styles/pages/transform-builder-page.scss";
+
+td.truncate-column {
+  width: 16rem;
+  max-width: 16rem;
+
+  div.truncate {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+}
 </style>
