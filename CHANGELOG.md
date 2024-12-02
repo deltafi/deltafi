@@ -5,6 +5,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.1.0] - 2024-12-02
+
+### Added
+- Python test kit now supports testing of a Timed Ingress action (#347)
+- Added `users` and `roles` to the system snapshots
+- Added support for YAML file format in python action kit for flows, variables, and integration test files
+
+### Changed
+- Redesign of the Action Picker on the Transform Builder 
+
+### Fixed
+- Fixed the connection to the SSE endpoint when running in compose (#378)
+- Fixed filtering by flow on Filtered page. (#379)
+- Data Source dropdown on Upload page now only displays REST Data Sources. (#380)
+- Compose: Uninstall successfully when there are no plugins
+- Fixed a bug where aged off joined DeltaFile parents caused the child to get stuck in flight. The child is now moved to an errored state in this scenario.
+- Fix bug where JPA was trying to set the deltaFileId for deltaFileFlows and annotations when already set
+- Retain timed data source cron schedule when plugin reregisters if the data source is already running. Only replace it if the data source is stopped or belongs to the system plugin. 
+- Fix typo in `deltafi uninstall` output 
+
+### Tech-Debt/Refactor
+- Consolidate start/stop flow endpoints into single setFlowState command 
+- Change core-worker from a statefulSet to a deployment in k8s
+
+### Upgrade and Migration
+- Kubernetes upgrade to this version will require removing the core worker statefulset prior to upgrade:
+```
+kubectl delete statefulset deltafi-core-worker
+```
+
 ## [2.0.0] - 2024-11-15
 
 ### Highlights
@@ -3505,7 +3535,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.0.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.1.0...main
+[2.1.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.0.0...2.1.0
 [2.0.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.17...2.0.0
 [1.2.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.16...1.2.17
 [1.2.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.15...1.2.16
