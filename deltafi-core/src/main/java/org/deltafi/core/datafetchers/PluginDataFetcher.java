@@ -58,7 +58,14 @@ public class PluginDataFetcher {
     @NeedsPermission.PluginUninstall
     public Result uninstallPlugin(@InputArgument PluginCoordinates pluginCoordinates) {
         auditLogger.audit("uninstalled plugin {}", pluginCoordinates);
-        return deployerService.uninstallPlugin(pluginCoordinates);
+        return deployerService.uninstallPlugin(pluginCoordinates, false);
+    }
+
+    @DgsMutation
+    @NeedsPermission.Admin
+    public Result forcePluginUninstall(@InputArgument PluginCoordinates pluginCoordinates) {
+        auditLogger.audit("forced uninstall of plugin {}", pluginCoordinates);
+        return deployerService.uninstallPlugin(pluginCoordinates, true);
     }
 
     @DgsQuery

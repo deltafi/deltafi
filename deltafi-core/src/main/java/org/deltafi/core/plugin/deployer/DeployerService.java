@@ -33,7 +33,8 @@ public interface DeployerService {
     /**
      * Uninstall the plugin with the given coordinates
      * @param pluginCoordinates coordinates of the plugin to uninstall
+     * @param force uninstall even if there are blockers
      * @return result of the uninstallation process
      */
-    Result uninstallPlugin(PluginCoordinates pluginCoordinates);
+    Result uninstallPlugin(PluginCoordinates pluginCoordinates, boolean force);
 }

@@ -18,6 +18,7 @@
 package org.deltafi.core.datafetchers;
 
 import org.deltafi.common.types.Plugin;
+import org.deltafi.core.generated.client.ForcePluginUninstallProjectionRoot;
 import org.deltafi.core.generated.client.PluginsProjectionRoot;
 import org.deltafi.core.generated.client.UninstallPluginProjectionRoot;
 
@@ -41,6 +42,10 @@ public class PluginDataFetcherTestHelper {
             .groupId()
             .artifactId()
             .version().parent();
+
+    public static final ForcePluginUninstallProjectionRoot FORCED_UNINSTALL_PLUGIN_PROJECTION_ROOT = new ForcePluginUninstallProjectionRoot<>()
+            .success()
+            .errors();
 
     public static final UninstallPluginProjectionRoot UNINSTALL_PLUGIN_PROJECTION_ROOT = new UninstallPluginProjectionRoot<>()
             .success()

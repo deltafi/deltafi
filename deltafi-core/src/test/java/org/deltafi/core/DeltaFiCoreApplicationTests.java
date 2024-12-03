@@ -2087,13 +2087,33 @@ class DeltaFiCoreApplicationTests {
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
 
-
 		Result mockResult = Result.successResult();
-		Mockito.when(deployerService.uninstallPlugin(plugin.getPluginCoordinates())).thenReturn(mockResult);
+		Mockito.when(deployerService.uninstallPlugin(plugin.getPluginCoordinates(), false)).thenReturn(mockResult);
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
 
-		Mockito.verify(deployerService).uninstallPlugin(plugin.getPluginCoordinates());
+		Mockito.verify(deployerService).uninstallPlugin(plugin.getPluginCoordinates(), false);
+		assertThat(result).isEqualTo(mockResult);
+	}
+
+	@Test
+	void forcedUninstallPluginSuccess() throws IOException {
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
+
+		PluginEntity plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class);
+		ForcePluginUninstallGraphQLQuery query =
+				ForcePluginUninstallGraphQLQuery.newRequest()
+						.pluginCoordinates(plugin.getPluginCoordinates()).build();
+
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, FORCED_UNINSTALL_PLUGIN_PROJECTION_ROOT);
+
+		Result mockResult = Result.successResult();
+		Mockito.when(deployerService.uninstallPlugin(plugin.getPluginCoordinates(), true)).thenReturn(mockResult);
+		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
+				"data." + query.getOperationName(), Result.class);
+
+		Mockito.verify(deployerService).uninstallPlugin(plugin.getPluginCoordinates(), true);
 		assertThat(result).isEqualTo(mockResult);
 	}
 

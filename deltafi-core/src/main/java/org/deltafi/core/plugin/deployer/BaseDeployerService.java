@@ -79,16 +79,16 @@ public abstract class BaseDeployerService implements DeployerService {
     }
 
     @Override
-    public Result uninstallPlugin(PluginCoordinates pluginCoordinates) {
+    public Result uninstallPlugin(PluginCoordinates pluginCoordinates, boolean force) {
         PluginEntity plugin = pluginService.getPlugin(pluginCoordinates).orElse(null);
         List<String> uninstallPreCheckErrors = pluginService.canBeUninstalled(plugin);
-        if (!uninstallPreCheckErrors.isEmpty()) {
+        if (plugin == null || (!force && !uninstallPreCheckErrors.isEmpty())) {
             return Result.builder().success(false).errors(uninstallPreCheckErrors).build();
         }
 
         pluginService.uninstallPlugin(pluginCoordinates);
         String appName = pluginCoordinates.getArtifactId();
-        if (plugin != null && StringUtils.isNotBlank(plugin.getImageName())) {
+        if (StringUtils.isNotBlank(plugin.getImageName())) {
             appName = InstallDetails.from(plugin.getImageName()).appName();
         }
         Result retval = removePluginResources(appName);
@@ -96,6 +96,14 @@ public abstract class BaseDeployerService implements DeployerService {
         MarkdownBuilder markdownBuilder = new MarkdownBuilder(pluginCoordinates + "\n\n")
                 .addList("Additional information:", retval.getInfo())
                 .addList("Errors:", retval.getErrors());
+
+        if (force && !uninstallPreCheckErrors.isEmpty()) {
+            // Avoid immutable list exception
+            retval.setInfo(new ArrayList<>(retval.getInfo()));
+            retval.getInfo().add("Forced uninstall ignored the following checks:");
+            retval.getInfo().addAll(uninstallPreCheckErrors);
+            markdownBuilder.addList("Ignored:", uninstallPreCheckErrors);
+        }
 
         String summary = "Plugin uninstalled: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion();
         eventService.createEvent(event(summary, retval.isSuccess(), markdownBuilder));

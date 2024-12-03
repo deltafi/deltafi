@@ -10,6 +10,8 @@ Usage:
   uninstall-plugin [GROUP_ID:ARTIFACT_ID:VERSION] [OPTIONS]
 
 Options:
+  -f, --force       Uninstall the plugin even if the plugin has running flows.  Use with caution as this could have
+                    unintended consequences.
   -h, --help        Show help"
   exit 1
 }
@@ -18,6 +20,10 @@ POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
+    -f|--force)
+      force="true"
+      shift
+      ;;
     *)
       POSITIONAL+=("$1")
       shift
@@ -52,10 +58,15 @@ if [[ -z "$GROUP_ID" || -z "$ARTIFACT_ID" || -z "$VERSION" ]]; then
   exit 1
 fi
 
+MUTATION="uninstallPlugin"
+if ! [ -z ${force} ] && [ "$force" == "true" ]; then
+  MUTATION="forcePluginUninstall"
+fi
+
 DELTAFI_DGS=$(_graphql)
 
 QUERY="mutation {
-         uninstallPlugin(pluginCoordinates: {groupId: \"$GROUP_ID\", artifactId: \"$ARTIFACT_ID\", version: \"$VERSION\"}) {
+         $MUTATION(pluginCoordinates: {groupId: \"$GROUP_ID\", artifactId: \"$ARTIFACT_ID\", version: \"$VERSION\"}) {
            success
            info
            errors
@@ -76,11 +87,13 @@ else
   if [[ "$DGS_ERRORS" != "" ]]; then
     log_failed "$DGS_ERRORS"
   else
-    SUCCESS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.success')
+    SUCCESS=$(cat ${TMPFILE} | jq -r ".data.${MUTATION}.success")
     if [[ $SUCCESS == "true" ]]; then
+      INFOS=$(cat ${TMPFILE} | jq -r ".data.${MUTATION}.info | join(\",\")")
       cli_log "Plugin $2 was successfully uninstalled"
+      cli_log "Details: $INFOS"
     else
-      ERRORS=$(cat ${TMPFILE} | jq -r '.data.uninstallPlugin.errors | join(",")')
+      ERRORS=$(cat ${TMPFILE} | jq -r ".data.${MUTATION}.errors | join(\",\")")
       log_failed "$ERRORS"
     fi
   fi
