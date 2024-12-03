@@ -369,7 +369,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n time_bucket_gapfill(($__interval_ms || ' ms')::interval, i.timestamp) AS time,\n i.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n COALESCE(SUM(i.ingress_bytes), 0) AS bytes\nFROM ts_ingresses i\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = i.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE $__timeFilter(i.timestamp)\n AND i.data_source IN ($datasources)\n AND (\n   '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, i.timestamp) AS time,\n    i.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(SUM(i.ingress_bytes), 0) AS bytes\nFROM ts_ingresses i\nLEFT JOIN ts_annotations a ON a.entity_id = i.id AND a.key = '$annotation_key'\nWHERE $__timeFilter(i.timestamp)\n  AND i.data_source IN ($datasources)\n  AND (\n    '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -649,7 +649,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n time_bucket_gapfill(($__interval_ms || ' ms')::interval, i.timestamp) AS time,\n i.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n COALESCE(COUNT(*), 0) AS values\nFROM ts_ingresses i\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = i.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE $__timeFilter(i.timestamp)\n AND i.data_source IN ($datasources)\n AND (\n   '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, i.timestamp) AS time,\n    i.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(COUNT(*), 0) AS values\nFROM ts_ingresses i\nLEFT JOIN ts_annotations a ON a.entity_id = i.id AND a.key = '$annotation_key'\nWHERE $__timeFilter(i.timestamp)\n  AND i.data_source IN ($datasources)\n  AND (\n    '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -988,7 +988,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n e.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n COALESCE(SUM(e.egress_bytes), 0) AS bytes\nFROM ts_egresses e\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = e.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE $__timeFilter(e.timestamp)\n AND e.data_source IN ($datasources)\n AND (\n   '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n    e.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(SUM(e.egress_bytes), 0) AS bytes\nFROM ts_egresses e\nLEFT JOIN ts_annotations a ON a.entity_id = e.id AND a.key = '$annotation_key'\nWHERE $__timeFilter(e.timestamp)\n  AND e.data_source IN ($datasources)\n  AND (\n    '*' IN ($annotation_value)\n    OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n    OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n  )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1267,7 +1267,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n e.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n COALESCE(COUNT(*), 0) AS values\nFROM ts_egresses e\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = e.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE $__timeFilter(e.timestamp)\n AND e.data_source IN ($datasources)\n AND (\n   '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n    e.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(COUNT(*), 0) AS values\nFROM ts_egresses e\n         LEFT JOIN ts_annotations a ON a.entity_id = e.id AND a.key = '$annotation_key'\nWHERE $__timeFilter(e.timestamp)\n  AND e.data_source IN ($datasources)\n  AND (\n    '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1589,7 +1589,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n e.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n COALESCE(COUNT(*), 0) AS values\nFROM ts_errors e\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = e.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE $__timeFilter(e.timestamp)\n AND e.data_source IN ($datasources)\n AND (\n   '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n  e.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n  COALESCE(COUNT(*), 0) AS values\nFROM ts_errors e\nLEFT JOIN ts_annotations a ON a.entity_id = e.id AND a.key = '$annotation_key'\nWHERE $__timeFilter(e.timestamp)\n  AND e.data_source IN ($datasources)\n  AND (\n    '*' IN ($annotation_value)\n    OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n    OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n  )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1887,7 +1887,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n time_bucket_gapfill(($__interval_ms || ' ms')::interval, f.timestamp) AS time,\n f.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n COALESCE(COUNT(*), 0) AS values\nFROM ts_filters f\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = f.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE $__timeFilter(f.timestamp)\n AND f.data_source IN ($datasources)\n AND (\n   '*' IN ($annotation_value)\n   OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n   OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, f.timestamp) AS time,\n  f.data_source || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n  COALESCE(COUNT(*), 0) AS values\nFROM ts_filters f\nLEFT JOIN ts_annotations a ON a.entity_id = f.id AND a.key = '$annotation_key'\nWHERE $__timeFilter(f.timestamp)\n  AND f.data_source IN ($datasources)\n  AND (\n    '*' IN ($annotation_value)\n    OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n    OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n  )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2082,7 +2082,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n combined.data_source,\n COALESCE(a.value, 'Not Present') AS annotation_value,\n COALESCE(SUM(CASE WHEN table_name = 'ingress' THEN bytes END), 0) AS total_ingress_bytes,\n COALESCE(SUM(CASE WHEN table_name = 'ingress' THEN 1 END), 0) AS ingress_files,\n COALESCE(SUM(CASE WHEN table_name = 'egress' THEN bytes END), 0) AS total_egress_bytes,\n COALESCE(SUM(CASE WHEN table_name = 'egress' THEN 1 END), 0) AS egress_files,\n COALESCE(SUM(CASE WHEN table_name = 'error' THEN 1 END), 0) AS error_files,\n COALESCE(SUM(CASE WHEN table_name = 'filter' THEN 1 END), 0) AS filter_files\nFROM (\n SELECT 'ingress' as table_name, data_source, id, ingress_bytes AS bytes \n FROM ts_ingresses \n WHERE $__timeFilter(timestamp)\n   AND data_source IN ($datasources)\n UNION ALL\n SELECT 'egress' as table_name, data_source, id, egress_bytes AS bytes \n FROM ts_egresses \n WHERE $__timeFilter(timestamp)\n   AND data_source IN ($datasources)\n UNION ALL\n SELECT 'error' as table_name, data_source, id, NULL AS bytes \n FROM ts_errors \n WHERE $__timeFilter(timestamp)\n   AND data_source IN ($datasources)\n UNION ALL\n SELECT 'filter' as table_name, data_source, id, NULL AS bytes \n FROM ts_filters \n WHERE $__timeFilter(timestamp)\n   AND data_source IN ($datasources)\n) combined\nLEFT JOIN LATERAL (\n SELECT value \n FROM ts_annotations \n WHERE entity_id = combined.id \n AND key = '$annotation_key'\n LIMIT 1\n) a ON true\nWHERE (\n '*' IN ($annotation_value)\n OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n)\nGROUP BY 1, 2\nORDER BY data_source, annotation_value;",
+          "rawSql": "SELECT\n  combined.data_source,\n  COALESCE(a.value, 'Not Present') AS annotation_value,\n  COALESCE(SUM(CASE WHEN table_name = 'ingress' THEN bytes END), 0) AS total_ingress_bytes,\n  COALESCE(SUM(CASE WHEN table_name = 'ingress' THEN 1 END), 0) AS ingress_files,\n  COALESCE(SUM(CASE WHEN table_name = 'egress' THEN bytes END), 0) AS total_egress_bytes,\n  COALESCE(SUM(CASE WHEN table_name = 'egress' THEN 1 END), 0) AS egress_files,\n  COALESCE(SUM(CASE WHEN table_name = 'error' THEN 1 END), 0) AS error_files,\n  COALESCE(SUM(CASE WHEN table_name = 'filter' THEN 1 END), 0) AS filter_files\nFROM (\n  SELECT 'ingress' as table_name, data_source, id, ingress_bytes AS bytes \n  FROM ts_ingresses \n  WHERE $__timeFilter(timestamp)\n    AND data_source IN ($datasources)\n  UNION ALL\n  SELECT 'egress' as table_name, data_source, id, egress_bytes AS bytes \n  FROM ts_egresses \n  WHERE $__timeFilter(timestamp)\n    AND data_source IN ($datasources)\n  UNION ALL\n  SELECT 'error' as table_name, data_source, id, NULL AS bytes \n  FROM ts_errors \n  WHERE $__timeFilter(timestamp)\n    AND data_source IN ($datasources)\n  UNION ALL\n  SELECT 'filter' as table_name, data_source, id, NULL AS bytes \n  FROM ts_filters \n  WHERE $__timeFilter(timestamp)\n    AND data_source IN ($datasources)\n) combined\nLEFT JOIN ts_annotations a ON a.entity_id = combined.id AND a.key = '$annotation_key'\nWHERE (\n    '*' IN ($annotation_value)\n    OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n    OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n  )\nGROUP BY 1, 2\nORDER BY data_source, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
