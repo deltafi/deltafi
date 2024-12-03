@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.1.1] - 2024-12-03
+
+### Added
+- New GraphQL endpoint `forcePluginUninstall` allows for plugin uninstall, even if there are running flows or other blockers (#361)
+
+### Tech-Debt/Refactor
+- Optimize dataSource by annotation dashboard queries
+- Optimize error analysis dashboard queries 
+
 ## [2.1.0] - 2024-12-02
 
 ### Added
@@ -3535,7 +3544,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.1.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.1.1...main
+[2.1.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.1.0...2.1.1
 [2.1.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.0.0...2.1.0
 [2.0.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.17...2.0.0
 [1.2.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.16...1.2.17
