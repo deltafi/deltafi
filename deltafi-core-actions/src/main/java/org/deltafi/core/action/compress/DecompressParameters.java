@@ -38,6 +38,6 @@ public class DecompressParameters extends ActionParameters {
     private String lineageFilename;
 
     @JsonProperty(defaultValue = "0")
-    @JsonPropertyDescription("Enables recursive decryption/un-archiving of embedded content by checking filename extensions")
+    @JsonPropertyDescription("Enables recursive decompression/un-archiving of embedded content by checking filename extensions")
     private int maxRecursionLevels = 0;
 }

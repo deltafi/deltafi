@@ -31,6 +31,10 @@ minus the compressed file suffix.
 
 If retainExistingContent is true, all input content is written first, in the original order.
 
+When recursion is enabled (maxRecursionLevels > 0), and nested files are discovered with the same name (path + filename),
+the content will be renamed to indicate its parent archive and an optional random ID. To obtain the original filename,
+the `LineageMap::findEntry()` must be used, and access the `fullName` attribute.
+
 When recursion is enabled (maxRecursionLevels > 0), retainExistingContent must be false.
 
 When saving lineage (non-empty lineageFilename), the format is written as a JSON string using the data type
