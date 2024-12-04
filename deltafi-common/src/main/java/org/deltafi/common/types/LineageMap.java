@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -68,6 +69,12 @@ public class LineageMap {
         return null;
     }
 
+    public List<String> findAllFullNameMatches(String fullName) {
+        return lineage.entrySet().stream()
+                .filter(e -> e.getValue().fullName.equals(fullName))
+                .map(e -> e.getKey())
+                .toList();
+    }
 
     public String add(String filename, String path, String parent) {
         String fullName = path + filename;

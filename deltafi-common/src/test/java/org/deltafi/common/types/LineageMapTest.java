@@ -20,6 +20,8 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class LineageMapTest {
@@ -65,6 +67,19 @@ class LineageMapTest {
 
         LineageData parent = lineageMap.findParentEntry("file2.zip:file2");
         assertEquals("parent.tar", parent.getParentContentName());
+
+        List<String> file1Matches = lineageMap.findAllFullNameMatches("file1");
+        assertEquals(1, file1Matches.size());
+        assertTrue(file1Matches.contains("file1"));
+
+        List<String> file2Matches = lineageMap.findAllFullNameMatches("file2");
+        assertEquals(2, file2Matches.size());
+        assertTrue(file2Matches.containsAll(List.of("file2", "file2.zip:file2")));
+
+        assertTrue(lineageMap.findAllFullNameMatches("file3").isEmpty());
+
+        LineageMap emptyMap = new LineageMap();
+        assertTrue(emptyMap.findAllFullNameMatches("file3").isEmpty());
     }
 
     @Test
