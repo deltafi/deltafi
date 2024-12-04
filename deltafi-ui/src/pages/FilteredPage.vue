@@ -28,7 +28,8 @@
         <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-3 p-button-outlined" @click="onRefresh" />
       </div>
     </PageHeader>
-    <TabView v-model:activeIndex="activeTab">
+    <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
+    <TabView v-if="showTabs" v-model:activeIndex="activeTab">
       <TabPanel header="All">
         <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" @refresh-filters="onRefresh()" />
       </TabPanel>
@@ -56,6 +57,7 @@ import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
 import useFiltered from "@/composables/useFiltered";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 
 const filterSummaryMessagePanel = ref();
 const filterSummaryFlowPanel = ref();
@@ -72,7 +74,8 @@ const filteredPanelState = useStorage("filtered-store", {}, sessionStorage, { se
 const { fetchUniqueMessages } = useFiltered();
 const uniqueMessages = ref([]);
 const formattedFlows = ref([]);
-const allFlowNames = ref([])
+const allFlowNames = ref([]);
+const showTabs = ref(false);
 const flowTypeMap = {
   TRANSFORM: "transform",
   REST_DATA_SOURCE: "restDataSource",
@@ -107,9 +110,10 @@ const formatFlowNames = () => {
   };
   for (const [key, label] of Object.entries(map)) {
     if (!_.isEmpty(allFlowNames.value[key])) {
-      const flows = _.map(allFlowNames.value[key], (name) => {
+      let flows = _.map(allFlowNames.value[key], (name) => {
         return { name: name, type: key }
       })
+      flows = _.sortBy(flows, ['name']);
       formattedFlows.value.push({ label: label, sources: flows });
     }
   }
@@ -183,9 +187,10 @@ onBeforeMount(() => {
 onMounted(async () => {
   allFlowNames.value = await fetchAllFlowNames();
   formatFlowNames();
-  await getPersistedParams();
   uniqueMessages.value = await fetchUniqueMessages();
+  await getPersistedParams();
   await nextTick();
+  showTabs.value = true;
   setupWatchers();
 });
 

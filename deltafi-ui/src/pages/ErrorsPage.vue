@@ -28,6 +28,7 @@
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
     </PageHeader>
+    <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
     <TabView v-if="showTabs" v-model:activeIndex="activeTab">
       <TabPanel header="All">
         <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" />
@@ -58,6 +59,7 @@ import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import Dropdown from "primevue/dropdown";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 
 const errorMessageSelected = ref("");
 const refreshInterval = 5000; // 5 seconds
@@ -245,9 +247,10 @@ const formatFlowNames = () => {
   };
   for (const [key, label] of Object.entries(map)) {
     if (!_.isEmpty(allFlowNames.value[key])) {
-      const flows = _.map(allFlowNames.value[key], (name) => {
+      let flows = _.map(allFlowNames.value[key], (name) => {
         return { name: name, type: key }
       })
+      flows = _.sortBy(flows, ['name']);
       formattedFlows.value.push({ label: label, sources: flows });
     }
   }

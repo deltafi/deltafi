@@ -152,7 +152,7 @@ export default function useFiltered() {
         },
       },
     };
-    await queryGraphQL(searchParams, "fetchUniqueMessages");
+    await queryGraphQL(searchParams, "getFilteredByMessage");
     return _.chain(response.value.data.filteredSummaryByMessage.countPerMessage)
       .map((o) => o.message)
       .uniq()
