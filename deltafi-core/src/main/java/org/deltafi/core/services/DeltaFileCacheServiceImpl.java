@@ -145,6 +145,8 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
         } else if (deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
                 deltaFiPropertiesService.getDeltaFiProperties().getCacheSyncDuration()))) {
             updateRepo(deltaFile);
+        } else if (deltaFile.getCacheTime().isEqual(OffsetDateTime.MAX)) {
+            updateRepo(deltaFile);
         }
     }
 

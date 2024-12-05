@@ -845,7 +845,7 @@ public class DeltaFilesService {
             // force the cache to persist the deltaFile
             advanceAndSaveInputs.stream()
                     .map(StateMachineInput::deltaFile)
-                    .forEach(deltaFile -> deltaFile.setCacheTime(OffsetDateTime.MIN));
+                    .forEach(deltaFile -> deltaFile.setCacheTime(OffsetDateTime.MAX));
 
             advanceAndSave(advanceAndSaveInputs, false);
         }
