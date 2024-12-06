@@ -21,9 +21,9 @@
     <PageHeader>
       <template #header>
         <div class="align-items-center btn-group">
-          <h2 class="mb-0">{{ flowPlanHeader }}</h2>
+          <h2 class="mb-0">{{ transformBuilderHeader }}</h2>
           <div v-if="model.active" class="btn-group">
-            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" :edit-flow-plan="editExistingFlowPlan" @create-flow-plan="setFlowValues">
+            <DialogTemplate component-name="transformBuilder/TransformConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" :edit-transform="editExistingTransform" @create-transform="setTransformValues">
               <Button v-tooltip.top="`Edit Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
             </DialogTemplate>
           </div>
@@ -50,19 +50,19 @@
         </div>
       </div>
       <div class="row p-2">
-        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" class="col pl-2 pr-1">
+        <div class="col pl-2 pr-1">
           <div>
-            <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
+            <Panel header="Transform Actions" class="table-panel">
               <template #icons>
-                <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
+                <button class="p-panel-header-icon p-link" @click="viewTransformActionsPicker($event)">
                   <span class="pi pi-plus-circle"></span>
                 </button>
               </template>
               <div class="action-panel-content p-2">
-                <template v-if="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer].length == 0">
-                  <div class="empty-action pt-2 mb-n3">No {{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }}</div>
+                <template v-if="transformActions.length == 0">
+                  <div class="empty-action pt-2 mb-n3">No Transform Actions</div>
                 </template>
-                <draggable :id="action" v-model="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
+                <draggable id="transformActions" v-model="transformActions" item-key="id" :sort="true" group="transformActions" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
                   <template #item="{ element, index }">
                     <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
                       <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
@@ -71,10 +71,10 @@
                           <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
                         </span>
                         <div class="pl-2 btn-group">
-                          <DialogTemplate component-name="flowBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
+                          <DialogTemplate component-name="transformBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
                             <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
                           </DialogTemplate>
-                          <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(element, index)" />
+                          <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(index)" />
                         </div>
                       </div>
                       <Divider class="my-0" />
@@ -109,10 +109,10 @@
       </div>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
-    <Dialog ref="actionsOverlayPanel" v-model:visible="actionPickerVisible" header="Available Actions" class="flow-plan-builder-page-overlay" :dismissable-mask="false" style="width: 50%" position="right">
+    <Dialog ref="actionsOverlayPanel" v-model:visible="actionPickerVisible" header="Available Actions" class="transform-builder-page-overlay" :dismissable-mask="false" style="width: 50%" position="right">
       <Splitter style="height: 80vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
         <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
-          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedTransformAction" v-model:filters="filters" :value="actionsTree" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" :global-filter-fields="['displayName', 'pluginCoordinate.groupId', 'pluginCoordinate.version']" data-key="id">
+          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedTransformAction" v-model:filters="filters" :value="actionsDataTable" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" :global-filter-fields="['displayName', 'pluginCoordinate.groupId', 'pluginCoordinate.version']" data-key="id">
             <template #header>
               <div class="flex justify-content-end">
                 <span class="p-input-icon-right">
@@ -125,7 +125,7 @@
             <template #loading>Loading Actions. Please wait.</template>
             <Column header-style="width: 3em">
               <template #body="{ data }">
-                <draggable ref="draggableRef" class="dragArea list-group align-items-center" :list="[data]" :group="{ name: flowActionTypeGroup, pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
+                <draggable ref="draggableRef" class="dragArea list-group align-items-center" :list="[data]" :group="{ name: 'transformActions', pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
                   <template #item="{ element }">
                     <span class="d-flex align-items-center"> <i v-tooltip.top="`Grabbing ${element.displayName}`" :class="['p-datatable-reorderablerow-handle', 'pi pi-bars']"></i></span>
                   </template>
@@ -154,11 +154,11 @@
         </SplitterPanel>
       </Splitter>
     </Dialog>
-    <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Transform" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-flow-plan="createFlowPlan">
+    <DialogTemplate component-name="transformBuilder/TransformConfigurationDialog" header="Create New Transform" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-transform="createFlowPlan">
       <span id="CreateFlowPlan" />
     </DialogTemplate>
-    <LeavePageConfirmationDialog header="Leaving Transform Builder" message="There is a transform build in progress with unsaved changes. Leaving the page will erase those changes. Are you sure you want to leave this page?" :match-condition="flowPlanInProgress()" />
-    <Dialog v-model:visible="displayRawJsonDialog" :style="{ width: '90vw' }" modal maximizable close-on-escape dismissable-mask :draggable="false" header="Flows Plan Raw Json" class="flow-plan-raw-json-dialog" @hide="flowPlanRawJsonDialogHide">
+    <LeavePageConfirmationDialog header="Leaving Transform Builder" message="There is a transform build in progress with unsaved changes. Leaving the page will erase those changes. Are you sure you want to leave this page?" :match-condition="transformInProgress()" />
+    <Dialog v-model:visible="displayRawJsonDialog" :style="{ width: '90vw' }" modal maximizable close-on-escape dismissable-mask :draggable="false" header="Transform Raw Json" class="transform-raw-json-dialog" @hide="hideTransformRawJsonDialog">
       <Panel header="Output">
         <template #icons>
           <Button v-tooltip.left="'Show Schema'" class="p-panel-header-icon p-link p-me-2" @click="showSchema()">
@@ -176,7 +176,7 @@
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import HoverSaveButton from "@/components/flowBuilder/HoverSaveButton.vue";
+import HoverSaveButton from "@/components/transformBuilder/HoverSaveButton.vue";
 import LeavePageConfirmationDialog from "@/components/LeavePageConfirmationDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowActions from "@/composables/useFlowActions";
@@ -211,6 +211,7 @@ import $ from "jquery";
 import _ from "lodash";
 
 import MarkdownIt from "markdown-it";
+
 const markdownIt = new MarkdownIt({
   html: true,
 });
@@ -228,7 +229,6 @@ const devKey = keys["d+e+v"];
 const { copy } = useClipboard();
 const notify = useNotifications();
 const router = useRouter();
-const actionsTreeRef = ref(null);
 const allTopics = ref(["default"]);
 const { myStyles, publishRenderList, subscribeRenderList } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
@@ -241,12 +241,10 @@ const draggableRef = ref(null);
 
 const allActionsData = ref({});
 
-const expandedKeys = ref({});
-
 const transformBuilderPage = ref(null);
 const pageWidthResizeObserver = ref(null);
-const editExistingFlowPlan = ref(false);
-const originalFlowPlan = ref(null);
+const editExistingTransform = ref(false);
+const originalTransform = ref(null);
 
 const schemaVisible = ref(false);
 const displayRawJsonDialog = ref(false);
@@ -298,16 +296,14 @@ useResizeObserver(transformBuilderPage, (entries) => {
   } else {
     if (!_.isEqual(pageWidthResizeObserver.value, width)) {
       if (model.value.type) {
-        for (let flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
-          connectActions(flowActionType);
-        }
+        connectActions();
       }
     }
   }
   pageWidthResizeObserver.value = width;
 });
 
-// This watch on key pressed state on "d+e+v" will activate the dialog to view the raw JSON of a flow plan.
+// This watch on key pressed state on "d+e+v" will activate the dialog to view the raw JSON of a Transform.
 watch(devKey, (v) => {
   if (v) {
     if (model.value.active) {
@@ -316,46 +312,15 @@ watch(devKey, (v) => {
   }
 });
 
-// This watch on filterValue expands the tree to the full depth for values
-// that match the search filter in the action tree.
-watch(
-  () => actionsTreeRef.value?.filterValue,
-  (data) => {
-    // The tree components filteredValue is a very temperamental computed value.
-    // Making sure its not empty then making sure its not a string with just spaces
-    if (!_.isEmpty(data)) {
-      if (!_.isEmpty(data.trim())) {
-        let expandedTreeObject = {};
-        if (!_.isEmpty(actionsTreeRef.value.filteredValue)) {
-          for (let element of actionsTreeRef.value.filteredValue) {
-            expandedTreeObject[element.label] = true;
-          }
-        }
-        expandedKeys.value = expandedTreeObject;
-      } else {
-        expandedKeys.value = {};
-      }
-    } else {
-      expandedKeys.value = {};
-    }
-  }
-);
+const linkedTransform = useStorage("linked-transform-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
-const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
-
-// The viewActionTreeMenu function is triggered by clicking on the add button on each flowActionType panel.
-const viewActionTreeMenu = (event, flowActionType) => {
-  // The flowActionTypeGroup is the value used to dynamically set the group variable in the draggable component
-  // for linking the draggable actions to their respective flowActionType.
-  flowActionTypeGroup.value = flowActionType;
-  // The actionsTree is the value used to dynamically provide the array of actions for each flowActionType.
-  actionsTree.value = flattenedActionsTypes.value[flowActionType];
-  console.log("actionsTree", actionsTree.value);
+// The viewTransformActionsPicker function is triggered by clicking on the add button on the Transform panel.
+const viewTransformActionsPicker = () => {
+  actionsDataTable.value = flattenedActions.value;
   actionPickerVisible.value = true;
 };
 
 const showHelp = (action) => {
-  console.log("action", action);
   helpMarkdown.value = action.docsMarkdown || "# No Docs Available";
   helpHeader.value = `${action.displayName} Action Help`;
   helpVisible.value = true;
@@ -363,7 +328,7 @@ const showHelp = (action) => {
 
 const defaultTopicTemplate = [{ condition: null, topic: null }];
 
-const flowTemplate = {
+const transformTemplate = {
   type: "TRANSFORM",
   active: false,
   name: null,
@@ -389,27 +354,9 @@ const transformActionsTemplate = {
   join: {},
 };
 
-const flowPlan = ref(JSON.parse(JSON.stringify(flowTemplate)));
+const transformBlueprint = ref(JSON.parse(JSON.stringify(transformTemplate)));
 
-const flowTypesMap = new Map([
-  [
-    "TRANSFORM",
-    {
-      flowActionTypes: ["TRANSFORM"],
-      activeContainerList: function () {
-        return this.flowActionTypes.flatMap((v) => [flowActionTemplateMap.get(v).activeContainer]);
-      },
-    },
-  ],
-]);
-
-const flowActionTemplateMap = new Map([["TRANSFORM", { selectTemplate: [transformActionsTemplate], activeContainer: "transformActions", limit: false, requiredActionMin: false }]]);
-
-const flowActionTemplateObject = ref({
-  transformActions: [],
-});
-
-const originalFlowActionTemplateObject = JSON.parse(JSON.stringify(flowActionTemplateObject.value));
+const transformActions = ref([]);
 
 onBeforeMount(async () => {
   let topics = await getAllTopicNames();
@@ -424,28 +371,28 @@ onBeforeMount(async () => {
   let response = await getAllFlows();
   allFlowPlanData.value = response.data.getAllFlows;
 
-  if (!_.isEmpty(_.get(linkedFlowPlan.value, "flowPlanParams", null))) {
-    if (linkedFlowPlan.value.flowPlanParams.editExistingFlow) {
-      editExistingFlowPlan.value = true;
-      let flowInfo = {};
-      flowInfo["type"] = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
-      flowInfo["name"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName;
-      flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
-      flowInfo["description"] = flowInfo["selectedFlowPlan"].description;
-      if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "subscribe")) {
-        flowInfo["subscribe"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.subscribe || [];
+  if (!_.isEmpty(_.get(linkedTransform.value, "transformParams", null))) {
+    if (linkedTransform.value.transformParams.editExistingTransform) {
+      editExistingTransform.value = true;
+      let transformInfo = {};
+      transformInfo["type"] = _.toUpper(linkedTransform.value.transformParams.type);
+      transformInfo["name"] = linkedTransform.value.transformParams.selectedTransformName;
+      transformInfo["selectedTransform"] = _.find(allFlowPlanData.value[`${_.toLower(linkedTransform.value.transformParams.type)}`], { name: linkedTransform.value.transformParams.selectedTransformName });
+      transformInfo["description"] = transformInfo["selectedTransform"].description;
+      if (_.has(linkedTransform.value.transformParams.selectedTransform, "subscribe")) {
+        transformInfo["subscribe"] = linkedTransform.value.transformParams.selectedTransform.subscribe || [];
       }
-      if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "publish")) {
-        flowInfo["publish"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.publish || {};
+      if (_.has(linkedTransform.value.transformParams.selectedTransform, "publish")) {
+        transformInfo["publish"] = linkedTransform.value.transformParams.selectedTransform.publish || {};
       }
-      await createFlowPlan(flowInfo);
-      originalFlowPlan.value = rawOutput.value;
+      await createFlowPlan(transformInfo);
+      originalTransform.value = rawOutput.value;
     } else {
-      model.value.type = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
-      model.value.selectedFlowPlan = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      model.value.type = _.toUpper(linkedTransform.value.transformParams.type);
+      model.value.selectedTransform = _.find(allFlowPlanData.value[`${_.toLower(linkedTransform.value.transformParams.type)}`], { name: linkedTransform.value.transformParams.selectedTransformName });
       document.getElementById("CreateFlowPlan").click();
     }
-    linkedFlowPlan.value = null;
+    linkedTransform.value = null;
   } else {
     document.getElementById("CreateFlowPlan").click();
   }
@@ -453,7 +400,7 @@ onBeforeMount(async () => {
 
 const model = computed({
   get() {
-    return new Proxy(flowPlan.value, {
+    return new Proxy(transformBlueprint.value, {
       set(obj, key, value) {
         model.value = { ...obj, [key]: value };
         return true;
@@ -462,7 +409,7 @@ const model = computed({
   },
   set(newValue) {
     Object.assign(
-      flowPlan.value,
+      transformBlueprint.value,
       _.mapValues(newValue, (v) => (v === "" ? null : v))
     );
   },
@@ -479,55 +426,50 @@ watch(
   }
 );
 
-const flowActionTypeGroup = ref("");
-const actionsTree = ref([]);
-const flowActionSpecificJsPlumbInstance = ref({});
+const actionsDataTable = ref([]);
+const transformJsPlumbInstance = ref({});
 
-const flowPlanHeader = computed(() => {
+const transformBuilderHeader = computed(() => {
   let header = model.value.name ? `Transform Builder - ${model.value.name}` : "Transform Builder";
   return header;
 });
 
 const createFlowPlan = async (newFlowPlan) => {
   removeFlow();
-  await setFlowValues(newFlowPlan);
-  if (newFlowPlan.selectedFlowPlan) {
-    cloneFlow(newFlowPlan);
+  await setTransformValues(newFlowPlan);
+  if (newFlowPlan.selectedTransform) {
+    cloneTransform(newFlowPlan);
   }
 };
 
-const setFlowValues = async (flowInfo) => {
+const setTransformValues = async (transformInfo) => {
   await nextTick();
-  model.value.type = flowInfo["type"];
-  model.value.name = flowInfo["name"];
-  model.value.description = flowInfo["description"];
-  model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
+  model.value.type = transformInfo["type"];
+  model.value.name = transformInfo["name"];
+  model.value.description = transformInfo["description"];
+  model.value.selectedTransform = transformInfo["selectedTransform"];
 
-  if (_.has(flowInfo["selectedFlowPlan"], "subscribe")) {
-    model.value["subscribe"] = flowInfo["selectedFlowPlan"].subscribe || defaultTopicTemplate;
+  if (_.has(transformInfo["selectedTransform"], "subscribe")) {
+    model.value["subscribe"] = transformInfo["selectedTransform"].subscribe || defaultTopicTemplate;
   }
 
-  if (_.has(flowInfo["selectedFlowPlan"], "publish")) {
-    model.value["publish"] = flowInfo["selectedFlowPlan"].publish || {};
+  if (_.has(transformInfo["selectedTransform"], "publish")) {
+    model.value["publish"] = transformInfo["selectedTransform"].publish || {};
   }
   model.value.active = true;
 };
 
-const cloneFlow = async (cloneFlow) => {
-  for (let flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
-    let clonedActionsByTypes = [];
-    let getClonedActionsByTypes = _.cloneDeep(_.get(cloneFlow.selectedFlowPlan, flowActionTemplateMap.get(flowActionType).activeContainer));
-    if (_.isEmpty(getClonedActionsByTypes)) {
-      getClonedActionsByTypes = [];
-      continue;
-    }
+const cloneTransform = async (cloneTransform) => {
+  let clonedTransformActions = [];
 
-    clonedActionsByTypes = clonedActionsByTypes.concat(getClonedActionsByTypes);
-    if (!_.isEmpty(clonedActionsByTypes)) {
-      for (let clonedAction of clonedActionsByTypes) {
-        let tmpMergedActionAndActionSchema = _.cloneDeep(_.find(flattenedActionsTypes.value[flowActionType], { type: clonedAction.type, flowActionType: flowActionType }));
+  let getClonedActionsByTypes = _.cloneDeep(_.get(cloneTransform.selectedTransform, "transformActions"));
+  if (!_.isEmpty(getClonedActionsByTypes)) {
+    clonedTransformActions = clonedTransformActions.concat(getClonedActionsByTypes);
+    if (!_.isEmpty(clonedTransformActions)) {
+      for (let clonedAction of clonedTransformActions) {
+        let tmpMergedActionAndActionSchema = _.cloneDeep(_.find(flattenedActions.value, { type: clonedAction.type, flowActionType: "TRANSFORM" }));
         let mergedActionAndActionSchema = _.merge(tmpMergedActionAndActionSchema, clonedAction);
-        addAction(flowActionType, mergedActionAndActionSchema);
+        addAction(mergedActionAndActionSchema);
       }
     }
   }
@@ -582,39 +524,37 @@ const clearEmptyObjects = (queryObj) => {
   return queryObj;
 };
 
-const save = async (rawFlow) => {
+const save = async (rawTransform) => {
   let response = null;
-  let newRawFlow = JSON.parse(JSON.stringify(rawFlow));
-  newRawFlow = clearEmptyObjects(newRawFlow);
-  response = await saveTransformFlowPlan(newRawFlow);
+  let newRawTransform = JSON.parse(JSON.stringify(rawTransform));
+  newRawTransform = clearEmptyObjects(newRawTransform);
+  response = await saveTransformFlowPlan(newRawTransform);
   if (response !== undefined) {
-    notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Flow Plan Saved`);
+    notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Transform Saved`);
     model.value.active = false;
-    // Null out the originalFlowPlan value as that flow plan has changed.
-    originalFlowPlan.value = null;
+    // Null out the originalTransform value as that Transform has changed.
+    originalTransform.value = null;
     router.push({ path: `/config/transforms` });
   }
 };
 
 const removeFlow = () => {
-  model.value = JSON.parse(JSON.stringify(flowTemplate));
-  flowActionTemplateObject.value = JSON.parse(JSON.stringify(originalFlowActionTemplateObject));
-  flowActionSpecificJsPlumbInstance.value = {};
+  model.value = JSON.parse(JSON.stringify(transformTemplate));
+  transformActions.value = [];
+  transformJsPlumbInstance.value = {};
 };
 
-const connectActions = async (flowActionType) => {
+const connectActions = async () => {
   await nextTick();
 
-  // An instance of jsPlumb is created for each flowActionType and stored in an object if one is not already
-  // present for that flowActionType. This allows for resetting of that specific jsPlumb instance every time we
+  // An instance of jsPlumb and stored if one has not already been created.
+  // This allows for resetting of that specific jsPlumb instance every time we
   // need to redraw the connection.
-  if (!_.get(flowActionSpecificJsPlumbInstance.value, flowActionType, null)) {
-    flowActionSpecificJsPlumbInstance.value[flowActionType] = jsPlumb.getInstance();
+  if (_.isEmpty(transformJsPlumbInstance.value)) {
+    transformJsPlumbInstance.value = jsPlumb.getInstance();
   }
 
-  let plumbIns = flowActionSpecificJsPlumbInstance.value[flowActionType];
-
-  console.log("plumbIns", plumbIns);
+  let plumbIns = transformJsPlumbInstance.value;
 
   plumbIns.ready(function () {
     // Reset the action connects so we can redraw them.
@@ -625,7 +565,7 @@ const connectActions = async (flowActionType) => {
 
   // Get all the actions in the panel.
   var actionsInPanel = [];
-  $(`#${flowActionType}`)
+  $(`#transformActions`)
     .find("div")
     .each(function () {
       actionsInPanel.push(this);
@@ -662,7 +602,7 @@ const connectActions = async (flowActionType) => {
         deleteEndpointsOnDetach: true,
         ...defaultConnectionValues,
         anchor: anchorType,
-        scope: flowActionType,
+        scope: "transformActions",
       });
 
       plumbIns.repaintEverything();
@@ -670,50 +610,50 @@ const connectActions = async (flowActionType) => {
   }
 };
 
-const addAction = async (flowActionType, action) => {
+const addAction = async (action) => {
   let addNewAction = JSON.parse(JSON.stringify(action));
-  addNewAction["id"] = _.uniqueId(flowActionType);
+  addNewAction["id"] = _.uniqueId("transformActions");
 
-  flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].push(addNewAction);
-  connectActions(flowActionType);
+  transformActions.value.push(addNewAction);
+  connectActions();
 };
 
-const transFormActionsChanged = () => {
+const transformActionsChanged = () => {
   // Get all the keys from both original and rawOutput
-  let allKeys = _.union(_.keys(originalFlowPlan.value), _.keys(rawOutput.value));
+  let allKeys = _.union(_.keys(originalTransform.value), _.keys(rawOutput.value));
 
   // Detect changes and deletions
-  let changedFlowValues = _.omitBy(_.pick(rawOutput.value, allKeys), function (v, k) {
-    return JSON.stringify(originalFlowPlan.value[k]) === JSON.stringify(v);
+  let changedTransformValues = _.omitBy(_.pick(rawOutput.value, allKeys), function (v, k) {
+    return JSON.stringify(originalTransform.value[k]) === JSON.stringify(v);
   });
 
-  // Detect deletions (keys present in originalFlowPlan but missing in rawOutput)
-  let deletedKeys = _.difference(_.keys(originalFlowPlan.value), _.keys(rawOutput.value));
+  // Detect deletions (keys present in originalTransform but missing in rawOutput)
+  let deletedKeys = _.difference(_.keys(originalTransform.value), _.keys(rawOutput.value));
 
   // If there are no changes or deletions, return false
-  if (_.isEmpty(changedFlowValues) && _.isEmpty(deletedKeys)) {
+  if (_.isEmpty(changedTransformValues) && _.isEmpty(deletedKeys)) {
     return false;
   } else {
     return true;
   }
 };
 
-// Validates all parts of the Flow Plan. If invalid it disables the save button.
-const isValidFlow = computed(() => {
-  // If the Flow Plans Raw Dialog or the Schema is visible disable the save
+// Validates all parts of the Transform. If invalid it disables the save button.
+const isValidTransform = computed(() => {
+  // If the Transform Raw Dialog or the Schema is visible disable the save
   if (schemaVisible.value || displayRawJsonDialog.value) {
     return false;
   }
 
-  // If we are editing an existing flow and we haven't made any changes disable the save
-  if (!_.isEmpty(originalFlowPlan.value)) {
+  // If we are editing an existing Transform and we haven't made any changes disable the save
+  if (!_.isEmpty(originalTransform.value)) {
     // If there are no changes or deletions, return false
-    if (!transFormActionsChanged()) {
+    if (!transformActionsChanged()) {
       return false;
     }
   }
 
-  // If the flow plan isn't active disable the save
+  // If the Transform isn't active disable the save
   if (!model.value.active) {
     return false;
   }
@@ -727,21 +667,21 @@ const isValidFlow = computed(() => {
   }
 
   // If there are missing required fields disable the save
-  let allFlowMissingFields = [];
-  for (let action of _.flatten(Object.values(_.pick(flowActionTemplateObject.value, flowTypesMap.get(model.value.type).activeContainerList())))) {
+  let allTransformMissingFields = [];
+  for (let action of _.flatten(transformActions.value)) {
     let actionMissingRequiredFields = validateAction(action);
     if (!_.isEmpty(actionMissingRequiredFields)) {
-      allFlowMissingFields.push(actionMissingRequiredFields);
+      allTransformMissingFields.push(actionMissingRequiredFields);
     }
   }
 
-  return allFlowMissingFields.length == 0;
+  return allTransformMissingFields.length == 0;
 });
 
-const flowPlanInProgress = () => {
-  // If the flow plan is being edited and a value is changed return true that the flow plan should be saved
-  if (!_.isEmpty(originalFlowPlan.value)) {
-    return transFormActionsChanged();
+const transformInProgress = () => {
+  // If the transform is being edited and a value is changed return true that the transform should be saved
+  if (!_.isEmpty(originalTransform.value)) {
+    return transformActionsChanged();
   }
 
   return model.value.active;
@@ -751,7 +691,7 @@ const items = ref([
   {
     label: "Save",
     icon: "fa-solid fa-hard-drive",
-    isEnabled: isValidFlow,
+    isEnabled: isValidTransform,
     visible: true,
     command: () => {
       save(rawOutput.value);
@@ -820,7 +760,7 @@ const validateAction = (action) => {
   // completedFields is a list of all the keys of the fields that the user has filled in for the action.
   let completedFields = _.keys(_.get(action, "parameters", {}));
 
-  // Check if the action name is missing if so add it to the list of missing required fields. The action name is required and should not allow the flow to be saved.
+  // Check if the action name is missing if so add it to the list of missing required fields. The action name is required and should not allow the transform to be saved.
   if (_.isEmpty(action.name)) {
     missingFieldsInAction.push("name");
   }
@@ -829,12 +769,12 @@ const validateAction = (action) => {
   // with the keys of the user completed fields and add those to the list of missing required fields.
   missingFieldsInAction = _.concat(missingFieldsInAction, _.difference(requiredSchemaFields, completedFields));
 
-  // All action names within a flow plan have to be unique.
+  // All action names within a Transform have to be unique.
   let duplicateActionNames = "";
   if (!_.isEmpty(action.name)) {
-    let duplicateActionNamesInFlow = _.filter(_.flatten(Object.values(_.pick(flowActionTemplateObject.value, flowTypesMap.get(model.value.type).activeContainerList()))), { name: action.name });
-    if (duplicateActionNamesInFlow.length > 1) {
-      duplicateActionNames = `All action names within a Flow Plan have to be unique. Duplicate action name: ${action.name}.`;
+    let duplicateActionNamesInTransform = _.filter(_.flatten(transformActions.value), { name: action.name });
+    if (duplicateActionNamesInTransform.length > 1) {
+      duplicateActionNames = `All action names within a Transform have to be unique. Duplicate action name: ${action.name}.`;
     }
   }
 
@@ -856,13 +796,13 @@ const displayActionName = (action) => {
 };
 
 const updateAction = (newActionValue) => {
-  flowActionTemplateObject.value[flowActionTemplateMap.get(newActionValue["updatedAction"].flowActionType).activeContainer].splice(newActionValue["actionIndex"], 1, newActionValue["updatedAction"]);
-  connectActions(newActionValue["updatedAction"].flowActionType);
+  transformActions.value.splice(newActionValue["actionIndex"], 1, newActionValue["updatedAction"]);
+  connectActions();
 };
 
-const removeAction = (removeAction, index) => {
-  flowActionTemplateObject.value[flowActionTemplateMap.get(removeAction.flowActionType).activeContainer].splice(index, 1);
-  connectActions(removeAction.flowActionType);
+const removeAction = (index) => {
+  transformActions.value.splice(index, 1);
+  connectActions();
 };
 
 const cloneAction = (clonedAction) => {
@@ -871,27 +811,17 @@ const cloneAction = (clonedAction) => {
   return JSON.parse(JSON.stringify(addNewClonedAction));
 };
 
-const validateNewAction = async (event) => {
-  let addedEvent = _.get(event, "added", false);
-  let movedEvent = _.get(event, "moved", false);
-  let flowActionType = "";
-  if (addedEvent) {
-    flowActionType = addedEvent.element.flowActionType;
-  } else if (movedEvent) {
-    flowActionType = movedEvent.element.flowActionType;
-  }
-  connectActions(flowActionType);
+const validateNewAction = async () => {
+  connectActions();
 };
 
 // When there are multiple actions of a certain Action Type the order of the actions can be changed.
 // If this happens we need to update the connections between each action. This
-const actionOrderChanged = (event) => {
-  let flowActionType = event.target.id;
-  connectActions(flowActionType);
+const actionOrderChanged = () => {
+  connectActions();
 };
 
-const actionTypesTree = ref({});
-const flattenedActionsTypes = ref({});
+const flattenedActions = ref([]);
 
 const getLoadedActions = () => {
   for (const plugin of allActionsData.value) {
@@ -920,44 +850,7 @@ const getLoadedActions = () => {
       }
 
       action["join"] = {};
-
-      // Adding an flowActionType key to the actionTypesTree. Each root flowActionType key will hold the tree structure for that actionType.
-      if (!Object.prototype.hasOwnProperty.call(actionTypesTree.value, action["flowActionType"])) {
-        actionTypesTree.value[action["flowActionType"]] = [];
-        flattenedActionsTypes.value[action["flowActionType"]] = [];
-      }
-
-      flattenedActionsTypes.value[action["flowActionType"]].push(action);
-
-      // We next group all the actions into their respective plugins. We search in the actionTypesTree to see if the plugin
-      // coordinateGrouping is already in the tree. If not we add it.
-      let mavenCoordinateKey = actionTypesTree.value[action["flowActionType"]].find((x) => x.key === action["coordinateGrouping"]);
-      // If no plugin coordinateGrouping is found we create it and go ahead and add the action to it.
-      if (!mavenCoordinateKey) {
-        let rootCoordinateGrouping = {};
-        rootCoordinateGrouping["key"] = action["coordinateGrouping"];
-        rootCoordinateGrouping["label"] = action["coordinateGrouping"];
-        rootCoordinateGrouping["children"] = [];
-        let pluginName = {};
-        pluginName["key"] = action["displayName"];
-        pluginName["label"] = action["displayName"];
-        pluginName["filterField"] = action["displayName"];
-        pluginName["data"] = [action];
-        pluginName["type"] = "actions";
-        rootCoordinateGrouping["children"].push(pluginName);
-        actionTypesTree.value[action["flowActionType"]].push(rootCoordinateGrouping);
-        actionTypesTree.value[action["flowActionType"]] = _.sortBy(actionTypesTree.value[action["flowActionType"]], "label");
-      } else {
-        // If plugin coordinateGrouping is found we add the action to it.
-        let pluginName = {};
-        pluginName["key"] = action["displayName"];
-        pluginName["label"] = action["displayName"];
-        pluginName["filterField"] = action["displayName"];
-        pluginName["data"] = [action];
-        pluginName["type"] = "actions";
-        mavenCoordinateKey.children.push(pluginName);
-        mavenCoordinateKey.children = _.sortBy(mavenCoordinateKey.children, "label");
-      }
+      flattenedActions.value.push(action);
     }
   }
 };
@@ -968,24 +861,18 @@ const rawOutput = computed(() => {
   }
   let displayOutput = JSON.parse(JSON.stringify(model.value));
 
-  for (const flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
-    if (!_.isEmpty(flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer])) {
-      displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = JSON.parse(JSON.stringify(flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer]));
-      if (schemaVisible.value) {
-        displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
-      } else {
-        displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(flowActionTemplateMap.get(flowActionType).selectTemplate[0])));
-        if (flowActionTemplateMap.get(flowActionType).limit) {
-          displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ schema, description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs)[0]; // eslint-disable-line @typescript-eslint/no-unused-vars
-        } else {
-          displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ schema, description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
-        }
-      }
+  if (!_.isEmpty(transformActions.value)) {
+    displayOutput["transformActions"] = JSON.parse(JSON.stringify(transformActions.value));
+    if (schemaVisible.value) {
+      displayOutput["transformActions"] = displayOutput["transformActions"].map(({ description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
+    } else {
+      displayOutput["transformActions"] = displayOutput["transformActions"].map(({ ...attrs }) => _.pick(attrs, Object.keys([transformActionsTemplate][0])));
+      displayOutput["transformActions"] = displayOutput["transformActions"].map(({ schema, description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
     }
   }
 
   // Remove UI metakeys from output
-  displayOutput = _.omit(displayOutput, ["active", "selectedFlowPlan"]);
+  displayOutput = _.omit(displayOutput, ["active", "selectedTransform"]);
 
   return displayOutput;
 });
@@ -994,7 +881,7 @@ const showSchema = () => {
   schemaVisible.value = !schemaVisible.value;
 };
 
-const flowPlanRawJsonDialogHide = () => {
+const hideTransformRawJsonDialog = () => {
   if (schemaVisible.value) {
     schemaVisible.value = !schemaVisible.value;
   }

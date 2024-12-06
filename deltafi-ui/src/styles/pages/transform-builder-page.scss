@@ -97,7 +97,7 @@
   }
 }
 
-.flow-plan-builder-page-overlay {
+.transform-builder-page-overlay {
   .p-overlaypanel-close.p-link {
     z-index: 2100 !important;
   }
@@ -151,7 +151,7 @@
   }
 }
 
-.flow-plan-raw-json-dialog {
+.transform-raw-json-dialog {
   pre {
     padding: 3px;
     margin: 3px;
@@ -203,12 +203,15 @@
     margin-bottom: 20px;
   }
 
-  table, th, td {
+  table,
+  th,
+  td {
     border-collapse: collapse;
     border: 1px solid black;
   }
 
-  th, td {
+  th,
+  td {
     padding: 10px;
   }
 

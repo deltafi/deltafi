@@ -21,7 +21,7 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" :header="header" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" @show="onResize" @maximize="onResize" @unmaximize="onResize">
+    <Dialog v-model:visible="dialogVisible" :header="header" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
       <ContentSelector :content="content" @content-selected="handleContentSelected" />
     </Dialog>
   </div>
@@ -47,10 +47,10 @@ const props = defineProps({
 const { content, action } = reactive(props);
 
 const dialogVisible = ref(false);
-const showDialog = () => dialogVisible.value = true;
+const showDialog = () => (dialogVisible.value = true);
 
-const header = ref(content[0].name || `${content[0].did}-${action}`)
-const handleContentSelected = (content) => header.value = content.name
+const header = ref(content[0].name || `${content[0].did}-${action}`);
+const handleContentSelected = (content) => (header.value = content.name);
 </script>
 
 <style lang="scss">

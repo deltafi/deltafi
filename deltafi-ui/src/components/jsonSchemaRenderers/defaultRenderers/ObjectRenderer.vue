@@ -18,7 +18,6 @@
 
 <template>
   <div v-if="schemaData.control.visible" class="pb-2">
-    <dt>Object renderer</dt>
     <dt>{{ computedLabel }}</dt>
     <div class="deltafi-fieldset">
       <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />

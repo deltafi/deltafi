@@ -44,10 +44,10 @@
                 <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
                   <i class="ml-2 text-muted fa-solid fa-trash-can" />
                 </span>
-                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setFlowPlanParams(data, true)">
+                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data, true)">
                   <i v-tooltip.top="{ value: `Edit`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-pencil" />
                 </PermissionedRouterLink>
-                <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setFlowPlanParams(data)">
+                <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data)">
                   <i v-tooltip.top="{ value: `Clone`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-clone" />
                 </PermissionedRouterLink>
               </span>
@@ -136,7 +136,7 @@ let autoRefresh = null;
 const emit = defineEmits(["updateFlows"]);
 const flowData = ref({});
 const flowDataByPlugin = ref({});
-const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
+const linkedTransform = useStorage("linked-transform-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const { startTransformFlowByName, stopTransformFlowByName, enableTestTransformFlowByName, disableTestTransformFlowByName } = useFlowQueryBuilder();
 const menu = ref();
@@ -334,8 +334,8 @@ const removeFlowFromProp = (data) => {
   });
 };
 
-const setFlowPlanParams = (data, editExistingFlow) => {
-  linkedFlowPlan.value["flowPlanParams"] = { type: data.flowType, selectedFlowPlanName: data.name, selectedFlowPlan: data, editExistingFlow: editExistingFlow };
+const setTransformParams = (data, editExistingTransform) => {
+  linkedTransform.value["transformParams"] = { type: data.flowType, selectedTransformName: data.name, selectedTransform: data, editExistingTransform: editExistingTransform };
 };
 </script>
 

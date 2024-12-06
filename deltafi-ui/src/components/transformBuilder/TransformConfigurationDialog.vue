@@ -17,8 +17,8 @@
 -->
 
 <template>
-  <div class="flow-configuration-dialog">
-    <div class="flow-configuration-panel">
+  <div class="transform-configuration-dialog">
+    <div class="transform-configuration-panel">
       <div class="pb-0">
         <div v-if="hasErrors" class="pt-2">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
@@ -32,7 +32,7 @@
         <dl>
           <dt>Name*</dt>
           <dd>
-            <InputText v-model="model.name" class="inputWidth" :disabled="editFlowPlan" />
+            <InputText v-model="model.name" class="inputWidth" :disabled="editTransform" />
           </dd>
           <dt>Description*</dt>
           <dd>
@@ -40,7 +40,7 @@
           </dd>
           <dt>Clone From <small class="text-muted">- Optional</small></dt>
           <dd>
-            <Dropdown v-model="model.selectedFlowPlan" :options="_.orderBy(allFlowPlans[`${_.toLower(model.type)}`], [(flow) => flow.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Flow" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
+            <Dropdown v-model="model.selectedTransform" :options="_.orderBy(allTransforms[`${_.toLower(model.type)}`], [(transform) => transform.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Transform" :show-clear="!editTransform" :disabled="editTransform" class="inputWidth" />
           </dd>
         </dl>
       </div>
@@ -68,14 +68,14 @@ import _ from "lodash";
 const { getAllFlows } = useFlowQueryBuilder();
 
 const isMounted = ref(useMounted());
-const emit = defineEmits(["createFlowPlan"]);
+const emit = defineEmits(["createTransform"]);
 const props = defineProps({
   dataProp: {
     type: Object,
     required: false,
     default: Object,
   },
-  editFlowPlan: {
+  editTransform: {
     type: Boolean,
     required: false,
     default: false,
@@ -86,22 +86,22 @@ const props = defineProps({
   },
 });
 
-const flowTemplate = {
+const transformTemplate = {
   name: null,
   description: null,
   type: null,
-  selectedFlowPlan: null,
+  selectedTransform: null,
 };
 
-const { editFlowPlan, closeDialogCommand } = reactive(props);
+const { editTransform, closeDialogCommand } = reactive(props);
 const errors = ref([]);
-const flowData = ref(Object.assign({}, props.dataProp || flowTemplate));
+const transformData = ref(Object.assign({}, props.dataProp || transformTemplate));
 
-const allFlowPlans = ref({});
+const allTransforms = ref({});
 
 const model = computed({
   get() {
-    return new Proxy(flowData.value, {
+    return new Proxy(transformData.value, {
       set(obj, key, value) {
         model.value = { ...obj, [key]: value };
         return true;
@@ -110,24 +110,24 @@ const model = computed({
   },
   set(newValue) {
     Object.assign(
-      flowData.value,
+      transformData.value,
       _.mapValues(newValue, (v) => (v === "" ? null : v))
     );
   },
 });
 
-// If the type changes or is removed make sure the selectedFlowPlan is null
+// If the type changes or is removed make sure the selectedTransform is null
 watch(
   () => model.value.type,
   () => {
-    model.value.selectedFlowPlan = null;
+    model.value.selectedTransform = null;
   }
 );
 
 onMounted(async () => {
   let response = await getAllFlows();
 
-  allFlowPlans.value = response.data.getAllFlows;
+  allTransforms.value = response.data.getAllFlows;
 });
 
 const hasErrors = computed(() => {
@@ -153,10 +153,10 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(model.value.name) && !_.isEmpty(model.value.type)) {
-    let activeSystemFlowNames = _.map(allFlowPlans.value[`${_.toLower(model.value.type)}`], "name");
+    let activeSystemFlowNames = _.map(allTransforms.value[`${_.toLower(model.value.type)}`], "name");
     let isFlowNameUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
 
-    if (isFlowNameUsed && !editFlowPlan) {
+    if (isFlowNameUsed && !editTransform) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
     }
   }
@@ -166,7 +166,7 @@ const submit = async () => {
   }
 
   closeDialogCommand.command();
-  emit("createFlowPlan", { type: model.value.type, name: model.value.name.trim(), description: model.value.description, selectedFlowPlan: model.value.selectedFlowPlan });
+  emit("createTransform", { type: model.value.type, name: model.value.name.trim(), description: model.value.description, selectedTransform: model.value.selectedTransform });
 };
 </script>
 

@@ -28,11 +28,11 @@
 </template>
 
 <script setup>
-import { computed, ref, defineProps, reactive, defineEmits, watch } from "vue";
+import { computed, defineEmits, defineProps, reactive, ref, watch } from "vue";
 import Listbox from "primevue/listbox";
 import ContentViewer from "@/components/ContentViewer.vue";
 
-const emit = defineEmits("content-selected");
+const emit = defineEmits(["contentSelected"]);
 const props = defineProps({
   content: {
     type: Array,
@@ -52,11 +52,11 @@ const listboxItems = computed(() => {
 });
 const selectedItem = ref(listboxItems.value[0]);
 const selectedContent = computed(() => content[selectedItem.value.index]);
-emit("content-selected", selectedContent.value);
+emit("contentSelected", selectedContent.value);
 
 watch(selectedItem, (newItem, oldValue) => {
   if (newItem === null) selectedItem.value = oldValue;
-  emit("content-selected", selectedContent.value);
+  emit("contentSelected", selectedContent.value);
 });
 </script>
 
