@@ -19,7 +19,6 @@
 from typing import List
 
 from deltafi.result import IngressResult, IngressResultItem, IngressStatusEnum
-
 from .assertions import *
 from .framework import TestCaseBase, ActionTest, IOContent
 
@@ -74,12 +73,12 @@ class TimedIngressActionTest(ActionTest):
         self.assert_ingress_result(test_case, result)
 
     def assert_ingress_result(self, test_case: TimedIngressTestCase, result: IngressResult):
-        assert_equal(test_case.memo, result.memo)
-        assert_equal(test_case.execute_immediate, result.execute_immediate)
-        assert_equal(test_case.status, result.status)
-        assert_equal(test_case.status_message, result.status_message)
+        assert_equal_short(test_case.memo, result.memo, "invalid memo")
+        assert_equal_short(test_case.execute_immediate, result.execute_immediate, "invalid execute_immediate")
+        assert_equal_short(test_case.status, result.status, "invalid status")
+        assert_equal_with_label(test_case.status_message, result.status_message, "invalid status_message")
 
-        assert_equal_len(test_case.results, result.ingress_result_items)
+        assert_equal_len_with_label(test_case.results, result.ingress_result_items, "item count mismatch")
         for index, ingress_item in enumerate(result.ingress_result_items):
             self.compare_one_ingress_item(test_case, ingress_item, index)
             expected = test_case.results[index]

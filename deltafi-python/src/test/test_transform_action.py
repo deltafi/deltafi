@@ -17,17 +17,16 @@
 #
 
 import pytest
+from mockito import when, mock, unstub
+from pydantic import BaseModel, Field
+
 from deltafi.action import TransformAction
 from deltafi.actiontype import ActionType
-from deltafi.domain import Context
 from deltafi.input import TransformInput
 from deltafi.logger import get_logger
 from deltafi.plugin import Plugin
 from deltafi.result import TransformResult, EgressResult, ErrorResult
 from deltafi.storage import ContentService
-from mockito import when, mock, unstub
-from pydantic import BaseModel, Field
-
 from .helperutils import *
 
 

@@ -19,7 +19,6 @@
 from typing import List
 
 from deltafi.result import TransformResult, TransformResults
-
 from .assertions import *
 from .framework import TestCaseBase, ActionTest, IOContent
 
@@ -74,7 +73,7 @@ class TransformActionTest(ActionTest):
         self.assert_transform_results(test_case, result)
 
     def assert_transform_results(self, test_case: TransformTestCase, result: TransformResults):
-        assert_equal_len(test_case.results, result.child_results)
+        assert_equal_len_with_label(test_case.results, result.child_results, "invalid child count")
         for index, child_result in enumerate(result.child_results):
             self.compare_one_transform_result(test_case, child_result, index)
             expected = test_case.results[index]

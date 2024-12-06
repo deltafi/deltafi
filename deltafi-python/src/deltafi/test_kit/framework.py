@@ -350,13 +350,13 @@ class ActionTest(ABC):
 
     @staticmethod
     def compare_one_metric(expected: Metric, result: Metric):
-        assert expected.name == result.name
-        assert_equal_with_label(expected.value, result.value, expected.name)
+        assert_equal_short(expected.name, result.name, "invalid metric name")
+        assert_equal_short(expected.value, result.value, f"invalid metric value for {expected.name}")
         assert_keys_and_values(expected.tags, result.tags)
 
     def compare_metrics(self, expected_metrics: List[Metric], results: List[Metric]):
         if len(expected_metrics) > 0:
-            assert_equal_len(expected_metrics, results)
+            assert_equal_len_with_label(expected_metrics, results, "invalid metrics count")
             for index, expected in enumerate(expected_metrics):
                 self.compare_one_metric(expected, results[index])
 

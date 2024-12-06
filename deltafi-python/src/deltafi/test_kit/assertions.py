@@ -29,8 +29,16 @@ def assert_equal_with_label(e, a, l):
     assert e == a, f"{l}. Expected:\n<<{e}>>\nBut was:\n<<{a}>>"
 
 
+def assert_equal_short(e, a, l):
+    assert e == a, f"{l}. E:{e}, A::{a}"
+
+
 def assert_equal_len(e, a):
     assert len(e) == len(a), f"{len(e)} != {len(a)}"
+
+
+def assert_equal_len_with_label(e, a, l):
+    assert len(e) == len(a), f"{l}. {len(e)} != {len(a)}"
 
 
 def assert_key_in(k, m):
@@ -45,4 +53,4 @@ def assert_keys_and_values(expected: Dict, actual: Dict):
     for key in expected:
         assert_key_in(key, actual)
         if expected[key] != IGNORE_VALUE:
-            assert_equal(expected[key], actual[key])
+            assert_equal_short(expected[key], actual[key], f"invalid value for key {key}")
