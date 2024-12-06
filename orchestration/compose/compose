@@ -38,7 +38,7 @@ Usage:
 
   Arguments:
   -f|--values <val>                  specify values in a YAML file (can specify multiple)
-  -p|--plugin <PLUGIN NAME>          install plugin (can specify multiple)
+  -p|--plugin <PLUGIN IMAGE>         install plugin (can specify multiple)
   -s|--post-install-script <SCRIPT>  run post-install script (can specify multiple)
   "
   exit 1
@@ -640,16 +640,12 @@ _install_plugins() {
   while [[ $# -gt 0 ]]; do
     plugin="$1"
     shift
-    image_tag=${plugin##*/}
-    registry=${plugin%/"$image_tag"}
-    if [[ "$registry" == "$plugin" ]]; then
-      registry="docker.io"
-    fi
 
     echo "Installing plugin: $plugin"
-    deltafi install-plugin -i "$registry" "org.deltafi:$image_tag"
-    while ! deltafi list-plugins | grep "$image_tag" > /dev/null; do
-      echo "- Waiting for ${image_tag} plugin"
+    deltafi install-plugin "$plugin"
+    PLUGIN_NAME=$(echo $line | sed 's|.*/\(.*\):.*|\1|g')
+    while ! deltafi list-plugins | grep "$PLUGIN_NAME" > /dev/null; do
+      echo "- Waiting for ${PLUGIN_NAME} plugin"
       sleep 0.5
     done
 
