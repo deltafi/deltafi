@@ -140,6 +140,9 @@ PV_DIR=$ORCHESTRATION_PATH/data
 SUDO=$(which sudo)
 KIND_DIR="${ROOT}/deltafi/orchestration/kind"
 
+# shellcheck source=common
+. "$DELTAFI_PATH/deltafi-cli/config"
+
 _base64() {
   local TEMPFILE
   if _tool_exists mktemp; then
@@ -160,6 +163,10 @@ _base64() {
 
 if [[ "$(basename "$0")" == "deltafi" ]]; then
   # Deltafi wrapper mode
+  if [[ "$DELTAFI_MODE" == "STANDALONE" ]]; then
+    "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
+    exit 0
+  fi
 
   if [[ $# -gt 0 ]]; then
 
