@@ -10,6 +10,7 @@
     "build": "vue-cli-service build",
     "lint": "npx eslint --max-warnings=0 --ext .js,.vue,.ts .",
     "lint:fix": "npm run lint -- --fix",
+    "lint:fix-a11y": "npm run lint -- --config ./.eslintrc-a11y.js",
     "test-server": "VUE_APP_MOCK_REQUEST_DELAY=1 VUE_APP_MOCK_RESPONSES=successResponse vue-cli-service serve --mode test",
     "test": "cypress run"
   },
@@ -78,6 +79,7 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.20.1",
+    "eslint-plugin-vuejs-accessibility": "^2.4.1",
     "mocha": "^10.2.0",
     "msw": "^1.2.1",
     "sass": "^1.69.7",
