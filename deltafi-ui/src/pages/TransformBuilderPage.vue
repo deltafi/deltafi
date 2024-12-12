@@ -125,9 +125,11 @@
             <template #loading>Loading Actions. Please wait.</template>
             <Column header-style="width: 3em">
               <template #body="{ data }">
-                <draggable ref="draggableRef" class="dragArea list-group align-items-center" :list="[data]" :group="{ name: 'transformActions', pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
+                <draggable ref="draggableRef" class="dragArea list-group align-items-center justify-content-center w-100 h-100" :list="[data]" :group="{ name: 'transformActions', pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
                   <template #item="{ element }">
-                    <span class="d-flex align-items-center"> <i v-tooltip.top="`Grabbing ${element.displayName}`" :class="['p-datatable-reorderablerow-handle', 'pi pi-bars']"></i></span>
+                    <span class="d-flex align-items-center justify-content-center w-100 h-100">
+                      <i v-tooltip.bottom="`Grabbing ${element.displayName}`" :class="['p-datatable-reorderablerow-handle', 'pi pi-bars', 'd-flex', 'align-items-center', 'justify-content-center', 'w-100', 'h-100']"></i>
+                    </span>
                   </template>
                 </draggable>
               </template>
@@ -1061,15 +1063,4 @@ const publishUISchema = {
 
 <style lang="scss">
 @import "@/styles/pages/transform-builder-page.scss";
-
-td.truncate-column {
-  width: 16rem;
-  max-width: 16rem;
-
-  div.truncate {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-  }
-}
 </style>

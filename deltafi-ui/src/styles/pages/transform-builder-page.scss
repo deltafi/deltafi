@@ -98,6 +98,15 @@
 }
 
 .transform-builder-page-overlay {
+  .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td:first-child {
+    padding: 0 !important;
+
+    .dragArea {
+      height: 33.594px !important;
+      width: 41px !important;
+    }
+  }
+  
   .p-overlaypanel-close.p-link {
     z-index: 2100 !important;
   }
