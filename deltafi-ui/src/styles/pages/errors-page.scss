@@ -38,6 +38,10 @@
     .p-panel-content {
       padding: 0;
       border: none;
+
+      td.filename-column {
+        overflow-wrap: anywhere;
+      }
     }
   }
   .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
@@ -52,7 +56,7 @@
   }
   .p-paginator {
     background: inherit !important;
-    color: inherit  !important;
+    color: inherit !important;
     border: none !important;
     padding: 0 !important;
     font-size: inherit !important;
