@@ -53,7 +53,6 @@ export default function useSystemSnapshots() {
       errorSubstring: true,
       dataSource: true,
       action: true,
-      actionType: true,
       maxAttempts: true,
       priority: true,
       backOff: {

@@ -25,7 +25,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.ActionType;
 import org.deltafi.core.generated.types.BackOff;
 import org.hibernate.annotations.Type;
 
@@ -35,13 +34,23 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "resume_policies", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"errorSubstring", "action", "actionType"})
+        @UniqueConstraint(columnNames = {"dataSource", "errorSubstring", "action"})
 })
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ResumePolicy {
+    public static final String INVALID_DELAY = "delay must not be negative";
+    public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be greater than 1";
+    public static final String INVALID_MAX_DELAY = "maxDelay must not be negative";
+    public static final String INVALID_MULTIPLIER = "multiplier must be positive";
+    public static final String MAX_DELAY_ERROR = "maxDelay must not be lower than delay";
+    public static final String MISSING_CRITERIA = "Must specify errorSubstring, dataSource, or action";
+    public static final String MISSING_ID = "missing id";
+    public static final String MISSING_NAME = "missing name";
+    public static final String MISSING_BACKOFF = "missing backOff";
+    public static final String MISSING_MAX_DELAY = "Must set maxDelay when random is true";
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @lombok.Builder.Default
@@ -51,23 +60,11 @@ public class ResumePolicy {
     private String errorSubstring;
     private String dataSource;
     private String action;
-    private ActionType actionType;
     private int maxAttempts;
     private Integer priority;
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private BackOff backOff;
-
-    public static final String INVALID_DELAY = "delay must not be negative";
-    public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be greater than 1";
-    public static final String INVALID_MAX_DELAY = "maxDelay must not be negative";
-    public static final String INVALID_MULTIPLIER = "multiplier must be positive";
-    public static final String MAX_DELAY_ERROR = "maxDelay must not be lower than delay";
-    public static final String MISSING_CRITERIA = "Must specify errorSubstring, dataSource, action, and actionType";
-    public static final String MISSING_ID = "missing id";
-    public static final String MISSING_NAME = "missing name";
-    public static final String MISSING_BACKOFF = "missing backOff";
-    public static final String MISSING_MAX_DELAY = "Must set maxDelay when random is true";
 
     /**
      * Validate the resume policy for any errors.
@@ -90,8 +87,7 @@ public class ResumePolicy {
 
         if (StringUtils.isBlank(getErrorSubstring()) &&
                 StringUtils.isBlank(getDataSource()) &&
-                StringUtils.isBlank(getAction()) &&
-                getActionType() == null) {
+                StringUtils.isBlank(getAction())) {
             errors.add(MISSING_CRITERIA);
         }
 
@@ -119,10 +115,6 @@ public class ResumePolicy {
         }
         if (StringUtils.isNotBlank(getAction())) {
             tempPriority += 100;
-        } else {
-            if (getActionType() != null) {
-                tempPriority += 50;
-            }
         }
 
         if (StringUtils.isNotBlank(getDataSource())) {
@@ -159,8 +151,7 @@ public class ResumePolicy {
     }
 
     public boolean isMatch(Action action, String dataSource) {
-        return isMatch(action.getAttempt(), action.getErrorCause(), dataSource,
-                action.getName(), action.getType());
+        return isMatch(action.getAttempt(), action.getErrorCause(), dataSource, action.getName());
     }
 
     /**
@@ -170,17 +161,15 @@ public class ResumePolicy {
      *
      * @param attempt    the number of times the action was attempted
      * @param error      the errorCause message from the action
-     * @param flow       the DeltaFile;s sourceInfo dataSource
+     * @param dataSource the DeltaFile;s sourceInfo dataSource
      * @param action     the name of the action, including dataSource prefix
-     * @param actionType the action type
      * @return true if a match; otherwise false
      */
-    public boolean isMatch(int attempt, String error, String flow, String action, ActionType actionType) {
+    public boolean isMatch(int attempt, String error, String dataSource, String action) {
         return attempt < getMaxAttempts() &&
                 errorMatch(error) &&
-                canMatch(getDataSource(), flow) &&
-                canMatch(getAction(), action) &&
-                actionTypeMatches(actionType);
+                canMatch(getDataSource(), dataSource) &&
+                canMatch(getAction(), action);
     }
 
     private boolean errorMatch(String error) {
@@ -190,9 +179,5 @@ public class ResumePolicy {
 
     private boolean canMatch(String objectValue, String searchValue) {
         return StringUtils.isBlank(objectValue) || objectValue.equals(searchValue);
-    }
-
-    private boolean actionTypeMatches(ActionType actionType) {
-        return this.getActionType() == null || this.getActionType() == actionType;
     }
 }

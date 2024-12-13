@@ -34,7 +34,6 @@ const generateData = () => {
           errorSubstring: null,
           flow: null,
           action: "NoDataSinkConfiguredAction",
-          actionType: null,
           maxAttempts: 20,
           backOff: {
             delay: 60,
@@ -49,7 +48,6 @@ const generateData = () => {
           errorSubstring: "Failed to load content from storage",
           flow: null,
           action: null,
-          actionType: null,
           maxAttempts: 20,
           backOff: {
             delay: 60,

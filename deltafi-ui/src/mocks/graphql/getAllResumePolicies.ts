@@ -26,7 +26,6 @@ const generateData = (count: number) => {
       errorSubstring: faker.lorem.sentence(5),
       flow: "mock " + faker.lorem.word(),
       action: "mocksmoke.SmokeEgressAction",
-      actionType: null,
       maxAttempts: faker.number.int({
         min: 2,
         max: 5,

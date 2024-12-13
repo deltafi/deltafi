@@ -124,7 +124,6 @@ ALL_SNAPSHOT_FIELDS="id
               errorSubstring
               dataSource
               action
-              actionType
               maxAttempts
               priority
               backOff {

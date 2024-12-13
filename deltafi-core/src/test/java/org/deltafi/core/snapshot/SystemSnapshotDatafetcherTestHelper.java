@@ -78,7 +78,6 @@ public class SystemSnapshotDatafetcherTestHelper {
         second.setId(UUID.fromString("a2b08968-866a-4080-bc28-1d7e7c81ada8"));
         second.setName("resume-json-errors");
         second.setErrorSubstring("JsonException");
-        second.setActionType(ActionType.TRANSFORM);
         second.setMaxAttempts(4);
         second.setBackOff(BackOff.newBuilder().delay(60).maxDelay(120).random(true).build());
 
@@ -205,7 +204,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 id: "a2b08968-866a-4080-bc28-1d7e7c81ada8"
                                 name: "resume-json-errors"
                                 errorSubstring: "JsonException"
-                                actionType: TRANSFORM
                                 maxAttempts: 4
                                 backOff:
                                     {
@@ -348,7 +346,6 @@ public class SystemSnapshotDatafetcherTestHelper {
               dataSource
               errorSubstring
               action
-              actionType
               maxAttempts
               backOff {
                 delay

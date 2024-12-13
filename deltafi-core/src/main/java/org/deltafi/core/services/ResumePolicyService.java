@@ -21,16 +21,11 @@ import com.fasterxml.uuid.Generators;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.types.Action;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.ResumePolicyRepo;
+import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.deltafi.core.types.Result;
-import org.deltafi.core.types.ResumePolicy;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -59,14 +54,13 @@ public class ResumePolicyService implements Snapshotter {
      *
      * @param attempt    number of times action attempted
      * @param errorCause error cause text.
-     * @param flowName       the sourceInfo dataSource.
-     * @param actionName     name of action with error.
-     * @param actionType type of action with error.
+     * @param flowName   the sourceInfo dataSource.
+     * @param actionName name of action with error.
      * @return Optional ResumePolicy if found, else empty.
      */
-    Optional<ResumePolicy> find(int attempt, String errorCause, String flowName, String actionName, ActionType actionType) {
+    Optional<ResumePolicy> find(int attempt, String errorCause, String flowName, String actionName) {
         for (ResumePolicy policy : policiesCache) {
-            if (policy.isMatch(attempt, errorCause, flowName, actionName, actionType)) {
+            if (policy.isMatch(attempt, errorCause, flowName, actionName)) {
                 return Optional.of(policy);
             }
         }
@@ -126,8 +120,7 @@ public class ResumePolicyService implements Snapshotter {
                 action.getAttempt(),
                 errorCause,
                 deltaFile.getDataSource(),
-                action.getName(),
-                action.getType());
+                action.getName());
 
         return policy.map(resumePolicy -> new ResumeDetails(resumePolicy.getName(),
                 computeDelay(resumePolicy.getBackOff(), action.getAttempt())));

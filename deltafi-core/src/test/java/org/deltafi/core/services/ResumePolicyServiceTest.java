@@ -99,7 +99,7 @@ class ResumePolicyServiceTest {
     void testFind() {
         when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
-        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + DATA_SOURCE, "2" + ACTION, ActionType.TRANSFORM);
+        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + DATA_SOURCE, "2" + ACTION);
         assertFalse(policy.isEmpty());
         assertEquals("name2", policy.get().getName());
     }
@@ -325,7 +325,6 @@ class ResumePolicyServiceTest {
         if (null != error) policy.setErrorSubstring(error);
         if (null != dataSource) policy.setDataSource(dataSource);
         if (null != action) policy.setAction(action);
-        if (null != actionType) policy.setActionType(actionType);
 
         return policy;
     }

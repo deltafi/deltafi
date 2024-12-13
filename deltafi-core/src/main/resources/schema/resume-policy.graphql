@@ -36,7 +36,6 @@ type ResumePolicy {
     errorSubstring: String
     dataSource: String
     action: String
-    actionType: ActionType
     maxAttempts: Int!
     priority: Int
     backOff: BackOff!
@@ -48,7 +47,6 @@ input ResumePolicyInput {
     errorSubstring: String
     dataSource: String
     action: String
-    actionType: ActionType
     maxAttempts: Int!
     priority: Int
     backOff: BackOffInput!
