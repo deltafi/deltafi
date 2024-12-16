@@ -19,12 +19,10 @@ package org.deltafi.core.action.mediatype;
 
 import org.apache.tika.exception.TikaException;
 import org.deltafi.actionkit.action.ResultType;
-import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.asserters.ErrorResultAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +30,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ModifyMediaTypeTest {
@@ -61,7 +57,7 @@ class ModifyMediaTypeTest {
 
         ResultType result = action.transform(context, params, input);
 
-        assertTransformResult(result);
+        TransformResultAssert.assertThat(result);
         TransformResult transformResult = (TransformResult) result;
 
         assertEquals("image/png", transformResult.getContent().get(0).getMediaType());
@@ -81,7 +77,7 @@ class ModifyMediaTypeTest {
 
         ResultType result = action.transform(context, params, input);
 
-        assertErrorResult(result);
+        ErrorResultAssert.assertThat(result);
     }
 
     @Test
@@ -96,18 +92,10 @@ class ModifyMediaTypeTest {
 
         TransformResultType result = action.transform(runner.actionContext(), new ModifyMediaTypeParameters(), input);
 
-        assertTransformResult(result)
-                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "foobar.tar", "application/x-tar"))
-                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "foobar.zip", "application/zip"))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "thing1.txt", "text/plain"))
-                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "stix1.xml", "application/xml"));
-    }
-
-    private boolean contentMatches(ActionContent actionContent, String expectedName, String expectedMediaType) {
-        ContentAssert.assertThat(actionContent)
-                .hasName(expectedName)
-                .hasMediaType(expectedMediaType);
-
-        return true;
+        TransformResultAssert.assertThat(result)
+                .hasContentMatchingAt(0, input.content(0).getName(), "application/x-tar", input.content(0).loadBytes())
+                .hasContentMatchingAt(1, input.content(1).getName(), "application/zip", input.content(1).loadBytes())
+                .hasContentMatchingAt(2, input.content(2).getName(), "text/plain", input.content(2).loadBytes())
+                .hasContentMatchingAt(3, input.content(3).getName(), "application/xml", input.content(3).loadBytes());
     }
 }

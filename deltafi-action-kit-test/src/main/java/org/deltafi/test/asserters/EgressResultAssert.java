@@ -17,24 +17,36 @@
  */
 package org.deltafi.test.asserters;
 
+import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.egress.EgressResult;
 
 /**
  * Assertions for EgressResults
  */
 public class EgressResultAssert extends ResultAssert<EgressResultAssert, EgressResult> {
-
-    public EgressResultAssert(EgressResult egressResult) {
-        super(egressResult, EgressResultAssert.class);
+    /**
+     * Create a new EgressResultAssert with the given result, asserting that the result is not null and an instance
+     * of EgressResult.
+     * @param result to validate
+     * @return a new EgressResultAssert
+     */
+    public static EgressResultAssert assertThat(ResultType result) {
+        return assertThat(result, "Is non-null EgressResult");
     }
 
     /**
-     * Create a new EgressResultAssert with the given result
-     * @param egressResult to validate
-     * @return new EgressResultAssert
+     * Create a new EgressResultAssert with the given result, asserting that the result is not null and an instance
+     * of EgressResult.
+     * @param result to validate
+     * @param description a description to include with the not null and instance of assertions
+     * @return a new EgressResultAssert
      */
-    public static EgressResultAssert assertThat(EgressResult egressResult) {
-        return new EgressResultAssert(egressResult);
+    public static EgressResultAssert assertThat(ResultType result, String description) {
+        ResultAssertions.assertNonNullResult(result, EgressResult.class, description);
+        return new EgressResultAssert((EgressResult) result);
     }
 
+    private EgressResultAssert(EgressResult egressResult) {
+        super(egressResult, EgressResultAssert.class);
+    }
 }

@@ -20,12 +20,11 @@ package org.deltafi.core.action.delete;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 public class DeleteContentTest {
     DeleteContent action = new DeleteContent();
@@ -45,6 +44,6 @@ public class DeleteContentTest {
                 .build();
         ResultType result = action.transform(context, params, input);
 
-        assertTransformResult(result).hasContentCount(0);
+        TransformResultAssert.assertThat(result).hasContentCount(0);
     }
 }

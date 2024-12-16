@@ -20,14 +20,11 @@ package org.deltafi.core.action.split;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.test.asserters.TransformResultsAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResults;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class SplitTest {
     @Test
@@ -42,28 +39,10 @@ public class SplitTest {
                         .content(runner.saveContentFromResource("content1", "content2", "content3"))
                         .metadata(metadata).build());
 
-        assertTransformResults(transformResultType)
-                .hasChildrenSize(3)
-                .hasChildResultAt(0, transformResult -> {
-                    assertEquals("content1", transformResult.getContent().getFirst().getName());
-                    assertNull(transformResult.getContent().getFirst().getMediaType());
-                    assertEquals("first", transformResult.getContent().getFirst().loadString());
-                    assertEquals(metadata, transformResult.getMetadata());
-                    return true;
-                })
-                .hasChildResultAt(1, transformResult -> {
-                    assertEquals("content2", transformResult.getContent().getFirst().getName());
-                    assertNull(transformResult.getContent().getFirst().getMediaType());
-                    assertEquals("second", transformResult.getContent().getFirst().loadString());
-                    assertEquals(metadata, transformResult.getMetadata());
-                    return true;
-                })
-                .hasChildResultAt(2, transformResult -> {
-                    assertEquals("content3", transformResult.getContent().getFirst().getName());
-                    assertNull(transformResult.getContent().getFirst().getMediaType());
-                    assertEquals("third", transformResult.getContent().getFirst().loadString());
-                    assertEquals(metadata, transformResult.getMetadata());
-                    return true;
-                });
+        TransformResultsAssert.assertThat(transformResultType)
+                .hasChildrenSize(3, "Split has 3 children")
+                .hasChildResultAt(0, "content1", null, "first", metadata, "Child at index 0 matches")
+                .hasChildResultAt(1, "content2", null, "second", metadata, "Child at index 1 matches")
+                .hasChildResultAt(2, "content3", null, "third", metadata, "Child at index 2 matches");
     }
 }

@@ -21,13 +21,12 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.FilterResultAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertFilterResult;
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class FilterTest {
     private static final ActionContext CONTEXT = new ActionContext();
@@ -36,7 +35,7 @@ class FilterTest {
 
     @Test
     void filtersWithEmptyExpressions() {
-        assertFilterResult(action.transform(CONTEXT, new FilterParameters(), createInput()))
+        FilterResultAssert.assertThat(action.transform(CONTEXT, new FilterParameters(), createInput()))
                 .hasCause("Filtered by fiat");
     }
 
@@ -48,7 +47,7 @@ class FilterTest {
 
         ResultType result = action.transform(CONTEXT, params, createInput());
 
-        assertFilterResult(result)
+        FilterResultAssert.assertThat(result)
                 .hasCause("Filtered because at least one of the criteria matched")
                 .hasContext(null);
     }
@@ -61,7 +60,7 @@ class FilterTest {
 
         ResultType result = action.transform(CONTEXT, params, createInput());
 
-        assertTransformResult(result).hasContentCount(1);
+        TransformResultAssert.assertThat(result).hasContentCount(1);
     }
 
     @Test
@@ -72,7 +71,7 @@ class FilterTest {
 
         ResultType result = action.transform(CONTEXT, params, createInput());
 
-        assertFilterResult(result)
+        FilterResultAssert.assertThat(result)
                 .hasCause("Filtered because all of the criteria matched")
                 .hasContext(null);
     }
@@ -85,7 +84,7 @@ class FilterTest {
 
         ResultType result = action.transform(CONTEXT, params, createInput());
 
-        assertTransformResult(result).hasContentCount(1);
+        TransformResultAssert.assertThat(result).hasContentCount(1);
     }
 
     @Test
@@ -96,7 +95,7 @@ class FilterTest {
 
         ResultType result = action.transform(CONTEXT, params, createInput());
 
-        assertFilterResult(result)
+        FilterResultAssert.assertThat(result)
                 .hasCause("Filtered because none of the criteria matched")
                 .hasContext(null);
     }
@@ -109,7 +108,7 @@ class FilterTest {
 
         ResultType result = action.transform(CONTEXT, params, createInput());
 
-        assertTransformResult(result).hasContentCount(1);
+        TransformResultAssert.assertThat(result).hasContentCount(1);
     }
 
     private TransformInput createInput() {

@@ -21,14 +21,14 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.ErrorResultAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class ErrorTest {
     @Test
@@ -36,12 +36,12 @@ class ErrorTest {
         Error action = new Error();
         TransformResultType transformResultType =
                 action.transform(new ActionContext(), new ErrorParameters(), TransformInput.builder().build());
-        assertErrorResult(transformResultType).hasCause("Errored by fiat");
+        ErrorResultAssert.assertThat(transformResultType).hasCause("Errored by fiat");
 
         ErrorParameters errorParameters = new ErrorParameters();
         errorParameters.setMessage("Test error message");
         transformResultType = action.transform(new ActionContext(), errorParameters, TransformInput.builder().build());
-        assertErrorResult(transformResultType).hasCause("Test error message");
+        ErrorResultAssert.assertThat(transformResultType).hasCause("Test error message");
     }
 
     @Test
@@ -52,7 +52,7 @@ class ErrorTest {
         errorParameters.setMetadataTrigger("metadata-trigger-key");
         TransformResultType transformResultType = action.transform(new ActionContext(), errorParameters,
                 TransformInput.builder().metadata(Map.of("metadata-trigger-key", "Test error message")).build());
-        assertErrorResult(transformResultType).hasCause("Test error message");
+        ErrorResultAssert.assertThat(transformResultType).hasCause("Test error message");
     }
 
     @Test
@@ -61,11 +61,12 @@ class ErrorTest {
 
         ErrorParameters errorParameters = new ErrorParameters();
         errorParameters.setMetadataTrigger("non-matching-key");
-        ActionContext context = new ActionContext();
-        ActionContent actionContent = ActionContent.emptyContent(context, "empty", MediaType.TEXT_PLAIN);
-        TransformResultType transformResultType = action.transform(context, errorParameters,
+        DeltaFiTestRunner runner = DeltaFiTestRunner.setup("ErrorTest");
+        ActionContent actionContent = ActionContent.emptyContent(runner.actionContext(), "empty", MediaType.TEXT_PLAIN);
+        TransformResultType transformResultType = action.transform(runner.actionContext(), errorParameters,
                 TransformInput.builder().metadata(Map.of("metadata-trigger-key", "Test error message"))
                         .content(List.of(actionContent)).build());
-        assertTransformResult(transformResultType).hasContentMatching(actionContent::equals);
+        TransformResultAssert.assertThat(transformResultType)
+                .hasContentMatchingAt(0, actionContent.getName(), actionContent.getMediaType(), actionContent.loadString());
     }
 }

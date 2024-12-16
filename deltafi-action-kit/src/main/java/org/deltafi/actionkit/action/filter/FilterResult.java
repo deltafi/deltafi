@@ -73,4 +73,9 @@ public class FilterResult extends AnnotationsResult<FilterResult> implements Egr
                 .build());
         return event;
     }
+
+    @Override
+    public String toString() {
+        return "FilterResult: " + filteredCause + " : " + filteredContext;
+    }
 }

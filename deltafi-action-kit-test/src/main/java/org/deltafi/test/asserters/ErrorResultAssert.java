@@ -18,6 +18,7 @@
 package org.deltafi.test.asserters;
 
 import org.assertj.core.api.Assertions;
+import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 
 import java.util.regex.Pattern;
@@ -26,18 +27,30 @@ import java.util.regex.Pattern;
  * Assertions for ErrorResults
  */
 public class ErrorResultAssert extends AnnotationResultAssert<ErrorResultAssert, ErrorResult> {
-
-    public ErrorResultAssert(ErrorResult errorResult) {
-        super(errorResult, ErrorResultAssert.class);
+    /**
+     * Create a new ErrorResultAssert with the given result, asserting that the result is not null and an instance
+     * of ErrorResult.
+     * @param result to validate
+     * @return a new ErrorResultAssert
+     */
+    public static ErrorResultAssert assertThat(ResultType result) {
+        return assertThat(result, "Is non-null ErrorResult");
     }
 
     /**
-     * Create a new ErrorResultAssert with the given result
-     * @param errorResult to validate
+     * Create a new ErrorResultAssert with the given result, asserting that the result is not null and an instance
+     * of ErrorResult.
+     * @param result to validate
+     * @param description a description to include with the not null and instance of assertions
      * @return a new ErrorResultAssert
      */
-    public static ErrorResultAssert assertThat(ErrorResult errorResult) {
-        return new ErrorResultAssert(errorResult);
+    public static ErrorResultAssert assertThat(ResultType result, String description) {
+        ResultAssertions.assertNonNullResult(result, ErrorResult.class, description);
+        return new ErrorResultAssert((ErrorResult) result);
+    }
+
+    private ErrorResultAssert(ErrorResult errorResult) {
+        super(errorResult, ErrorResultAssert.class);
     }
 
     /**
@@ -46,7 +59,17 @@ public class ErrorResultAssert extends AnnotationResultAssert<ErrorResultAssert,
      * @return this
      */
     public ErrorResultAssert hasCause(String exactMatch) {
-        Assertions.assertThat(actual.getErrorCause()).isEqualTo(exactMatch);
+        return hasCause(exactMatch, "Has cause");
+    }
+
+    /**
+     * Verify the error cause is equal to the given cause
+     * @param exactMatch expected error cause
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public ErrorResultAssert hasCause(String exactMatch, String description) {
+        Assertions.assertThat(actual.getErrorCause()).describedAs(description).isEqualTo(exactMatch);
         return this;
     }
 
@@ -56,8 +79,18 @@ public class ErrorResultAssert extends AnnotationResultAssert<ErrorResultAssert,
      * @return this
      */
     public ErrorResultAssert hasCauseLike(String regexPattern) {
+        return hasCauseLike(regexPattern, "Has cause like");
+    }
+
+    /**
+     * Verify the error cause matches the given regex pattern
+     * @param regexPattern to match against the error cause
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public ErrorResultAssert hasCauseLike(String regexPattern, String description) {
         Pattern pattern = Pattern.compile(regexPattern);
-        Assertions.assertThat(actual.getErrorCause()).matches(pattern);
+        Assertions.assertThat(actual.getErrorCause()).describedAs(description).matches(pattern);
         return this;
     }
 
@@ -67,7 +100,17 @@ public class ErrorResultAssert extends AnnotationResultAssert<ErrorResultAssert,
      * @return this
      */
     public ErrorResultAssert hasContext(String exactMatch) {
-        Assertions.assertThat(actual.getErrorContext()).isEqualTo(exactMatch);
+        return hasContext(exactMatch, "Has context");
+    }
+
+    /**
+     * Verify the error context is equal to the given context
+     * @param exactMatch expected errorContext
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public ErrorResultAssert hasContext(String exactMatch, String description) {
+        Assertions.assertThat(actual.getErrorContext()).describedAs(description).isEqualTo(exactMatch);
         return this;
     }
 
@@ -77,8 +120,18 @@ public class ErrorResultAssert extends AnnotationResultAssert<ErrorResultAssert,
      * @return this
      */
     public ErrorResultAssert hasContextLike(String regexPattern) {
+        return hasContextLike(regexPattern, "Has context like");
+    }
+
+    /**
+     * Verify the error context matches the given regex pattern
+     * @param regexPattern to match against the error context
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public ErrorResultAssert hasContextLike(String regexPattern, String description) {
         Pattern pattern = Pattern.compile(regexPattern);
-        Assertions.assertThat(actual.getErrorContext()).matches(pattern);
+        Assertions.assertThat(actual.getErrorContext()).describedAs(description).matches(pattern);
         return this;
     }
 }

@@ -27,16 +27,14 @@ import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.LineageData;
 import org.deltafi.common.types.LineageMap;
 import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DecompressTest {
@@ -194,40 +192,18 @@ public class DecompressTest {
     }
 
     private void verifyTransform(ResultType result, Format archiveType, boolean retainExistingContent, String originalInputName) {
-        int startIdx = retainExistingContent ? 1 : 0;
-
-        assertTransformResult(result)
-                .hasContentMatchingAt(startIdx, actionContent -> {
-                    ContentAssert.assertThat(actionContent)
-                            .hasName(FILE1)
-                            .hasMediaType(MediaType.APPLICATION_OCTET_STREAM);
-                    return true;
-                })
-                .hasContentMatchingAt(startIdx + 1, actionContent -> {
-                    ContentAssert.assertThat(actionContent)
-                            .hasName(FILE2)
-                            .hasMediaType(MediaType.APPLICATION_OCTET_STREAM);
-                    return true;
-                })
-                .addedMetadata("compressFormat", archiveType.getValue());
+        TransformResultAssert transformResultAssert = TransformResultAssert.assertThat(result);
+        int index = 0;
 
         if (retainExistingContent) {
-            assertTransformResult(result)
-                    .hasContentMatchingAt(0, actionContent -> {
-                        ContentAssert.assertThat(actionContent)
-                                .hasName(originalInputName);
-                        return true;
-                    })
-                    .contentLoadBytesEquals(List.of(
-                            runner.readResourceAsBytes(originalInputName),
-                            runner.readResourceAsBytes(FILE1),
-                            runner.readResourceAsBytes(FILE2)));
-        } else {
-            assertTransformResult(result)
-                    .contentLoadBytesEquals(List.of(
-                            runner.readResourceAsBytes(FILE1),
-                            runner.readResourceAsBytes(FILE2)));
+            transformResultAssert.hasContentMatchingAt(index++, originalInputName, null, runner.readResourceAsBytes(originalInputName));
         }
+
+        transformResultAssert
+                .hasContentMatchingAt(index++, FILE1, MediaType.APPLICATION_OCTET_STREAM, runner.readResourceAsBytes(FILE1))
+                .hasContentMatchingAt(index, FILE2, MediaType.APPLICATION_OCTET_STREAM, runner.readResourceAsBytes(FILE2));
+
+        transformResultAssert.addedMetadata("compressFormat", archiveType.getValue());
     }
 
     @Test
@@ -281,7 +257,7 @@ public class DecompressTest {
         Map<String, LineageData> lineage = new HashMap<>(BASE_LINEAGE);
         String expectedLineage = mapToJson(lineage);
 
-        assertTransformResult(resultType)
+        TransformResultAssert.assertThat(resultType)
                 .hasContentCount(5)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
                 .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir3-has-two-zips.tar", null))
@@ -297,7 +273,7 @@ public class DecompressTest {
 
         ResultType resultType = runRecursiveTest(params, input("multi-layers.tgz"));
 
-        assertTransformResult(resultType)
+        TransformResultAssert.assertThat(resultType)
                 .hasContentCount(7)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
                 .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n"))
@@ -316,7 +292,7 @@ public class DecompressTest {
 
         ResultType resultType = runRecursiveTest(params, input("multi-layers.tgz"));
 
-        assertTransformResult(resultType)
+        TransformResultAssert.assertThat(resultType)
                 .hasContentCount(8)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
                 .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n"))
@@ -513,7 +489,7 @@ public class DecompressTest {
                   }
                 }""";
 
-        assertTransformResult(resultType)
+        TransformResultAssert.assertThat(resultType)
                 .hasContentCount(20)
                 .hasContentMatchingAt(19, actionContent -> lineageMatches(actionContent, LINEAGE_FILENAME, lineageJson));
     }
@@ -549,7 +525,7 @@ public class DecompressTest {
 
         String expectedLineage = mapToJson(lineage);
 
-        assertTransformResult(resultType)
+        TransformResultAssert.assertThat(resultType)
                 .hasContentCount(8)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
                 .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt.zip", null))
@@ -579,19 +555,27 @@ public class DecompressTest {
 
     private void runTest(DecompressParameters parameters, Format expectedCompressFormat, TransformInput input, String... outputFiles) {
         ResultType result = action.transform(runner.actionContext(), parameters, input);
-        List<String> names = new ArrayList<>();
-        if (parameters.isRetainExistingContent()) {
-            names.addAll(input.getContent().stream().map(ActionContent::getName).toList());
-        }
-        names.addAll(List.of(outputFiles));
 
-        assertTransformResult(result)
-                .contentLoadBytesEquals(names.stream().map(runner::readResourceAsBytes).toList())
-                .addedMetadata("compressFormat", expectedCompressFormat.getValue());
+        TransformResultAssert transformResultAssert = TransformResultAssert.assertThat(result);
+        int index = 0;
+
+        if (parameters.isRetainExistingContent()) {
+            for (ActionContent content : input.content()) {
+                transformResultAssert.hasContentMatchingAt(index++, content.getName(), content.getMediaType(),
+                        content.loadBytes());
+            }
+        }
+
+        for (String outputFile : outputFiles) {
+            transformResultAssert.hasContentMatchingAt(index++, outputFile, MediaType.APPLICATION_OCTET_STREAM,
+                    runner.readResourceAsBytes(outputFile));
+        }
+
+        transformResultAssert.addedMetadata("compressFormat", expectedCompressFormat.getValue());
     }
 
     private String mapToJson(Map<String, LineageData> theMap) {
-        String jsonLineage = "";
+        String jsonLineage;
         try {
             jsonLineage = OBJECT_MAPPER.writeValueAsString(theMap);
         } catch (JsonProcessingException e) {

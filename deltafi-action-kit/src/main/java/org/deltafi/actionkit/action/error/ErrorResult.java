@@ -124,4 +124,9 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
                 .build());
         return event;
     }
+
+    @Override
+    public String toString() {
+        return "ErrorResult: " + errorCause + " : " + errorContext;
+    }
 }

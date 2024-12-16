@@ -27,18 +27,28 @@ import java.nio.charset.Charset;
  * Provide assertions to verify the contents of an ActionContent
  */
 public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> {
-
-    public ContentAssert(ActionContent content) {
-        super(content, ContentAssert.class);
-    }
-
     /**
-     * Create a new ContentAssert with the given ActionContent
+     * Create a new ContentAssert with the given ActionContent, asserting that the content is not null
      * @param content to run assertions against
      * @return new ContentAssert
      */
     public static ContentAssert assertThat(ActionContent content) {
+        return assertThat(content, "Is non-null ActionContent");
+    }
+
+    /**
+     * Create a new ContentAssert with the given ActionContent, asserting that the content is not null
+     * @param content to run assertions against
+     * @param description a description to include with the not null assertion
+     * @return new ContentAssert
+     */
+    public static ContentAssert assertThat(ActionContent content, String description) {
+        Assertions.assertThat(content).describedAs(description).isNotNull();
         return new ContentAssert(content);
+    }
+
+    private ContentAssert(ActionContent content) {
+        super(content, ContentAssert.class);
     }
 
     /**
@@ -47,7 +57,6 @@ public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> 
      * @return this
      */
     public ContentAssert hasName(String name) {
-        isNotNull();
         Assertions.assertThat(actual.getName()).isEqualTo(name);
         return this;
     }
@@ -58,7 +67,6 @@ public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> 
      * @return this
      */
     public ContentAssert hasSize(long size) {
-        isNotNull();
         Assertions.assertThat(actual.getSize()).isEqualTo(size);
         return this;
     }
@@ -69,7 +77,6 @@ public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> 
      * @return this
      */
     public ContentAssert hasMediaType(String mediaType) {
-        isNotNull();
         Assertions.assertThat(actual.getMediaType()).isEqualTo(mediaType);
         return this;
     }
@@ -80,7 +87,6 @@ public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> 
      * @return this
      */
     public ContentAssert hasSegmentCount(int count) {
-        isNotNull();
         Assertions.assertThat(actual.getContent().getSegments()).hasSize(count);
         return this;
     }
@@ -91,7 +97,6 @@ public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> 
      * @return this
      */
     public ContentAssert loadBytesIsEqualTo(byte[] bytes) {
-        isNotNull();
         Assertions.assertThat(actual.loadBytes()).isEqualTo(bytes);
         return this;
     }
@@ -113,7 +118,6 @@ public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> 
      * @return this
      */
     public ContentAssert loadStringIsEqualTo(String value, Charset charset) {
-        isNotNull();
         Assertions.assertThat(actual.loadString(charset)).isEqualTo(value);
         return this;
     }

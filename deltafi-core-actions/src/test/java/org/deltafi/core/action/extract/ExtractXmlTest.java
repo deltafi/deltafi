@@ -20,15 +20,12 @@ package org.deltafi.core.action.extract;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.test.asserters.ErrorResultAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
+import java.util.*;
 
 class ExtractXmlTest {
 
@@ -44,7 +41,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result).addedMetadataEquals(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
+        TransformResultAssert.assertThat(result).addedMetadata(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
     }
 
     @Test
@@ -78,7 +75,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result).addedMetadataEquals(Map.of("valuesMetadata", expected));
+        TransformResultAssert.assertThat(result).addedMetadata("valuesMetadata", expected);
     }
 
     @Test
@@ -91,7 +88,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result).addedMetadataEquals(Collections.emptyMap());
+        TransformResultAssert.assertThat(result).metadataIsEmpty();
     }
 
     @Test
@@ -105,7 +102,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertErrorResult(result).hasCause("Key not found: /missing/element");
+        ErrorResultAssert.assertThat(result).hasCause("Key not found: /missing/element");
     }
 
     @Test
@@ -118,7 +115,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertErrorResult(result).hasCause("Unable to read XML content");
+        ErrorResultAssert.assertThat(result).hasCause("Unable to read XML content");
     }
 
     @Test
@@ -131,7 +128,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertErrorResult(result).hasCause("Unable to evaluate XPATH expression");
+        ErrorResultAssert.assertThat(result).hasCause("Unable to evaluate XPATH expression");
     }
 
     @Test
@@ -144,7 +141,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result).addedAnnotations(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
+        TransformResultAssert.assertThat(result).addedAnnotations(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
     }
 
     @Test
@@ -179,7 +176,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result).addedAnnotations(Map.of("valuesMetadata", expected));
+        TransformResultAssert.assertThat(result).addedAnnotation("valuesMetadata", expected);
     }
 
     @Test
@@ -194,7 +191,7 @@ class ExtractXmlTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result).addedAnnotations(Collections.emptyMap());
+        TransformResultAssert.assertThat(result).annotationsIsEmpty();
     }
 
     private ActionContent saveXml(String xml) {

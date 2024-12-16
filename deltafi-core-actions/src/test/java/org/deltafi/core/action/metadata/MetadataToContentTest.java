@@ -22,14 +22,11 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
+import java.util.*;
 
 class MetadataToContentTest {
     MetadataToContent action = new MetadataToContent();
@@ -40,7 +37,7 @@ class MetadataToContentTest {
     void testMetadataToContentWithAllMetadata() {
         ResultType result = action.transform(context, new MetadataToContentParameters(), createInput());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(2) // Original content plus metadata
                 .hasContentMatchingAt(1, this::checkContent);
     }
@@ -52,7 +49,7 @@ class MetadataToContentTest {
 
         ResultType result = action.transform(context, params, createInput());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(2)
                 .hasContentMatchingAt(1, content -> {
                     Assertions.assertThat(content.getName()).isEqualTo("metadata.json");
@@ -70,7 +67,7 @@ class MetadataToContentTest {
 
         ResultType result = action.transform(context, params, createInput());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1) // Only metadata, original content replaced
                 .hasContentMatchingAt(0, this::checkContent);
     }

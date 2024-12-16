@@ -21,6 +21,7 @@ import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.MetadataResult;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,7 +31,6 @@ import java.util.Map;
  */
 public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T extends MetadataResult<T>>
         extends ResultAssert<A, T> {
-
 
     protected MetadataResultAssert(T metadataResult, Class<?> selfType) {
         super(metadataResult, selfType);
@@ -43,7 +43,18 @@ public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T ext
      * @return this
      */
     public A addedMetadata(String key, String value) {
-        Assertions.assertThat(actual.getMetadata()).containsEntry(key, value);
+        return addedMetadata(key, value, "Has metadata");
+    }
+
+    /**
+     * Verify that the result includes the key and value in the metadata map
+     * @param key to search for
+     * @param value that should be set for the key
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public A addedMetadata(String key, String value, String description) {
+        Assertions.assertThat(actual.getMetadata()).describedAs(description).containsEntry(key, value);
         return myself;
     }
 
@@ -52,6 +63,87 @@ public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T ext
      * @param metadata that should be included in the result
      * @return this
      */
+    public A addedMetadata(Map<String, String> metadata) {
+        return addedMetadata(metadata, "Has metadata");
+    }
+
+    /**
+     * Verify that the result include all the given metadata
+     * @param metadata that should be included in the result
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public A addedMetadata(Map<String, String> metadata, String description) {
+        Assertions.assertThat(actual.getMetadata()).describedAs(description).isEqualTo(metadata);
+        return myself;
+    }
+
+    /**
+     * Verify that result deleted the given key from the metadata
+     * @param key key that should have been deleted
+     * @return this
+     */
+    public A deletedMetadataKey(String key) {
+        return deletedMetadataKey(key, "Has deleted metadata key");
+    }
+
+    /**
+     * Verify that result deleted the given key from the metadata
+     * @param key key that should have been deleted
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public A deletedMetadataKey(String key, String description) {
+        Assertions.assertThat(actual.getDeleteMetadataKeys()).describedAs(description).contains(key);
+        return myself;
+    }
+
+    /**
+     * Verify that result deleted the given list of keys from the metadata
+     * @param keys zero or more keys that should have been deleted
+     * @return this
+     */
+    public A deletedMetadataKeys(List<String> keys) {
+        return deletedMetadataKeys(keys, "Has deleted metadata keys");
+    }
+
+    /**
+     * Verify that result deleted the given list of keys from the metadata
+     * @param keys zero or more keys that should have been deleted
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public A deletedMetadataKeys(List<String> keys, String description) {
+        Assertions.assertThat(actual.getDeleteMetadataKeys()).describedAs(description).isEqualTo(keys);
+        return myself;
+    }
+
+    /**
+     * Verify that no metadata was added
+     * @return this
+     */
+    public A metadataIsEmpty() {
+        return metadataIsEmpty("Has no metadata");
+    }
+
+    /**
+     * Verify that no metadata was added
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public A metadataIsEmpty(String description) {
+        Assertions.assertThat(actual.getMetadata()).describedAs(description).isEmpty();
+        return myself;
+    }
+
+
+    /**
+     * Verify that the result include all the given metadata
+     * @param metadata that should be included in the result
+     * @return this
+     * @deprecated Use {@link MetadataResultAssert#addedMetadata(Map)}
+     */
+    @Deprecated
     public A addedMetadataEquals(Map<String, String> metadata) {
         Assertions.assertThat(actual.getMetadata()).isEqualTo(metadata);
         return myself;
@@ -61,8 +153,11 @@ public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T ext
      * Verify that result deleted the given list of keys from the metadata
      * @param keys zero or more keys that should have been deleted
      * @return this
+     * @deprecated Use {@link MetadataResultAssert#deletedMetadataKeys(List)} or multiple
+     * {@link MetadataResultAssert#deletedMetadataKey(String)} calls
      */
-    public A deletedKeyEquals(String ... keys) {
+    @Deprecated
+    public A deletedKeyEquals(String... keys) {
         Assertions.assertThat(actual.getDeleteMetadataKeys()).containsExactly(keys);
         return myself;
     }

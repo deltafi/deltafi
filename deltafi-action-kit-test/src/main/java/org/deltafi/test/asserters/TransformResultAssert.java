@@ -17,24 +17,36 @@
  */
 package org.deltafi.test.asserters;
 
-
+import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.transform.TransformResult;
 
 /**
  * Assertions for TransformResults
  */
 public class TransformResultAssert extends ContentResultAssert<TransformResultAssert, TransformResult> {
-
-    public TransformResultAssert(TransformResult transformResult) {
-        super(transformResult, TransformResultAssert.class);
+    /**
+     * Create a new TransformResultAssert with the given result, asserting that the result is not null and an instance
+     * of TransformResult.
+     * @param result to validate
+     * @return a new TransformResultAssert
+     */
+    public static TransformResultAssert assertThat(ResultType result) {
+        return assertThat(result, "Is non-null TransformResult");
     }
 
     /**
-     * Create a new TransformResultAssert with the given result
-     * @param transformResult to validate
+     * Create a new TransformResultAssert with the given result, asserting that the result is not null and an instance
+     * of TransformResult.
+     * @param result to validate
+     * @param description a description to include with the not null and instance of assertions
      * @return a new TransformResultAssert
      */
-    public static TransformResultAssert assertThat(TransformResult transformResult) {
-        return new TransformResultAssert(transformResult);
+    public static TransformResultAssert assertThat(ResultType result, String description) {
+        ResultAssertions.assertNonNullResult(result, TransformResult.class, description);
+        return new TransformResultAssert((TransformResult) result);
+    }
+
+    private TransformResultAssert(TransformResult transformResult) {
+        super(transformResult, TransformResultAssert.class);
     }
 }

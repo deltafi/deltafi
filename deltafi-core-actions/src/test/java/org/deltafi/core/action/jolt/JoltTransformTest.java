@@ -21,13 +21,12 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.test.asserters.ErrorResultAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class JoltTransformTest {
 
@@ -43,7 +42,7 @@ class JoltTransformTest {
         TransformInput input = createInput();
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, this::checkContent);
     }
@@ -57,7 +56,7 @@ class JoltTransformTest {
         TransformInput input = createInput();
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, this::checkContent);
     }
@@ -71,7 +70,7 @@ class JoltTransformTest {
         TransformInput input = createInput();
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, this::checkContent);
     }
@@ -87,7 +86,7 @@ class JoltTransformTest {
         TransformInput input = createInput();
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, content -> {
                     // Content should remain unchanged
@@ -107,7 +106,7 @@ class JoltTransformTest {
         params.setFilePatterns(List.of("example.json"));
 
         TransformInput input = createInput();
-        assertErrorResult(action.transform(runner.actionContext(), params, input))
+        ErrorResultAssert.assertThat(action.transform(runner.actionContext(), params, input))
                 .hasCause("Error transforming content at index 0")
                 .hasContextLike("[\\s\\S]*Unable to unmarshal JSON to a List.[\\s\\S]*");
     }
@@ -120,7 +119,7 @@ class JoltTransformTest {
         params.setFilePatterns(List.of("example.json"));
 
         TransformInput input = createInputWithErrorInContent();
-        assertErrorResult(action.transform(runner.actionContext(), params, input))
+        ErrorResultAssert.assertThat(action.transform(runner.actionContext(), params, input))
                 .hasCause("Error transforming content at index 0");
     }
 

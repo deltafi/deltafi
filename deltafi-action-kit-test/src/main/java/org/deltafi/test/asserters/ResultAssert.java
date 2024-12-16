@@ -30,8 +30,7 @@ import java.util.Objects;
  * @param <A> The class that extended this
  * @param <T> The expected result type
  */
-public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>>
-        extends AbstractAssert<A, T> {
+public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>> extends AbstractAssert<A, T> {
 
     protected ResultAssert(T t, Class<?> selfType) {
         super(t, selfType);
@@ -49,12 +48,34 @@ public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>>
     }
 
     /**
+     * Verify that the result contains a metric with the given name, value and tags
+     * @param name of the expected metric
+     * @param value of the expected metric
+     * @param tags of the expected metric
+     * @param description a description to include with the assertion
+     * @return myself
+     */
+    public A hasMetric(String name, long value, Map<String, String> tags, String description) {
+        return hasMetric(new Metric(name, value, tags), description);
+    }
+
+    /**
      * Verify that the result contains the given metric
      * @param metric expected metric
      * @return myself
      */
     public A hasMetric(Metric metric) {
-        Assertions.assertThat(actual.getCustomMetrics()).contains(metric);
+        return hasMetric(metric, "Has metric");
+    }
+
+    /**
+     * Verify that the result contains the given metric
+     * @param metric expected metric
+     * @param description a description to include with the assertion
+     * @return myself
+     */
+    public A hasMetric(Metric metric, String description) {
+        Assertions.assertThat(actual.getCustomMetrics()).describedAs(description).contains(metric);
         return myself;
     }
 
@@ -64,16 +85,29 @@ public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>>
      * @return myself
      */
     public A hasMetricNamed(String name) {
-        Assertions.assertThat(actual.getCustomMetrics()).anyMatch(m -> Objects.equals(name, m.getName()));
+        return hasMetricNamed(name, "Has metric named " + name);
+    }
+
+    /**
+     * Verify that the result contains a metric with the given name
+     * @param name of the expected metric
+     * @param description a description to include with the assertion
+     * @return myself
+     */
+    public A hasMetricNamed(String name, String description) {
+        Assertions.assertThat(actual.getCustomMetrics()).describedAs(description)
+                .anyMatch(m -> Objects.equals(name, m.getName()));
         return myself;
     }
+
 
     /**
      * Get the result that is being verified
      * @return the original result with casted to the correct class
+     * @deprecated Use result supplied to constructor
      */
+    @Deprecated
     public T getResult() {
         return actual;
     }
-
 }

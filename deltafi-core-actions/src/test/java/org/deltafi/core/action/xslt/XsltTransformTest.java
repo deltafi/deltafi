@@ -22,13 +22,12 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.ErrorResultAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class XsltTransformTest {
     
@@ -45,7 +44,7 @@ class XsltTransformTest {
         TransformInput input = createInput();
         ResultType result = action.transform(context, params, input);
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, this::checkContent);
     }
@@ -58,7 +57,7 @@ class XsltTransformTest {
         TransformInput input = createInput();
         ResultType result = action.transform(context, params, input);
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, content -> {
                     // Content should remain unchanged
@@ -75,7 +74,7 @@ class XsltTransformTest {
         params.setXslt("INVALID");
 
         TransformInput input = createInput();
-        assertErrorResult(action.transform(context, params, input))
+        ErrorResultAssert.assertThat(action.transform(context, params, input))
                 .hasCause("Error transforming content at index 0")
                 .hasContextLike("[\\s\\S]*Content is not allowed in prolog[\\s\\S]*");
     }
@@ -85,7 +84,7 @@ class XsltTransformTest {
         XsltParameters params = createParameters();
 
         TransformInput input = createBadInput();
-        assertErrorResult(action.transform(context, params, input))
+        ErrorResultAssert.assertThat(action.transform(context, params, input))
                 .hasCause("Error transforming content at index 0");
     }
 

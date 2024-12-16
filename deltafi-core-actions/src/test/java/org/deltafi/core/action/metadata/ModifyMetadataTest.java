@@ -19,14 +19,11 @@ package org.deltafi.core.action.metadata;
 
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.test.asserters.ActionResultAssertions;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 
 class ModifyMetadataTest {
 
@@ -45,9 +42,8 @@ class ModifyMetadataTest {
 
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        ActionResultAssertions.assertTransformResult(result)
-                        .addedMetadataEquals(Map.of("key1", "value1", "key2", "value2", "key3", "origVal1", "key4", "origVal1"))
-                        .deletedKeyEquals("origKey2");
-
+        TransformResultAssert.assertThat(result)
+                .addedMetadata(Map.of("key1", "value1", "key2", "value2", "key3", "origVal1", "key4", "origVal1"))
+                .deletedMetadataKey("origKey2");
     }
 }

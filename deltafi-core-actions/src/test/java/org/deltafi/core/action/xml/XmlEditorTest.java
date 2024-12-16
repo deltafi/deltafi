@@ -22,17 +22,15 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.*;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-
-import java.util.LinkedList;
-import java.util.List;
-
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.*;
+import java.util.LinkedList;
+import java.util.List;
 
 
 class XmlEditorTest {
@@ -894,7 +892,7 @@ class XmlEditorTest {
 
         ResultType result = performXmlTransformTest(xmlEditingCommandList, createContent());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, this::checkContentName)
                 .hasContentMatchingAt(0, content -> {
@@ -908,7 +906,7 @@ class XmlEditorTest {
 
         ResultType result = performXmlTransformTest(xmlEditingCommandList, createContent());
 
-        assertFilterResult(result)
+        FilterResultAssert.assertThat(result)
                 .hasCause(expectedCause);
     }
 
@@ -918,7 +916,7 @@ class XmlEditorTest {
 
         ResultType result = performXmlTransformTest(xmlEditingCommandList, createContent());
 
-        assertFilterResult(result)
+        FilterResultAssert.assertThat(result)
                 .hasCause(expectedCause)
                 .hasContextLike(expectedErrorContext);
     }
@@ -929,7 +927,7 @@ class XmlEditorTest {
 
         ResultType result = performXmlTransformTest(xmlEditingCommandList, createContent());
 
-        assertErrorResult(result)
+        ErrorResultAssert.assertThat(result)
                 .hasCause(expectedCause)
                 .hasContextLike(expectedErrorContext);
     }
@@ -939,7 +937,7 @@ class XmlEditorTest {
 
         ResultType result = performXmlTransformTest(xmlEditingCommandList, createContent());
 
-        assertErrorResult(result)
+        ErrorResultAssert.assertThat(result)
                 .hasCause(expectedCause);
     }
 
@@ -950,7 +948,7 @@ class XmlEditorTest {
 
         ResultType result = performXmlTransformTest(xmlEditingCommandList, input);
 
-        assertErrorResult(result)
+        ErrorResultAssert.assertThat(result)
                 .hasCause(expectedCause)
                 .hasContextLike(expectedErrorContext);
     }

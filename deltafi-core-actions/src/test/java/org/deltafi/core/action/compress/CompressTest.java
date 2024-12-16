@@ -21,16 +21,14 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.test.time.TestClock;
-import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -83,8 +81,7 @@ public class CompressTest {
 
         ResultType result = action.transform(runner.actionContext(), compressParameters, transformInput);
 
-        verifyFormat(result, format, transformInput, "compressed." + format.getValue(),
-                format.getMediaType());
+        verifyFormat(result, format, transformInput, "compressed." + format.getValue(), format.getMediaType());
     }
 
     @Test
@@ -114,14 +111,9 @@ public class CompressTest {
             fail(e.getMessage());
         }
 
-        assertTransformResult(result)
-                .hasContentMatching(content -> {
-                    ContentAssert.assertThat(content)
-                            .hasName(name)
-                            .hasMediaType(mediaType);
-                    return true;
-                })
-                .contentLoadBytesEquals(List.of(byteArrayOutputStream.toByteArray()))
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(1)
+                .hasContentMatchingAt(0, name, mediaType, byteArrayOutputStream.toByteArray(), "Content at index 0 matches")
                 .addedMetadata("compressFormat", format.getValue());
     }
 
@@ -157,13 +149,9 @@ public class CompressTest {
     }
 
     private void verifySingleResult(ResultType result, Format format, String file, String mediaType) {
-        assertTransformResult(result)
-                .hasContentMatching(actionContent -> {
-                    ContentAssert.assertThat(actionContent)
-                            .loadBytesIsEqualTo(runner.readResourceAsBytes(file))
-                            .hasMediaType(mediaType);
-                    return true;
-                })
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(1)
+                .hasContentMatchingAt(0, file, mediaType, runner.readResourceAsBytes(file), "Content at index 0 matches")
                 .addedMetadata("compressFormat", format.getValue());
     }
 
@@ -188,21 +176,9 @@ public class CompressTest {
     }
 
     private void verifyMultipleResults(ResultType result, Format format, String fileA, String fileB) {
-        assertTransformResult(result)
-                .hasContentMatchingAt(0, actionContent -> {
-                    ContentAssert.assertThat(actionContent)
-                            .hasName(fileA)
-                            .loadBytesIsEqualTo(runner.readResourceAsBytes(fileA))
-                            .hasMediaType(format.getMediaType());
-                    return true;
-                })
-                .hasContentMatchingAt(1, actionContent -> {
-                    ContentAssert.assertThat(actionContent)
-                            .hasName(fileB)
-                            .loadBytesIsEqualTo(runner.readResourceAsBytes(fileB))
-                            .hasMediaType(format.getMediaType());
-                    return true;
-                })
+        TransformResultAssert.assertThat(result)
+                .hasContentMatchingAt(0, fileA, format.getMediaType(), runner.readResourceAsBytes(fileA), "Content at index 0 matches")
+                .hasContentMatchingAt(1, fileB, format.getMediaType(), runner.readResourceAsBytes(fileB), "Content at index 1 matches")
                 .addedMetadata("compressFormat", format.getValue());
    }
 }

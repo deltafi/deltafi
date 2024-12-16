@@ -20,12 +20,11 @@ package org.deltafi.core.action.convert;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class ConvertTest {
 
@@ -37,6 +36,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.XML,
+                "example.xml",
                 "{\"name\":\"John\",\"place\": \"Ohio\"}",
                 "<xml><name>John</name><place>Ohio</place></xml>",
                 null,
@@ -51,6 +51,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.XML,
+                "example.xml",
                 "[{\"name\":\"John\"},{\"name\":\"Jane\", \"favoriteThings\": [\"music\", \"movies\"]}]",
                 "<xml><listEntry><name>John</name></listEntry><listEntry><name>Jane</name><favoriteThings>music</favoriteThings><favoriteThings>movies</favoriteThings></listEntry></xml>",
                 null,
@@ -65,6 +66,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.XML,
                 DataFormat.JSON,
+                "example.json",
                 "<xml><name>John</name></xml>",
                 "{\"name\":\"John\"}",
                 null,
@@ -79,6 +81,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.XML,
                 DataFormat.JSON,
+                "example.json",
                 "<xml><listEntry><name>John</name><place>Ohio</place></listEntry><listEntry><name>Jane</name><place>New York</place></listEntry></xml>",
                 "{\"listEntry\":[{\"name\":\"John\",\"place\":\"Ohio\"},{\"name\":\"Jane\",\"place\":\"New York\"}]}",
                 null,
@@ -93,6 +96,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.CSV,
                 DataFormat.JSON,
+                "example.json",
                 "name,place\nJohn,Ohio\nJane,New York",
                 "[{\"name\":\"John\",\"place\":\"Ohio\"},{\"name\":\"Jane\",\"place\":\"New York\"}]",
                 null,
@@ -107,6 +111,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.CSV,
                 DataFormat.XML,
+                "example.xml",
                 "name,place\nJohn,Ohio\nJane,New York",
                 "<xml><listEntry><name>John</name><place>Ohio</place></listEntry><listEntry><name>Jane</name><place>New York</place></listEntry></xml>",
                 null,
@@ -121,6 +126,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.CSV,
+                "example.csv",
                 "[{\"name\":\"John\",\"place\":\"Ohio\"},{\"name\":\"Jane\",\"place\":\"New York\"}]",
                 "name,place\nJohn,Ohio\nJane,\"New York\"\n",
                 null,
@@ -135,6 +141,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.XML,
                 DataFormat.CSV,
+                "example.csv",
                 "<xml><listEntry><name>John</name><place>Ohio</place></listEntry><listEntry><name>Jane</name><place>New York</place></listEntry></xml>",
                 "name,place\nJohn,Ohio\nJane,\"New York\"\n",
                 null,
@@ -149,6 +156,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.XML,
+                "example.xml",
                 "{\"name\":\"John\"}",
                 "<xml><name>John</name></xml>",
                 null,
@@ -163,6 +171,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.XML,
+                "example.xml",
                 "{\"name\":\"John\"}",
                 "<xml><name>John</name></xml>",
                 List.of("application/json"),
@@ -177,6 +186,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.XML,
+                "example.xml",
                 "{\"name\":\"John\"}",
                 "<xml><name>John</name></xml>",
                 null,
@@ -191,6 +201,8 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.XML,
+                "example.json",
+                DataFormat.JSON.getMediaType(),
                 "{\"name\":\"John\"}",
                 "{\"name\":\"John\"}",
                 List.of("a/b"),
@@ -205,6 +217,7 @@ class ConvertTest {
         convertAndAssert(
                 DataFormat.JSON,
                 DataFormat.XML,
+                "example.xml",
                 "{\"name\":\"John\"}",
                 "<xml><name>John</name></xml>",
                 null,
@@ -214,16 +227,16 @@ class ConvertTest {
         );
     }
 
-    private void convertAndAssert(
-            DataFormat inputFormat,
-            DataFormat outputFormat,
-            String inputContent,
-            String expectedOutputContent,
-            List<String> mediaTypes,
-            List<String> filePatterns,
-            List<Integer> contentIndexes,
-            boolean retainExistingContent) {
+    private void convertAndAssert(DataFormat inputFormat, DataFormat outputFormat, String outputContentName,
+            String inputContent, String expectedOutputContent, List<String> mediaTypes, List<String> filePatterns,
+            List<Integer> contentIndexes, boolean retainExistingContent) {
+        convertAndAssert(inputFormat, outputFormat, outputContentName, outputFormat.getMediaType(), inputContent,
+                expectedOutputContent, mediaTypes, filePatterns, contentIndexes, retainExistingContent);
+    }
 
+    private void convertAndAssert(DataFormat inputFormat, DataFormat outputFormat, String outputContentName,
+            String outputContentMediaType, String inputContent, String expectedOutputContent, List<String> mediaTypes,
+            List<String> filePatterns, List<Integer> contentIndexes, boolean retainExistingContent) {
         ConvertParameters params = new ConvertParameters();
         params.setInputFormat(inputFormat);
         params.setOutputFormat(outputFormat);
@@ -237,10 +250,16 @@ class ConvertTest {
 
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        List<String> expected = retainExistingContent ?
-                List.of(inputContent, expectedOutputContent) : List.of(expectedOutputContent);
+        TransformResultAssert transformResultAssert = TransformResultAssert.assertThat(result);
+        int index = 0;
 
-        assertTransformResult(result)
-                .contentLoadStringEquals(expected);
+        if (retainExistingContent) {
+            for (ActionContent c : input.content()) {
+                transformResultAssert.hasContentMatchingAt(index++, c.getName(), c.getMediaType(), c.loadBytes());
+            }
+        }
+
+        transformResultAssert.hasContentMatchingAt(index, outputContentName, outputContentMediaType,
+                expectedOutputContent);
     }
 }

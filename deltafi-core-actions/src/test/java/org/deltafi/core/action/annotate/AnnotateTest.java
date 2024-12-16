@@ -20,15 +20,12 @@ package org.deltafi.core.action.annotate;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.test.asserters.ActionResultAssertions;
+import org.deltafi.test.asserters.ErrorResultAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
+import java.util.*;
 
 
 class AnnotateTest {
@@ -45,7 +42,7 @@ class AnnotateTest {
 
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        ActionResultAssertions.assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .addedAnnotations(Map.of("key1", "value1", "key2", "value2"));
     }
 
@@ -58,7 +55,7 @@ class AnnotateTest {
 
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        ActionResultAssertions.assertErrorResult(result)
+        ErrorResultAssert.assertThat(result)
                 .hasCause("Invalid annotations")
                 .hasContext("Contains a blank key");
     }
@@ -72,7 +69,7 @@ class AnnotateTest {
 
         ResultType result = action.transform(runner.actionContext(), params, input);
 
-        ActionResultAssertions.assertErrorResult(result)
+        ErrorResultAssert.assertThat(result)
                 .hasCause("Invalid annotations")
                 .hasContext("Annotations with the following keys were invalid: key1");
     }
@@ -84,7 +81,7 @@ class AnnotateTest {
 
         ResultType result = action.transform(runner.actionContext(), params, createInput());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .addedAnnotations(Map.of(
                         "prefix.key1", "value1",
@@ -102,7 +99,7 @@ class AnnotateTest {
 
         ResultType result = action.transform(runner.actionContext(), params, createInput());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .addedAnnotations(Map.of(
                         "prefix.key1", "value1",
@@ -118,7 +115,7 @@ class AnnotateTest {
 
         ResultType result = action.transform(runner.actionContext(), params, createInput());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .addedAnnotations(Map.of(
                         "key1", "value1",
@@ -137,7 +134,7 @@ class AnnotateTest {
 
         ResultType result = action.transform(runner.actionContext(), params, createInput());
 
-        assertTransformResult(result)
+        TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .addedAnnotations(Map.of(
                         "key1", "value1",

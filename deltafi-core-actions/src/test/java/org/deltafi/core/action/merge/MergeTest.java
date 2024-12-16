@@ -20,13 +20,11 @@ package org.deltafi.core.action.merge;
 import org.bouncycastle.util.Arrays;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResultType;
-import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
-
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 public class MergeTest {
     @Test
@@ -44,13 +42,7 @@ public class MergeTest {
 
         byte[] expectedOutput = Arrays.concatenate(runner.readResourceAsBytes("thing1.txt"),
                 runner.readResourceAsBytes("thing2.txt"));
-        assertTransformResult(transformResultType)
-                .hasContentMatching(actionContent -> {
-                    ContentAssert.assertThat(actionContent)
-                            .hasName("merged")
-                            .hasMediaType(MediaType.TEXT_PLAIN)
-                            .loadBytesIsEqualTo(expectedOutput);
-                    return true;
-                });
+        TransformResultAssert.assertThat(transformResultType)
+                .hasContentMatchingAt(0, "merged", MediaType.TEXT_PLAIN, expectedOutput);
     }
 }

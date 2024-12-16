@@ -17,27 +17,23 @@ Below is a sample unit test showing the standard setup.
 ```java
 package org.deltafi.helloworld.actions;
 
-import org.deltafi.actionkit.action.ResultType;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.helloworld.parameters.HelloWorldTransformParameters;
-import org.deltafi.test.asserters.ActionResultAssertions;
+import org.deltafi.test.asserters.*;
 import org.deltafi.test.content.DeltaFiTestRunner;
-import org.deltafi.test.content.loader.ContentLoader;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import javax.ws.rs.core.MediaType;
+import java.util.*;
 
 class HelloWorldTransformActionTest {
 
     // create the action to test
     HelloWorldTransformAction helloWorldTransformAction = new HelloWorldTransformAction();
     
-    // prepare the action for testing (injects the ContentStorageService into the action)
-    DeltaFiTestRunner deltaFiTestRunner = DeltaFiTestRunner.setup(helloWorldTransformAction);
+    // prepare the test runner
+    DeltaFiTestRunner deltaFiTestRunner = DeltaFiTestRunner.setup();
     
     // get an ActionContext to use in the action input in each test
     ActionContext actionContext = deltaFiTestRunner.actionContext();
@@ -64,7 +60,7 @@ class HelloWorldTransformActionTest {
 
 ### Result Verification
 
-The `org.deltafi.test.asserters.ActionResultAssertions` class provides the main entry points used to verify the results from executing an `Action`. Each result type has a set of predefined assertions that can be used to validate the results.
+The `org.deltafi.test.asserters` package provides classes used to verify the results from executing an `Action`. Each result type has a set of predefined assertions that can be used to validate the results.
 
 The following code shows sample usage of a subset of the assertions.
 
@@ -72,71 +68,43 @@ The following code shows sample usage of a subset of the assertions.
 ```java
 package org.deltafi.helloworld.actions;
 
-import org.deltafi.actionkit.action.ResultType;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.helloworld.parameters.HelloWorldTransformParameters;
-import org.deltafi.test.asserters.ActionResultAssertions;
+import org.deltafi.test.asserters.*;
 import org.deltafi.test.content.DeltaFiTestRunner;
-import org.deltafi.test.content.loader.ContentLoader;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import javax.ws.rs.core.MediaType;
+import java.util.*;
 
 class HelloWorldTransformActionTest {
 
     HelloWorldTransformAction helloWorldTransformAction = new HelloWorldTransformAction();
+    DeltaFiTestRunner deltaFiTestRunner = DeltaFiTestRunner.setup();
+    ActionContext actionContext = deltaFiTestRunner.actionContext();
     
     @Test
     void simpleTest() {
-        ResultType resultType = helloWorldTransformAction.transform(new ActionContext(), new HelloWorldTransformParameters(), TransformInput.builder().build());
+        ResultType resultType = helloWorldTransformAction.transform(actionContext, new HelloWorldTransformParameters(), TransformInput.builder().build());
 
         // expect a transform result and verify all the parts
-        ActionResultAssertions.assertTransformResult(resultType)
-                .contentLoadStringEquals(List.of("expected this content to be saved"))
+        TransformResultAssert.assertThat(resultType)
+                .hasMatchingContentAt(0, "name", "mediaType", "expected this content to be saved")
                 .addedMetadata("new-key", "value")
-                .deletedKeyEquals("deleted-key")
+                .deletedMetadataKey("deleted-key")
                 .hasMetric("some-metric", 1, Map.of("tag", "tag-value"));
 
         // expect a filter result with an exact cause
-        ActionResultAssertions.assertFilterResult(resultType)
+        FilterResultAssert.assertThat(resultType)
                 .hasCause("filtered reason");
 
         // expect an error result with a cause that matches the regex
-        ActionResultAssertions.assertErrorResult(resultType)
+        ErrorResultAssert.assertThat(resultType)
                 .hasCauseLike(".*errored reason substring.*");
 
-        // expect a load result with the given domain
-        ActionResultAssertions.assertLoadResult(resultType)
-                .hasDomain("domain", "value", "application/xml");
-
-        // expect a domain result with annotations added
-        ActionResultAssertions.assertDomainResult(resultType)
-                .addedAnnotation("key", "value");
-
-        // expect an enrich result with the given enrichment
-        ActionResultAssertions.assertEnrichResult(resultType)
-                .hasEnrichment("name", "value", "application/json");
-
-        // expect a format result with the given formatted string
-        ActionResultAssertions.assertFormatResult(resultType)
-                .formattedContentEquals("some formatted data");
-
-        // expect a format result with the given name, formatted string, and mediaType
-        ActionResultAssertions.assertFormatResult(resultType)
-                .hasFormattedContent("file1", "input 1", "text/plain");
-
-        // expect a validate result
-        ActionResultAssertions.assertValidateResult(resultType);
-
         // expect an egress result
-        ActionResultAssertions.assertEgressResult(resultType);
-
-        // Get the actual result to do advanced verification
-        LoadResult actualResult = ActionResultAssertions.assertLoadResult(resultType).getResult();
+        EgressResultAssert.assertThat(resultType);
     }
 }
 ```
