@@ -7,7 +7,6 @@ metadata:
     group: deltafi-core
     role: api
 spec:
-  serviceName: core-worker
   revisionHistoryLimit: 0
   selector:
     matchLabels:

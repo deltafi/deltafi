@@ -60,7 +60,7 @@ readinessProbe:
     command: ["/probe.sh"]
   periodSeconds: 20
   timeoutSeconds: 10
-  failureThreshold: 2
+  failureThreshold: 4
 {{- end -}}
 
 {{- define "defaultLivenessProbe" -}}
@@ -303,4 +303,6 @@ volumeMounts:
     readOnly: true
   env:
   {{- include "sslEnvVars" . | nindent 2 }}
+  - name: DATA_DIR
+    value: /config
 {{- end -}}
