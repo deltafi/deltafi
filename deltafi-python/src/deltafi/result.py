@@ -95,6 +95,7 @@ class IngressResultItem:
         self._did = str(uuid.uuid4())
         self.content = []
         self.metadata = {}
+        self.annotations = {}
         self.delta_file_name = delta_file_name
 
     @property
@@ -139,12 +140,17 @@ class IngressResultItem:
             segment_names.update(c.get_segment_names())
         return segment_names
 
+    def annotate(self, key: str, value: str):
+                    self.annotations[key] = value
+                    return self
+
     def response(self):
         return {
             'did': self._did,
             'deltaFileName': self.delta_file_name,
             'metadata': self.metadata,
-            'content': [content.json() for content in self.content]
+            'content': [content.json() for content in self.content],
+            'annotations': self.annotations
         }
 
 

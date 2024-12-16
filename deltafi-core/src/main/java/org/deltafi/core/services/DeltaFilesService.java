@@ -245,9 +245,9 @@ public class DeltaFilesService {
         return deltaFileFlowRepo.countUnacknowledgedErrors();
     }
 
-    public DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
-            OffsetDateTime ingressStopTime) {
-        return ingress(restDataSource, ingressEventItem, Collections.emptyList(), ingressStartTime, ingressStopTime);
+    public DeltaFile ingressRest(RestDataSource restDataSource, IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
+                                 OffsetDateTime ingressStopTime) {
+        return ingressRest(restDataSource, ingressEventItem, Collections.emptyList(), ingressStartTime, ingressStopTime);
     }
 
     private DeltaFile buildIngressDeltaFile(DataSource dataSource, IngressEventItem ingressEventItem, List<UUID> parentDids,
@@ -285,7 +285,7 @@ public class DeltaFilesService {
 
         long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
 
-        return DeltaFile.builder()
+        DeltaFile deltaFile = DeltaFile.builder()
                 .did(ingressEventItem.getDid())
                 .dataSource(dataSource.getName())
                 .name(ingressEventItem.getDeltaFileName())
@@ -301,10 +301,13 @@ public class DeltaFilesService {
                 .egressed(false)
                 .filtered(false)
                 .build();
+        deltaFile.addAnnotations(ingressEventItem.getAnnotations());
+
+        return deltaFile;
     }
 
-    private DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, List<UUID> parentDids, OffsetDateTime ingressStartTime,
-            OffsetDateTime ingressStopTime) {
+    private DeltaFile ingressRest(RestDataSource restDataSource, IngressEventItem ingressEventItem, List<UUID> parentDids,
+                                  OffsetDateTime ingressStartTime, OffsetDateTime ingressStopTime) {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
@@ -312,7 +315,7 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    public DeltaFile buildIngressDeltaFile(DataSource dataSource, ActionEvent parentEvent, IngressEventItem ingressEventItem) {
+    public DeltaFile buildTimedDataSourceDeltaFile(DataSource dataSource, ActionEvent parentEvent, IngressEventItem ingressEventItem) {
         ingressEventItem.setFlowName(parentEvent.getFlowName());
         return buildIngressDeltaFile(dataSource, ingressEventItem, Collections.emptyList(), parentEvent.getStart(),
                 parentEvent.getStop(), parentEvent.getActionName(), FlowType.TIMED_DATA_SOURCE);
@@ -458,7 +461,7 @@ public class DeltaFilesService {
 
         final Counter counter = new Counter();
         List<StateMachineInput> stateMachineInputs = ingressEvent.getIngressItems().stream()
-                .map((item) -> buildIngressDeltaFile(dataSource, event, item))
+                .map((item) -> buildTimedDataSourceDeltaFile(dataSource, event, item))
                 .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.firstFlow()))
                 .toList();
 

@@ -34,6 +34,7 @@ class SampleTimedIngressAction(TimedIngressAction):
     def make_item(self, context: Context, name: str, index: int):
         ingress_item = IngressResultItem(context, name)
         ingress_item.add_metadata("index", str(index))
+        ingress_item.annotate("a", "b")
         if name == "even":
             ingress_item.save_string_content("even-data", "even.0", "text/plain")
         else:
@@ -110,7 +111,8 @@ class SampleTimedIngressActionTest(TimedIngressActionTest):
         test_case.add_ingress_result_item(
             name="even",
             content=even_outputs,
-            metadata={"index": expected_meta_val})
+            metadata={"index": expected_meta_val},
+            annotations={"a": "b"})
         if two_results and not skip_odd:
             test_case.add_ingress_result_item(
                 name="odd",

@@ -27,7 +27,6 @@ import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -137,9 +136,9 @@ class DeltaFilesServiceTest {
         UUID did = UUID.randomUUID();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
         IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
-                Map.of(), content);
+                Map.of(), content, Map.of());
 
-        DeltaFile deltaFile = deltaFilesService.ingress(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+        DeltaFile deltaFile = deltaFilesService.ingressRest(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
         DeltaFileFlow ingressFlow = deltaFile.firstFlow();
@@ -157,9 +156,9 @@ class DeltaFilesServiceTest {
         UUID did = UUID.randomUUID();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
         IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
-                Map.of(), content);
+                Map.of(), content, Map.of());
 
-        DeltaFile deltaFile = deltaFilesService.ingress(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+        DeltaFile deltaFile = deltaFilesService.ingressRest(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
         DeltaFileFlow ingressFlow = deltaFile.firstFlow();

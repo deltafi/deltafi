@@ -40,7 +40,7 @@ public class DeltaFilesDatafetcherTestHelper {
     static final Map<String, String> METADATA = Map.of("k1", "v1", "k2", "v2");
     static final String MEDIA_TYPE = "plain/text";
     static final List<Content> CONTENT = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID)));
-    public static final IngressEventItem INGRESS_INPUT = new IngressEventItem(DID, FILENAME, REST_DATA_SOURCE_NAME, METADATA, CONTENT);
+    public static final IngressEventItem INGRESS_INPUT = new IngressEventItem(DID, FILENAME, REST_DATA_SOURCE_NAME, METADATA, CONTENT, Collections.emptyMap());
 
     public static final DeltaFilesProjectionRoot<?, ?> DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot<>()
             .deltaFiles()

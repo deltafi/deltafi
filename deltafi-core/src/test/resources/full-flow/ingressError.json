@@ -14,6 +14,10 @@
                 "metadata": {
                     "smoke": "test"
                 },
+                "annotations": {
+                    "a": "b",
+                    "c": "d"
+                },
                 "content": [
                     {
                         "name": "filename",

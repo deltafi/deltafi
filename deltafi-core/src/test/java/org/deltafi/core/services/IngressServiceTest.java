@@ -143,7 +143,7 @@ class IngressServiceTest {
         }
         DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").build();
         DeltaFile deltaFile = DeltaFile.builder().flows(Set.of(flow)).build();
-        Mockito.when(deltaFilesService.ingress(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
+        Mockito.when(deltaFilesService.ingressRest(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
     }
 
     private void verifyNormalExecution(List<IngressResult> ingressResults) throws IOException, ObjectStorageException {
@@ -426,7 +426,7 @@ class IngressServiceTest {
     void ingressBinaryServiceException() {
         mockNormalExecution();
 
-        Mockito.when(deltaFilesService.ingress(any(), ingressEventCaptor.capture(), any(), any())).thenThrow(new RuntimeException());
+        Mockito.when(deltaFilesService.ingressRest(any(), ingressEventCaptor.capture(), any(), any())).thenThrow(new RuntimeException());
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         assertThrows(IngressException.class,

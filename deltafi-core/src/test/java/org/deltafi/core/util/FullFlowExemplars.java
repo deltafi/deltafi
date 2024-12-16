@@ -63,6 +63,7 @@ public class FullFlowExemplars {
                 .egressed(false)
                 .filtered(false)
                 .build();
+        deltaFile.addAnnotations(Map.of("a", "b", "c", "d"));
 
         DeltaFileFlow ingressFlow = DeltaFileFlow.builder()
                 .name(TIMED_DATA_SOURCE_NAME)

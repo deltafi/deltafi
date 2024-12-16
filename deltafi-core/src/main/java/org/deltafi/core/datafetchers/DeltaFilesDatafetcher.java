@@ -288,9 +288,9 @@ public class DeltaFilesDatafetcher {
         UUID did = c.getSegments().isEmpty() ? UUID.randomUUID() : c.getSegments().getFirst().getDid();
         IngressEventItem ingressEventItem = new IngressEventItem(did, "stressTestData", flow,
                 metadata == null ? new HashMap<>() : metadata,
-                List.of(c));
+                List.of(c), Map.of());
         log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
-        deltaFilesService.ingress(restDataSource, ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFilesService.ingressRest(restDataSource, ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now());
       }
 
       remainingFiles -= batchSize;

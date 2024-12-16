@@ -60,7 +60,6 @@ import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.types.*;
 import org.deltafi.common.types.integration.*;
-import org.deltafi.core.types.Role.Input;
 import org.deltafi.core.types.integration.*;
 import org.deltafi.core.types.snapshot.RoleSnapshot;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
@@ -1850,7 +1849,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void deltaFile() {
-		DeltaFile expected = deltaFilesService.ingress(buildDataSource(DATA_SOURCE), INGRESS_INPUT, OffsetDateTime.now(), OffsetDateTime.now());
+		DeltaFile expected = deltaFilesService.ingressRest(buildDataSource(DATA_SOURCE), INGRESS_INPUT, OffsetDateTime.now(), OffsetDateTime.now());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new DeltaFileGraphQLQuery.Builder().did(expected.getDid()).build(), DELTA_FILE_PROJECTION_ROOT, SCALARS);
@@ -4466,12 +4465,12 @@ class DeltaFiCoreApplicationTests {
 		refreshFlowCaches();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, restDataSource.getName(), null,
-				Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", restDataSource.getName(), null,
-				Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
 		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName());
@@ -4514,12 +4513,12 @@ class DeltaFiCoreApplicationTests {
 		String dataSourceName = restDataSource.getName();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, dataSourceName, null,
-				Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", dataSourceName, null,
-				Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		TEST_CLOCK.setInstant(Instant.now().plusSeconds(4));
 		scheduledJoinService.handleTimedOutJoins();
@@ -4542,20 +4541,20 @@ class DeltaFiCoreApplicationTests {
 		refreshFlowCaches();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(),
-				FILENAME, dataSourceName, Map.of("a", "1"), Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
+				FILENAME, dataSourceName, Map.of("a", "1"), Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(),
-				"file-2", dataSourceName, Map.of("a", "2"), Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
+				"file-2", dataSourceName, Map.of("a", "2"), Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress3 = new IngressEventItem(UUID.randomUUID(),
-				"file-3", dataSourceName, Map.of("a", "2"), Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress3, OffsetDateTime.now(), OffsetDateTime.now());
+				"file-3", dataSourceName, Map.of("a", "2"), Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress3, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress4 = new IngressEventItem(UUID.randomUUID(),
-				"file-4", dataSourceName, Map.of("a", "1"), Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress4, OffsetDateTime.now(), OffsetDateTime.now());
+				"file-4", dataSourceName, Map.of("a", "1"), Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress4, OffsetDateTime.now(), OffsetDateTime.now());
 
 		Mockito.verify(coreEventQueue, Mockito.times(2))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
@@ -4575,12 +4574,12 @@ class DeltaFiCoreApplicationTests {
 		String dataSourceName = restDataSource.getName();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, dataSourceName, null,
-				Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", dataSourceName, null,
-				Collections.emptyList());
-		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		TEST_CLOCK.setInstant(Instant.now().plusSeconds(4));
 		scheduledJoinService.handleTimedOutJoins();

@@ -38,4 +38,6 @@ public class IngressEventItem {
   @Builder.Default
   private Map<String, String> metadata = new HashMap<>();
   private List<Content> content;
+  @Builder.Default
+  private Map<String, String> annotations = new HashMap<>();
 }

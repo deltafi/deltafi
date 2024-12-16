@@ -43,12 +43,15 @@ class TimedIngressTestCase(TestCaseBase):
         self.status = status
         self.status_message = status_message
 
-    def add_ingress_result_item(self, content: List[IOContent], metadata: Dict, name: str = None):
+    def add_ingress_result_item(self, content: List[IOContent], metadata: Dict, name: str = None, annotations: Dict = None):
+        if annotations is None:
+            annotations = {}
         self.results.append(
             {
                 'content': content,
                 'metadata': metadata,
-                'name': name
+                'name': name,
+                'annotations': annotations
             }
         )
 
@@ -93,3 +96,6 @@ class TimedIngressActionTest(ActionTest):
 
         # Check metadata
         assert_keys_and_values(expected['metadata'], result.metadata)
+
+        # Check annotations
+        assert_keys_and_values(expected['annotations'], result.annotations)

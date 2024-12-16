@@ -39,12 +39,12 @@ public class IngressResultItem extends ContentResult<IngressResultItem> {
     }
 
     public final IngressEventItem toIngressEventItem() {
-        // TODO: allow annotations?
         return IngressEventItem.builder()
                 .did(context.getDid())
                 .content(ContentConverter.convert(content))
                 .metadata(metadata)
                 .deltaFileName(deltaFileName)
+                .annotations(annotations)
                 .build();
     }
 }

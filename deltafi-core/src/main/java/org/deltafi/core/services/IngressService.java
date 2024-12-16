@@ -199,7 +199,7 @@ public class IngressService {
                 .build();
 
         try {
-            deltaFilesService.ingress(restDataSource, ingressEventItem, created, OffsetDateTime.now());
+            deltaFilesService.ingressRest(restDataSource, ingressEventItem, created, OffsetDateTime.now());
             return new IngressResult(flow, did, content);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
