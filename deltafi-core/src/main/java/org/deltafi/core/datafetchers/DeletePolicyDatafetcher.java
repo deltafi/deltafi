@@ -61,7 +61,7 @@ public class DeletePolicyDatafetcher {
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
     public boolean enablePolicy(@InputArgument UUID id, @InputArgument Boolean enabled) {
-        auditLogger.audit("enabled delete policy with id {}", id);
+        auditLogger.audit("{} delete policy with id {}", Boolean.TRUE.equals(enabled) ? "enabled" : "disabled", id);
         return deletePolicyService.enablePolicy(id, enabled);
     }
 
