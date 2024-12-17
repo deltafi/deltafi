@@ -9,10 +9,11 @@ license {
               "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
               "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
               "**/*.md", "**/*.png", "**/*.ico", "**/*.jar", "**/*.MF", "**/.gitkeep", "**/Dockerfile",
-              "**/*.drawio", "**/.dockerignore",
+              "**/*.drawio", "**/.dockerignore", "**/.go",
               "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**", "**/virtualenv/**",
               "**/db/migration/**"])
     strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
+    mapping("java", "SLASHSTAR_STYLE")
     mapping("graphql", "SCRIPT_STYLE")
+    mapping("go", "SLASHSTAR_STYLE")
 }
