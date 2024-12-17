@@ -733,7 +733,7 @@ describe help "Get additional details on commands"
 help() {
   cat <<EOF
 DeltaFi KinD cluster CLI
-Version: $(cat "${DELTAFI_PATH}/deltafi-cli/VERSION")
+Version: $(cat "${DELTAFI_PATH}/VERSION")
 
 Usage:
   cluster [flags] [command] [command arguments]

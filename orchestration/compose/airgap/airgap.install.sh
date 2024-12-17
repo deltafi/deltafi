@@ -125,13 +125,13 @@ DELTAFI_PATH="$( cd "$( dirname "$(_readlink -f "${BASH_SOURCE[0]}")")" &> /dev/
 export DELTAFI_PATH
 PLUGIN_LIST_FILE="${DELTAFI_PATH}/airgap.plugin.manifest"
 SNAPSHOT_FILE="${DELTAFI_PATH}/airgap.snapshot.json"
-DELTAFI_VERSION=$(cat "${DELTAFI_PATH}/VERSION")
 
 export PATH=$DELTAFI_PATH/deltafi-cli:$PATH:$DELTAFI_PATH/bin
 
 pushd "$DELTAFI_PATH" > /dev/null || exit
 
 DELTAFI_CLI=${DELTAFI_PATH}/deltafi-cli/deltafi
+DELTAFI_VERSION=$(${DELTAFI_CLI} version)
 
 ${DELTAFI_CLI} status > /dev/null || echo "No running DeltaFi detected."
 

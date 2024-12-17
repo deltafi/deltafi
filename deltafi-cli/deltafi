@@ -139,7 +139,7 @@ cli_help() {
   cat "$DELTAFICLI_WORKDIR/logo"
   echo "
 DeltaFi CLI
-Version: $(cat $DELTAFICLI_WORKDIR/VERSION)
+Version: $(cat $DELTAFI_DIR/VERSION)
 
 Usage: $cli_name [command]
 
@@ -346,7 +346,7 @@ case "$1" in
     "$DELTAFICLI_WORKDIR/commands/versions" "$@"
     ;;
   version)
-    cat "$DELTAFICLI_WORKDIR"/VERSION
+    cat "$DELTAFI_DIR"/VERSION
     ;;
   logo)
     cat "$DELTAFICLI_WORKDIR"/logo

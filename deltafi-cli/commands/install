@@ -168,7 +168,7 @@ _k8s_install() {
   [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
   cli_log "Helmchart upgrade complete"
 
-  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
+  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFI_DIR}/VERSION")"
 }
 
 _compose_install() {
@@ -183,12 +183,12 @@ _compose_install() {
     _exit_1
   fi
 
-  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
+  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFI_DIR}/VERSION")"
 }
 
 _pre_upgrade_tasks() {
   cli_log "Creating a snapshot"
-  version=$( cat "${DELTAFICLI_WORKDIR}/VERSION")
+  version=$( cat "${DELTAFI_DIR}/VERSION")
   message="Starting upgrade from DeltaFi $(deltafi version) to version ${version}"
   deltafi event create -q -s "cli" --success --notification "$message"
   snapshot_file="pre-upgrade-to-${version}-$(date +%s).json"
