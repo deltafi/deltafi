@@ -205,6 +205,10 @@ public class CoreEventQueue {
         return longRunningTasks;
     }
 
+    public void removeLongRunningTask(Collection<String> actionExecutionKeys) {
+        valkeyKeyedBlockingQueue.removeLongRunningTasks(actionExecutionKeys);
+    }
+
     /**
      * Check if a specific long-running task exists and if its heartbeat is within the acceptable threshold.
      *

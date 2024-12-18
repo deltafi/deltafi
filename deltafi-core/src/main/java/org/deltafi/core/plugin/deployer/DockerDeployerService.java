@@ -93,6 +93,12 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         }
     }
 
+    @Override
+    public void restartPlugin(String plugin) {
+        findExisting(plugin)
+                .forEach(container -> dockerClient.restartContainerCmd(container.getId()).exec());
+    }
+
     private void install(InstallDetails installDetails) {
         Map<String, String> containerLabels = Map.of(DELTAFI_GROUP, "deltafi-plugins", "logging", "promtail", "logging_jobname", "containerlogs");
 

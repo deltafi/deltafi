@@ -20,8 +20,8 @@ package org.deltafi.core.plugin.deployer;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.MicroTime;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.core.util.TimeFormatter;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -75,25 +75,7 @@ public class K8sEventUtil {
     }
 
     private static String humanReadableTimeSince(String time) {
-        long seconds = OffsetDateTime.now().toEpochSecond() - OffsetDateTime.parse(time).toEpochSecond();
-        return formattedDuration(Duration.ofSeconds(seconds));
-    }
-
-    private static String formattedDuration(Duration duration) {
-        long days = duration.toDaysPart();
-        long hours = duration.toHoursPart();
-        long minutes = duration.toMinutesPart();
-        long seconds = duration.toSeconds();
-
-        if (days > 0) {
-            return String.format("%dd%dh%dm%ds", days, hours, minutes, seconds);
-        } else if (hours > 0) {
-            return String.format("%dh%dm%ds", hours, minutes, seconds);
-        } else if (minutes > 0) {
-            return String.format("%dm%ds", minutes, seconds);
-        } else {
-            return String.format("%ds", seconds);
-        }
+        return TimeFormatter.humanReadableTimeSince(OffsetDateTime.parse(time));
     }
 
     private static int compareEventTimes(Event a, Event b) {

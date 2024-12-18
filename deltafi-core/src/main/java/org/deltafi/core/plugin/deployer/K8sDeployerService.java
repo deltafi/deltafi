@@ -79,6 +79,15 @@ public class K8sDeployerService extends BaseDeployerService {
         return result;
     }
 
+    @Override
+    public void restartPlugin(String plugin) {
+        Deployment dep = k8sClient.apps().deployments().withName(plugin).get();
+        if (dep != null) {
+            k8sClient.apps().deployments().resource(dep).rolling().restart();
+            k8sClient.resource(dep).waitUntilCondition(this::rolloutSuccessful, getTimeoutInMillis(), TimeUnit.MILLISECONDS);
+        }
+    }
+
     private DeployResult createOrReplace(Deployment deployment, InstallDetails installDetails) {
         Deployment existingDeployment = k8sClient.apps().deployments().withName(deployment.getMetadata().getName()).get();
 

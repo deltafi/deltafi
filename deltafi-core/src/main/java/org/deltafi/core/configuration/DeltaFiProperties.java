@@ -79,6 +79,9 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
     private Duration pluginDeployTimeout = Duration.ofMinutes(1);
 
+    @PropertyInfo(description = "Max time to allow an action to run before restarting the plugin. This must be greater than 30 seconds (or 0 to turn it off) and should be less than the requeueDuration.  By default, there is no timeout set. To turn off this feature set the value to null or 0")
+    private Duration actionExecutionTimeout;
+
     @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10")
     private int checkActionQueueSizeThreshold = 10;
 
@@ -185,6 +188,14 @@ public class DeltaFiProperties {
     public void setPluginDeployTimeout(Duration pluginDeployTimeout) {
         positiveDurationCheck(pluginDeployTimeout, "pluginDeployTimeout");
         this.pluginDeployTimeout = pluginDeployTimeout;
+    }
+
+    public void setActionExecutionTimeout(Duration actionExecutionTimeout) {
+        long timeout = actionExecutionTimeout != null ? actionExecutionTimeout.toMillis() : 0;
+        if (timeout != 0 && timeout <= 30_000L) {
+            throw new IllegalArgumentException("The actionExecutionTimeout property must be larger than 30 seconds or set to 0 to disable this timeout but was " + actionExecutionTimeout);
+        }
+        this.actionExecutionTimeout = actionExecutionTimeout;
     }
 
     public void setCheckActionQueueSizeThreshold(int checkActionQueueSizeThreshold) {

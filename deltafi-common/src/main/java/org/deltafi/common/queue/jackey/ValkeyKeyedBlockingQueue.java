@@ -251,6 +251,19 @@ public class ValkeyKeyedBlockingQueue {
     }
 
     /**
+     * Remove a long-running tasks with the specified keys
+     *
+     * @param keys the collection of keys of the tasks to be removed
+     */
+    public void removeLongRunningTasks(Collection<String> keys) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            for (String key : keys) {
+                jedis.hdel(LONG_RUNNING_TASKS_HASH, key);
+            }
+        }
+    }
+
+    /**
      * Find all keys with the given prefix and the associated values
      * @param prefix to search for
      * @return map of keys to values with keys that match the prefix

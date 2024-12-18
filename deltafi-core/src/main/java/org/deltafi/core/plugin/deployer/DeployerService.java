@@ -20,6 +20,8 @@ package org.deltafi.core.plugin.deployer;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.types.Result;
 
+import java.util.Set;
+
 public interface DeployerService {
 
     /**
@@ -37,4 +39,18 @@ public interface DeployerService {
      * @return result of the uninstallation process
      */
     Result uninstallPlugin(PluginCoordinates pluginCoordinates, boolean force);
+
+    /**
+     * Restart or recreate the plugins with the given names
+     * @param plugins name of the plugins to bounce
+     */
+    default void restartPlugins(Set<String> plugins) {
+        plugins.forEach(this::restartPlugin);
+    }
+
+    /**
+     * Restart or recreate the plugin with the given names
+     * @param plugin name of the plugin to bounce
+     */
+    void restartPlugin(String plugin);
 }

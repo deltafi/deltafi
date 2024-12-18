@@ -64,6 +64,7 @@ public class PluginService implements Snapshotter {
     private final List<PluginCleaner> pluginCleaners;
 
     private Map<String, ActionDescriptor> actionDescriptorMap;
+    private Map<String, String> actionsToPlugin;
 
     public static final String SYSTEM_PLUGIN_GROUP_ID = "org.deltafi";
     public static final String SYSTEM_PLUGIN_ARTIFACT_ID = "system-plugin";
@@ -99,12 +100,18 @@ public class PluginService implements Snapshotter {
     }
 
     public void updateActionDescriptors() {
-        actionDescriptorMap = pluginRepo.findAll()
-                .stream()
-                .map(PluginEntity::getActions)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toMap(ActionDescriptor::getName, Function.identity(), (a, b) -> a));
+        actionDescriptorMap = new HashMap<>();
+        actionsToPlugin = new HashMap<>();
+        pluginRepo.findAll().stream()
+                .filter(pluginEntity ->  pluginEntity.getActions() != null)
+                .forEach(this::updateMaps);
+    }
+
+    private void updateMaps(PluginEntity pluginEntity) {
+        for (ActionDescriptor actionDescriptor : pluginEntity.getActions()) {
+            actionDescriptorMap.put(actionDescriptor.getName(), actionDescriptor);
+            actionsToPlugin.put(actionDescriptor.getName(), pluginEntity.getPluginCoordinates().getArtifactId());
+        }
     }
 
     public PluginEntity getSystemPlugin() {
@@ -472,6 +479,10 @@ public class PluginService implements Snapshotter {
 
     public Collection<ActionDescriptor> getActionDescriptors() {
         return actionDescriptorMap.values();
+    }
+
+    public String getPluginWithAction(String clazz) {
+        return actionsToPlugin.get(clazz);
     }
 
     private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<DataSinkPlan> DataSinkPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans){}
