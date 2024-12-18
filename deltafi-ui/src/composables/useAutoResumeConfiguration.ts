@@ -86,6 +86,10 @@ export default function useAutoResumeConfiguration() {
       {
         type: "object",
         properties: {
+          dataSource: {
+            type: ["string", "null"],
+            minLength: 1,
+          },
           errorSubstring: {
             type: ["string", "null"],
             minLength: 1,
@@ -98,6 +102,9 @@ export default function useAutoResumeConfiguration() {
       },
       {
         anyOf: [
+          {
+            required: ["dataSource"],
+          },
           {
             required: ["errorSubstring"],
           },
