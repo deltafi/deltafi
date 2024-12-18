@@ -1,6 +1,6 @@
 # Install Kubernetes
 
-DeltaFi is designed to run in a Kubernetes cluster. In this section, we will set up a new Kubernetes cluster using an Ansible playbook included with DeltaFi.
+DeltaFi is designed to run in a Kubernetes cluster. In this section, we will set up a new RKE2 Kubernetes cluster using an Ansible playbook included with DeltaFi.
 
 <Note>
 
@@ -17,15 +17,15 @@ sudo mkdir -p /data/rke2
 sudo chown $USER:$USER /data/rke2
 ```
 
-Place the following RKE2 files in `/data/rke2`:
+Place the following RKE2 v1.31.3+rke2r1 files in `/data/rke2`:
 
 - `rke2-images.linux-amd64.tar.zst`
 - `rke2.linux-amd64.tar.gz`
 - `sha256sum-amd64.txt`
 
-These files can be obtained [here](https://github.com/rancher/rke2/releases).
+These files can be obtained [here](https://github.com/rancher/rke2/releases/tag/v1.31.3%2Brke2r1).
 
-Also, place the `helm` binary in `/data/rke2`. It can be obtained [here](https://github.com/helm/helm/releases).
+Also, place the Helm v3.16.4 binary in `/data/rke2`. It can be obtained [here](https://github.com/helm/helm/releases/tag/v3.16.4). Be sure to extract the binary and place it in `/data/rke2`.
 
 Next, run the `install-rke2.yaml` playbook passing in the inventory file you created in the [Ansible Setup](/install/ansible#inventory-file) section and setting `rke2_airgap_mode` to `true`.
 
@@ -40,7 +40,7 @@ If you are connected to the internet, simply run the `install-rke2.yml` playbook
 
 ```bash
 cd ~/ansible
-ansible-playbook install-rke2.yml -i inventory/site
+ansible-playbook install-rke2.yml -i inventory/site -e rke2_airgap_mode=false
 ```
 
 ## Verification
@@ -64,5 +64,5 @@ This should return a list of nodes that matches that of the inventory file you c
 
 ```bash
 NAME         STATUS   ROLES                       AGE   VERSION
-df-test-01   Ready    control-plane,etcd,master   1h    v1.20.15+rke2r2
+df-test-01   Ready    control-plane,etcd,master   1h    v1.31.3+rke2r1
 ```

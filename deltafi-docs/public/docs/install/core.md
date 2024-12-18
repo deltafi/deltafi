@@ -34,6 +34,12 @@ This installs the deltafi command into `/usr/local/bin/deltafi`. Verify this wit
 which deltafi
 ```
 
+Next, we need to enable local path storage for PostgreSQL:
+
+```
+~/deltafi/orchestration/charts/local-path-storage/install.sh
+```
+
 Next, we will use the `deltafi install` command to install the core services of DeltaFi.
 
 This process utilizes a [Helm](https://helm.sh/) values.yaml file for providing system configuration located in `~/deltafi/charts/deltafi/values.yaml`. Any of the values in this file can be overridden in a site-specific values file. For this install, let's create the file `~/site.values.yaml` with the following content:
