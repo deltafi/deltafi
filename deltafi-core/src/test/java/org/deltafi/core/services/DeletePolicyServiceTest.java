@@ -18,7 +18,7 @@
 package org.deltafi.core.services;
 
 import org.deltafi.core.repo.DeletePolicyRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -109,7 +109,7 @@ class DeletePolicyServiceTest {
     void testUpdateSnapshot() {
         DiskSpaceDeletePolicy diskSpaceDeletePolicy = buildDiskSpaceDeletePolicy(50);
         TimedDeletePolicy timedDeletePolicy = buildTimeDeletePolicy();
-        SystemSnapshot snapshot = new SystemSnapshot();
+        Snapshot snapshot = new Snapshot();
 
         Mockito.when(deletePolicyRepo.findAll()).thenReturn(List.of(diskSpaceDeletePolicy, timedDeletePolicy));
         deletePolicyService.updateSnapshot(snapshot);
@@ -121,10 +121,10 @@ class DeletePolicyServiceTest {
     @Test
     void testResetFromSnapshot() {
         DeletePolicies deletePolicies = getValidSave();
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setDeletePolicies(deletePolicies);
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDeletePolicies(deletePolicies);
 
-        Result result = deletePolicyService.resetFromSnapshot(systemSnapshot, true);
+        Result result = deletePolicyService.resetFromSnapshot(snapshot, true);
 
         Mockito.verify(deletePolicyRepo).deleteAll();
         Mockito.verify(deletePolicyRepo).saveAll(deletePolicies.allPolicies());

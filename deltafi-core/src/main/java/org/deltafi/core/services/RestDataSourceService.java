@@ -23,7 +23,7 @@ import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.core.converters.RestDataSourcePlanConverter;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.repo.RestDataSourceRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.RestDataSourceSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.validation.FlowValidator;
@@ -53,17 +53,17 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlan, RestD
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+    public void updateSnapshot(Snapshot snapshot) {
         List<RestDataSourceSnapshot> restDataSourceSnapshots = new ArrayList<>();
         for (RestDataSource dataSource : getAll()) {
             restDataSourceSnapshots.add(new RestDataSourceSnapshot(dataSource));
         }
-        systemSnapshot.setRestDataSources(restDataSourceSnapshots);
+        snapshot.setRestDataSources(restDataSourceSnapshots);
     }
 
     @Override
-    public List<RestDataSourceSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
-        return systemSnapshot.getRestDataSources();
+    public List<RestDataSourceSnapshot> getFlowSnapshots(Snapshot snapshot) {
+        return snapshot.getRestDataSources();
     }
 
     @Override

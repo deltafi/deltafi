@@ -24,7 +24,7 @@ import org.deltafi.common.types.Variable;
 import org.deltafi.core.types.*;
 import org.deltafi.core.repo.PluginVariableRepo;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -203,9 +203,9 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+    public void updateSnapshot(Snapshot snapshot) {
         // Only include PluginVariables that have the value set
-        systemSnapshot.setPluginVariables(pluginVariableRepo.findAll().stream()
+        snapshot.setPluginVariables(pluginVariableRepo.findAll().stream()
                 .map(this::filterSetValuesOnly)
                 .filter(Objects::nonNull)
                 .toList());
@@ -230,7 +230,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         if (hardReset) {
             // Unset all the values, a full deleteAll/replace could lead to problems if this snapshot is from a different version of DeltaFi
             // Masked variables are left in place b/c imported snapshots will not have those values
@@ -238,7 +238,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         }
 
         List<PluginVariables> storedPluginVariables = pluginVariableRepo.findAll();
-        Map<PluginCoordinates, PluginVariables> snapshotVariables = systemSnapshot.getPluginVariables().stream()
+        Map<PluginCoordinates, PluginVariables> snapshotVariables = snapshot.getPluginVariables().stream()
                 .collect(Collectors.toMap(PluginVariables::getSourcePlugin, Function.identity()));
 
         storedPluginVariables.forEach(targetVariables -> rollbackValues(targetVariables, snapshotVariables.get(targetVariables.getSourcePlugin())));

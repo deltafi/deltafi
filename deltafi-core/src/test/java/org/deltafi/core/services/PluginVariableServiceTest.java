@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.repo.PluginVariableRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
 import org.junit.jupiter.api.Test;
@@ -59,11 +59,11 @@ class PluginVariableServiceTest {
 
         Mockito.when(pluginVariableRepo.findAll()).thenReturn(List.of(pluginVariablesToKeep, pluginVariablesToSkip));
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        pluginVariableService.updateSnapshot(systemSnapshot);
+        Snapshot snapshot = new Snapshot();
+        pluginVariableService.updateSnapshot(snapshot);
 
-        assertThat(systemSnapshot.getPluginVariables()).hasSize(1);
-        PluginVariables fromSnapshot = systemSnapshot.getPluginVariables().getFirst();
+        assertThat(snapshot.getPluginVariables()).hasSize(1);
+        PluginVariables fromSnapshot = snapshot.getPluginVariables().getFirst();
         assertThat(fromSnapshot.getSourcePlugin()).isEqualTo(pluginVariablesToKeep.getSourcePlugin());
         assertThat(fromSnapshot.getVariables()).hasSize(1).contains(KEEP_VARIABLE);
     }
@@ -73,8 +73,8 @@ class PluginVariableServiceTest {
         PluginVariables snapshotVariables = pluginVariables("a");
         snapshotVariables.setVariables(List.of(KEEP_VARIABLE));
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setPluginVariables(List.of(snapshotVariables));
+        Snapshot snapshot = new Snapshot();
+        snapshot.setPluginVariables(List.of(snapshotVariables));
 
         PluginVariables storedPluginA = pluginVariables("a");
         // keep value should be restored to 'value'
@@ -89,7 +89,7 @@ class PluginVariableServiceTest {
 
         Mockito.when(pluginVariableRepo.findAll()).thenReturn(List.of(storedPluginA, storedPluginB));
 
-        Result result = pluginVariableService.resetFromSnapshot(systemSnapshot, true);
+        Result result = pluginVariableService.resetFromSnapshot(snapshot, true);
 
         Mockito.verify(pluginVariableRepo).resetAllUnmaskedVariableValues();
 

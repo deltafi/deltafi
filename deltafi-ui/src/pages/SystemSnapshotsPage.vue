@@ -93,7 +93,6 @@ import Timestamp from "@/components/Timestamp.vue";
 import useNotifications from "@/composables/useNotifications";
 import useSystemSnapshots from "@/composables/useSnapshots";
 import { onMounted, ref, computed } from "vue";
-import { EnumType } from "json-to-graphql-query";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
@@ -217,25 +216,17 @@ const onImport = async (snapShotData) => {
 
 const cleanUpSnapshot = (snapShotData) => {
   let snap = JSON.parse(JSON.stringify(snapShotData.value));
-  for (let x = 0; x < snap.pluginVariables.length; x++) {
-    for (let y = 0; y < snap.pluginVariables[x].variables.length; y++) {
-      snap.pluginVariables[x].variables[y].dataType = new EnumType(snap.pluginVariables[x].variables[y].dataType);
-    }
-  }
-  if (snap.links) {
-    snap.links.forEach((link) => {
-      link.linkType = new EnumType(link.linkType);
-    });
-  }
-  if (snap.systemFlowPlans) {
-    snap.systemFlowPlans.transformPlans.forEach(transformFlow => {
-      if (transformFlow.publish.matchingPolicy) {
-        transformFlow.publish.matchingPolicy = new EnumType(transformFlow.publish.matchingPolicy);
-      }
-      if (transformFlow.publish.defaultRule && transformFlow.publish.defaultRule.defaultBehavior) {
-        transformFlow.publish.defaultRule.defaultBehavior = new EnumType(transformFlow.publish.defaultRule.defaultBehavior);
-      }
-    });
+
+  // support older snapshots by wrapping the snapshot data in the snapshot field if it doesn't exist
+  if (!snap.snapshot) {
+    const { id, created, reason, ...otherFields } = snap;
+    return {
+      id,
+      created,
+      reason,
+      schemaVersion: 1,
+      snapshot: otherFields
+    };
   }
   return snap;
 };

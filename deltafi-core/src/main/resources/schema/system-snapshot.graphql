@@ -16,143 +16,20 @@
 #    limitations under the License.
 #
 
-type TimedDataSourceSnapshot {
-    name: String!
-    topic: String!
-    running: Boolean!
-    testMode: Boolean!
-    cronSchedule: String
-    maxErrors: Int
-}
-
-type RestDataSourceSnapshot {
-    name: String!
-    topic: String!
-    running: Boolean!
-    testMode: Boolean!
-    maxErrors: Int
-}
-
-type TransformFlowSnapshot {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
-}
-
-type DataSinkSnapshot {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
-    expectedAnnotations: [String]
-}
-
-type User {
-    id: UUID!
-    name: String!
-    username: String!
-    password: String
-    dn: String
-    roles: [Role]!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-}
-
-type Role {
-    id: UUID!
-    name: String!
-    permissions: [String]!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-}
-
 type SystemSnapshot {
     id: UUID!
     reason: String
     created: DateTime!
-    deletePolicies: DeletePolicies!
-    deltaFiProperties: [KeyValue]!
-    installedPlugins: [PluginCoordinates]!
-    links: [Link]!
-    pluginVariables: [PluginVariables]!
-    restDataSources: [RestDataSourceSnapshot]
-    timedDataSources: [TimedDataSourceSnapshot]
-    transformFlows: [TransformFlowSnapshot]
-    dataSinks: [DataSinkSnapshot]
-    resumePolicies: [ResumePolicy]!
-    systemFlowPlans: SystemFlowPlans!
-    users: [User]!
-    roles: [Role]!
-}
-
-input TimedDataSourceSnapshotInput {
-    name: String!
-    topic: String!
-    running: Boolean!
-    testMode: Boolean!
-    cronSchedule: String
-    maxErrors: Int
-}
-
-input RestDataSourceSnapshotInput {
-    name: String!
-    topic: String!
-    running: Boolean!
-    testMode: Boolean!
-    maxErrors: Int
-}
-
-input TransformFlowSnapshotInput {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
-}
-
-input DataSinkSnapshotInput {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
-    expectedAnnotations: [String]
-}
-
-input UserInput {
-    id: UUID!
-    name: String!
-    username: String!
-    password: String
-    dn: String
-    roles: [RoleInput]!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-}
-
-input RoleInput {
-    id: UUID!
-    name: String!
-    permissions: [String]!
-    createdAt: DateTime!
-    updatedAt: DateTime!
+    schemaVersion: Int!
+    snapshot: JSON!
 }
 
 input SystemSnapshotInput {
     id: String!
     reason: String
     created: DateTime!
-    deletePolicies: DeletePoliciesInput!
-    deltaFiProperties: [KeyValueInput]!
-    installedPlugins: [PluginCoordinatesInput]!
-    links: [LinkInput]!
-    pluginVariables: [PluginVariablesInput]!
-    testTransformFlows: [String]
-    testIngressFlows: [String]
-    testDataSinks: [String]
-    restDataSources: [RestDataSourceSnapshotInput]
-    timedDataSources: [TimedDataSourceSnapshotInput]
-    transformFlows: [TransformFlowSnapshotInput]
-    dataSinks: [DataSinkSnapshotInput]
-    resumePolicies: [ResumePolicyInput]!
-    systemFlowPlans: SystemFlowPlansInput
-    users: [UserInput]
-    roles: [RoleInput]
+    schemaVersion: Int!
+    snapshot: JSON!
 }
 
 extend type Query {

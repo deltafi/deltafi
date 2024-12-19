@@ -19,7 +19,7 @@ package org.deltafi.core.services;
 
 
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.core.Ordered;
 
 /**
@@ -30,15 +30,15 @@ public interface Snapshotter extends Ordered {
 
     /**
      * Update the SystemSnapshot with current system state
-     * @param systemSnapshot system snapshot that holds the current system state
+     * @param snapshot snapshot that is used to capture the current system state
      */
-    void updateSnapshot(SystemSnapshot systemSnapshot);
+    void updateSnapshot(Snapshot snapshot);
 
     /**
-     * Reset the system to the state in the SystemSnapshot
-     * @param systemSnapshot system snapshot that holds the state at the time of the snapshot
+     * Reset the system to the state in the Snapshot
+     * @param snapshot snapshot that holds the system state at the time of the snapshot
      * @param hardReset when true reset all other custom settings before applying the system snapshot values
      * @return the Result of the reset that will hold any errors or information about the reset
      */
-    Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset);
+    Result resetFromSnapshot(Snapshot snapshot, boolean hardReset);
 }

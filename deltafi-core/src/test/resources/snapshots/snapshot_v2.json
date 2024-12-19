@@ -1,0 +1,262 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "reason": "snapshot v2",
+  "created": "",
+  "schemaVersion": "2",
+  "snapshot": {
+    "pluginVariables": [
+      {
+        "id": null,
+        "groupId": "org.deltafi.passthrough",
+        "artifactId": "deltafi-passthrough",
+        "version": "0.102.1-SNAPSHOT",
+        "variables": [
+          {
+            "name": "annotations",
+            "description": "Searchable annotations in the DeltaFile",
+            "dataType": "MAP",
+            "required": false,
+            "defaultValue": "a: b",
+            "value": "test_key: value, X: O",
+            "masked": false
+          }
+        ],
+        "sourcePlugin": {
+          "groupId": "org.deltafi.passthrough",
+          "artifactId": "deltafi-passthrough",
+          "version": "0.102.1-SNAPSHOT"
+        }
+      }
+    ],
+    "deletePolicies": {
+      "timedPolicies": [
+        {
+          "__typename": "TimedDeletePolicy",
+          "id": "66e4572f-3c5f-45dc-b35d-b3ffd7f70245",
+          "name": "deleteSmoke1MafterComplete",
+          "enabled": false,
+          "flow": "smoke",
+          "afterCreate": null,
+          "afterComplete": "PT2M",
+          "minBytes": 10,
+          "deleteMetadata": false
+        }
+      ],
+      "diskSpacePolicies": [
+        {
+          "__typename": "DiskSpaceDeletePolicy",
+          "id": "66e4572f-3c5f-45dc-b35d-b3ffd7f70246",
+          "name": "percentDisk",
+          "enabled": true,
+          "flow": null,
+          "maxPercent": 75
+        }
+      ]
+    },
+    "deltaFiProperties": [
+      {
+        "key": "uiUseUTC",
+        "value": "false"
+      },
+      {
+        "key": "checkActionQueueSizeThreshold",
+        "value": "1000"
+      }
+    ],
+    "links": [
+      {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "View in HTTPBin",
+        "url": "https://httpbin.org/anything/example?did=${did}",
+        "description": "View in HTTPBin",
+        "linkType": "EXTERNAL"
+      }
+    ],
+    "restDataSources": [
+      {
+        "name": "restDataSource",
+        "running": true,
+        "testMode": true,
+        "topic": "topic",
+        "maxErrors": 3
+      }
+    ],
+    "timedDataSources": [
+      {
+        "name": "timedDataSource",
+        "running": true,
+        "testMode": true,
+        "topic": "topic",
+        "maxErrors": 3,
+        "cronSchedule": "5m"
+      }
+    ],
+    "transformFlows": [
+      {
+        "name": "restDataSource",
+        "running": true,
+        "testMode": true
+      }
+    ],
+    "dataSinks": [
+      {
+        "name": "dataSink",
+        "running": false,
+        "testMode": true,
+        "expectedAnnotations": [
+          "annotation"
+        ]
+      }
+    ],
+    "installedPlugins": [
+      {
+        "groupId": "org.deltafi.python-poc",
+        "artifactId": "deltafi-python-poc",
+        "version": "main-9cc5379d"
+      }
+    ],
+    "resumePolicies": [
+      {
+        "id": "88bc7429-7adf-4bb1-b23f-3922993e0a1a",
+        "name": "auto-resume-passthrough",
+        "errorSubstring": "Exception",
+        "dataSource": "passthrough",
+        "action": "action",
+        "maxAttempts": 1,
+        "priority": 3,
+        "backOff": {
+          "delay": 60,
+          "maxDelay": 120,
+          "multiplier": 1,
+          "random": true
+        }
+      }
+    ],
+    "systemFlowPlans": {
+      "dataSinkPlans": [
+        {
+          "name": "dataSinkPlan",
+          "type": "DATA_SINK",
+          "description": "description",
+          "egressAction": {
+            "name": "egress",
+            "apiVersion": null,
+            "actionType": "EGRESS",
+            "type": "type",
+            "parameters": null,
+            "join": null
+          },
+          "sourcePlugin": null,
+          "subscribe": [
+            {
+              "topic": "subscribe",
+              "condition": "a = b"
+            }
+          ]
+        }
+      ],
+      "restDataSources": [
+        {
+          "name": "restDataSource",
+          "type": "REST_DATA_SOURCE",
+          "description": "description",
+          "topic": "topic",
+          "sourcePlugin": null
+        }
+      ],
+      "timedDataSources": [
+        {
+          "name": "timedIngressPlan",
+          "type": "TIMED_DATA_SOURCE",
+          "description": "description",
+          "topic": "topic",
+          "timedIngressAction": {
+            "name": "timedIngress",
+            "apiVersion": null,
+            "actionType": "TIMED_INGRESS",
+            "type": "type",
+            "parameters": null,
+            "join": null
+          },
+          "cronSchedule": "*/5 * * * * *",
+          "sourcePlugin": null
+        }
+      ],
+      "transformPlans": [
+        {
+          "name": "transformPlan",
+          "type": "TRANSFORM",
+          "description": "description",
+          "sourcePlugin": null,
+          "transformActions": [
+            {
+              "name": "transform",
+              "apiVersion": null,
+              "actionType": "TRANSFORM",
+              "type": "type",
+              "parameters": null,
+              "join": {
+                "maxAge": 300.0,
+                "minNum": 5,
+                "maxNum": 10,
+                "metadataKey": "meta-key"
+              }
+            }
+          ],
+          "subscribe": [
+            {
+              "topic": "subscribe",
+              "condition": "a == a"
+            }
+          ],
+          "publish": {
+            "matchingPolicy": "FIRST_MATCHING",
+            "defaultRule": {
+              "defaultBehavior": "PUBLISH",
+              "topic": "default"
+            },
+            "rules": [
+              {
+                "topic": "publish",
+                "condition": "a == a"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "users": [
+      {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "user",
+        "username": "user",
+        "dn": "CN=user",
+        "password": "password",
+        "roles": [
+          {
+            "id": "00000000-0000-0000-0000-000000000000",
+            "name": "role",
+            "permissions": [
+              "permission"
+            ],
+            "createdAt": "2000-01-01T00:00Z",
+            "updatedAt": "2000-01-01T00:00Z"
+          }
+        ],
+        "createdAt": "2000-01-01T00:00Z",
+        "updatedAt": "2000-01-01T00:00Z"
+      }
+    ],
+    "roles": [
+      {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "role",
+        "permissions": [
+          "permission"
+        ],
+        "createdAt": "2000-01-01T00:00Z",
+        "updatedAt": "2000-01-01T00:00Z"
+      }
+    ]
+  }
+}

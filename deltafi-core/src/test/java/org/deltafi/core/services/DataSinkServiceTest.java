@@ -21,7 +21,7 @@ import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.DataSinkRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.DataSinkSnapshot;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.DataSink;
@@ -66,12 +66,12 @@ class DataSinkServiceTest {
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.DATA_SINK)).thenReturn(flows);
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        dataSinkService.updateSnapshot(systemSnapshot);
+        Snapshot snapshot = new Snapshot();
+        dataSinkService.updateSnapshot(snapshot);
 
-        assertThat(systemSnapshot.getDataSinks()).hasSize(3);
+        assertThat(snapshot.getDataSinks()).hasSize(3);
 
-        Map<String, DataSinkSnapshot> dataSinkSnapshotMap = systemSnapshot.getDataSinks().stream()
+        Map<String, DataSinkSnapshot> dataSinkSnapshotMap = snapshot.getDataSinks().stream()
                 .collect(Collectors.toMap(FlowSnapshot::getName, Function.identity()));
 
         DataSinkSnapshot aFlowSnapshot = dataSinkSnapshotMap.get("a");
@@ -96,8 +96,8 @@ class DataSinkServiceTest {
         DataSink stopped = dataSink("stopped", FlowState.STOPPED, false, Set.of());
         DataSink invalid = dataSink("invalid", FlowState.INVALID, false, Set.of());
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setDataSinks(List.of(
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDataSinks(List.of(
                 new DataSinkSnapshot("running", true, false),
                 new DataSinkSnapshot("stopped", true, true),
                 new DataSinkSnapshot("invalid", true, false),
@@ -105,7 +105,7 @@ class DataSinkServiceTest {
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.DATA_SINK)).thenReturn(List.of(running, stopped, invalid));
 
-        Result result = dataSinkService.resetFromSnapshot(systemSnapshot, true);
+        Result result = dataSinkService.resetFromSnapshot(snapshot, true);
 
         Mockito.verify(dataSinkRepo).saveAll(flowCaptor.capture());
 

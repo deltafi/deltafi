@@ -26,7 +26,7 @@ import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.validation.FlowValidator;
 import org.junit.jupiter.api.Test;
@@ -87,12 +87,12 @@ class TransformFlowServiceTest {
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(flows);
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        transformFlowService.updateSnapshot(systemSnapshot);
+        Snapshot snapshot = new Snapshot();
+        transformFlowService.updateSnapshot(snapshot);
 
-        assertThat(systemSnapshot.getTransformFlows()).hasSize(3);
+        assertThat(snapshot.getTransformFlows()).hasSize(3);
 
-        Map<String, TransformFlowSnapshot> transformFlowSnapshotMap = systemSnapshot.getTransformFlows().stream()
+        Map<String, TransformFlowSnapshot> transformFlowSnapshotMap = snapshot.getTransformFlows().stream()
                 .collect(Collectors.toMap(FlowSnapshot::getName, Function.identity()));
 
         TransformFlowSnapshot aFlowSnapshot = transformFlowSnapshotMap.get("a");
@@ -114,8 +114,8 @@ class TransformFlowServiceTest {
         TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false);
         TransformFlow invalid = transformFlow("invalid", FlowState.INVALID, false);
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setTransformFlows(List.of(
+        Snapshot snapshot = new Snapshot();
+        snapshot.setTransformFlows(List.of(
                 new TransformFlowSnapshot("running", true, false),
                 new TransformFlowSnapshot("stopped", true, true),
                 new TransformFlowSnapshot("invalid", true, false),
@@ -123,7 +123,7 @@ class TransformFlowServiceTest {
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(List.of(running, stopped, invalid));
 
-        Result result = transformFlowService.resetFromSnapshot(systemSnapshot, true);
+        Result result = transformFlowService.resetFromSnapshot(snapshot, true);
 
         Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
 

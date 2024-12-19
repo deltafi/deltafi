@@ -17,6 +17,11 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
@@ -24,17 +29,22 @@ import org.deltafi.core.repo.SystemSnapshotRepo;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
 
 @Service
 @Slf4j
 @AllArgsConstructor
 public class SystemSnapshotService {
+
+    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .registerModule(new JavaTimeModule());
 
     private List<Snapshotter> snapshotters;
     private SystemSnapshotRepo systemSnapshotRepo;
@@ -51,17 +61,20 @@ public class SystemSnapshotService {
 
     public List<SystemSnapshot> getAll() {
         List<SystemSnapshot> snapshots = systemSnapshotRepo.findAll();
+
+        // masked variables are stored unmasked so they can be used if you reset to a snapshot that was created locally
+        // when returning the list of all snapshots apply masks to sensitive variables
         snapshots.forEach(this::maskAndUpgradeSnapshots);
         return snapshots;
     }
 
     void maskAndUpgradeSnapshots(SystemSnapshot systemSnapshot) {
-        applyMaskToVariables(systemSnapshot);
+        modifySnapshotData(systemSnapshot, this::applyMaskToVariables);
     }
 
-    void applyMaskToVariables(SystemSnapshot systemSnapshot) {
-        if (systemSnapshot.getPluginVariables() != null) {
-            systemSnapshot.getPluginVariables().forEach(this::applyMaskToVariables);
+    void applyMaskToVariables(Snapshot snapshot) {
+        if (snapshot.getPluginVariables() != null) {
+            snapshot.getPluginVariables().forEach(this::applyMaskToVariables);
         }
     }
 
@@ -74,13 +87,17 @@ public class SystemSnapshotService {
     public SystemSnapshot createSnapshot(String reason) {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setReason(reason);
-        snapshotters.forEach(snapshotter -> snapshotter.updateSnapshot(systemSnapshot));
+        Snapshot snapshot = new Snapshot();
+        snapshotters.forEach(snapshotter -> snapshotter.updateSnapshot(snapshot));
+        systemSnapshot.setSnapshot(OBJECT_MAPPER.convertValue(snapshot, new TypeReference<>() {}));
         return saveSnapshot(systemSnapshot);
     }
 
     public Result resetFromSnapshot(UUID snapshotId, boolean hardReset) {
         SystemSnapshot systemSnapshot = getById(snapshotId);
-        return resetFromSnapshot(systemSnapshot, hardReset);
+
+        Snapshot snapshotData = mapSnapshotData(systemSnapshot);
+        return resetFromSnapshot(snapshotData, hardReset);
     }
 
     public SystemSnapshot saveSnapshot(SystemSnapshot systemSnapshot) {
@@ -92,13 +109,14 @@ public class SystemSnapshotService {
             return null;
         }
 
-        removeMaskedVariables(systemSnapshot);
+        // remove any variables that were masked before importing
+        modifySnapshotData(systemSnapshot, this::removeMaskedVariables);
         return saveSnapshot(systemSnapshot);
     }
 
-    void removeMaskedVariables(SystemSnapshot systemSnapshot) {
-        if (systemSnapshot.getPluginVariables() != null) {
-            systemSnapshot.setPluginVariables(systemSnapshot.getPluginVariables().stream()
+    void removeMaskedVariables(Snapshot snasphot) {
+        if (snasphot.getPluginVariables() != null) {
+            snasphot.setPluginVariables(snasphot.getPluginVariables().stream()
                     .map(this::removeMaskedVariables).filter(Objects::nonNull).toList());
         }
     }
@@ -130,10 +148,28 @@ public class SystemSnapshotService {
         return Result.builder().success(false).errors(List.of("Could not find a snapshot with an ID of " + id)).build();
     }
 
-    private Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    /**
+     * Map the given snapshot data to the latest data model
+     * @param snapshot that will be used to reset the system settings
+     * @return a snapshot using the latest data model that can be applied to the current system
+     */
+    public Snapshot mapSnapshotData(SystemSnapshot snapshot) {
+        if (snapshot == null) {
+            return null;
+        }
+
+        int version = snapshot.getSchemaVersion();
+        if (SystemSnapshot.CURRENT_VERSION == version) {
+            return OBJECT_MAPPER.convertValue(snapshot.getSnapshot(), Snapshot.class);
+        }
+
+        throw new IllegalArgumentException("Invalid system snapshot schema version '" + version + "' in snapshot with id '" + snapshot.getId() + "' with reason: '" + snapshot.getReason() + "'");
+    }
+
+    private Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         Result baseResult = new Result();
         return snapshotters.stream()
-                .map(snapshotter -> snapshotter.resetFromSnapshot(systemSnapshot, hardReset))
+                .map(snapshotter -> snapshotter.resetFromSnapshot(snapshot, hardReset))
                 .reduce(baseResult, SystemSnapshotService::combine);
     }
 
@@ -142,6 +178,12 @@ public class SystemSnapshotService {
                 .success(a.isSuccess() && b.isSuccess())
                 .info(combineLists(a.getInfo(), b.getInfo()))
                 .errors(combineLists(a.getErrors(), b.getErrors())).build();
+    }
+
+    private void modifySnapshotData(SystemSnapshot systemSnapshot, Consumer<Snapshot> snapshotConsumer) {
+        Snapshot snapshot = mapSnapshotData(systemSnapshot);
+        snapshotConsumer.accept(snapshot);
+        systemSnapshot.setSnapshot(OBJECT_MAPPER.convertValue(snapshot, new TypeReference<>() {}));
     }
 
     private static List<String> combineLists(List<String> a, List<String> b) {

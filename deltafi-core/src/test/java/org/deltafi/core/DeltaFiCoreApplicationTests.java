@@ -57,11 +57,12 @@ import org.deltafi.core.repo.*;
 import org.deltafi.core.rest.AuthRest;
 import org.deltafi.core.services.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
-import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
+import org.deltafi.core.snapshot.SystemSnapshotTestHelper;
 import org.deltafi.core.types.*;
 import org.deltafi.common.types.integration.*;
 import org.deltafi.core.types.integration.*;
 import org.deltafi.core.types.snapshot.RoleSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.UserSnapshot;
 import org.deltafi.core.util.FlowBuilders;
@@ -3995,15 +3996,15 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testImportSnapshot() {
-		SystemSnapshot snapshot = SystemSnapshotDatafetcherTestHelper.importSystemSnapshot(dgsQueryExecutor);
-		assertThat(snapshot).isEqualTo(SystemSnapshotDatafetcherTestHelper.expectedSnapshot());
+		SystemSnapshot snapshot = SystemSnapshotTestHelper.importSystemSnapshot(dgsQueryExecutor);
+		assertThat(snapshot).isEqualTo(SystemSnapshotTestHelper.expectedSnapshot());
 	}
 
 	@Test
 	void restoreSnapshot() {
 		pluginService.doUpdateSystemPlugin();
-		systemSnapshotRepo.save(SystemSnapshotDatafetcherTestHelper.expectedSnapshot());
-		Result result = SystemSnapshotDatafetcherTestHelper.restoreSnapshot(dgsQueryExecutor);
+		systemSnapshotRepo.save(SystemSnapshotTestHelper.expectedSnapshot());
+		Result result = SystemSnapshotTestHelper.restoreSnapshot(dgsQueryExecutor);
 
 		assertThat(result.isSuccess()).isTrue();
 	}
@@ -5071,7 +5072,7 @@ class DeltaFiCoreApplicationTests {
 		snapshotReplacementUser.setRoles(Set.of(snapshotOnlyRole));
 		UserSnapshot snapshotOnlyUser = new UserSnapshot(user("snap", snapshotOnlyRole.toRole()));
 
-		SystemSnapshot snapshot = new SystemSnapshot();
+		Snapshot snapshot = new Snapshot();
 		snapshot.setRoles(List.of(snapReplacementRole, snapshotOnlyRole));
 		snapshot.setUsers(List.of(snapshotReplacementUser, snapshotOnlyUser));
 

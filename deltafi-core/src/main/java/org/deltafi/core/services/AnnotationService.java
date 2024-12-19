@@ -20,9 +20,9 @@ package org.deltafi.core.services;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.HasExpectedAnnotations;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -62,15 +62,15 @@ public class AnnotationService implements Snapshotter {
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+    public void updateSnapshot(Snapshot snapshot) {
         // Nothing to be done here
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         Result result = new Result();
-        if (systemSnapshot.getDataSinks() != null) {
-            systemSnapshot.getDataSinks().forEach(dataSinkSnapshot -> resetFromSnapshot(dataSinkSnapshot, result));
+        if (snapshot.getDataSinks() != null) {
+            snapshot.getDataSinks().forEach(dataSinkSnapshot -> resetFromSnapshot(dataSinkSnapshot, result));
         }
         result.setSuccess(result.getErrors().isEmpty());
         return result;

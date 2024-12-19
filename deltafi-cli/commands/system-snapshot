@@ -68,185 +68,8 @@ ID_OR_FILE=${ARGS[2]}
 ALL_SNAPSHOT_FIELDS="id
             reason
             created
-            deltaFiProperties {
-              key
-              value
-            }
-            deletePolicies {
-              timedPolicies {
-                id
-                name
-                enabled
-                flow
-                afterCreate
-                afterComplete
-                minBytes
-                deleteMetadata
-              }
-              diskSpacePolicies {
-                id
-                name
-                enabled
-                flow
-                maxPercent
-              }
-            }
-            links {
-              name
-              description
-              url
-              linkType
-            }
-            installedPlugins {
-              groupId
-              artifactId
-              version
-            }
-            pluginVariables {
-              sourcePlugin {
-                groupId
-                artifactId
-                version
-              }
-              variables {
-                name
-                description
-                dataType
-                required
-                defaultValue
-                value
-                masked
-              }
-            }
-            resumePolicies {
-              id
-              name
-              errorSubstring
-              dataSource
-              action
-              maxAttempts
-              priority
-              backOff {
-                delay
-                maxDelay
-                multiplier
-                random
-              }
-            }
-            restDataSources {
-              name
-              topic
-              running
-              testMode
-              maxErrors
-            }
-            timedDataSources {
-              name
-              topic
-              running
-              testMode
-              cronSchedule
-              maxErrors
-            }
-            transformFlows {
-              name
-              running
-              testMode
-            }
-            dataSinks {
-              name
-              running
-              testMode
-              expectedAnnotations
-            }
-            systemFlowPlans {
-              restDataSources {
-                name
-                type
-                description
-                topic
-              }
-              timedDataSources {
-                name
-                type
-                description
-                topic
-                timedIngressAction {
-                  name
-                  type
-                  parameters
-                }
-                cronSchedule
-              }
-              transformPlans {
-                name
-                description
-                type
-                subscribe {
-                  condition
-                  topic
-                }
-                transformActions {
-                  name
-                  type
-                  parameters
-                  join {
-                    maxAge
-                    minNum
-                    maxNum
-                    metadataKey
-                  }
-                }
-                publish {
-                  matchingPolicy
-                  defaultRule {
-                    defaultBehavior
-                    topic
-                  }
-                  rules {
-                    condition
-                    topic
-                  }
-                }
-              }
-              dataSinkPlans {
-                name
-                description
-                type
-                subscribe {
-                  condition
-                  topic
-                }
-                egressAction {
-                  name
-                  type
-                  parameters
-                }
-              }
-            }
-            users {
-              id
-              name
-              username
-              password
-              dn
-              roles {
-                id
-                name
-                permissions
-                createdAt
-                updatedAt
-              }
-              createdAt
-              updatedAt
-            }
-            roles {
-              id
-              name
-              permissions
-              createdAt
-              updatedAt
-            }
+            schemaVersion
+            snapshot
           "
 
 ALL_RESULT_FIELDS="success info errors"
@@ -276,6 +99,10 @@ case "$SUBCOMMAND" in
     fi
 
     JSON=$(cat "$ID_OR_FILE")
+
+    #  support older snapshots by wrapping the snapshot data in the snapshot field if it doesn't exist
+    JSON=$(jq 'if has("snapshot") then . else {id, created, reason,  schemaVersion: 1, snapshot: (del(.id, .created, .reason))} end' "$ID_OR_FILE")
+
     VARIABLES="{\"snapshotData\": $JSON}"
     EXTRACT_PATH=".data.importSnapshot"
     QUERY="mutation(\$snapshotData: SystemSnapshotInput!) { importSnapshot(snapshot: \$snapshotData) { $ALL_SNAPSHOT_FIELDS } }"

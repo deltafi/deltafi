@@ -24,69 +24,24 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.configuration.ui.Link;
-import org.deltafi.core.generated.types.SystemFlowPlans;
-import org.deltafi.core.types.*;
 import org.hibernate.annotations.Type;
 
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 
 @Data
 @Entity
 @NoArgsConstructor
 public class SystemSnapshot {
+    public static final int CURRENT_VERSION = 1;
+
     @Id
     private UUID id = Generators.timeBasedEpochGenerator().generate();
     private String reason;
     private OffsetDateTime created = OffsetDateTime.now();
+    private int schemaVersion = CURRENT_VERSION;
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private List<PluginVariables> pluginVariables;
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private DeletePolicies deletePolicies;
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<KeyValue> deltaFiProperties;
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<Link> links;
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<RestDataSourceSnapshot> restDataSources = new ArrayList<>();
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<TimedDataSourceSnapshot> timedDataSources = new ArrayList<>();
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<DataSinkSnapshot> dataSinks = new ArrayList<>();
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private Set<PluginCoordinates> installedPlugins;
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<ResumePolicy> resumePolicies = new ArrayList<>();
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private SystemFlowPlans systemFlowPlans = new SystemFlowPlans();
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<UserSnapshot> users = new ArrayList<>();
-
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<RoleSnapshot> roles = new ArrayList<>();
-
+    private Map<String, Object> snapshot;
 }

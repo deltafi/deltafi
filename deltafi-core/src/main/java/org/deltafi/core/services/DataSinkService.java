@@ -24,7 +24,7 @@ import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.DataSinkPlanConverter;
 import org.deltafi.core.repo.DataSinkRepo;
 import org.deltafi.core.services.pubsub.SubscriberService;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.DataSinkSnapshot;
 import org.deltafi.core.types.DataSink;
 
@@ -80,13 +80,13 @@ class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapsh
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        systemSnapshot.setDataSinks(getAll().stream().map(DataSinkSnapshot::new).toList());
+    public void updateSnapshot(Snapshot snapshot) {
+        snapshot.setDataSinks(getAll().stream().map(DataSinkSnapshot::new).toList());
     }
 
     @Override
-    public List<DataSinkSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
-        return systemSnapshot.getDataSinks();
+    public List<DataSinkSnapshot> getFlowSnapshots(Snapshot snapshot) {
+        return snapshot.getDataSinks();
     }
 
     @Override

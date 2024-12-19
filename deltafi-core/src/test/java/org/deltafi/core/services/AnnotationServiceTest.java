@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.DataSinkSnapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,15 +74,15 @@ class AnnotationServiceTest {
 
     @Test
     void resetFromSnapshot() {
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setDataSinks(List.of(dataSinkSnapshot("egressNoChange", ANNOTATION_KEYS),
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDataSinks(List.of(dataSinkSnapshot("egressNoChange", ANNOTATION_KEYS),
                 dataSinkSnapshot("egressChanged", ANNOTATION_KEYS), dataSinkSnapshot("nullset", null)));
 
         Mockito.when(dataSinkService.setExpectedAnnotations("egressNoChange", ANNOTATION_KEYS)).thenReturn(false);
         Mockito.when(dataSinkService.setExpectedAnnotations("egressChanged", ANNOTATION_KEYS)).thenReturn(true);
         Mockito.when(dataSinkService.setExpectedAnnotations("nullset", null)).thenReturn(true);
 
-        annotationService.resetFromSnapshot(systemSnapshot, true);
+        annotationService.resetFromSnapshot(snapshot, true);
 
         Mockito.verify(dataSinkService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
         Mockito.verify(deltaFilesService).updatePendingAnnotationsForFlows("egressChanged", ANNOTATION_KEYS);

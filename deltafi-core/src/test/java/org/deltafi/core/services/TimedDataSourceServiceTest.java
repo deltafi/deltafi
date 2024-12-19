@@ -24,7 +24,7 @@ import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.validation.FlowValidator;
 import org.junit.jupiter.api.Assertions;
@@ -114,12 +114,12 @@ class TimedDataSourceServiceTest {
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(flows);
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        timedDataSourceService.updateSnapshot(systemSnapshot);
+        Snapshot snapshot = new Snapshot();
+        timedDataSourceService.updateSnapshot(snapshot);
 
-        assertThat(systemSnapshot.getTimedDataSources()).hasSize(3);
+        assertThat(snapshot.getTimedDataSources()).hasSize(3);
 
-        Map<String, TimedDataSourceSnapshot> timedIngressFlowSnapshotMap = systemSnapshot.getTimedDataSources().stream()
+        Map<String, TimedDataSourceSnapshot> timedIngressFlowSnapshotMap = snapshot.getTimedDataSources().stream()
                 .collect(Collectors.toMap(FlowSnapshot::getName, Function.identity()));
 
         TimedDataSourceSnapshot aFlowSnapshot = timedIngressFlowSnapshotMap.get("a");
@@ -148,7 +148,7 @@ class TimedDataSourceServiceTest {
         TimedDataSource invalid = timedDataSource("invalid", FlowState.INVALID, false, "0 */3 * * * *", 1);
         TimedDataSource changed = timedDataSource("changed", FlowState.STOPPED, false, "0 0 0 */7 * *", 2);
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        Snapshot snapshot = new Snapshot();
 
         // create snapshot objects
         List<TimedDataSourceSnapshot> snapshots = new ArrayList<>();
@@ -157,11 +157,11 @@ class TimedDataSourceServiceTest {
         snapshots.add(snapshot("invalid", true, false, "0 */3 * * * *", 1));
         snapshots.add(snapshot("changed", false, true, "0 */4 * * * *", -1));
         snapshots.add(snapshot("missing", false, true, "*/1 * * * * *", 3));
-        systemSnapshot.setTimedDataSources(snapshots);
+        snapshot.setTimedDataSources(snapshots);
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(List.of(running, stopped, invalid, changed));
 
-        Result result = timedDataSourceService.resetFromSnapshot(systemSnapshot, true);
+        Result result = timedDataSourceService.resetFromSnapshot(snapshot, true);
 
         Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
         Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()

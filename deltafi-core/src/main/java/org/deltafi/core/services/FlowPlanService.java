@@ -28,7 +28,7 @@ import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.validation.FlowPlanValidator;
 
 import java.util.*;
@@ -105,14 +105,14 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+    public void updateSnapshot(Snapshot snapshot) {
         // nothing to do here, dataSource plans should be packaged in the plugin
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         // rebuild flows if there were any plugin variable changes
-        systemSnapshot.getPluginVariables().stream()
+        snapshot.getPluginVariables().stream()
                 .map(PluginVariables::getSourcePlugin)
                 .forEach(this::rebuildFlowsForPlugin);
         return new Result();

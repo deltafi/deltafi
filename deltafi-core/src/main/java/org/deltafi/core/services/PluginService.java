@@ -30,7 +30,7 @@ import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.validation.PluginValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
@@ -351,8 +351,8 @@ public class PluginService implements Snapshotter {
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        systemSnapshot.setInstalledPlugins(getInstalledPluginCoordinates());
+    public void updateSnapshot(Snapshot snapshot) {
+        snapshot.setInstalledPlugins(getInstalledPluginCoordinates());
 
         SystemFlowPlans systemFlowPlans = new SystemFlowPlans(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
         PluginEntity pluginEntity = getSystemPlugin();
@@ -369,14 +369,14 @@ public class PluginService implements Snapshotter {
             }
         }
 
-        systemSnapshot.setSystemFlowPlans(systemFlowPlans);
+        snapshot.setSystemFlowPlans(systemFlowPlans);
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         Result result = new Result();
-        Set<PluginCoordinates> installedPlugins = getInstalledPluginCoordinates();
-        Set<PluginCoordinates> snapshotPlugins = systemSnapshot.getInstalledPlugins();
+        List<PluginCoordinates> installedPlugins = getInstalledPluginCoordinates();
+        List<PluginCoordinates> snapshotPlugins = snapshot.getInstalledPlugins();
 
         Set<PluginCoordinates> missing = new HashSet<>(installedPlugins);
 
@@ -404,7 +404,7 @@ public class PluginService implements Snapshotter {
 
         result.getInfo().addAll(missing.stream().map(snapshotPlugin -> "Plugin " + snapshotPlugin + " was installed at the time of the snapshot but is no longer installed").toList());
 
-        restoreSystemPlugin(systemSnapshot.getSystemFlowPlans(), hardReset);
+        restoreSystemPlugin(snapshot.getSystemFlowPlans(), hardReset);
         return result;
     }
 
@@ -436,8 +436,8 @@ public class PluginService implements Snapshotter {
         return SnapshotRestoreOrder.PLUGIN_REGISTRY_ORDER;
     }
 
-    private Set<PluginCoordinates> getInstalledPluginCoordinates() {
-        return getPlugins().stream().map(PluginEntity::getPluginCoordinates).collect(Collectors.toSet());
+    private List<PluginCoordinates> getInstalledPluginCoordinates() {
+        return getPlugins().stream().map(PluginEntity::getPluginCoordinates).toList();
     }
 
     public List<String> canBeUninstalled(PluginEntity plugin) {

@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.*;
 import org.deltafi.core.repo.DeletePolicyRepo;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.validation.DeletePolicyValidator;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -205,31 +205,31 @@ public class DeletePolicyService implements Snapshotter {
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+    public void updateSnapshot(Snapshot snapshot) {
         DeletePolicies deletePolicies = new DeletePolicies();
         List<DeletePolicy> allPolicies = deletePolicyRepo.findAll();
 
         for (DeletePolicy deletePolicy : allPolicies) {
-            if (deletePolicy instanceof TimedDeletePolicy) {
-                deletePolicies.getTimedPolicies().add((TimedDeletePolicy) deletePolicy);
-            } else if (deletePolicy instanceof DiskSpaceDeletePolicy) {
-                deletePolicies.getDiskSpacePolicies().add((DiskSpaceDeletePolicy) deletePolicy);
+            if (deletePolicy instanceof TimedDeletePolicy timedDeletePolicy) {
+                deletePolicies.getTimedPolicies().add(timedDeletePolicy);
+            } else if (deletePolicy instanceof DiskSpaceDeletePolicy diskSpaceDeletePolicy) {
+                deletePolicies.getDiskSpacePolicies().add(diskSpaceDeletePolicy);
             } else {
                 String type = null != deletePolicy ? deletePolicy.getClass().getName() : "null";
                 throw new IllegalStateException("Delete Policy is not a known instance type: " + type);
             }
         }
 
-        systemSnapshot.setDeletePolicies(deletePolicies);
+        snapshot.setDeletePolicies(deletePolicies);
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         if (hardReset) {
             deletePolicyRepo.deleteAll();
         }
 
-        deletePolicyRepo.saveAll(systemSnapshot.getDeletePolicies().allPolicies());
+        deletePolicyRepo.saveAll(snapshot.getDeletePolicies().allPolicies());
         return Result.builder().success(true).build();
     }
 

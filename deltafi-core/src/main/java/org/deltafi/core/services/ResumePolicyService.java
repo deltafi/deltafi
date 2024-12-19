@@ -25,7 +25,7 @@ import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.ResumePolicyRepo;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -248,17 +248,17 @@ public class ResumePolicyService implements Snapshotter {
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        systemSnapshot.setResumePolicies(resumePolicyRepo.findAll());
+    public void updateSnapshot(Snapshot snapshot) {
+        snapshot.setResumePolicies(resumePolicyRepo.findAll());
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         if (hardReset) {
             removeAll();
         }
 
-        return saveAll(systemSnapshot.getResumePolicies());
+        return saveAll(snapshot.getResumePolicies());
     }
 
     @Override

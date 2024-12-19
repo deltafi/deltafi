@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.types.Property;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,10 +80,10 @@ class DeltaFiPropertiesServiceTest {
         KeyValue valueOutOfRange = new KeyValue("coreServiceThreads", "0");
         KeyValue validValue = new KeyValue("ageOffDays", "1");
 
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setDeltaFiProperties(List.of(unrecognizedKey, invalidDataType, valueOutOfRange, validValue));
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDeltaFiProperties(List.of(unrecognizedKey, invalidDataType, valueOutOfRange, validValue));
 
-        deltaFiPropertiesService.resetFromSnapshot(systemSnapshot, true);
+        deltaFiPropertiesService.resetFromSnapshot(snapshot, true);
         Mockito.verify(deltaFiPropertiesRepo).updateProperty(validValue.getKey(), validValue.getValue());
     }
 

@@ -23,7 +23,7 @@ import org.deltafi.core.exceptions.ValidationException;
 import org.deltafi.core.repo.UiLinkRepo;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -59,25 +59,25 @@ public class UiLinkService implements Snapshotter {
     }
 
     /**
-     * Update the SystemSnapshot with current system state
+     * Update the Snapshot with current system state
      *
-     * @param systemSnapshot system snapshot that holds the current system state
+     * @param snapshot system snapshot that holds the current system state
      */
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        systemSnapshot.setLinks(uiLinkRepo.findAll());
+    public void updateSnapshot(Snapshot snapshot) {
+        snapshot.setLinks(uiLinkRepo.findAll());
     }
 
     /**
-     * Reset the system to the state in the SystemSnapshot
+     * Reset the system to the state in the Snapshot
      *
-     * @param systemSnapshot system snapshot that holds the state at the time of the snapshot
+     * @param snapshot system snapshot that holds the state at the time of the snapshot
      * @param hardReset      when true reset all other custom settings before applying the system snapshot values
      * @return the Result of the reset that will hold any errors or information about the reset
      */
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
-        List<Link> links = Objects.requireNonNullElseGet(systemSnapshot.getLinks(), List::of);
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
+        List<Link> links = Objects.requireNonNullElseGet(snapshot.getLinks(), List::of);
         if (hardReset) {
             uiLinkRepo.deleteAll();
         } else {

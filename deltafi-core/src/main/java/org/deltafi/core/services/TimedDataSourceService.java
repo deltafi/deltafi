@@ -25,7 +25,7 @@ import org.deltafi.core.converters.TimedDataSourcePlanConverter;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.TimedDataSourceRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.validation.FlowValidator;
@@ -76,17 +76,17 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+    public void updateSnapshot(Snapshot snapshot) {
         List<TimedDataSourceSnapshot> timedDataSourceSnapshots = new ArrayList<>();
         for (TimedDataSource timedDataSource : getAll()) {
             timedDataSourceSnapshots.add(new TimedDataSourceSnapshot(timedDataSource));
         }
-        systemSnapshot.setTimedDataSources(timedDataSourceSnapshots);
+        snapshot.setTimedDataSources(timedDataSourceSnapshots);
     }
 
     @Override
-    public List<TimedDataSourceSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
-        return systemSnapshot.getTimedDataSources();
+    public List<TimedDataSourceSnapshot> getFlowSnapshots(Snapshot snapshot) {
+        return snapshot.getTimedDataSources();
     }
 
     @Override

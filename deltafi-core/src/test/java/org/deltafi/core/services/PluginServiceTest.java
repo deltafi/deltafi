@@ -25,7 +25,7 @@ import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.PluginEntity;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.Util;
 import org.deltafi.core.validation.PluginValidator;
@@ -252,17 +252,17 @@ class PluginServiceTest {
         PluginEntity one = makePlugin();
         PluginEntity two = makePlugin();
         two.setPluginCoordinates(PLUGIN_COORDINATES_2);
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        Snapshot snapshot = new Snapshot();
 
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
-        pluginService.updateSnapshot(systemSnapshot);
+        pluginService.updateSnapshot(snapshot);
 
-        assertThat(systemSnapshot.getInstalledPlugins()).hasSize(2).contains(PLUGIN_COORDINATES_1, PLUGIN_COORDINATES_2);
+        assertThat(snapshot.getInstalledPlugins()).hasSize(2).contains(PLUGIN_COORDINATES_1, PLUGIN_COORDINATES_2);
     }
 
     @Test
     void testResetFromSnapshot() {
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        Snapshot snapshot = new Snapshot();
 
         PluginEntity installedOnly = makePlugin();
         installedOnly.setPluginCoordinates(new PluginCoordinates("org.installed", "installed-plugin", "1.0.0"));
@@ -275,9 +275,9 @@ class PluginServiceTest {
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(installedOnly, newVersion, inBoth));
         Mockito.when(pluginRepository.findById(SYSTEM_PLUGIN_ID)).thenReturn(Optional.of(new PluginEntity()));
 
-        systemSnapshot.setInstalledPlugins(Set.of(inBoth.getPluginCoordinates(), PLUGIN_COORDINATES_2, inSnapshotOnly));
+        snapshot.setInstalledPlugins(List.of(inBoth.getPluginCoordinates(), PLUGIN_COORDINATES_2, inSnapshotOnly));
 
-        Result result = pluginService.resetFromSnapshot(systemSnapshot, true);
+        Result result = pluginService.resetFromSnapshot(snapshot, true);
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getInfo()).hasSize(3)
                 .contains("Installed plugin org.mock:plugin-2:1.1.0 was a different version at the time of the snapshot: org.mock:plugin-2:1.0.0")

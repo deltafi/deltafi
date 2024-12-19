@@ -24,7 +24,7 @@ import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.services.pubsub.SubscriberService;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.FlowValidator;
@@ -53,14 +53,14 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+    public void updateSnapshot(Snapshot snapshot) {
         refreshCache();
-        systemSnapshot.setTransformFlows(getAll().stream().map(TransformFlowSnapshot::new).toList());
+        snapshot.setTransformFlows(getAll().stream().map(TransformFlowSnapshot::new).toList());
     }
 
     @Override
-    public List<TransformFlowSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
-        return systemSnapshot.getTransformFlows();
+    public List<TransformFlowSnapshot> getFlowSnapshots(Snapshot snapshot) {
+        return snapshot.getTransformFlows();
     }
 
     @Override

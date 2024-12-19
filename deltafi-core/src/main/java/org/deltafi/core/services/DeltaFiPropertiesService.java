@@ -26,8 +26,8 @@ import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.PropertyInfo;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.stereotype.Service;
@@ -152,11 +152,11 @@ public class DeltaFiPropertiesService implements Snapshotter {
     }
 
     @Override
-    public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        List<KeyValue> snapshot = deltaFiPropertiesRepo.findAll().stream()
+    public void updateSnapshot(Snapshot snapshot) {
+        List<KeyValue> propertiesSnapshot = deltaFiPropertiesRepo.findAll().stream()
                 .map(this::keyValue).filter(Objects::nonNull).toList();
 
-        systemSnapshot.setDeltaFiProperties(snapshot);
+        snapshot.setDeltaFiProperties(propertiesSnapshot);
     }
 
     private KeyValue keyValue(Property property) {
@@ -164,12 +164,12 @@ public class DeltaFiPropertiesService implements Snapshotter {
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         if (hardReset) {
             unsetProperties(new ArrayList<>(allowedProperties));
         }
 
-        List<KeyValue> snapshotProperties = systemSnapshot.getDeltaFiProperties();
+        List<KeyValue> snapshotProperties = snapshot.getDeltaFiProperties();
         if (snapshotProperties != null) {
             updateProperties(snapshotProperties);
         }

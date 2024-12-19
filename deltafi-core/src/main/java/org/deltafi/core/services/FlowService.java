@@ -28,7 +28,7 @@ import org.deltafi.core.types.*;
 import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 
@@ -349,7 +349,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     @Override
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
         refreshCache();
 
         List<FlowT> flows = getAll();
@@ -374,23 +374,23 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
             allFlows.put(flow.getName(), flow);
         }
 
-        return resetFromSnapshot(systemSnapshot, allFlows, updatedFlows);
+        return resetFromSnapshot(snapshot, allFlows, updatedFlows);
     }
 
-    private Result resetFromSnapshot(SystemSnapshot systemSnapshot, Map<String, FlowT> allFlows, Map<String, FlowT> updatedFlows) {
+    private Result resetFromSnapshot(Snapshot snapshot, Map<String, FlowT> allFlows, Map<String, FlowT> updatedFlows) {
         Result result = new Result();
-        List<FlowSnapshotT> flowSnapshots = getFlowSnapshots(systemSnapshot);
+        List<FlowSnapshotT> flowSnapshots = getFlowSnapshots(snapshot);
 
         if (flowSnapshots == null || flowSnapshots.isEmpty()) {
             return result;
         }
 
-        for (FlowSnapshotT snapshot : flowSnapshots) {
-            FlowT existing = allFlows.get(snapshot.getName());
+        for (FlowSnapshotT flowSnapshotT : flowSnapshots) {
+            FlowT existing = allFlows.get(flowSnapshotT.getName());
 
             if (existing == null) {
-                result.getInfo().add("Flow " + snapshot.getName() + " is no longer installed");
-            } else if (updateFromSnapshot(existing, snapshot, result)) {
+                result.getInfo().add("Flow " + flowSnapshotT.getName() + " is no longer installed");
+            } else if (updateFromSnapshot(existing, flowSnapshotT, result)) {
                 updatedFlows.put(existing.getName(), existing);
             }
         }
@@ -405,7 +405,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
 
-    public abstract List<FlowSnapshotT> getFlowSnapshots(SystemSnapshot systemSnapshot);
+    public abstract List<FlowSnapshotT> getFlowSnapshots(Snapshot snapshot);
 
     public boolean updateFromSnapshot(FlowT flow, FlowSnapshotT flowSnapshot, Result result) {
         boolean changed = false;
