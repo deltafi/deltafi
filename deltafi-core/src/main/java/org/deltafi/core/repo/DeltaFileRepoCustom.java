@@ -46,10 +46,22 @@ public interface DeltaFileRepoCustom {
      *
      * @param actionNames requeue actions with these names
      * @param maxFiles limit the query to this many files
-     * @param modified time to mark the files QUEUED
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified);
+    List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles);
+
+    /**
+     * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names
+     *
+     * @param skipRestDataSources Set of rest data sources to not requeue
+     * @param skipTimedDataSource Set of timed data sources to not requeue
+     * @param skipTransforms Set of transforms to not requeue
+     * @param skipDataSinks Set of data sinks to not requeue
+     * @param maxFiles limit the query to this many files
+     * @return the list of the DeltaFiles to be requeued
+     */
+    List<DeltaFile> findPausedForRequeue(Set<String> skipRestDataSources, Set<String> skipTimedDataSource,
+                                         Set<String> skipTransforms, Set<String> skipDataSinks, int maxFiles);
 
     /**
      * Find DeltaFiles that are ready for an automatic resume after encountering an error.

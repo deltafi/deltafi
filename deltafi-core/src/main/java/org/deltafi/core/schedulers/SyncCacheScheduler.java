@@ -36,7 +36,6 @@ public class SyncCacheScheduler {
 
     final DeltaFileCacheService deltaFileCacheService;
     final DeltaFiPropertiesService deltaFiPropertiesService;
-    final DeltaFileRepo deltaFileRepo;
 
     @Scheduled(fixedDelay = 2000)
     public void syncCache() {

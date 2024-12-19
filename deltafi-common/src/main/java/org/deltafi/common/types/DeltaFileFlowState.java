@@ -23,5 +23,6 @@ public enum DeltaFileFlowState {
     COMPLETE,
     ERROR,
     FILTERED,
-    CANCELLED
+    CANCELLED,
+    PAUSED
 }

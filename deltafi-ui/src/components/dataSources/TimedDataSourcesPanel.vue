@@ -69,9 +69,9 @@
             <TimedDataSourceTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
-        <Column header="Active" :style="{ width: '7%' }" class="switch-column">
+        <Column :style="{ width: '7%' }" class="switch-column">
           <template #body="{ data }">
-            <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
+            <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" @confirm-start="confirming = true" @confirm-stop="confirming = false" />
           </template>
         </Column>
       </DataTable>
@@ -105,9 +105,6 @@
         <div class="d-flex justify-content-between">
           <div>
             <StatusBadge :status="activeAction.ingressStatus" :message="activeAction.ingressStatusMessage" />
-          </div>
-          <div>
-            <StateInputSwitch :row-data-prop="activeAction" data-source-type="timedDataSource" @change="refresh" />
           </div>
         </div>
       </template>
@@ -151,6 +148,7 @@ const timedDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
 const onEditCancel = () => (editing.value = false);
 const updateDataSourceDialog = ref(null);
+const confirming = ref(false);
 
 const onEditComplete = async (event) => {
   const { data, newValue, field } = event;
@@ -232,8 +230,8 @@ const concatMvnCoordinates = (sourcePlugin) => {
 };
 
 const refresh = async () => {
-  // Do not refresh data while editing.
-  if (editing.value) return;
+  // Do not refresh data while editing or confirming.
+  if (editing.value || confirming.value) return;
 
   const response = await getTimedDataSources();
   timedDataSources.value = response.data.getAllFlows.timedDataSource.map((ds) => {
@@ -263,7 +261,7 @@ defineExpose({ refresh });
           margin: 0.25rem 0 0 0.25rem !important;
         }
 
-        .p-button {
+        .control-buttons {
           padding: 0.25rem !important;
           margin: 0 0 0 0.25rem !important;
         }

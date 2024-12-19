@@ -31,8 +31,12 @@ public class FlowBuilders {
     public static final String TRANSFORM_TOPIC = "transform-topic";
     public static final String EGRESS_TOPIC = "egress-topic";
     public static RestDataSource buildRestDataSource(FlowState flowState) {
+        return buildRestDataSource(REST_DATA_SOURCE_NAME, flowState);
+    }
+
+    public static RestDataSource buildRestDataSource(String name, FlowState flowState) {
         RestDataSource dataSource = new RestDataSource();
-        dataSource.setName(REST_DATA_SOURCE_NAME);
+        dataSource.setName(name);
         dataSource.getFlowStatus().setState(flowState);
         dataSource.setTestMode(false);
         dataSource.setTopic(TRANSFORM_TOPIC);
@@ -43,7 +47,11 @@ public class FlowBuilders {
     public static TimedDataSource buildTimedDataSource(FlowState flowState) {
         ActionConfiguration tic = new ActionConfiguration("SampleTimedIngressAction", ActionType.TIMED_INGRESS, "type");
 
-        return buildDataSource(TIMED_DATA_SOURCE_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_TOPIC);
+        return buildTimedDataSource(TIMED_DATA_SOURCE_NAME, tic, "*/5 * * * * *", flowState);
+    }
+
+    public static TimedDataSource buildTimedDataSource(String name, ActionConfiguration ac, String cronSchedule, FlowState flowState) {
+        return buildDataSource(name, ac, flowState, false, cronSchedule, TRANSFORM_TOPIC);
     }
 
     public static TimedDataSource buildTimedDataSourceError(FlowState flowState) {
@@ -82,10 +90,10 @@ public class FlowBuilders {
     public static DataSink buildDataSink(FlowState flowState) {
         ActionConfiguration sampleEgress = new ActionConfiguration("SampleEgressAction", ActionType.EGRESS, "type");
 
-        return buildFlow(EGRESS_FLOW_NAME, sampleEgress, flowState, false);
+        return buildDataSink(EGRESS_FLOW_NAME, sampleEgress, flowState, false);
     }
 
-    public static DataSink buildFlow(String name, ActionConfiguration egressAction, FlowState flowState, boolean testMode) {
+    public static DataSink buildDataSink(String name, ActionConfiguration egressAction, FlowState flowState, boolean testMode) {
         DataSink dataSink = new DataSink();
         dataSink.setName(name);
         dataSink.setEgressAction(egressAction);
@@ -95,17 +103,17 @@ public class FlowBuilders {
     }
 
     public static DataSink buildRunningDataSink(String name, ActionConfiguration egressAction, boolean testMode) {
-        return buildFlow(name, egressAction, FlowState.RUNNING, testMode);
+        return buildDataSink(name, egressAction, FlowState.RUNNING, testMode);
     }
 
     public static TransformFlow buildTransformFlow(FlowState flowState) {
         ActionConfiguration tc = new ActionConfiguration("Utf8TransformAction", ActionType.TRANSFORM, "type");
         ActionConfiguration tc2 = new ActionConfiguration("SampleTransformAction", ActionType.TRANSFORM, "type");
 
-        return buildFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), flowState, false);
+        return buildTransform(TRANSFORM_FLOW_NAME, List.of(tc, tc2), flowState, false);
     }
 
-    public static TransformFlow buildFlow(String name, List<ActionConfiguration> transforms, FlowState flowState, boolean testMode) {
+    public static TransformFlow buildTransform(String name, List<ActionConfiguration> transforms, FlowState flowState, boolean testMode) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(name);
         transformFlow.getFlowStatus().setState(flowState);
@@ -115,7 +123,7 @@ public class FlowBuilders {
     }
 
     public static TransformFlow buildRunningTransformFlow(String name, List<ActionConfiguration> transforms, boolean testMode) {
-        return buildFlow(name, transforms, FlowState.RUNNING, testMode);
+        return buildTransform(name, transforms, FlowState.RUNNING, testMode);
     }
 
     public static TransformFlow buildTransformFlow(String name, String groupId, String artifactId, String version) {

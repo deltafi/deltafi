@@ -113,6 +113,7 @@ public class DeltaFilesService {
     private final AnalyticEventService analyticEventService;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
+    private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
@@ -311,7 +312,13 @@ public class DeltaFilesService {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
-        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.firstFlow())), false);
+        if (restDataSource.isPaused()) {
+            deltaFile.firstFlow().setState(DeltaFileFlowState.PAUSED);
+            deltaFile.setPaused(true);
+            deltaFileRepo.insertOne(deltaFile);
+        } else {
+            advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.firstFlow())), false);
+        }
         return deltaFile;
     }
 
@@ -449,7 +456,7 @@ public class DeltaFilesService {
     }
 
     public void handleIngressActionEvent(ActionEvent event) {
-        TimedDataSource dataSource = timedDataSourceService.getRunningFlowByName(event.getFlowName());
+        TimedDataSource dataSource = timedDataSourceService.getActiveFlowByName(event.getFlowName());
         IngressEvent ingressEvent = event.getIngress();
         boolean completedExecution = timedDataSourceService.completeExecution(dataSource.getName(),
                 event.getDid(), ingressEvent.getMemo(), ingressEvent.isExecuteImmediate(),
@@ -465,7 +472,15 @@ public class DeltaFilesService {
                 .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.firstFlow()))
                 .toList();
 
-        advanceAndSave(stateMachineInputs, false);
+        if (dataSource.isPaused()) {
+            for (StateMachineInput stateMachineInput : stateMachineInputs) {
+                stateMachineInput.deltaFile().firstFlow().setState(DeltaFileFlowState.PAUSED);
+                stateMachineInput.deltaFile().setPaused(true);
+            }
+            deltaFileRepo.insertBatch(stateMachineInputs.stream().map(StateMachineInput::deltaFile).toList());
+        } else {
+            advanceAndSave(stateMachineInputs, false);
+        }
 
         for (StateMachineInput stateMachineInput : stateMachineInputs) {
             DeltaFile deltaFile = stateMachineInput.deltaFile();
@@ -501,8 +516,9 @@ public class DeltaFilesService {
 
     public void transform(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event) {
         List<TransformEvent> transformEvents = event.getTransform();
+
         try {
-            transformFlowService.getRunningFlowByName(event.getFlowName());
+            transformFlowService.getActiveFlowByName(event.getFlowName());
         } catch (MissingFlowException missingFlowException) {
             handleMissingFlow(deltaFile, flow, missingFlowException.getMessage());
             return;
@@ -1306,15 +1322,15 @@ public class DeltaFilesService {
 
             if (!actionInputs.isEmpty()) {
                 log.warn("{} actions exceeded requeue threshold of {} seconds, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
+                deltaFileRepo.saveAll(filesToRequeue);
                 enqueueActions(actionInputs, true);
             }
-            deltaFileRepo.saveAll(filesToRequeue);
         }
     }
 
     public void requeueColdQueueActions(List<String> actionNames, int maxFiles) {
         OffsetDateTime modified = OffsetDateTime.now(clock);
-        List<DeltaFile> filesToRequeue = deltaFileRepo.findColdQueuedForRequeue(actionNames, maxFiles, modified);
+        List<DeltaFile> filesToRequeue = deltaFileRepo.findColdQueuedForRequeue(actionNames, maxFiles);
 
         List<WrappedActionInput> actionInputs = new ArrayList<>();
         filesToRequeue.forEach(deltaFile -> {
@@ -1338,10 +1354,52 @@ public class DeltaFilesService {
         });
 
         if (!actionInputs.isEmpty()) {
-            log.warn("Moving {} from the cold to warm queue", actionInputs.size());
+            log.info("Moving {} from the cold to warm queue", actionInputs.size());
+            deltaFileRepo.saveAll(filesToRequeue);
             enqueueActions(actionInputs, true);
         }
-        deltaFileRepo.saveAll(filesToRequeue);
+    }
+
+    public void requeuePausedFlows() {
+        Integer numFound = null;
+        while (numFound == null || numFound == REQUEUE_BATCH_SIZE) {
+            Map<FlowType, Set<String>> pausedFlows = Map.of(
+                    FlowType.REST_DATA_SOURCE, restDataSourceService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet()),
+                    FlowType.TIMED_DATA_SOURCE, timedDataSourceService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet()),
+                    FlowType.TRANSFORM, transformFlowService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet()),
+                    FlowType.DATA_SINK, dataSinkService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet())
+            );
+
+            OffsetDateTime modified = OffsetDateTime.now(clock);
+            List<DeltaFile> filesToRequeue = deltaFileRepo.findPausedForRequeue(
+                    pausedFlows.get(FlowType.REST_DATA_SOURCE),
+                    pausedFlows.get(FlowType.TIMED_DATA_SOURCE),
+                    pausedFlows.get(FlowType.TRANSFORM),
+                    pausedFlows.get(FlowType.DATA_SINK),
+                    REQUEUE_BATCH_SIZE);
+            numFound = filesToRequeue.size();
+
+            List<StateMachineInput> inputs = new ArrayList<>();
+            filesToRequeue.forEach(deltaFile -> {
+                deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
+                deltaFile.setModified(modified);
+                inputs.addAll(deltaFile.getFlows().stream()
+                        .filter(f -> f.getState() == DeltaFileFlowState.PAUSED &&
+                                !pausedFlows.get(f.getType()).contains(f.getName()))
+                        .map(f -> {
+                            f.setState(DeltaFileFlowState.IN_FLIGHT);
+                            return new StateMachineInput(deltaFile, f);
+                        })
+                        .toList());
+            });
+
+            if (!inputs.isEmpty()) {
+                log.info("Unpausing {} DeltaFile flows", inputs.size());
+                List<WrappedActionInput> actionInputs = stateMachine.advance(inputs);
+                deltaFileRepo.saveAll(filesToRequeue);
+                enqueueActions(actionInputs, false);
+            }
+        }
     }
 
     private WrappedActionInput requeueActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action) {
@@ -1587,7 +1645,7 @@ public class DeltaFilesService {
             }
             dataSource.setMemo(memo);
         } else {
-            dataSource = timedDataSourceService.getRunningFlowByName(flowName);
+            dataSource = timedDataSourceService.getActiveFlowByName(flowName);
         }
 
         return taskTimedDataSource(dataSource);
@@ -1733,9 +1791,7 @@ public class DeltaFilesService {
                     deltaFiles.stream()
                             .map(DeltaFile::erroredFlows)
                             .flatMap(List::stream)
-                            .forEach(deltaFileFlow -> {
-                                deltaFileFlow.enableAutoResume(nextResume, resumePolicy.getName());
-                            });
+                            .forEach(deltaFileFlow -> deltaFileFlow.enableAutoResume(nextResume, resumePolicy.getName()));
                     deltaFileRepo.saveAll(deltaFiles);
                     previousDids.addAll(deltaFiles.stream().map(DeltaFile::getDid).toList());
                     information.add("Applied " + resumePolicy.getName() + " policy to " + deltaFiles.size() + " DeltaFiles");

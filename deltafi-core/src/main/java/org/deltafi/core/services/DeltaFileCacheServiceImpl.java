@@ -132,7 +132,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
 
     @Override
     public void save(DeltaFile deltaFile) {
-        if (deltaFile.inactiveStage()) {
+        if (deltaFile.noActiveFlows()) {
             try {
                 updateRepo(deltaFile);
             } finally {

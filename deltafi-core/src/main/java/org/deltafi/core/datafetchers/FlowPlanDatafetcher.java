@@ -144,7 +144,7 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setFlowState(FlowType flowType, String flowName, FlowState flowState) {
+    public boolean setFlowState(@InputArgument FlowType flowType, @InputArgument String flowName, @InputArgument FlowState flowState) {
         auditLogger.audit("set {} {} to state {}", flowType, flowName, flowState);
 
         FlowService<?, ?, ?, ?> flowService = switch(flowType) {
@@ -153,10 +153,13 @@ public class FlowPlanDatafetcher {
             case FlowType.TRANSFORM -> transformFlowService;
             case FlowType.DATA_SINK -> dataSinkService;
         };
+
         if (flowState == FlowState.RUNNING) {
             return flowService.startFlow(flowName);
-        } else if (flowState == FlowState.STOPPED){
+        } else if (flowState == FlowState.STOPPED) {
             return flowService.stopFlow(flowName);
+        } else if (flowState == FlowState.PAUSED) {
+            return flowService.pauseFlow(flowName);
         } else {
             throw new IllegalArgumentException("Unsupported flow state: " + flowState);
         }

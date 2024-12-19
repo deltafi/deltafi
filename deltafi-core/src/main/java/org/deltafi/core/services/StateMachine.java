@@ -118,7 +118,7 @@ public class StateMachine {
     }
 
     private List<WrappedActionInput> advanceDataSink(StateMachineInput input, Map<String, Long> pendingQueued) {
-        DataSink dataSink = dataSinkService.getRunningFlowByName(input.flow().getName());
+        DataSink dataSink = dataSinkService.getActiveFlowByName(input.flow().getName());
         ActionConfiguration nextEgressAction = dataSink.getEgressAction();
 
         if (nextEgressAction == null || input.flow().hasFinalAction(nextEgressAction.getName())) {
@@ -175,8 +175,10 @@ public class StateMachine {
         generatePubSubMetrics(input.deltaFile(), input.flow(), subscriberFlows);
 
         for (DeltaFileFlow newFlow : subscriberFlows) {
-            StateMachineInput newInput = new StateMachineInput(input.deltaFile(), newFlow);
-            actionInputs.addAll(advance(newInput, pendingQueued));
+            if (newFlow.getState() != DeltaFileFlowState.PAUSED) {
+                StateMachineInput newInput = new StateMachineInput(input.deltaFile(), newFlow);
+                actionInputs.addAll(advance(newInput, pendingQueued));
+            }
         }
 
         if (!actionInputs.isEmpty() && input.flow().getState() != DeltaFileFlowState.COMPLETE) {
@@ -237,9 +239,9 @@ public class StateMachine {
 
     private Flow getFlow(DeltaFileFlow flow) {
         return switch (flow.getType()) {
-            case REST_DATA_SOURCE -> restDataSourceService.getRunningFlowByName(flow.getName());
-            case TIMED_DATA_SOURCE -> timedDataSourceService.getRunningFlowByName(flow.getName());
-            case TRANSFORM -> transformFlowService.getRunningFlowByName(flow.getName());
+            case REST_DATA_SOURCE -> restDataSourceService.getActiveFlowByName(flow.getName());
+            case TIMED_DATA_SOURCE -> timedDataSourceService.getActiveFlowByName(flow.getName());
+            case TRANSFORM -> transformFlowService.getActiveFlowByName(flow.getName());
             default -> throw new IllegalArgumentException("Unexpected value: " + flow.getType());
         };
     }

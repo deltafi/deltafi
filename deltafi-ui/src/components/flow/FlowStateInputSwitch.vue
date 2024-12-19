@@ -17,16 +17,14 @@
 -->
 
 <template>
-  <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowUpdate')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowUpdate'))">
-    <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
+  <span v-if="states.includes(rowData.flowStatus.state) && $hasPermission('FlowUpdate')">
+    <ConfirmDialog :group="'transform_' + rowData.name">
       <template #message="slotProps">
-        <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-          <p class="pl-2" v-html="slotProps.message.message" />
-        </div>
+        <span class="p-confirm-dialog-icon pi pi-exclamation-triangle"></span>
+        <span class="p-confirm-dialog-message" v-html="slotProps.message.message" />
       </template>
-    </ConfirmPopup>
-    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state)" />
+    </ConfirmDialog>
+    <FlowControlButtons v-model="rowData.flowStatus.state" class="control-buttons" @start="start()" @pause="pause()" @stop="stop()" />
   </span>
   <span v-else>
     <Button :label="rowData.flowStatus.state" :class="buttonClass" style="width: 5.5rem" disabled />
@@ -34,19 +32,21 @@
 </template>
 
 <script setup>
-import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
+import FlowControlButtons from "@/components/FlowControlButtons.vue";
 import useNotifications from "@/composables/useNotifications";
+import useFlows from "@/composables/useFlows";
 import { computed, defineProps, toRefs } from "vue";
 
-import ConfirmPopup from "primevue/confirmpopup";
 import Button from "primevue/button";
-import InputSwitch from "primevue/inputswitch";
+import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startTransformFlowByName, stopTransformFlowByName } = useFlowQueryBuilder();
+const { setFlowState } = useFlows();
 const notify = useNotifications();
+const emit = defineEmits(["change", "confirm-start", "confirm-stop"]);
+const states = ['RUNNING', 'STOPPED', 'PAUSED'];
 
 const props = defineProps({
   rowDataProp: {
@@ -61,30 +61,52 @@ const buttonClass = computed(() => {
   return _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "p-button-primary" : "p-button-secondary";
 });
 
-const confirmationPopup = async (event, name, state) => {
-  if (_.isEqual(state, "RUNNING")) {
-    confirm.require({
-      target: event.currentTarget,
-      group: `${rowData.value.flowType}_${rowData.value.name}`,
-      message: `Stop the <b>${name}</b> flow?`,
-      acceptLabel: "Stop",
-      rejectLabel: "Cancel",
-      icon: "pi pi-exclamation-triangle",
-      accept: () => toggleFlowState(name, state),
-      reject: () => { },
-    });
-  } else {
-    await toggleFlowState(name, state);
-  }
-};
-const toggleFlowState = async (flowName, newFlowState) => {
-  if (_.isEqual(newFlowState, "STOPPED")) {
-    notify.info("Starting Flow", `Starting <b>${flowName}</b> flow.`, 3000);
-    await startTransformFlowByName(flowName);
-  } else {
-    notify.info("Stopping Flow", `Stopping <b>${flowName}</b> flow.`, 3000);
-    await stopTransformFlowByName(flowName);
-  }
-  rowData.value.flowStatus.state = _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "STOPPED" : "RUNNING";
-};
+const start = async () => {
+  const { name } = { name: rowData.value.name };
+  notify.info("Starting Transform", `Starting <b>${name}</b> transform.`, 3000);
+  await setFlowState('TRANSFORM', name, 'RUNNING');
+  emit("change");
+}
+
+const pause = async () => {
+  const { name } = { name: rowData.value.name };
+  notify.info("Pausing Transform", `Pausing <b>${name}</b> transform.`, 3000);
+  await setFlowState('TRANSFORM', name, 'PAUSED');
+  emit("change");
+}
+
+const stop = async () => {
+  const { name } = { name: rowData.value.name };
+  emit("confirm-start");
+  confirm.require({
+    group: `transform_${name}`,
+    message: `Are you sure you want to stop the <b>${name}</b> transform?`,
+    acceptLabel: "Stop",
+    rejectLabel: "Cancel",
+    icon: "pi pi-exclamation-triangle",
+    header: "Stop Confirmation",
+    rejectProps: {
+      label: "Cancel",
+      severity: "secondary",
+      outlined: true,
+    },
+    acceptProps: {},
+    accept: async () => {
+      notify.info("Stopping Transform", `Stopping <b>${name}</b> transform.`, 3000);
+      await setFlowState('TRANSFORM', name, 'STOPPED');
+      emit("confirm-stop");
+      emit("change");
+    },
+    reject: () => {
+      emit("confirm-stop");
+      emit("change");
+    },
+    onHide: () => {
+      emit("confirm-stop");
+      emit("change");
+    }
+  });
+}
+
+
 </script>

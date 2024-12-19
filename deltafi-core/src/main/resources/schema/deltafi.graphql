@@ -82,6 +82,7 @@ enum ActionState {
   JOINING
   JOINED
   INHERITED
+  PAUSED
 }
 
 enum ActionType {
@@ -129,6 +130,7 @@ enum DeltaFileFlowState {
   ERROR
   FILTERED
   CANCELLED
+  PAUSED
 }
 
 enum FlowType {
@@ -183,6 +185,7 @@ type DeltaFile {
   filtered: Boolean
   replayed: DateTime
   replayDid: UUID
+  paused: Boolean
 }
 
 type DeltaFiles {
@@ -293,6 +296,7 @@ input DeltaFilesFilter {
   replayed: Boolean
   terminalStage: Boolean
   pendingAnnotations: Boolean
+  paused: Boolean
 }
 
 type RetryResult {

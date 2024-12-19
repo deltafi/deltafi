@@ -55,4 +55,6 @@ public interface Subscriber {
     default boolean isTestMode() {
         return false;
     }
+
+    boolean isPaused();
 }

@@ -30,7 +30,7 @@ import java.util.Set;
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class DataSinkPlan extends FlowPlan implements Subscriber {
+public class DataSinkPlan extends FlowPlan {
     private final ActionConfiguration egressAction;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;
@@ -56,15 +56,5 @@ public class DataSinkPlan extends FlowPlan implements Subscriber {
             actionConfigurations.add(egressAction);
         }
         return actionConfigurations;
-    }
-
-    @Override
-    public Set<Rule> subscribeRules() {
-        return subscribe;
-    }
-
-    @Override
-    public FlowType flowType() {
-        return FlowType.DATA_SINK;
     }
 }

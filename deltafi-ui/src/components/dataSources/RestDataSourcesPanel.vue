@@ -59,9 +59,9 @@
             <RestDataSourceTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
-        <Column header="Active" :style="{ width: '7%' }" class="switch-column">
+        <Column :style="{ width: '7%' }" class="switch-column">
           <template #body="{ data }">
-            <StateInputSwitch :row-data-prop="data" data-source-type="restDataSource" @change="refresh" />
+            <StateInputSwitch :row-data-prop="data" data-source-type="restDataSource" @change="refresh" @confirm-start="confirming = true" @confirm-stop="confirming = false" />
           </template>
         </Column>
       </DataTable>
@@ -85,14 +85,6 @@
         </span>
         <span v-else>{{ activeAction[fieldName] || "-" }}</span>
       </div>
-      <template #footer>
-        <div class="d-flex justify-content-between">
-          <span></span>
-          <div>
-            <StateInputSwitch :row-data-prop="activeAction" data-source-type="restDataSource" @change="refresh" />
-          </div>
-        </div>
-      </template>
     </Dialog>
   </div>
 </template>
@@ -125,6 +117,7 @@ const restDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
 const onEditCancel = () => (editing.value = false);
 const updateDataSource = ref(null);
+const confirming = ref(false);
 
 const onEditComplete = async (event) => {
   const { data, newValue, field } = event;
@@ -185,8 +178,8 @@ const concatMvnCoordinates = (sourcePlugin) => {
 };
 
 const refresh = async () => {
-  // Do not refresh data while editing.
-  if (editing.value) return;
+  // Do not refresh data while editing or confirming.
+  if (editing.value || confirming.value) return;
 
   const response = await getRestDataSources();
   restDataSources.value = response.data.getAllFlows.restDataSource.map((ds) => {
@@ -216,7 +209,7 @@ defineExpose({ refresh });
           margin: 0.25rem 0 0 0.25rem !important;
         }
 
-        .p-button {
+        .control-buttons {
           padding: 0.25rem !important;
           margin: 0 0 0 0.25rem !important;
         }

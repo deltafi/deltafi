@@ -36,7 +36,7 @@ import java.time.OffsetDateTime;
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
-public class DataSourceScheduler {
+public class TimedDataSourceScheduler {
 
     private final DeltaFilesService deltaFilesService;
     private final TimedDataSourceService timedDataSourceService;
@@ -47,7 +47,7 @@ public class DataSourceScheduler {
     private final Clock clock;
 
     @Scheduled(fixedDelay = 1000)
-    public void triggerTimedIngressFlows() {
+    public void triggerTimedDataSources() {
         for (TimedDataSource dataSource : timedDataSourceService.getRunningTimedDataSources()) {
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled() &&

@@ -83,5 +83,35 @@ export default function useFlows() {
     return response.value.data.getFlowNames;
   };
 
-  return { dataSinks, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, transforms, fetchDataSinkNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, fetchAllFlowNames, fetchTransformNames, loading, loaded, errors };
+  const setFlowState = (flowType: string, flowName: string, flowState: string) => {
+    const query = {
+      setFlowState: {
+        __args: {
+          flowType: new EnumType(flowType),
+          flowName: flowName,
+          flowState: new EnumType(flowState),
+        },
+      },
+    };
+    console.log(query)
+    return queryGraphQL(query, "setFlowState", "mutation");
+  };
+
+  return {
+    dataSinks,
+    allDataSourceFlowNames,
+    restDataSourceFlowNames,
+    timedDataSourceFlowNames,
+    transforms,
+    fetchDataSinkNames,
+    fetchAllDataSourceFlowNames,
+    fetchRestDataSourceFlowNames,
+    fetchTimedDataSourceFlowNames,
+    fetchAllFlowNames,
+    fetchTransformNames,
+    setFlowState,
+    loading,
+    loaded,
+    errors
+  };
 }

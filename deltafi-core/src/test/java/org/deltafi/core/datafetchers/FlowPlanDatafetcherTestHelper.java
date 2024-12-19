@@ -196,12 +196,20 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.TRANSFORM).flowName("sampleTransform").flowState(FlowState.STOPPED).build());
     }
 
+    public static boolean pauseTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.TRANSFORM).flowName("sampleTransform").flowState(FlowState.PAUSED).build());
+    }
+
     public static boolean startDataSink(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.DATA_SINK).flowName("sampleEgress").flowState(FlowState.RUNNING).build());
     }
 
     public static boolean stopDataSink(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.DATA_SINK).flowName("sampleEgress").flowState(FlowState.STOPPED).build());
+    }
+
+    public static boolean pauseDataSink(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, SetFlowStateGraphQLQuery.newRequest().flowType(FlowType.DATA_SINK).flowName("sampleEgress").flowState(FlowState.PAUSED).build());
     }
 
     public static boolean startTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {

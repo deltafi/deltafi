@@ -62,9 +62,9 @@
             <EgressTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
-        <Column header="Active" :style="{ width: '7%' }" class="egress-action-state-column">
+        <Column :style="{ width: '7%' }" class="egress-action-state-column">
           <template #body="{ data }">
-            <StateInputSwitch :row-data-prop="data" @change="refresh" />
+            <StateInputSwitch :row-data-prop="data" @change="refresh" @confirm-start="confirming = true" @confirm-stop="confirming = false" />
           </template>
         </Column>
       </DataTable>
@@ -95,6 +95,7 @@ const { getAllDataSinks, loaded, loading } = useDataSink();
 const showLoading = computed(() => loading.value && !loaded.value);
 const egressActionsList = ref([]);
 const updateEgressDialog = ref(null);
+const confirming = ref(false);
 
 const props = defineProps({
   pluginNameSelectedProp: {
@@ -139,8 +140,8 @@ const concatMvnCoordinates = (sourcePlugin) => {
 };
 
 const refresh = async () => {
-  // Do not refresh data while editing.
-  if (editing.value) return;
+  // Do not refresh data while editing or confirming.
+  if (editing.value || confirming.value) return;
 
   const response = await getAllDataSinks();
   egressActionsList.value = response.data.getAllFlows.dataSink;
@@ -180,7 +181,7 @@ defineExpose({ refresh });
           margin: 0.25rem 0 0 0.25rem !important;
         }
 
-        .p-button {
+        .control-buttons {
           padding: 0.25rem !important;
           margin: 0 0 0 0.25rem !important;
         }

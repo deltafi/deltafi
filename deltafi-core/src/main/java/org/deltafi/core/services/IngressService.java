@@ -179,7 +179,7 @@ public class IngressService {
             Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException, IngressMetadataException, IngressUnavailableException {
         RestDataSource restDataSource;
         try {
-            restDataSource = restDataSourceService.getRunningFlowByName(flow);
+            restDataSource = restDataSourceService.getActiveFlowByName(flow);
         } catch (MissingFlowException e) {
             throw new IngressMetadataException(e.getMessage());
         }

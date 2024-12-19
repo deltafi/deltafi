@@ -118,6 +118,10 @@ public abstract class Flow {
         return FlowState.STOPPED.equals(getFlowStatus().getState());
     }
 
+    public boolean isPaused() {
+        return FlowState.PAUSED.equals(getFlowStatus().getState());
+    }
+
     public boolean isInvalid() {
         return FlowState.INVALID.equals(getFlowStatus().getState());
     }

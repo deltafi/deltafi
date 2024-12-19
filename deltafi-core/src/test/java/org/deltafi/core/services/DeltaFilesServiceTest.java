@@ -117,9 +117,10 @@ class DeltaFilesServiceTest {
         this.metricService = metricService;
 
         MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
-        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
-                stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
-                metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, timedDataSourceService,
+        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService,
+                mockDeltaFiPropertiesService, stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo,
+                coreEventQueue, contentStorageService, resumePolicyService, metricService, analyticEventService,
+                new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService);
     }
 
@@ -131,7 +132,7 @@ class DeltaFilesServiceTest {
     @Test
     void setsAndGets() {
         RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
-        when(restDataSourceService.getRunningFlowByName(dataSource.getName())).thenReturn(dataSource);
+        when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
 
         UUID did = UUID.randomUUID();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
@@ -151,7 +152,7 @@ class DeltaFilesServiceTest {
     void dataSourceTestModeTrue() {
         RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
         dataSource.setTestMode(true);
-        when(restDataSourceService.getRunningFlowByName(dataSource.getName())).thenReturn(dataSource);
+        when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
 
         UUID did = UUID.randomUUID();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
@@ -417,7 +418,7 @@ class DeltaFilesServiceTest {
         DataSink dataSink = new DataSink();
         dataSink.setExpectedAnnotations(Set.of("a", "b"));
         Mockito.when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
-        Mockito.when(dataSinkService.getRunningFlowByName("dataSource")).thenReturn(dataSink);
+        Mockito.when(dataSinkService.getActiveFlowByName("dataSource")).thenReturn(dataSink);
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.DATA_SINK).build();
@@ -441,7 +442,7 @@ class DeltaFilesServiceTest {
     void testEgress_addPendingAnnotationsIgnoreNotRunningException() {
         // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the dataSink is added in the state machine
         Mockito.when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
-        Mockito.when(dataSinkService.getRunningFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
+        Mockito.when(dataSinkService.getActiveFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = deltaFile.firstFlow();

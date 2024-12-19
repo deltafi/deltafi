@@ -24,6 +24,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
@@ -34,5 +35,10 @@ public class RequeueScheduler {
     @Scheduled(fixedDelay = 5000)
     public void requeue() {
         deltaFilesService.requeue();
+    }
+
+    @Scheduled(fixedDelay = 5000)
+    public void requeuePausedFlows() {
+        deltaFilesService.requeuePausedFlows();
     }
 }

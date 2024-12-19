@@ -32,7 +32,7 @@ import java.util.Set;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @EqualsAndHashCode(callSuper = true)
-public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber {
+public class TransformFlowPlan extends FlowPlan {
     private List<ActionConfiguration> transformActions;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;
@@ -57,20 +57,5 @@ public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber
             actionConfigurations.addAll(transformActions);
         }
         return actionConfigurations;
-    }
-
-    @Override
-    public Set<Rule> subscribeRules() {
-        return this.subscribe;
-    }
-
-    @Override
-    public PublishRules publishRules() {
-        return this.publish;
-    }
-
-    @Override
-    public FlowType flowType() {
-        return FlowType.TRANSFORM;
     }
 }

@@ -109,7 +109,12 @@
         </Column>
         <Column field="name" header="Filename" :sortable="true" class="filename-column" />
         <Column field="dataSource" header="Data Source" :sortable="true" />
-        <Column field="stage" header="Stage" :sortable="true" />
+        <Column field="stage" header="Stage" :sortable="true">
+          <template #body="{ data }">
+            {{ data.stage }}
+            <i v-if="data.paused" v-tooltip="'Paused'" style="color: #888888" class="fa-solid fa-circle-pause"></i>
+          </template>
+        </Column>
         <Column field="created" header="Created" :sortable="true">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
@@ -250,7 +255,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.terminalStage, model.value.pendingAnnotations],
+    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.terminalStage, model.value.pendingAnnotations, model.value.paused],
     () => {
       fetchDeltaFilesData();
     }
@@ -399,6 +404,7 @@ const defaultQueryParamsTemplate = {
   testMode: null,
   terminalStage: null,
   replayable: null,
+  paused: null,
   sizeMin: null,
   sizeMax: null,
   sizeType: sizeTypesOptions.value[0],
@@ -449,11 +455,12 @@ const advanceOptionsPanelInfo = computed(() => {
     { field: "replayable", column: 2, order: 2, componentType: "Dropdown", label: "Replayable:", placeholder: "Select if Replayable", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
     { field: "terminalStage", column: 2, order: 3, componentType: "Dropdown", label: "Terminal Stage:", placeholder: "Select if Terminal Stage", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
     { field: "egressed", column: 2, order: 4, componentType: "Dropdown", label: "Egressed:", placeholder: "Select if Egressed", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "paused", column: 2, order: 5, componentType: "Dropdown", label: "Paused:", placeholder: "Select if Paused", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
     { field: "filtered", column: 2, order: 5, componentType: "Dropdown", label: "Filtered:", placeholder: "Select if Filtered", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "filteredCause", column: 2, order: 6, componentType: "InputText", label: "Filtered Cause:", placeholder: "Filtered Cause", class: "deltafi-input-field min-width" },
     // 3nd Column fields
-    { field: "requeueMin", column: 3, order: 1, componentType: "InputNumber", label: "Requeue Count:", placeholder: "Min", class: "p-inputnumber input-area-height" },
-    { field: "stage", column: 3, order: 2, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
+    { field: "filteredCause", column: 3, order: 1, componentType: "InputText", label: "Filtered Cause:", placeholder: "Filtered Cause", class: "deltafi-input-field min-width" },
+    { field: "requeueMin", column: 3, order: 2, componentType: "InputNumber", label: "Requeue Count:", placeholder: "Min", class: "p-inputnumber input-area-height" },
+    { field: "stage", column: 3, order: 3, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
     { field: "pendingAnnotations", column: 3, order: 4, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
     { field: "annotations", column: 3, order: 5, componentType: "Annotations", label: "Annotations:" },
   ];
@@ -576,13 +583,13 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType", "paused"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = isoStringToDate(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused"].includes(k)) {
       r[k] = JSON.parse(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
@@ -615,7 +622,7 @@ const encodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = dateToISOString(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused"].includes(k)) {
       r[k] = Boolean(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);

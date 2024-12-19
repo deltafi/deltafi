@@ -78,14 +78,14 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
-        when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(TransformFlowMaker.builder()
+        when(transformFlowService.getActiveFlowByName(TRANSFORM_FLOW)).thenReturn(TransformFlowMaker.builder()
                 .name(TRANSFORM_FLOW).flowState(FlowState.RUNNING).build().makeTransformFlow());
         DataSink dataSink1 = DataSinkMaker.builder()
                 .egressActionName(EGRESS_ACTION + "1").flowState(FlowState.RUNNING).build().makeDataSink();
-        when(dataSinkService.getRunningFlowByName(EGRESS_FLOW + "1")).thenReturn(dataSink1);
+        when(dataSinkService.getActiveFlowByName(EGRESS_FLOW + "1")).thenReturn(dataSink1);
         DataSink dataSink2 = DataSinkMaker.builder()
                 .egressActionName(EGRESS_ACTION + "2").flowState(FlowState.RUNNING).build().makeDataSink();
-        when(dataSinkService.getRunningFlowByName(EGRESS_FLOW + "2")).thenReturn(dataSink2);
+        when(dataSinkService.getActiveFlowByName(EGRESS_FLOW + "2")).thenReturn(dataSink2);
 
         DeltaFileFlow deltaFileTransformFlow = deltaFile.firstFlow();
         deltaFileTransformFlow.setType(FlowType.TRANSFORM);
@@ -131,10 +131,10 @@ class StateMachineTest {
                 .name(TRANSFORM_FLOW)
                 .testMode(true)
                 .flowState(FlowState.RUNNING).build().makeTransformFlow();
-        when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
+        when(transformFlowService.getActiveFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
 
         DataSink dataSinkConfig = DataSinkMaker.builder().build().makeDataSink();
-        when(dataSinkService.getRunningFlowByName("dataSink"))
+        when(dataSinkService.getActiveFlowByName("dataSink"))
                 .thenReturn(dataSinkConfig);
 
         DeltaFileFlow dataSink = new DeltaFileFlow();

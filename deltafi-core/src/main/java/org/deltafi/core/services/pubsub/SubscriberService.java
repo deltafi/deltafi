@@ -36,10 +36,10 @@ public interface SubscriberService {
     Set<Subscriber> subscriberForTopic(String topic);
 
     /**
-     * Get all running flows
-     * @return list of running flows
+     * Get all running and paused flows
+     * @return list of running and paused flows
      */
-    List<? extends Subscriber> getRunningFlows();
+    List<? extends Subscriber> getActiveFlows();
 
     /**
      * Create a map of topicIds to the set of subscribers of that topic
@@ -48,7 +48,7 @@ public interface SubscriberService {
      */
     default Map<String, Set<Subscriber>> buildSubscriberMap() {
         Map<String, Set<Subscriber>> updatedMap = new HashMap<>();
-        for (Subscriber subscriber : getRunningFlows()) {
+        for (Subscriber subscriber : getActiveFlows()) {
             if (subscriber.subscribeRules() != null) {
                 for (Rule rule : subscriber.subscribeRules()) {
                     Set<Subscriber> subscribers = updatedMap.computeIfAbsent(rule.getTopic(), ignore -> new HashSet<>());

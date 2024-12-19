@@ -83,13 +83,13 @@
             <FlowTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
-        <Column header="Active" class="flow-state-column">
+        <Column class="flow-state-column">
           <template #body="{ data }">
             <template v-if="_.isEqual(data.flowStatus.state, 'INVALID')">
               <FlowStateValidationButton :row-data-prop="data" @update-flows="emit('updateFlows')" />
             </template>
             <template v-else>
-              <FlowStateInputSwitch :row-data-prop="data" />
+              <FlowStateInputSwitch :row-data-prop="data" @change="emit('updateFlows')" />
             </template>
           </template>
         </Column>

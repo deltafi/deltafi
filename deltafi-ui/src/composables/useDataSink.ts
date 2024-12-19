@@ -84,6 +84,20 @@ export default function useDataSink() {
     return sendGraphQLQuery(query, "startDataSinkByName", "mutation");
   };
 
+  // Pause a data sink
+  const pauseDataSinkByName = (flowName: string) => {
+    const query = {
+      setFlowState: {
+        __args: {
+          flowType: new EnumType('DATA_SINK'),
+          flowName: flowName,
+          flowState: new EnumType('PAUSED'),
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "pauseDataSinkByName", "mutation");
+  };
+
   // Stops a data sink
   const stopDataSinkByName = (flowName: string) => {
     const query = {
@@ -184,6 +198,7 @@ export default function useDataSink() {
   return {
     getAllDataSinks,
     startDataSinkByName,
+    pauseDataSinkByName,
     stopDataSinkByName,
     saveDataSinkPlan,
     removeDataSinkPlan,

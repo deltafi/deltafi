@@ -137,9 +137,9 @@ class IngressServiceTest {
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
         if (flowRunning) {
-            Mockito.when(restDataSourceService.getRunningFlowByName(any())).thenReturn(REST_DATA_SOURCE);
+            Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(REST_DATA_SOURCE);
         } else {
-            Mockito.when(restDataSourceService.getRunningFlowByName(any())).thenThrow(new MissingFlowException("Flow dataSource is not running"));
+            Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenThrow(new MissingFlowException("Flow dataSource is not running"));
         }
         DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").build();
         DeltaFile deltaFile = DeltaFile.builder().flows(Set.of(flow)).build();

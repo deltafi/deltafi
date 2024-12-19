@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.collect.Lists;
 import jakarta.persistence.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.PreparedStatementCallback;
@@ -84,7 +83,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         StringBuilder sqlQuery = new StringBuilder("""
             SELECT DISTINCT did
             FROM delta_file_flows dff
-            LEFT JOIN delta_files df
+            JOIN delta_files df
             ON dff.delta_file_id = df.did
             WHERE dff.modified < :requeueThreshold
             AND df.modified < :requeueThreshold
@@ -121,28 +120,63 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     @Transactional
-    public List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
+    public List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles) {
+        if (actionNames == null || actionNames.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         String nativeQueryStr = """
-            SELECT df.did FROM delta_files df
-            WHERE df.stage = 'IN_FLIGHT'
+            SELECT DISTINCT delta_file_id
+            FROM delta_file_flows dff
+            WHERE dff.state = 'IN_FLIGHT'
+            AND dff.cold_queued = TRUE
             AND EXISTS (
                 SELECT 1
-                FROM delta_file_flows dff
-                WHERE dff.delta_file_id = df.did
-                AND dff.state = 'IN_FLIGHT'
-                AND dff.cold_queued = TRUE
-                AND EXISTS (
-                    SELECT 1
-                    FROM jsonb_array_elements(dff.actions) AS action
-                    WHERE action->>'s' = 'COLD_QUEUED'
-                    AND action->>'n' IN (:actionNames)
-                )
+                FROM jsonb_array_elements(dff.actions) AS action
+                WHERE action->>'s' = 'COLD_QUEUED'
+                AND action->>'n' IN (:actionNames)
             )
             LIMIT :limit
         """;
 
         Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
                 .setParameter("actionNames", actionNames)
+                .setParameter("limit", maxFiles);
+
+        @SuppressWarnings("unchecked")
+        List<UUID> dids = nativeQuery.getResultList();
+        return fetchByDidIn(dids);
+    }
+
+    @Override
+    @Transactional
+    public List<DeltaFile> findPausedForRequeue(Set<String> skipRestDataSources, Set<String> skipTimedDataSource,
+                                                Set<String> skipTransforms, Set<String> skipDataSinks, int maxFiles) {
+        // join to delta_files to check the overall paused flag
+        // only resume if all other flows are terminal, causing the top level paused flag to be set
+        // else there can be split brain between caches in core workers
+        String nativeQueryStr = """
+                SELECT DISTINCT df.delta_file_id
+                FROM delta_file_flows df
+                JOIN delta_files d ON df.delta_file_id = d.did AND d.paused = TRUE
+                WHERE df.state = 'PAUSED'
+                AND (
+                   (df.type = 'REST_DATA_SOURCE' AND (:skipRestDataSources IS NULL OR df.name NOT IN (:skipRestDataSources)))
+                   OR
+                   (df.type = 'TIMED_DATA_SOURCE' AND (:skipTimedDataSources IS NULL OR df.name NOT IN (:skipTimedDataSources)))
+                   OR
+                   (df.type = 'TRANSFORM' AND (:skipTransforms IS NULL OR df.name NOT IN (:skipTransforms)))
+                   OR
+                   (df.type = 'DATA_SINK' AND (:skipDataSinks IS NULL OR df.name NOT IN (:skipDataSinks)))
+                 )
+                 LIMIT :limit
+            """;
+
+        Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
+                .setParameter("skipRestDataSources", skipRestDataSources)
+                .setParameter("skipTimedDataSources", skipTimedDataSource)
+                .setParameter("skipTransforms", skipTransforms)
+                .setParameter("skipDataSinks", skipDataSinks)
                 .setParameter("limit", maxFiles);
 
         @SuppressWarnings("unchecked")
@@ -672,6 +706,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             parameters.put("topics", filter.getTopics().toArray(new String[0]));
         }
 
+        if (filter.getPaused() != null) {
+            criteria.append("AND df.paused = :paused ");
+            parameters.put("paused", filter.getPaused());
+        }
+
         return criteria.toString();
     }
 
@@ -702,8 +741,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                      requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
-                                     content_deletable, content_object_ids, topics, transforms, data_sinks, version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                     content_deletable, content_object_ids, topics, transforms, data_sinks, paused, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, input,
@@ -830,7 +869,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setArray(23, conn.createArrayOf("text", deltaFile.getTopics().toArray(new String[0])));
         ps.setArray(24, conn.createArrayOf("text", deltaFile.getTransforms().toArray(new String[0])));
         ps.setArray(25, conn.createArrayOf("text", deltaFile.getDataSinks().toArray(new String[0])));
-        ps.setLong(26, deltaFile.getVersion());
+        ps.setBoolean(26, deltaFile.getPaused());
+        ps.setLong(27, deltaFile.getVersion());
     }
 
     private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {

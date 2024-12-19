@@ -121,6 +121,9 @@ public class DeltaFile {
   @Builder.Default
   private List<String> dataSinks = new ArrayList<>();
 
+  @Builder.Default
+  private Boolean paused = false;
+
   @Version
   @EqualsAndHashCode.Exclude
   private long version;
@@ -157,6 +160,10 @@ public class DeltaFile {
     this.version = other.version;
     this.cacheTime = other.cacheTime;
     this.contentObjectIds = other.contentObjectIds;
+    this.topics = new ArrayList<>(other.topics);
+    this.transforms = new ArrayList<>(other.transforms);
+    this.dataSinks = new ArrayList<>(other.dataSinks);
+    this.paused = other.paused;
   }
 
   @EqualsAndHashCode.Include(replaces = "flows")
@@ -181,6 +188,10 @@ public class DeltaFile {
     terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
     filtered = flows.stream().anyMatch(f -> f.getState() == DeltaFileFlowState.FILTERED);
+    // only set paused if all flows are terminal or paused
+    paused = stage == DeltaFileStage.IN_FLIGHT &&
+            flows.stream().anyMatch(f -> f.getState() == DeltaFileFlowState.PAUSED) &&
+            flows.stream().allMatch(f -> f.terminal() || f.getState() == DeltaFileFlowState.PAUSED);
   }
 
   public void updateContentObjectIds() {
@@ -411,6 +422,10 @@ public class DeltaFile {
 
   public boolean inactiveStage() {
     return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
+  }
+
+  public boolean noActiveFlows() {
+    return inactiveStage() || flows.stream().noneMatch(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT);
   }
 
   public void acknowledgeErrors(OffsetDateTime now, String reason) {

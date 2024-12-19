@@ -17,17 +17,14 @@
 -->
 
 <template>
-  <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowUpdate')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowUpdate'))">
-    <ConfirmPopup></ConfirmPopup>
-    <ConfirmPopup :group="dataSourceType + '_' + rowData.name">
+  <span v-if="states.includes(rowData.flowStatus.state) && $hasPermission('FlowUpdate')">
+    <ConfirmDialog :group="dataSourceType + '_' + rowData.name">
       <template #message="slotProps">
-        <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-          <p class="pl-2" v-html="slotProps.message.message" />
-        </div>
+        <span class="p-confirm-dialog-icon pi pi-exclamation-triangle"></span>
+        <span class="p-confirm-dialog-message" v-html="slotProps.message.message" />
       </template>
-    </ConfirmPopup>
-    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event)" />
+    </ConfirmDialog>
+    <FlowControlButtons v-model="rowData.flowStatus.state" class="control-buttons" @start="start()" @pause="pause()" @stop="stop()" />
   </span>
   <span v-else class="pt-1">
     <Tag v-tooltip.left="tooltip" class="ml-2" :value="rowData.flowStatus.state" severity="info" icon="pi pi-info-circle" :rounded="true" />
@@ -35,23 +32,28 @@
 </template>
 
 <script setup>
-import useDataSource from "@/composables/useDataSource";
+import FlowControlButtons from "@/components/FlowControlButtons.vue";
 import useNotifications from "@/composables/useNotifications";
 import useTopics from "@/composables/useTopics";
+import useFlows from "@/composables/useFlows";
 import { computed, defineProps, toRefs, onBeforeMount, ref } from "vue";
 
 import Tag from "primevue/tag";
-import ConfirmPopup from "primevue/confirmpopup";
-import InputSwitch from "primevue/inputswitch";
+import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const { hasActiveSubscribers } = useTopics();
 const confirm = useConfirm();
 const topicActive = ref(false);
-const { startRestDataSourceByName, startTimedDataSourceByName, stopRestDataSourceByName, stopTimedDataSourceByName } = useDataSource();
+const { setFlowState } = useFlows();
 const notify = useNotifications();
-const emit = defineEmits(["change"]);
+const emit = defineEmits(["change", "confirm-start", "confirm-stop"]);
+const states = ['RUNNING', 'STOPPED', 'PAUSED'];
+const flowTypeMap = {
+  restDataSource: "REST_DATA_SOURCE",
+  timedDataSource: "TIMED_DATA_SOURCE",
+}
 
 const props = defineProps({
   rowDataProp: {
@@ -62,50 +64,90 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  configureDataSourceDialog: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
 });
 
 onBeforeMount(async () => (topicActive.value = await hasActiveSubscribers(rowData.value.topic)));
 
-const { rowDataProp: rowData, dataSourceType, configureDataSourceDialog } = toRefs(props);
+const { rowDataProp: rowData, dataSourceType } = toRefs(props);
 
-const confirmationPopup = async (event) => {
-  const { name, state, topic } = { name: rowData.value.name, state: rowData.value.flowStatus.state, topic: rowData.value.topic };
-
-  if (_.isEqual(state, "RUNNING")) {
-    // Stop
+const start = async () => {
+  const { name, topic } = { name: rowData.value.name, topic: rowData.value.topic };
+  if (topicActive.value) {
+    notify.info("Starting Data Source", `Starting <b>${name}</b> data source.`, 3000);
+    await setFlowState(flowTypeMap[dataSourceType.value], name, 'RUNNING');
+    emit("change");
+  } else {
+    emit("confirm-start");
     confirm.require({
-      target: event.currentTarget,
       group: `${dataSourceType.value}_${name}`,
-      message: `Stop the <b>${name}</b> data source?`,
-      acceptLabel: "Stop",
+      message: `<p>Are you sure you want to start the <b>${name}</b> data source?</p><p>The target topic, <b>${topic}</b>, has no active subscribers.</p>`,
+      acceptLabel: "Start",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: () => toggleFlowState(name, state),
-      reject: () => {},
+      header: "Start Confirmation",
+      rejectProps: {
+        label: "Cancel",
+        severity: "secondary",
+        outlined: true,
+      },
+      acceptProps: {},
+      accept: async () => {
+        notify.info("Starting Data Source", `Starting <b>${name}</b> data source.`, 3000);
+        await setFlowState(flowTypeMap[dataSourceType.value], name, 'RUNNING');
+        emit("change");
+        emit("confirm-stop");
+      },
+      reject: () => {
+        emit("confirm-stop");
+        emit("change");
+      },
+      onHide: () => {
+        emit("confirm-stop");
+        emit("change");
+      }
     });
-  } else {
-    // Start
-    if (topicActive.value) {
-      await toggleFlowState(name, state);
-    } else {
-      confirm.require({
-        target: event.currentTarget,
-        group: `${dataSourceType.value}_${name}`,
-        message: `Start the <b>${name}</b> data source? Target topic <b>${topic}</b> has no active subscribers.`,
-        acceptLabel: "Start",
-        rejectLabel: "Cancel",
-        icon: "pi pi-exclamation-triangle",
-        accept: () => toggleFlowState(name, state),
-        reject: () => {},
-      });
-    }
   }
-};
+}
+
+const pause = async () => {
+  const { name } = { name: rowData.value.name };
+  notify.info("Pausing Data Source", `Pausing <b>${name}</b> data source.`, 3000);
+  await setFlowState(flowTypeMap[dataSourceType.value], name, 'PAUSED');
+  emit("change");
+}
+
+const stop = async () => {
+  const { name } = { name: rowData.value.name };
+  emit("confirm-start");
+  confirm.require({
+    group: `${dataSourceType.value}_${name}`,
+    message: `Are you sure you want to stop the <b>${name}</b> data source?`,
+    acceptLabel: "Stop",
+    rejectLabel: "Cancel",
+    icon: "pi pi-exclamation-triangle",
+    header: "Stop Confirmation",
+    rejectProps: {
+      label: "Cancel",
+      severity: "secondary",
+      outlined: true,
+    },
+    acceptProps: {},
+    accept: async () => {
+      notify.info("Stopping Data Source", `Stopping <b>${name}</b> data source.`, 3000);
+      await setFlowState(flowTypeMap[dataSourceType.value], name, 'STOPPED');
+      emit("confirm-stop");
+      emit("change");
+    },
+    reject: () => {
+      emit("confirm-stop");
+      emit("change");
+    },
+    onHide: () => {
+      emit("confirm-stop");
+      emit("change");
+    }
+  });
+}
 
 const tooltip = computed(() => {
   let errorsList = _.map(rowData.value.flowStatus.errors, "message");
@@ -116,28 +158,4 @@ const tooltip = computed(() => {
 
   return ` Errors:\n •${errorsList.join("\n•")}`;
 });
-
-const toggleFlowState = async (flowName, newFlowState) => {
-  if (!configureDataSourceDialog.value) {
-    if (_.isEqual(newFlowState, "STOPPED")) {
-      if (_.isEqual(dataSourceType.value, "timedDataSource")) {
-        notify.info("Starting Timed Data Source", `Starting <b>${flowName}</b> data source.`, 3000);
-        await startTimedDataSourceByName(flowName);
-      } else {
-        notify.info("Starting Rest Data Source", `Starting <b>${flowName}</b> data source.`, 3000);
-        await startRestDataSourceByName(flowName);
-      }
-    } else {
-      if (_.isEqual(dataSourceType.value, "timedDataSource")) {
-        notify.info("Stopping Timed Data Source", `Stopping <b>${flowName}</b> data source.`, 3000);
-        await stopTimedDataSourceByName(flowName);
-      } else {
-        notify.info("Stopping Rest Data Source", `Stopping <b>${flowName}</b> data source.`, 3000);
-        await stopRestDataSourceByName(flowName);
-      }
-    }
-    emit("change");
-  }
-  rowData.value.flowStatus.state = _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "STOPPED" : "RUNNING";
-};
 </script>

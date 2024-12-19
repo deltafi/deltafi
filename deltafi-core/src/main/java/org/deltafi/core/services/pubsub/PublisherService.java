@@ -118,6 +118,9 @@ public class PublisherService {
             nextFlow.setTestMode(true);
             nextFlow.setTestModeReason(subscriber.getName());
         }
+        if (subscriber.isPaused()) {
+            nextFlow.setState(DeltaFileFlowState.PAUSED);
+        }
         return nextFlow;
     }
 

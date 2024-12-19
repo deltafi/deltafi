@@ -64,6 +64,7 @@ import org.deltafi.core.types.integration.*;
 import org.deltafi.core.types.snapshot.RoleSnapshot;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.UserSnapshot;
+import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
@@ -216,6 +217,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	DataSinkRepo dataSinkRepo;
+
+	@Autowired
+	DataSinkService dataSinkService;
 
 	@Autowired
 	TestResultRepo testResultRepo;
@@ -1618,6 +1622,17 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testPauseTransformFlow() {
+		clearForFlowTests();
+		transformFlowRepo.save(buildTransformFlow(FlowState.RUNNING));
+		refreshFlowCaches();
+		assertTrue(transformFlowService.getPausedFlows().isEmpty());
+		assertTrue(FlowPlanDatafetcherTestHelper.pauseTransformFlow(dgsQueryExecutor));
+		refreshFlowCaches();
+		assertFalse(transformFlowService.getPausedFlows().isEmpty());
+	}
+
+	@Test
 	void testStartDataSink() {
 		clearForFlowTests();
 		dataSinkRepo.save(buildDataSink(FlowState.STOPPED));
@@ -1631,6 +1646,17 @@ class DeltaFiCoreApplicationTests {
 		dataSinkRepo.save(buildDataSink(FlowState.RUNNING));
 		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.stopDataSink(dgsQueryExecutor));
+	}
+
+	@Test
+	void testPauseDataSink() {
+		clearForFlowTests();
+		dataSinkRepo.save(buildDataSink(FlowState.RUNNING));
+		refreshFlowCaches();
+		assertTrue(dataSinkService.getPausedFlows().isEmpty());
+		assertTrue(FlowPlanDatafetcherTestHelper.pauseDataSink(dgsQueryExecutor));
+		refreshFlowCaches();
+		assertFalse(dataSinkService.getPausedFlows().isEmpty());
 	}
 
 	@Test
@@ -2229,15 +2255,15 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(oneHit, twoHits, miss, excludedByDid, wrongStage));
 
-		/*List<DeltaFile> hits = deltaFileRepo.findForRequeue(NOW, Duration.ofSeconds(30),
+		List<DeltaFile> hits = deltaFileRepo.findForRequeue(NOW, Duration.ofSeconds(30),
 				Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()), 5000);
 
-		assertEquals(2, hits.size());*/
+		assertEquals(2, hits.size());
 
 		ActionConfiguration ac = new ActionConfiguration("hit", ActionType.TRANSFORM, "type");
-		transformFlowRepo.save(buildFlow("flow1", List.of(ac), FlowState.RUNNING, false));
-		transformFlowRepo.save(buildFlow("flow2", List.of(ac), FlowState.RUNNING, false));
-		dataSinkRepo.save(buildFlow("flow3", List.of(ac), FlowState.RUNNING, false));
+		transformFlowRepo.save(FlowBuilders.buildTransform("flow1", List.of(ac), FlowState.RUNNING, false));
+		transformFlowRepo.save(FlowBuilders.buildTransform("flow2", List.of(ac), FlowState.RUNNING, false));
+		dataSinkRepo.save(FlowBuilders.buildTransform("flow3", List.of(ac), FlowState.RUNNING, false));
 		refreshFlowCaches();
 
 		deltaFiPropertiesService.getDeltaFiProperties().setRequeueDuration(Duration.ofSeconds(30));
@@ -2269,6 +2295,101 @@ class DeltaFiCoreApplicationTests {
 				flowsList.get(2).lastAction().getModified(),
 				flowsAfterList.get(2).lastAction().getModified()
 		);
+	}
+
+	@Test
+	void testRequeuePausedFlows() {
+		DeltaFile multipleTypes = buildDeltaFile(UUID.randomUUID(), "rest1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		multipleTypes.firstFlow().setType(FlowType.REST_DATA_SOURCE);
+		multipleTypes.firstFlow().setState(DeltaFileFlowState.PAUSED);
+		multipleTypes.addFlow("transform1", FlowType.TRANSFORM, multipleTypes.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		multipleTypes.addFlow("timed1", FlowType.TIMED_DATA_SOURCE, multipleTypes.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		multipleTypes.addFlow("sink1", FlowType.DATA_SINK, multipleTypes.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		multipleTypes.setPaused(true);
+
+		DeltaFile partiallySkipped = buildDeltaFile(UUID.randomUUID(), "rest1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		partiallySkipped.firstFlow().setType(FlowType.REST_DATA_SOURCE);
+		partiallySkipped.firstFlow().setState(DeltaFileFlowState.PAUSED);
+		partiallySkipped.addFlow("skipTransform", FlowType.TRANSFORM, partiallySkipped.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		partiallySkipped.addFlow("timed1", FlowType.TIMED_DATA_SOURCE, partiallySkipped.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		partiallySkipped.addFlow("skipSink", FlowType.DATA_SINK, partiallySkipped.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		partiallySkipped.setPaused(true);
+
+		DeltaFile skipAll = buildDeltaFile(UUID.randomUUID(), "skipRest", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		skipAll.firstFlow().setType(FlowType.REST_DATA_SOURCE);
+		skipAll.firstFlow().setState(DeltaFileFlowState.PAUSED);
+		skipAll.addFlow("skipTransform", FlowType.TRANSFORM, skipAll.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		skipAll.addFlow("skipTimed", FlowType.TIMED_DATA_SOURCE, skipAll.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		skipAll.addFlow("skipSink", FlowType.DATA_SINK, skipAll.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		skipAll.setPaused(true);
+
+		DeltaFile notPaused = buildDeltaFile(UUID.randomUUID(), "rest1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		notPaused.firstFlow().setType(FlowType.REST_DATA_SOURCE);
+		notPaused.firstFlow().setState(DeltaFileFlowState.PAUSED);
+		notPaused.addFlow("transform1", FlowType.TRANSFORM, notPaused.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		notPaused.addFlow("timed1", FlowType.TIMED_DATA_SOURCE, notPaused.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		notPaused.addFlow("sink1", FlowType.DATA_SINK, notPaused.firstFlow(), NOW.minusSeconds(1000))
+				.setState(DeltaFileFlowState.PAUSED);
+		notPaused.setPaused(false);
+
+		deltaFileRepo.insertBatch(List.of(multipleTypes, partiallySkipped, skipAll, notPaused));
+
+		List<DeltaFile> hits = deltaFileRepo.findPausedForRequeue(
+				Set.of("skipRest"),
+				Set.of("skipTimed"),
+				Set.of("skipTransform"),
+				Set.of("skipSink"),
+				5000);
+		assertEquals(Stream.of(multipleTypes.getDid(), partiallySkipped.getDid()).sorted().toList(),
+				hits.stream().map(DeltaFile::getDid).sorted().toList());
+
+		ActionConfiguration ac = new ActionConfiguration("action", ActionType.TRANSFORM, "type");
+		restDataSourceRepo.save(buildRestDataSource("rest1", FlowState.RUNNING));
+		restDataSourceRepo.save(buildRestDataSource("skipRest", FlowState.PAUSED));
+		transformFlowRepo.save(FlowBuilders.buildTransform("transform1", List.of(ac), FlowState.RUNNING, false));
+		transformFlowRepo.save(FlowBuilders.buildTransform("skipTransform", List.of(ac), FlowState.PAUSED, false));
+		timedDataSourceRepo.save(buildTimedDataSource("timed1", ac, "0 0 0 1 1 ?", FlowState.RUNNING));
+		timedDataSourceRepo.save(buildTimedDataSource("skipTimed", ac, "0 0 0 1 1 ?", FlowState.PAUSED));
+		dataSinkRepo.save(buildDataSink("sink1", ac, FlowState.RUNNING, false));
+		dataSinkRepo.save(buildDataSink("skipSink", ac, FlowState.PAUSED, false));
+		refreshFlowCaches();
+
+		deltaFiPropertiesService.getDeltaFiProperties().setRequeueDuration(Duration.ofSeconds(30));
+		deltaFilesService.requeuePausedFlows();
+
+		DeltaFile multipleTypesAfter = deltaFileRepo.findById(multipleTypes.getDid()).orElse(null);
+		DeltaFile partiallySkippedAfter = deltaFileRepo.findById(partiallySkipped.getDid()).orElse(null);
+		DeltaFile skipAllAfter = deltaFileRepo.findById(skipAll.getDid()).orElse(null);
+
+		assertNotNull(multipleTypesAfter);
+		assertNotNull(partiallySkippedAfter);
+		assertNotNull(skipAllAfter);
+
+		multipleTypesAfter.getFlows().forEach(flow ->
+				assertNotEquals(DeltaFileFlowState.PAUSED, flow.getState()));
+
+		List<DeltaFileFlow> flows = partiallySkippedAfter.getFlows().stream()
+				.sorted(Comparator.comparingInt(DeltaFileFlow::getNumber))
+				.toList();
+		assertNotEquals(DeltaFileFlowState.PAUSED, flows.get(0).getState()); // rest1
+		assertEquals(DeltaFileFlowState.PAUSED, flows.get(1).getState()); // skipTransform
+		assertNotEquals(DeltaFileFlowState.PAUSED, flows.get(2).getState()); // timed1
+		assertEquals(DeltaFileFlowState.PAUSED, flows.get(3).getState()); // skipSink
+
+		skipAllAfter.getFlows().forEach(flow ->
+				assertEquals(DeltaFileFlowState.PAUSED, flow.getState()));
+
 	}
 
 	@Test
@@ -2834,6 +2955,20 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testFilterByPaused() {
+		DeltaFile paused = buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.IN_FLIGHT, NOW, NOW);
+		paused.firstFlow().setState(DeltaFileFlowState.PAUSED);
+		paused.updateFlags();
+		assertTrue(paused.getPaused());
+		DeltaFile notPaused = buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.IN_FLIGHT, NOW, NOW);
+		assertFalse(notPaused.getPaused());
+
+		deltaFileRepo.insertBatch(List.of(paused, notPaused));
+		testFilter(DeltaFilesFilter.newBuilder().paused(true).build(), paused);
+		testFilter(DeltaFilesFilter.newBuilder().paused(false).build(), notPaused);
+	}
+
+	@Test
 	void testFilterByName() {
 		DeltaFile deltaFile = new DeltaFile();
 		deltaFile.setModified(NOW.plusSeconds(1));
@@ -3253,8 +3388,7 @@ class DeltaFiCoreApplicationTests {
 		IntegrationTest updatedTest1 = readYamlTestFile("/config-binary.yaml");
 
 		// Updates an existing test
-		Result result = IntegrationDataFetcherTestHelper.saveIntegrationTest(
-				dgsQueryExecutor, updatedTest1);
+		IntegrationDataFetcherTestHelper.saveIntegrationTest(dgsQueryExecutor, updatedTest1);
 
 		// validator sets some defaults for missing values
 		ConfigurationValidator.validateExpectedDeltaFiles(updatedTest1);

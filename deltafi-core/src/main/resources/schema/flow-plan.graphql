@@ -135,6 +135,7 @@ input TransformFlowPlanInput {
 enum FlowState {
   STOPPED
   RUNNING
+  PAUSED
   INVALID
 }
 

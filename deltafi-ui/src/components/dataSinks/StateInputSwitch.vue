@@ -17,16 +17,14 @@
 -->
 
 <template>
-  <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowUpdate')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowUpdate'))">
-    <ConfirmPopup :group="'egressAction__' + rowData.name">
+  <span v-if="states.includes(rowData.flowStatus.state) && $hasPermission('FlowUpdate')">
+    <ConfirmDialog :group="'egressAction__' + rowData.name">
       <template #message="slotProps">
-        <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-          <p class="pl-2" v-html="slotProps.message.message" />
-        </div>
+        <span class="p-confirm-dialog-icon pi pi-exclamation-triangle"></span>
+        <span class="p-confirm-dialog-message" v-html="slotProps.message.message" />
       </template>
-    </ConfirmPopup>
-    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state)" />
+    </ConfirmDialog>
+    <FlowControlButtons v-model="rowData.flowStatus.state" class="control-buttons" @start="start()" @pause="pause()" @stop="stop()" />
   </span>
   <span v-else class="pt-1">
     <Tag v-tooltip.left="tooltip" class="ml-2" :value="rowData.flowStatus.state" severity="info" icon="pi pi-info-circle" :rounded="true" />
@@ -34,51 +32,31 @@
 </template>
 
 <script setup>
-import useEgressActions from "@/composables/useDataSink";
+import FlowControlButtons from "@/components/FlowControlButtons.vue";
 import useNotifications from "@/composables/useNotifications";
+import useFlows from "@/composables/useFlows";
 import { computed, defineProps, toRefs } from "vue";
 
 import Tag from "primevue/tag";
-import ConfirmPopup from "primevue/confirmpopup";
-import InputSwitch from "primevue/inputswitch";
+import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startDataSinkByName, stopDataSinkByName } = useEgressActions();
+const { setFlowState } = useFlows();
+
 const notify = useNotifications();
-const emit = defineEmits(["change"]);
+const emit = defineEmits(["change", "confirm-start", "confirm-stop"]);
+const states = ['RUNNING', 'STOPPED', 'PAUSED'];
 
 const props = defineProps({
   rowDataProp: {
     type: Object,
     required: true,
   },
-  configureEgressActionDialog: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
 });
 
-const { rowDataProp: rowData, configureEgressActionDialog } = toRefs(props);
-
-const confirmationPopup = async (event, name, state) => {
-  if (_.isEqual(state, "RUNNING")) {
-    confirm.require({
-      target: event.currentTarget,
-      group: `egressAction__${name}`,
-      message: `Stop the <b>${name}</b> egress?`,
-      acceptLabel: "Stop",
-      rejectLabel: "Cancel",
-      icon: "pi pi-exclamation-triangle",
-      accept: () => toggleFlowState(name, state),
-      reject: () => { },
-    });
-  } else {
-    await toggleFlowState(name, state);
-  }
-};
+const { rowDataProp: rowData } = toRefs(props);
 
 const tooltip = computed(() => {
   let errorsList = _.map(rowData.value.flowStatus.errors, "message");
@@ -90,17 +68,51 @@ const tooltip = computed(() => {
   return ` Errors:\n •${errorsList.join("\n•")}`;
 });
 
-const toggleFlowState = async (flowName, newFlowState) => {
-  if (!configureEgressActionDialog.value) {
-    if (_.isEqual(newFlowState, "STOPPED")) {
-      notify.info("Starting Egress", `Starting <b>${flowName}</b> egress.`, 3000);
-      await startDataSinkByName(flowName);
-    } else {
-      notify.info("Stopping Egress", `Stopping <b>${flowName}</b> egress.`, 3000);
-      await stopDataSinkByName(flowName);
+const start = async () => {
+  const { name } = { name: rowData.value.name };
+  notify.info("Starting Data Sink", `Starting <b>${name}</b> data sink.`, 3000);
+  await setFlowState('DATA_SINK', name, 'RUNNING');
+  emit("change");
+}
+
+const pause = async () => {
+  const { name } = { name: rowData.value.name };
+  notify.info("Pausing Data Sink", `Pausing <b>${name}</b> data sink.`, 3000);
+  await setFlowState('DATA_SINK', name, 'PAUSED');
+  emit("change");
+}
+
+const stop = async () => {
+  const { name } = { name: rowData.value.name };
+  emit("confirm-start");
+  confirm.require({
+    group: `egressAction__${name}`,
+    message: `Are you sure you want to stop the <b>${name}</b> data sink?`,
+    acceptLabel: "Stop",
+    rejectLabel: "Cancel",
+    icon: "pi pi-exclamation-triangle",
+    header: "Stop Confirmation",
+    rejectProps: {
+      label: "Cancel",
+      severity: "secondary",
+      outlined: true,
+    },
+    acceptProps: {},
+    accept: async () => {
+      notify.info("Stopping Data Sink", `Stopping <b>${name}</b> data sink.`, 3000);
+      await setFlowState('DATA_SINK', name, 'STOPPED');
+      emit("confirm-stop");
+      emit("change");
+    },
+    reject: () => {
+      emit("confirm-stop");
+      emit("change");
+
+    },
+    onHide: () => {
+      emit("confirm-stop");
+      emit("change");
     }
-    emit("change");
-  }
-  rowData.value.flowStatus.state = _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "STOPPED" : "RUNNING";
-};
+  });
+}
 </script>
