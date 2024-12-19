@@ -805,6 +805,7 @@ public class DeltaFilesService {
                 .egressed(false)
                 .filtered(false)
                 .build();
+        child.addAnnotations(transformEvent.getAnnotations());
 
         child.setName(transformEvent.getName());
         return new StateMachineInput(child, childFlow);

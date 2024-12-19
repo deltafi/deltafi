@@ -27,6 +27,9 @@
             "metadata": {
                 "sampleType": "sample-type",
                 "sampleVersion": "2.1"
+            },
+            "annotations": {
+                "childIndex": "1"
             }
         },
         {
@@ -49,6 +52,9 @@
             "metadata": {
                 "sampleType": "sample-type",
                 "sampleVersion": "2.1"
+            },
+            "annotations": {
+                "childIndex": "2"
             }
         }
     ]

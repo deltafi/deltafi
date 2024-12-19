@@ -4537,6 +4537,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile child1 = children.stream().filter(d -> d.getName().equals("child1")).findFirst().orElseThrow();
 		assertThat(child1.getDid()).isEqualTo(childOne);
 		assertEquals(DeltaFileStage.IN_FLIGHT, child1.getStage());
+		assertEquals(Map.of("childIndex", "1"), child1.annotationMap());
 		assertNull(child1.firstFlow().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals(0, child1.firstFlow().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
@@ -4544,6 +4545,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile child2 = children.stream().filter(d -> d.getName().equals("child2")).findFirst().orElseThrow();
 		assertThat(child2.getDid()).isEqualTo(childTwo);
 		assertEquals(DeltaFileStage.IN_FLIGHT, child2.getStage());
+		assertEquals(Map.of("childIndex", "2"), child2.annotationMap());
 		assertNull(child2.firstFlow().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals(100, child2.firstFlow().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
