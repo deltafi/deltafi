@@ -91,6 +91,7 @@ class IntegrationServiceTest {
 
         assertEquals("unarchive-passthrough-rest-data-source", testCase.getInputs().getFirst().getFlow());
         assertEquals(3, testCase.getExpectedDeltaFiles().getFirst().getChildCount());
+        assertEquals(Map.of("THIS", "THAT"), testCase.getExpectedDeltaFiles().getFirst().annotationsToMap());
     }
 
     @Test

@@ -244,12 +244,22 @@ public class TestEvaluator {
                         + ", " + deltaFile.getDid());
 
             } else {
-                if (contentMatches(deltaFile, expected.getExpectedContent())) {
-                    childCheck(depth + 1, deltaFile, expected);
-                } else {
+                if (!contentMatches(deltaFile, expected.getExpectedContent())) {
                     errors.add(label + ": content does not match");
+                } else if (!annotationsMatch(deltaFile, expected)) {
+                    errors.add(label + ": annotations do not match");
+                } else {
+                    childCheck(depth + 1, deltaFile, expected);
                 }
             }
+        }
+    }
+
+    private boolean annotationsMatch(DeltaFile deltaFile, ExpectedDeltaFile expected) {
+        if (expected.getAnnotations() == null) {
+            return true;
+        } else {
+            return deltaFile.annotationMap().equals(expected.annotationsToMap());
         }
     }
 

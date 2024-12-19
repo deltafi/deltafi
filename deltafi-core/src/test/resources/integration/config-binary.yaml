@@ -33,6 +33,9 @@ timeout: PT3M
 expectedDeltaFiles:
   - stage: COMPLETE
     childCount: 3
+    annotations:
+      - key: THIS
+        value: THAT
     expectedFlows:
       - flow: unarchive-passthrough-transform
         type: TRANSFORM
