@@ -821,6 +821,30 @@ public class DeltaFilesService {
                 resumeMetadata);
     }
 
+
+    public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, ResumeMetadata resumeMetadata, boolean includeAcknowledged) {
+        List<RetryResult> retryResults = new ArrayList<>();
+        List<ResumeMetadata> resumeMetadataList = resumeMetadata != null ? List.of(resumeMetadata) : List.of();
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            List<UUID> deltaFileIds = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged, REQUEUE_BATCH_SIZE);
+            numFound = deltaFileIds.size();
+            retryResults.addAll(this.resume(deltaFileIds, resumeMetadataList));
+        }
+        return retryResults;
+    }
+
+    public List<RetryResult> resumeByErrorCause(String errorCause, boolean includeAcknowledged) {
+        List<RetryResult> retryResults = new ArrayList<>();
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            List<UUID> deltaFileIds = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, REQUEUE_BATCH_SIZE);
+            numFound = deltaFileIds.size();
+            retryResults.addAll(this.resume(deltaFileIds, List.of()));
+        }
+        return retryResults;
+    }
+
     public List<RetryResult> resumeDeltaFiles(@NotNull Map<UUID, DeltaFile> deltaFiles, @NotNull List<ResumeMetadata> resumeMetadata) {
         List<StateMachineInput> advanceAndSaveInputs = new ArrayList<>();
 

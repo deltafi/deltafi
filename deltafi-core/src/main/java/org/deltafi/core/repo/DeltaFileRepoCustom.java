@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.repo;
 
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.DeltaFileDeleteDTO;
@@ -142,4 +143,23 @@ public interface DeltaFileRepoCustom {
     void insertOne(DeltaFile deltaFile);
     void insertBatch(List<DeltaFile> deltaFiles);
     void batchedBulkDeleteByDidIn(List<UUID> dids);
+
+    /**
+     * Find the ids of the DeltaFiles with an error in the flow with the given type and name
+     * @param flowType type of flow to search for
+     * @param flowName name of flow to search for
+     * @param includeAcknowledged include dids of DeltaFiles with acknowledged errors when true
+     * @param limit max number of DeltaFile dids to return
+     * @return the list of dids who can be resumed
+     */
+    List<UUID> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit);
+
+    /**
+     * Find the ids of the DeltaFiles with the given errorCause that can be resumed
+     * @param errorCause error cause to search for using an exact match
+     * @param includeAcknowledged include dids of DeltaFiles with acknowledged errors when true
+     * @param limit max number of DeltaFile dids to return
+     * @return the list of dids who can be resumed
+     */
+    List<UUID> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit);
 }

@@ -432,7 +432,9 @@ type Mutation {
   setDataSinkExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
   taskTimedDataSource(name: String!, memo: String) : Boolean!
-  resume(action: String, dids: [UUID!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
+  resume(dids: [UUID!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
+  resumeByFlow(flowType: FlowType!, name: String!, resumeMetadata: ResumeMetadata, includeAcknowledged: Boolean): [RetryResult]!
+  resumeByErrorCause(errorCause: String!, includeAcknowledged: Boolean): [RetryResult]!
   replay(dids: [UUID!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [UUID!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [UUID!]!) : [CancelResult!]!

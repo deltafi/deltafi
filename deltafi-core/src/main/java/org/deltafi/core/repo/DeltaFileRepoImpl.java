@@ -245,6 +245,62 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
+    public List<UUID> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit) {
+        String queryBuilder = """
+                    SELECT df.did
+                    FROM delta_files df
+                    WHERE df.stage = 'ERROR'
+                    AND df.content_deleted IS NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM delta_file_flows flow
+                        WHERE flow.delta_file_id = df.did
+                        AND flow.state = 'ERROR'
+                        AND flow.type = CAST(:flowType AS dff_type_enum)
+                        AND flow.name = :flowName
+                        AND (:includeAcknowledged OR flow.error_acknowledged IS NULL)
+                    )
+                    LIMIT :limit
+                """;
+        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
+                .setParameter("flowType", flowType.name())
+                .setParameter("flowName", flowName)
+                .setParameter("includeAcknowledged", includeAcknowledged)
+                .setParameter("limit", limit);
+
+        @SuppressWarnings("unchecked")
+        List<UUID> dids = query.getResultList();
+        return dids;
+    }
+
+    @Override
+    public List<UUID> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit) {
+        String queryBuilder = """
+                    SELECT df.did
+                    FROM delta_files df
+                    WHERE df.stage = 'ERROR'
+                    AND df.content_deleted IS NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM delta_file_flows flow
+                        WHERE flow.delta_file_id = df.did
+                        AND flow.state = 'ERROR'
+                        AND flow.error_or_filter_cause = :errorCause
+                        AND (:includeAcknowledged OR flow.error_acknowledged IS NULL)
+                    )
+                    LIMIT :limit
+                """;
+        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
+                .setParameter("errorCause", errorCause)
+                .setParameter("includeAcknowledged", includeAcknowledged)
+                .setParameter("limit", limit);
+
+        @SuppressWarnings("unchecked")
+        List<UUID> dids = query.getResultList();
+        return dids;
+    }
+
+    @Override
     @Transactional
     public int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, int batchSize) {
         if (createdBefore == null && completedBefore == null) {

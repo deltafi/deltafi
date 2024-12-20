@@ -230,6 +230,18 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileResume
+  public List<RetryResult> resumeByFlow(@InputArgument FlowType flowType, @InputArgument String name, @InputArgument ResumeMetadata resumeMetadata, @InputArgument Boolean includeAcknowledged) {
+    return deltaFilesService.resumeByFlowTypeAndName(flowType, name, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged));
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileResume
+  public List<RetryResult> resumeByErrorCause(@InputArgument String errorCause, @InputArgument Boolean includeAcknowledged) {
+    return deltaFilesService.resumeByErrorCause(errorCause, Boolean.TRUE.equals(includeAcknowledged));
+  }
+
+  @DgsMutation
   @NeedsPermission.Admin
   public boolean taskTimedDataSource(@InputArgument String name, @InputArgument String memo, DataFetchingEnvironment dataFetchingEnvironment) {
     boolean useMemo = dataFetchingEnvironment.containsArgument("memo");

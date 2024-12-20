@@ -200,6 +200,7 @@ public class FullFlowExemplars {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         Action action = flow.getAction("SampleTransformAction");
         action.error(START_TIME, STOP_TIME, OffsetDateTime.now(), "transform failed", "message");
+        flow.updateState();
         return deltaFile;
     }
 

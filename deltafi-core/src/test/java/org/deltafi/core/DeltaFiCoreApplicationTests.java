@@ -2219,6 +2219,89 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testFindForResumeByFlowTypeAndName() {
+		// Has an error in the transform flow with the matching flow name
+		DeltaFile shouldResume = makeErroredDeltaFile();
+		DeltaFile shouldAlsoResume = makeErroredDeltaFile();
+		shouldAlsoResume.lastFlow().setErrorAcknowledged(NOW);
+
+		// has matching flow type/name but no errors
+		DeltaFile noErrors = postTransformDeltaFile(UUID.randomUUID());
+		makeFlowsUnique(noErrors);
+
+		// deltaFile has an error in a transform flow but different flow name
+		DeltaFile differentFlowName = makeErroredDeltaFile();
+		differentFlowName.lastFlow().setName("differentFlowName");
+
+		// deltafi has an error in the matching flow name but the flow type is data sink instead of transform
+		DeltaFile differentFlowType = makeEgressErroredDeltaFile();
+
+		// not resumed because it is not in an error stage
+		DeltaFile cancelled = makeErroredDeltaFile();
+		cancelled.setStage(DeltaFileStage.CANCELLED);
+
+		// not resumed because the content was removed
+		DeltaFile contentDeleted = makeErroredDeltaFile();
+		contentDeleted.setContentDeleted(NOW);
+
+		deltaFileRepo.insertBatch(List.of(shouldResume, shouldAlsoResume, noErrors, differentFlowType, differentFlowName, cancelled, contentDeleted));
+
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  true,  10)).hasSize(2).contains(shouldResume.getDid(), shouldAlsoResume.getDid());
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  false,  10)).hasSize(1).contains(shouldResume.getDid());
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME, true, 1)).hasSize(1);
+	}
+
+	@Test
+	void testFindForResumeByErrorCause() {
+		// next two deltaFiles are in an error state with a matching error cause
+		DeltaFile shouldResumeTransformError = makeErroredDeltaFile();
+		DeltaFile shouldResumeEgressError = makeEgressErroredDeltaFile();
+		shouldResumeEgressError.lastFlow().setErrorAcknowledged(NOW);
+
+		DeltaFile transformErrorDiffCause = makeErroredDeltaFile();
+		transformErrorDiffCause.lastFlow().setErrorOrFilterCause("different error cause");
+		DeltaFile egressErrorDiffCause = makeEgressErroredDeltaFile();
+		egressErrorDiffCause.lastFlow().setErrorOrFilterCause("different error cause");
+
+		// has a matching errorOrFilter cause but different state
+		DeltaFile filterCause = makeErroredDeltaFile();
+		filterCause.lastFlow().setState(DeltaFileFlowState.FILTERED);
+
+		// not resumed because it is not in an error stage
+		DeltaFile cancelled = makeErroredDeltaFile();
+		cancelled.setStage(DeltaFileStage.CANCELLED);
+
+		// not resumed because the content was removed
+		DeltaFile contentDeleted = makeErroredDeltaFile();
+		contentDeleted.setContentDeleted(NOW);
+
+		deltaFileRepo.insertBatch(List.of(shouldResumeTransformError, shouldResumeEgressError, transformErrorDiffCause, egressErrorDiffCause, filterCause, cancelled, contentDeleted));
+
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  true,10)).hasSize(2).contains(shouldResumeTransformError.getDid(), shouldResumeEgressError.getDid());
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  false, 10)).hasSize(1).contains(shouldResumeTransformError.getDid());
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed", true, 1)).hasSize(1);
+	}
+
+	private DeltaFile makeErroredDeltaFile() {
+		return makeFlowsUnique(postTransformHadErrorDeltaFile(UUID.randomUUID()));
+	}
+
+	private DeltaFile makeEgressErroredDeltaFile() {
+		DeltaFile deltaFile = makeFlowsUnique(postTransformDeltaFile(UUID.randomUUID()));
+		DeltaFileFlow egressFlow = deltaFile.lastFlow();
+		egressFlow.setName(TRANSFORM_FLOW_NAME);
+		egressFlow.getActions().getLast().error(NOW, NOW, NOW, "transform failed", "failed context");
+		egressFlow.updateState();
+		deltaFile.updateState(NOW);
+		return deltaFile;
+	}
+
+	private DeltaFile makeFlowsUnique(DeltaFile deltaFile) {
+		deltaFile.getFlows().forEach(flow -> flow.setId(UUID.randomUUID()));
+		return deltaFile;
+	}
+
+	@Test
 	void testRequeue() {
 		DeltaFile oneHit = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
 		oneHit.firstFlow().setType(FlowType.TRANSFORM);
