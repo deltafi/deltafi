@@ -54,6 +54,11 @@ expectedDeltaFiles:
             type: DATA_SINK
             state: COMPLETE
             actions: [ PassthroughEgress ]
+            metadata:
+              - key: KEY3
+                value: VALUE3
+              - key: KEY4
+                value: VALUE4
         expectedContent:
           flow: passthrough-egress
           type: DATA_SINK

@@ -56,6 +56,8 @@ input ExpectedFlowInput {
   type: FlowType
   state: DeltaFileFlowState
   actions: [String]
+  metadata: [KeyValueInput]
+  metaExactMatch: Boolean
 }
 
 type ExpectedFlow {
@@ -63,6 +65,8 @@ type ExpectedFlow {
   type: FlowType
   state: DeltaFileFlowState
   actions: [String]
+  metadata: [KeyValue]
+  metaExactMatch: Boolean
 }
 
 input ExpectedDeltaFileInput {

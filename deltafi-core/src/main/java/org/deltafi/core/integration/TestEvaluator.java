@@ -24,6 +24,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.TestStatus;
 import org.deltafi.common.types.integration.ExpectedContentData;
 import org.deltafi.common.types.integration.ExpectedContentList;
@@ -201,42 +202,11 @@ public class TestEvaluator {
                             + ", " + deltaFile.getDid());
             return;
         }
-        int flowActionMatchCount = 0;
-        for (ExpectedFlow ef : expected.getExpectedFlows()) {
-            List<DeltaFileFlow> deltaFileFlows = deltaFile.getFlows()
-                    .stream()
-                    .filter(f -> flowMatch(f, ef.getFlow(), ef.getType()))
-                    .toList();
-            if (deltaFileFlows.size() != 1) {
-                // TODO: Maybe handle >1 later?
-                fatalSizeError(ef.getFlow(), "deltaFileFlows", 1, deltaFileFlows.size());
-            } else {
-                if (ef.getState() != deltaFileFlows.getFirst().getState()) {
-                    fatalError(ef.getFlow(), "state", ef.getState().name(),
-                            deltaFileFlows.getFirst().getState().name());
-                } else {
-                    List<String> actionNames = deltaFileFlows.getFirst().getActions()
-                            .stream().map(Action::getName)
-                            .toList();
-
-                    if (!new HashSet<>(actionNames).containsAll(ef.getActions())) {
-                        fatalError(label + ": expected actions " +
-                                String.join(",", ef.getActions()) +
-                                " - but were " + String.join(",", actionNames)
-                                + ", " + deltaFile.getDid());
-
-                    } else {
-                        flowActionMatchCount++;
-                    }
-                }
-            }
-        }
-
+        int flowActionMatchCount = expectedFlowsMatch(label, expected, deltaFile);
         if (flowActionMatchCount != expected.getExpectedFlows().size()) {
             errors.add("Expected to match " + expected.getExpectedFlows().size()
-                    + " action sets, but matched only " + flowActionMatchCount);
+                    + " flow/action sets, but matched only " + flowActionMatchCount);
         } else {
-
             if (expected.getParentCount() != null && expected.getParentCount() != deltaFile.getParentDids().size()) {
                 errors.add(label + ": expected " +
                         expected.getParentCount() +
@@ -253,6 +223,69 @@ public class TestEvaluator {
                 }
             }
         }
+    }
+
+    private int expectedFlowsMatch(String label, ExpectedDeltaFile expected, DeltaFile deltaFile) {
+        int flowActionMatchCount = 0;
+        for (ExpectedFlow ef : expected.getExpectedFlows()) {
+            List<DeltaFileFlow> deltaFileFlows = deltaFile.getFlows()
+                    .stream()
+                    .filter(f -> flowMatch(f, ef.getFlow(), ef.getType()))
+                    .toList();
+            if (deltaFileFlows.size() != 1) {
+                // TODO: Maybe handle >1 later?
+                fatalSizeError(ef.getFlow(), "deltaFileFlows", 1, deltaFileFlows.size());
+            } else {
+                DeltaFileFlow deltaFileFlow = deltaFileFlows.getFirst();
+                if (ef.getState() != deltaFileFlow.getState()) {
+                    fatalError(ef.getFlow(), "state", ef.getState().name(), deltaFileFlow.getState().name());
+                } else {
+                    List<String> actionNames = deltaFileFlow.getActions()
+                            .stream().map(Action::getName)
+                            .toList();
+
+                    if (!new HashSet<>(actionNames).containsAll(ef.getActions())) {
+                        fatalError(label + ": expected actions " +
+                                String.join(",", ef.getActions()) +
+                                " - but were " + String.join(",", actionNames)
+                                + ", " + deltaFile.getDid());
+                    } else {
+                        if (metadataMatches(ef, deltaFileFlow)) {
+                            flowActionMatchCount++;
+                        } else {
+                            errors.add(label + ": metadata does not match for flow " + ef.getFlow());
+                        }
+                    }
+                }
+            }
+        }
+        return flowActionMatchCount;
+    }
+
+    private boolean metadataMatches(ExpectedFlow expectedFlow, DeltaFileFlow deltaFileFlow) {
+        if (expectedFlow.getMetadata() != null) {
+            if (Boolean.TRUE.equals(expectedFlow.getMetaExactMatch())) {
+                if (expectedFlow.metadataToMap().equals(deltaFileFlow.getMetadata())) {
+                    return true;
+                } else {
+                    errors.add("Expected metadata: " + expectedFlow.metadataToMap().toString()
+                            + ", but was: " + deltaFileFlow.getMetadata().toString());
+                    return false;
+                }
+            } else {
+                // evaluate as "contains"
+                for (KeyValue keyValue : expectedFlow.getMetadata()) {
+                    if (!deltaFileFlow.getMetadata().containsKey(keyValue.getKey())) {
+                        errors.add("Missing metadata key: " + keyValue.getKey());
+                        return false;
+                    } else if (!deltaFileFlow.getMetadata().get(keyValue.getKey()).equals(keyValue.getValue())) {
+                        fatalError("Wrong value for metadata key: " + keyValue.getKey());
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private boolean annotationsMatch(DeltaFile deltaFile, ExpectedDeltaFile expected) {

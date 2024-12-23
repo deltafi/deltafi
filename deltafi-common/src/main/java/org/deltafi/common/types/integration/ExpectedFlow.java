@@ -22,11 +22,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.KeyValue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @SuperBuilder
@@ -37,6 +40,8 @@ public class ExpectedFlow {
     private FlowType type;
     private DeltaFileFlowState state;
     private List<String> actions;
+    private List<KeyValue> metadata;
+    private Boolean metaExactMatch;
 
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
@@ -57,6 +62,14 @@ public class ExpectedFlow {
             actions = new ArrayList<>();
         }
 
+        if (metaExactMatch == null) {
+            metaExactMatch = false;
+        }
+
         return errors;
+    }
+
+    public Map<String, String> metadataToMap() {
+        return KeyValueConverter.convertKeyValues(metadata);
     }
 }
