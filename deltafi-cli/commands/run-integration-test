@@ -9,11 +9,12 @@ Command: run-integration-test
 Run an integration test that was previously loaded
 
 Usage:
-  run-integration-test TESTNAME
+  run-integration-test [OPTIONS] TESTNAME
 
 Options:
   -h, --help        Show help
-  -q, --quiet       Suppress detailed error messages"
+  -q, --quiet       Suppress detailed error messages
+  -w, --wait <SECS> Wait for test to complete"
   exit 1
 }
 
@@ -27,6 +28,7 @@ cleanup() {
 trap cleanup INT
 
 SHOWERRORS=1
+MAXWAITSECS=0
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -40,6 +42,10 @@ while [[ $# -gt 0 ]]; do
       SHOWERRORS=0
       shift # past argument
       ;;
+    -w|--wait)
+      MAXWAITSECS=$2
+      shift 2
+      ;;
     *)    # unknown option
       POSITIONAL+=("$1") # save it in an array for later
       shift # past argument
@@ -52,12 +58,42 @@ ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 TESTNAME=${ARGS[1]}
+DELTAFI_DGS=$(_graphql)
+
+wait_for_test() {
+  test_id=$1
+  rm -f $TMPFILE
+
+  WAITVARS="{\"id\": \"$test_id\"}"
+  WAITQUERY="query (\$id: String!) { getTestResult(id: \$id) { id status errors } }"
+  WAITPOST="{ \"query\": \"$WAITQUERY\",\"variables\":$WAITVARS}"
+  WAITRC=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$WAITPOST" "$DELTAFI_DGS")
+
+  if [[ "$WAITRC" == "200" ]]; then
+    echo "$(cat ${TMPFILE} | jq -r '.data.getTestResult.status')"
+  else
+    # echo -e "${red}${WAITRC} Error: $(cat ${TMPFILE})${normal}"
+    echo "ERROR"
+  fi
+  rm -f $TMPFILE
+}
+
+wait_in_loop() {
+  test_id=$1
+
+  TEST_STATUS=$(wait_for_test $test_id)
+  tries=0
+  cli_log "Test status: ${TEST_STATUS}"
+  until [[ $TEST_STATUS != "STARTED" ]]; do
+    ((tries+=5)) && ((tries>=$MAXWAITSECS)) && cli_log "Timer expired" && break
+    sleep 5.0
+    TEST_STATUS=$(wait_for_test $test_id)
+      cli_log "Test status: ${TEST_STATUS}"
+  done
+}
 
 VARIABLES="{\"name\": \"$TESTNAME\"}"
-
 QUERY="mutation (\$name: String!) { startIntegrationTest(name: \$name) { id status errors } }"
-
-DELTAFI_DGS=$(_graphql)
 POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
 
 truncate -s 0 ${TMPFILE}
@@ -75,7 +111,10 @@ else
     SUCCESS=$(cat ${TMPFILE} | jq -r '.data.startIntegrationTest.status')
     if [[ $SUCCESS == "STARTED" ]]; then
       TESTID=$(cat ${TMPFILE} | jq -r '.data.startIntegrationTest.id')
-      cli_log "Started test: ${TESTID}"
+      cli_log "Started test, id: ${TESTID}"
+      if [[ $MAXWAITSECS != "0" ]]; then
+        wait_in_loop $TESTID
+      fi
     else
       ERRORS=$(cat ${TMPFILE} | jq -r '.data.startIntegrationTest.errors | join(",")')
       cli_log "${red}${TESTNAME}: Test failure from ${TESTNAME}${normal}"
