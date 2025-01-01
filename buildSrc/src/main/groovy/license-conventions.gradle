@@ -4,7 +4,7 @@ plugins {
 
 license {
     header(rootProject.file('HEADER'))
-    ext.year = 2024
+    ext.year = 2025
     excludes(["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
               "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
               "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
