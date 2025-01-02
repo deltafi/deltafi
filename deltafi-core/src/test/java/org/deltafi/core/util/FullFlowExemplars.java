@@ -296,6 +296,10 @@ public class FullFlowExemplars {
     }
 
     public static DeltaFile postEgressDeltaFile(UUID did) {
+        return postEgressDeltaFile(did, null, null);
+    }
+
+    public static DeltaFile postEgressDeltaFile(UUID did, Set<String> pendingAnnotations, Map<String, String> annotations) {
         DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.COMPLETE);
         deltaFile.setEgressed(true);
@@ -303,7 +307,18 @@ public class FullFlowExemplars {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_2);
         Action action = flow.getAction(SAMPLE_EGRESS_ACTION);
         action.complete(START_TIME, STOP_TIME, List.of(content), flow.getMetadata(), List.of(), OffsetDateTime.now());
-        flow.setState(DeltaFileFlowState.COMPLETE);
+        if (pendingAnnotations != null) {
+            deltaFile.setPendingAnnotations("sampleEgress", pendingAnnotations);
+            deltaFile.setTerminal(false);
+            flow.setState(DeltaFileFlowState.PENDING_ANNOTATIONS);
+            flow.setPendingActions(pendingAnnotations.stream().toList());
+        } else {
+            deltaFile.setTerminal(true);
+            flow.setState(DeltaFileFlowState.COMPLETE);
+        }
+        if (annotations != null) {
+            deltaFile.addAnnotations(annotations);
+        }
         return deltaFile;
     }
 }

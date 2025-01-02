@@ -271,7 +271,7 @@ public class DeltaFileFlow {
     }
 
     public boolean terminal() {
-        return state == DeltaFileFlowState.COMPLETE || state == DeltaFileFlowState.CANCELLED || state == DeltaFileFlowState.ERROR || state == DeltaFileFlowState.FILTERED;
+        return state == DeltaFileFlowState.COMPLETE || state == DeltaFileFlowState.PENDING_ANNOTATIONS ||state == DeltaFileFlowState.CANCELLED || state == DeltaFileFlowState.ERROR || state == DeltaFileFlowState.FILTERED;
     }
 
     public Action getAction(String actionName) {
@@ -363,6 +363,7 @@ public class DeltaFileFlow {
     public void removePendingAnnotations(Set<String> receivedAnnotations) {
         this.pendingAnnotations = this.pendingAnnotations != null ? new ArrayList<>(pendingAnnotations) : new ArrayList<>();
         this.pendingAnnotations.removeAll(receivedAnnotations);
+        updateState();
     }
 
     public void removePendingAction(String actionName) {

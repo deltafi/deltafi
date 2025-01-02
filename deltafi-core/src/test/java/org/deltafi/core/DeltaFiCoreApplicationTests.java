@@ -4131,6 +4131,27 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testReadReceiptsPending() throws IOException {
+		UUID did = UUID.randomUUID();
+		deltaFileRepo.save(postTransformDeltaFile(did));
+		dataSinkService.setExpectedAnnotations("sampleEgress", Set.of("readReceipt"));
+		deltaFilesService.handleActionEvent(actionEvent("egress", did));
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertEqualsIgnoringDates(postEgressDeltaFile(did, Set.of("readReceipt"), null), deltaFile);
+		assertFalse(deltaFile.isTerminal());
+	}
+
+	@Test
+	void testReadReceiptsProcessed() {
+		UUID did = UUID.randomUUID();
+		deltaFileRepo.save(postEgressDeltaFile(did, Set.of("readReceipt"), null));
+		deltaFilesService.addAnnotations(did, Map.of("readReceipt", "123"), false);
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertEqualsIgnoringDates(postEgressDeltaFile(did, null, Map.of("readReceipt", "123")), deltaFile);
+		assertTrue(deltaFile.isTerminal());
+	}
+
+	@Test
 	void countErrors() {
 		String reason = "reason";
 		OffsetDateTime time = OffsetDateTime.now(clock);

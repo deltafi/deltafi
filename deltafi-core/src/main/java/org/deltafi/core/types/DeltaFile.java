@@ -185,7 +185,7 @@ public class DeltaFile {
   }
 
   public void updateFlags() {
-    terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
+    terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && !hasPendingAnnotations();
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
     filtered = flows.stream().anyMatch(f -> f.getState() == DeltaFileFlowState.FILTERED);
     // only set paused if all flows are terminal or paused
@@ -343,6 +343,10 @@ public class DeltaFile {
   public boolean hasPendingActions() {
     return flows.stream().anyMatch(flow -> !flow.terminal());
   }
+
+  public boolean hasPendingAnnotations() {
+    return flows.stream().anyMatch(DeltaFileFlow::hasPendingAnnotations);
+   }
 
   public boolean hasErrors() {
     return flows.stream().anyMatch(flow -> flow.getState() == DeltaFileFlowState.ERROR);

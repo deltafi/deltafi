@@ -654,7 +654,7 @@ public class DeltaFilesService {
         analyticEventService.recordError(deltaFile, action.getFlowName(), action.getActionName(), message, action.getStop());
     }
 
-    private DeltaFile getTerminalDeltaFileOrCache(UUID did) {
+    private DeltaFile getTerminalStageDeltaFileOrCache(UUID did) {
         if (deltaFileCacheService.isCached(did)) {
             return getCachedDeltaFile(did);
         }
@@ -665,7 +665,7 @@ public class DeltaFilesService {
 
     public void addAnnotations(UUID did, Map<String, String> annotations, boolean allowOverwrites) {
         didMutexService.executeWithLock(did, () -> {
-            DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
+            DeltaFile deltaFile = getTerminalStageDeltaFileOrCache(did);
 
             if (deltaFile == null) {
                 if (deltaFileRepo.existsById(did)) {
@@ -686,10 +686,13 @@ public class DeltaFilesService {
         for (QueuedAnnotation queuedAnnotation : queuedAnnotations) {
             UUID did = queuedAnnotation.getDid();
             didMutexService.executeWithLock(did, () -> {
-                DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
+                DeltaFile deltaFile = getTerminalStageDeltaFileOrCache(did);
 
-                if (deltaFile == null && deltaFileRepo.existsById(did)) {
-                    log.warn("Attempted to apply queued annotation to deltaFile {} that no longer exists", did);
+                if (deltaFile == null) {
+                    if (!deltaFileRepo.existsById(did)) {
+                        log.warn("Attempted to apply queued annotation to deltaFile {} that no longer exists", did);
+                    }
+                    // else: not in a terminal stage yet; try again later
                 } else {
                     addAnnotations(deltaFile, queuedAnnotation.getAnnotations(), queuedAnnotation.isAllowOverwrites(), queuedAnnotation.getTime());
                     queuedAnnotationRepo.deleteById(queuedAnnotation.getId());
