@@ -283,9 +283,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public FlowT getActiveFlowByName(String flowName) {
         Flow flow = flowCacheService.getFlow(flowType, flowName);
         if (flow == null) {
-            throw new MissingFlowException("Flow of type " + flowType + " named " + flowName + " is not installed");
+            throw new MissingFlowException(flowName, flowType);
         } else if (!flow.isRunning() && !flow.isPaused()){
-            throw new MissingFlowException("Flow of type " + flowType + " named " + flowName + " is not running");
+            throw new MissingFlowException(flowName, flowType, flow.getFlowStatus().getState());
         }
 
         return flowClass.cast(flow);

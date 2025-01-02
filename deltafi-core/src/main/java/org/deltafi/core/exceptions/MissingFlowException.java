@@ -17,8 +17,25 @@
  */
 package org.deltafi.core.exceptions;
 
+import lombok.Getter;
+import org.deltafi.common.types.FlowType;
+import org.deltafi.core.generated.types.FlowState;
+
+@Getter
 public class MissingFlowException extends RuntimeException {
-    public MissingFlowException(String message) {
-        super(message);
+    private static final String MISSING_FLOW_CONTEXT = "The %s named %s is not %s";
+    private static final String MISSING_FLOW_CAUSE = "The %s is no longer installed";
+    private static final String NOT_RUNNING_CAUSE = "The %s is not running";
+
+    private final String missingCause;
+
+    public MissingFlowException(String flowName, FlowType flowType) {
+        super(MISSING_FLOW_CONTEXT.formatted(flowType.getDisplayName(), flowName, "installed"));
+        this.missingCause = MISSING_FLOW_CAUSE.formatted(flowType.getDisplayName());
+    }
+
+    public MissingFlowException(String flowName, FlowType flowType, FlowState flowState) {
+        super(MISSING_FLOW_CONTEXT.formatted(flowType.getDisplayName(), flowName, "running (flow state is " + flowState + ")"));
+        this.missingCause = NOT_RUNNING_CAUSE.formatted(flowType.getDisplayName());
     }
 }

@@ -200,7 +200,7 @@ public class PublisherService {
             defaultBehavior = DefaultBehavior.ERROR;
         }
 
-        String context = "No subscribers found from dataSource '" + publisher.getName() + "' ";
+        String context = "No subscribers found from " + completedFlow.getType().getDisplayName() + " '" + publisher.getName() + "' ";
         if (publishTopics.isEmpty()) {
             context += "because no topics matched the criteria.";
         } else {
@@ -218,7 +218,7 @@ public class PublisherService {
     }
 
     private void handleNoMatches(DeltaFile deltaFile, DataSource dataSource, DeltaFileFlow flow) {
-        errorDeltaFile(deltaFile, flow, "No subscribers found for data source '" + dataSource.getName() + "'" + " on topic '" + dataSource.getTopic() + "'");
+        errorDeltaFile(deltaFile, flow, "No subscribers found for " + dataSource.getType().getDisplayName() + " '" + dataSource.getName() + "'" + " on topic '" + dataSource.getTopic() + "'");
     }
 
     private Set<Subscriber> getSubscribers(String topic) {

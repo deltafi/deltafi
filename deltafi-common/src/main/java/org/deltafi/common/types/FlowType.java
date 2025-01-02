@@ -17,6 +17,16 @@
  */
 package org.deltafi.common.types;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum FlowType {
-    REST_DATA_SOURCE, TIMED_DATA_SOURCE, TRANSFORM, DATA_SINK
+    REST_DATA_SOURCE("rest data source"),
+    TIMED_DATA_SOURCE("timed data source"),
+    TRANSFORM("transform"),
+    DATA_SINK("data sink");
+
+    private final String displayName;
 }

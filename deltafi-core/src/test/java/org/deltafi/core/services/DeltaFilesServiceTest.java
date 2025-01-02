@@ -27,6 +27,8 @@ import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
+import org.deltafi.core.exceptions.MissingFlowException;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -763,7 +765,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile(did);
         DeltaFileFlow flow = deltaFile.firstFlow();
 
-        deltaFilesService.handleMissingFlow(deltaFile, flow, "Flow configuration not found");
+        deltaFilesService.handleMissingFlow(deltaFile, flow, new MissingFlowException("flowName", FlowType.TRANSFORM, FlowState.INVALID));
 
         assertEquals(DeltaFileStage.ERROR, deltaFile.getStage());
         Action errorAction = flow.lastAction();

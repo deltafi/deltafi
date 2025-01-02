@@ -20,18 +20,11 @@ package org.deltafi.core.services.pubsub;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.test.time.TestClock;
+import org.deltafi.common.types.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.Action;
-import org.deltafi.common.types.ActionState;
-import org.deltafi.common.types.DefaultBehavior;
-import org.deltafi.common.types.DefaultRule;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.common.types.MatchingPolicy;
-import org.deltafi.common.types.PublishRules;
-import org.deltafi.common.types.Publisher;
-import org.deltafi.common.types.Rule;
-import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.types.TransformFlow;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -159,6 +152,7 @@ class PublisherServiceTest {
     void subscribers_defaultToError() {
         DeltaFile deltaFile = deltaFile();
         DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        deltaFileFlow.setType(FlowType.TRANSFORM);
 
         PublishRules publishRules = new PublishRules();
         Publisher publisher = flow(publishRules, Set.of());
@@ -182,6 +176,7 @@ class PublisherServiceTest {
     void subscribers_defaultToFilter() {
         DeltaFile deltaFile = deltaFile();
         DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        deltaFileFlow.setType(FlowType.TRANSFORM);
 
         PublishRules publishRules = new PublishRules();
         publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.FILTER));
@@ -228,6 +223,7 @@ class PublisherServiceTest {
     void subscribers_defaultPublishFails() {
         DeltaFile deltaFile = deltaFile();
         DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+        deltaFileFlow.setType(FlowType.TRANSFORM);
 
         PublishRules publishRules = new PublishRules();
         publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.PUBLISH, "default-topic"));
@@ -291,6 +287,7 @@ class PublisherServiceTest {
 
         DeltaFile deltaFile = new DeltaFile();
         DeltaFileFlow deltaFileFlow = new DeltaFileFlow();
+        deltaFileFlow.setType(FlowType.TRANSFORM);
         deltaFile.setFlows(Set.of(deltaFileFlow));
 
         mockRuleEval("publish-a", deltaFileFlow, true);

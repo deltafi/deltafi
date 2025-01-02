@@ -27,6 +27,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
@@ -139,7 +140,7 @@ class IngressServiceTest {
         if (flowRunning) {
             Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(REST_DATA_SOURCE);
         } else {
-            Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenThrow(new MissingFlowException("Flow dataSource is not running"));
+            Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenThrow(new MissingFlowException("dataSource", FlowType.REST_DATA_SOURCE, FlowState.STOPPED));
         }
         DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").build();
         DeltaFile deltaFile = DeltaFile.builder().flows(Set.of(flow)).build();
@@ -375,7 +376,7 @@ class IngressServiceTest {
                         "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
-        assertEquals("Flow dataSource is not running", ingressMetadataException.getMessage());
+        assertEquals("The rest data source named dataSource is not running (flow state is STOPPED)", ingressMetadataException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");

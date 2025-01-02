@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.JoinException;
+import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
@@ -170,7 +171,13 @@ public class StateMachine {
             return Collections.emptyList();
         }
 
-        Set<DeltaFileFlow> subscriberFlows = publisherService.subscribers(getFlow(input.flow()), input.deltaFile(), input.flow());
+        Set<DeltaFileFlow> subscriberFlows;
+        try {
+            subscriberFlows = publisherService.subscribers(getFlow(input.flow()), input.deltaFile(), input.flow());
+        } catch (MissingFlowException e) {
+            markMissingFlow(input.flow(), e);
+            return Collections.emptyList();
+        }
 
         generatePubSubMetrics(input.deltaFile(), input.flow(), subscriberFlows);
 
@@ -220,21 +227,28 @@ public class StateMachine {
     }
 
     private void markFlowAsCircular(DeltaFileFlow flow) {
-        // grab the last content list to copy into the synthetic error action to make it available for retry
-        List<Content> lastActionContent = flow.lastActionContent();
-        Action action = flow.queueNewAction("CIRCULAR_FLOWS", ActionType.PUBLISH, false, OffsetDateTime.now(clock));
-        action.setState(ActionState.ERROR);
-        action.setErrorCause("Circular flows detected");
-        action.setErrorContext("Circular flows detected. Processing stopped at maximum depth of " +
-                deltaFiPropertiesService.getDeltaFiProperties().getMaxFlowDepth());
-        action.setContent(lastActionContent);
-        flow.updateState();
+        addErroredPublishAction(flow, "CIRCULAR_FLOWS", "Circular flows detected",
+                "Circular flows detected. Processing stopped at maximum depth of " + deltaFiPropertiesService.getDeltaFiProperties().getMaxFlowDepth());
+    }
+
+    private void markMissingFlow(DeltaFileFlow flow, MissingFlowException missingFlowException) {
+        addErroredPublishAction(flow, MISSING_FLOW_ACTION, missingFlowException.getMissingCause(), missingFlowException.getMessage());
     }
 
     private void markMissingAction(DeltaFileFlow flow, String context) {
         Action action = flow.lastAction();
         OffsetDateTime now = OffsetDateTime.now(clock);
         action.error(null, null, now, "Action configuration not found", context);
+    }
+
+    private void addErroredPublishAction(DeltaFileFlow flow, String actionName, String cause, String context) {
+        List<Content> lastActionContent = flow.lastActionContent();
+        Action action = flow.queueNewAction(actionName, ActionType.PUBLISH, false, OffsetDateTime.now(clock));
+        action.setState(ActionState.ERROR);
+        action.setErrorCause(cause);
+        action.setErrorContext(context);
+        action.setContent(lastActionContent);
+        flow.updateState();
     }
 
     private Flow getFlow(DeltaFileFlow flow) {

@@ -94,8 +94,6 @@ public class DeltaFilesService {
 
     private static final ObjectWriter PRETTY_OBJECT_WRITER = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
 
-    public static final String MISSING_FLOW_CAUSE = "The dataSource is no longer installed or running";
-
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
     private final Clock clock;
@@ -520,7 +518,7 @@ public class DeltaFilesService {
         try {
             transformFlowService.getActiveFlowByName(event.getFlowName());
         } catch (MissingFlowException missingFlowException) {
-            handleMissingFlow(deltaFile, flow, missingFlowException.getMessage());
+            handleMissingFlow(deltaFile, flow, missingFlowException);
             return;
         }
 
@@ -749,7 +747,7 @@ public class DeltaFilesService {
         }
     }
 
-    public static ActionEvent buildMissingFlowErrorEvent(DeltaFile deltaFile, OffsetDateTime time, String errorContext) {
+    public static ActionEvent buildMissingFlowErrorEvent(DeltaFile deltaFile, OffsetDateTime time, MissingFlowException missingFlowException) {
         return ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .flowName("MISSING")
@@ -757,8 +755,8 @@ public class DeltaFilesService {
                 .start(time)
                 .stop(time)
                 .error(ErrorEvent.builder()
-                        .cause(MISSING_FLOW_CAUSE)
-                        .context(errorContext)
+                        .cause(missingFlowException.getMissingCause())
+                        .context(missingFlowException.getMessage())
                         .build())
                 .type(ActionEventType.UNKNOWN)
                 .build();
@@ -1225,10 +1223,10 @@ public class DeltaFilesService {
         enqueueActions(actionInputs);
     }
 
-    void handleMissingFlow(DeltaFile deltaFile, DeltaFileFlow flow, String errorContext) {
+    void handleMissingFlow(DeltaFile deltaFile, DeltaFileFlow flow, MissingFlowException missingFlowException) {
         OffsetDateTime now = OffsetDateTime.now(clock);
         Action action = flow.queueNewAction(MISSING_FLOW_ACTION, ActionType.UNKNOWN, false, now);
-        processErrorEvent(deltaFile, flow, action, buildMissingFlowErrorEvent(deltaFile, now, errorContext));
+        processErrorEvent(deltaFile, flow, action, buildMissingFlowErrorEvent(deltaFile, now, missingFlowException));
         deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFileCacheService.save(deltaFile);
     }
