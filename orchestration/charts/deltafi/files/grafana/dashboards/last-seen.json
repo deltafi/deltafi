@@ -47,18 +47,17 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 4,
+  "id": 16,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
-        "h": 22,
-        "w": 8,
+        "h": 24,
+        "w": 7,
         "x": 0,
         "y": 0
       },
@@ -80,6 +79,7 @@
         },
         "viewMode": "list"
       },
+      "pluginVersion": "11.4.0",
       "title": "Active Alerts",
       "type": "alertlist"
     },
@@ -108,9 +108,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 22,
-        "w": 16,
-        "x": 8,
+        "h": 24,
+        "w": 17,
+        "x": 7,
         "y": 0
       },
       "id": 46,
@@ -131,10 +131,14 @@
           "values": true
         },
         "showPercentChange": false,
+        "text": {
+          "titleSize": 22,
+          "valueSize": 22
+        },
         "textMode": "value_and_name",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -220,8 +224,9 @@
       "type": "stat"
     }
   ],
-  "refresh": "5m",
-  "schemaVersion": 39,
+  "preload": false,
+  "refresh": "10m",
+  "schemaVersion": 40,
   "tags": [
     "DeltaFi"
   ],
@@ -229,21 +234,16 @@
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "Graphite",
           "value": "deltafi-graphite"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Data Source",
-        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "graphite",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       }
     ]
@@ -263,6 +263,6 @@
   "timezone": "",
   "title": "Last Seen on Flows",
   "uid": "last-seen",
-  "version": 7,
+  "version": 8,
   "weekStart": ""
 }
