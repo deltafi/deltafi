@@ -258,6 +258,7 @@ const staticMenuItems = ref([
       },
     ],
   },
+  { name: "External Links", expand: true, visible: false },
   { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions", visible: computed(() => hasPermission("VersionsView")) },
   { name: "Documentation", icon: "fas fa-book fa-fw", url: buildURL(null, "/docs"), visible: true },
 ]);
@@ -265,18 +266,16 @@ const staticMenuItems = ref([
 const menuItems = computed(() => {
   let items = staticMenuItems.value;
   if (externalLinks.value.length > 0) {
-    const externalLinksObject = {
-      name: "External Links",
-      expand: true,
-      children: externalLinks.value,
-    };
-
-    const objIndex = items.findIndex((obj) => obj.name == "External Links");
-    if (objIndex != -1) {
-      items[objIndex] = externalLinksObject;
-    } else {
-      items.splice(5, 0, externalLinksObject);
-    }
+    const index = items.findIndex((obj) => obj.name == "External Links");
+    const menu = items[index];
+    menu.children = externalLinks.value.map((link) => {
+      return {
+        ...link,
+        visible: true
+      }
+    });
+    menu.expand = true;
+    menu.visible = true;
   }
   return items;
 });
