@@ -212,7 +212,7 @@ const rowClick = (event) => {
   // Don't interfere with expander
   if (event.originalEvent.target.nodeName === "svg") return;
 
-  let action = event.data.actions.length > 0 ? event.data.actions[0] : event.data;
+  let action = event.data.actions.length > 0 ? event.data.actions.slice(-1)[0] : event.data;
   if (!["ERROR", "RETRIED", "FILTERED"].includes(action.state)) return;
 
   errorViewer.visible = true;

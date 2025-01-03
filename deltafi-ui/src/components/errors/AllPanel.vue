@@ -341,7 +341,7 @@ const actionRowClass = (action) => {
 };
 
 const actionRowClick = (event) => {
-  let action = event.data.actions ? event.data.actions[0] : event.data;
+  let action = event.data.actions ? event.data.actions.slice(-1)[0] : event.data;
   if (["ERROR", "RETRIED"].includes(action.state)) {
     errorViewer.value.action = action;
     errorViewer.value.visible = true;
