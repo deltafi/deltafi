@@ -5,6 +5,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.3.0] - 2025-01-03
+
+### Highlights
+- Flows now have the ability to be paused.  A paused flow will suspend processing of DeltaFiles through the flow until the flow is unpaused.  DeltaFile processing will resume normally when the flow is unpaused
+- New play/pause/stop user interface for flows
+
+### Added
+- Integration tests now evaluate expected metadata for each flow
+- Added a `resumeByFlow` mutation that resumes errors for the given flow
+- Added a `resumeByErrorCause` mutation that resumes errors with the given error cause
+- Added ability to pause individual flows
+- The CLI command `run-integration-test` now offers a `--wait` flag that will monitor the running test until it is finished
+
+### Changed
+- [UI] Flow on/off switch has been replaced with a play/pause/stop interface
+- Updated the license for 2025
+- DeltaFiles may be marked COMPLETE when there are pending annotations, but will not be terminal
+
+### Fixed
+- Fixed a bug where resuming a DeltaFile from an inactive flow left the DeltaFile in a bad state
+- Fixed issue causing UI to become unresponsive after configuring external links.
+- Last seen dashboard uses fixed font sizes for stats
+- Fixed an issue where clicking on an errored flow from the all errors page or DeltaFileViewer only worked if the error was in the first action instead of the last action
+- Annotations in Child TransformResults are now stored in the new DeltaFile
+- Read receipts (pending data-sink annotations) are now saved to the DeltaFile
+
+### Tech-Debt/Refactor
+- Restructure system snapshots to enable adding backwards compatibility going forward and reduce the amount of changes needed in the CLI and GUI
+
+### Upgrade and Migration
+- Upgrade to Grafana 11.4.0
+- Upgraded Java base image to `deltafi/deltafi-java-jre:21.0.5-alpine-1`
+- The `queued_annotations` table will be cleared
+
 ## [2.2.1] - 2024-12-19
 
 ### Added
@@ -3605,7 +3639,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.0...main
+[2.3.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.1...2.3.0
 [2.2.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.0...2.2.1
 [2.2.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.1.1...2.2.0
 [2.1.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.1.0...2.1.1
