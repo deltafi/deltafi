@@ -1,7 +1,7 @@
 /*
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -22,28 +22,28 @@ import { register } from 'register-service-worker'
 
 if (process.env.NODE_ENV === 'production') {
   register(`${process.env.BASE_URL}service-worker.js`, {
-    ready () {
+    ready() {
       console.log(
         'App is being served from cache by a service worker.\n' +
         'For more details, visit https://goo.gl/AFskqB'
       )
     },
-    registered () {
+    registered() {
       console.log('Service worker has been registered.')
     },
-    cached () {
+    cached() {
       console.log('Content has been cached for offline use.')
     },
-    updatefound () {
+    updatefound() {
       console.log('New content is downloading.')
     },
-    updated () {
+    updated() {
       console.log('New content is available; please refresh.')
     },
-    offline () {
+    offline() {
       console.log('No internet connection found. App is running in offline mode.')
     },
-    error (error) {
+    error(error) {
       console.error('Error during service worker registration:', error)
     }
   })

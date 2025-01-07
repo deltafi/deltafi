@@ -1,7 +1,7 @@
 /*
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -33,26 +33,26 @@ import { rankWith, isObjectControl, isBooleanControl, isStringControl, isInteger
 
 export default function usePrimeVueJsonSchemaUIRenderers() {
   const rendererList = [
-    ...vanillaRenderers, 
+    ...vanillaRenderers,
     { tester: rankWith(3, isObjectControl), renderer: ObjectRenderer },
     { tester: rankWith(3, isStringControl), renderer: StringRenderer },
     { tester: rankWith(3, isIntegerControl), renderer: IntegerRenderer },
     { tester: rankWith(3, isBooleanControl), renderer: BooleanRenderer },
-    { tester: rankWith(3, schemaTypeIs("array")), renderer: ArrayListRenderer},
-    { tester: rankWith(3, schemaTypeIs("additionalPropertyString")), renderer: AdditionalPropertiesStringRenderer},
+    { tester: rankWith(3, schemaTypeIs("array")), renderer: ArrayListRenderer },
+    { tester: rankWith(3, schemaTypeIs("additionalPropertyString")), renderer: AdditionalPropertiesStringRenderer },
   ];
 
   const publishRenderList = [
     ...rendererList,
     { tester: rankWith(4, isObjectControl), renderer: PublishObjectRenderer },
-    { tester: rankWith(4, schemaTypeIs("array")), renderer: PublishArrayListRenderer},
+    { tester: rankWith(4, schemaTypeIs("array")), renderer: PublishArrayListRenderer },
     { tester: rankWith(4, isStringControl), renderer: PublishStringRenderer },
   ]
 
   const subscribeRenderList = [
     ...rendererList,
     { tester: rankWith(4, isObjectControl), renderer: SubscribeObjectRenderer },
-    { tester: rankWith(4, schemaTypeIs("array")), renderer: SubscribeArrayListRenderer},
+    { tester: rankWith(4, schemaTypeIs("array")), renderer: SubscribeArrayListRenderer },
     { tester: rankWith(4, isStringControl), renderer: SubscribeStringRenderer },
   ]
 

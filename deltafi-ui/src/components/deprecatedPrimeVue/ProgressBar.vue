@@ -1,7 +1,7 @@
 <!--
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
     <div role="progressbar" :class="containerClass" aria-valuemin="0" :aria-valuenow="value" aria-valuemax="100">
         <div v-if="determinate" class="p-progressbar-value p-progressbar-value-animate" :style="progressStyle"></div>
         <div v-if="determinate && (value !== null) && showValue" class="p-progressbar-label">
-            <slot>{{value + '%'}}</slot>  
+            <slot>{{value + '%'}}</slot>
         </div>
         <div v-if="indeterminate" class="p-progressbar-indeterminate-container">
             <div class="p-progressbar-value p-progressbar-value-animate"></div>

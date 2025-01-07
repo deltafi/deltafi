@@ -1,7 +1,7 @@
 /*
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ export default function useGraphQL() {
   };
 
   const queryGraphQL = async (query: string | object, queryName: string, queryType: string = "query", bypass: boolean = false) => {
-    if (typeof query === 'object' && !bypass ) {
+    if (typeof query === 'object' && !bypass) {
       const cleanedQuery = removeEmptyKeyValues(query);
       clearEmptyObjects(cleanedQuery);
       query = jsonToGraphQLQuery(cleanedQuery, { pretty: false });

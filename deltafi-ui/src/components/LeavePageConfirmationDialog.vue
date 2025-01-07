@@ -1,7 +1,7 @@
 <!--
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 <template>
   <ConfirmDialog group="positioned" />
 </template>
-    
+
 <script setup>
 import { defineProps } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
@@ -61,5 +61,3 @@ onBeforeRouteLeave((to, from, next) => {
   }
 });
 </script>
-
-    

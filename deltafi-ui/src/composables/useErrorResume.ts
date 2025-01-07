@@ -1,7 +1,7 @@
 /*
    DeltaFi - Data transformation and enrichment platform
 
-   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ export default function useErrorResume() {
     };
   };
 
-  const resume = async (dids: Array<string>,  metadata: Array<Object>) => {
-    await queryGraphQL(buildResumeQuery(dids,metadata), "errorsResume", "mutation");
+  const resume = async (dids: Array<string>, metadata: Array<Object>) => {
+    await queryGraphQL(buildResumeQuery(dids, metadata), "errorsResume", "mutation");
     return Promise.resolve(response);
   };
 
