@@ -33,7 +33,7 @@
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Flow'" placeholder="Search" />
+          <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
       </template>
       <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">

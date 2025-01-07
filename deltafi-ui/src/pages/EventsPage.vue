@@ -30,7 +30,7 @@
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Flow'" placeholder="Search" />
+          <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
       </template>
       <DataTable ref="eventsTable" v-model:filters="filters" v-model:selection="selectedEvents" filter-display="menu" :value="events" data-key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true" sort-field="timestamp" :sort-order="-1" :loading="loading">

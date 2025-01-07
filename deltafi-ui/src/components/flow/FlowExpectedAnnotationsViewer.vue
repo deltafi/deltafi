@@ -29,9 +29,7 @@
           <template #message="slotProps">
             <div class="flex btn-group p-4">
               <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-              <p class="pl-2">
-                {{ slotProps.message.message }}
-              </p>
+              <p class="pl-2" v-html="slotProps.message.message" />
             </div>
           </template>
         </ConfirmPopup>
@@ -101,7 +99,7 @@ const confirmationPopup = (event) => {
   confirm.require({
     target: event.currentTarget,
     group: flowName,
-    message: `Update flow ${flowName} by ${compareAnnotationsArrays()}?`,
+    message: `Update the <b>${flowName}</b> data sink by ${compareAnnotationsArrays()}?`,
     acceptLabel: "Yes",
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",
@@ -150,9 +148,9 @@ const submitNewReadReceipts = async () => {
   }
 
   if (!_.isEmpty(_.get(response, "errors", null))) {
-    notify.error(`Failed to update Read Receipts for flow: ${flowName}`, `Unsuccessfull in ${compareAnnotationsArrays()}.`, 4000);
+    notify.error(`Failed to update Read Receipts for data sink: ${flowName}`, `Unsuccessful in ${compareAnnotationsArrays()}.`, 4000);
   } else {
-    notify.success(`Updated Read Receipts for flow: ${flowName}`, `Successfull in ${compareAnnotationsArrays()}.`, 4000);
+    notify.success(`Updated Read Receipts for data sink: ${flowName}`, `Successful in ${compareAnnotationsArrays()}.`, 4000);
   }
 
   originalExpectedAnnotations.value = sortedReadReceiptsList.value;

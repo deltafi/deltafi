@@ -74,7 +74,7 @@ const confirmationPopup = (event, name, testMode) => {
     confirm.require({
       target: event.currentTarget,
       group: `${rowData.value.flowType}_testmode_${rowData.value.name}`,
-      message: `Disable Test Mode for <b>${name}</b> flow?`,
+      message: `Disable Test Mode for the <b>${name}</b> data sink?`,
       acceptLabel: "Disable Test Mode",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
@@ -85,7 +85,7 @@ const confirmationPopup = (event, name, testMode) => {
     confirm.require({
       target: event.currentTarget,
       group: `${rowData.value.flowType}_testmode_${rowData.value.name}`,
-      message: `Enable Test Mode for <b>${name}</b> flow?`,
+      message: `Enable Test Mode for the <b>${name}</b> data sink?`,
       acceptLabel: "Enable Test Mode",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
@@ -97,10 +97,10 @@ const confirmationPopup = (event, name, testMode) => {
 
 const toggleFlowState = async (flowName, newFlowTestMode) => {
   if (!newFlowTestMode) {
-    notify.info("Enabling Test Mode", `Enabling Test Mode for <b>${flowName}</b> flow.`, 3000);
+    notify.info("Enabling Test Mode", `Enabling Test Mode for the <b>${flowName}</b> data sink.`, 3000);
     await enableDataSinkTestModeByName(flowName);
   } else {
-    notify.info("Disabling Test Mode", `Disabling Test Mode for <b>${flowName}</b> flow.`, 3000);
+    notify.info("Disabling Test Mode", `Disabling Test Mode for the <b>${flowName}</b> data sink.`, 3000);
     await disableDataSinkTestModeByName(flowName);
   }
   rowData.value.flowStatus.testMode = !rowData.value.flowStatus.testMode;

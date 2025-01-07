@@ -144,14 +144,14 @@ const selectedPlugin = ref(null);
 
 const menuItems = reactive([
   {
-    label: "Start All Plugin Flows",
+    label: "Start All Plugin Transforms",
     icon: "fas fa-play fa-fw",
     command: () => {
       confirmAllFlows("Start", "");
     },
   },
   {
-    label: "Stop All Plugin Flows",
+    label: "Stop All Plugin Transforms",
     icon: "fas fa-stop fa-fw",
     command: () => {
       confirmAllFlows("Stop", "");
@@ -161,14 +161,14 @@ const menuItems = reactive([
     separator: true,
   },
   {
-    label: "Enable Test Mode For All Plugin Flows",
+    label: "Enable Test Mode For All Plugin Transforms",
     icon: "fas fa-flask fa-fw",
     command: () => {
       confirmAllFlows("Enable", "Test Mode for");
     },
   },
   {
-    label: "Disable Test Mode For All Plugin Flows",
+    label: "Disable Test Mode For All Plugin Transforms",
     icon: "fas fa-flask fa-fw",
     command: () => {
       confirmAllFlows("Disable", "Test Mode for");
@@ -205,16 +205,16 @@ const runForAllFlowsForPlugin = (runType) => {
   const pluginFlows = flowDataByPlugin.value[selectedPlugin.value];
   pluginFlows.forEach(async (element) => {
     if (runType === "Start") {
-      notify.info("Starting All Flow's", `Starting all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      notify.info("Starting All Transforms", `Starting all <b>${selectedPlugin.value}</b> transforms.`, 3000);
       await startTransformFlowByName(element.name);
     } else if (runType === "Stop") {
-      notify.info("Stopping All Flow's", `Stopping all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      notify.info("Stopping All Transforms", `Stopping all <b>${selectedPlugin.value}</b> transforms.`, 3000);
       await stopTransformFlowByName(element.name);
     } else if (runType === "Enable") {
-      notify.info("Enabling Test Mode", `Enabling Test Mode for all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      notify.info("Enabling Test Mode", `Enabling Test Mode for all <b>${selectedPlugin.value}</b> transforms.`, 3000);
       await enableTestTransformFlowByName(element.name);
     } else if (runType === "Disable") {
-      notify.info("Disabling Test Mode", `Disabling Test Mode for all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      notify.info("Disabling Test Mode", `Disabling Test Mode for all <b>${selectedPlugin.value}</b> transforms.`, 3000);
       await disableTestTransformFlowByName(element.name);
     }
     emit("updateFlows");
@@ -258,7 +258,7 @@ const deleteFlow = async (data) => {
   let response = false;
   response = await removeTransformFlowPlanByName(data.name);
   if (response) {
-    notify.success(`Removed ${data.flowType} flow:`, data.name);
+    notify.success(`Removed ${data.flowType}:`, data.name);
     removeFlowFromProp(data);
     emit("updateFlows");
   } else {
@@ -308,7 +308,7 @@ const confirmationPopup = (event, data) => {
 const confirmAllFlows = (runType, message) => {
   confirm.require({
     group: "bulkActions",
-    message: `${runType} ${message} all <b>${selectedPlugin.value}</b> flows?`,
+    message: `${runType} ${message} all <b>${selectedPlugin.value}</b> transforms?`,
     acceptLabel: runType,
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",
@@ -319,7 +319,7 @@ const confirmAllFlows = (runType, message) => {
       outlined: true,
     },
     acceptProps: {
-      label: `${runType} ${message} all <b>${selectedPlugin.value}</b> flows?`,
+      label: `${runType} ${message} all <b>${selectedPlugin.value}</b> transforms?`,
     },
     accept: () => {
       runForAllFlowsForPlugin(runType);

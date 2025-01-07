@@ -50,7 +50,7 @@
             </dd>
             <dt>Action*</dt>
             <dd>
-              <Dropdown v-model="model['timedIngressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select a flow" show-clear class="inputWidth" />
+              <Dropdown v-model="model['timedIngressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
             </dd>
             <template v-if="!_.isEmpty(model['timedIngressActionOption'])">
               <template v-if="schemaProvided(model['timedIngressActionOption']['schema'])">
