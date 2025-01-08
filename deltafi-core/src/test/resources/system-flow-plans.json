@@ -1,0 +1,85 @@
+{
+  "dataSinkPlans": [
+    {
+      "name": "copy-sink",
+      "type": "DATA_SINK",
+      "description": "copy of pt egress",
+      "subscribe": [
+        {
+          "topic": "passthrough-egress",
+          "condition": null
+        }
+      ],
+      "egressAction": {
+        "name": "PassthroughEgress",
+        "type": "org.deltafi.core.action.egress.RestPostEgress",
+        "parameters": {
+          "url": "http://deltafi-egress-sink-service",
+          "metadataKey": "deltafiMetadata"
+        }
+      }
+    }
+  ],
+  "restDataSources": [
+    {
+      "name": "copy pt rest",
+      "type": "REST_DATA_SOURCE",
+      "description": "Copy",
+      "topic": "passthrough"
+    }
+  ],
+  "timedDataSources": [
+    {
+      "name": "copy-smoke-timed",
+      "type": "TIMED_DATA_SOURCE",
+      "description": "copy of smoke timed ingress",
+      "topic": "smoke-transform",
+      "timedIngressAction": {
+        "name": "SmokeTestIngressAction",
+        "type": "org.deltafi.core.action.ingress.SmokeTestIngress",
+        "parameters": {
+          "metadata": {
+            "smoke": "test"
+          }
+        }
+      },
+      "cronSchedule": "*/5 * * * * *"
+    }
+  ],
+  "transformPlans": [
+    {
+      "name": "copy-pass-trans",
+      "type": "TRANSFORM",
+      "description": "copy",
+      "subscribe": [
+        {
+          "topic": "passthrough",
+          "condition": null
+        }
+      ],
+      "transformActions": [
+        {
+          "name": "Passthrough",
+          "type": "org.deltafi.core.action.delay.Delay",
+          "parameters": {
+            "maxDelayMS": 0,
+            "minDelayMS": 0
+          }
+        }
+      ],
+      "publish": {
+        "matchingPolicy": "FIRST_MATCHING",
+        "defaultRule": {
+          "defaultBehavior": "ERROR",
+          "topic": null
+        },
+        "rules": [
+          {
+            "topic": "passthrough-egress",
+            "condition": null
+          }
+        ]
+      }
+    }
+  ]
+}

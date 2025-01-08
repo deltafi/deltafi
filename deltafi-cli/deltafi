@@ -151,6 +151,7 @@ Commands:
   export-config                 export all the loaded flow configurations as yaml
   export-data-sink-plan         export a single data sink plan by name as JSON
   export-rest-data-source-plan  export a single rest data source plan by name as JSON
+  export-system-plans           export all flow plans from the system-plugin
   export-timed-data-source-plan export a single timed data source flow plan by name as JSON
   export-transform-plan         export a single transform plan by name as JSON
   ingress                       ingress one or more files to a flow
@@ -162,8 +163,8 @@ Commands:
   list-plugins                  list all installed plugins
   list-policies                 list delete policies
   load-integration-test         load an integration test into the system
-  load-plans                    load the flow plans and variables for the given plugin
   load-policies                 load delete policies from a JSON file
+  load-system-plans             load flow plans and variables for the system-plugin
   minio-cli                     launch the minio CLI
   performance-test              run performance tests against DeltaFi
   plugin-init                   create a new plugin project
@@ -222,14 +223,17 @@ case "$1" in
   export-config)
     "$DELTAFICLI_WORKDIR/commands/export-config" "$@"
     ;;
+  export-data-sink-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-data-sink-plan" "$@"
+    ;;
   export-rest-data-source-plan)
     "$DELTAFICLI_WORKDIR/commands/export-rest-data-source-plan" "$@"
     ;;
+  export-system-plans)
+    "$DELTAFICLI_WORKDIR/commands/export-system-plans" "$@"
+    ;;
   export-timed-data-source-plan)
     "$DELTAFICLI_WORKDIR/commands/export-timed-data-source-plan" "$@"
-    ;;
-  export-data-sink-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-data-sink-plan" "$@"
     ;;
   export-transform-plan)
     "$DELTAFICLI_WORKDIR/commands/export-transform-plan" "$@"
@@ -261,11 +265,11 @@ case "$1" in
   load-integration-test)
     "$DELTAFICLI_WORKDIR/commands/load-integration-test" "$@"
     ;;
-  load-plans)
-    "$DELTAFICLI_WORKDIR/commands/load-plans" "$@"
-    ;;
   load-policies)
     "$DELTAFICLI_WORKDIR/commands/load-policies" "$@"
+    ;;
+  load-system-plans)
+    "$DELTAFICLI_WORKDIR/commands/load-system-plans" "$@"
     ;;
   minio-cli)
     "$DELTAFICLI_WORKDIR/commands/minio-cli" "$@"

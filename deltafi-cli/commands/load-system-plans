@@ -4,17 +4,17 @@
 
 cli_help_command() {
   echo "
-Command: load-plans
+Command: load-system-plans
 
 Usage:
-  load-plans <plan_or_flows_dir>
+  load-system-plans <FLOWS-DIR | FLOW-PLAN-FILE | EXPORTED-PLANS-FILE>
   
 Options:
   -h, --help  Show help"
   exit 1
 }
 
-TMPFILE="/tmp/.deltafi-load-plans.$$"
+TMPFILE="/tmp/.deltafi-load-system-plans.$$"
 
 cleanup() {
   rm -f $TMPFILE
@@ -45,14 +45,14 @@ ARGS=("$@")
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
 
-FLOWS_DIRECTORY=${ARGS[1]}
-if [ ! -e "${FLOWS_DIRECTORY}" ]; then
-    cli_log "${red}${FLOWS_DIRECTORY}: Flow plan or flows directory not found${normal}"
+FLOW_PLAN_OR_DIR=${ARGS[1]}
+if [ ! -e "${FLOW_PLAN_OR_DIR}" ]; then
+    cli_log "${red}${FLOW_PLAN_OR_DIR}: Flow plan or flows directory not found${normal}"
   exit 1
 fi
 
-if [ -d "${FLOWS_DIRECTORY}" ]; then
-  FLOWS_DIRECTORY=$(cd ${FLOWS_DIRECTORY} && pwd)
+if [ -d "${FLOW_PLAN_OR_DIR}" ]; then
+  FLOW_PLAN_OR_DIR=$(cd ${FLOW_PLAN_OR_DIR} && pwd)
 fi
 
 DELTAFI_DGS=$(_graphql)
@@ -113,10 +113,43 @@ load_variables() {
   fi
 }
 
+import_plans() {
+  local FLOW_PLAN_FILE="$@"
+  local BASENAME="$(basename ${FLOW_PLAN_FILE})"
+  local JSON=$(read_file "${FLOW_PLAN_FILE}")
+  local VARIABLES="{\"plans\": ${JSON} }"
+
+  local QUERY="mutation (\$plans: SystemFlowPlansInput!) { saveSystemFlowPlans(systemFlowPlansInput: \$plans) }"
+
+  local DELTAFI_DGS=$(_graphql)
+  local POST_QUERY="{ \"query\": \"$QUERY\",\"variables\":$VARIABLES}"
+
+  truncate -s 0 ${TMPFILE}
+  local RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "$DELTAFI_DGS")
+
+  if [[ "$RESPONSE_CODE" != "200" ]]; then
+    cli_log "${red}${BASENAME}: Loading system flow plans failed${normal}"
+    echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
+  else
+    local ERRORS=$(cat ${TMPFILE} | jq -r "select(.errors) | .errors[] | .message")
+    if [[ "$ERRORS" != "" ]]; then
+      cli_log "${red}${BASENAME}: Loading system flow plans failed${normal}"
+      echo -e "${red}Error: ${ERRORS}${normal}"
+    else
+      cli_log "Successfully loaded all system flow plans from file ${cyan}${BASENAME}${normal}"
+    fi
+  fi
+}
+
 load_plan() {
   local FLOW_PLAN_FILE="$@"
   local BASENAME="$(basename ${FLOW_PLAN_FILE})"
   local JSON=$(read_file "${FLOW_PLAN_FILE}")
+
+  if [[ "${JSON}" == *"\"dataSinkPlans\""* || "${JSON}" == *"\"restDataSources\""*  || "${JSON}" == *"\"timedDataSources\""* || "${JSON}" == *"\"transformPlans\""* ]]; then
+	  import_plans $FLOW_PLAN_FILE
+	  return
+  fi
 
   local VARIABLES="{\"flowPlan\": ${JSON} }"
 
@@ -158,21 +191,21 @@ load_plan() {
 
 cli_log "Loading flow plan(s) and/or variables to the system-plugin"
 
-if [[ -d ${FLOWS_DIRECTORY} ]]; then
-  if [[ -f ${FLOWS_DIRECTORY}/variables.json ]]; then
-    load_variables "${FLOWS_DIRECTORY}/variables.json"
+if [[ -d ${FLOW_PLAN_OR_DIR} ]]; then
+  if [[ -f ${FLOW_PLAN_OR_DIR}/variables.json ]]; then
+    load_variables "${FLOW_PLAN_OR_DIR}/variables.json"
   fi
 
-  for flowFile in "${FLOWS_DIRECTORY}"/*.json; do
+  for flowFile in "${FLOW_PLAN_OR_DIR}"/*.json; do
     if [[ ! "${flowFile}" =~ "variables.json" ]]; then
       load_plan "$flowFile"
     fi
   done
-elif [[ -f ${FLOWS_DIRECTORY} ]]; then
-  if [[ "${FLOWS_DIRECTORY}" =~ "variables.json" ]]; then
-    load_variables "${FLOWS_DIRECTORY}"
+elif [[ -f ${FLOW_PLAN_OR_DIR} ]]; then
+  if [[ "${FLOW_PLAN_OR_DIR}" =~ "variables.json" ]]; then
+    load_variables "${FLOW_PLAN_OR_DIR}"
   else
-    load_plan "${FLOWS_DIRECTORY}"
+    load_plan "${FLOW_PLAN_OR_DIR}"
   fi
 fi
 

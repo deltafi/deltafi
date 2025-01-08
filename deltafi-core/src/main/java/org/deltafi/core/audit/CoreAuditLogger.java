@@ -118,6 +118,6 @@ public class CoreAuditLogger {
     }
 
     public static <T> String listToString(List<T> list, Function<T, String> toString) {
-        return list.stream().map(toString).collect(Collectors.joining(", "));
+        return list != null ? list.stream().map(toString).collect(Collectors.joining(", ")) : "";
     }
 }

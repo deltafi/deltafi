@@ -286,6 +286,25 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
+    public SystemFlowPlans getAllSystemFlowPlans() {
+        return pluginService.getSystemFlowPlans();
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowPlanCreate
+    public boolean saveSystemFlowPlans(@InputArgument SystemFlowPlansInput systemFlowPlansInput) {
+        SystemFlowPlans flowPlans = OBJECT_MAPPER.convertValue(systemFlowPlansInput, SystemFlowPlans.class);
+        auditLogger.audit("saved system flow plans: dataSink[{}] rest[{}] timed[{}] transform[{}]",
+                CoreAuditLogger.listToString(flowPlans.getDataSinkPlans(), DataSinkPlan::getName),
+                CoreAuditLogger.listToString(flowPlans.getRestDataSources(), DataSourcePlan::getName),
+                CoreAuditLogger.listToString(flowPlans.getTimedDataSources(), DataSourcePlan::getName),
+                CoreAuditLogger.listToString(flowPlans.getTransformPlans(), TransformFlowPlan::getName));
+        pluginService.importSystemFlows(flowPlans);
+        return true;
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
     public DataSink getDataSink(@InputArgument String flowName) {
         return dataSinkService.getFlowOrThrow(flowName);
     }

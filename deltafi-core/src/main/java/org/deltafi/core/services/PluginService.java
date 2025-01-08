@@ -350,10 +350,7 @@ public class PluginService implements Snapshotter {
         return pluginRepo.findPluginsWithDependency(pluginCoordinates);
     }
 
-    @Override
-    public void updateSnapshot(Snapshot snapshot) {
-        snapshot.setInstalledPlugins(getInstalledPluginCoordinates());
-
+    public SystemFlowPlans getSystemFlowPlans() {
         SystemFlowPlans systemFlowPlans = new SystemFlowPlans(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
         PluginEntity pluginEntity = getSystemPlugin();
 
@@ -368,8 +365,13 @@ public class PluginService implements Snapshotter {
                 }
             }
         }
+        return systemFlowPlans;
+    }
 
-        snapshot.setSystemFlowPlans(systemFlowPlans);
+    @Override
+    public void updateSnapshot(Snapshot snapshot) {
+        snapshot.setInstalledPlugins(getInstalledPluginCoordinates());
+        snapshot.setSystemFlowPlans(getSystemFlowPlans());
     }
 
     @Override
@@ -406,6 +408,10 @@ public class PluginService implements Snapshotter {
 
         restoreSystemPlugin(snapshot.getSystemFlowPlans(), hardReset);
         return result;
+    }
+
+    public void importSystemFlows(SystemFlowPlans flowPlans) {
+        restoreSystemPlugin(flowPlans, false);
     }
 
     protected void restoreSystemPlugin(SystemFlowPlans flowPlans, boolean hardReset) {

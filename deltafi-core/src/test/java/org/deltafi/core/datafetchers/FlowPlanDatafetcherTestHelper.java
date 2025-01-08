@@ -95,6 +95,92 @@ public class FlowPlanDatafetcherTestHelper {
                 new GetAllFlowsProjectionRoot<>().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().dataSink().name().root(), SystemFlows.class);
     }
 
+    public static SystemFlowPlans getAllSystemFlowPlans(DgsQueryExecutor dgsQueryExecutor) {
+        GetAllSystemFlowPlansProjectionRoot projection = new GetAllSystemFlowPlansProjectionRoot<>()
+                .dataSinkPlans()
+                .name()
+                .type()
+                .description()
+                .sourcePlugin()
+                .groupId()
+                .artifactId()
+                .version()
+                .parent()
+                .subscribe()
+                .topic()
+                .condition()
+                .parent()
+                .egressAction()
+                .name()
+                .type()
+                .parameters()
+                .parent()
+                .parent()
+
+                .restDataSources()
+                .name()
+                .type()
+                .description()
+                .sourcePlugin()
+                .groupId()
+                .artifactId()
+                .version()
+                .parent()
+                .topic()
+                .parent()
+
+                .timedDataSources()
+                .name()
+                .type()
+                .description()
+                .sourcePlugin()
+                .groupId()
+                .artifactId()
+                .version()
+                .parent()
+                .timedIngressAction()
+                .name()
+                .type()
+                .parameters()
+                .parent()
+                .topic()
+                .cronSchedule()
+                .parent()
+
+                .transformPlans()
+                .name()
+                .type()
+                .description()
+                .sourcePlugin()
+                .groupId()
+                .artifactId()
+                .version()
+                .parent()
+                .publish()
+                .defaultRule()
+                .defaultBehavior()
+                .parent()
+                .topic()
+                .parent()
+                .matchingPolicy()
+                .parent()
+                .parent()
+
+                .subscribe()
+                .topic()
+                .condition()
+                .parent()
+                .transformActions()
+                .name()
+                .type()
+                .parameters()
+                .parent()
+                .parent();
+
+        return executeQuery(dgsQueryExecutor, GetAllSystemFlowPlansGraphQLQuery.newRequest().build(),
+                projection, SystemFlowPlans.class);
+    }
+
     @SuppressWarnings("unchecked")
     public static List<Topic> getAllTopics(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllTopicsGraphQLQuery.newRequest().build(),
@@ -132,6 +218,10 @@ public class FlowPlanDatafetcherTestHelper {
     public static List<ActionFamily> getActionFamilies(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<ActionFamily>> typeRef = new TypeRef<>() {};
         return executeQuery(dgsQueryExecutor, GetActionNamesByFamilyGraphQLQuery.newRequest().build(), new GetActionNamesByFamilyProjectionRoot<>().family().actionNames(), typeRef);
+    }
+
+    public static boolean saveSystemFlowPlans(DgsQueryExecutor dgsQueryExecutor, SystemFlowPlansInput input) {
+        return executeQuery(dgsQueryExecutor, SaveSystemFlowPlansGraphQLQuery.newRequest().systemFlowPlansInput(input).build());
     }
 
     public static TransformFlow saveTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {

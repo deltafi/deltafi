@@ -1554,6 +1554,20 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testExportImportCustomSystemFlowPlans() throws IOException {
+		clearForFlowTests();
+		SystemFlowPlansInput input = OBJECT_MAPPER.readValue(Resource.read("/system-flow-plans.json"), SystemFlowPlansInput.class);
+		assertTrue(FlowPlanDatafetcherTestHelper.saveSystemFlowPlans(dgsQueryExecutor, input));
+
+		SystemFlowPlans systemFlowPlans = FlowPlanDatafetcherTestHelper.getAllSystemFlowPlans(dgsQueryExecutor);
+
+		assertEquals(input.getDataSinkPlans().getFirst().getName(), systemFlowPlans.getDataSinkPlans().getFirst().getName());
+		assertEquals(input.getRestDataSources().getFirst().getName(), systemFlowPlans.getRestDataSources().getFirst().getName());
+		assertEquals(input.getTimedDataSources().getFirst().getName(), systemFlowPlans.getTimedDataSources().getFirst().getName());
+		assertEquals(input.getTransformPlans().getFirst().getName(), systemFlowPlans.getTransformPlans().getFirst().getName());
+	}
+
+	@Test
 	void testRemoveTransformFlowPlan() {
 		clearForFlowTests();
 		TransformFlowPlan transformFlowPlan = new TransformFlowPlan("flowPlan", FlowType.TRANSFORM, "desc");

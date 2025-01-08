@@ -370,6 +370,7 @@ type Query {
   getTopics(names: [String!]!): [Topic!]!
   getTopic(name: String!): Topic!
   getAllFlowPlans: SystemFlowPlans!
+  getAllSystemFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
   dataSourceErrorsExceeded: [DataSourceErrorState]!
 
@@ -414,6 +415,7 @@ type Mutation {
   removeRestDataSourcePlan(name: String!) : Boolean!
   removeTimedDataSourcePlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
+  saveSystemFlowPlans(systemFlowPlansInput: SystemFlowPlansInput!) : Boolean!
 
   setFlowState(flowType: FlowType!, flowName: String!, flowState: FlowState!) : Boolean!
 
