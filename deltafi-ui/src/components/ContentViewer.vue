@@ -112,6 +112,12 @@ const processContent = async () => {
     contentAs[language.value] = "Loading...";
     contentAs[language.value] = await prettyPrint(contentAs.utf8, language.value);
   }
+
+  if (renderFormats.value.find((f) => f.id == language.value)) {
+    selectedRenderFormat.value = renderFormats.value.find((f) => f.id === language.value);
+  } else {
+    selectedRenderFormat.value = renderFormats.value.find((f) => f.id === "utf8");
+  }
 };
 
 const displayedContent = computed(() => {
@@ -202,18 +208,6 @@ const selectedRenderFormat = ref(renderFormats.value.find((f) => f.id === langua
 onMounted(() => {
   loadContent();
 });
-
-watch(
-  () => renderFormats.value,
-  () => {
-    if (renderFormats.value.find((f) => f.id == selectedRenderFormat.value.id)) {
-      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === selectedRenderFormat.value.id);
-    } else {
-      selectedRenderFormat.value = renderFormats.value.find((f) => f.id === "utf8");
-    }
-  }
-);
-
 
 watch(
   () => content.value,
