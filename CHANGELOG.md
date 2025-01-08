@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.3.1] - 2025-01-08
+
+### Changed
+- Updated copyright dates for UI source files.
+
+### Fixed
+- Fixed old flow wording on test mode confirmations and toast messages.
+
+### Upgrade and Migration
+- Updated KinD support to Kubernetes 1.31.4 and KinD version 0.26.0
+
 ## [2.3.0] - 2025-01-03
 
 ### Highlights
@@ -3639,7 +3650,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.1...main
+[2.3.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.0...2.3.1
 [2.3.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.1...2.3.0
 [2.2.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.0...2.2.1
 [2.2.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.1.1...2.2.0
