@@ -21,12 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
+import org.apache.tika.Tika;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.types.LineageMap;
 import org.deltafi.common.types.SaveManyContent;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -53,6 +53,8 @@ public class SevenZUtil {
             throw new ArchiveException("Unable to extract 7z archive");
         }
     }
+
+    private static final Tika TIKA = new Tika();
 
     private static void unarchiveSevnZ(TransformResult result, LineageMap lineage,
                                        String parentDir, String parentName, SevenZFile sevenZFile) throws IOException {
@@ -82,7 +84,7 @@ public class SevenZUtil {
                 currentBatchSize = 0;
             }
 
-            saveManyContentList.add(new SaveManyContent(newContentName, MediaType.APPLICATION_OCTET_STREAM, fileContent));
+            saveManyContentList.add(new SaveManyContent(newContentName, TIKA.detect(entry.getName()), fileContent));
             currentBatchSize += fileSize;
         }
 

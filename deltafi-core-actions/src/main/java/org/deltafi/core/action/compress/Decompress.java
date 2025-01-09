@@ -19,40 +19,26 @@ package org.deltafi.core.action.compress;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.*;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.compress.compressors.*;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.Tika;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.LineageMap;
-import org.deltafi.common.types.SaveManyContent;
+import org.deltafi.actionkit.action.transform.*;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 import static org.deltafi.core.action.compress.BatchSizes.BATCH_BYTES;
 import static org.deltafi.core.action.compress.BatchSizes.BATCH_FILES;
@@ -373,9 +359,10 @@ public class Decompress extends TransformAction<DecompressParameters> {
         }
     }
 
-    private void unarchive(TransformResult result, LineageMap lineage,
-                           String parentDir, String parentName, ActionContent content, ArchiveInputStream<?> archiveInputStream)
-            throws IOException {
+    private static final Tika TIKA = new Tika();
+
+    private void unarchive(TransformResult result, LineageMap lineage, String parentDir, String parentName,
+            ActionContent content, ArchiveInputStream<?> archiveInputStream) throws IOException {
         ArrayList<SaveManyContent> saveManyBatch = new ArrayList<>();
         int currentBatchSize = 0;
 
@@ -386,13 +373,13 @@ public class Decompress extends TransformAction<DecompressParameters> {
             }
 
             String newContentName = lineage.add(entry.getName(), parentDir, parentName);
+            String mediaType = TIKA.detect(entry.getName());
 
             if (content != null) { // in place
                 result.addContent(content.subcontent(archiveInputStream.getBytesRead(), entry.getSize(),
-                        newContentName, MediaType.APPLICATION_OCTET_STREAM));
+                        newContentName, mediaType));
             } else {
-                SaveManyContent file = new SaveManyContent(newContentName, MediaType.APPLICATION_OCTET_STREAM,
-                        archiveInputStream.readAllBytes());
+                SaveManyContent file = new SaveManyContent(newContentName, mediaType, archiveInputStream.readAllBytes());
                 int fileSize = file.content().length;
 
                 if ((saveManyBatch.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
@@ -418,7 +405,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         try (compressorInputStream) {
             String withoutSuffix = stripSuffix(content.getName());
             String newContentName = lineage.add(withoutSuffix, "", content.getName());
-            result.saveContent(compressorInputStream, newContentName, MediaType.APPLICATION_OCTET_STREAM);
+            result.saveContent(compressorInputStream, newContentName, TIKA.detect(withoutSuffix));
         }
     }
 

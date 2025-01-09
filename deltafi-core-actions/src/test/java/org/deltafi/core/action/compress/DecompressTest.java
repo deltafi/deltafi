@@ -39,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class DecompressTest {
 
-    private static final String CONTENT_TYPE = "application/octet-stream";
     private static final String LINEAGE_CONTENT_TYPE = "application/json";
     private static final String LINEAGE_FILENAME = "Lineage.json";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -200,8 +199,8 @@ public class DecompressTest {
         }
 
         transformResultAssert
-                .hasContentMatchingAt(index++, FILE1, MediaType.APPLICATION_OCTET_STREAM, runner.readResourceAsBytes(FILE1))
-                .hasContentMatchingAt(index, FILE2, MediaType.APPLICATION_OCTET_STREAM, runner.readResourceAsBytes(FILE2));
+                .hasContentMatchingAt(index++, FILE1, MediaType.TEXT_PLAIN, runner.readResourceAsBytes(FILE1))
+                .hasContentMatchingAt(index, FILE2, MediaType.TEXT_PLAIN, runner.readResourceAsBytes(FILE2));
 
         transformResultAssert.addedMetadata("compressFormat", archiveType.getValue());
     }
@@ -259,10 +258,10 @@ public class DecompressTest {
 
         TransformResultAssert.assertThat(resultType)
                 .hasContentCount(5)
-                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
-                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir3-has-two-zips.tar", null))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/three.zip", null))
-                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/a.txt.gz", null))
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir3-has-two-zips.tar", null, "application/x-tar"))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/three.zip", null, "application/zip"))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/a.txt.gz", null, "application/gzip"))
                 .hasContentMatchingAt(4, actionContent -> lineageMatches(actionContent, LINEAGE_FILENAME, expectedLineage));
     }
 
@@ -275,13 +274,13 @@ public class DecompressTest {
 
         TransformResultAssert.assertThat(resultType)
                 .hasContentCount(7)
-                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
-                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n"))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n"))
-                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n"))
-                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n"))
-                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n"))
-                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n"));
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n", MediaType.TEXT_PLAIN));
     }
 
     @Test
@@ -294,13 +293,13 @@ public class DecompressTest {
 
         TransformResultAssert.assertThat(resultType)
                 .hasContentCount(8)
-                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
-                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n"))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n"))
-                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n"))
-                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n"))
-                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n"))
-                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n"))
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n", MediaType.TEXT_PLAIN))
                 .hasContentMatchingAt(7, actionContent -> lineageMatches(actionContent, LINEAGE_FILENAME, null));
     }
 
@@ -527,13 +526,13 @@ public class DecompressTest {
 
         TransformResultAssert.assertThat(resultType)
                 .hasContentCount(8)
-                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n"))
-                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt.zip", null))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt.zip", null))
-                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n"))
-                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n"))
-                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n"))
-                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n"))
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n", MediaType.TEXT_PLAIN))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt.zip", null, "application/zip"))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt.zip", null, "application/zip"))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n", MediaType.APPLICATION_OCTET_STREAM))
+                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n", MediaType.TEXT_PLAIN))
                 .hasContentMatchingAt(7, actionContent -> lineageMatches(actionContent, LINEAGE_FILENAME, expectedLineage));
     }
 
@@ -584,10 +583,10 @@ public class DecompressTest {
         return jsonLineage;
     }
 
-    boolean contentMatches(ActionContent actionContent, String expectedName, String contentValue) {
+    boolean contentMatches(ActionContent actionContent, String expectedName, String contentValue, String mediaType) {
         ContentAssert.assertThat(actionContent)
                 .hasName(expectedName)
-                .hasMediaType(CONTENT_TYPE);
+                .hasMediaType(mediaType);
         if (contentValue != null) {
             ContentAssert.assertThat(actionContent)
                     .loadStringIsEqualTo(contentValue);
