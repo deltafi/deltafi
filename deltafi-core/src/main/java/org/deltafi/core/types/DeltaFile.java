@@ -124,6 +124,9 @@ public class DeltaFile {
   @Builder.Default
   private Boolean paused = false;
 
+  @Builder.Default
+  private Boolean waitingForChildren = false;
+
   @Version
   @EqualsAndHashCode.Exclude
   private long version;
@@ -164,6 +167,7 @@ public class DeltaFile {
     this.transforms = new ArrayList<>(other.transforms);
     this.dataSinks = new ArrayList<>(other.dataSinks);
     this.paused = other.paused;
+    this.waitingForChildren = other.waitingForChildren;
   }
 
   @EqualsAndHashCode.Include(replaces = "flows")
@@ -185,7 +189,7 @@ public class DeltaFile {
   }
 
   public void updateFlags() {
-    terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && !hasPendingAnnotations();
+    terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && !hasPendingAnnotations() && !waitingForChildren;
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
     filtered = flows.stream().anyMatch(f -> f.getState() == DeltaFileFlowState.FILTERED);
     // only set paused if all flows are terminal or paused

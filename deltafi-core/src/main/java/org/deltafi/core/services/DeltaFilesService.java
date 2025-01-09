@@ -548,6 +548,7 @@ public class DeltaFilesService {
                     .map(input -> input.deltaFile().getDid())
                     .toList());
             deltaFile.setChildDids(updatedChildDids);
+            deltaFile.setWaitingForChildren(true);
             advanceAndSave(inputs, false);
         }
     }
@@ -1969,6 +1970,10 @@ public class DeltaFilesService {
             deltaFileRepo.saveAll(parentDeltaFiles);
             enqueueActions(actionInputs);
         }
+    }
+
+    public int completeParents() {
+        return deltaFileRepo.completeParents();
     }
 
     private static class Counter {

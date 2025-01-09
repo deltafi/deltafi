@@ -4639,6 +4639,7 @@ class DeltaFiCoreApplicationTests {
 		UUID childOne = UUID.randomUUID();
 		UUID childTwo = UUID.randomUUID();
 		DeltaFile postUtf8Transform = postTransformUtf8DeltaFile(did);
+		assertFalse(postUtf8Transform.getWaitingForChildren());
 		deltaFileRepo.save(postUtf8Transform);
 
 		deltaFilesService.handleActionEvent(actionEvent("split", did, childOne, childTwo));
@@ -4647,6 +4648,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 		assertEquals(2, deltaFile.getChildDids().size());
 		assertEquals(ActionState.SPLIT, deltaFile.lastFlow().lastAction().getState());
+		assertTrue(deltaFile.getWaitingForChildren());
 
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
@@ -5237,5 +5239,63 @@ class DeltaFiCoreApplicationTests {
 		link.setUrl("google.com");
 		link.setLinkType(LinkType.EXTERNAL);
 		return link;
+	}
+
+	@Test
+	void testCompleteParents() {
+		DeltaFile parent = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.COMPLETE, NOW, NOW);
+		parent.setWaitingForChildren(true);
+		parent.setTerminal(false);
+
+		DeltaFile terminalChild = buildDeltaFile(UUID.randomUUID(), "flow2", DeltaFileStage.COMPLETE, NOW, NOW);
+		terminalChild.setTerminal(true);
+
+		parent.setChildDids(List.of(terminalChild.getDid()));
+		deltaFileRepo.insertBatch(List.of(parent, terminalChild));
+
+		assertThat(deltaFilesService.completeParents()).isEqualTo(1);
+
+		DeltaFile updated = deltaFileRepo.findById(parent.getDid()).orElseThrow();
+		assertThat(updated.getWaitingForChildren()).isFalse();
+		assertThat(updated.isTerminal()).isTrue();
+	}
+
+	@Test
+	void testCompleteParentsWithPendingAnnotations() {
+		DeltaFile parent = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.COMPLETE, NOW, NOW);
+		parent.getFlow("flow1").setPendingAnnotations(Set.of("abc"));
+		parent.setWaitingForChildren(true);
+		parent.setTerminal(false);
+
+		DeltaFile terminalChild = buildDeltaFile(UUID.randomUUID(), "flow2", DeltaFileStage.COMPLETE, NOW, NOW);
+		terminalChild.setTerminal(true);
+
+		parent.setChildDids(List.of(terminalChild.getDid()));
+		deltaFileRepo.insertBatch(List.of(parent, terminalChild));
+
+		assertThat(deltaFilesService.completeParents()).isEqualTo(1);
+
+		DeltaFile updated = deltaFileRepo.findById(parent.getDid()).orElseThrow();
+		assertThat(updated.getWaitingForChildren()).isFalse();
+		assertThat(updated.isTerminal()).isFalse();
+	}
+
+	@Test
+	void testCompleteParentsNotReadyToComplete() {
+		DeltaFile parent = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.COMPLETE, NOW, NOW);
+		parent.setWaitingForChildren(true);
+		parent.setTerminal(false);
+
+		DeltaFile nonTerminalChild = buildDeltaFile(UUID.randomUUID(), "flow2", DeltaFileStage.IN_FLIGHT, NOW, NOW);
+		nonTerminalChild.setTerminal(false);
+
+		parent.setChildDids(List.of(nonTerminalChild.getDid()));
+		deltaFileRepo.insertBatch(List.of(parent, nonTerminalChild));
+
+		assertThat(deltaFilesService.completeParents()).isEqualTo(0);
+
+		DeltaFile unchanged = deltaFileRepo.findById(parent.getDid()).orElseThrow();
+		assertThat(unchanged.getWaitingForChildren()).isTrue();
+		assertThat(unchanged.isTerminal()).isFalse();
 	}
 }

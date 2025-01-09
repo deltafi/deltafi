@@ -162,4 +162,12 @@ public interface DeltaFileRepoCustom {
      * @return the list of dids who can be resumed
      */
     List<UUID> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit);
+
+    /**
+     * Finds all DeltaFiles marked as waitingForChildren that have no non-terminal children,
+     * updates their waitingForChildren flag to false and terminal to true and returns count of updated records.
+     * This allows parent DeltaFiles to complete once all their split/child DeltaFiles have completed.
+     * @return number of parent DeltaFiles that were updated to no longer wait for children
+     */
+    int completeParents();
 }

@@ -797,8 +797,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                      requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
-                                     content_deletable, content_object_ids, topics, transforms, data_sinks, paused, version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                     content_deletable, content_object_ids, topics, transforms, data_sinks, paused,
+                                     waiting_for_children, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, input,
@@ -926,7 +927,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setArray(24, conn.createArrayOf("text", deltaFile.getTransforms().toArray(new String[0])));
         ps.setArray(25, conn.createArrayOf("text", deltaFile.getDataSinks().toArray(new String[0])));
         ps.setBoolean(26, deltaFile.getPaused());
-        ps.setLong(27, deltaFile.getVersion());
+        ps.setBoolean(27, deltaFile.getWaitingForChildren());
+        ps.setLong(28, deltaFile.getVersion());
     }
 
     private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {
@@ -1002,5 +1004,52 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("dids", dids);
         query.getSingleResult();
+    }
+
+    @Override
+    @Transactional
+    public int completeParents() {
+        int batchSize = 1000;
+        int totalUpdated = 0;
+        boolean hasMore = true;
+
+        while (hasMore) {
+            String sql = """
+            WITH candidates AS (
+                SELECT df.did,
+                       NOT EXISTS (
+                           SELECT 1
+                           FROM delta_file_flows dff
+                           WHERE dff.delta_file_id = df.did
+                           AND array_length(dff.pending_annotations, 1) > 0
+                       ) as can_be_terminal
+                FROM delta_files df
+                WHERE df.waiting_for_children = true
+                AND df.stage = 'COMPLETE'
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM delta_files child
+                    WHERE child.did = ANY(df.child_dids)
+                    AND child.terminal = false
+                )
+                LIMIT :batchSize
+            )
+            UPDATE delta_files df
+            SET waiting_for_children = false,
+                terminal = c.can_be_terminal,
+                modified = now()
+            FROM candidates c
+            WHERE df.did = c.did
+            """;
+
+            Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("batchSize", batchSize);
+
+            int updated = query.executeUpdate();
+            totalUpdated += updated;
+            hasMore = updated == batchSize;
+        }
+
+        return totalUpdated;
     }
 }
