@@ -103,33 +103,65 @@ public class TransformResultsAssert extends ResultAssert<TransformResultsAssert,
      */
     public TransformResultsAssert hasChildResultAt(int index, String contentName, String mediaType, String content,
             Map<String, String> metadata, String description) {
-        if (actual.getChildResults() == null || index >= actual.getChildResults().size()) {
-            String contentSize = actual.getChildResults() == null ? "content list is null" :
-                    "content list has size " + actual.getChildResults().size();
+        return hasChildResultAt(index, 0, contentName, mediaType, content, metadata, null, description);
+    }
+
+    /**
+     * Runs the provided match predicate against the child TransformResult at the specified index
+     * for the specified content position.
+     *
+     * @param childIndex   position of the TransformResult in the child list
+     * @param contentIndex position of the Content in the content list
+     * @param contentName  the expected content name
+     * @param mediaType    the expected media type
+     * @param content      the expected content
+     * @param metadata     the expected metadata
+     * @param annotations  the expected annotations
+     * @param description  a description to include with the assertion
+     * @return this
+     */
+    public TransformResultsAssert hasChildResultAt(int childIndex, int contentIndex, String contentName, String mediaType, String content,
+                                                   Map<String, String> metadata, Map<String, String> annotations, String description) {
+        if (actual.getChildResults() == null || childIndex >= actual.getChildResults().size()) {
+            String numChildren = actual.getChildResults() == null ? "child list is null" :
+                    "child list has size " + actual.getChildResults().size();
             describedAs(description);
-            failWithMessage("There is no content at index %s (%s)", index, contentSize);
+            failWithMessage("There is no child at index %s (%s)", childIndex, numChildren);
+            return myself;
+        }
+
+        TransformResult actualChild = actual.getChildResults().get(childIndex);
+        if (actualChild.getContent() == null || contentIndex >= actualChild.getContent().size()) {
+            String contentSize = actualChild.getContent() == null ? "content list is null" :
+                    "content list has size " + actualChild.getContent().size();
+            describedAs(description);
+            failWithMessage("There is no content at index %s (%s)", contentIndex, contentSize);
             return myself;
         }
 
         SoftAssertions softAssertions = new SoftAssertions();
-        buildTransformResultAsserter(contentName, mediaType, content, metadata)
-                .accept(actual.getChildResults().get(index), softAssertions);
+        buildTransformResultAsserter(contentIndex, contentName, mediaType, content, metadata, annotations)
+                .accept(actualChild, softAssertions);
         try {
             softAssertions.assertAll();
         } catch (AssertionError e) {
             describedAs(description);
-            failWithMessage("\nChild at index %d failed %s", index, e.getMessage());
+            failWithMessage("\nChild/content at index %d/%d failed %s", childIndex, contentIndex, e.getMessage());
         }
         return myself;
     }
 
-    private BiConsumer<TransformResult, SoftAssertions> buildTransformResultAsserter(String contentName, String mediaType,
-            String content, Map<String, String> metadata) {
+    private BiConsumer<TransformResult, SoftAssertions> buildTransformResultAsserter(int index, String contentName, String mediaType,
+                                                                                     String content, Map<String, String> metadata, Map<String, String> annotations) {
         return (transformResult, softAssertions) -> {
-            softAssertions.assertThat(transformResult.getContent().getFirst().getName()).describedAs("Content name matches").isEqualTo(contentName);
-            softAssertions.assertThat(transformResult.getContent().getFirst().getMediaType()).describedAs("Media type matches").isEqualTo(mediaType);
-            softAssertions.assertThat(transformResult.getContent().getFirst().loadString()).describedAs("Content matches").isEqualTo(content);
+            softAssertions.assertThat(transformResult.getContent().get(index).getName()).describedAs("Content name matches").isEqualTo(contentName);
+            softAssertions.assertThat(transformResult.getContent().get(index).getMediaType()).describedAs("Media type matches").isEqualTo(mediaType);
+            softAssertions.assertThat(transformResult.getContent().get(index).loadString()).describedAs("Content matches").isEqualTo(content);
             softAssertions.assertThat(transformResult.getMetadata()).describedAs("Metadata matches").isEqualTo(metadata);
+            if (annotations != null) {
+                softAssertions.assertThat(transformResult.getAnnotations()).describedAs("Annotations match").isEqualTo(annotations);
+            }
         };
     }
+
 }
