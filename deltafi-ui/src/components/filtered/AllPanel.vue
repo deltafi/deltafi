@@ -45,7 +45,7 @@
         <Column field="dataSource" header="Data Source" :sortable="true" class="flow-column" />
         <Column field="filtered_cause" header="Last Filtered Cause">
           <template #body="{ data }">
-            {{ latestFiltered(data.flows) }}
+            {{ lastFilteredCauseFlow(data.flows) }}
           </template>
         </Column>
         <Column field="created" header="Created" :sortable="true" class="timestamp-column">
@@ -66,7 +66,7 @@
               <Column field="state" header="State" />
               <Column field="filtered_cause" header="Filtered Cause">
                 <template #body="{ data }">
-                  {{ filteredActions(data.actions) }}
+                  {{ lastFilteredCauseActions(data.actions) }}
                 </template>
               </Column>
               <Column field="created" header="Created">
@@ -81,7 +81,7 @@
               </Column>
               <template #expansion="actions">
                 <div class="filtered-Subtable">
-                  <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions.data.actions" :row-class="actionRowClass" @row-click="actionRowClick">
+                  <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions.data.actions" :row-class="actionRowClass">
                     <Column field="name" header="Action" :sortable="true" />
                     <Column field="state" header="State" class="state-column" :sortable="true" />
                     <Column field="created" header="Created" class="timestamp-column" :sortable="true">
@@ -116,6 +116,7 @@ import Panel from "primevue/panel";
 import Menu from "primevue/menu";
 import ContextMenu from "primevue/contextmenu";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
+import _ from 'lodash';
 
 import Paginator from "primevue/paginator";
 import DidLink from "@/components/DidLink.vue";
@@ -196,20 +197,8 @@ const flowRowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";
   if (action.state === "FILTERED") return "table-warning action-filtered";
   if (action.state === "RETRIED") return "table-warning action-error";
-  if (filteredActions(action.actions) !== null) return "table-warning action-filtered";
 };
 
-const filterViewer = ref({
-  visible: false,
-  action: {},
-});
-const actionRowClick = (event) => {
-  let action = event.data;
-  if (["FILTERED", "RETRIED"].includes(action.state)) {
-    filterViewer.value.action = action;
-    filterViewer.value.visible = true;
-  }
-};
 
 const fetchFiltered = async () => {
   await getPersistedParams();
@@ -243,24 +232,22 @@ const filterSelectedDids = computed(() => {
   return dids;
 });
 
-const filterActions = (actions) => {
-  return actions.filter((action) => {
-    return action.state === "FILTERED";
-  });
-};
+const lastFilteredCauseActions = (actions) => {
+  return _.chain(actions)
+    .filter((action) => action.state === 'FILTERED')
+    .sortBy(['modified'])
+    .reverse()
+    .value()[0]
+    ?.filteredCause;
+}
 
-const filteredActions = (actions) => {
-  let x = filterActions(actions);
-  return x.length > 0 ? x[0].filteredCause : null;
-};
-
-const latestFiltered = (flows) => {
-  let filteredActions = [];
-  flows.map((a) => {
-    filteredActions.push(filterActions(a.actions));
-  });
-  return filteredActions.sort((a, b) => (a.modified < b.modified ? 1 : -1))[0][0].filteredCause;
-};
+const lastFilteredCauseFlow = (flows) => {
+  const actions = _.chain(flows)
+    .map((flow) => flow.actions)
+    .flatten()
+    .value()
+  return lastFilteredCauseActions(actions)
+}
 
 const onPage = async (event) => {
   offset.value = event.first;

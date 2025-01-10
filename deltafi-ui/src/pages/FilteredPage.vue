@@ -248,10 +248,6 @@ onMounted(async () => {
     }
   }
 
-  tr.action-filtered {
-    cursor: pointer !important;
-  }
-
   .p-paginator {
     background: inherit !important;
     color: inherit !important;
