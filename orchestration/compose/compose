@@ -451,6 +451,8 @@ deltafi:
 # nginx domain
 ingress:
   domain: local.deltafi.org
+  tls:
+    enabled: false
 dependencies:
   grafana: deltafi/grafana:11.4.0-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
@@ -552,14 +554,6 @@ _write_startup_file() {
   _append_startup_from_values "REDIS" ".dependencies.valkey"
   _append_startup_from_values "DOCKER_WEB_GUI" ".dependencies.docker_web_gui"
   _append_startup_from_values "ENTITY_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
-
-  extra_conf_dir="http"
-  if [[ -f "${DATA_DIR}/certs/tls.crt" && -f "${DATA_DIR}/certs/tls.key" ]]; then
-      extra_conf_dir="https"
-  fi
-
-  _append "NGINX_CONF_DIR" "${extra_conf_dir}" "${NGINX_SETTINGS}"
-
   _append_compose_profiles
 }
 
@@ -596,6 +590,7 @@ _write_env_files() {
   hostname_value=$(hostname)
   auth_mode=$(_from_values ".deltafi.auth.mode")
   domain=$(_from_values ".ingress.domain")
+  tls_enabled=$(_from_values ".ingress.tls.enabled")
 
   _write_common_base
   _append_common "AUTH_MODE" "${auth_mode}"
@@ -618,13 +613,25 @@ _write_env_files() {
       exit 1
   fi
 
+  extra_conf_dir="http"
+  if [[ $tls_enabled == 'true' ]]; then
+    if [[ ! -f "${DATA_DIR}/certs/tls.crt" || ! -f "${DATA_DIR}/certs/tls.key" ]]; then
+        echo "Cannot enable SSL listener without the tls.key and tls.crt files in the '${DATA_DIR}/certs' directory."
+        exit 1
+    fi
+    extra_conf_dir="https"
+  fi
+
   include_cert_auth=''
   proxy_cache_key='no-auth'
   if [[ $auth_mode == 'basic' ]]; then
     proxy_cache_key='$$remote_user$$http_authorization'
   elif [[ $auth_mode == 'cert' ]]; then
-    if [[ ! -f "${DATA_DIR}/certs/ca.crt" || ! -f "${DATA_DIR}/certs/tls.crt" || ! -f "${DATA_DIR}/certs/tls.key" ]]; then
-        echo "Cannot run in cert mode without the ca.crt, tls.crt, and tls.key files in the '${DATA_DIR}/certs' directory."
+    if [[ $tls_enabled != 'true' ]]; then
+        echo "Cannot run with certificate authentication without .ingress.tls.enabled set to true"
+        exit 1
+    elif [[ ! -f "${DATA_DIR}/certs/ca.crt" ]]; then
+        echo "Cannot run with certificate authentication without the ca.crt file in the '${DATA_DIR}/certs' directory."
         exit 1
     fi
     include_cert_auth='include /opt/nginx/https/ssl_verify.conf;'
@@ -634,6 +641,7 @@ _write_env_files() {
   _append "DOMAIN" "${domain}" "${NGINX_SETTINGS}"
   _append "PROXY_CACHE_KEY" "${proxy_cache_key}" "${NGINX_SETTINGS}"
   _append "INCLUDE_CERT_AUTH" "${include_cert_auth}" "${NGINX_SETTINGS}"
+  _append "NGINX_CONF_DIR" "${extra_conf_dir}" "${NGINX_SETTINGS}"
 }
 
 _entity_resolver_config() {
