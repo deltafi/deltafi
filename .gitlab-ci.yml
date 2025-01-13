@@ -6,6 +6,7 @@ stages:
   - ci
   - trigger
   - scan
+  - release
 
 default:
   timeout: 45m
@@ -27,13 +28,15 @@ gradle:build:
   stage: build
   script:
     - git describe --tags
-    - ${GRADLE} --rerun-tasks license assemble test dockerPrepare
+    - ${GRADLE} --rerun-tasks license assemble test dockerPrepare distro
+    - ls -la build/distributions/*.tgz
   artifacts:
     when: always
     reports:
       junit: "**/build/test-results/test/**/TEST-*.xml"
     paths:
       - "**/build"
+      - "build"
     exclude:
       - "**/build/tmp"
       - "**/build/classes"
@@ -67,7 +70,7 @@ gradle:build:
 .docker:
   stage: docker
   image:
-    name: gcr.io/kaniko-project/executor:v1.22.0-debug
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
     entrypoint: [""]
   tags:
     - light
@@ -256,17 +259,73 @@ trivy_scan:
   variables:
     CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning/trivy:5"
 
-release:
+publish:distros:
   stage: publish
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  image: curlimages/curl:latest
+  needs:
+    - job: "gradle:build"
+  tags:
+    - light
   rules:
     - if: $CI_COMMIT_TAG
   script:
+    - |
+      # Read version from VERSION file
+      VERSION=$(cat VERSION)
+      if [ -z "$VERSION" ]; then
+        echo "Error: Could not read version from VERSION file"
+        exit 1
+      fi
+      echo "Using version: $VERSION"
+      DIST_LIST="distribution.md"
+      echo "### Distribution Files" > $DIST_LIST
+      echo "" >> $DIST_LIST
+
+      # Process each .tgz file
+      for file in build/distributions/*.tgz; do
+        if [ -f "$file" ]; then
+          filename=$(basename "$file")
+          echo "Publishing $filename to package registry..."
+          curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+               --upload-file "$file" \
+               "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${VERSION}/${filename}"
+          echo "* [$filename](${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${VERSION}/${filename})" >> $DIST_LIST
+        fi
+      done
+  artifacts:
+    paths:
+      - distribution.md
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  needs:
+    - job: "publish:distros"
+  script:
     - echo "Release Job"
+    - cp ./CHANGELOG/latest.md release_notes.md
+    - echo >> release_notes.md
+    - cat distribution.md >> release_notes.md
   release:
     name: '$CI_COMMIT_TAG'
     tag_name: '$CI_COMMIT_TAG'
-    description: "./CHANGELOG/latest.md"
+    description: "release_notes.md"
+    assets:
+      links:
+        - name: "deltafi-${CI_COMMIT_TAG}-darwin-arm64.tgz"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-darwin-arm64.tgz"
+          link_type: "package"
+        - name: "deltafi-${CI_COMMIT_TAG}-darwin-amd64.tgz"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-darwin-amd64.tgz"
+          link_type: "package"
+        - name: "deltafi-${CI_COMMIT_TAG}-linux-amd64.tgz"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-linux-amd64.tgz"
+          link_type: "package"
+  artifacts:
+    paths:
+      - release_notes.md
 
 include:
   - local: '*/.gitlab-ci.yml'

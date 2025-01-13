@@ -6,6 +6,109 @@ plugins {
     id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
+// Distribution configuration
+
+ext {
+    // Base distribution directory
+    distroOutputDir = layout.buildDirectory.dir('distributions')
+
+    // Common files/directories included in all distributions
+    commonDistroContents = [
+        [source: 'VERSION', destination: '.'],
+        [source: 'CHANGELOG.md', destination: '.'],
+        [source: 'README.md', destination: '.'],
+        [source: 'LICENSE', destination: '.'],
+        [source: 'deltafi-cli/', destination: 'deltafi-cli'],
+        [source: 'orchestration/', destination: 'orchestration'],
+        [source: 'deltafi-docs/public/docs/', destination: 'docs']
+    ]
+
+    // Paths to exclude from all distributions
+    excludePaths = [
+        '**/data/**',
+        '**/logs/**',
+        '**/compose/settings/env/common.env',
+        '**/compose/settings/env/startup.env',
+    ]
+
+    // Architecture-specific files/directories
+    archDistroContents = [
+        'linux-amd64': [
+            'linux/bin/'
+        ],
+        'darwin-amd64': [
+            'darwin/bin/'
+        ],
+        'darwin-arm64': [
+            'darwin/bin/'
+        ]
+    ]
+}
+
+// Create base distribution task
+task distro {
+    group = 'distribution'
+    description = 'Creates distribution archives for all supported architectures'
+}
+
+// Create tasks for each architecture
+archDistroContents.each { arch, archFiles ->
+    def archTask = tasks.create(name: "distro-${arch}", type: Tar) {
+        group = 'distribution'
+        description = "Creates distribution archive for ${arch}"
+
+        // Configure archive properties
+        archiveBaseName = "deltafi"
+        archiveVersion = project.version
+        archiveClassifier = arch
+        compression = Compression.GZIP
+
+        // Set output directory
+        destinationDirectory = distroOutputDir
+
+        // Include common files/directories
+        commonDistroContents.each { item ->
+            from(item.source) {
+                into project.version + "/" + item.destination
+                // Apply exclusions using Gradle's pattern syntax
+                exclude excludePaths
+                exclude {
+                    details -> excludePaths.any { pattern ->
+                        details.relativePath.pathString.startsWith(pattern.replace('**', ''))
+                    }
+                }
+            }
+        }
+
+        // Include architecture-specific files/directories
+        archFiles.each { item ->
+            from(item) {
+                // Strip the architecture prefix (e.g., 'linux/' or 'darwin/')
+                into project.version + '/' + item.substring(item.indexOf('/') + 1)
+            }
+        }
+
+        // Ensure reproducible builds
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+
+        // Ensure output directory exists
+        doFirst {
+            destinationDirectory.get().asFile.mkdirs()
+        }
+    }
+
+    // Make the main distro task depend on this architecture-specific task
+    distro.dependsOn archTask
+}
+
+// Task to clean the distribution directory
+task cleanDistro(type: Delete) {
+    group = 'distribution'
+    description = 'Cleans the distribution directory'
+    delete distroOutputDir
+}
+
 allprojects { project ->
     group 'org.deltafi'
 
