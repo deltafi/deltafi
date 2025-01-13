@@ -140,3 +140,13 @@ metadata:
 data:
   data-source-by-annotation.json: |-
 {{ .Files.Get "files/grafana/dashboards/data-source-by-annotation.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pivot-by-annotation
+  labels:
+    grafana_dashboard: "1"
+data:
+  data-source-by-annotation.json: |-
+{{ .Files.Get "files/grafana/dashboards/pivot-by-annotation.json" | indent 4 }}
