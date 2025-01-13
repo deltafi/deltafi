@@ -5,6 +5,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.4.0] - 2025-01-13
+
+### Added
+- [action kit test - Java] New IngressResultAssert for verifying Timed Ingress actions
+- Add Pivot by Annotation dashboard
+- Added GraphQL endpoints and CLI command support to import/export of flow plans from the system-plugin (those created by the flow plan builders)
+  - Export: export-system-plans / getAllSystemFlowPlans
+  - Import: load-system-plans / saveSystemFlowPlans
+- Added the ability to pin DeltaFiles so they won't be deleted by delete policies
+
+### Changed
+-  In compose, use the `.ingress.tls.enabled` setting to determine if NGINX should be setup with the SSL listener instead of automatically setting that up when the key and cert are present.
+- [action kit test - Java] TransformResultsAssert now allows content index and annotations to be specified
+- Detect extracted content types by file name in Decompress action
+- CLI command `load-plans` renamed to `load-system-plans`
+
+### Fixed
+- Fixed bug in default format selection in Content Viewer
+- Don't delete a parent deltaFile's content if its descendants may still be using it 
+- Fixed bug on Filtered page when filtered action is not the first action.
+
 ## [2.3.1] - 2025-01-08
 
 ### Changed
@@ -3650,7 +3671,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.4.0...main
+[2.4.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.1...2.4.0
 [2.3.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.0...2.3.1
 [2.3.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.1...2.3.0
 [2.2.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.0...2.2.1
