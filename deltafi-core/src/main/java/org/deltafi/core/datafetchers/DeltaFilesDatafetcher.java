@@ -36,8 +36,8 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 
@@ -208,9 +208,23 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeletePolicyDelete
+  public List<Result> pin(@InputArgument List<UUID> dids) {
+    auditLogger.audit("pinning deltafiles with dids {}", CoreAuditLogger.listToString(dids));
+    return deltaFilesService.pin(dids);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeletePolicyDelete
+  public List<Result> unpin(@InputArgument List<UUID> dids) {
+    auditLogger.audit("unpinning deltafiles with dids {}", CoreAuditLogger.listToString(dids));
+    return deltaFilesService.unpin(dids);
+  }
+
+  @DgsMutation
   @NeedsPermission.DeltaFileMetadataWrite
   public boolean addAnnotations(UUID did, List<KeyValue> annotations, boolean allowOverwrites) {
-    auditLogger.audit("annotated deltafi with did {} with {}", did, CoreAuditLogger.listToString(annotations));
+    auditLogger.audit("annotated deltafile with did {} with {}", did, CoreAuditLogger.listToString(annotations));
     deltaFilesService.addAnnotations(did, KeyValueConverter.convertKeyValues(annotations), allowOverwrites);
     return true;
   }

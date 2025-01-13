@@ -38,6 +38,7 @@
       </div>
     </div>
     <div v-else-if="loaded">
+      <Message v-if="deltaFile.pinned" severity="warn" :closable="false">This DeltaFile is pinned and won't be deleted by delete policies</Message>
       <Message v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
       <Message v-if="testMode" severity="info" :closable="false">This DeltaFile was processed in test mode. Reason: {{ deltaFile.testModeReason }} </Message>
       <div class="row mb-3">
@@ -125,7 +126,7 @@ const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][
 const route = useRoute();
 const router = useRouter();
 const uiConfig = inject("uiConfig");
-const { data: deltaFile, getDeltaFile, getRawDeltaFile, cancelDeltaFile, loaded, loading } = useDeltaFiles();
+const { data: deltaFile, getDeltaFile, getRawDeltaFile, cancelDeltaFile, pin, unpin, loaded, loading } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
 const notify = useNotifications();
 const { pendingAnnotations } = useDeltaFilesQueryBuilder();
@@ -164,6 +165,22 @@ const staticMenuItems = reactive([
     visible: () => canBeCancelled.value && hasPermission("DeltaFileCancel"),
     command: () => {
       onCancelClick();
+    },
+  },
+  {
+    label: "Pin",
+    icon: "fas fa-thumb-tack fa-fw",
+    visible: () => deltaFile.stage == "COMPLETE" && !deltaFile.pinned,
+    command: () => {
+      onPin();
+    },
+  },
+  {
+    label: "Unpin",
+    icon: "fas fa-thumb-tack fa-fw",
+    visible: () => deltaFile.pinned,
+    command: () => {
+      onUnpin();
     },
   },
   {
@@ -398,6 +415,24 @@ const onCancel = async () => {
     loadDeltaFileData();
   } else {
     notify.error("Failed to Cancel DeltaFile", cancelResponse[0].error);
+  }
+};
+
+const onPin = async () => {
+  const response = await pin([did.value]);
+  if (response[0].success) {
+    loadDeltaFileData();
+  } else {
+    notify.error("Failed to pin DeltaFile", response[0].info);
+  }
+};
+
+const onUnpin = async () => {
+  const response = await unpin([did.value]);
+  if (response[0].success) {
+    loadDeltaFileData();
+  } else {
+    notify.error("Failed to unpin DeltaFile", response[0].info);
   }
 };
 

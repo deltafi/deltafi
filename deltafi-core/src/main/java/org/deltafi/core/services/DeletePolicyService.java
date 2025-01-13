@@ -85,7 +85,7 @@ public class DeletePolicyService implements Snapshotter {
                 .name(TTL_SYSTEM_POLICY)
                 .enabled(true)
                 .afterCreate("P" + deltaFiPropertiesService.getDeltaFiProperties().getAgeOffDays() + "D")
-                .build();
+               .build();
     }
 
     /**

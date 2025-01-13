@@ -26,14 +26,11 @@ import com.google.common.collect.Lists;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import org.deltafi.common.content.Segment;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.content.ContentUtil;
+import org.deltafi.common.content.*;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
@@ -44,26 +41,20 @@ import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
+import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.io.*;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -71,6 +62,7 @@ import java.util.stream.Stream;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.types.ActionState.COLD_QUEUED;
 import static org.deltafi.common.types.ActionState.QUEUED;
+import static org.deltafi.core.services.DeletePolicyService.TTL_SYSTEM_POLICY;
 
 @Service
 @RequiredArgsConstructor
@@ -1173,6 +1165,35 @@ public class DeltaFilesService {
         return results;
     }
 
+    public List<Result> pin(List<UUID> dids) {
+        return dids.stream().map(this::pin).toList();
+    }
+
+    private Result pin(UUID did) {
+        return setPinned(did, true);
+    }
+
+    public List<Result> unpin(List<UUID> dids) {
+        return dids.stream().map(this::unpin).toList();
+    }
+
+    private Result unpin(UUID did) {
+        return setPinned(did, false);
+    }
+
+    private Result setPinned(UUID did, boolean pinned) {
+        DeltaFile deltaFile = getDeltaFile(did);
+        if (deltaFile == null) {
+            return Result.builder().success(false).info(List.of(String.format("DeltaFile with did %s doesn't exist", did))).build();
+        }
+        if (deltaFile.getStage() != DeltaFileStage.COMPLETE) {
+            return Result.builder().success(false).info(List.of(String.format("DeltaFile with did %s hasn't completed", did))).build();
+        }
+        deltaFile.setPinned(pinned);
+        deltaFileRepo.save(deltaFile);
+        return Result.successResult();
+    }
+
     public List<PerActionUniqueKeyValues> errorMetadataUnion(List<UUID> dids) {
         // TODO: limit fields returned
         List<DeltaFileFlow> deltaFileFlows = deltaFileFlowRepo.findAllByDeltaFileIds(dids);
@@ -1257,7 +1278,8 @@ public class DeltaFilesService {
      * @param  deleteMetadata  whether to delete the metadata of the DeltaFiles in addition to the content
      * @return                 true if there are more DeltaFiles to delete, false otherwise
      */
-    public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
+    public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow,
+            String policy, boolean deleteMetadata) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
 
         int alreadyDeleted = 0;
@@ -1274,7 +1296,8 @@ public class DeltaFilesService {
             }
         }
         logBatch(batchSize, policy);
-        List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
+        List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes,
+                flow, deleteMetadata, policy.equals(TTL_SYSTEM_POLICY), batchSize);
         delete(deltaFiles, policy, deleteMetadata, alreadyDeleted);
 
         return deltaFiles.size() == batchSize;
@@ -1291,7 +1314,7 @@ public class DeltaFilesService {
         log.info("Searching for batch of up to {} deltaFiles to delete for policy {}", batchSize, policy);
     }
 
-    public List<DeltaFileDeleteDTO> delete(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, int alreadyDeleted) {
+    private List<DeltaFileDeleteDTO> delete(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, int alreadyDeleted) {
         if (deltaFiles.isEmpty()) {
             log.info("No deltaFiles found to delete for policy {}", policy);
             if (alreadyDeleted > 0) {
@@ -1309,6 +1332,30 @@ public class DeltaFilesService {
         log.info("Finished deleting {} deltaFiles for policy {}", deltaFiles.size(), policy);
 
         return deltaFiles;
+    }
+
+    private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata) {
+        List<DeltaFileDeleteDTO> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
+        contentStorageService.deleteAllByObjectName(deltaFilesWithContent.stream()
+                .flatMap(d -> d.getContentObjectIds().stream()
+                        .map(contentId -> Segment.objectName(d.getDid(), contentId))
+                )
+                .toList());
+
+        if (deleteMetadata) {
+            deleteMetadata(deltaFiles);
+        } else {
+            deltaFileRepo.setContentDeletedByDidIn(
+                    deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).distinct().toList(),
+                    OffsetDateTime.now(clock),
+                    policy);
+        }
+    }
+
+    private void deleteMetadata(List<DeltaFileDeleteDTO> deltaFiles) {
+        for (List<DeltaFileDeleteDTO> batch : Lists.partition(deltaFiles, 1000)) {
+            deltaFileRepo.batchedBulkDeleteByDidIn(batch.stream().map(DeltaFileDeleteDTO::getDid).distinct().toList());
+        }
     }
 
     public void requeue() {
@@ -1694,30 +1741,6 @@ public class DeltaFilesService {
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);
-        }
-    }
-
-    private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata) {
-        List<DeltaFileDeleteDTO> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
-        contentStorageService.deleteAllByObjectName(deltaFilesWithContent.stream()
-                .flatMap(d -> d.getContentObjectIds().stream()
-                        .map(contentId -> Segment.objectName(d.getDid(), contentId))
-                )
-                .toList());
-
-        if (deleteMetadata) {
-            deleteMetadata(deltaFiles);
-        } else {
-            deltaFileRepo.setContentDeletedByDidIn(
-                    deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).distinct().toList(),
-                    OffsetDateTime.now(clock),
-                    policy);
-        }
-    }
-
-    private void deleteMetadata(List<DeltaFileDeleteDTO> deltaFiles) {
-        for (List<DeltaFileDeleteDTO> batch : Lists.partition(deltaFiles, 1000)) {
-            deltaFileRepo.batchedBulkDeleteByDidIn(batch.stream().map(DeltaFileDeleteDTO::getDid).distinct().toList());
         }
     }
 

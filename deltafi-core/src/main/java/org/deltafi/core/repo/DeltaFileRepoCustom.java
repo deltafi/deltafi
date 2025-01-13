@@ -84,11 +84,11 @@ public interface DeltaFileRepoCustom {
     /**
      * Delete DeltaFiles that match the given criteria if they have no content.
      *
-     * @param createdBefore - if non-null find DeltaFiles created before this date
-     * @param completedBefore - if non-null find DeltaFiles in the completed stage that were last modified before this date
-     * @param minBytes - only delete deltaFiles greater than or equal to this size
-     * @param flow - if non-null the DeltaFiles must have this flow set in the source info
-     * @param batchSize - maximum number to delete
+     * @param createdBefore if non-null find DeltaFiles created before this date
+     * @param completedBefore if non-null find DeltaFiles in the completed stage that were last modified before this date
+     * @param minBytes only delete deltaFiles greater than or equal to this size
+     * @param flow if non-null the DeltaFiles must have this flow set in the source info
+     * @param batchSize maximum number to delete
      * @return the number of rows deleted
      */
     int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, int batchSize);
@@ -98,24 +98,26 @@ public interface DeltaFileRepoCustom {
      * Any actions in a non-terminal state will be marked as errors stating the given policy
      * marked the DeltaFile for deletion.
      *
-     * @param createdBefore - if non-null find DeltaFiles created before this date
-     * @param completedBefore - if non-null find DeltaFiles in the completed stage that were last modified before this date
-     * @param minBytes - only delete deltaFiles greater than or equal to this size
-     * @param flow - if non-null the DeltaFiles must have this dataSource set in the source info
-     * @param deleteMetadata - whether we are finding files to be finally deleted.  if this is false, DeltaFiles that have already had their content deleted will not be selected
-     * @param batchSize - maximum number to delete
+     * @param createdBefore if non-null find DeltaFiles created before this date
+     * @param completedBefore if non-null find DeltaFiles in the completed stage that were last modified before this date
+     * @param minBytes only delete deltaFiles greater than or equal to this size
+     * @param flow if non-null the DeltaFiles must have this dataSource set in the source info
+     * @param deleteMetadata whether we are finding files to be finally deleted.  If this is false, DeltaFiles that have already had their content deleted will not be selected
+     * @param includePinned whether to include pinned DeltaFiles
+     * @param batchSize maximum number to delete
      * @return the list of DeltaFile information marked for deletion
      */
-    List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, boolean deleteMetadata, int batchSize);
+    List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore,
+            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize);
 
     /**
      * Find the oldest DeltaFiles up to bytesToDelete size that match the dataSource (if given).
      * Any actions in a non-terminal state will be marked as errors stating the given policy
      * marked the DeltaFile for deletion.
      *
-     * @param bytesToDelete - the number of bytes that must be deleted
-     * @param flow - if non-null the DeltaFiles must have this dataSource set in the source info
-     * @param batchSize - maximum number to delete
+     * @param bytesToDelete the number of bytes that must be deleted
+     * @param flow if non-null the DeltaFiles must have this dataSource set in the source info
+     * @param batchSize maximum number to delete
      * @return the list of DeltaFile information marked for deletion
      */
     List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String flow, int batchSize);

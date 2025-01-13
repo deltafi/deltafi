@@ -89,8 +89,6 @@ public class DeltaFile {
   private Set<Annotation> annotations = new LinkedHashSet<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
-  private OffsetDateTime contentDeleted;
-  private String contentDeletedReason;
   private Boolean egressed;
   private Boolean filtered;
   private OffsetDateTime replayed;
@@ -98,8 +96,14 @@ public class DeltaFile {
 
   @Builder.Default
   private boolean terminal = false;
+
+  @Builder.Default
+  private boolean pinned = false;
+
   @Builder.Default
   private boolean contentDeletable = false;
+  private OffsetDateTime contentDeleted;
+  private String contentDeletedReason;
 
   @Type(UUIDArrayType.class)
   @Column(columnDefinition = "uuid[]")
@@ -152,14 +156,15 @@ public class DeltaFile {
     this.annotations = other.annotations == null ? null : new LinkedHashSet<>(other.annotations);
     this.created = other.created;
     this.modified = other.modified;
-    this.contentDeleted = other.contentDeleted;
-    this.contentDeletedReason = other.contentDeletedReason;
     this.egressed = other.egressed;
     this.filtered = other.filtered;
     this.replayed = other.replayed;
     this.replayDid = other.replayDid;
     this.terminal = other.terminal;
+    this.pinned = other.pinned;
     this.contentDeletable = other.contentDeletable;
+    this.contentDeleted = other.contentDeleted;
+    this.contentDeletedReason = other.contentDeletedReason;
     this.version = other.version;
     this.cacheTime = other.cacheTime;
     this.contentObjectIds = other.contentObjectIds;

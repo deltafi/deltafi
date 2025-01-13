@@ -19,12 +19,8 @@ package org.deltafi.core.delete;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.types.DeletePolicy;
-import org.deltafi.core.types.DiskSpaceDeletePolicy;
-import org.deltafi.core.types.TimedDeletePolicy;
-import org.deltafi.core.services.DeletePolicyService;
-import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.DiskSpaceService;
+import org.deltafi.core.services.*;
+import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

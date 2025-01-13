@@ -365,7 +365,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore,
-                                                       long minBytes, String flow, boolean deleteMetadata, int batchSize) {
+            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize) {
         if (createdBefore == null && completedBefore == null) {
             return Collections.emptyList();
         }
@@ -375,6 +375,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 FROM delta_files df
                 WHERE
                 """);
+
+        if (!includePinned) {
+            queryBuilder.append(" df.pinned = false AND");
+        }
 
         Map<String, Object> parameters = new HashMap<>();
 
@@ -469,8 +473,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         StringBuilder queryBuilder = new StringBuilder("""
             SELECT df.did, df.content_deleted, df.total_bytes, df.content_object_ids
             FROM delta_files df
-            WHERE df.content_deletable = true
-    """);
+            WHERE df.content_deletable = true AND df.pinned = false
+            """);
 
         if (dataSource != null) {
             queryBuilder.append("AND df.data_source = :dataSource ");

@@ -22,9 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.DiskSpaceService;
-import org.deltafi.core.types.DeltaFileDeleteDTO;
-import org.deltafi.core.types.DiskMetrics;
-import org.deltafi.core.types.DiskSpaceDeletePolicy;
+import org.deltafi.core.types.*;
 
 import java.util.List;
 

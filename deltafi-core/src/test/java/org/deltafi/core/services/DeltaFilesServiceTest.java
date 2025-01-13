@@ -75,12 +75,6 @@ class DeltaFilesServiceTest {
     private final MetricService metricService;
 
     @Captor
-    ArgumentCaptor<List<UUID>> uuidListCaptor;
-
-    @Captor
-    ArgumentCaptor<List<String>> stringListCaptor;
-
-    @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
 
     @Captor
@@ -128,7 +122,7 @@ class DeltaFilesServiceTest {
 
     @AfterEach
     void finalizeMetrics() {
-        Mockito.verifyNoMoreInteractions(metricService);
+        verifyNoMoreInteractions(metricService);
     }
 
     @Test
@@ -278,6 +272,12 @@ class DeltaFilesServiceTest {
         assertTrue(foundKey4);
     }
 
+    @Captor
+    private ArgumentCaptor<List<UUID>> uuidListCaptor;
+
+    @Captor
+    private ArgumentCaptor<List<String>> stringListCaptor;
+
     @Test
     void testDelete() {
         UUID did1 = UUID.randomUUID();
@@ -286,7 +286,7 @@ class DeltaFilesServiceTest {
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
         DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
-        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
@@ -294,8 +294,8 @@ class DeltaFilesServiceTest {
         assertEquals(List.of(content1.getSegments().getFirst().objectName(), content2.getSegments().getFirst().objectName()), stringListCaptor.getValue());
         verify(deltaFileRepo).setContentDeletedByDidIn(uuidListCaptor.capture(), any(), eq("policy"));
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policy"));
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 0).addTag("policy", "policy"));
+        verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policy"));
+        verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 0).addTag("policy", "policy"));
     }
 
     @Test
@@ -306,7 +306,7 @@ class DeltaFilesServiceTest {
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
         DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
-        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
 
@@ -315,8 +315,8 @@ class DeltaFilesServiceTest {
         verify(deltaFileRepo, never()).saveAll(any());
         verify(deltaFileRepo).batchedBulkDeleteByDidIn(uuidListCaptor.capture());
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policy"));
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 0).addTag("policy", "policy"));
+        verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policy"));
+        verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 0).addTag("policy", "policy"));
     }
 
     @Test
@@ -324,12 +324,12 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.addAnnotations(Map.of("key", "one"));
 
-        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
-        Mockito.when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
+        when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
+        when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
 
         deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("sys-ack", "true"), false);
-        Mockito.verify(deltaFileCacheService).save(deltaFileCaptor.capture());
+        verify(deltaFileCacheService).save(deltaFileCaptor.capture());
 
         DeltaFile after = deltaFileCaptor.getValue();
         Assertions.assertThat(after.annotationMap()).hasSize(2).containsEntry("key", "one").containsEntry("sys-ack", "true");
@@ -349,8 +349,8 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.addAnnotations(Map.of("key", "one"));
 
-        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
+        when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
 
         deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("key", "changed"), false);
         Assertions.assertThat(deltaFile.annotationMap()).hasSize(1).containsEntry("key", "one");
@@ -365,15 +365,15 @@ class DeltaFilesServiceTest {
     @Test
     void testQueueAnnotation_whenDeltaFileNotReady() {
         UUID did = UUID.randomUUID();
-        Mockito.when(deltaFileRepo.existsById(did)).thenReturn(true);
-        Mockito.when(deltaFileCacheService.isCached(did)).thenReturn(false);
-        Mockito.when(deltaFileRepo.findByDidAndStageIn(eq(did), anyList())).thenReturn(Optional.empty());
+        when(deltaFileRepo.existsById(did)).thenReturn(true);
+        when(deltaFileCacheService.isCached(did)).thenReturn(false);
+        when(deltaFileRepo.findByDidAndStageIn(eq(did), anyList())).thenReturn(Optional.empty());
 
         deltaFilesService.addAnnotations(did, Map.of("queued", "true"), false);
 
-        Mockito.verify(queuedAnnotationRepo).save(queuedAnnotationCaptor.capture());
-        Mockito.verify(deltaFileCacheService, never()).save(any());
-        Mockito.verify(deltaFileRepo, never()).save(any());
+        verify(queuedAnnotationRepo).save(queuedAnnotationCaptor.capture());
+        verify(deltaFileCacheService, never()).save(any());
+        verify(deltaFileRepo, never()).save(any());
 
         QueuedAnnotation after = queuedAnnotationCaptor.getValue();
         Assertions.assertThat(after.getAnnotations()).containsEntry("queued", "true");
@@ -384,12 +384,12 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
 
         QueuedAnnotation queuedAnnotation = new QueuedAnnotation(deltaFile.getDid(), Map.of("queued", "true"), false);
-        Mockito.when(queuedAnnotationRepo.findAllByOrderByTimeAsc()).thenReturn(List.of(queuedAnnotation));
-        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
+        when(queuedAnnotationRepo.findAllByOrderByTimeAsc()).thenReturn(List.of(queuedAnnotation));
+        when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
 
         deltaFilesService.processQueuedAnnotations();
-        Mockito.verify(queuedAnnotationRepo).deleteById(queuedAnnotation.getId());
+        verify(queuedAnnotationRepo).deleteById(queuedAnnotation.getId());
         Assertions.assertThat(deltaFile.annotationMap()).containsEntry("queued", "true");
     }
 
@@ -399,19 +399,19 @@ class DeltaFilesServiceTest {
         UUID did = UUID.randomUUID();
         deltaFilesService.deleteContentAndMetadata(did, content);
 
-        Mockito.verify(deltaFileRepo).deleteById(did);
-        Mockito.verify(contentStorageService).delete(content);
+        verify(deltaFileRepo).deleteById(did);
+        verify(contentStorageService).delete(content);
     }
 
     @Test
     void testDeleteContentAndMetadata_dbFail() {
         Content content = new Content();
         UUID did = UUID.randomUUID();
-        Mockito.doThrow(new RuntimeException("db fail")).when(deltaFileRepo).deleteById(did);
+        doThrow(new RuntimeException("db fail")).when(deltaFileRepo).deleteById(did);
         deltaFilesService.deleteContentAndMetadata(did, content);
 
         // make sure content cleanup happens after a db failure
-        Mockito.verify(contentStorageService).delete(content);
+        verify(contentStorageService).delete(content);
     }
 
     @Test
@@ -419,8 +419,8 @@ class DeltaFilesServiceTest {
         // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the dataSink is added in the state machine
         DataSink dataSink = new DataSink();
         dataSink.setExpectedAnnotations(Set.of("a", "b"));
-        Mockito.when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
-        Mockito.when(dataSinkService.getActiveFlowByName("dataSource")).thenReturn(dataSink);
+        when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
+        when(dataSinkService.getActiveFlowByName("dataSource")).thenReturn(dataSink);
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.DATA_SINK).build();
@@ -436,15 +436,15 @@ class DeltaFilesServiceTest {
                 "dataSource", "myFlow",
                 "dataSink", "dataSource");
 
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_TO_SINK, 1).addTags(flowTags));
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_TO_SINK, 0).addTags(flowTags));
+        verify(metricService).increment(new Metric(DeltaFiConstants.FILES_TO_SINK, 1).addTags(flowTags));
+        verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_TO_SINK, 0).addTags(flowTags));
     }
 
     @Test
     void testEgress_addPendingAnnotationsIgnoreNotRunningException() {
         // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the dataSink is added in the state machine
-        Mockito.when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
-        Mockito.when(dataSinkService.getActiveFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
+        when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
+        when(dataSinkService.getActiveFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = deltaFile.firstFlow();
@@ -457,8 +457,8 @@ class DeltaFilesServiceTest {
                 "dataSource", "myFlow",
                 "dataSink", "myFlow");
 
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_TO_SINK, 1).addTags(flowTags));
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_TO_SINK, 0).addTags(flowTags));
+        verify(metricService).increment(new Metric(DeltaFiConstants.FILES_TO_SINK, 1).addTags(flowTags));
+        verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_TO_SINK, 0).addTags(flowTags));
     }
 
     @Test
@@ -467,11 +467,11 @@ class DeltaFilesServiceTest {
         deltaFile.setDid(UUID.randomUUID());
         deltaFile.setModified(OffsetDateTime.now());
         deltaFile.setFlows(Stream.of("a", "b", "c").map(this::deltaFileFlow).collect(Collectors.toSet()));
-        Mockito.when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
+        when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
         Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).hasSize(3).contains("a", "b", "c");
 
-        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
+        when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
         deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("b", "2"), false);
         Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).hasSize(2).contains("a", "c");
     }
@@ -492,13 +492,13 @@ class DeltaFilesServiceTest {
         DeltaFileFlow deltaFileFlow = new DeltaFileFlow();
         deltaFile.setFlows(Set.of(deltaFileFlow));
 
-        Mockito.when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
+        when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
         Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).isEmpty();
     }
 
     @Test
     void testProcessActionEventsExceptionHandling() throws JsonProcessingException {
-        Mockito.when(coreEventQueue.takeResult(Mockito.anyString()))
+        when(coreEventQueue.takeResult(anyString()))
                 .thenThrow(JsonProcessingException.class);
         assertFalse(deltaFilesService.processActionEvents("test"));
     }
@@ -585,7 +585,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.requeue();
 
         verify(deltaFileRepo).saveAll(List.of(aggregate));
-        verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+        verify(coreEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
         List<WrappedActionInput> enqueuedActions = actionInputListCaptor.getValue();
         assertEquals(1, enqueuedActions.size());
         assertEquals(List.of(parent1.getDid(), parent2.getDid()), enqueuedActions.getFirst().getActionContext().getJoinedDids());
@@ -595,7 +595,7 @@ class DeltaFilesServiceTest {
     @Test
     void applyResumePolicies() {
         deltaFilesService.applyResumePolicies(List.of("name1"));
-        Mockito.verify(resumePolicyService, times(1)).refreshCache();
+        verify(resumePolicyService, times(1)).refreshCache();
     }
 
     @Test
@@ -617,8 +617,8 @@ class DeltaFilesServiceTest {
         flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "splitAction", "childAction", "childActionNewName"));
 
         List<UUID> dids = List.of(uuid);
-        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
@@ -626,7 +626,7 @@ class DeltaFilesServiceTest {
         RetryResult result = results.getFirst();
         assertTrue(result.getSuccess());
 
-        Mockito.verify(stateMachine).advance(stateMachineInputCaptor.capture());
+        verify(stateMachine).advance(stateMachineInputCaptor.capture());
 
         List<StateMachineInput> stateMachines = stateMachineInputCaptor.getValue();
         assertEquals(1, stateMachines.size());
@@ -660,8 +660,8 @@ class DeltaFilesServiceTest {
         flowConfig.setTransformActions(mockActions("parentAction1", "splitAction", "childAction", "childAction2"));
 
         List<UUID> dids = List.of(uuid);
-        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
@@ -690,8 +690,8 @@ class DeltaFilesServiceTest {
         flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "extraParentAction", "splitAction", "childAction", "childAction2"));
 
         List<UUID> dids = List.of(uuid);
-        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
@@ -718,8 +718,8 @@ class DeltaFilesServiceTest {
         flowConfig.setTransformActions(mockActions("parentAction1", "parentActionNewName", "splitAction", "childAction", "childAction2"));
 
         List<UUID> dids = List.of(uuid);
-        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
@@ -748,8 +748,8 @@ class DeltaFilesServiceTest {
         flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "splitActionNew", "childAction", "childActionNewName"));
 
         List<UUID> dids = List.of(uuid);
-        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
@@ -772,7 +772,7 @@ class DeltaFilesServiceTest {
         assertEquals("MissingRunningFlow", errorAction.getName());
         assertEquals(ActionType.UNKNOWN, errorAction.getType());
         assertEquals(ActionState.ERROR, errorAction.getState());
-        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(Map.of("action", "unknown", "source", "MissingRunningFlow", "dataSource", "myFlow")));
+        verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(Map.of("action", "unknown", "source", "MissingRunningFlow", "dataSource", "myFlow")));
     }
 
     @Test
@@ -820,5 +820,54 @@ class DeltaFilesServiceTest {
 
     private ActionConfiguration mockAction(String name) {
         return new ActionConfiguration(name, ActionType.TRANSFORM, "org.action." + name);
+    }
+
+    @Test
+    void pinsDeltaFiles() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID()); // IN_FLIGHT
+        UUID nonExistentDid = UUID.randomUUID();
+
+        when(deltaFileRepo.findById(eq(deltaFile1.getDid()))).thenReturn(Optional.of(deltaFile1));
+        when(deltaFileRepo.findById(eq(deltaFile2.getDid()))).thenReturn(Optional.of(deltaFile2));
+        when(deltaFileRepo.findById(eq(deltaFile3.getDid()))).thenReturn(Optional.of(deltaFile3));
+
+        List<Result> results = deltaFilesService.pin(List.of(deltaFile1.getDid(), deltaFile2.getDid(),
+                deltaFile3.getDid(), nonExistentDid));
+
+        assertTrue(deltaFile1.isPinned());
+        assertTrue(deltaFile2.isPinned());
+        assertFalse(deltaFile3.isPinned());
+        verify(deltaFileRepo, times(2)).save(any());
+        assertEquals(4, results.size());
+        assertTrue(results.get(0).isSuccess());
+        assertTrue(results.get(1).isSuccess());
+        assertFalse(results.get(2).isSuccess());
+        assertEquals(1, results.get(2).getInfo().size());
+        assertEquals("DeltaFile with did " + deltaFile3.getDid() + " hasn't completed",
+                results.get(2).getInfo().getFirst());
+        assertEquals("DeltaFile with did " + nonExistentDid + " doesn't exist",
+                results.get(3).getInfo().getFirst());
+    }
+
+    @Test
+    void unpinsDeltaFiles() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFile1.setPinned(true);
+        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFile2.setPinned(true);
+
+        when(deltaFileRepo.findById(eq(deltaFile1.getDid()))).thenReturn(Optional.of(deltaFile1));
+        when(deltaFileRepo.findById(eq(deltaFile2.getDid()))).thenReturn(Optional.of(deltaFile2));
+
+        deltaFilesService.unpin(List.of(deltaFile1.getDid(), deltaFile2.getDid()));
+
+        assertFalse(deltaFile1.isPinned());
+        assertFalse(deltaFile2.isPinned());
     }
 }

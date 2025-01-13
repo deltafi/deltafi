@@ -179,6 +179,7 @@ type DeltaFile {
   annotations: Metadata
   created: DateTime!
   modified: DateTime!
+  pinned: Boolean
   contentDeleted: DateTime
   contentDeletedReason: String
   egressed: Boolean
@@ -440,6 +441,9 @@ type Mutation {
   replay(dids: [UUID!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [UUID!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [UUID!]!) : [CancelResult!]!
+
+  pin(dids: [UUID!]!) : [Result!]!
+  unpin(dids: [UUID!]!) : [Result!]!
 
   addAnnotations(did: UUID!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
 

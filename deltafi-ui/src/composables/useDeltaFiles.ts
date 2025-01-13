@@ -111,6 +111,7 @@ export default function useDeltaFiles() {
         dataSinks: true,
         created: true,
         modified: true,
+        pinned: true,
         contentDeleted: true,
         contentDeletedReason: true,
         egressed: true,
@@ -155,5 +156,33 @@ export default function useDeltaFiles() {
     return response.value.data.cancel;
   };
 
-  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, cancelDeltaFile, errors };
+  const pin = async (dids: Array<string>) => {
+    const query = {
+      pin: {
+        __args: {
+          dids: dids,
+        },
+        success: true,
+        info: true,
+      },
+    };
+    await queryGraphQL(query, "pin", "mutation");
+    return response.value.data.pin;
+  };
+
+  const unpin = async (dids: Array<string>) => {
+    const query = {
+      unpin: {
+        __args: {
+          dids: dids,
+        },
+        success: true,
+        info: true,
+      },
+    };
+    await queryGraphQL(query, "unpin", "mutation");
+    return response.value.data.unpin;
+  };
+
+  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, cancelDeltaFile, pin, unpin, errors };
 }
