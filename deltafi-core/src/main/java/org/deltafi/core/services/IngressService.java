@@ -108,10 +108,8 @@ public class IngressService {
             throw e;
         }
 
-        ingressResults.forEach(ingressResult -> {
-            Map<String, String> tags = tagsFor(ingressResult.dataSource());
-            analyticEventService.recordIngress(ingressResult.did(), created, ingressResult.dataSource(), ingressResult.content().getSize(), Collections.emptyMap());
-        });
+        ingressResults.forEach(ingressResult -> analyticEventService.recordIngress(ingressResult.did(), created,
+                ingressResult.dataSource(), ingressResult.content().getSize(), Collections.emptyMap()));
 
         return ingressResults;
     }

@@ -274,6 +274,10 @@ public class DeltaFilesService {
                 .depth(0)
                 .build();
 
+        if (dataSource.isTestMode()) {
+            ingressFlow.setTestModeReason(dataSource.getName());
+        }
+
         long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
 
         DeltaFile deltaFile = DeltaFile.builder()
@@ -545,7 +549,7 @@ public class DeltaFilesService {
         }
     }
 
-    public List<StateMachineInput> createChildren(List<TransformEvent> transformEvents, OffsetDateTime startTime,
+    private List<StateMachineInput> createChildren(List<TransformEvent> transformEvents, OffsetDateTime startTime,
             OffsetDateTime stopTime, DeltaFile deltaFile, DeltaFileFlow flow) {
         List<StateMachineInput> inputs = transformEvents.stream()
                 .map(transformEvent -> createChildDeltaFile(transformEvent, deltaFile, flow, startTime, stopTime))
