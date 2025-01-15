@@ -148,5 +148,5 @@ metadata:
   labels:
     grafana_dashboard: "1"
 data:
-  data-source-by-annotation.json: |-
+  pivot-by-annotation.json: |-
 {{ .Files.Get "files/grafana/dashboards/pivot-by-annotation.json" | indent 4 }}
