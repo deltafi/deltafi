@@ -59,7 +59,7 @@ public class SevenZUtil {
     private static void unarchiveSevnZ(TransformResult result, LineageMap lineage,
                                        String parentDir, String parentName, SevenZFile sevenZFile) throws IOException {
         SevenZArchiveEntry entry;
-        List<SaveManyContent> saveManyContentList = new ArrayList<>();
+        List<SaveManyContent> saveManyBatch = new ArrayList<>();
         int currentBatchSize = 0;
 
         while ((entry = sevenZFile.getNextEntry()) != null) {
@@ -68,29 +68,39 @@ public class SevenZUtil {
             }
 
             String newContentName = lineage.add(entry.getName(), parentDir, parentName);
+            String mediaType = TIKA.detect(entry.getName());
 
             InputStream inputStream = sevenZFile.getInputStream(entry);
-            byte[] fileContent = inputStream.readAllBytes();
-            int fileSize = fileContent.length;
+            if (entry.getSize() < 2 * BATCH_BYTES) {
+                byte[] fileContent = inputStream.readAllBytes();
+                int fileSize = fileContent.length;
 
-            // Check if adding this file will exceed the batch constraints
-            if (!saveManyContentList.isEmpty() &&
-                    (saveManyContentList.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
-                // Save the current batch
-                result.saveContent(new ArrayList<>(saveManyContentList));
+                // Check if adding this file will exceed the batch constraints
+                if (!saveManyBatch.isEmpty() &&
+                        (saveManyBatch.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
+                    // save the current batch, and start a new one
+                    result.saveContent(saveManyBatch);
+                    saveManyBatch.clear();
+                    currentBatchSize = 0;
+                }
 
-                // Clear the list for the next batch and reset counters
-                saveManyContentList.clear();
-                currentBatchSize = 0;
+                saveManyBatch.add(new SaveManyContent(newContentName, mediaType, fileContent));
+                currentBatchSize += fileSize;
+            } else {
+                if (!saveManyBatch.isEmpty()) {
+                    // save the existing batch to keep save order consistent
+                    result.saveContent(saveManyBatch);
+                    saveManyBatch.clear();
+                    currentBatchSize = 0;
+                }
+                // Safely avoid OutOfMemoryError from readAllBytes() for large files
+                result.saveContent(inputStream, newContentName, mediaType);
             }
-
-            saveManyContentList.add(new SaveManyContent(newContentName, TIKA.detect(entry.getName()), fileContent));
-            currentBatchSize += fileSize;
         }
 
         // Save any remaining files that didn't make up a full batch
-        if (!saveManyContentList.isEmpty()) {
-            result.saveContent(saveManyContentList);
+        if (!saveManyBatch.isEmpty()) {
+            result.saveContent(saveManyBatch);
         }
     }
 

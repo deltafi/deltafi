@@ -362,7 +362,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     private static final Tika TIKA = new Tika();
 
     private void unarchive(TransformResult result, LineageMap lineage, String parentDir, String parentName,
-            ActionContent content, ArchiveInputStream<?> archiveInputStream) throws IOException {
+                           ActionContent content, ArchiveInputStream<?> archiveInputStream) throws IOException {
         ArrayList<SaveManyContent> saveManyBatch = new ArrayList<>();
         int currentBatchSize = 0;
 
@@ -379,18 +379,31 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 result.addContent(content.subcontent(archiveInputStream.getBytesRead(), entry.getSize(),
                         newContentName, mediaType));
             } else {
-                SaveManyContent file = new SaveManyContent(newContentName, mediaType, archiveInputStream.readAllBytes());
-                int fileSize = file.content().length;
+                if (entry.getSize() < 2 * BATCH_BYTES) {
+                    SaveManyContent file = new SaveManyContent(newContentName, mediaType, archiveInputStream.readAllBytes());
+                    int fileSize = file.content().length;
 
-                if ((saveManyBatch.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
-                    // save the existing batch
-                    result.saveContent(saveManyBatch);
-                    saveManyBatch.clear();
-                    currentBatchSize = 0;
+                    // Check if adding this file will exceed the batch constraints
+                    if (!saveManyBatch.isEmpty() &&
+                            (saveManyBatch.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
+                        // save the current batch, and start a new one
+                        result.saveContent(saveManyBatch);
+                        saveManyBatch.clear();
+                        currentBatchSize = 0;
+                    }
+
+                    saveManyBatch.add(file);
+                    currentBatchSize += fileSize;
+                } else {
+                    if (!saveManyBatch.isEmpty()) {
+                        // save the existing batch to keep save order consistent
+                        result.saveContent(saveManyBatch);
+                        saveManyBatch.clear();
+                        currentBatchSize = 0;
+                    }
+                    // Safely avoid OutOfMemoryError from readAllBytes() for large files
+                    result.saveContent(archiveInputStream, newContentName, mediaType);
                 }
-
-                saveManyBatch.add(file);
-                currentBatchSize += fileSize;
             }
         }
 
