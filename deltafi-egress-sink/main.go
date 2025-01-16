@@ -128,7 +128,7 @@ func fileSinkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := saveFile(metadata, r.Body, metadataJSON); err != nil {
+	if err := saveFile(metadata, r.Method, r.Body, metadataJSON); err != nil {
 		logger.Error("Error saving file: %v", err)
 		http.Error(w, fmt.Sprintf("Error saving file: %v", err), http.StatusInternalServerError)
 		return
@@ -136,7 +136,7 @@ func fileSinkHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func saveFile(metadata Metadata, body io.ReadCloser, metadataJSON string) error {
+func saveFile(metadata Metadata, method string, body io.ReadCloser, metadataJSON string) error {
 	defer func(body io.ReadCloser) {
 		err := body.Close()
 		if err != nil {
@@ -161,7 +161,7 @@ func saveFile(metadata Metadata, body io.ReadCloser, metadataJSON string) error 
 		}
 	}(file)
 
-	metadataPath := filePath + ".metadata.json"
+	metadataPath := filePath + "." + method + ".metadata.json"
 	if err := os.WriteFile(metadataPath, []byte(metadataJSON), os.ModePerm); err != nil {
 		return fmt.Errorf("error writing metadata file: %w", err)
 	}

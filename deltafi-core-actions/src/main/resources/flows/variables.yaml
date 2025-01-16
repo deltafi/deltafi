@@ -1,8 +1,14 @@
 name: passthroughEgressUrl
-description: The URL to post the DeltaFile to
+description: The URL to send the DeltaFile to
 dataType: STRING
 required: true
 defaultValue: http://deltafi-egress-sink-service
+---
+name: passthroughEgressMethod
+description: The HTTP Request method used to send the DeltaFile (POST, PUT, PATCH, or DELETE)
+dataType: STRING
+required: true
+defaultValue: POST
 ---
 name: smokeEgressUrl
 description: The URL to post the DeltaFile to

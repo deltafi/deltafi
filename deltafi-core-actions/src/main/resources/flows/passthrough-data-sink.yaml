@@ -5,7 +5,8 @@ subscribe:
   - topic: passthrough-egress
 egressAction:
   name: PassthroughEgress
-  type: org.deltafi.core.action.egress.RestPostEgress
+  type: org.deltafi.core.action.egress.HttpEgress
   parameters:
     metadataKey: deltafiMetadata
     url: "${passthroughEgressUrl}"
+    method: "${passthroughEgressMethod}"

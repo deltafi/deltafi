@@ -29,17 +29,21 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+/**
+ * @deprecated Use the HttpEgress action instead. RestPostEgress will be deleted in a future version.
+ */
 @Component
 @Slf4j
+@Deprecated
 public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public RestPostEgress(HttpService httpService) {
-        super("Egresses to a REST endpoint", httpService);
+        super("Egress to an HTTP endpoint using POST", httpService);
     }
 
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull RestPostEgressParameters params,
-            @NotNull EgressInput input) throws JsonProcessingException {
+                                               @NotNull EgressInput input) throws JsonProcessingException {
         return Map.of(params.getMetadataKey(),
                 OBJECT_MAPPER.writeValueAsString(StandardEgressHeaders.buildMap(context, input)));
     }

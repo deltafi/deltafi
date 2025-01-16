@@ -26,9 +26,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * General purpose HTTP client service
@@ -36,29 +36,21 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 @Slf4j
 public class HttpService {
+    private static final String CONTENT_TYPE = "content-type";
+
     private final HttpClient httpClient;
 
-    /**
-     * Post data to an HTTP endpoint
-     * @param url URL endpoint where data will be posted
-     * @param headers Map of key-value pairs for HTTP header fields and values
-     * @param body Body content to be posted to the HTTP endpoint
-     * @param mediaType Media type of the HTTP post
-     * @return an HTTP response object with success/failure details
-     * @throws HttpPostException when the HTTP client throws an IOException, InterruptedException, IllegalArgumentException , or SecurityException
-     */
-    @SuppressWarnings("UnusedReturnValue")
-    @NotNull
-    public java.net.http.HttpResponse<InputStream> post(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) throws HttpPostException {
-        Supplier<InputStream> is = () -> body;
+    private static HttpRequest.Builder newRequestBuilder(@NotNull String url, @NotNull Map<String, String> headers, @NotNull String mediaType) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .setHeader("content-type", mediaType)
-                .POST(HttpRequest.BodyPublishers.ofInputStream(is));
-        addHeaders(requestBuilder, headers);
+                .uri(URI.create(url));
+        headers.forEach(requestBuilder::header);
+        if (!headers.containsKey(CONTENT_TYPE)) {
+            requestBuilder.header(CONTENT_TYPE, mediaType);
+        }
+        return requestBuilder;
+    }
 
-        HttpRequest request = requestBuilder.build();
-
+    private HttpResponse<InputStream> execute(@NotNull HttpRequest request) throws HttpSendException {
         try {
             // TODO: Should exceptions be thrown for 4xx return codes?
             return httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
@@ -66,20 +58,85 @@ public class HttpService {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new HttpPostException(e.getClass().getSimpleName(), e.getMessage());
+            throw new HttpSendException(e.getClass().getSimpleName(), request.method(), e.getMessage());
         }
     }
 
     /**
-     * Add a string map of headers to an HttpRequest
-     * @param builder Builder used to create an HttpRequest
-     * @param headers String map of headers to add to the HttpRequest
+     * Post data to an HTTP endpoint
+     *
+     * @param url       URL endpoint where data will be posted
+     * @param headers   Map of key-value pairs for HTTP header fields and values
+     * @param body      Body content to be posted to the HTTP endpoint
+     * @param mediaType Media type of the HTTP post
+     * @return an HTTP response object with success/failure details
+     * @throws HttpPostException when the HTTP client throws an IOException, InterruptedException, IllegalArgumentException , or SecurityException
      */
-    static private void addHeaders(@NotNull HttpRequest.Builder builder, @NotNull Map<String, String> headers) {
-        if (!headers.isEmpty()) {
-            builder.headers(
-                    headers.entrySet().stream().flatMap(x -> Stream.of(x.getKey(), x.getValue())).toArray(String[]::new)
-            );
-        }
+    @SuppressWarnings("UnusedReturnValue")
+    @NotNull
+    public HttpResponse<InputStream> post(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) throws HttpPostException {
+        Supplier<InputStream> is = () -> body;
+        HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
+        requestBuilder.POST(HttpRequest.BodyPublishers.ofInputStream(is));
+        HttpRequest request = requestBuilder.build();
+        return execute(request);
+    }
+
+    /**
+     * Put data to an HTTP endpoint
+     *
+     * @param url       URL endpoint where data will be put
+     * @param headers   Map of key-value pairs for HTTP header fields and values
+     * @param body      Body content to be put to the HTTP endpoint
+     * @param mediaType Media type of the HTTP put
+     * @return an HTTP response object with success/failure details
+     * @throws HttpSendException when the HTTP client throws an IOException, InterruptedException, IllegalArgumentException , or SecurityException
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    @NotNull
+    public HttpResponse<InputStream> put(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) throws HttpSendException {
+        Supplier<InputStream> is = () -> body;
+        HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
+        requestBuilder.PUT(HttpRequest.BodyPublishers.ofInputStream(is));
+        HttpRequest request = requestBuilder.build();
+        return execute(request);
+    }
+
+    /**
+     * Patch data at an HTTP endpoint
+     *
+     * @param url       URL endpoint where data will be sent as a patch
+     * @param headers   Map of key-value pairs for HTTP header fields and values
+     * @param body      Body content to be patched to the HTTP endpoint
+     * @param mediaType Media type of the HTTP patch
+     * @return an HTTP response object with success/failure details
+     * @throws HttpSendException when the HTTP client throws an IOException, InterruptedException, IllegalArgumentException , or SecurityException
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    @NotNull
+    public HttpResponse<InputStream> patch(@NotNull String url, @NotNull Map<String, String> headers, @NotNull InputStream body, @NotNull String mediaType) throws HttpSendException {
+        Supplier<InputStream> is = () -> body;
+        HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
+        requestBuilder.method("PATCH", HttpRequest.BodyPublishers.ofInputStream(is));
+        HttpRequest request = requestBuilder.build();
+        return execute(request);
+    }
+
+    /**
+     * Delete data from an HTTP endpoint
+     *
+     * @param url       URL endpoint where data will be deleted from
+     * @param headers   Map of key-value pairs for HTTP header fields and values
+     * @param mediaType Media type of the HTTP delete
+     * @return an HTTP response object with success/failure details
+     * @throws HttpSendException when the HTTP client throws an IOException, InterruptedException, IllegalArgumentException , or SecurityException
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    @NotNull
+    public HttpResponse<InputStream> delete(@NotNull String url, @NotNull Map<String, String> headers, @NotNull String mediaType) throws HttpSendException {
+        HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
+        requestBuilder.DELETE();
+        HttpRequest request = requestBuilder.build();
+        return execute(request);
     }
 }

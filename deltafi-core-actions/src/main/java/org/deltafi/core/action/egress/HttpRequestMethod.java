@@ -15,10 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.http;
+package org.deltafi.core.action.egress;
 
-public class HttpPostException extends HttpSendException {
-    public HttpPostException(String clazz, String reason) {
-        super(clazz, "POST", reason);
-    }
+public enum HttpRequestMethod {
+    POST,
+    PUT,
+    PATCH,
+    DELETE
 }

@@ -24,7 +24,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.common.http.HttpPostException;
+import org.deltafi.common.http.HttpSendException;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
@@ -48,10 +48,14 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
 
     @SuppressWarnings("BusyWait")
     public EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input) {
+        return egressWithMethod(context, params, HttpRequestMethod.POST, input);
+    }
+
+    protected EgressResultType egressWithMethod(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
         int tries = 0;
 
         while (true) {
-            EgressResultType result = doEgress(context, params, input);
+            EgressResultType result = doEgress(context, params, method, input);
             tries++;
 
             if (!(result instanceof ErrorResult) || (tries > params.getRetryCount())) {
@@ -72,11 +76,20 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
         }
     }
 
-    private EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input) {
+    private EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
         try {
             // The stream is automatically closed by HttpClient when the end of stream is reached.
-            HttpResponse<InputStream> response = httpService.post(params.getUrl(), buildHeaders(context, params, input),
-                    openInputStream(context, input), getMediaType(input));
+            HttpResponse<InputStream> response = switch (method) {
+                case PATCH -> httpService.patch(params.getUrl(), buildHeaders(context, params, input),
+                        openInputStream(context, input), getMediaType(input));
+                case POST -> httpService.post(params.getUrl(), buildHeaders(context, params, input),
+                        openInputStream(context, input), getMediaType(input));
+                case PUT -> httpService.put(params.getUrl(), buildHeaders(context, params, input),
+                        openInputStream(context, input), getMediaType(input));
+                case DELETE -> httpService.delete(params.getUrl(), buildHeaders(context, params, input),
+                        getMediaType(input));
+            };
+
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
                 try (InputStream body = response.body()) {
@@ -91,8 +104,8 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
             return new ErrorResult(context, "Unable to build post headers", e).logErrorTo(log);
         } catch (IOException e) {
             return new ErrorResult(context, "Unable to open input stream", e).logErrorTo(log);
-        } catch (HttpPostException e) {
-            return new ErrorResult(context, "Service post failure", e).logErrorTo(log);
+        } catch (HttpSendException e) {
+            return new ErrorResult(context, "Service " + method.toString().toLowerCase() + " failure", e).logErrorTo(log);
         }
 
         return new EgressResult(context);
@@ -108,7 +121,7 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
     }
 
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull P params,
-            @NotNull EgressInput input) throws JsonProcessingException {
+                                               @NotNull EgressInput input) throws JsonProcessingException {
         return Collections.emptyMap();
     }
 }
