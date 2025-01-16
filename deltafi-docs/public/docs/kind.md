@@ -22,14 +22,14 @@ To start up a demo DeltaFi or to set up a DeltaFi development environment, your 
 
 ### Hardware
 
-Hardware requirements are:
-
-- minimum system resources:
+Minimum system resources:
   - 4 CPU cores
   - 8 GB RAM
-  - 50 GB free disk space minimum, preferrably 100 GB to 200 GB depending on tool and data needs
-- support for and OS access to (including for the guest VM, if using virtualization) the AVX instruction set
-   - verify AVX support with ```cat /proc/cpuinfo | grep avx```
+  - 50 GB free disk space minimum, preferably 100 GB to 200 GB depending on tool and data needs
+
+For 1.x DeltaFi only:
+  - support for and OS access to (including for the guest VM, if using virtualization) the AVX instruction set
+     - verify AVX support with `cat /proc/cpuinfo | grep avx`
 
 
 ### Operating System
@@ -38,20 +38,24 @@ Supported operating systems include:
 - MacOS 14 (x86 and ARM64)
 - CentOS 8
 - Rocky 9
-- Ubuntu 22.04.3
+- Ubuntu
+   - 22.04.3
+   - 24.04.1
 
 ### VM-based Setups
 
-VM-based deployments of DeltaFi have been tested on the following confgurations:
+VM-based deployments of DeltaFi have been tested on the following configurations:
 
 **For a Windows 11 host:**
-- VMware Workstation 17 Player/Pro with guest VMs
+- VMware Workstation 17 Player/Pro with guest VMs:
   - Ubuntu 22.04.3
-- VirtualBox 6.1 with guest VMs
+- VirtualBox 6.1 with guest VMs:
   - CentOS 8
+- VirtualBox 7.0 with guest VMs:
+  - Ubuntu 24.04.1
 
 **For a Linux host:**
-- VirtualBox 6.1 with guest VMs
+- VirtualBox 6.1 with guest VMs:
   - Ubuntu 22.04.3
 
 
