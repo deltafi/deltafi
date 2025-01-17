@@ -30,8 +30,7 @@ import (
 )
 
 const (
-	outputDir  = "/data/deltafi/egress-sink"
-	numWorkers = 10
+	outputDir = "/data/deltafi/egress-sink"
 )
 
 type Metadata struct {
@@ -39,60 +38,27 @@ type Metadata struct {
 	Flow     string `json:"flow"`
 }
 
-type Job struct {
-	w       http.ResponseWriter
-	r       *http.Request
-	jobType string
-}
-
-var jobQueue chan Job
-
 func main() {
-	jobQueue = make(chan Job, 100)
-
-	for i := 0; i < numWorkers; i++ {
-		go worker(jobQueue)
-	}
-
 	logger.Info("Starting server on :80")
 	http.HandleFunc("/probe", func(w http.ResponseWriter, r *http.Request) {})
-	http.HandleFunc("/blackhole", func(w http.ResponseWriter, r *http.Request) {
-		jobQueue <- Job{w, r, "blackhole"}
-	})
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		jobQueue <- Job{w, r, "fileSink"}
-	})
+	http.HandleFunc("/blackhole", blackholeHandler)
+	http.HandleFunc("/", fileSinkHandler)
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
 		logger.Error("Failed to start server: %v", err)
 	}
 }
 
-func worker(jobs <-chan Job) {
-	for job := range jobs {
-		switch job.jobType {
-		case "blackhole":
-			blackholeHandler(job.w, job.r)
-		case "fileSink":
-			fileSinkHandler(job.w, job.r)
-		}
-	}
-}
-
 func blackholeHandler(w http.ResponseWriter, r *http.Request) {
+	// grab the form value before discarding the body
+	latencyParam := r.FormValue("latency")
+
 	// Consume and discard the request body
 	_, err := io.Copy(io.Discard, r.Body)
 	if err != nil {
 		logger.Error("Error discarding request body: %v", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			logger.Error("Error closing request body: %v", err)
-		}
-	}(r.Body)
 
-	latencyParam := r.FormValue("latency")
 	if latencyParam != "" {
 		latency, err := time.ParseDuration(latencyParam + "s")
 		if err != nil {
@@ -137,13 +103,6 @@ func fileSinkHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func saveFile(metadata Metadata, method string, body io.ReadCloser, metadataJSON string) error {
-	defer func(body io.ReadCloser) {
-		err := body.Close()
-		if err != nil {
-			logger.Error("Error closing body: %v", err)
-		}
-	}(body)
-
 	flowPath := filepath.Join(outputDir, metadata.Flow)
 	if err := os.MkdirAll(flowPath, os.ModePerm); err != nil {
 		return fmt.Errorf("error creating directory: %w", err)
