@@ -699,7 +699,7 @@ _post_install() {
 _create_data_dirs() {
   mkdir -p "${DATA_DIR}"
   if _is_linux; then
-    mkdir -p "${DATA_DIR}"/{postgres,grafana,auth,loki,minio,certs}
+    mkdir -p "${DATA_DIR}"/{postgres,egress-sink,graphite,grafana,auth,loki,minio,certs}
   fi
 }
 
