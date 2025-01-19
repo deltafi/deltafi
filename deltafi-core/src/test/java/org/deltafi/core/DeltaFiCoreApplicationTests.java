@@ -1069,6 +1069,64 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testReplayPaused() throws IOException {
+		UUID did = UUID.randomUUID();
+		deltaFileRepo.save(postEgressDeltaFile(did));
+
+		timedDataSourceService.pauseFlow(TIMED_DATA_SOURCE_NAME);
+
+		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("replay"), did),
+				"data." + DgsConstants.MUTATION.Replay,
+				new TypeRef<>() {});
+
+		assertEquals(1, results.size());
+		assertTrue(results.getFirst().getSuccess());
+
+		DeltaFile parent = deltaFilesService.getDeltaFile(did);
+		assertEquals(1, parent.getChildDids().size());
+		assertEquals(parent.getChildDids().getFirst(), parent.getReplayDid());
+		assertEquals(results.getFirst().getDid(), parent.getReplayDid());
+		assertNotNull(parent.getReplayed());
+
+		DeltaFile child = deltaFilesService.getDeltaFile(parent.getChildDids().getFirst());
+		assertEquals(1, child.getFlows().size());
+		assertEquals(DeltaFileFlowState.PAUSED, child.firstFlow().getState());
+		assertTrue(child.getPaused());
+
+		Mockito.verifyNoInteractions(coreEventQueue);
+	}
+
+	@Test
+	void testReplayTestMode() throws IOException {
+		UUID did = UUID.randomUUID();
+		deltaFileRepo.save(postEgressDeltaFile(did));
+
+		timedDataSourceService.enableTestMode(TIMED_DATA_SOURCE_NAME);
+
+		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("replay"), did),
+				"data." + DgsConstants.MUTATION.Replay,
+				new TypeRef<>() {});
+
+		assertEquals(1, results.size());
+		assertTrue(results.getFirst().getSuccess());
+
+		DeltaFile parent = deltaFilesService.getDeltaFile(did);
+		assertEquals(1, parent.getChildDids().size());
+		assertEquals(parent.getChildDids().getFirst(), parent.getReplayDid());
+		assertEquals(results.getFirst().getDid(), parent.getReplayDid());
+		assertNotNull(parent.getReplayed());
+
+		DeltaFile child = deltaFilesService.getDeltaFile(parent.getChildDids().getFirst());
+		assertEquals(2, child.getFlows().size());
+		assertTrue(child.firstFlow().isTestMode());
+		assertEquals(TIMED_DATA_SOURCE_NAME, child.firstFlow().getTestModeReason());
+		assertTrue(child.lastFlow().isTestMode());
+		assertEquals(TIMED_DATA_SOURCE_NAME, child.lastFlow().getTestModeReason());
+	}
+
+	@Test
 	void testSourceMetadataUnion() throws IOException {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("key", "val1"));
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("key", "val2"));

@@ -947,6 +947,15 @@ public class DeltaFilesService {
                                 replayAction.setContent(content);
                             }
 
+                            Flow flowConfig = getFlowConfig(flow);
+                            if (flowConfig.isPaused()) {
+                                flow.setState(DeltaFileFlowState.PAUSED);
+                            }
+                            if (flowConfig.isTestMode()) {
+                                flow.setTestMode(true);
+                                flow.setTestModeReason(flowConfig.getName());
+                            }
+
                             if (!removeSourceMetadata.isEmpty()) {
                                 replayAction.setDeleteMetadataKeys(removeSourceMetadata);
                             }
@@ -973,7 +982,13 @@ public class DeltaFilesService {
                                     .joinId(deltaFile.getJoinId())
                                     .build();
 
-                            inputs.add(new StateMachineInput(child, flow));
+                            child.updateFlags();
+
+                            if (flow.getState() == DeltaFileFlowState.PAUSED) {
+                                deltaFileCacheService.save(child);
+                            } else {
+                                inputs.add(new StateMachineInput(child, flow));
+                            }
 
                             deltaFile.setReplayed(now);
                             deltaFile.setReplayDid(child.getDid());
@@ -1551,6 +1566,15 @@ public class DeltaFilesService {
             Metric metric = new Metric(name, count, tags);
             metricService.increment(metric);
         }
+    }
+
+    private Flow getFlowConfig(DeltaFileFlow deltaFileFlow) {
+        return switch (deltaFileFlow.getType()) {
+            case REST_DATA_SOURCE -> restDataSourceService.getFlowOrThrow(deltaFileFlow.getName());
+            case TIMED_DATA_SOURCE -> timedDataSourceService.getFlowOrThrow(deltaFileFlow.getName());
+            case TRANSFORM -> transformFlowService.getFlowOrThrow(deltaFileFlow.getName());
+            case DATA_SINK -> dataSinkService.getFlowOrThrow(deltaFileFlow.getName());
+        };
     }
 
     private ActionConfiguration actionConfiguration(String flow, FlowType flowType, String actionName) {
