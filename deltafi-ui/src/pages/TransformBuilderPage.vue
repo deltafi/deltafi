@@ -828,7 +828,7 @@ const flattenedActions = ref([]);
 const getLoadedActions = () => {
   for (const plugin of allActionsData.value) {
     for (const action of plugin["actions"]) {
-      if (action.type === "TIMED_INGRESS") continue;
+      if (!_.isEqual(action.type, "TRANSFORM")) continue;
 
       // Reformatting each action.
       action["disableEdit"] = true;
