@@ -157,6 +157,10 @@ new Docute({
           link: '/core-actions/org.deltafi.core.action.delay.Delay'
         },
         {
+          title: 'DeleteContent',
+          link: '/core-actions/org.deltafi.core.action.delete.DeleteContent.md'
+        },
+        {
           title: 'Error',
           link: '/core-actions/org.deltafi.core.action.error.Error'
         },
@@ -171,6 +175,10 @@ new Docute({
         {
           title: 'Filter',
           link: '/core-actions/org.deltafi.core.action.filter.Filter'
+        },
+        {
+          title: 'HttpEgress',
+          link: '/core-actions/org.deltafi.core.action.egress.HttpEgress.md'
         },
         {
           title: 'JoltTransform',

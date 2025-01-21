@@ -28,7 +28,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @NoArgsConstructor
 public class HttpEgressParameters extends ActionParameters {
     @JsonProperty(required = true)
-    @JsonPropertyDescription("The URL to post the DeltaFile to")
+    @JsonPropertyDescription("The URL to send the DeltaFile to")
     private String url;
 
     @JsonProperty(defaultValue = "3")
@@ -36,6 +36,6 @@ public class HttpEgressParameters extends ActionParameters {
     private Integer retryCount = 3;
 
     @JsonProperty(defaultValue = "150")
-    @JsonPropertyDescription("Number milliseconds to wait for an HTTP retry")
+    @JsonPropertyDescription("Number of milliseconds to wait for an HTTP retry")
     private Integer retryDelayMs = 150;
 }

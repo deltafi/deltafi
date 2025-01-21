@@ -72,10 +72,10 @@ public class HttpEgress extends HttpEgressBase<HttpEgress.Parameters> {
         private String metadataKey;
 
         @JsonProperty(defaultValue = "POST")
-        @JsonPropertyDescription("The HTTP method: DELETE, PATCH, POST, or PUT")
+        @JsonPropertyDescription("HTTP method to use when sending the data: DELETE, PATCH, POST, or PUT")
         private HttpRequestMethod method = HttpRequestMethod.POST;
 
-        @JsonPropertyDescription("Additional key/value pairs to set in the HTTP Headers")
+        @JsonPropertyDescription("Additional key/value pairs to set in the HTTP header")
         private Map<String, String> extraHeaders;
     }
 }
