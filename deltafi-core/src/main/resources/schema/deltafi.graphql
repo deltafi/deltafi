@@ -94,6 +94,19 @@ enum ActionType {
   UNKNOWN
 }
 
+enum SummaryByFlowSort {
+  NAME,
+  TYPE,
+  COUNT
+}
+
+enum SummaryByMessageSort {
+  NAME,
+  TYPE,
+  COUNT,
+  MESSAGE
+}
+
 type Action {
   name: String!
   number: Int!
@@ -384,11 +397,11 @@ type Query {
   lastErrored(last: Int) : [DeltaFile]!
   lastWithName(name: String!) : DeltaFile
 
-  errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection): ErrorsByFlow!
-  errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection): ErrorsByMessage!
+  errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByFlowSort): ErrorsByFlow!
+  errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByMessageSort): ErrorsByMessage!
 
-  filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection): FilteredByFlow!
-  filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection): FilteredByMessage!
+  filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByFlowSort): FilteredByFlow!
+  filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByMessageSort): FilteredByMessage!
 
   errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]!
   sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]!

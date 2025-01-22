@@ -22,9 +22,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.generated.types.CountPerFlow;
-import org.deltafi.core.generated.types.CountPerMessage;
-import org.deltafi.core.generated.types.DeltaFileDirection;
+import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Repository;
 
@@ -57,26 +55,26 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     }
 
     @Override
-    public SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlow(offset, limit, filter, direction, DeltaFileFlowState.ERROR);
+    public SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField) {
+        return getSummaryByFlow(offset, limit, filter, direction, sortField, DeltaFileFlowState.ERROR);
     }
 
     @Override
-    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlow(offset, limit, filter, direction, DeltaFileFlowState.FILTERED);
+    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField) {
+        return getSummaryByFlow(offset, limit, filter, direction, sortField, DeltaFileFlowState.FILTERED);
     }
 
     @Override
-    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlowAndMessage(offset, limit, filter, direction, DeltaFileFlowState.ERROR);
+    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField) {
+        return getSummaryByFlowAndMessage(offset, limit, filter, direction, sortField, DeltaFileFlowState.ERROR);
     }
 
     @Override
-    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
-        return getSummaryByFlowAndMessage(offset, limit, filter, direction, DeltaFileFlowState.FILTERED);
+    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField) {
+        return getSummaryByFlowAndMessage(offset, limit, filter, direction, sortField, DeltaFileFlowState.FILTERED);
     }
 
-    private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, DeltaFileFlowState deltaFileFlowState) {
+    private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField, DeltaFileFlowState deltaFileFlowState) {
         StringBuilder sql = new StringBuilder("""
                 SELECT name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
                 FROM delta_file_flows
@@ -86,7 +84,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
         sql.append("GROUP BY name, type ");
 
-        addFooterClauses(sql, direction, false);
+        addFooterClauses(sql, sortField.toString().toLowerCase(), direction, false);
 
         Query query = entityManager.createNativeQuery(sql.toString())
                 .setParameter("state", deltaFileFlowState.name())
@@ -106,7 +104,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         return new SummaryByFlow(offset != null ? offset : 0, countPerFlow.size(), totalCount.intValue(), countPerFlow);
     }
 
-    private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, DeltaFileFlowState flowState) {
+    private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
             SELECT error_or_filter_cause, name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
             FROM delta_file_flows
@@ -116,7 +114,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
         sql.append("GROUP BY error_or_filter_cause, name, type ");
 
-        addFooterClauses(sql, direction, true);
+        addFooterClauses(sql, sortField == SummaryByMessageSort.MESSAGE ? "error_or_filter_cause" : sortField.toString().toLowerCase(), direction, true);
 
         Query query = entityManager.createNativeQuery(sql.toString())
                 .setParameter("state", flowState.toString())
@@ -158,8 +156,9 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         }
     }
 
-    private void addFooterClauses(StringBuilder sql, DeltaFileDirection direction, boolean includeCause) {
-        sql.append("ORDER BY name");
+    private void addFooterClauses(StringBuilder sql, String orderBy, DeltaFileDirection direction, boolean includeCause) {
+        sql.append("ORDER BY ");
+        sql.append(orderBy);
         if (direction == null || direction == DeltaFileDirection.ASC) {
             sql.append(" ASC ");
         } else {
@@ -167,7 +166,9 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         }
 
         if (includeCause) {
-            sql.append(", error_or_filter_cause");
+            String secondary = orderBy.equals("name") ? "error_or_filter_cause" : "name";
+            sql.append(", ");
+            sql.append(secondary);
             if (direction == null || direction == DeltaFileDirection.ASC) {
                 sql.append(" ASC ");
             } else {

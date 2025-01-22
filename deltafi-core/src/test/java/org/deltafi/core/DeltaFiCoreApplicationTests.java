@@ -3631,7 +3631,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile5);
 
 		SummaryByFlow firstPage = deltaFilesService.getErrorSummaryByFlow(
-				0, 2, null, null);
+				0, 2, null, null, null);
 
 		assertEquals(2, firstPage.count());
 		assertEquals(0, firstPage.offset());
@@ -3648,7 +3648,7 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(firstPage.countPerFlow().get(1).getDids().contains(deltaFile3.getDid()));
 
 		SummaryByFlow secondPage = deltaFilesService.getErrorSummaryByFlow(
-				2, 2, null, null);
+				2, 2, null, null, null);
 
 		assertEquals(1, secondPage.count());
 		assertEquals(2, secondPage.offset());
@@ -3666,7 +3666,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile7);
 
 		SummaryByFlow filterByTime = deltaFilesService.getErrorSummaryByFlow(
-				0, 99, ErrorSummaryFilter.builder().modifiedBefore(now).build(), DeltaFileDirection.DESC);
+				0, 99, ErrorSummaryFilter.builder().modifiedBefore(now).build(), DeltaFileDirection.DESC, null);
 
 		assertEquals(2, filterByTime.count());
 		assertEquals(0, filterByTime.offset());
@@ -3684,7 +3684,7 @@ class DeltaFiCoreApplicationTests {
 						.flow("flow3")
 						.modifiedBefore(now)
 						.build(),
-				DeltaFileDirection.ASC);
+				DeltaFileDirection.ASC, null);
 
 		assertEquals(1, filterByFlow.count());
 		assertEquals(0, filterByFlow.offset());
@@ -3697,7 +3697,7 @@ class DeltaFiCoreApplicationTests {
 				0, 99, ErrorSummaryFilter.builder()
 						.flow("flowNotFound")
 						.modifiedBefore(now)
-						.build(), null);
+						.build(), null, null);
 
 		assertEquals(0, noneFound.count());
 		assertEquals(0, noneFound.offset());
@@ -3758,7 +3758,7 @@ class DeltaFiCoreApplicationTests {
 				.build();
 
 		SummaryByFlow resultsAck = deltaFilesService.getErrorSummaryByFlow(
-				0, 99, filterAck, null);
+				0, 99, filterAck, null, null);
 
 		assertEquals(1, resultsAck.count());
 		assertEquals(1, resultsAck.countPerFlow().size());
@@ -3772,7 +3772,7 @@ class DeltaFiCoreApplicationTests {
 				.build();
 
 		SummaryByFlow resultsNoAck = deltaFilesService.getErrorSummaryByFlow(
-				0, 99, filterNoAck, null);
+				0, 99, filterNoAck, null, null);
 
 		assertEquals(1, resultsNoAck.count());
 		assertEquals(1, resultsNoAck.countPerFlow().size());
@@ -3785,7 +3785,7 @@ class DeltaFiCoreApplicationTests {
 				.build();
 
 		SummaryByFlow resultsForFlow = deltaFilesService.getErrorSummaryByFlow(
-				0, 99, filterFlowOnly, null);
+				0, 99, filterFlowOnly, null, null);
 
 		assertEquals(1, resultsForFlow.count());
 		assertEquals(1, resultsForFlow.countPerFlow().size());
@@ -3939,7 +3939,7 @@ class DeltaFiCoreApplicationTests {
 		loadDeltaFilesWithActionErrors(now, plusTwo);
 
 		SummaryByFlowAndMessage fullSummary = deltaFilesService.getErrorSummaryByMessage(
-				0, 99, null, null);
+				0, 99, null, null, null);
 
 		assertEquals(0, fullSummary.offset());
 		assertEquals(7, fullSummary.count());
@@ -3963,7 +3963,7 @@ class DeltaFiCoreApplicationTests {
 		loadDeltaFilesWithActionErrors(now, plusTwo);
 
 		SummaryByFlowAndMessage orderByFlow = deltaFilesService.getErrorSummaryByMessage(
-				0, 4, null, DeltaFileDirection.ASC);
+				0, 4, null, DeltaFileDirection.ASC, null);
 
 		assertEquals(0, orderByFlow.offset());
 		assertEquals(4, orderByFlow.count());
@@ -3974,6 +3974,19 @@ class DeltaFiCoreApplicationTests {
 		matchesCounterPerMessage(orderByFlow, 1, "causeA", "f1", List.of(DIDS.get(3), DIDS.get(4)));
 		matchesCounterPerMessage(orderByFlow, 2, "causeX", "f1", List.of(DIDS.get(1)));
 		matchesCounterPerMessage(orderByFlow, 3, "causeZ", "f1", List.of(DIDS.get(8)));
+
+		SummaryByFlowAndMessage orderByCountDesc = deltaFilesService.getErrorSummaryByMessage(
+				0, 4, null, DeltaFileDirection.DESC, SummaryByMessageSort.COUNT);
+
+		assertEquals(0, orderByCountDesc.offset());
+		assertEquals(4, orderByCountDesc.count());
+		assertEquals(7, orderByCountDesc.totalCount());
+		assertEquals(4, orderByCountDesc.countPerMessage().size());
+
+		matchesCounterPerMessage(orderByCountDesc, 0, "causeZ", "f3", List.of(DIDS.get(6), DIDS.get(5), DIDS.get(7)));
+		matchesCounterPerMessage(orderByCountDesc, 1, "causeX", "f2", List.of(DIDS.get(0), DIDS.get(2)));
+		matchesCounterPerMessage(orderByCountDesc, 2, "causeA", "f1", List.of(DIDS.get(4), DIDS.get(3)));
+		matchesCounterPerMessage(orderByCountDesc, 3, "causeZ", "f2", List.of(DIDS.get(9)));
 	}
 
 	@Test
@@ -3988,7 +4001,7 @@ class DeltaFiCoreApplicationTests {
 				.modifiedBefore(plusOne).build();
 
 		SummaryByFlowAndMessage resultsBefore = deltaFilesService.getErrorSummaryByMessage(
-				0, 99, filterBefore, null);
+				0, 99, filterBefore, null, null);
 
 		assertEquals(0, resultsBefore.offset());
 		assertEquals(6, resultsBefore.count());
@@ -4007,7 +4020,7 @@ class DeltaFiCoreApplicationTests {
 				.modifiedAfter(plusOne).build();
 
 		SummaryByFlowAndMessage resultAfter = deltaFilesService.getErrorSummaryByMessage(
-				0, 99, filterAfter, null);
+				0, 99, filterAfter, null, null);
 
 		assertEquals(0, resultAfter.offset());
 		assertEquals(1, resultAfter.count());
@@ -4028,7 +4041,7 @@ class DeltaFiCoreApplicationTests {
 				.flow("f1").build();
 
 		SummaryByFlowAndMessage firstPage = deltaFilesService.getErrorSummaryByMessage(
-				0, 2, filter, DeltaFileDirection.DESC);
+				0, 2, filter, DeltaFileDirection.DESC, null);
 
 		assertEquals(0, firstPage.offset());
 		assertEquals(2, firstPage.count());
@@ -4038,7 +4051,7 @@ class DeltaFiCoreApplicationTests {
 		matchesCounterPerMessage(firstPage, 1, "causeX", "f1", List.of(DIDS.get(1)));
 
 		SummaryByFlowAndMessage pageTwo = deltaFilesService.getErrorSummaryByMessage(
-				2, 2, filter, DeltaFileDirection.DESC);
+				2, 2, filter, DeltaFileDirection.DESC, null);
 
 		assertEquals(2, pageTwo.offset());
 		assertEquals(1, pageTwo.count());
@@ -4047,7 +4060,7 @@ class DeltaFiCoreApplicationTests {
 		matchesCounterPerMessage(pageTwo, 0, "causeA", "f1", List.of(DIDS.get(3), DIDS.get(4)));
 
 		SummaryByFlowAndMessage invalidPage = deltaFilesService.getErrorSummaryByMessage(
-				4, 2, filter, DeltaFileDirection.DESC);
+				4, 2, filter, DeltaFileDirection.DESC, null);
 
 		// there was only enough data for two pages
 		assertEquals(4, invalidPage.offset());
@@ -4065,7 +4078,7 @@ class DeltaFiCoreApplicationTests {
 
 		SummaryByFlowAndMessage noneFound = deltaFilesService.getErrorSummaryByMessage(
 				0, 99, ErrorSummaryFilter.builder()
-						.flow("flowNotFound").build(), null);
+						.flow("flowNotFound").build(), null, null);
 
 		assertEquals(0, noneFound.offset());
 		assertEquals(0, noneFound.count());

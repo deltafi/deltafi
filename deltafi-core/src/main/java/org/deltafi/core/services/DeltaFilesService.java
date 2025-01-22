@@ -1772,32 +1772,36 @@ public class DeltaFilesService {
         }
     }
 
-    public SummaryByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
+    public SummaryByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField) {
         return deltaFileFlowRepo.getErrorSummaryByFlow(offset,
-                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                (limit != null && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
-                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
+                direction != null ? direction : DeltaFileDirection.ASC,
+                sortField != null ? sortField : SummaryByFlowSort.NAME);
     }
 
-    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
+    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField) {
         return deltaFileFlowRepo.getErrorSummaryByMessage(offset,
-                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                (limit != null && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
-                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
+                direction != null ? direction : DeltaFileDirection.ASC,
+                sortField != null ? sortField : SummaryByMessageSort.NAME);
     }
 
-    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
+    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField) {
         return deltaFileFlowRepo.getFilteredSummaryByFlow(offset,
-                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                (limit != null && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
-                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
+                direction != null ? direction : DeltaFileDirection.ASC,
+                sortField != null ? sortField : SummaryByFlowSort.NAME);
     }
 
-    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
+    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField) {
         return deltaFileFlowRepo.getFilteredSummaryByMessage(offset,
-                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                (limit != null && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter,
-                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
+                direction != null ? direction : DeltaFileDirection.ASC,
+                sortField != null ? sortField : SummaryByMessageSort.NAME);
     }
 
     public List<String> annotationKeys() {

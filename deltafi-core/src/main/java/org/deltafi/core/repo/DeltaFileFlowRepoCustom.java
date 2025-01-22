@@ -18,6 +18,8 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.generated.types.DeltaFileDirection;
+import org.deltafi.core.generated.types.SummaryByFlowSort;
+import org.deltafi.core.generated.types.SummaryByMessageSort;
 import org.deltafi.core.types.*;
 
 import java.util.List;
@@ -41,9 +43,10 @@ public interface DeltaFileFlowRepoCustom {
      * @param limit   Maximum number of flows to return
      * @param filter  Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
+     * @param sortField Field to order by, optional
      * @return the SummaryByFlow
      */
-    SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction);
+    SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField);
 
     /**
      * Count the number of filtered DeltaFiles per dataSource using the optional filter parameters, and return the requested
@@ -53,9 +56,10 @@ public interface DeltaFileFlowRepoCustom {
      * @param limit   Maximum number of flows to return
      * @param filter  Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
+     * @param sortField Field to order by, optional
      * @return the SummaryByFlow
      */
-    SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction);
+    SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField);
 
     /**
      * Count the number of errors per errorMessage + dataSource using the optional filter parameters, and return the requested
@@ -65,9 +69,10 @@ public interface DeltaFileFlowRepoCustom {
      * @param limit   Maximum number of errorMessage/flows to return
      * @param filter  Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
+     * @param sortField Field to order by, optional
      * @return the SummaryByFlowAndMessage
      */
-    SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction);
+    SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField);
 
     /**
      * Count the number of filtered DeltaFiles per dataSource and filterCause using the optional filter parameters, and return the requested
@@ -77,9 +82,10 @@ public interface DeltaFileFlowRepoCustom {
      * @param limit   Maximum number of errorMessage/flows to return
      * @param filter  Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
+     * @param sortField Field to order by, optional
      * @return the SummaryByFlowAndMessage
      */
-    SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction);
+    SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField);
 
     List<ColdQueuedActionSummary> coldQueuedActionsSummary();
 }

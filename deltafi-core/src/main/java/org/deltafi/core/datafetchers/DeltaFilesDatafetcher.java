@@ -145,8 +145,9 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
-          @InputArgument DeltaFileDirection direction) {
-    return deltaFilesService.getErrorSummaryByFlow(offset, limit, filter, direction);
+          @InputArgument DeltaFileDirection direction,
+          @InputArgument SummaryByFlowSort sortField) {
+    return deltaFilesService.getErrorSummaryByFlow(offset, limit, filter, direction, sortField);
   }
 
   @DgsQuery
@@ -155,8 +156,9 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
-          @InputArgument DeltaFileDirection direction) {
-    return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, direction);
+          @InputArgument DeltaFileDirection direction,
+          @InputArgument SummaryByMessageSort sortField) {
+    return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, direction, sortField);
   }
 
   @DgsQuery
@@ -165,8 +167,9 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument FilteredSummaryFilter filter,
-          @InputArgument DeltaFileDirection direction) {
-    return deltaFilesService.getFilteredSummaryByFlow(offset, limit, filter, direction);
+          @InputArgument DeltaFileDirection direction,
+          @InputArgument SummaryByFlowSort sortField) {
+    return deltaFilesService.getFilteredSummaryByFlow(offset, limit, filter, direction, sortField);
   }
 
   @DgsQuery
@@ -175,8 +178,9 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument FilteredSummaryFilter filter,
-          @InputArgument DeltaFileDirection direction) {
-    return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, direction);
+          @InputArgument DeltaFileDirection direction,
+          @InputArgument SummaryByMessageSort sortField) {
+    return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, direction, sortField);
   }
 
   @DgsMutation
