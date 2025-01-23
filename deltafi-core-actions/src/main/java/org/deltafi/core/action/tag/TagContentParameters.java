@@ -15,11 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.action;
+package org.deltafi.core.action.tag;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.core.action.ContentMatchingParameters;
 
 import java.util.List;
 
@@ -27,12 +29,8 @@ import java.util.List;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class ContentSelectionParameters extends ContentMatchingParameters {
-    @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("Retain the existing content")
-    private boolean retainExistingContent = false;
-
-    public ContentSelectionParameters(List<String> mediaTypes) {
-        super(mediaTypes);
-    }
+public class TagContentParameters extends ContentMatchingParameters {
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Tags to add to the content.")
+    private List<String> tagsToAdd;
 }

@@ -74,10 +74,11 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param content   String content to store.  The entire string will be stored in content storage
      * @param name      the content name
      * @param mediaType Media type for the content being stored
+     * @return The created ActionContent
      */
     @SuppressWarnings("unused")
-    public void saveContent(@NotNull String content, @NotNull String name, @NotNull String mediaType) {
-        saveContent(content.getBytes(), name, mediaType);
+    public ActionContent saveContent(@NotNull String content, @NotNull String name, @NotNull String mediaType) {
+        return saveContent(content.getBytes(), name, mediaType);
     }
 
     /**
@@ -85,10 +86,13 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param bytes     Byte array of content to store.  The entire byte array will be stored in content storage
      * @param name      the content name
      * @param mediaType Media type for the content being stored
+     * @return The created ActionContent
      */
     @SuppressWarnings("unused")
-    public void saveContent(@NotNull byte[] bytes, @NotNull String name, @NotNull String mediaType) {
-        addContent(ActionContent.saveContent(context, bytes, name, mediaType));
+    public ActionContent saveContent(@NotNull byte[] bytes, @NotNull String name, @NotNull String mediaType) {
+        ActionContent actionContent = ActionContent.saveContent(context, bytes, name, mediaType);
+        addContent(actionContent);
+        return actionContent;
     }
 
     /**
@@ -97,9 +101,12 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * stream may be closed by underlying processors after execution
      * @param name the content name
      * @param mediaType Media type for the content being stored
+     * @return The created ActionContent
      */
-    public void saveContent(@NotNull InputStream stream, @NotNull String name, @NotNull String mediaType) {
-        addContent(ActionContent.saveContent(context, stream, name, mediaType));
+    public ActionContent saveContent(@NotNull InputStream stream, @NotNull String name, @NotNull String mediaType) {
+        ActionContent actionContent = ActionContent.saveContent(context, stream, name, mediaType);
+        addContent(actionContent);
+        return actionContent;
     }
 
     /**
@@ -108,9 +115,12 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param writer a Writer that produces the content to be stored
      * @param name the content name
      * @param mediaType Media type for the content being stored
+     * @return The created ActionContent
      */
-    public void saveContent(@NotNull Writer writer, @NotNull String name, @NotNull String mediaType) {
-        addContent(ActionContent.saveContent(context, writer, name, mediaType));
+    public ActionContent saveContent(@NotNull Writer writer, @NotNull String name, @NotNull String mediaType) {
+        ActionContent actionContent = ActionContent.saveContent(context, writer, name, mediaType);
+        addContent(actionContent);
+        return actionContent;
     }
 
     /**
@@ -149,10 +159,10 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
 
     /**
      * Add all the annotations in the given map to this Result. These entries will be searchable.
-     * @param metadata map of entries that will be added to the annotations
+     * @param annotations map of entries that will be added to the annotations
      */
     @SuppressWarnings("unused")
-    public void addAnnotations(@NotNull Map<String, String> metadata) {
-        annotations.putAll(metadata);
+    public void addAnnotations(@NotNull Map<String, String> annotations) {
+        this.annotations.putAll(annotations);
     }
 }

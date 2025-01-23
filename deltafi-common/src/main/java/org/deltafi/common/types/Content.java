@@ -22,9 +22,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.Segment;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * A data object that defines a named content reference
@@ -36,11 +34,19 @@ public class Content {
   private String name;
   private String mediaType;
   private List<Segment> segments = new ArrayList<>();
+  private Set<String> tags = new HashSet<>();
+
+  public Content(String name, String mediaType, List<Segment> segments) {
+    this.name = name;
+    this.mediaType = mediaType;
+    this.segments.addAll(segments);
+  }
 
   public Content(Content other) {
     this.name = other.name;
     this.mediaType = other.mediaType;
-    this.segments = other.segments.stream().map(Segment::new).toList();
+    this.segments = new ArrayList<>(other.segments.stream().map(Segment::new).toList());
+    this.tags = new HashSet<>(other.tags);
   }
 
   /**
@@ -71,11 +77,13 @@ public class Content {
    * @param mediaType mediaType
    * @param segments segments
    * @param ignored placeholder for size
+   * @param tags tags
    */
-  public Content(String name, String mediaType, List<Segment> segments, long ignored) {
+  public Content(String name, String mediaType, List<Segment> segments, long ignored, Set<String> tags) {
     this.name = name;
     this.mediaType = mediaType;
-    this.segments = Collections.unmodifiableList(segments);
+    this.segments = new ArrayList<>(segments);
+    this.tags = new HashSet<>(tags);
   }
 
   /**
@@ -197,9 +205,9 @@ public class Content {
   /**
    * Creates and returns a copy of the current Content object.
    *
-   * @return A new Content object that is a copy of the current object. The segments are copied into a new ArrayList.
+   * @return A new Content object that is a copy of the current object. The segments are deep copied into a new ArrayList.
    */
   public Content copy() {
-    return new Content(name, mediaType, new ArrayList<>(segments));
+    return new Content(name, mediaType, new ArrayList<>(segments.stream().map(Segment::new).toList()), new HashSet<>(tags));
   }
 }

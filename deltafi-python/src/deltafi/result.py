@@ -112,16 +112,20 @@ class IngressResultItem:
 
         return self
 
-    def save_string_content(self, string_data: str, name: str, media_type: str):
+    def save_string_content(self, string_data: str, name: str, media_type: str, tags: set = None):
         segment = self.context.content_service.put_str(self._did, string_data)
         c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        if tags is not None:
+            c.add_tags(tags)
         self.content.append(c)
         self.context.saved_content.append(c)
         return self
 
-    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
+    def save_byte_content(self, byte_data: bytes, name: str, media_type: str, tags: set = None):
         segment = self.context.content_service.put_bytes(self._did, byte_data)
         c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        if tags is not None:
+            c.add_tags(tags)
         self.content.append(c)
         self.context.saved_content.append(c)
         return self
@@ -207,16 +211,20 @@ class TransformResult(Result):
 
         return self
 
-    def save_string_content(self, string_data: str, name: str, media_type: str):
+    def save_string_content(self, string_data: str, name: str, media_type: str, tags: set = None):
         segment = self.context.content_service.put_str(self.context.did, string_data)
         c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        if tags is not None:
+            c.add_tags(tags)
         self.content.append(c)
         self.context.saved_content.append(c)
         return self
 
-    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
+    def save_byte_content(self, byte_data: bytes, name: str, media_type: str, tags: set = None):
         segment = self.context.content_service.put_bytes(self.context.did, byte_data)
         c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        if tags is not None:
+            c.add_tags(tags)
         self.content.append(c)
         self.context.saved_content.append(c)
         return self

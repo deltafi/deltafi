@@ -34,6 +34,7 @@ public class ContentConverter {
 
     public static Content convert(ActionContent actionContent) {
         return new org.deltafi.common.types.Content(actionContent.getContent().getName(),
-                actionContent.getMediaType(), actionContent.getContent().getSegments());
+                actionContent.getMediaType(), actionContent.getContent().getSegments(),
+                actionContent.getTags());
     }
 }

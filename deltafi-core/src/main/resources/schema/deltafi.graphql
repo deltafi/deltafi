@@ -54,6 +54,7 @@ type Content {
   segments: [Segment!]!
   mediaType: String!
   size: Long!
+  tags: [String!]!
 }
 
 type Segment {

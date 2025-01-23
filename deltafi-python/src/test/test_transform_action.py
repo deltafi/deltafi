@@ -49,7 +49,7 @@ class SampleTransformAction(TransformAction):
         return TransformResult(context) \
             .add_metadata('transformKey', 'transformValue') \
             .annotate('transformAnnotate', 'transformAnnotateValue') \
-            .save_string_content("Abcde12345", "ten.txt", "text.plain")
+            .save_string_content("Abcde12345", "ten.txt", "text.plain", { "tag" })
 
 
 class InvalidResult(TransformAction):
@@ -145,7 +145,8 @@ def test_action_returns_transform():
                         'size': 100,
                         'uuid': '333'
                     }
-                ]
+                ],
+                'tags': [ 'tag' ]
             }
         ],
         'metadata': {

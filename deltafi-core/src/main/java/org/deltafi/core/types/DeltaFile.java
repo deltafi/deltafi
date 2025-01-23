@@ -524,7 +524,7 @@ public class DeltaFile {
   public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, Action action, String systemName,
                                              String returnAddress, String memo) {
     WrappedActionInput actionInput = buildActionInput(actionConfiguration, flow, List.of(), action, systemName, returnAddress, memo);
-    actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent().stream().map(c -> new Content(c.getName(), c.getMediaType(), c.getSegments())).toList())));
+    actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent().stream().map(Content::copy).toList())));
     return actionInput;
   }
 

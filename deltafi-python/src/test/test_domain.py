@@ -46,6 +46,7 @@ def test_content_json():
 def test_content_copy():
     segment = Segment(uuid="id1", offset=0, size=100, did="device1")
     content = Content(name="test", segments=[segment], media_type="text/plain", content_service=mock(ContentService))
+    content.add_tag("tag")
     copied_content = content.copy()
     assert content == copied_content
     assert content is not copied_content

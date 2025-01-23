@@ -59,6 +59,7 @@ export default function useDeltaFiles() {
                 did: true,
               },
               mediaType: true,
+              tags: true,
               size: true,
             },
             topics: true,
@@ -86,6 +87,7 @@ export default function useDeltaFiles() {
               name: true,
               mediaType: true,
               size: true,
+              tags: true,
               segments: {
                 uuid: true,
                 offset: true,

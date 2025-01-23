@@ -129,7 +129,7 @@ class Content:
     A Content class that holds information about a piece of content, including its name, segments, mediaType, and service.
     Attributes:
         name (str): The name of the content.
-        segments (List<Segment): The list of segments in storage that make up the Content
+        segments (List<Segment>): The list of segments in storage that make up the Content
         media_type (str): The media type of the content
         content_service (ContentService): A ContentService object used to retrieve the content data.
     """
@@ -138,6 +138,7 @@ class Content:
         self.name = name
         self.segments = segments
         self.media_type = media_type
+        self.tags = set()
         self.content_service = content_service
 
     def json(self):
@@ -150,7 +151,8 @@ class Content:
         return {
             'name': self.name,
             'segments': [segment.json() for segment in self.segments],
-            'mediaType': self.media_type
+            'mediaType': self.media_type,
+            'tags': list(self.tags)
         }
 
     def copy(self):
@@ -160,10 +162,12 @@ class Content:
         Returns:
             Content: A deep copy of the Content object.
         """
-        return Content(name=self.name,
+        new_copy = Content(name=self.name,
                        segments=copy.deepcopy(self.segments),
                        media_type=self.media_type,
                        content_service=self.content_service)
+        new_copy.add_tags(self.tags.copy())
+        return new_copy
 
     def subcontent(self, offset: int, size: int):
         """
@@ -297,11 +301,66 @@ class Content:
             segment_names[seg.id()] = seg
         return segment_names
 
+    def add_tag(self, tag: str):
+        """
+        Adds a tag to the content.
+
+        Args:
+            tag (str): The tag to add.
+        """
+        self.tags.add(tag)
+
+    def add_tags(self, tags: set):
+        """
+        Adds multiple tags to the content.
+
+        Args:
+            tags (set): A set of tags to add.
+        """
+        self.tags.update(tags)
+
+    def remove_tag(self, tag: str):
+        """
+        Removes a tag from the content.
+
+        Args:
+            tag (str): The tag to remove.
+        """
+        self.tags.discard(tag)
+
+    def has_tag(self, tag: str) -> bool:
+        """
+        Checks if the content has a specific tag.
+
+        Args:
+            tag (str): The tag to check.
+
+        Returns:
+            bool: True if the content has the tag, False otherwise.
+        """
+        return tag in self.tags
+
+    def clear_tags(self):
+        """
+        Clears all tags from the content.
+        """
+        self.tags.clear()
+
+    def get_tags(self) -> set:
+        """
+        Returns the tags associated with the content.
+
+        Returns:
+            set: A set of tags.
+        """
+        return self.tags
+
     def __eq__(self, other):
         if isinstance(other, Content):
             return (self.name == other.name and
                     self.segments == other.segments and
                     self.media_type == other.media_type and
+                    self.tags == other.tags and
                     self.content_service == other.content_service)
         return False
 
@@ -323,10 +382,13 @@ class Content:
             name = None
         segments = [Segment.from_dict(segment) for segment in content['segments']]
         media_type = content['mediaType']
-        return Content(name=name,
-                       segments=segments,
-                       media_type=media_type,
-                       content_service=content_service)
+        action_content = Content(name=name,
+                                 segments=segments,
+                                 media_type=media_type,
+                                 content_service=content_service)
+        tags = set(content.get('tags', []))
+        action_content.add_tags(tags)
+        return action_content
 
 
 class DeltaFileMessage(NamedTuple):

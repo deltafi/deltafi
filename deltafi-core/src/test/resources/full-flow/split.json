@@ -21,7 +21,8 @@
                             "did": "%1$s"
                         }
                     ],
-                    "mediaType": "application/octet-stream"
+                    "mediaType": "application/octet-stream",
+                    "tags": ["a", "b"]
                 }
             ],
             "metadata": {
@@ -46,7 +47,8 @@
                             "did": "%1$s"
                         }
                     ],
-                    "mediaType": "application/octet-stream"
+                    "mediaType": "application/octet-stream",
+                    "tags": ["b", "c"]
                 }
             ],
             "metadata": {

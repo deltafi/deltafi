@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -309,5 +310,59 @@ public class ActionContent {
      */
     public void append(ActionContent other) {
         content.getSegments().addAll(other.content.getSegments());
+    }
+
+    /**
+     * Adds a tag to this {@code ActionContent} instance.
+     *
+     * @param tag the tag to add
+     */
+    public void addTag(String tag) {
+        content.getTags().add(tag);
+    }
+
+    /**
+     * Adds multiple tags to this {@code ActionContent} instance.
+     *
+     * @param tags the set of tags to add
+     */
+    public void addTags(Set<String> tags) {
+        content.getTags().addAll(tags);
+    }
+
+    /**
+     * Retrieves the set of tags associated with this {@code ActionContent} instance.
+     *
+     * @return the set of tags
+     */
+    public Set<String> getTags() {
+        return content.getTags();
+    }
+
+    /**
+     * Removes all tags from this {@code ActionContent} instance.
+     */
+    public void clearTags() {
+        content.getTags().clear();
+    }
+
+    /**
+     * Removes a specific tag from this {@code ActionContent} instance.
+     *
+     * @param tag the tag to remove
+     * @return {@code true} if the tag was removed, {@code false} otherwise
+     */
+    public boolean removeTag(String tag) {
+        return content.getTags().remove(tag);
+    }
+
+    /**
+     * Checks if a specific tag is associated with this {@code ActionContent} instance.
+     *
+     * @param tag the tag to check
+     * @return {@code true} if the tag is present, {@code false} otherwise
+     */
+    public boolean hasTag(String tag) {
+        return content.getTags().contains(tag);
     }
 }

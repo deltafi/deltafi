@@ -25,6 +25,10 @@
             <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
           </template>
           <template #end>
+            <span class="mr-3">
+              <ContentTag v-for="tag in content.tags" :key="tag" :value="tag" class="ml-2"/>
+            </span>
+            <Divider v-if="content.tags.length > 0" layout="vertical" />
             <Button :label="content.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
             <Button class="p-button-text p-button-secondary" disabled>
@@ -53,6 +57,7 @@
 <script setup>
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import ContentViewerMenu from "@/components/ContentViewerMenu.vue";
+import ContentTag from "@/components/ContentTag.vue";
 import useContent from "@/composables/useContent";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, defineProps, onMounted, ref, toRefs, watch, reactive } from "vue";
@@ -253,6 +258,7 @@ const loadContent = async () => {
     ...content.value,
     size: partialContent.value ? maxPreviewSize : content.value.size,
   };
+  delete request.tags;
   try {
     await fetchContent(request);
   } catch {

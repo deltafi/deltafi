@@ -47,13 +47,18 @@
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-4">
+        <div class="col-6">
           <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="parentDids" />
         </div>
-        <div class="col-4">
+        <div class="col-6">
           <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="childDids" />
         </div>
-        <div class="col-4">
+      </div>
+      <div class="row mb-3">
+        <div class="col-6">
+          <ContentTagsPanel :delta-file-data="deltaFile" />
+        </div>
+        <div class="col-6">
           <DeltaFileAnnotationsPanel :delta-file-data="deltaFile" />
         </div>
       </div>
@@ -77,9 +82,6 @@
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
     <MetadataDialogResume ref="metadataDialogResume" :did="[did]" @update="loadDeltaFileData" />
-    <!-- <DialogTemplate component-name="MetadataViewer" header="Metadata" :flow-name="deltaFile.sourceInfo?.flow" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata" :dismissable-mask="true">
-      <span id="cumulativeMetadataDialog" />
-    </DialogTemplate> -->
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
@@ -94,6 +96,7 @@ import DeltaFileFlowsPanel from "@/components/DeltaFileViewer/DeltaFileFlowsPane
 import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileViewer/DeltaFileParentChildPanel.vue";
+import ContentTagsPanel from "@/components/DeltaFileViewer/ContentTagsPanel.vue";
 import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";

@@ -4761,6 +4761,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().getFirst().getActionContext().getDid());
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
 
+		assertEquals(Set.of("a", "b"), child1.firstFlow().lastAction().getContent().getLast().getTags());
+		assertEquals(Set.of("b", "c"), child2.firstFlow().lastAction().getContent().getLast().getTags());
+
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "SampleTransformAction", REST_DATA_SOURCE_NAME, null);
 
 		Map<String, String> flowTags = Map.of(
@@ -4771,12 +4774,10 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_OUT, 100).addTags(flowTags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_OUT, 400).addTags(flowTags));
 
-
 		extendTagsForAction(tags, "type");
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
-
 	}
 
 	@Test

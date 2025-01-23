@@ -17,14 +17,20 @@
  */
 package org.deltafi.core.action.split;
 
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.TransformResults;
 import org.deltafi.test.asserters.TransformResultsAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SplitTest {
     @Test
@@ -33,10 +39,12 @@ public class SplitTest {
         DeltaFiTestRunner runner = DeltaFiTestRunner.setup("SplitTest");
 
         Map<String, String> metadata = Map.of("key1", "value1", "key2", "value2");
+        List<ActionContent> actionContent = runner.saveContentFromResource("content1", "content2", "content3");
+        actionContent.forEach(a -> a.addTag(a.getName() + "-tag"));
 
         TransformResultType transformResultType = split.transform(runner.actionContext(),
                 new ActionParameters(), TransformInput.builder()
-                        .content(runner.saveContentFromResource("content1", "content2", "content3"))
+                        .content(actionContent)
                         .metadata(metadata).build());
 
         TransformResultsAssert.assertThat(transformResultType)
@@ -44,5 +52,9 @@ public class SplitTest {
                 .hasChildResultAt(0, "content1", null, "first", metadata, "Child at index 0 matches")
                 .hasChildResultAt(1, "content2", null, "second", metadata, "Child at index 1 matches")
                 .hasChildResultAt(2, "content3", null, "third", metadata, "Child at index 2 matches");
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals(Set.of("content" + (i + 1) + "-tag"), ((TransformResults) transformResultType).getChildResults().get(i).getContent().getFirst().getTags());
+        }
     }
 }
