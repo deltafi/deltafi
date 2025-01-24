@@ -240,10 +240,12 @@ const download = () => {
   if (embeddedContent.value) {
     downloadEmbeddedContent();
   } else {
-    let url = downloadURL({
+    const request = {
       ...content.value,
       ...content.value.name.value,
-    });
+    }
+    delete request.tags
+    let url = downloadURL(request);
     window.open(url);
   }
 };
