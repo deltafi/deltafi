@@ -29,8 +29,7 @@ import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.services.analytics.AnalyticEventService;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.DeltaFileFlow;
+import org.deltafi.core.types.*;
 import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.IngressException;
@@ -39,8 +38,6 @@ import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.metrics.MetricService;
-import org.deltafi.core.types.IngressResult;
-import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.util.FlowBuilders;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -142,14 +139,12 @@ class IngressServiceTest {
         } else {
             Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenThrow(new MissingFlowException("dataSource", FlowType.REST_DATA_SOURCE, FlowState.STOPPED));
         }
-        DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").build();
+        DeltaFileFlow flow = DeltaFileFlow.builder().flowDefinition(FlowDefinition.builder().name("dataSource").type(FlowType.REST_DATA_SOURCE).build()).build();
         DeltaFile deltaFile = DeltaFile.builder().flows(Set.of(flow)).build();
         Mockito.when(deltaFilesService.ingressRest(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
     }
 
     private void verifyNormalExecution(List<IngressResult> ingressResults) throws IOException, ObjectStorageException {
-        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress",
-                DeltaFiConstants.SOURCE, DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
         Mockito.verifyNoMoreInteractions(metricService);
         String content;
         try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResults.getFirst().content())) {

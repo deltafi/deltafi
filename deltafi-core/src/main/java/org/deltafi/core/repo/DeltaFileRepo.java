@@ -53,12 +53,12 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
             "WHERE df.did IN (:dids)")
     List<DeltaFile> findByIdsIn(@NotNull List<UUID> dids);
 
-    /**
-     * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
-     * @param flowName name of dataSource to search for
-     * @return stream of matching DeltaFiles
-     */
-    Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
+    Stream<DeltaFile> findByTerminalAndFlows_FlowDefinition_NameAndFlows_State(
+            boolean isTerminal,
+            String flowName,
+            DeltaFileFlowState state
+    );
+
 
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 

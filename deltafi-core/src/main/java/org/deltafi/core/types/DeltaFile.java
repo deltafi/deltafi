@@ -483,15 +483,14 @@ public class DeltaFile {
             .toList();
   }
 
-  public DeltaFileFlow addFlow(String name, FlowType type, DeltaFileFlow previousFlow, OffsetDateTime now) {
-    return addFlow(name, type, previousFlow, Set.of(), now);
+  public DeltaFileFlow addFlow(FlowDefinition flowDefinition, DeltaFileFlow previousFlow, OffsetDateTime now) {
+    return addFlow(flowDefinition, previousFlow, Set.of(), now);
   }
 
-  public DeltaFileFlow addFlow(String name, FlowType type, DeltaFileFlow previousFlow, Set<String> subscribedTopics, OffsetDateTime now) {
+  public DeltaFileFlow addFlow(FlowDefinition flowDefinition, DeltaFileFlow previousFlow, Set<String> subscribedTopics, OffsetDateTime now) {
     DeltaFileFlow flow = DeltaFileFlow.builder()
-            .name(name)
+            .flowDefinition(flowDefinition)
             .number(flows.stream().mapToInt(DeltaFileFlow::getNumber).max().orElse(0) + 1)
-            .type(type)
             .state(DeltaFileFlowState.IN_FLIGHT)
             .created(now)
             .modified(now)

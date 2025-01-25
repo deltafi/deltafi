@@ -76,13 +76,15 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField, DeltaFileFlowState deltaFileFlowState) {
         StringBuilder sql = new StringBuilder("""
-                SELECT name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
-                FROM delta_file_flows
+                SELECT fd.name, fd.type, COUNT(dff.id) AS count, ARRAY_AGG(dff.delta_file_id) AS dids
+                FROM delta_file_flows dff
+                LEFT JOIN flow_definitions fd
+                ON dff.flow_definition_id = fd.id
                 WHERE state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
-        sql.append("GROUP BY name, type ");
+        sql.append("GROUP BY fd.name, fd.type ");
 
         addFooterClauses(sql, sortField.toString().toLowerCase(), direction, false);
 
@@ -106,13 +108,15 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
-            SELECT error_or_filter_cause, name, type, COUNT(id) AS count, ARRAY_AGG(delta_file_id) AS dids
-            FROM delta_file_flows
-            WHERE state = CAST(:state AS dff_state_enum)\s""");
+            SELECT dff.error_or_filter_cause, fd.name, fd.type, COUNT(dff.id) AS count, ARRAY_AGG(dff.delta_file_id) AS dids
+            FROM delta_file_flows dff
+            LEFT JOIN flow_definitions fd
+            ON dff.flow_definition_id = fd.id
+            WHERE dff.state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
-        sql.append("GROUP BY error_or_filter_cause, name, type ");
+        sql.append("GROUP BY dff.error_or_filter_cause, fd.name, fd.type ");
 
         addFooterClauses(sql, sortField == SummaryByMessageSort.MESSAGE ? "error_or_filter_cause" : sortField.toString().toLowerCase(), direction, true);
 
@@ -137,20 +141,20 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     private void addFilterClauses(StringBuilder sql, SummaryFilter filter) {
         if (filter != null) {
             if (filter.getModifiedAfter() != null) {
-                sql.append("AND modified > :modifiedAfter ");
+                sql.append("AND dff.modified > :modifiedAfter ");
             }
             if (filter.getModifiedBefore() != null) {
-                sql.append("AND modified < :modifiedBefore ");
+                sql.append("AND dff.modified < :modifiedBefore ");
             }
             if (filter.getFlow() != null) {
-                sql.append("AND name = :flow ");
+                sql.append("AND fd.name = :flow ");
             }
 
             if (filter instanceof ErrorSummaryFilter errorFilter && errorFilter.getErrorAcknowledged() != null) {
                 if (errorFilter.getErrorAcknowledged()) {
-                    sql.append("AND error_acknowledged IS NOT NULL ");
+                    sql.append("AND dff.error_acknowledged IS NOT NULL ");
                 } else {
-                    sql.append("AND error_acknowledged IS NULL ");
+                    sql.append("AND dff.error_acknowledged IS NULL ");
                 }
             }
         }
@@ -183,9 +187,11 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         StringBuilder sql = new StringBuilder("""
             SELECT COUNT(*)
             FROM (
-              SELECT DISTINCT name
-              FROM delta_file_flows
-              WHERE state = CAST(:state AS dff_state_enum)\s""");
+              SELECT DISTINCT fd.name
+              FROM delta_file_flows dff
+              LEFT JOIN flow_definitions fd
+              ON dff.flow_definition_id = fd.id
+              WHERE dff.state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
@@ -203,10 +209,12 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         StringBuilder sql = new StringBuilder("""
             SELECT COUNT(*)
             FROM (
-              SELECT DISTINCT error_or_filter_cause, name
-              FROM delta_file_flows
-              WHERE error_or_filter_cause IS NOT NULL
-              AND state = CAST(:state AS dff_state_enum)\s""");
+              SELECT DISTINCT dff.error_or_filter_cause, fd.name
+              FROM delta_file_flows dff
+              JOIN flow_definitions fd
+              ON dff.flow_definition_id = fd.id
+              WHERE dff.error_or_filter_cause IS NOT NULL
+              AND dff.state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
 
@@ -238,13 +246,15 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
         String queryStr = """
             SELECT
-                (actions->(jsonb_array_length(actions) - 1))->>'n' as actionName,
-                type as type,
+                (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' as actionName,
+                fd.type,
                 COUNT(*) as count
-            FROM delta_file_flows
-            WHERE state = 'IN_FLIGHT'
-            AND cold_queued = TRUE
-            GROUP BY (actions->(jsonb_array_length(actions) - 1))->>'n', type
+            FROM delta_file_flows dff
+            JOIN flow_definitions fd
+            ON dff.flow_definition_id = fd.id
+            WHERE dff.state = 'IN_FLIGHT'
+            AND dff.cold_queued = TRUE
+            GROUP BY (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n', fd.type
         """;
 
         Query query = entityManager.createNativeQuery(queryStr);

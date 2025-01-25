@@ -28,7 +28,8 @@ import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
-import org.deltafi.core.util.Util;
+import org.deltafi.core.util.MockFlowDefinitionService;
+import org.deltafi.core.util.UtilService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -70,12 +71,15 @@ class StateMachineTest {
     @Mock private AnalyticEventService analyticEventService;
     @Mock private MetricService metricService;
 
+    private final FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
+    private final UtilService utilService = new UtilService(flowDefinitionService);
+
     @InjectMocks private StateMachine stateMachine;
 
     @Test
     @SuppressWarnings("unchecked")
     void advancesToMultipleDataSinks() {
-        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
         when(transformFlowService.getActiveFlowByName(TRANSFORM_FLOW)).thenReturn(TransformFlowMaker.builder()
@@ -88,12 +92,12 @@ class StateMachineTest {
         when(dataSinkService.getActiveFlowByName(EGRESS_FLOW + "2")).thenReturn(dataSink2);
 
         DeltaFileFlow deltaFileTransformFlow = deltaFile.firstFlow();
-        deltaFileTransformFlow.setType(FlowType.TRANSFORM);
+        deltaFileTransformFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
         // Add flows and set action configurations to simulate PublisherService
-        DeltaFileFlow deltaFileDataSink1 = deltaFile.addFlow(EGRESS_FLOW + "1", FlowType.DATA_SINK, deltaFileTransformFlow,
+        DeltaFileFlow deltaFileDataSink1 = deltaFile.addFlow(FlowDefinition.builder().name(EGRESS_FLOW + "1").type(FlowType.DATA_SINK).build(), deltaFileTransformFlow,
                 OffsetDateTime.now(clock));
         deltaFileDataSink1.setPendingActions(List.of(dataSink1.getEgressAction().getName()));
-        DeltaFileFlow deltaFileDataSink2 = deltaFile.addFlow(EGRESS_FLOW + "2", FlowType.DATA_SINK, deltaFileTransformFlow,
+        DeltaFileFlow deltaFileDataSink2 = deltaFile.addFlow(FlowDefinition.builder().name(EGRESS_FLOW + "2").type(FlowType.DATA_SINK).build(), deltaFileTransformFlow,
                 OffsetDateTime.now(clock));
         deltaFileDataSink2.setPendingActions(List.of(dataSink2.getEgressAction().getName()));
         TreeSet<DeltaFileFlow> deltaFileDataSinks = new TreeSet<>(Comparator.comparing(DeltaFileFlow::getName));
@@ -120,11 +124,11 @@ class StateMachineTest {
 
     @Test
     void advancesToEgressActionWhenInTransformTestMode() {
-        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
         DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
-        deltaFileFlow.setType(FlowType.TRANSFORM);
+        deltaFileFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
         deltaFileFlow.setTestMode(true);
 
         TransformFlow transformFlow = TransformFlowMaker.builder()
@@ -138,8 +142,7 @@ class StateMachineTest {
                 .thenReturn(dataSinkConfig);
 
         DeltaFileFlow dataSink = new DeltaFileFlow();
-        dataSink.setName("dataSink");
-        dataSink.setType(FlowType.DATA_SINK);
+        dataSink.setFlowDefinition(FlowDefinition.builder().name("dataSink").type(FlowType.DATA_SINK).build());
         dataSink.setTestMode(true);
         dataSink.setTestModeReason("test mode reason");
         dataSink.setPendingActions(new ArrayList<>(dataSinkConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
@@ -165,10 +168,10 @@ class StateMachineTest {
 
     @Test
     void advancesInTransformationFlowWithJoiningTransformAction() {
-        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
         DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
-        deltaFileFlow.setType(FlowType.TRANSFORM);
+        deltaFileFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
         ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
                 "org.deltafi.action.SomeJoiningTransformAction");
         transformAction.setJoin(new JoinConfiguration(Duration.parse("PT1S"), null, 3, null));
@@ -197,10 +200,10 @@ class StateMachineTest {
 
     @Test
     void advancesInTransformationFlowWithJoiningTransformActionNullMaxNum() {
-        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
         DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
-        deltaFileFlow.setType(FlowType.TRANSFORM);
+        deltaFileFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
         ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
                 "org.deltafi.action.SomeJoiningTransformAction");
         transformAction.setJoin(new JoinConfiguration(Duration.parse("PT1S"), null, null, null));
@@ -232,16 +235,15 @@ class StateMachineTest {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
 
-        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
         DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
-        deltaFileFlow.setType(FlowType.TRANSFORM);
+        deltaFileFlow.getFlowDefinition().setType(FlowType.TRANSFORM);
         deltaFileFlow.setDepth(deltaFiProperties.getMaxFlowDepth());
 
         DeltaFileFlow dataSink = new DeltaFileFlow();
-        dataSink.setName("dataSink");
-        dataSink.setType(FlowType.DATA_SINK);
+        dataSink.setFlowDefinition(FlowDefinition.builder().name("dataSink").type(FlowType.DATA_SINK).build());
         DataSink dataSinkConfig = DataSinkMaker.builder().build().makeDataSink();
         dataSink.setPendingActions(new ArrayList<>(dataSinkConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
 

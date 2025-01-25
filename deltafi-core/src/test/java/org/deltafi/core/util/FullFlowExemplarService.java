@@ -17,9 +17,12 @@
  */
 package org.deltafi.core.util;
 
+import lombok.RequiredArgsConstructor;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
+import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.types.*;
+import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -33,7 +36,12 @@ import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.EGRESS_TOPIC;
 import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
 
-public class FullFlowExemplars {
+@Service
+@RequiredArgsConstructor
+public class FullFlowExemplarService {
+
+    private final FlowDefinitionService flowDefinitionService;
+    private final UtilService utilService;
 
     public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
     public static final ActionConfiguration TRANSFORM1 = new ActionConfiguration("Utf8TransformAction", ActionType.TRANSFORM, "type");
@@ -44,7 +52,7 @@ public class FullFlowExemplars {
     public static final UUID UUID_1 = UUID.fromString("11111111-1111-1111-1111-111111111111");
     public static final UUID UUID_2 = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
-    public static DeltaFile ingressedFromAction(UUID did, String dataSource) {
+    public DeltaFile ingressedFromAction(UUID did, String dataSource) {
         Content content = new Content("filename", "application/text",
                 new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 36, did));
         Map<String, String> metadata = Map.of("smoke", "test");
@@ -66,8 +74,7 @@ public class FullFlowExemplars {
         deltaFile.addAnnotations(Map.of("a", "b", "c", "d"));
 
         DeltaFileFlow ingressFlow = DeltaFileFlow.builder()
-                .name(TIMED_DATA_SOURCE_NAME)
-                .type(FlowType.TIMED_DATA_SOURCE)
+                .flowDefinition(flowDefinitionService.getOrCreateFlow(TIMED_DATA_SOURCE_NAME, FlowType.TIMED_DATA_SOURCE))
                 .state(DeltaFileFlowState.COMPLETE)
                 .actions(new ArrayList<>())
                 .publishTopics(List.of(TRANSFORM_TOPIC))
@@ -79,20 +86,20 @@ public class FullFlowExemplars {
         ingress.setContent(List.of(content));
         ingress.setMetadata(metadata);
 
-        DeltaFileFlow transformFlow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, ingressFlow,
-                Set.of(TRANSFORM_TOPIC), OffsetDateTime.now());
+        DeltaFileFlow transformFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM),
+                ingressFlow, Set.of(TRANSFORM_TOPIC), OffsetDateTime.now());
 
         transformFlow.addAction("Utf8TransformAction", ActionType.TRANSFORM, ActionState.QUEUED, OffsetDateTime.now());
 
         return deltaFile;
     }
 
-    public static DeltaFile ingressedFromActionWithError(UUID did) {
+    public DeltaFile ingressedFromActionWithError(UUID did) {
         DeltaFile deltaFile = ingressedFromAction(did, TIMED_DATA_SOURCE_ERROR_NAME);
         deltaFile.getFlow(TIMED_DATA_SOURCE_NAME).setPublishTopics(List.of(MISSING_PUBLISH_TOPIC));
         deltaFile.setFlows(new HashSet<>(Set.of(deltaFile.firstFlow())));
         DeltaFileFlow flow = deltaFile.firstFlow();
-        flow.setName(TIMED_DATA_SOURCE_ERROR_NAME);
+        flow.setFlowDefinition(flowDefinitionService.getOrCreateFlow(TIMED_DATA_SOURCE_ERROR_NAME, FlowType.TIMED_DATA_SOURCE));
         flow.setState(DeltaFileFlowState.ERROR);
         flow.firstAction().setName("SampleTimedIngressErrorAction");
 
@@ -106,7 +113,7 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postTransformDeltaFileWithUnicodeAnnotation(UUID did) {
+    public DeltaFile postTransformDeltaFileWithUnicodeAnnotation(UUID did) {
         DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.addAnnotationIfAbsent("first", "one");
         deltaFile.addAnnotationIfAbsent("second", "two");
@@ -114,11 +121,11 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static Action getAction(DeltaFileFlow flow, String actionName) {
+    public Action getAction(DeltaFileFlow flow, String actionName) {
         return flow.getAction(actionName);
     }
 
-    public static DeltaFile postTransformInvalidDeltaFile(UUID did) {
+    public DeltaFile postTransformInvalidDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
@@ -131,11 +138,11 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postIngressDeltaFile(UUID did) {
+    public DeltaFile postIngressDeltaFile(UUID did) {
         Content content = new Content("name", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
-        DeltaFile deltaFile = Util.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
+        DeltaFile deltaFile = utilService.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
         deltaFile.setIngressBytes(500L);
-        DeltaFileFlow flow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, deltaFile.firstFlow(), OffsetDateTime.now());
+        DeltaFileFlow flow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM), deltaFile.firstFlow(), OffsetDateTime.now());
         flow.setId(UUID_1);
         flow.setPendingActions(TRANSFORM_ACTIONS.stream().map(ActionConfiguration::getName).toList());
         flow.getInput().setMetadata(SOURCE_METADATA);
@@ -146,7 +153,7 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postTransformUtf8DeltaFile(UUID did) {
+    public DeltaFile postTransformUtf8DeltaFile(UUID did) {
         DeltaFile deltaFile = postIngressDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         Content content = new Content("file.json", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111114"), 0, 500, did));
@@ -158,7 +165,7 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postTransformUtf8NoSubscriberDeltaFile(UUID did) {
+    public DeltaFile postTransformUtf8NoSubscriberDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         Content content = new Content("transformed", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
@@ -171,14 +178,14 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postResumeNoSubscribersDeltaFile(UUID did) {
+    public DeltaFile postResumeNoSubscribersDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8NoSubscriberDeltaFile(did);
         deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, NO_SUBSCRIBERS, Map.of(), List.of())), OffsetDateTime.now());
 
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setState(DeltaFileFlowState.COMPLETE);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK, flow, OffsetDateTime.now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, OffsetDateTime.now());
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.getInput().setMetadata(flow.getMetadata());
         dataSink.getInput().setContent(flow.lastContent());
@@ -187,13 +194,13 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postCancelDeltaFile(UUID did) {
+    public DeltaFile postCancelDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.cancel(OffsetDateTime.now());
         return deltaFile;
     }
 
-    public static DeltaFile postTransformHadErrorDeltaFile(UUID did) {
+    public DeltaFile postTransformHadErrorDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.lastFlow().setPendingActions(List.of(TRANSFORM2.getName()));
         deltaFile.setStage(DeltaFileStage.ERROR);
@@ -205,7 +212,7 @@ public class FullFlowExemplars {
     }
 
     @SuppressWarnings("SameParameterValue")
-    public static DeltaFile postResumeTransformDeltaFile(UUID did) {
+    public DeltaFile postResumeTransformDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
         deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, "SampleTransformAction", Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue"), List.of("removeMe"))), OffsetDateTime.now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
@@ -215,11 +222,11 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postTransformDeltaFile(UUID did) {
+    public DeltaFile postTransformDeltaFile(UUID did) {
         DeltaFile deltaFile = withCompleteTransformFlow(did);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK, flow, OffsetDateTime.now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, OffsetDateTime.now());
         dataSink.setId(UUID_2);
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.getInput().setMetadata(flow.getMetadata());
@@ -228,7 +235,7 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    private static DeltaFile withCompleteTransformFlow(UUID did) {
+    private DeltaFile withCompleteTransformFlow(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         Content content = new Content("transformed", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
@@ -241,11 +248,11 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postErrorDeltaFile(UUID did) {
+    public DeltaFile postErrorDeltaFile(UUID did) {
         return postErrorDeltaFile(did, null, null);
     }
 
-    public static DeltaFile postErrorDeltaFile(UUID did, String policyName, Integer autoRetryDelay) {
+    public DeltaFile postErrorDeltaFile(UUID did, String policyName, Integer autoRetryDelay) {
         OffsetDateTime nextAutoResume = autoRetryDelay == null ? null : STOP_TIME.plusSeconds(autoRetryDelay);
         DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
@@ -262,7 +269,7 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postResumeDeltaFile(UUID did) {
+    public DeltaFile postResumeDeltaFile(UUID did) {
         DeltaFile deltaFile = postErrorDeltaFile(did);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_2);
         flow.getActions().getFirst().setState(ActionState.RETRIED);
@@ -274,14 +281,14 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postTransformDeltaFileInTestMode(UUID did, OffsetDateTime now) {
+    public DeltaFile postTransformDeltaFileInTestMode(UUID did, OffsetDateTime now) {
         DeltaFile deltaFile = withCompleteTransformFlow(did);
         deltaFile.setFiltered(true);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setTestMode(true);
         flow.setTestModeReason(TRANSFORM_FLOW_NAME);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK, flow, now);
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now);
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         Action action = dataSink.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
         action.setFilteredCause("Filtered by test mode");
@@ -295,11 +302,11 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postEgressDeltaFile(UUID did) {
+    public DeltaFile postEgressDeltaFile(UUID did) {
         return postEgressDeltaFile(did, null, null);
     }
 
-    public static DeltaFile postEgressDeltaFile(UUID did, Set<String> pendingAnnotations, Map<String, String> annotations) {
+    public DeltaFile postEgressDeltaFile(UUID did, Set<String> pendingAnnotations, Map<String, String> annotations) {
         DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.COMPLETE);
         deltaFile.setEgressed(true);

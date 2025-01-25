@@ -48,12 +48,11 @@ public class DeltaFileFlow {
     @Builder.Default
     private UUID id = Generators.timeBasedEpochGenerator().generate();
 
-    private String name;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "flow_definition_id", nullable = false)
+    private FlowDefinition flowDefinition;
+
     private int number;
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "dff_type_enum")
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    private FlowType type;
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "dff_state_enum")
@@ -97,9 +96,8 @@ public class DeltaFileFlow {
 
     public DeltaFileFlow(DeltaFileFlow other) {
         this.id = other.id;
-        this.name = other.name;
+        this.flowDefinition = other.flowDefinition;
         this.number = other.number;
-        this.type = other.type;
         this.state = other.state;
         this.created = other.created;
         this.modified = other.modified;
@@ -118,6 +116,14 @@ public class DeltaFileFlow {
         this.coldQueued = other.coldQueued;
         this.errorOrFilterCause = other.errorOrFilterCause;
         this.nextAutoResume = other.nextAutoResume;
+    }
+
+    public String getName() {
+        return flowDefinition.getName();
+    }
+
+    public FlowType getType() {
+        return flowDefinition.getType();
     }
 
     /**
@@ -284,7 +290,7 @@ public class DeltaFileFlow {
     public Action getPendingAction(String actionName, UUID did) {
         Action action = lastAction();
         if (action == null || !action.getName().equals(actionName) || action.terminal()) {
-            throw new UnexpectedActionException(name, number, actionName, did, action == null ? "none" : action.getName());
+            throw new UnexpectedActionException(flowDefinition.getName(), number, actionName, did, action == null ? "none" : action.getName());
         }
 
         return action;
@@ -304,7 +310,7 @@ public class DeltaFileFlow {
     }
 
     private boolean metadataFlowMatches(ResumeMetadata resumeMetadata) {
-        return resumeMetadata.getFlow().equals(name);
+        return resumeMetadata.getFlow().equals(flowDefinition.getName());
     }
 
     public boolean hasActionInState(ActionState actionState) {

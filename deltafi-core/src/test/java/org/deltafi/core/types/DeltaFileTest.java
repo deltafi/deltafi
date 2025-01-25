@@ -74,7 +74,7 @@ class DeltaFileTest {
 
         assertTrue(deltaFile.canBeCancelled());
         deltaFile.cancel(OffsetDateTime.now());
-        assertEquals(deltaFile.getStage(), DeltaFileStage.CANCELLED);
+        assertEquals(DeltaFileStage.CANCELLED, deltaFile.getStage());
         assertNull(action1.getNextAutoResume());
         assertNull(action1.getNextAutoResumeReason());
         assertFalse(deltaFile.canBeCancelled());
@@ -100,7 +100,7 @@ class DeltaFileTest {
         deltaFile.cancel(OffsetDateTime.now());
         assertTrue(flow.queuedActions().isEmpty());
 
-        assertEquals(deltaFile.getStage(), DeltaFileStage.CANCELLED);
+        assertEquals(DeltaFileStage.CANCELLED, deltaFile.getStage());
         assertNull(action1.getNextAutoResume());
         assertNull(action1.getNextAutoResumeReason());
         assertFalse(deltaFile.canBeCancelled());
@@ -117,7 +117,7 @@ class DeltaFileTest {
                 .nextAutoResumeReason("policy-name")
                 .build();
         DeltaFileFlow flow1 = DeltaFileFlow.builder()
-                .name("flow1")
+                .flowDefinition(FlowDefinition.builder().name("flow1").build())
                 .actions(new ArrayList<>(List.of(action1)))
                 .build();
         Action action2 = Action.builder()
@@ -128,7 +128,7 @@ class DeltaFileTest {
                 .nextAutoResumeReason("policy-name")
                 .build();
         DeltaFileFlow flow2 = DeltaFileFlow.builder()
-                .name("flow2")
+                .flowDefinition(FlowDefinition.builder().name("flow2").build())
                 .actions(new ArrayList<>(List.of(action2)))
                 .build();
         Action action3 = Action.builder()
@@ -139,7 +139,7 @@ class DeltaFileTest {
                 .nextAutoResumeReason("policy-name")
                 .build();
         DeltaFileFlow flow3 = DeltaFileFlow.builder()
-                .name("flow3")
+                .flowDefinition(FlowDefinition.builder().name("flow3").build())
                 .actions(new ArrayList<>(List.of(action3)))
                 .build();
 

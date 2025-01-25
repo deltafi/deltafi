@@ -18,7 +18,7 @@
 package org.deltafi.core.converters;
 
 import org.deltafi.common.types.*;
-import org.deltafi.core.util.Util;
+import org.deltafi.core.util.UtilService;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.validation.SchemaComplianceValidator;
 import org.junit.jupiter.api.Test;
@@ -250,7 +250,7 @@ class FlowPlanPropertyHelperTest {
     void testValidParameterSubstitution() {
         SchemaComplianceValidator validator = new SchemaComplianceValidator(null);
 
-        Map<String, Object> parameters = Util.readResource("config-test/complex-parameter-values.json", Map.class);
+        Map<String, Object> parameters = UtilService.readResource("config-test/complex-parameter-values.json", Map.class);
 
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables());
         Map<String, Object> mappedParameters = flowPlanPropertyHelper.replaceMapPlaceholders(parameters, "");
@@ -258,15 +258,15 @@ class FlowPlanPropertyHelperTest {
         ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.EGRESS, null);
         actionConfiguration.setInternalParameters(mappedParameters);
 
-        ActionDescriptor egressActionDescriptor = Util.egressActionDescriptor("config-test/complex-parameter-action-descriptor.json");
+        ActionDescriptor egressActionDescriptor = UtilService.egressActionDescriptor("config-test/complex-parameter-action-descriptor.json");
         List<FlowConfigError> errors = validator.validateAgainstSchema(egressActionDescriptor, actionConfiguration);
         assertThat(errors).isEmpty();
     }
 
     @Test
     void testDelegateToMaskedHelper() {
-        Variable notMasked = Util.buildVariable("notMasked", "plainValue", null);
-        Variable masked = Util.buildVariable("masked", "maskedValue", null);
+        Variable notMasked = UtilService.buildVariable("notMasked", "plainValue", null);
+        Variable masked = UtilService.buildVariable("masked", "maskedValue", null);
         masked.setMasked(true);
         List<Variable> variables = List.of(notMasked, masked);
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);

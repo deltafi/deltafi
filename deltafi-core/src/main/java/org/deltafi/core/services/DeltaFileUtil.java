@@ -57,11 +57,10 @@ public class DeltaFileUtil {
 
     private static DeltaFileFlow aggregateDeltaFileFlow(DeltaFileFlow currentFlow, OffsetDateTime now, int flowDepth) {
         return DeltaFileFlow.builder()
-                .name(currentFlow.getName())
+                .flowDefinition(currentFlow.getFlowDefinition())
                 .number(0)
                 .depth(flowDepth)
                 .state(DeltaFileFlowState.IN_FLIGHT)
-                .type(currentFlow.getType())
                 .created(now)
                 .modified(now)
                 .testMode(currentFlow.isTestMode())

@@ -110,6 +110,7 @@ public class DeltaFilesService {
     private final Environment environment;
     private final UUIDGenerator uuidGenerator;
     private final IdentityService identityService;
+    private final FlowDefinitionService flowDefinitionService;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -262,9 +263,8 @@ public class DeltaFilesService {
                 .build();
 
         DeltaFileFlow ingressFlow = DeltaFileFlow.builder()
-                .name(ingressEventItem.getFlowName())
+                .flowDefinition(flowDefinitionService.getOrCreateFlow(ingressEventItem.getFlowName(), flowType))
                 .number(0)
-                .type(flowType)
                 .state(DeltaFileFlowState.COMPLETE)
                 .testMode(dataSource.isTestMode())
                 .created(ingressStartTime)
@@ -725,7 +725,7 @@ public class DeltaFilesService {
     public void updatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
         List<DeltaFile> updatedDeltaFiles = new ArrayList<>();
-        try (Stream<DeltaFile> deltaFiles = deltaFileRepo.findByTerminalAndFlowsNameAndFlowsState(false, flowName, DeltaFileFlowState.PENDING_ANNOTATIONS)) {
+        try (Stream<DeltaFile> deltaFiles = deltaFileRepo.findByTerminalAndFlows_FlowDefinition_NameAndFlows_State(false, flowName, DeltaFileFlowState.PENDING_ANNOTATIONS)) {
             deltaFiles.forEach(deltaFile -> updatePendingAnnotationsForFlowsAndCollect(deltaFile, flowName, expectedAnnotations, updatedDeltaFiles, batchSize));
         }
     }
@@ -773,9 +773,8 @@ public class DeltaFilesService {
         childAction.setReplayStart(true);
 
         DeltaFileFlow childFlow = DeltaFileFlow.builder()
-                .name(fromFlow.getName())
+                .flowDefinition(fromFlow.getFlowDefinition())
                 .number(0)
-                .type(fromFlow.getType())
                 .state(DeltaFileFlowState.IN_FLIGHT)
                 .created(startTime)
                 .modified(now)
@@ -924,8 +923,7 @@ public class DeltaFilesService {
                             DeltaFileFlow firstFlow = deltaFile.firstFlow();
 
                             DeltaFileFlow flow = DeltaFileFlow.builder()
-                                    .name(firstFlow.getName())
-                                    .type(firstFlow.getType())
+                                    .flowDefinition(firstFlow.getFlowDefinition())
                                     .state(DeltaFileFlowState.COMPLETE)
                                     .input(firstFlow.getInput())
                                     .created(now)
@@ -1754,7 +1752,10 @@ public class DeltaFilesService {
     }
 
     public boolean taskTimedDataSource(TimedDataSource dataSource) throws EnqueueActionException {
-        WrappedActionInput actionInput = dataSource.buildActionInput(getProperties().getSystemName(), OffsetDateTime.now(clock), identityService.getUniqueId());
+        WrappedActionInput actionInput = dataSource.buildActionInput(getProperties().getSystemName(),
+                OffsetDateTime.now(clock), identityService.getUniqueId(),
+                flowDefinitionService.getOrCreateFlow(dataSource.getName(), FlowType.TIMED_DATA_SOURCE));
+
         try {
             if (!coreEventQueue.queueHasTaskingForAction(actionInput)) {
                 timedDataSourceService.setLastRun(dataSource.getName(), OffsetDateTime.now(clock),

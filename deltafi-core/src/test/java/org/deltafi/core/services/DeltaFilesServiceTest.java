@@ -35,7 +35,8 @@ import org.deltafi.core.repo.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.FlowBuilders;
-import org.deltafi.core.util.Util;
+import org.deltafi.core.util.MockFlowDefinitionService;
+import org.deltafi.core.util.UtilService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -73,6 +74,7 @@ class DeltaFilesServiceTest {
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final DeltaFilesService deltaFilesService;
     private final MetricService metricService;
+    private final UtilService utilService;
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
@@ -85,6 +87,8 @@ class DeltaFilesServiceTest {
 
     @Captor
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
+
+    private final FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock DataSinkService dataSinkService, @Mock StateMachine stateMachine,
@@ -111,13 +115,14 @@ class DeltaFilesServiceTest {
         this.queuedAnnotationRepo = queuedAnnotationRepo;
         this.restDataSourceService = restDataSourceService;
         this.metricService = metricService;
+        this.utilService = new UtilService(flowDefinitionService);
 
         MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
-        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService,
-                mockDeltaFiPropertiesService, stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo,
-                coreEventQueue, contentStorageService, resumePolicyService, metricService, analyticEventService,
-                new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
-                queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService);
+        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
+                stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
+                metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
+                queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
+                flowDefinitionService);
     }
 
     @AfterEach
@@ -176,6 +181,7 @@ class DeltaFilesServiceTest {
         Action action = Action.builder().metadata(Map.of()).build();
         ingressFlow.setActions(List.of(action));
         ingressFlow.setInput(new DeltaFileFlowInput());
+        ingressFlow.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow", FlowType.TIMED_DATA_SOURCE));
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(DID)
                 .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
@@ -194,6 +200,7 @@ class DeltaFilesServiceTest {
         Action action = Action.builder().metadata(Map.of()).build();
         ingressFlow.setActions(List.of(action));
         ingressFlow.setInput(new DeltaFileFlowInput());
+        ingressFlow.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow", FlowType.TIMED_DATA_SOURCE));
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(DID)
                 .flows(Set.of(ingressFlow))
@@ -212,11 +219,11 @@ class DeltaFilesServiceTest {
 
     @Test
     void testSourceMetadataUnion() {
-        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1a", "k2", "val2"));
-        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1b", "k3", "val3"));
+        DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1a", "k2", "val2"));
+        DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1b", "k3", "val3"));
 
         // Map.of disallows null keys or values, so do it the hard way
-        DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID(), List.of(), new HashMap<>());
+        DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID(), List.of(), new HashMap<>());
         DeltaFileFlow ingressFlow = deltaFile3.firstFlow();
         Map<String, String> metadata = new HashMap<>();
         metadata.put("k2", "val2");
@@ -321,7 +328,7 @@ class DeltaFilesServiceTest {
 
     @Test
     void testAnnotationDeltaFile() {
-        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
         deltaFile.addAnnotations(Map.of("key", "one"));
 
         when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
@@ -346,7 +353,7 @@ class DeltaFilesServiceTest {
 
     @Test
     void testAddAnnotationOverwrites() {
-        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
         deltaFile.addAnnotations(Map.of("key", "one"));
 
         when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
@@ -381,7 +388,7 @@ class DeltaFilesServiceTest {
 
     @Test
     void testProcessQueuedAnnotations() {
-        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
 
         QueuedAnnotation queuedAnnotation = new QueuedAnnotation(deltaFile.getDid(), Map.of("queued", "true"), false);
         when(queuedAnnotationRepo.findAllByOrderByTimeAsc()).thenReturn(List.of(queuedAnnotation));
@@ -422,8 +429,8 @@ class DeltaFilesServiceTest {
         when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
         when(dataSinkService.getActiveFlowByName("dataSource")).thenReturn(dataSink);
 
-        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.DATA_SINK).build();
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
+        DeltaFileFlow flow = DeltaFileFlow.builder().flowDefinition(flowDefinitionService.getOrCreateFlow("dataSource", FlowType.DATA_SINK)).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
@@ -446,7 +453,7 @@ class DeltaFilesServiceTest {
         when(dataSinkService.hasFlow("dataSource")).thenReturn(true);
         when(dataSinkService.getActiveFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
 
-        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = deltaFile.firstFlow();
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
@@ -478,8 +485,7 @@ class DeltaFilesServiceTest {
 
     private DeltaFileFlow deltaFileFlow(String name) {
         DeltaFileFlow flow = new DeltaFileFlow();
-        flow.setName(name);
-        flow.setType(FlowType.DATA_SINK);
+        flow.setFlowDefinition(flowDefinitionService.getOrCreateFlow(name, FlowType.DATA_SINK));
         flow.setPendingAnnotations(Set.of(name));
         flow.setActions(List.of(Action.builder().state(ActionState.COMPLETE).build()));
         return flow;
@@ -505,30 +511,30 @@ class DeltaFilesServiceTest {
 
     @Test
     void testErrorMetadataUnion() {
-        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow1 = deltaFile1.firstFlow();
-        deltaFileFlow1.setName("flow1");
+        deltaFileFlow1.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", deltaFileFlow1.getType()));
         deltaFileFlow1.firstAction().setMetadata(Map.of("a", "1", "b", "2"));
         Action error1 = deltaFileFlow1.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error1.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
-        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow2 = deltaFile2.firstFlow();
-        deltaFileFlow2.setName("flow1");
+        deltaFileFlow2.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", deltaFileFlow2.getType()));
         deltaFileFlow2.firstAction().setMetadata(Map.of("a", "somethingElse", "c", "3"));
         Action error2 = deltaFileFlow2.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error2.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
-        DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow3 = deltaFile3.firstFlow();
-        deltaFileFlow3.setName("flow2");
+        deltaFileFlow3.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow2", deltaFileFlow3.getType()));
         deltaFileFlow3.firstAction().setMetadata(Map.of("d", "4"));
         Action error3 = deltaFileFlow3.queueAction("TransformAction2", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error3.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
-        DeltaFile deltaFile4 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFile deltaFile4 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow4 = deltaFile4.firstFlow();
-        deltaFileFlow4.setName("flow3");
+        deltaFileFlow4.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow3", deltaFileFlow4.getType()));
         deltaFileFlow4.firstAction().setMetadata(Map.of("e", "5"));
         deltaFileFlow4.queueAction("TransformAction3", ActionType.TRANSFORM, false, OffsetDateTime.now());
 
@@ -557,11 +563,11 @@ class DeltaFilesServiceTest {
 
     @Test
     void requeuesJoinedAction() {
-        DeltaFile aggregate = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile aggregate = utilService.buildDeltaFile(UUID.randomUUID());
         aggregate.setJoinId(aggregate.getDid());
-        DeltaFile parent1 = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile parent1 = utilService.buildDeltaFile(UUID.randomUUID());
         parent1.firstFlow().setJoinId(aggregate.getDid());
-        DeltaFile parent2 = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile parent2 = utilService.buildDeltaFile(UUID.randomUUID());
         parent2.firstFlow().setJoinId(aggregate.getDid());
         aggregate.setParentDids(List.of(parent1.getDid(), parent2.getDid()));
 
@@ -601,9 +607,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChild() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("dataSource",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -646,9 +652,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildRemovedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("dataSource",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("removedParentAction", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -674,9 +680,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildAddedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("dataSource",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -704,9 +710,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildRenamedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("dataSource", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentActionOldName", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -732,9 +738,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildSplitActionRenamed() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
+        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("dataSource", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -762,7 +768,7 @@ class DeltaFilesServiceTest {
     @Test
     void testHandleMissingFlow() {
         UUID did = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(did);
+        DeltaFile deltaFile = utilService.buildDeltaFile(did);
         DeltaFileFlow flow = deltaFile.firstFlow();
 
         deltaFilesService.handleMissingFlow(deltaFile, flow, new MissingFlowException("flowName", FlowType.TRANSFORM, FlowState.INVALID));
@@ -778,7 +784,7 @@ class DeltaFilesServiceTest {
     @Test
     void testProcessErrorEvent() {
         UUID did = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(did);
+        DeltaFile deltaFile = utilService.buildDeltaFile(did);
         DeltaFileFlow flow = deltaFile.firstFlow();
         Action action = flow.firstAction();
 
@@ -824,11 +830,11 @@ class DeltaFilesServiceTest {
 
     @Test
     void pinsDeltaFiles() {
-        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+        DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
                 OffsetDateTime.now(), OffsetDateTime.now());
-        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+        DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
                 OffsetDateTime.now(), OffsetDateTime.now());
-        DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID()); // IN_FLIGHT
+        DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID()); // IN_FLIGHT
         UUID nonExistentDid = UUID.randomUUID();
 
         when(deltaFileRepo.findById(eq(deltaFile1.getDid()))).thenReturn(Optional.of(deltaFile1));
@@ -855,10 +861,10 @@ class DeltaFilesServiceTest {
 
     @Test
     void unpinsDeltaFiles() {
-        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+        DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
                 OffsetDateTime.now(), OffsetDateTime.now());
         deltaFile1.setPinned(true);
-        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+        DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
                 OffsetDateTime.now(), OffsetDateTime.now());
         deltaFile2.setPinned(true);
 

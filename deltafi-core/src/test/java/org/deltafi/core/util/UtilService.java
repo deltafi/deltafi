@@ -19,11 +19,14 @@ package org.deltafi.core.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.services.CoreEventQueue;
+import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.types.*;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -36,66 +39,70 @@ import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class Util {
+@Service
+@RequiredArgsConstructor
+public class UtilService {
+    private final FlowDefinitionService flowDefinitionService;
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private static final String FLOW = "myFlow";
     private static final Clock clock = Clock.tickMillis(ZoneOffset.UTC);
 
-    public static DeltaFile buildDeltaFile(UUID did) {
+    public DeltaFile buildDeltaFile(UUID did) {
         return buildDeltaFile(did, List.of());
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, List<Content> content) {
+    public DeltaFile buildDeltaFile(UUID did, List<Content> content) {
         return emptyDeltaFile(did, FLOW, content);
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, List<Content> content, Map<String, String> metadata) {
+    public DeltaFile buildDeltaFile(UUID did, List<Content> content, Map<String, String> metadata) {
         OffsetDateTime now = now();
-        return buildDeltaFile(did, null, DeltaFileStage.IN_FLIGHT, now, now, content, metadata);
+        return buildDeltaFile(did, "dataSource", DeltaFileStage.IN_FLIGHT, now, now, content, metadata);
     }
 
-    public static DeltaFile emptyDeltaFile(UUID did, String dataSource) {
+    public DeltaFile emptyDeltaFile(UUID did, String dataSource) {
         OffsetDateTime now = now();
         return buildDeltaFile(did, dataSource, DeltaFileStage.IN_FLIGHT, now, now, new ArrayList<>());
     }
 
-    public static DeltaFile emptyDeltaFile(UUID did, String dataSource, List<Content> content) {
+    public DeltaFile emptyDeltaFile(UUID did, String dataSource, List<Content> content) {
         OffsetDateTime now = now();
         return buildDeltaFile(did, dataSource, DeltaFileStage.IN_FLIGHT, now, now, content);
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
+    public DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified) {
         return buildDeltaFile(did, dataSource, stage, created, modified, new ArrayList<>(), new HashMap<>());
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
+    public DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content) {
         return buildDeltaFile(did, dataSource, stage, created, modified, content, new HashMap<>());
     }
 
-    public static DeltaFile buildErrorDeltaFile(
+    public DeltaFile buildErrorDeltaFile(
             UUID did, String dataSource, String cause, String context, OffsetDateTime created) {
         return buildErrorDeltaFile(did, dataSource, cause, context, created, created, null, List.of());
     }
 
-    public static DeltaFile buildErrorDeltaFile(UUID did, String dataSource, String cause, String context,
+    public DeltaFile buildErrorDeltaFile(UUID did, String dataSource, String cause, String context,
                                                 OffsetDateTime created, OffsetDateTime modified, String extraError) {
         return buildErrorDeltaFile(did, dataSource, cause, context, created, modified, extraError, new ArrayList<>());
     }
 
-    public static DeltaFile buildErrorDeltaFile(UUID did, String dataSource, String cause, String context, OffsetDateTime created,
+    public DeltaFile buildErrorDeltaFile(UUID did, String dataSource, String cause, String context, OffsetDateTime created,
                                                 OffsetDateTime modified, String extraError, List<Content> content) {
 
-        DeltaFile deltaFile = Util.buildDeltaFile(did, "ingressFlow", DeltaFileStage.COMPLETE, created, modified, content);
+        DeltaFile deltaFile = buildDeltaFile(did, "ingressFlow", DeltaFileStage.COMPLETE, created, modified, content);
         deltaFile.firstFlow().getActions().getFirst().setState(ActionState.COMPLETE);
-        DeltaFileFlow firstFlow = deltaFile.addFlow(dataSource, FlowType.TRANSFORM, deltaFile.firstFlow(), created);
+        DeltaFileFlow firstFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(dataSource, FlowType.TRANSFORM), deltaFile.firstFlow(), created);
         Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
         firstFlow.updateState();
 
         if (extraError != null) {
-            DeltaFileFlow secondFlow = deltaFile.addFlow("extraFlow", FlowType.TRANSFORM, deltaFile.firstFlow(), created);
+            DeltaFileFlow secondFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow("extraFlow", FlowType.TRANSFORM), deltaFile.firstFlow(), created);
             Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
             anotherErrorAction.error(modified, modified, modified, extraError, context);
             secondFlow.updateState();
@@ -105,7 +112,7 @@ public class Util {
         return deltaFile;
     }
 
-    public static DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
+    public DeltaFile buildDeltaFile(UUID did, String dataSource, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content, Map<String, String> metadata) {
         Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
@@ -118,8 +125,7 @@ public class Util {
                 .build();
 
         DeltaFileFlow flow = DeltaFileFlow.builder()
-                .name(dataSource)
-                .type(FlowType.TIMED_DATA_SOURCE)
+                .flowDefinition(flowDefinitionService.getOrCreateFlow(dataSource, FlowType.TIMED_DATA_SOURCE))
                 .state(DeltaFileFlowState.COMPLETE)
                 .created(created)
                 .modified(modified)
@@ -259,7 +265,7 @@ public class Util {
 
     public static <T> T readResource(String resourcePath, Class<T> clazz) {
         try {
-            return OBJECT_MAPPER.readValue(Util.class.getClassLoader().getResource(resourcePath), clazz);
+            return OBJECT_MAPPER.readValue(UtilService.class.getClassLoader().getResource(resourcePath), clazz);
         } catch (IOException e) {
             org.junit.jupiter.api.Assertions.fail(e);
         }
@@ -267,18 +273,18 @@ public class Util {
     }
 
     public static ActionEvent actionEvent(String filename, UUID... dids) throws IOException {
-        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()),
+        String json = String.format(new String(Objects.requireNonNull(UtilService.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()),
                 (Object[]) Arrays.stream(dids).map(UUID::toString).toList().toArray(new String[0]));
         return CoreEventQueue.convertEvent(json);
     }
 
     public static ActionEvent filterActionEvent(UUID did, String flow, UUID flowId, String filteredAction) throws IOException {
-        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction);
+        String json = String.format(new String(Objects.requireNonNull(UtilService.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction);
         return CoreEventQueue.convertEvent(json);
     }
 
     public static String graphQL(String filename) throws IOException {
-        return new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".graphql")).readAllBytes());
+        return new String(Objects.requireNonNull(UtilService.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".graphql")).readAllBytes());
     }
 
     public static List<String> getActionNames(List<ActionFamily> actionFamilies, String family) {

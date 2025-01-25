@@ -27,7 +27,7 @@ import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.util.Util;
+import org.deltafi.core.util.UtilService;
 import org.deltafi.core.validation.PluginValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -320,7 +320,7 @@ class PluginServiceTest {
     private void testGetPluginsWithVariables(MockedStatic<DeltaFiUserService> userDetailsServiceMockedStatic, boolean isAdmin) {
         PluginEntity one = makeDependencyPlugin();
         PluginEntity two = makeDependencyPlugin();
-        Variable variable = Util.buildNewVariable("setValue");
+        Variable variable = UtilService.buildNewVariable("setValue");
         one.setVariables(List.of(variable));
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
         Mockito.when(pluginVariableService.getVariablesByPlugin(Mockito.any())).thenReturn(variableList());
@@ -364,11 +364,11 @@ class PluginServiceTest {
     }
 
     List<Variable> variableList() {
-        Variable notSet = Util.buildVariable("notSet", null, "default");
-        Variable notSetAndMasked = Util.buildVariable("notSetAndMasked", null, "default");
+        Variable notSet = UtilService.buildVariable("notSet", null, "default");
+        Variable notSetAndMasked = UtilService.buildVariable("notSetAndMasked", null, "default");
         notSetAndMasked.setMasked(true);
-        Variable setValue = Util.buildVariable("setValue", "value", "default");
-        Variable setValueAndMasked = Util.buildVariable("setValueAndMasked", "value", "default");
+        Variable setValue = UtilService.buildVariable("setValue", "value", "default");
+        Variable setValueAndMasked = UtilService.buildVariable("setValueAndMasked", "value", "default");
         setValueAndMasked.setMasked(true);
         return List.of(notSet, notSetAndMasked, setValue, setValueAndMasked);
     }

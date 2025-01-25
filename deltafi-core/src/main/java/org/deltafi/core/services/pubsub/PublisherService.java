@@ -20,6 +20,7 @@ package org.deltafi.core.services.pubsub;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.*;
+import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
@@ -45,12 +46,14 @@ public class PublisherService {
     private final List<SubscriberService> subscriberServices;
     private final Clock clock;
     private final AnalyticEventService analyticEventService;
+    private final FlowDefinitionService flowDefinitionService;
 
-    public PublisherService(RuleEvaluator ruleEvaluator, List<SubscriberService> subscriberServices, Clock clock, AnalyticEventService analyticEventService) {
+    public PublisherService(RuleEvaluator ruleEvaluator, List<SubscriberService> subscriberServices, Clock clock, AnalyticEventService analyticEventService, FlowDefinitionService flowDefinitionService) {
         this.ruleEvaluator = ruleEvaluator;
         this.subscriberServices = subscriberServices;
         this.clock = clock;
         this.analyticEventService = analyticEventService;
+        this.flowDefinitionService = flowDefinitionService;
     }
 
     /**
@@ -112,7 +115,8 @@ public class PublisherService {
      * @return DeltaFileFlow that is added to the DeltaFile
      */
     private DeltaFileFlow deltaFileFlow(Subscriber subscriber, DeltaFile deltaFile, DeltaFileFlow previousFlow, Set<String> sourceTopics) {
-        DeltaFileFlow nextFlow = deltaFile.addFlow(subscriber.getName(), subscriber.flowType(), previousFlow, sourceTopics, OffsetDateTime.now(clock));
+        DeltaFileFlow nextFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(subscriber.getName(), subscriber.flowType()),
+                previousFlow, sourceTopics, OffsetDateTime.now(clock));
         nextFlow.setPendingActions(subscriber.allActionConfigurations().stream().map(ActionConfiguration::getName).toList());
         if (subscriber.isTestMode()) {
             nextFlow.setTestMode(true);

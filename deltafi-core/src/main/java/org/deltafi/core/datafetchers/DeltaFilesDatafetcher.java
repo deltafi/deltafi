@@ -37,6 +37,7 @@ import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
@@ -57,11 +58,12 @@ public class DeltaFilesDatafetcher {
   private final CoreAuditLogger auditLogger;
 
   static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+  private final FlowDefinitionService flowDefinitionService;
 
   @DgsData(parentType = "DeltaFile", field = "annotations")
   public Object getAnnotations(DgsDataFetchingEnvironment dfe) {
     DeltaFile deltaFile = dfe.getSource();
-    if (deltaFile.getAnnotations() == null) {
+    if (deltaFile == null || deltaFile.getAnnotations() == null) {
       return Collections.emptyMap();
     }
     return deltaFile.getAnnotations().stream()
@@ -409,7 +411,7 @@ public class DeltaFilesDatafetcher {
           egressAction.setModified(branchTime);
           egressFlow.setModified(branchTime);
           String dataSink = dataSinks[random.nextInt(dataSinks.length)];
-          egressFlow.setName(dataSink);
+          egressFlow.setFlowDefinition(flowDefinitionService.getOrCreateFlow(dataSink, FlowType.DATA_SINK));
 
           analyticEventService.recordEgress(deltaFile, egressFlow);
         } else if (outcome < 95) {

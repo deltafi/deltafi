@@ -246,7 +246,7 @@ class ResumePolicyServiceTest {
         assertTrue(resumePolicyService.findByName("name3").isPresent());
         List<UUID> noMatchese = resumePolicyService.canBeApplied(
                 resumePolicyService.findByName("name3").get(), deltaFiles, excludes).stream()
-                .map(DeltaFile::getDid).toList();;
+                .map(DeltaFile::getDid).toList();
         assertTrue(noMatchese.isEmpty());
     }
 
@@ -283,7 +283,7 @@ class ResumePolicyServiceTest {
         String dataSource = prefix + DATA_SOURCE;
         DeltaFileFlow flow = DeltaFileFlow.builder()
                 .state(withErrorAction ? DeltaFileFlowState.ERROR : DeltaFileFlowState.COMPLETE)
-                .name(dataSource)
+                .flowDefinition(FlowDefinition.builder().name(dataSource).type(FlowType.REST_DATA_SOURCE).build())
                 .actions(new ArrayList<>(List.of(action1, action2))).build();
         return DeltaFile.builder()
                 .did(UUID.randomUUID())
@@ -343,7 +343,7 @@ class ResumePolicyServiceTest {
 
         String dataSource = 1 + DATA_SOURCE;
         DeltaFileFlow flow = DeltaFileFlow.builder()
-                .name(dataSource)
+                .flowDefinition(FlowDefinition.builder().name(dataSource).type(FlowType.REST_DATA_SOURCE).build())
                 .actions(new ArrayList<>(List.of(action))).build();
 
         return DeltaFile.builder()

@@ -19,7 +19,7 @@ package org.deltafi.core.validation;
 
 import org.deltafi.common.types.*;
 import org.deltafi.core.services.PluginService;
-import org.deltafi.core.util.Util;
+import org.deltafi.core.util.UtilService;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.jetbrains.annotations.NotNull;
@@ -116,7 +116,7 @@ class SchemaComplianceValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.remove("url");
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(Util.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: required property 'url' not found").build());
     }
@@ -126,7 +126,7 @@ class SchemaComplianceValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.put("url", true);
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(Util.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.url: boolean found, string expected").build());
     }
@@ -136,7 +136,7 @@ class SchemaComplianceValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.put("unknownField", "not needed");
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(Util.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: property 'unknownField' is not defined in the schema and the schema does not allow additional properties").build());
     }
@@ -147,14 +147,14 @@ class SchemaComplianceValidatorTest {
         params.remove("url");
         params.put("urlTypo", "http://egress");
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(Util.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
 
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: required property 'url' not found; $: property 'urlTypo' is not defined in the schema and the schema does not allow additional properties").build());
     }
 
     Optional<ActionDescriptor> egressActionDescriptorOptional() {
-        return Optional.of(Util.egressActionDescriptor());
+        return Optional.of(UtilService.egressActionDescriptor());
     }
 
     private ActionConfiguration egressConfig(Map<String, Object> params) {

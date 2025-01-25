@@ -156,18 +156,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         // only resume if all other flows are terminal, causing the top level paused flag to be set
         // else there can be split brain between caches in core workers
         String nativeQueryStr = """
-                SELECT DISTINCT df.delta_file_id
-                FROM delta_file_flows df
-                JOIN delta_files d ON df.delta_file_id = d.did AND d.paused = TRUE
-                WHERE df.state = 'PAUSED'
+                SELECT DISTINCT dff.delta_file_id
+                FROM delta_file_flows dff
+                JOIN delta_files df ON dff.delta_file_id = df.did AND df.paused = TRUE
+                JOIN flow_definitions fd ON fd.id = dff.flow_definition_id
+                WHERE dff.state = 'PAUSED'
                 AND (
-                   (df.type = 'REST_DATA_SOURCE' AND (:skipRestDataSources IS NULL OR df.name NOT IN (:skipRestDataSources)))
+                   (fd.type = 'REST_DATA_SOURCE' AND (:skipRestDataSources IS NULL OR fd.name NOT IN (:skipRestDataSources)))
                    OR
-                   (df.type = 'TIMED_DATA_SOURCE' AND (:skipTimedDataSources IS NULL OR df.name NOT IN (:skipTimedDataSources)))
+                   (fd.type = 'TIMED_DATA_SOURCE' AND (:skipTimedDataSources IS NULL OR fd.name NOT IN (:skipTimedDataSources)))
                    OR
-                   (df.type = 'TRANSFORM' AND (:skipTransforms IS NULL OR df.name NOT IN (:skipTransforms)))
+                   (fd.type = 'TRANSFORM' AND (:skipTransforms IS NULL OR fd.name NOT IN (:skipTransforms)))
                    OR
-                   (df.type = 'DATA_SINK' AND (:skipDataSinks IS NULL OR df.name NOT IN (:skipDataSinks)))
+                   (fd.type = 'DATA_SINK' AND (:skipDataSinks IS NULL OR fd.name NOT IN (:skipDataSinks)))
                  )
                  LIMIT :limit
             """;
@@ -254,10 +255,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     AND EXISTS (
                         SELECT 1
                         FROM delta_file_flows flow
+                        JOIN flow_definitions fd ON fd.id = flow.flow_definition_id
                         WHERE flow.delta_file_id = df.did
                         AND flow.state = 'ERROR'
-                        AND flow.type = CAST(:flowType AS dff_type_enum)
-                        AND flow.name = :flowName
+                        AND fd.type = CAST(:flowType AS dff_type_enum)
+                        AND fd.name = :flowName
                         AND (:includeAcknowledged OR flow.error_acknowledged IS NULL)
                     )
                     LIMIT :limit
@@ -806,12 +808,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
-            INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, input,
+            INSERT INTO delta_file_flows (id, flow_definition_id, number, state, created, modified, input,
                                           publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
                                           join_id, pending_actions, delta_file_id, version, actions,
                                           error_acknowledged, error_acknowledged_reason, cold_queued, error_or_filter_cause,
                                           next_auto_resume)
-            VALUES (?, ?, ?, CAST(? AS dff_type_enum), CAST(? AS dff_state_enum), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
+            VALUES (?, ?, ?, CAST(? AS dff_state_enum), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_ANNOTATIONS = """
             INSERT INTO annotations (id, key, value, delta_file_id)
@@ -939,28 +941,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Connection conn = ps.getConnection();
 
         ps.setObject(1, flow.getId());
-        ps.setString(2, flow.getName());
+        ps.setInt(2, flow.getFlowDefinition().getId());
         ps.setInt(3, flow.getNumber());
-        ps.setString(4, flow.getType().name());
-        ps.setString(5, flow.getState().name());
-        ps.setTimestamp(6, toTimestamp(flow.getCreated()));
-        ps.setTimestamp(7, toTimestamp(flow.getModified()));
-        ps.setString(8, toJson(flow.getInput()));
-        ps.setArray(9, conn.createArrayOf("text", flow.getPublishTopics().toArray(new String[0])));
-        ps.setInt(10, flow.getDepth());
-        ps.setArray(11, conn.createArrayOf("text", flow.getPendingAnnotations().toArray(new String[0])));
-        ps.setBoolean(12, flow.isTestMode());
-        ps.setString(13, flow.getTestModeReason());
-        ps.setObject(14, flow.getJoinId());
-        ps.setArray(15, conn.createArrayOf("text", flow.getPendingActions().toArray(new String[0])));
-        ps.setObject(16, deltaFile.getDid());
-        ps.setLong(17, flow.getVersion());
-        ps.setString(18, toJson(flow.getActions()));
-        ps.setTimestamp(19, toTimestamp(flow.getErrorAcknowledged()));
-        ps.setString(20, flow.getErrorAcknowledgedReason());
-        ps.setBoolean(21, flow.isColdQueued());
-        ps.setString(22, flow.getErrorOrFilterCause());
-        ps.setTimestamp(23, toTimestamp(flow.getNextAutoResume()));
+        ps.setString(4, flow.getState().name());
+        ps.setTimestamp(5, toTimestamp(flow.getCreated()));
+        ps.setTimestamp(6, toTimestamp(flow.getModified()));
+        ps.setString(7, toJson(flow.getInput()));
+        ps.setArray(8, conn.createArrayOf("text", flow.getPublishTopics().toArray(new String[0])));
+        ps.setInt(9, flow.getDepth());
+        ps.setArray(10, conn.createArrayOf("text", flow.getPendingAnnotations().toArray(new String[0])));
+        ps.setBoolean(11, flow.isTestMode());
+        ps.setString(12, flow.getTestModeReason());
+        ps.setObject(13, flow.getJoinId());
+        ps.setArray(14, conn.createArrayOf("text", flow.getPendingActions().toArray(new String[0])));
+        ps.setObject(15, deltaFile.getDid());
+        ps.setLong(16, flow.getVersion());
+        ps.setString(17, toJson(flow.getActions()));
+        ps.setTimestamp(18, toTimestamp(flow.getErrorAcknowledged()));
+        ps.setString(19, flow.getErrorAcknowledgedReason());
+        ps.setBoolean(20, flow.isColdQueued());
+        ps.setString(21, flow.getErrorOrFilterCause());
+        ps.setTimestamp(22, toTimestamp(flow.getNextAutoResume()));
     }
 
     private void setAnnotationParameters(PreparedStatement ps, Annotation annotation, DeltaFile deltaFile) throws SQLException {

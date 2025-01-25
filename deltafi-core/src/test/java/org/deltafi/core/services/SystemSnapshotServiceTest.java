@@ -26,7 +26,7 @@ import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.repo.SystemSnapshotRepo;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.*;
-import org.deltafi.core.util.Util;
+import org.deltafi.core.util.UtilService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -53,18 +53,18 @@ class SystemSnapshotServiceTest {
     @Test
     void testGetWithMaskedVariables() {
         PluginVariables pluginVariables = new PluginVariables();
-        Variable one = Util.buildOriginalVariable("notMasked");
-        Variable two = Util.buildOriginalVariable("masked");
+        Variable one = UtilService.buildOriginalVariable("notMasked");
+        Variable two = UtilService.buildOriginalVariable("masked");
         two.setMasked(true);
         pluginVariables.setVariables(List.of(one, two));
 
         PluginVariables pluginVariables2 = new PluginVariables();
-        Variable three = Util.buildOriginalVariable("notMasked");
-        Variable four = Util.buildOriginalVariable("masked");
+        Variable three = UtilService.buildOriginalVariable("notMasked");
+        Variable four = UtilService.buildOriginalVariable("masked");
         four.setMasked(true);
         pluginVariables2.setVariables(List.of(three, four));
 
-        Variable afterMask = Util.buildOriginalVariable("masked");
+        Variable afterMask = UtilService.buildOriginalVariable("masked");
         afterMask.setMasked(true);
         afterMask.setValue(Variable.MASK_STRING);
         afterMask.setDefaultValue(Variable.MASK_STRING);
@@ -92,22 +92,22 @@ class SystemSnapshotServiceTest {
     @Test
     void testImportSnapshot() {
         PluginVariables pluginVariables = new PluginVariables();
-        Variable one = Util.buildOriginalVariable("notMasked");
-        Variable two = Util.buildOriginalVariable("masked");
+        Variable one = UtilService.buildOriginalVariable("notMasked");
+        Variable two = UtilService.buildOriginalVariable("masked");
         two.setMasked(true);
         two.setValue(Variable.MASK_STRING);
         pluginVariables.setVariables(List.of(one, two));
 
         PluginVariables pluginVariables2 = new PluginVariables();
-        Variable three = Util.buildOriginalVariable("notMasked");
-        Variable four = Util.buildOriginalVariable("masked");
+        Variable three = UtilService.buildOriginalVariable("notMasked");
+        Variable four = UtilService.buildOriginalVariable("masked");
         four.setValue(Variable.MASK_STRING);
         four.setValue("clear");
         four.setMasked(true);
         pluginVariables2.setVariables(List.of(three, four));
 
         PluginVariables pluginVariables3 = new PluginVariables();
-        Variable five = Util.buildOriginalVariable("masked");
+        Variable five = UtilService.buildOriginalVariable("masked");
         five.setValue(Variable.MASK_STRING);
         five.setMasked(true);
         pluginVariables3.setVariables(List.of(five));

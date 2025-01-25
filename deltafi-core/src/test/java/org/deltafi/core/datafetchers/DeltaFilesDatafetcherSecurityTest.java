@@ -21,6 +21,7 @@ import graphql.schema.DataFetchingEnvironmentImpl;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.analytics.AnalyticEventService;
@@ -40,7 +41,7 @@ import java.util.concurrent.Callable;
 
 @EnableMethodSecurity
 @SpringBootTest(classes = {DeltaFilesDatafetcher.class}, webEnvironment = WebEnvironment.NONE)
-@MockBean({DeltaFilesService.class, RestDataSourceService.class, ContentStorageService.class, CoreAuditLogger.class, AnalyticEventService.class})
+@MockBean({DeltaFilesService.class, RestDataSourceService.class, ContentStorageService.class, CoreAuditLogger.class, AnalyticEventService.class, FlowDefinitionService.class})
 class DeltaFilesDatafetcherSecurityTest {
     
     private static final UUID DID = UUID.randomUUID();
