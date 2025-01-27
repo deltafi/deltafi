@@ -1,0 +1,12 @@
+build:TUI:
+  tags:
+    - light
+  extends:
+    - .golang
+  stage: build
+  script:
+    - |
+      pushd tui
+      make
+      popd
+      ./deltafi2 || echo "Oopsie..."

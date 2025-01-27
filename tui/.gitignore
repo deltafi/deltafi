@@ -1,0 +1,4 @@
+repomix-output.*
+bin/*
+.go
+dist

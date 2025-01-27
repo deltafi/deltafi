@@ -1,0 +1,19 @@
+# Default genqlient config; for full documentation see:
+# https://github.com/Khan/genqlient/blob/main/docs/genqlient.yaml
+schema:
+- schema/*.graphql
+operations:
+- plugin.graphql
+generated: generated.go
+client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
+context_type: "-"
+optional: value
+bindings:
+  DateTime:
+    type: time.Time
+  JSON:
+    type: map[string]any
+  UUID:
+    type: github.com/google/uuid.UUID
+  Long:
+    type: int64

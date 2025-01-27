@@ -1,0 +1,11 @@
+# Add patterns to ignore here, one per line
+# Example:
+# *.log
+# tmp/
+bin/
+repomix.config.json
+go.sum
+go.mod
+gradlew
+docs
+cmd/*-demo

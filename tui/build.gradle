@@ -1,0 +1,23 @@
+plugins {
+    id 'license-plain'
+}
+
+license {
+    includes(["**/*.go"])
+}
+
+task tuiClean(type: Exec) {
+    commandLine 'make', 'clean'
+}
+
+task tuiBuild(type: Exec) {
+    commandLine 'make', 'all'
+}
+
+task tuiDist(type: Exec) {
+    commandLine 'make', 'dist'
+}
+
+clean.dependsOn tuiClean
+rootProject.tui.dependsOn tuiBuild
+rootProject.dist.dependsOn tuiDist

@@ -10,7 +10,7 @@ plugins {
 
 ext {
     // Base distribution directory
-    distroOutputDir = layout.buildDirectory.dir('distributions')
+    distroOutputDir = layout.buildDirectory.dir('dist')
 
     // Common files/directories included in all distributions
     commonDistroContents = [
@@ -34,26 +34,31 @@ ext {
     // Architecture-specific files/directories
     archDistroContents = [
         'linux-amd64': [
-            'linux/bin/'
+            [source: 'tui/dist/linux/amd64', destination: '.']
         ],
         'darwin-amd64': [
-            'darwin/bin/'
+            [source: 'tui/dist/darwin/amd64', destination: '.']
         ],
         'darwin-arm64': [
-            'darwin/bin/'
+            [source: 'tui/dist/darwin/arm64', destination: '.']
         ]
     ]
 }
 
 // Create base distribution task
-task distro {
+task dist {
     group = 'distribution'
     description = 'Creates distribution archives for all supported architectures'
 }
 
+task tui {
+    group = 'build'
+    description = 'Build the TUI for the current architecture'
+}
+
 // Create tasks for each architecture
 archDistroContents.each { arch, archFiles ->
-    def archTask = tasks.create(name: "distro-${arch}", type: Tar) {
+    def archTask = tasks.create(name: "dist-${arch}", type: Tar) {
         group = 'distribution'
         description = "Creates distribution archive for ${arch}"
 
@@ -82,9 +87,8 @@ archDistroContents.each { arch, archFiles ->
 
         // Include architecture-specific files/directories
         archFiles.each { item ->
-            from(item) {
-                // Strip the architecture prefix (e.g., 'linux/' or 'darwin/')
-                into project.version + '/' + item.substring(item.indexOf('/') + 1)
+            from(item.source) {
+                into project.version + '/' + item.destination
             }
         }
 
@@ -99,11 +103,11 @@ archDistroContents.each { arch, archFiles ->
     }
 
     // Make the main distro task depend on this architecture-specific task
-    distro.dependsOn archTask
+    dist.finalizedBy archTask
 }
 
 // Task to clean the distribution directory
-task cleanDistro(type: Delete) {
+task cleanDist(type: Delete) {
     group = 'distribution'
     description = 'Cleans the distribution directory'
     delete distroOutputDir
