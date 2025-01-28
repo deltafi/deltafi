@@ -40,7 +40,7 @@
     <div v-else-if="loaded">
       <Message v-if="deltaFile.pinned" severity="warn" :closable="false">This DeltaFile is pinned and won't be deleted by delete policies</Message>
       <Message v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
-      <Message v-if="testMode" severity="info" :closable="false">This DeltaFile was processed in test mode. Reason: {{ deltaFile.testModeReason }} </Message>
+      <Message v-if="testMode" severity="info" :closable="false">This DeltaFile was processed in test mode.</Message>
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileInfoPanel :delta-file-data="deltaFile" />
@@ -235,7 +235,7 @@ const contentDeleted = computed(() => {
 });
 
 const testMode = computed(() => {
-  return loaded.value && deltaFile.testMode;
+  return loaded.value && _.some(deltaFile.flows, (flow) => flow.testMode);
 });
 const deltaFileLinks = computed(() => {
   if (Object.keys(deltaFile).length === 0) return [];

@@ -28,7 +28,12 @@
           </template>
         </Column>
         <Column field="type" header="Type" :sortable="true" />
-        <Column field="state" header="State" class="state-column" :sortable="true" />
+        <Column field="state" header="State" class="state-column" :sortable="true">
+          <template #body="{ data }">
+            {{ data.state }}
+            <TestModeBadge v-if="data.testMode" :reason="data.testModeReason" />
+          </template>
+        </Column>
         <Column field="created" header="Created" class="timestamp-column" :sortable="true">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
@@ -87,6 +92,7 @@ import Button from "primevue/button";
 import DeltaFileActionsTable from "@/components/DeltaFileViewer/DeltaFileActionsTable.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
+import TestModeBadge from "@/components/TestModeBadge.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 
