@@ -5,6 +5,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.5.0] - 2025-01-27
+
+### Added
+- Created a new index `idx_delta_files_filtered` to speed up query for the UI Filtered page
+- Added tags to content
+- Added TagContent action
+- Added Content Tags panel to DeltaFile viewer
+- Added content tags to DeltaFile content viewer
+- Updated documentation for the `HttpEgress` action and parameters
+- [deltafi-docs] Add new version of Ubuntu as supported system and tested configuration in public docs
+- Add sorting options to errorSummaryByFlow, errorSummaryByMessage, filteredSummaryByFlow, and filteredSummaryByMessage GraphQL endpoints.
+- Created a new Egress action, HttpEgress, that will allow for selection of the HTTP request method (POST, PUT, PATCH, or DELETE)
+
+### Changed
+- Changed the `passthrough-data-sink` to use the new `HttpEgress` action, with a new plugin variable `passthroughEgressMethod` to choose the HTTP request method
+- Mododified the metadata filename created by `deltafi-egress-sink` to include the HTTP request method
+- Make `idx_delta_files_filtered` a partial index
+
+### Fixed
+- The Decompress action no longer generates an `OutOfMemoryError` when unarchivng a file over 2GB (#401)
+- FIX: Data Source by Annotation dashboard overwritten by Pivot by Annotation dashboard because of filename collision
+- [deltafi-docs] Fix public docs reference to "topics" for publishing rules in Flows
+- Fixed an issue where egress sink failed to write the request body to a file
+- Fixed an issue where the blackhole latency argument was not applied
+- Fix the ownership of the `egress-sink` data directory when using compose. Also included `graphite` in compose mkdir list
+- Test mode reason now shows data source name instead of null when only the data source is in test mode
+- Only show `TRANSFORM` action types on the Transform Builder
+- Ensure replayed DeltaFiles are paused or placed in test mode appropriately. 
+
+### Deprecated
+- org.deltafi.core.action.egress.RestPostEgress is being deprecated; use org.deltafi.core.action.egress.HttpEgress instead
+
+### Tech-Debt/Refactor
+- Create a flow definitions lookup table to normalize flow name and type data in the deltaFile flows table
+
 ## [2.4.0] - 2025-01-13
 
 ### Added
@@ -3671,7 +3706,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.4.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.5.0...main
+[2.5.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.4.0...2.5.0
 [2.4.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.1...2.4.0
 [2.3.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.0...2.3.1
 [2.3.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.2.1...2.3.0
