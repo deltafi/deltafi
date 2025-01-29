@@ -29,7 +29,7 @@
       </div>
     </PageHeader>
     <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
-    <TabView v-if="showTabs" v-model:activeIndex="activeTab">
+    <TabView v-if="showTabs" v-model:activeIndex="activeTab" @tab-change="unSelectAllRows">
       <TabPanel header="All">
         <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
@@ -83,7 +83,7 @@ const { fetchUniqueErrorMessages } = useErrorsSummary();
 const formattedFlows = ref([]);
 const allFlowNames = ref();
 const showTabs = ref(false);
-const uniqueErrorMessages = ref([])
+const uniqueErrorMessages = ref([]);
 
 const ackOptions = [
   { name: "Errors", value: 0 },
@@ -101,7 +101,7 @@ const flowTypeMap = {
   REST_DATA_SOURCE: "restDataSource",
   TIMED_DATA_SOURCE: "timedDataSource",
   DATA_SINK: "dataSink",
-}
+};
 
 const setPersistedParams = () => {
   // Session Storage
@@ -130,8 +130,8 @@ const getPersistedParams = async () => {
     if (params.flowName && params.flowType) {
       flowSelected.value = {
         name: params.flowName,
-        type: params.flowType
-      }
+        type: params.flowType,
+      };
     }
     errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
   } else {
@@ -148,6 +148,12 @@ const clearOptions = () => {
   flowSelected.value = null;
   selectedAckOption.value = 0;
   setPersistedParams();
+};
+
+const unSelectAllRows = () => {
+  errorsSummaryPanel.value.unSelectAllRows();
+  errorSummaryFlowPanel.value.unSelectAllRows();
+  errorSummaryMessagePanel.value.unSelectAllRows();
 };
 
 const filterOptionsSelected = computed(() => {
@@ -229,7 +235,7 @@ onMounted(async () => {
   await nextTick();
   showTabs.value = true;
   pollNewErrors();
-  uniqueErrorMessages.value  = await fetchUniqueErrorMessages();
+  uniqueErrorMessages.value = await fetchUniqueErrorMessages();
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !loading.value) {
       pollNewErrors();
@@ -243,14 +249,14 @@ const formatFlowNames = () => {
     restDataSource: "Rest Data Sources",
     timedDataSource: "Timed Data Sources",
     transform: "Transforms",
-    dataSink: "Data Sinks"
+    dataSink: "Data Sinks",
   };
   for (const [key, label] of Object.entries(map)) {
     if (!_.isEmpty(allFlowNames.value[key])) {
       let flows = _.map(allFlowNames.value[key], (name) => {
-        return { name: name, type: key }
-      })
-      flows = _.sortBy(flows, ['name']);
+        return { name: name, type: key };
+      });
+      flows = _.sortBy(flows, ["name"]);
       formattedFlows.value.push({ label: label, sources: flows });
     }
   }

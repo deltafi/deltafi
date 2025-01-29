@@ -185,7 +185,7 @@ const menuItems = ref([
     label: "Clear Selected",
     icon: "fas fa-times fa-fw",
     command: () => {
-      selectedErrors.value = [];
+      unSelectAllRows();
     },
   },
   {
@@ -237,7 +237,7 @@ const menuItems = ref([
 ]);
 
 const onRefresh = () => {
-  selectedErrors.value = [];
+  unSelectAllRows();
   fetchErrors();
 };
 
@@ -290,8 +290,12 @@ const acknowledgeClickConfirm = () => {
   ackErrorsDialog.value.visible = true;
 };
 
-const onAcknowledged = (dids, reason) => {
+const unSelectAllRows = async () => {
   selectedErrors.value = [];
+};
+
+const onAcknowledged = (dids, reason) => {
+  unSelectAllRows();
   ackErrorsDialog.value.dids = [];
   ackErrorsDialog.value.visible = false;
   let pluralized = pluralize(dids.length, "Error");
@@ -330,9 +334,9 @@ const latestErrorAction = (deltaFile) => {
 
 const latestErrorFlow = (deltaFile) => {
   return _.chain(deltaFile.flows)
-      .filter((flow) => flow.state === "ERROR")
-      .sortBy(["modified"])
-      .value()[0];
+    .filter((flow) => flow.state === "ERROR")
+    .sortBy(["modified"])
+    .value()[0];
 };
 
 const actionRowClass = (action) => {
@@ -368,11 +372,13 @@ const onSort = (event) => {
 
 defineExpose({
   fetchErrors,
+  unSelectAllRows,
 });
 const setupWatchers = () => {
   watch(
     () => props.flow,
     () => {
+      unSelectAllRows();
       fetchErrors();
     }
   );
@@ -380,6 +386,7 @@ const setupWatchers = () => {
   watch(
     () => props.errorsMessageSelected,
     () => {
+      unSelectAllRows();
       filters.value.last_error_cause.value = props.errorsMessageSelected ? { message: props.errorsMessageSelected } : null;
     }
   );
@@ -387,7 +394,7 @@ const setupWatchers = () => {
   watch(
     () => props.acknowledged,
     () => {
-      selectedErrors.value = [];
+      unSelectAllRows();
       fetchErrors();
     }
   );
@@ -396,6 +403,7 @@ const setupWatchers = () => {
     () => filters.value.last_error_cause.value,
     () => {
       let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
+      unSelectAllRows();
       fetchErrors();
       emit("errorMessageChanged:errorMessage", errorMessage);
     }

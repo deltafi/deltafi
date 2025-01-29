@@ -101,12 +101,16 @@ const props = defineProps({
   },
 });
 
+const unSelectAllRows = async () => {
+  selectedErrors.value = [];
+};
+
 const menuItems = ref([
   {
     label: "Clear Selected",
     icon: "fas fa-times fa-fw",
     command: () => {
-      selectedErrors.value = [];
+      unSelectAllRows();
     },
   },
   {
@@ -166,7 +170,7 @@ onMounted(async () => {
 const { data: response, fetchByMessage } = useErrorsSummary();
 
 const onRefresh = () => {
-  selectedErrors.value = [];
+  unSelectAllRows();
   fetchErrorsMessages();
 };
 
@@ -209,6 +213,7 @@ const onPanelRightClick = (event) => {
 
 defineExpose({
   fetchErrorsMessages,
+  unSelectAllRows,
 });
 
 const onSort = (event) => {
@@ -224,7 +229,7 @@ const acknowledgeClickConfirm = () => {
 };
 
 const onAcknowledged = (dids, reason) => {
-  selectedErrors.value = [];
+  unSelectAllRows();
   ackErrorsDialog.value.dids = [];
   ackErrorsDialog.value.visible = false;
   let pluralized = pluralize(dids.length, "Error");
@@ -248,6 +253,7 @@ const setupWatchers = () => {
   watch(
     () => props.flow,
     () => {
+      unSelectAllRows();
       fetchErrorsMessages();
     }
   );
@@ -255,7 +261,7 @@ const setupWatchers = () => {
   watch(
     () => props.acknowledged,
     () => {
-      selectedErrors.value = [];
+      unSelectAllRows();
       fetchErrorsMessages();
     }
   );
