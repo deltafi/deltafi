@@ -20,7 +20,6 @@ plugins {
     id 'org.deltafi.plugin'
     id 'java'
     id 'jacoco'
-    id 'maven-publish'
     id 'org.springframework.boot'
     id 'com.palantir.docker'
 }
@@ -90,26 +89,6 @@ bootJar {
     setArchiveFileName "deltafi-plugin.jar"
 }
 
-publishing {
-    publications {
-        mavenJarPublication(MavenPublication) {
-            artifact bootJar
-        }
-    }
-    repositories {
-        maven {
-            url projectMavenRepo
-            credentials(HttpHeaderCredentials) {
-                name = gitLabTokenType
-                value = gitLabToken
-            }
-            authentication {
-                header(HttpHeaderAuthentication)
-            }
-        }
-    }
-}
-
 // Copy the standard plugin Dockerfile from the gradle-plugin jar resources to the build directory after the bootJar is
 // built. Here it will be available to both the gradle docker plugin and the CI docker job.
 task copyPluginDockerfile(type: Copy) {
@@ -135,7 +114,15 @@ dockerfileZip {
 
 compileTestJava.dependsOn copyPluginDockerfile
 
-publishMavenJarPublicationPublicationToMavenLocal.dependsOn copyPluginDockerfile
+
+// This prevents publishing tasks from failing due to 'task uses this output of task ':copyPluginDockerfile' without declaring an explicit or implicit dependency.
+allprojects {
+    plugins.withId('maven-publish') {
+        tasks.withType(AbstractPublishToMaven).configureEach {
+            dependsOn tasks.named('copyPluginDockerfile')
+        }
+    }
+}
 
 docker {
     name "${project.name}:${project.version}"
