@@ -656,6 +656,7 @@ const setPersistedParams = async () => {
   // Set the browser history to make the back button work
   await nextTick();
   window.history.state.current = `/deltafile/search${window.location.search}`;
+  await customCalendarRef.value.setDateTimeToday();
 };
 
 const getAnnotationsString = (arrayData) => {
@@ -774,7 +775,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 

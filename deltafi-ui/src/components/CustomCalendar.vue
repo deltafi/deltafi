@@ -196,6 +196,7 @@ const refreshUpdateDateTime = () => {
 
 defineExpose({
   refreshUpdateDateTime,
+  setDateTimeToday
 });
 
 const calculateFromTime = (fromTime) => {
