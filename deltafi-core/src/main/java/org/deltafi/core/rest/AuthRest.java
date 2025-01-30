@@ -59,12 +59,32 @@ public class AuthRest {
                     @RequestHeader(value = X_ORIGINAL_URL, required = false) String originalUrl) {
         if (user instanceof DeltaFiUserDetails deltaFiUserDetails) {
             verifyDomainAccess(originalUrl, deltaFiUserDetails);
+            verifyPathAccess(originalUrl, deltaFiUserDetails);
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader(USER_NAME_HEADER, user.getUsername());
             response.setHeader(USER_ID_HEADER, deltaFiUserDetails.id());
             response.setHeader(PERMISSIONS_HEADER, deltaFiUserDetails.getPermissions());
             response.setHeader(USER_METRIC_ROLE_HEADER, deltaFiUserDetails.metricsRole());
         } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    void verifyPathAccess(String originalUrl, DeltaFiUserDetails user) {
+        if (authProperties.noAuth()) {
+            return;
+        }
+
+        String requestedPath = extractPath(originalUrl);
+
+        String requiredPermission = pathPermission(requestedPath);
+
+        if (requiredPermission == null) {
+            return;
+        }
+
+        if (!user.hasPermission(requiredPermission)) {
+            auditLogger.audit("request to '{}' was denied due to missing permission '{}'", requestedPath, requiredPermission);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }
@@ -84,7 +104,7 @@ public class AuthRest {
         String requiredPermission = domainPermission(requestedDomain);
 
         if (!user.hasPermission(requiredPermission)) {
-            auditLogger.audit("request to '{}' was denied due to missing permission '{}'", requestedDomain, requiredPermission);
+            auditLogger.audit("request to the '{}' domain was denied due to missing permission '{}'", requestedDomain, requiredPermission);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }
@@ -102,6 +122,18 @@ public class AuthRest {
         };
     }
 
+    String pathPermission(String path) {
+        if (path == null) {
+            return null;
+        }
+
+        if (path.startsWith("/visualization")) {
+            return "MetricsView";
+        }
+
+        return null;
+    }
+
     private String extractDomain(String originalUrl) {
         if (StringUtils.isBlank(originalUrl)) {
             throw new InvalidRequestException("Missing required header " + X_ORIGINAL_URL);
@@ -113,6 +145,23 @@ public class AuthRest {
                 throw invalidRequestException();
             }
             return host;
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal URL in auth check {}", originalUrl, e);
+            throw invalidRequestException();
+        }
+    }
+
+    private String extractPath(String originalUrl) {
+        if (StringUtils.isBlank(originalUrl)) {
+            throw new InvalidRequestException("Missing required header " + X_ORIGINAL_URL);
+        }
+
+        try {
+            String path = URI.create(originalUrl).getPath();
+            if (StringUtils.isBlank(path)) {
+                throw invalidRequestException();
+            }
+            return path;
         } catch (IllegalArgumentException e) {
             log.error("Illegal URL in auth check {}", originalUrl, e);
             throw invalidRequestException();
