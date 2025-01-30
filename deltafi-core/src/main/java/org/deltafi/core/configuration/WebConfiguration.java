@@ -37,5 +37,7 @@ public class WebConfiguration implements WebMvcConfigurer {
         viewControllerRegistry.addViewController("/config/**").setViewName("forward:/");
         viewControllerRegistry.addViewController("/admin/**").setViewName("forward:/");
         viewControllerRegistry.addViewController("/versions").setViewName("forward:/");
+        viewControllerRegistry.addViewController("/events").setViewName("forward:/");
+        viewControllerRegistry.addViewController("/unauthorized").setViewName("forward:/");
     }
 }
