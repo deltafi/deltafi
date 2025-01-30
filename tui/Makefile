@@ -40,7 +40,7 @@ export GOPATH
 GOBINPATH = $(GOPATH)/bin
 
 # Docker settings
-DOCKER_IMAGE := golang:1.23.4
+DOCKER_IMAGE := golang:1.23.5
 DOCKER_WORKDIR := /go/src/deltafi2
 DOCKER_GOPATH := $(DOCKER_WORKDIR)/.go
 DOCKER_CMD := docker run --rm \
