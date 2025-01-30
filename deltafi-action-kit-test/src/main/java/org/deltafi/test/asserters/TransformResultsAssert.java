@@ -20,11 +20,11 @@ package org.deltafi.test.asserters;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.deltafi.actionkit.action.ResultType;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResults;
+import org.deltafi.actionkit.action.transform.*;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 public class TransformResultsAssert extends ResultAssert<TransformResultsAssert, TransformResults> {
     /**
@@ -76,7 +76,9 @@ public class TransformResultsAssert extends ResultAssert<TransformResultsAssert,
     }
 
     /**
-     * Runs the provided match predicate against the child TransformResult at the specified index.
+     * Checks a child transform result at a given index for a) content at index 0 that matches the given
+     * contentName, mediaType, and content string, b) metadata matching the given metadata, and c) annotations matching
+     * the given annotations.
      *
      * @param index position of the TransformResult in the child list
      * @param contentName the expected content name
@@ -91,7 +93,9 @@ public class TransformResultsAssert extends ResultAssert<TransformResultsAssert,
     }
 
     /**
-     * Runs the provided match predicate against the child TransformResult at the specified index.
+     * Checks a child transform result at a given index for a) content at index 0 that matches the given
+     * contentName, mediaType, and content string, b) metadata matching the given metadata, and c) annotations matching
+     * the given annotations.
      *
      * @param index position of the TransformResult in the child list
      * @param contentName the expected content name
@@ -107,8 +111,9 @@ public class TransformResultsAssert extends ResultAssert<TransformResultsAssert,
     }
 
     /**
-     * Runs the provided match predicate against the child TransformResult at the specified index
-     * for the specified content position.
+     * Checks a child transform result at a given index for a) content at a given index that matches the given
+     * contentName, mediaType, and content string, b) metadata matching the given metadata, and c) annotations matching
+     * the given annotations.
      *
      * @param childIndex   position of the TransformResult in the child list
      * @param contentIndex position of the Content in the content list
@@ -164,4 +169,24 @@ public class TransformResultsAssert extends ResultAssert<TransformResultsAssert,
         };
     }
 
+    /**
+     * Runs the provided match predicate against the child TransformResult at the specified index.
+     *
+     * @param index position of the TransformResult in the child list
+     * @param childMatcher predicate used to find the matching child
+     * @return this
+     * @deprecated Use any {@link TransformResultsAssert#hasChildResultAt} method
+     */
+    @Deprecated
+    public TransformResultsAssert hasChildResultAt(int index, Predicate<TransformResult> childMatcher) {
+        if (actual.getChildResults() == null || index >= actual.getChildResults().size()) {
+            String contentSize = actual.getChildResults() == null ? "content list  is null" :
+                    "content list has size " + actual.getChildResults().size();
+            failWithMessage("There is no content at index %s (%s)", index, contentSize);
+            return myself;
+        }
+        ChildTransformResult transformResult = actual.getChildResults().get(index);
+        Assertions.assertThat(transformResult).matches(childMatcher);
+        return myself;
+    }
 }
