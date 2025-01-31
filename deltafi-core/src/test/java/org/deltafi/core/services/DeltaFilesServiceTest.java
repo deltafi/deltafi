@@ -35,6 +35,7 @@ import org.deltafi.core.repo.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.FlowBuilders;
+import org.deltafi.core.util.ParameterResolver;
 import org.deltafi.core.util.MockFlowDefinitionService;
 import org.deltafi.core.util.UtilService;
 import org.junit.jupiter.api.AfterEach;
@@ -100,7 +101,8 @@ class DeltaFilesServiceTest {
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock RestDataSourceService restDataSourceService,
                           @Mock TimedDataSourceService timedDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
-                          @Mock Environment environment, @Mock IdentityService identityService) {
+                          @Mock Environment environment, @Mock IdentityService identityService,
+                          @Mock ParameterResolver parameterResolver) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.dataSinkService = dataSinkService;
@@ -122,7 +124,7 @@ class DeltaFilesServiceTest {
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
-                flowDefinitionService);
+                flowDefinitionService, parameterResolver);
     }
 
     @AfterEach

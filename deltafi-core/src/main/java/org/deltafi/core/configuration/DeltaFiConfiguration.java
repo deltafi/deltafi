@@ -25,6 +25,7 @@ import org.deltafi.common.uuid.RandomUUIDGenerator;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.util.ParameterResolver;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -79,5 +80,10 @@ public class DeltaFiConfiguration {
     @Bean
     public AuthorizationEventPublisher authorizationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         return new SpringAuthorizationEventPublisher(applicationEventPublisher);
+    }
+
+    @Bean
+    public ParameterResolver parameterResolver() {
+        return new ParameterResolver();
     }
 }

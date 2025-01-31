@@ -20,11 +20,10 @@ package org.deltafi.gradle.plugin;
 import lombok.Setter;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
-import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.Publisher;
-import org.deltafi.common.types.Subscriber;
-import org.deltafi.common.types.Variable;
+import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.util.ParameterTemplateException;
+import org.deltafi.common.util.ParameterUtil;
 import org.deltafi.common.util.ResourceMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -36,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A Gradle plugin for validating Deltafi plugins.
@@ -128,9 +128,15 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             List<String> errors = new ArrayList<>();
             for (File flowFile : flowFiles) {
                 try {
-                    String errorMessage = validateConditions(ResourceMapper.readValue(flowFile, FlowPlan.class), flowFile.getName());
+                    FlowPlan flow = ResourceMapper.readValue(flowFile, FlowPlan.class);
+                    String errorMessage = validateConditions(flow, flowFile.getName());
                     if (errorMessage != null) {
                         errors.add(errorMessage);
+                    }
+
+                    String paramTemplateErrors = checkParameterTemplates(flow);
+                    if (paramTemplateErrors != null) {
+                        errors.add(paramTemplateErrors);
                     }
                 } catch (IOException e) {
                     throw new GradleException("Unable to load flow plan (" + flowFile + "): " + e.getMessage(), e);
@@ -182,6 +188,44 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
         private boolean isTestFile(File file) {
             String name = file.getName();
             return (name.endsWith(".json") || name.endsWith(".yaml") || name.endsWith(".yml"));
+        }
+
+        private String checkParameterTemplates(FlowPlan flow) {
+            String error = switch(flow) {
+                case TimedDataSourcePlan timedDataSourcePlan -> checkParameters(timedDataSourcePlan.getTimedIngressAction());
+                case TransformFlowPlan transformFlowPlan -> checkParameters(transformFlowPlan.getTransformActions());
+                case DataSinkPlan dataSinkPlan -> checkParameters(dataSinkPlan.getEgressAction());
+                default -> null;
+            };
+
+
+            return error != null ? "Invalid action parameters found in " + flow.getType().getDisplayName() + " `" + flow.getName() + "`, " + error : null;
+        }
+
+        private String checkParameters(List<ActionConfiguration> actionConfigurations) {
+            if (actionConfigurations == null) {
+                return null;
+            }
+
+            List<String> errors = actionConfigurations.stream()
+                    .map(this::checkParameters)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            return !errors.isEmpty() ? String.join("; ", errors) : null;
+        }
+
+        private String checkParameters(ActionConfiguration actionConfiguration) {
+            if (actionConfiguration != null && actionConfiguration.getParameters() != null) {
+                try {
+                    ParameterUtil.hasTemplates(actionConfiguration.getParameters());
+                } catch (ParameterTemplateException e) {
+                    return "in action configuration `" + actionConfiguration.getName() + "`:\n"
+                            + ParameterUtil.toErrorContext(e, actionConfiguration.getParameters());
+                }
+            }
+
+            return null;
         }
     }
 

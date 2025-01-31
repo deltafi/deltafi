@@ -128,6 +128,10 @@ new Docute({
           link: '/flows'
         },
         {
+          title: "Action Parameters",
+          link: '/action_parameters'
+        },
+        {
           title: "Action Unit Testing",
           link: '/unit-test'
         }

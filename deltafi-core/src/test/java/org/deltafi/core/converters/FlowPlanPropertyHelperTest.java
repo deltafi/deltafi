@@ -20,7 +20,7 @@ package org.deltafi.core.converters;
 import org.deltafi.common.types.*;
 import org.deltafi.core.util.UtilService;
 import org.deltafi.core.generated.types.FlowConfigError;
-import org.deltafi.core.validation.SchemaComplianceValidator;
+import org.deltafi.core.validation.ActionConfigurationValidator;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -248,7 +248,7 @@ class FlowPlanPropertyHelperTest {
 
     @Test
     void testValidParameterSubstitution() {
-        SchemaComplianceValidator validator = new SchemaComplianceValidator(null);
+        ActionConfigurationValidator validator = new ActionConfigurationValidator(null);
 
         Map<String, Object> parameters = UtilService.readResource("config-test/complex-parameter-values.json", Map.class);
 

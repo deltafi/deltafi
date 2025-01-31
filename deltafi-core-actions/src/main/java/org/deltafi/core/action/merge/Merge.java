@@ -25,8 +25,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Merge extends TransformAction<MergeParameters> implements Join {
-    static final String FILENAME_REPLACEMENT = "{{filename}}";
-
     public Merge() {
         super("Merges multiple content into a single content.");
     }
@@ -40,7 +38,7 @@ public class Merge extends TransformAction<MergeParameters> implements Join {
         if (name == null || name.isEmpty()) {
             name = firstContent.getName();
         }
-        mergedContent.setName(name.replace(FILENAME_REPLACEMENT, firstContent.getName()));
+        mergedContent.setName(name);
 
         String mediaType = params.getMediaType();
         if (mediaType != null && !mediaType.isEmpty()) {

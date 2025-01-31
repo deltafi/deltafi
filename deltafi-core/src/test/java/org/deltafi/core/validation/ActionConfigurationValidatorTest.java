@@ -35,13 +35,13 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
-class SchemaComplianceValidatorTest {
+class ActionConfigurationValidatorTest {
 
     public static final String EGRESS_ACTION = "org.deltafi.core.action.RestPostEgressAction";
     public static final String TRANSFORM_ACTION = "org.deltafi.passthrough.action.RoteTransformAction";
 
     @InjectMocks
-    SchemaComplianceValidator schemaComplianceValidator;
+    ActionConfigurationValidator actionConfigurationValidator;
 
     @Mock
     PluginService pluginService;
@@ -49,7 +49,7 @@ class SchemaComplianceValidatorTest {
     @Test
     void runValidate() {
         Mockito.when(pluginService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
-        assertThat(schemaComplianceValidator.validate(egressConfig(getRequiredEgressParams()))).isEmpty();
+        assertThat(actionConfigurationValidator.validate(egressConfig(getRequiredEgressParams()))).isEmpty();
     }
 
     @Test
@@ -61,7 +61,7 @@ class SchemaComplianceValidatorTest {
         ActionConfiguration config = egressConfig("egressName", params);
 
         Mockito.when(pluginService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
-        List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
+        List<FlowConfigError> errors = actionConfigurationValidator.validate(config);
 
         assertThat(errors).hasSize(1);
         FlowConfigError error = errors.getFirst();
@@ -74,7 +74,7 @@ class SchemaComplianceValidatorTest {
     void runValidate_missingType() {
         ActionConfiguration config = egressConfig("egressName", "   ", getRequiredEgressParams());
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
+        List<FlowConfigError> errors = actionConfigurationValidator.validate(config);
         Mockito.verifyNoInteractions(pluginService);
         FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("egressName");
@@ -86,7 +86,7 @@ class SchemaComplianceValidatorTest {
     void validateAgainstSchema_wrongInstanceType() {
         ActionConfiguration config = egressConfig("egressAction", getRequiredEgressParams());
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(
+        List<FlowConfigError> errors = actionConfigurationValidator.validateAgainstSchema(
                 ActionDescriptor.builder().type(ActionType.INGRESS).build(), config);
 
         FlowConfigError error = errors.getFirst();
@@ -99,7 +99,7 @@ class SchemaComplianceValidatorTest {
     void validateAgainstSchema_actionNotRegistered() {
         Mockito.when(pluginService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.empty());
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validate(egressConfig(null));
+        List<FlowConfigError> errors = actionConfigurationValidator.validate(egressConfig(null));
         FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("RestEgress");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.UNREGISTERED_ACTION);
@@ -108,7 +108,7 @@ class SchemaComplianceValidatorTest {
 
     @Test
     void validateAgainstSchema_goodTransform() {
-        assertThat(schemaComplianceValidator.validateAgainstSchema(transformActionDescriptor(), transformConfig())).isEmpty();
+        assertThat(actionConfigurationValidator.validateAgainstSchema(transformActionDescriptor(), transformConfig())).isEmpty();
     }
 
     @Test
@@ -116,7 +116,7 @@ class SchemaComplianceValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.remove("url");
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = actionConfigurationValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: required property 'url' not found").build());
     }
@@ -126,7 +126,7 @@ class SchemaComplianceValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.put("url", true);
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = actionConfigurationValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$.url: boolean found, string expected").build());
     }
@@ -136,7 +136,7 @@ class SchemaComplianceValidatorTest {
         Map<String, Object> params = getRequiredEgressParams();
         params.put("unknownField", "not needed");
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = actionConfigurationValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: property 'unknownField' is not defined in the schema and the schema does not allow additional properties").build());
     }
@@ -147,7 +147,7 @@ class SchemaComplianceValidatorTest {
         params.remove("url");
         params.put("urlTypo", "http://egress");
 
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
+        List<FlowConfigError> errors = actionConfigurationValidator.validateAgainstSchema(UtilService.egressActionDescriptor(), egressConfig(params));
 
         assertThat(errors).hasSize(1)
                 .contains(FlowConfigError.newBuilder().configName("RestEgress").errorType(FlowErrorType.INVALID_ACTION_PARAMETERS).message("$: required property 'url' not found; $: property 'urlTypo' is not defined in the schema and the schema does not allow additional properties").build());

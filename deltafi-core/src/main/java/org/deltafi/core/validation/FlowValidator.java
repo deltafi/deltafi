@@ -29,7 +29,7 @@ import java.util.*;
 @Service
 public class FlowValidator {
 
-    private final SchemaComplianceValidator schemaComplianceValidator;
+    private final ActionConfigurationValidator actionConfigurationValidator;
 
     public List<FlowConfigError> validate(Flow flow) {
         return new ArrayList<>(validateActions(flow.allActionConfigurations()));
@@ -47,6 +47,6 @@ public class FlowValidator {
     }
 
     private List<FlowConfigError> validateAction(ActionConfiguration actionConfiguration) {
-        return schemaComplianceValidator.validate(actionConfiguration);
+        return actionConfigurationValidator.validate(actionConfiguration);
     }
 }

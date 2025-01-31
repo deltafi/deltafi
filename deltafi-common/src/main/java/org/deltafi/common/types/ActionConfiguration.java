@@ -18,6 +18,7 @@
 package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 
 import java.util.*;
@@ -32,10 +33,12 @@ public class ActionConfiguration {
     private String apiVersion;
     private ActionType actionType;
     private String type;
+    private boolean templated;
 
     @JsonIgnore
     private Map<String, Object> internalParameters;
     private Map<String, Object> parameters;
+    private JsonNode parameterSchema;
 
     protected JoinConfiguration join;
 

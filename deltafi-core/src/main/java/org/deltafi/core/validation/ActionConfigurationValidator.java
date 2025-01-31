@@ -17,9 +17,6 @@
  */
 package org.deltafi.core.validation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionConfiguration;
@@ -31,22 +28,15 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class SchemaComplianceValidator {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
+public class ActionConfigurationValidator {
 
     private final PluginService pluginService;
-    private final SchemaValidatorsConfig validatorsConfig;
 
-    public SchemaComplianceValidator(@Lazy PluginService pluginService) {
+    public ActionConfigurationValidator(@Lazy PluginService pluginService) {
         this.pluginService = pluginService;
-        validatorsConfig = new SchemaValidatorsConfig();
-        validatorsConfig.setTypeLoose(true);
     }
 
     public List<FlowConfigError> validate(ActionConfiguration actionConfiguration) {
@@ -82,7 +72,7 @@ public class SchemaComplianceValidator {
                     .build());
         }
 
-        validateParameters(actionConfiguration, actionDescriptor).ifPresent(errors::add);
+        SchemaComplianceUtil.validateParameters(actionConfiguration, actionDescriptor).ifPresent(errors::add);
 
         actionConfiguration.validate(actionDescriptor).stream()
                 .map(message -> actionConfigError(actionConfiguration, message))
@@ -91,24 +81,6 @@ public class SchemaComplianceValidator {
         return errors;
     }
 
-    private Optional<FlowConfigError> validateParameters(ActionConfiguration actionConfig, ActionDescriptor actionDescriptor) {
-        JsonNode schemaNode = OBJECT_MAPPER.convertValue(actionDescriptor.getSchema(), JsonNode.class);
-
-        Map<String, Object> paramMap = Objects.nonNull(actionConfig.getInternalParameters()) ? actionConfig.getInternalParameters() : new HashMap<>();
-        JsonNode params = OBJECT_MAPPER.convertValue(paramMap, JsonNode.class);
-
-        final JsonSchema schema = FACTORY.getSchema(schemaNode, validatorsConfig);
-
-        schema.initializeValidators();
-
-        Set<ValidationMessage> errors = schema.validate(params);
-        String schemaErrors = errors.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("; "));
-        if (!schemaErrors.isBlank()) {
-            return Optional.of(parameterErrors(actionConfig, schemaErrors));
-        }
-
-        return Optional.empty();
-    }
 
     FlowConfigError notRegisteredError(ActionConfiguration actionConfiguration) {
         FlowConfigError actionConfigError = new FlowConfigError();
@@ -116,14 +88,6 @@ public class SchemaComplianceValidator {
         actionConfigError.setErrorType(FlowErrorType.UNREGISTERED_ACTION);
         actionConfigError.setMessage("Action: " + actionConfiguration.getType() + " has not been registered with the system");
         return actionConfigError;
-    }
-
-    FlowConfigError parameterErrors(ActionConfiguration actionConfiguration, String parameterErrors) {
-        FlowConfigError configError = new FlowConfigError();
-        configError.setConfigName(actionConfiguration.getName());
-        configError.setErrorType(FlowErrorType.INVALID_ACTION_PARAMETERS);
-        configError.setMessage(parameterErrors);
-        return configError;
     }
 
     FlowConfigError actionConfigError(ActionConfiguration actionConfiguration, String message) {

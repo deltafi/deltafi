@@ -26,7 +26,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class MergeParameters extends ActionParameters {
-    @JsonPropertyDescription("Name of the merged file. Embed {{filename}} to have it replaced with the filename of the first file merged. If not set, will use the filename of the first file merged.")
+    @JsonPropertyDescription("Name of the merged file. Embed {{deltaFileName}} to have it replaced with the deltaFileName or content[0].name to get the name of the first content. If not set, will use the filename of the first file merged.")
     private String mergedFilename;
 
     @JsonPropertyDescription("Media type to apply to the merged file. If not set, will use the media type of the first file merged.")

@@ -33,6 +33,8 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.*;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.*;
+import org.deltafi.common.util.ParameterTemplateException;
+import org.deltafi.common.util.ParameterUtil;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.*;
@@ -43,6 +45,7 @@ import org.deltafi.core.repo.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.*;
+import org.deltafi.core.util.ParameterResolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -111,6 +114,7 @@ public class DeltaFilesService {
     private final UUIDGenerator uuidGenerator;
     private final IdentityService identityService;
     private final FlowDefinitionService flowDefinitionService;
+    private final ParameterResolver parameterResolver;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -1653,7 +1657,7 @@ public class DeltaFilesService {
         }
 
         try {
-            List<WrappedActionInput> toQueue = populateBatchInputs(actionInputs);
+            List<WrappedActionInput> toQueue = finalizeInput(actionInputs);
             coreEventQueue.putActions(toQueue, checkUnique);
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
@@ -1662,14 +1666,25 @@ public class DeltaFilesService {
     }
 
     // populate joined content, only return actionInput where batched input was successfully populated
-    private List<WrappedActionInput> populateBatchInputs(List<WrappedActionInput> actionInputs) {
+
+    /**
+     * Populate joined content if necessary. Attempt to resolve any parameters that include templates.
+     * Any invalid input will be filtered out. DeltaFiles that were part of invalid input are marked errored
+     * and persisted.
+     * @param actionInputs to populate and attempt to resolve parameters
+     * @return the list of valid ActionInput that should be added to the queue
+     */
+    private List<WrappedActionInput> finalizeInput(List<WrappedActionInput> actionInputs) {
         List<WrappedActionInput> filteredList = new ArrayList<>();
         for (WrappedActionInput actionInput : actionInputs) {
             try {
                 populateBatchInput(actionInput);
+                parameterResolver.resolve(actionInput);
                 filteredList.add(actionInput);
             } catch (MissingDeltaFilesException e) {
                 handleMissingParent(actionInput, e.getMessage());
+            } catch (ParameterTemplateException e) {
+                handleParamResolverError(actionInput, ParameterUtil.toErrorContext(e, actionInput.getActionParams()));
             }
         }
         return filteredList;
@@ -1686,6 +1701,24 @@ public class DeltaFilesService {
 
         OffsetDateTime now = OffsetDateTime.now(clock);
         failedAction.error(now, now, now, "Missing one or more parent DeltaFiles", errorContext);
+        deltaFileFlow.updateState();
+        deltaFile.updateState(now);
+
+        deltaFileCacheService.remove(deltaFile.getDid());
+        deltaFileRepo.saveAndFlush(deltaFile);
+    }
+
+    private void handleParamResolverError(WrappedActionInput input, String errorContext) {
+        // use the cache service to get the latest (this will handle pulling from the repo is needed for joins)
+        DeltaFile deltaFile = deltaFileCacheService.get(input.getDeltaFile().getDid());
+        if (deltaFile == null) {
+            return;
+        }
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlow(input.getActionContext().getFlowId());
+        Action failedAction = deltaFileFlow.getAction(input.getActionContext().getActionName());
+
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        failedAction.error(now, now, now, "Unable to resolve templated action parameter", errorContext);
         deltaFileFlow.updateState();
         deltaFile.updateState(now);
 
@@ -1760,7 +1793,7 @@ public class DeltaFilesService {
             if (!coreEventQueue.queueHasTaskingForAction(actionInput)) {
                 timedDataSourceService.setLastRun(dataSource.getName(), OffsetDateTime.now(clock),
                         actionInput.getActionContext().getDid());
-                coreEventQueue.putActions(List.of(actionInput), false);
+                enqueueActions(List.of(actionInput), false);
                 return true;
             } else {
                 log.warn("Skipping queueing on {} for duplicate timed ingress action event: {}",

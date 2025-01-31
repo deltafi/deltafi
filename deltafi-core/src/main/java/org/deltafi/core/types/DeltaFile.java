@@ -524,6 +524,8 @@ public class DeltaFile {
                                              String returnAddress, String memo) {
     WrappedActionInput actionInput = buildActionInput(actionConfiguration, flow, List.of(), action, systemName, returnAddress, memo);
     actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent().stream().map(Content::copy).toList())));
+    actionInput.setTemplated(actionConfiguration.isTemplated());
+    actionInput.setParameterSchema(actionConfiguration.getParameterSchema());
     return actionInput;
   }
 
@@ -560,6 +562,8 @@ public class DeltaFile {
             .returnAddress(returnAddress)
             .actionCreated(action.getCreated())
             .coldQueued(action.getState() == ActionState.COLD_QUEUED)
+            .templated(actionConfiguration.isTemplated())
+            .parameterSchema(actionConfiguration.getParameterSchema())
             .build();
   }
 

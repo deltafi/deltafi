@@ -17,6 +17,8 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,4 +37,12 @@ public class ActionInput {
     private Map<String, Object> actionParams;
     private String queueName;
     private String returnAddress;
+    @JsonIgnore
+    private boolean templated;
+    @JsonIgnore
+    private JsonNode parameterSchema;
+
+    public boolean needsResolved() {
+        return templated && (actionParams != null && !actionParams.isEmpty()) && (deltaFileMessages != null && !deltaFileMessages.isEmpty());
+    }
 }
