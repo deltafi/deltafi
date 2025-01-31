@@ -20,8 +20,10 @@ package org.deltafi.core.rest;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.AuthProperties;
 import org.deltafi.core.exceptions.InvalidRequestException;
+import org.deltafi.core.services.EventService;
 import org.deltafi.core.types.DeltaFiUserDetails;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Set;
@@ -33,7 +35,7 @@ class AuthRestTest {
 
     private static final DeltaFiUserDetails ADMIN  = DeltaFiUserDetails.builder().username("admin").permissionSet(Set.of("Admin")).build();
     private static final DeltaFiUserDetails UIOnly = DeltaFiUserDetails.builder().username("ui").permissionSet(Set.of("UIAccess")).build();
-    private final AuthRest authRest = new AuthRest("local.deltafi", new AuthProperties("cert"), new CoreAuditLogger());
+    private final AuthRest authRest = new AuthRest("local.deltafi", new AuthProperties("cert"), new CoreAuditLogger(Mockito.mock(EventService.class)));
 
     @Test
     void testDomainCheckHasAccessAdminAccess() {

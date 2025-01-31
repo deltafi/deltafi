@@ -99,14 +99,14 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableDataSinkTestMode(@InputArgument String flowName) {
-        auditLogger.audit("enabled test mode for dataSink {}", flowName);
+        auditLogger.auditAndEvent("enabled test mode for dataSink {}", flowName);
         return dataSinkService.enableTestMode(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableDataSinkTestMode(@InputArgument String flowName) {
-        auditLogger.audit("disabled test mode for dataSink {}", flowName);
+        auditLogger.auditAndEvent("disabled test mode for dataSink {}", flowName);
         return dataSinkService.disableTestMode(flowName);
     }
 
@@ -145,7 +145,7 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setFlowState(@InputArgument FlowType flowType, @InputArgument String flowName, @InputArgument FlowState flowState) {
-        auditLogger.audit("set {} {} to state {}", flowType, flowName, flowState);
+        auditLogger.auditAndEvent("set {} {} to state {}", flowType.getDisplayName(), flowName, flowState);
 
         FlowService<?, ?, ?, ?> flowService = switch(flowType) {
             case FlowType.REST_DATA_SOURCE -> restDataSourceService;
@@ -204,28 +204,28 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableRestDataSourceTestMode(@InputArgument String name) {
-        auditLogger.audit("enabled test mode for restDataSource {}", name);
+        auditLogger.auditAndEvent("enabled test mode for restDataSource {}", name);
         return restDataSourceService.enableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableTimedDataSourceTestMode(@InputArgument String name) {
-        auditLogger.audit("enabled test mode for timedDataSource {}", name);
+        auditLogger.auditAndEvent("enabled test mode for timedDataSource {}", name);
         return timedDataSourceService.enableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableRestDataSourceTestMode(@InputArgument String name) {
-        auditLogger.audit("disabled test mode for restDataSource {}", name);
+        auditLogger.auditAndEvent("disabled test mode for restDataSource {}", name);
         return restDataSourceService.disableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableTimedDataSourceTestMode(@InputArgument String name) {
-        auditLogger.audit("disabled test mode for timedDataSource {}", name);
+        auditLogger.auditAndEvent("disabled test mode for timedDataSource {}", name);
         return timedDataSourceService.disableTestMode(name);
     }
 
@@ -250,14 +250,14 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableTransformTestMode(@InputArgument String flowName) {
-        auditLogger.audit("enabled test mode for transform dataSource {}", flowName);
+        auditLogger.auditAndEvent("enabled test mode for transform {}", flowName);
         return transformFlowService.enableTestMode(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableTransformTestMode(@InputArgument String flowName) {
-        auditLogger.audit("disabled test mode for transform dataSource {}", flowName);
+        auditLogger.auditAndEvent("disabled test mode for transform {}", flowName);
         return transformFlowService.disableTestMode(flowName);
     }
 

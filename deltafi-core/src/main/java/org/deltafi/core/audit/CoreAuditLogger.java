@@ -18,10 +18,15 @@
 package org.deltafi.core.audit;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
 import org.deltafi.core.services.DeltaFiUserService;
+import org.deltafi.core.services.EventService;
+import org.deltafi.core.types.Event;
+import org.deltafi.core.types.Event.Severity;
 import org.slf4j.MDC;
+import org.slf4j.helpers.MessageFormatter;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +36,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,15 +45,30 @@ import java.util.stream.Collectors;
 
 @Component
 @Slf4j(topic = "AUDIT")
+@RequiredArgsConstructor
 public class CoreAuditLogger {
 
     private final Map<String, String> permissionMap = new ConcurrentHashMap<>();
+    private final EventService eventService;
 
     public void audit(String message, Object ... objects) {
+        writeLog(DeltaFiUserService.currentUsername(), message, objects);
+    }
+
+    public void auditAndEvent(String message, Object ... objects) {
         String username = DeltaFiUserService.currentUsername();
-        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", username)) {
-            log.info(message, objects);
-        }
+        writeLog(username, message, objects);
+
+        String populatedMessage = MessageFormatter.arrayFormat(message, objects).getMessage();
+        Event event = Event.builder()
+                .source(username)
+                .summary(populatedMessage)
+                .content(username + " " + populatedMessage)
+                .timestamp(OffsetDateTime.now())
+                .severity(Severity.INFO)
+                .build();
+
+        eventService.createEvent(event);
     }
 
     @EventListener
@@ -58,9 +79,12 @@ public class CoreAuditLogger {
         String username = extractUsername(authorizationDeniedEvent);
         String methodCalled = extractMethodName(authorizationDeniedEvent);
         String missingPermissions = extractMissingPermissions(authorizationDeniedEvent);
+        writeLog(username, "request '{}' was denied due to missing permission '{}'", methodCalled, missingPermissions);
+    }
 
-        try (@SuppressWarnings("unused") MDC.MDCCloseable mdc = MDC.putCloseable("user", username)) {
-            log.info("request '{}' was denied due to missing permission '{}'", methodCalled, missingPermissions);
+    private void writeLog(String username, String message, Object ... objects) {
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", username)) {
+            log.info(message, objects);
         }
     }
 
