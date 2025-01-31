@@ -1138,9 +1138,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testReplayTestMode() throws IOException {
 		UUID did = UUID.randomUUID();
-		deltaFileRepo.save(fullFlowExemplarService.postEgressDeltaFile(did));
-
-		timedDataSourceService.enableTestMode(TIMED_DATA_SOURCE_NAME);
+		DeltaFile tempParent = fullFlowExemplarService.postEgressDeltaFile(did);
+		tempParent.firstFlow().setTestMode(true);
+		tempParent.firstFlow().setTestModeReason(TIMED_DATA_SOURCE_NAME);
+		deltaFileRepo.save(tempParent);
 
 		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("replay"), did),

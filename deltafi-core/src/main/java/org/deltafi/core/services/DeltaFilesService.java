@@ -932,6 +932,8 @@ public class DeltaFilesService {
                                     .input(firstFlow.getInput())
                                     .created(now)
                                     .modified(now)
+                                    .testMode(firstFlow.isTestMode())
+                                    .testModeReason(firstFlow.getTestModeReason())
                                     .build();
 
                             List<UUID> parentDids = new ArrayList<>(List.of(deltaFile.getDid()));
@@ -952,10 +954,6 @@ public class DeltaFilesService {
                             Flow flowConfig = getFlowConfig(flow);
                             if (flowConfig.isPaused()) {
                                 flow.setState(DeltaFileFlowState.PAUSED);
-                            }
-                            if (flowConfig.isTestMode()) {
-                                flow.setTestMode(true);
-                                flow.setTestModeReason(flowConfig.getName());
                             }
 
                             if (!removeSourceMetadata.isEmpty()) {
