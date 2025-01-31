@@ -153,6 +153,7 @@
           <div v-if="helpVisible" class="help-dialog">
             <div class="p-3" v-html="markdownIt.render(helpMarkdown)" />
           </div>
+          <ScrollTop id="actionsScrollTopId" ref="actionsScrollTopRef" target="parent" :threshold="10" icon="pi pi-arrow-up" />
         </SplitterPanel>
       </Splitter>
     </Dialog>
@@ -203,6 +204,7 @@ import Dialog from "primevue/dialog";
 import Divider from "primevue/divider";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
+import ScrollTop from "primevue/scrolltop";
 import Splitter from "primevue/splitter";
 import SplitterPanel from "primevue/splitterpanel";
 
@@ -217,6 +219,7 @@ import MarkdownIt from "markdown-it";
 const markdownIt = new MarkdownIt({
   html: true,
 });
+const actionsScrollTopRef = ref(null);
 const helpMarkdown = ref("");
 const helpVisible = ref(false);
 const actionPickerVisible = ref(false);
@@ -326,6 +329,10 @@ const showHelp = (action) => {
   helpMarkdown.value = action.docsMarkdown || "# No Docs Available";
   helpHeader.value = `${action.displayName} Action Help`;
   helpVisible.value = true;
+  let actionsScrollTopId = document.getElementById("actionsScrollTopId")
+  if (actionsScrollTopId) {
+    actionsScrollTopId.click();
+  }
 };
 
 const defaultTopicTemplate = [{ condition: null, topic: null }];
