@@ -22,7 +22,11 @@
       <CollapsiblePanel v-if="metadataArray.length > 0" :header="actionName" class="table-panel">
         <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px" data-key="key">
           <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
-          <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
+          <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" class="metadata-value">
+            <template #body="{ data }">
+              <pre>{{ data.value }}</pre>
+            </template>
+          </Column>
         </DataTable>
       </CollapsiblePanel>
       <CollapsiblePanel v-if="!_.isEmpty(props.deletedMetadata)" header="Deleted Metadata" class="table-panel mt-3">
@@ -110,3 +114,12 @@ defineExpose({
   showDialog,
 });
 </script>
+
+<style lang="scss">
+.metadata-value {
+  pre {
+    margin: 0;
+    padding: 0;
+  }
+}
+</style>
