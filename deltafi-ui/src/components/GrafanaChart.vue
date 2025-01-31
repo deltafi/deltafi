@@ -22,6 +22,9 @@
 
 <script setup>
 import { computed, defineProps } from "vue";
+import useUiConfig from "@/composables/useUiConfig";
+
+const { uiConfig } = useUiConfig();
 
 const props = defineProps({
   panelId: {
@@ -69,28 +72,18 @@ const props = defineProps({
   keyPairs: {
     type: Object,
     required: false,
-    default: null,
+    default: () => {},
   },
 });
 
-const getKeys = () => {
-  const keyPairs = props.keyPairs;
-  let expendedProps = {
-    ...keyPairs,
-    ...props,
-  };
-  expendedProps.keyPairs = null;
-  return expendedProps;
-};
-
 const src = computed(() => {
-  let params = null;
-  if (props.keyPairs) {
-    let expandedParms = getKeys();
-    params = new URLSearchParams(expandedParms);
-  } else {
-    params = new URLSearchParams(props);
-  }
-  return `/visualization/d-solo/${props.dashboardId}?${params}`;
+  let params = {
+    ...props,
+    ...props.keyPairs,
+  };
+  if (uiConfig.useUTC) params.timezone = "utc";
+  delete params.keyPairs;
+  const formattedParams = new URLSearchParams(params);
+  return `/visualization/d-solo/${props.dashboardId}?${formattedParams}`;
 });
 </script>
