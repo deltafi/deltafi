@@ -62,15 +62,15 @@ class TransformFlowServiceTest {
     void buildFlow() {
         TransformFlow running = transformFlow("running", FlowState.RUNNING, true);
         TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false);
-        Mockito.when(transformFlowRepo.findByNameAndType("running", FlowType.TRANSFORM, TransformFlow.class)).thenReturn(Optional.of(running));
-        Mockito.when(transformFlowRepo.findByNameAndType("stopped", FlowType.TRANSFORM, TransformFlow.class)).thenReturn(Optional.of(stopped));
+        Map<String, TransformFlow> existingFlows = Map.of(running.getName(), running, stopped.getName(), stopped);
+
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TransformFlowPlan runningFlowPlan = new TransformFlowPlan("running", FlowType.TRANSFORM, "yep");
         TransformFlowPlan stoppedFlowPlan = new TransformFlowPlan("stopped", FlowType.TRANSFORM, "naw");
 
-        TransformFlow runningTransformFlow = transformFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
-        TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());
+        TransformFlow runningTransformFlow = transformFlowService.buildFlow(existingFlows, runningFlowPlan, Collections.emptyList());
+        TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(existingFlows, stoppedFlowPlan, Collections.emptyList());
 
         assertThat(runningTransformFlow.isRunning()).isTrue();
         assertThat(runningTransformFlow.isTestMode()).isTrue();

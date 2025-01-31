@@ -46,8 +46,12 @@ class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapsh
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
-    public DataSinkService(DataSinkRepo flowRepo, PluginVariableService pluginVariableService, FlowValidator flowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
-        super(FlowType.DATA_SINK, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, DataSink.class, DataSinkPlan.class);
+    public DataSinkService(DataSinkRepo flowRepo, PluginVariableService pluginVariableService,
+                           FlowValidator flowValidator, BuildProperties buildProperties,
+                           FlowCacheService flowCacheService, EventService eventService) {
+        super(FlowType.DATA_SINK, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER,
+                flowValidator, buildProperties, flowCacheService,
+                eventService, DataSink.class, DataSinkPlan.class);
     }
 
     @Override

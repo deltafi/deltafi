@@ -45,9 +45,10 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlan, RestD
 
     public RestDataSourceService(RestDataSourceRepo restDataSourceRepo, PluginVariableService pluginVariableService,
                                  FlowValidator flowValidator, BuildProperties buildProperties,
-                                 ErrorCountService errorCountService, FlowCacheService flowCacheService) {
+                                 ErrorCountService errorCountService, FlowCacheService flowCacheService,
+                                 EventService eventService) {
         super(FlowType.REST_DATA_SOURCE, restDataSourceRepo, pluginVariableService, REST_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                flowValidator, buildProperties, flowCacheService, RestDataSource.class, RestDataSourcePlan.class);
+                flowValidator, buildProperties, flowCacheService, eventService, RestDataSource.class, RestDataSourcePlan.class);
 
         this.errorCountService = errorCountService;
     }

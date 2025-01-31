@@ -43,8 +43,11 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
-    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, FlowValidator flowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
-        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, TransformFlow.class, TransformFlowPlan.class);
+    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService,
+                                FlowValidator flowValidator, BuildProperties buildProperties,
+                                FlowCacheService flowCacheService, EventService eventService) {
+        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, flowValidator,
+                buildProperties, flowCacheService, eventService, TransformFlow.class, TransformFlowPlan.class);
     }
 
     @Override

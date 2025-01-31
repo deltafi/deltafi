@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
 import org.deltafi.core.exceptions.MissingActionConfigException;
@@ -26,12 +27,15 @@ import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 import org.deltafi.core.repo.FlowRepo;
+import org.deltafi.core.types.Event.Severity;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.deltafi.core.util.MarkdownBuilder;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,8 +51,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     protected final FlowCacheService flowCacheService;
     private final Class<FlowT> flowClass;
     private final Class<FlowPlanT> flowPlanClass;
+    private final EventService eventService;
 
-    protected FlowService(FlowType flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator validator, BuildProperties buildProperties, FlowCacheService flowCacheService, Class<FlowT> flowClass, Class<FlowPlanT> flowPlanClass) {
+    protected FlowService(FlowType flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService,
+                          FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator validator,
+                          BuildProperties buildProperties, FlowCacheService flowCacheService, EventService eventService,
+                          Class<FlowT> flowClass, Class<FlowPlanT> flowPlanClass) {
         this.flowType = flowType;
         this.flowRepo = flowRepo;
         this.pluginVariableService = pluginVariableService;
@@ -58,6 +66,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         this.flowCacheService = flowCacheService;
         this.flowClass = flowClass;
         this.flowPlanClass = flowPlanClass;
+        this.eventService = eventService;
     }
 
     @PostConstruct
@@ -168,9 +177,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @param sourcePlugin PluginCoordinates used to find the variables
      */
     public void rebuildFlows(List<FlowPlan> flowPlans, PluginCoordinates sourcePlugin) {
+        Map<String, FlowT> existingFlows = getByPlugin(sourcePlugin);
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(sourcePlugin);
         List<FlowT> updatedFlows = flowPlans.stream()
-                .map(flowPlan -> buildFlow(flowPlan, variables))
+                .map(flowPlan -> buildFlow(existingFlows, flowPlan, variables))
                 .toList();
 
         updatedFlows.forEach(f -> flowRepo.deleteByNameAndType(f.getName(), f.getType()));
@@ -180,33 +190,25 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     public void upgradeFlows(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
-        List<Flow> existingFlows = flowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(
-                sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), flowType);
-        List<String> existingFlowNames = existingFlows.stream().map(Flow::getName).toList();
-        List<FlowT> flows = flowPlans.stream().map(this::buildFlow).toList();
-        List<String> incomingFlowNames = flows.stream().map(Flow::getName).toList();
-        List<FlowT> newFlows = flows.stream().filter(f -> !existingFlowNames.contains(f.getName())).toList();
-        saveAll(newFlows);
+        Map<String, FlowT> existingFlows = getByPlugin(sourcePlugin);
 
-        List<Flow> deleteFlows = existingFlows.stream().filter(e -> !incomingFlowNames.contains(e.getName())).toList();
+        // recreates each flow maintaining the original flow id and state for pre-existing flows
+        List<FlowT> flows = flowPlans.stream().map(flow -> buildFlow(existingFlows, flow)).toList();
+        List<String> incomingFlowNames = flows.stream().map(Flow::getName).toList();
+
+        // delete the old versions of the flow prior to saving the new versions
+        List<FlowT> deleteFlows = existingFlows.values().stream().filter(e -> !incomingFlowNames.contains(e.getName())).toList();
         flowRepo.deleteAll(deleteFlows);
 
-        List<FlowT> incomingExistingFlows = flows.stream().filter(f -> existingFlowNames.contains(f.getName())).toList();
-        for (Flow incomingExistingFlow : incomingExistingFlows) {
-            Flow existingFlow = existingFlows.stream().filter(f -> f.getName().equals(incomingExistingFlow.getName())).findFirst().orElse(null);
-            if (existingFlow != null) {
-                incomingExistingFlow.setId(existingFlow.getId());
-                incomingExistingFlow.copyFlowState(existingFlow);
-            }
-            flowRepo.save(incomingExistingFlow);
-        }
+        // save the replacement flows
+        flowRepo.saveAll(flows);
 
         refreshCache();
     }
 
-    private FlowT buildFlow(FlowPlanT flowPlan) {
+    private FlowT buildFlow(Map<String, FlowT> existingFlows, FlowPlanT flowPlan) {
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(flowPlan.getSourcePlugin());
-        return buildFlow(flowPlan, variables);
+        return buildFlow(existingFlows, flowPlan, variables);
     }
 
     /**
@@ -217,8 +219,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @return flow that was created from the plan
      */
     public FlowT buildAndSaveFlow(FlowPlanT flowPlan) {
+        Optional<FlowT> flow = flowRepo.findByNameAndType(flowPlan.getName(), flowType, flowClass);
+        Map<String, FlowT> existingFlows = flow.map(f -> Map.of(f.getName(), f)).orElse(Map.of());
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(flowPlan.getSourcePlugin());
-        return save(buildFlow(flowPlan, variables));
+        return save(buildFlow(existingFlows, flowPlan, variables));
     }
 
     /**
@@ -238,19 +242,22 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     FlowT validateAndSaveFlow(FlowT flow) {
+        FlowState originalState = flow.getFlowStatus().getState();
         List<FlowConfigError> errors = new ArrayList<>(flow.getFlowStatus()
                 .getErrors().stream().filter(error -> FlowErrorType.UNRESOLVED_VARIABLE.equals(error.getErrorType()))
                 .toList());
 
         errors.addAll(validator.validate(flow));
+        flow.getFlowStatus().setErrors(errors);
 
         if (!errors.isEmpty()) {
             flow.getFlowStatus().setState(FlowState.INVALID);
+            if (!FlowState.INVALID.equals(originalState)) {
+                invalidFlowEvent(flow, originalState);
+            }
         } else if(FlowState.INVALID.equals(flow.getFlowStatus().getState())) {
             flow.getFlowStatus().setState(FlowState.STOPPED);
         }
-
-        flow.getFlowStatus().setErrors(errors);
 
         return save(flow);
     }
@@ -507,20 +514,68 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 .collect(Collectors.groupingBy(FlowT::getSourcePlugin));
     }
 
-    FlowT buildFlow(FlowPlan flowPlan, List<Variable> variables) {
-        Optional<FlowT> existing = flowRepo.findByNameAndType(flowPlan.getName(), flowType, flowClass);
+    FlowT buildFlow(Map<String, FlowT> existingFlows, FlowPlan flowPlan, List<Variable> variables) {
+        Optional<FlowT> existing = Optional.ofNullable(existingFlows.get(flowPlan.getName()));
         FlowPlanT typedFlowPlan = flowPlanClass.cast(flowPlan);
         FlowT flow = flowPlanConverter.convert(typedFlowPlan, variables);
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
 
-        existing.ifPresent(flow::copyFlowState);
-
         if (flow.hasErrors()) {
             flow.getFlowStatus().setState(FlowState.INVALID);
         }
 
+        existing.ifPresent(existingFlow -> copyFlowState(flow, existingFlow));
+
         return flow;
+    }
+
+    /**
+     * Copy the source flow id and state to the target flow
+     * @param targetFlow the new flow that should inherit the sourceFlow state
+     * @param sourceFlow the existing flow whose state should be copied
+     */
+    private void copyFlowState(FlowT targetFlow, FlowT sourceFlow) {
+        targetFlow.setId(sourceFlow.getId());
+
+        if (!sourceFlow.getFlowStatus().getState().equals(targetFlow.getFlowStatus().getState())) {
+            if (targetFlow.isInvalid()) {
+                // flow was not invalid before fire an event
+                invalidFlowEvent(targetFlow, sourceFlow.getFlowStatus().getState());
+            } else {
+                // carry forward the old state (running/paused)
+                targetFlow.getFlowStatus().setState(sourceFlow.getFlowStatus().getState());
+            }
+        }
+
+        targetFlow.getFlowStatus().setTestMode(sourceFlow.getFlowStatus().getTestMode());
+        targetFlow.copyFlowSpecificState(sourceFlow);
+    }
+
+    private void invalidFlowEvent(FlowT invalidFlow, FlowState lastState) {
+        List<String> errors = invalidFlow.getFlowStatus().getErrors().stream().map(this::flowError).toList();
+
+        MarkdownBuilder markdownBuilder = new MarkdownBuilder();
+        markdownBuilder.addList("Errors:", errors);
+        String content = markdownBuilder.build();
+
+        Event event = Event.builder()
+                .source("core")
+                .timestamp(OffsetDateTime.now())
+                .summary(capitalizedType(invalidFlow) + " " + invalidFlow.getName() + " was " + lastState.name().toLowerCase() + " but is now invalid")
+                .content(content)
+                .severity(Severity.ERROR)
+                .notification(true)
+                .build();
+        eventService.createEvent(event);
+    }
+
+    private String capitalizedType(Flow flow) {
+        return StringUtils.capitalize(flow.getType().getDisplayName());
+    }
+
+    private String flowError(FlowConfigError flowConfigError) {
+        return flowConfigError.getConfigName() + ": " + flowConfigError.getMessage();
     }
 
     private FlowT save(FlowT flow) {
@@ -553,6 +608,15 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         }
 
         return false;
+    }
+
+    private Map<String, FlowT> getByPlugin(PluginCoordinates sourcePlugin) {
+        List<Flow> existingFlows = flowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(
+                sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), flowType);
+
+        return existingFlows.stream()
+                .map(flowClass::cast)
+                .collect(Collectors.toMap(FlowT::getName, f -> f));
     }
 
     String runningFlowError(List<String> runningFlows) {

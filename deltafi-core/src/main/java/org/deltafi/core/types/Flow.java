@@ -151,19 +151,6 @@ public abstract class Flow {
     }
 
     /**
-     * Copy the running and testMode state from the sourceFlow.
-     * Calls the dataSource specific copyFlowState method to copy additional state.
-     * @param sourceFlow to copy state and settings from
-     */
-    public final void copyFlowState(Flow sourceFlow) {
-        if (this.isStopped() && sourceFlow.isRunning()) {
-            this.flowStatus.setState(sourceFlow.getFlowStatus().getState());
-        }
-        this.flowStatus.setTestMode(sourceFlow.getFlowStatus().getTestMode());
-        copyFlowSpecificState(sourceFlow);
-    }
-
-    /**
      * Copy state fields from the source dataSource into the current dataSource
      * These should be fields that do not come from the FlowPlan
      * @param sourceFlow to copy state from

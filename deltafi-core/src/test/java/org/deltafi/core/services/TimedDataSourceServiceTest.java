@@ -74,9 +74,8 @@ class TimedDataSourceServiceTest {
         TimedDataSource stopped = timedDataSource("stopped", FlowState.STOPPED, false, "*/1 * * * * *", -1);
         TimedDataSource system = timedDataSource("system", FlowState.RUNNING, false, "*/1 * * * * *", -1);
         system.setSourcePlugin(PluginCoordinates.builder().artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).groupId(SYSTEM_PLUGIN_GROUP_ID).version("1.2.2").build());
-        Mockito.when(timedDataSourceRepo.findByNameAndType("running", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(running));
-        Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(stopped));
-        Mockito.when(timedDataSourceRepo.findByNameAndType("system", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(system));
+        Map<String, TimedDataSource> existingFlows = Map.of(running.getName(), running, stopped.getName(), stopped, system.getName(), system);
+
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TimedDataSourcePlan runningFlowPlan = new TimedDataSourcePlan("running", FlowType.TIMED_DATA_SOURCE, "yep", "topic",
@@ -90,9 +89,9 @@ class TimedDataSourceServiceTest {
                 "*/2 * * * * *");
         systemFlowPlan.setSourcePlugin(PluginCoordinates.builder().artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).groupId(SYSTEM_PLUGIN_GROUP_ID).version("1.2.3").build());
 
-        TimedDataSource runningDataSource = timedDataSourceService.buildFlow(runningFlowPlan, Collections.emptyList());
-        TimedDataSource stoppedDataSource = timedDataSourceService.buildFlow(stoppedFlowPlan, Collections.emptyList());
-        TimedDataSource systemDataSource = timedDataSourceService.buildFlow(systemFlowPlan, Collections.emptyList());
+        TimedDataSource runningDataSource = timedDataSourceService.buildFlow(existingFlows, runningFlowPlan, Collections.emptyList());
+        TimedDataSource stoppedDataSource = timedDataSourceService.buildFlow(existingFlows, stoppedFlowPlan, Collections.emptyList());
+        TimedDataSource systemDataSource = timedDataSourceService.buildFlow(existingFlows, systemFlowPlan, Collections.emptyList());
 
         assertThat(runningDataSource).isInstanceOf(TimedDataSource.class);
         assertThat(runningDataSource.isRunning()).isTrue();

@@ -28,6 +28,10 @@ public class MarkdownBuilder {
 
     private final StringBuilder markdown;
 
+    public MarkdownBuilder() {
+        markdown = new StringBuilder();
+    }
+
     public MarkdownBuilder(String content) {
         markdown = new StringBuilder(content);
     }
