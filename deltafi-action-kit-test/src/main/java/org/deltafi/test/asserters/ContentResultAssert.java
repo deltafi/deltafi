@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
@@ -321,6 +322,28 @@ public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T exte
     public A contentIsNotNull() {
         isNotNull();
         Assertions.assertThat(actual.getContent()).isNotNull();
+        return myself;
+    }
+
+    /**
+     * Verify that the ActionContent at the given index has the expected tags.
+     * @param index The index of the ActionContent to check
+     * @param expectedTags The expected set of tags
+     * @return this
+     */
+    public A hasTagsAt(int index, Set<String> expectedTags) {
+        if (actual.getContent() == null || index >= actual.getContent().size()) {
+            String contentSize = actual.getContent() == null ? "content list is null" :
+                    "content list has size " + actual.getContent().size();
+            failWithMessage("There is no content at index %s (%s)", index, contentSize);
+            return myself;
+        }
+
+        ActionContent actionContent = actual.getContent().get(index);
+        Assertions.assertThat(actionContent.getTags())
+                .describedAs("Content at index %d has expected tags", index)
+                .containsExactlyInAnyOrderElementsOf(expectedTags);
+
         return myself;
     }
 }
