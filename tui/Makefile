@@ -18,7 +18,8 @@
 APP_NAME := deltafi2
 
 # Binary names
-BUILD_DIR ?= $(CURDIR)/..
+BUILD_DIR ?= $(realpath $(CURDIR)/..)
+BIN_DIR ?= $(realpath $(BUILD_DIR)/../..)
 
 # Build info
 VERSION ?= $(shell cat ${BUILD_DIR}/VERSION)
@@ -95,7 +96,7 @@ DIST_DIR  = $(CURDIR)/dist
 # Cross-compilation targets
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 
-.PHONY: all build clean test lint fmt deps install uninstall dist tidy very-clean debug-make help check-env $(COMMANDS)
+.PHONY: all build clean test lint fmt deps dist tidy very-clean debug-make help check-env $(COMMANDS)
 
 all: check-env build test
 
@@ -124,8 +125,6 @@ help:
 	@echo "  lint             - Run linter"
 	@echo "  fmt              - Format code"
 	@echo "  deps             - Install dependencies"
-	@echo "  install          - Install binaries to system"
-	@echo "  uninstall        - Remove binaries from system"
 	@echo "  cross            - Build all commands for all platforms"
 	@echo ""
 	@echo "Build options:"
@@ -134,8 +133,8 @@ help:
 
 # Build a specific command
 build: check-env fmt $(GENERATED_FILES)
-	@echo "Building $(BUILD_DIR)/$(APP_NAME)"
-	@$(GOBUILD) $(LDFLAGS) -o $(BUILD_DIR)/$(APP_NAME) main.go
+	@echo "Building $(BIN_DIR)/$(APP_NAME)"
+	@$(GOBUILD) $(LDFLAGS) -o $(BIN_DIR)/$(APP_NAME) main.go
 
 GENQLIENT_YAML := graphql/genqlient.yaml
 GRAPHQL_SCHEMAS := $(wildcard graphql/schema/*.graphql)
@@ -164,7 +163,7 @@ clean:
 
 very-clean: clean
 	$(GOCLEAN) -modcache
-	rm -rf $(GOPATH) $(BUILD_DIR)/deltafi2 
+	rm -rf $(GOPATH) $(BIN_DIR)/deltafi2 
 
 lint: deps
 	@echo "Pulling dependencies"
@@ -182,16 +181,6 @@ deps:
 	@$(GOGET) ./...
 	@$(GOINSTALL) $(LINT_MODULE)
 	@$(GOINSTALL) $(GENQLIENT_MODULE)
-
-install: build
-	@$(foreach cmd,$(COMMANDS), \
-		install -m 755 $(BUILD_DIR)/$(cmd) /usr/local/bin/$(cmd); \
-	)
-
-uninstall:
-	@$(foreach cmd,$(COMMANDS), \
-		rm -f /usr/local/bin/$(cmd); \
-	)
 
 # Development targets
 dev: deps fmt lint test build

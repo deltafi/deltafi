@@ -7,3 +7,20 @@ docker {
     tag "local", "${localDockerRegistry}/${project.name}:latest"
     tag "deltafi", "deltafi/${project.name}:${project.version}"
 }
+
+if (!deltafiConfig.isEmpty()) {
+    task installDockerImages {
+        group = 'install'
+        var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
+        if (orchestrationMode == 'compose') {
+            dependsOn 'dockerPushDeltafi'
+        } else if (orchestrationMode == 'kind') {
+            dependsOn 'dockerPushLocal'
+        } else {
+            println ('WARNING: Cannot install docker images for orchestration mode:' + deltafiConfig['orchestrationMode'])
+        }
+    }
+
+    install.dependsOn 'installDockerImages'
+}
+

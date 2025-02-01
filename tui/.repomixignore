@@ -9,3 +9,4 @@ go.mod
 gradlew
 docs
 cmd/*-demo
+LICENSE

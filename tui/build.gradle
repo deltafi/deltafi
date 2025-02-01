@@ -11,7 +11,7 @@ task tuiClean(type: Exec) {
 }
 
 task tuiBuild(type: Exec) {
-    commandLine 'make', 'all'
+    commandLine 'make'
 }
 
 task tuiDist(type: Exec) {

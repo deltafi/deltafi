@@ -19,9 +19,10 @@ package app
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/deltafi/tui/internal/orchestration"
 )
@@ -30,6 +31,11 @@ type Config struct {
 	OrchestrationMode orchestration.OrchestrationMode `yaml:"orchestrationMode"`
 	DeploymentMode    DeploymentMode                  `yaml:"deploymentMode"`
 	CoreVersion       string                          `yaml:"coreVersion"`
+	Development       DevelopmentConfig               `yaml:"development"`
+}
+
+type DevelopmentConfig struct {
+	CoreRepo string `yaml:"coreRepo"`
 }
 
 type DeploymentConfig struct {
@@ -40,20 +46,32 @@ const (
 	defaultConfigFileName = "deltafi.yaml"
 )
 
-var (
-	configFile = filepath.Join(TuiPath(), defaultConfigFileName)
-)
-
 func DefaultConfig() Config {
 	return Config{
 		OrchestrationMode: orchestration.Compose,
 		DeploymentMode:    Deployment,
 		CoreVersion:       Version,
+		Development:       DefaultDevelopmentConfig(),
 	}
+}
+
+func DefaultDevelopmentConfig() DevelopmentConfig {
+	return DevelopmentConfig{
+		CoreRepo: "git@gitlab.com:systolic/deltafi/deltafi.git",
+	}
+}
+
+func getDistroPath(version string) string {
+	return filepath.Join(TuiPath(), version)
+}
+
+func configFile() string {
+	return filepath.Join(TuiPath(), defaultConfigFileName)
 }
 
 // LoadConfig loads the application configuration from the config file
 func LoadConfig() (Config, error) {
+	configFile := configFile()
 	config := DefaultConfig()
 
 	if fileInfo, err := os.Stat(configFile); err == nil {
@@ -63,7 +81,7 @@ func LoadConfig() (Config, error) {
 			}
 		}
 	} else if os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "Warning: deltafi.yaml file does not exist\n")
+		fmt.Fprintf(os.Stderr, "Warning: deltafi.yaml file does not exist (%s)\n", configFile)
 	} else {
 		return config, fmt.Errorf("deltafi.yaml unreadable: %v", err)
 	}
@@ -89,7 +107,7 @@ func loadFromFile(path string, config *Config) error {
 // Save saves the current configuration to file
 func (c *Config) Save() error {
 
-	file, err := os.Create(configFile)
+	file, err := os.Create(configFile())
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %w", err)
 	}

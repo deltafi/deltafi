@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/Khan/genqlient/graphql"
@@ -37,6 +38,8 @@ type App struct {
 	orchestrator  orchestration.Orchestrator
 	mu            sync.RWMutex
 	distroPath    string
+	os            string
+	arch          string
 }
 
 // Global singleton instance
@@ -60,6 +63,14 @@ func GetDistroPath() string {
 	return GetInstance().distroPath
 }
 
+func GetOS() string {
+	return GetInstance().os
+}
+
+func GetArch() string {
+	return GetInstance().arch
+}
+
 func SetVersion(version string) {
 	Version = version
 }
@@ -75,12 +86,12 @@ func build() {
 	orchestration.NewOrchestrator(config.OrchestrationMode)
 
 	// FIXME
-	distroPath := filepath.Join(TuiPath(), config.CoreVersion)
 
 	instance = &App{
 		config:       &config,
 		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode),
-		distroPath:   distroPath,
+		os:           runtime.GOOS,
+		arch:         runtime.GOARCH,
 	}
 
 	err := instance.initializeAPI()

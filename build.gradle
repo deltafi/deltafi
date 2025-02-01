@@ -1,5 +1,11 @@
 import java.util.concurrent.TimeUnit
 
+buildscript {
+    dependencies {
+        classpath "org.yaml:snakeyaml:2.3"
+    }
+}
+
 plugins {
     id 'org.deltafi.test-summary' version '1.0'
     id 'org.deltafi.git-version' version '2.0.1'
@@ -45,6 +51,30 @@ ext {
     ]
 }
 
+// Pretty print maps
+import groovy.json.JsonBuilder
+java.util.LinkedHashMap.metaClass.pprint = { -> new JsonBuilder(delegate).toPrettyString() }
+
+import org.yaml.snakeyaml.Yaml
+def loadDeltafiConfig() {
+    def retval = [:];
+    File testFile = new File('../../deltafi.yaml');
+    if ( !testFile.isFile() ) { testFile = new File('../deltafi.yaml'); }
+    if ( !testFile.isFile() ) { testFile = new File('./deltafi.yaml'); }
+    if ( testFile.isFile() ) {
+        retval = new Yaml().load(testFile.newInputStream());
+        println ('Loaded ' + testFile.getPath());
+    } else {
+        println ('WARNING: deltafi.yaml not found');
+    }
+    retval = retval ?: [:]
+
+    if (! retval.isEmpty()) println(retval.pprint());
+
+    return retval;
+}
+ext.deltafiConfig = loadDeltafiConfig();
+
 // Create base distribution task
 task dist {
     group = 'distribution'
@@ -54,6 +84,11 @@ task dist {
 task tui {
     group = 'build'
     description = 'Build the TUI for the current architecture'
+}
+
+task install {
+    group = 'install'
+    description = 'Install DeltaFi built from this repo into the current development environment'
 }
 
 // Create tasks for each architecture
@@ -133,6 +168,11 @@ allprojects { project ->
 }
 
 subprojects {
+    ext.deltafiConfig = rootProject.deltafiConfig
+    task install {
+        group = 'install'
+    }
+
     apply plugin: 'signing'
 
     afterEvaluate {
@@ -207,6 +247,8 @@ subprojects {
                     }
                 }
             }
+
+            install.dependsOn 'publishToMavenLocal'
 
             signing {
                 required { isSignable }
