@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.6.1] - 2025-02-03
+
+### Changed
+- Default time range on processing report changed to last 24 hours
+- Updated the descriptions for DeltaFi properties using the `Duration` data type to indicuate the ISO 8601 format should be used
+
+### Fixed
+- Setting plugin variable values is now `Transactional` so new values will be consistent across flows
+
+### Tech-Debt/Refactor
+- Add database indexes to improve counting performance when maxErrors is set 
+
 ## [2.6.0] - 2025-02-03
 
 ### Added
@@ -3773,7 +3785,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.1...main
+[2.6.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.0...2.6.1
 [2.6.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.5.0...2.6.0
 [2.5.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.4.0...2.5.0
 [2.4.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.1...2.4.0
