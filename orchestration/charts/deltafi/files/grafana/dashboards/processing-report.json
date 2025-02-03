@@ -44,18 +44,16 @@
       }
     ]
   },
-  "description": "",
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 2,
+  "id": 5,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 2,
@@ -70,10 +68,11 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<center>\n  <h2>DeltaFi System Processing Report</h2>\n  <div style=\"margin-top:-10px\">${__from:date:YYYY-MM-DD} to ${__to:date:YYYY-MM-DD}</div>\n</center>\n",
+        "content": "<center>\n  <h2>DeltaFi System Processing Report</h2>\n  <div style=\"margin-top:-10px\">${__from:date:YYYY-MM-DD HH:mm} to ${__to:date:YYYY-MM-DD HH:mm}</div>\n</center>\n",
         "mode": "html"
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
+      "title": "",
       "transparent": true,
       "type": "text"
     },
@@ -132,7 +131,7 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -235,7 +234,7 @@
         "textMode": "value_and_name",
         "wideLayout": true
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -347,7 +346,7 @@
         "textMode": "value_and_name",
         "wideLayout": true
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -488,6 +487,7 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -628,6 +628,7 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -700,7 +701,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -849,7 +850,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -942,8 +943,9 @@
       "type": "table"
     }
   ],
+  "preload": false,
   "refresh": "1d",
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [
     "DeltaFi"
   ],
@@ -951,26 +953,20 @@
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "Graphite",
           "value": "deltafi-graphite"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Database",
-        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "graphite",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -984,7 +980,6 @@
         },
         "definition": "tag_values(dataSink)",
         "description": "Include only these data sinks",
-        "hide": 0,
         "includeAll": true,
         "label": "Data Sink",
         "multi": true,
@@ -997,15 +992,14 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-1w/w",
-    "to": "now-1w/w"
+    "from": "now-1d/h",
+    "to": "now-1h/h+1s"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -1015,6 +1009,6 @@
   "timezone": "",
   "title": "Processing Report",
   "uid": "processing-report",
-  "version": 21,
+  "version": 22,
   "weekStart": ""
 }
