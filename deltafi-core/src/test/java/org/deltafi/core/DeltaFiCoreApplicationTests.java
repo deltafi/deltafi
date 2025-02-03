@@ -4772,6 +4772,7 @@ class DeltaFiCoreApplicationTests {
 		UUID childTwo = UUID.randomUUID();
 		DeltaFile postUtf8Transform = fullFlowExemplarService.postTransformUtf8DeltaFile(did);
 		assertFalse(postUtf8Transform.getWaitingForChildren());
+		assertFalse(postUtf8Transform.isContentDeletable());
 		deltaFileRepo.save(postUtf8Transform);
 
 		deltaFilesService.handleActionEvent(actionEvent("split", did, childOne, childTwo));
@@ -4781,6 +4782,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, deltaFile.getChildDids().size());
 		assertEquals(ActionState.SPLIT, deltaFile.lastFlow().lastAction().getState());
 		assertTrue(deltaFile.getWaitingForChildren());
+		assertFalse(postUtf8Transform.isContentDeletable());
 
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
@@ -5378,6 +5380,7 @@ class DeltaFiCoreApplicationTests {
 	void testCompleteParents() {
 		DeltaFile parent = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.COMPLETE, NOW, NOW);
 		parent.setWaitingForChildren(true);
+		parent.setContentDeletable(false);
 		parent.setTerminal(false);
 
 		DeltaFile terminalChild = utilService.buildDeltaFile(UUID.randomUUID(), "flow2", DeltaFileStage.COMPLETE, NOW, NOW);
@@ -5390,6 +5393,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile updated = deltaFileRepo.findById(parent.getDid()).orElseThrow();
 		assertThat(updated.getWaitingForChildren()).isFalse();
+		assertThat(updated.isContentDeletable()).isTrue();
 		assertThat(updated.isTerminal()).isTrue();
 	}
 
@@ -5410,6 +5414,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile updated = deltaFileRepo.findById(parent.getDid()).orElseThrow();
 		assertThat(updated.getWaitingForChildren()).isFalse();
+		assertThat(updated.isContentDeletable()).isFalse();
 		assertThat(updated.isTerminal()).isFalse();
 	}
 
@@ -5417,6 +5422,7 @@ class DeltaFiCoreApplicationTests {
 	void testCompleteParentsNotReadyToComplete() {
 		DeltaFile parent = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.COMPLETE, NOW, NOW);
 		parent.setWaitingForChildren(true);
+		parent.setContentDeletable(false);
 		parent.setTerminal(false);
 
 		DeltaFile nonTerminalChild = utilService.buildDeltaFile(UUID.randomUUID(), "flow2", DeltaFileStage.IN_FLIGHT, NOW, NOW);
@@ -5429,6 +5435,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile unchanged = deltaFileRepo.findById(parent.getDid()).orElseThrow();
 		assertThat(unchanged.getWaitingForChildren()).isTrue();
+		assertThat(unchanged.isContentDeletable()).isFalse();
 		assertThat(unchanged.isTerminal()).isFalse();
 	}
 }

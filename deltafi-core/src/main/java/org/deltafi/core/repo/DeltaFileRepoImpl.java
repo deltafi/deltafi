@@ -1022,6 +1022,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             String sql = """
             WITH candidates AS (
                 SELECT df.did,
+                       df.content_deleted,
+                       df.total_bytes,
                        NOT EXISTS (
                            SELECT 1
                            FROM delta_file_flows dff
@@ -1042,7 +1044,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             UPDATE delta_files df
             SET waiting_for_children = false,
                 terminal = c.can_be_terminal,
-                modified = now()
+                modified = now(),
+                content_deletable = c.can_be_terminal AND c.content_deleted IS NULL AND c.total_bytes > 0
             FROM candidates c
             WHERE df.did = c.did
             """;
