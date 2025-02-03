@@ -221,6 +221,7 @@ public class PluginService implements Snapshotter {
                 .findFirst();
     }
 
+    @Transactional
     public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
         VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (update.isUpdated()) {
