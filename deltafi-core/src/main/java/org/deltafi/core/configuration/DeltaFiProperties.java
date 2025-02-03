@@ -34,10 +34,10 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Name of the DeltaFi system", defaultValue = "DeltaFi")
     private String systemName = "DeltaFi";
 
-    @PropertyInfo(description = "Time to wait for an action to finish processing a DeltaFile before requeuing the action", defaultValue = "PT5M")
+    @PropertyInfo(description = "[Duration or ISO 8601] Time to wait for an action to finish processing a DeltaFile before requeuing the action", defaultValue = "PT5M")
     private Duration requeueDuration = Duration.ofMinutes(5);
 
-    @PropertyInfo(description = "Frequency that the auto-resume check is triggered", defaultValue = "PT1M")
+    @PropertyInfo(description = "[Duration or ISO 8601] Frequency that the auto-resume check is triggered", defaultValue = "PT1M")
     private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
 
     @PropertyInfo(description = "The number of threads used in core processing", defaultValue = "16")
@@ -55,13 +55,13 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13")
     private int ageOffDays = 13;
 
-    @PropertyInfo(description = "Frequency that the delete action is triggered", defaultValue = "PT5M")
+    @PropertyInfo(description = "[Duration or ISO 8601] Frequency that the delete action is triggered", defaultValue = "PT5M")
     private Duration deleteFrequency = Duration.ofMinutes(5);
 
     @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "1000")
     private int deletePolicyBatchSize = 1000;
 
-    @PropertyInfo(description = "Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
+    @PropertyInfo(description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
     private Duration cacheSyncDuration = Duration.ofSeconds(30);
 
     @PropertyInfo(description = "Enables or disables all ingress", defaultValue = "true")
@@ -76,10 +76,10 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Rollback failed plugin deployments", defaultValue = "false")
     private boolean pluginAutoRollback = false;
 
-    @PropertyInfo(description = "Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
+    @PropertyInfo(description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
     private Duration pluginDeployTimeout = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "Max time to allow an action to run before restarting the plugin. This must be greater than 30 seconds (or 0 to turn it off) and should be less than the requeueDuration.  By default, there is no timeout set. To turn off this feature set the value to null or 0")
+    @PropertyInfo(description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the plugin. This must be greater than 30 seconds (or 0 to turn it off) and should be less than the requeueDuration.  By default, there is no timeout set. To turn off this feature set the value to null or 0s")
     private Duration actionExecutionTimeout;
 
     @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10")
@@ -118,11 +118,11 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "The amount of time to wait before timing out while waiting to acquire the join lock", defaultValue = "30000")
     private long joinAcquireLockTimeoutMs = 30000;
 
-    @PropertyInfo(description = "Maximum duration a database lock can be held on a " +
+    @PropertyInfo(description = "[Duration or ISO 8601] Maximum duration a database lock can be held on a " +
             "join entry before it is automatically unlocked", defaultValue = "PT1M")
     private Duration joinMaxLockDuration = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "Frequency that database locks on join entries are " +
+    @PropertyInfo(description = "[Duration or ISO 8601] Frequency that database locks on join entries are " +
             "checked against the join.maxLockDuration", defaultValue = "PT1M")
     private Duration joinLockCheckInterval = Duration.ofMinutes(1);
 
