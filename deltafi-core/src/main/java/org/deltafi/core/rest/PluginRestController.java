@@ -42,9 +42,12 @@ public class PluginRestController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON)
     public ResponseEntity<String> createPlugin(@RequestBody PluginRegistration pluginRegistration) {
         log.info("Received plugin registration for {}", pluginRegistration.getPluginCoordinates());
+        pluginService.acquireUpdateLock();
 
         try {
             Result result = pluginService.register(pluginRegistration, integrationService);
+
+            pluginService.FlushToDB();
 
             if (result.isSuccess()) {
                 try {
@@ -58,6 +61,8 @@ public class PluginRestController {
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Plugin registration error: %s. See core logs for more details".formatted(e.getMessage()));
+        } finally {
+            pluginService.releaseUpdateLock();
         }
 
         return ResponseEntity.ok(null);

@@ -29,8 +29,8 @@ import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.validation.PluginValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
@@ -38,7 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,6 +63,8 @@ public class PluginService implements Snapshotter {
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
 
+    private final ReentrantLock mapsUpdateLock = new ReentrantLock();
+
     private Map<String, ActionDescriptor> actionDescriptorMap;
     private Map<String, String> actionsToPlugin;
 
@@ -77,6 +79,18 @@ public class PluginService implements Snapshotter {
         if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
             doUpdateSystemPlugin();
         }
+    }
+
+    public void FlushToDB() {
+        pluginRepo.flush();
+    }
+
+    public void acquireUpdateLock() {
+        mapsUpdateLock.lock();
+    }
+
+    public void releaseUpdateLock() {
+        mapsUpdateLock.unlock();
     }
 
     public void doUpdateSystemPlugin() {
@@ -100,17 +114,34 @@ public class PluginService implements Snapshotter {
     }
 
     public void updateActionDescriptors() {
-        actionDescriptorMap = new HashMap<>();
-        actionsToPlugin = new HashMap<>();
-        pluginRepo.findAll().stream()
-                .filter(pluginEntity ->  pluginEntity.getActions() != null)
-                .forEach(this::updateMaps);
+        acquireUpdateLock();
+        try {
+            updateActionMapsNoLockCheck();
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            releaseUpdateLock();
+        }
     }
 
-    private void updateMaps(PluginEntity pluginEntity) {
+    private void updateActionMapsNoLockCheck() {
+         Map<String, ActionDescriptor> nextActionDescriptorMap = new HashMap<>();
+         Map<String, String> nextActionsToPlugin = new HashMap<>();
+
+        pluginRepo.findAll().stream()
+                .filter(pluginEntity ->  pluginEntity.getActions() != null)
+                .forEach(entity -> updateMaps(entity, nextActionDescriptorMap, nextActionsToPlugin));
+
+        actionDescriptorMap = nextActionDescriptorMap;
+        actionsToPlugin = nextActionsToPlugin;
+    }
+
+    private static void updateMaps(PluginEntity pluginEntity,
+                            Map<String, ActionDescriptor> actionDescriptorsMap,
+                            Map<String, String> actionPluginMap) {
         for (ActionDescriptor actionDescriptor : pluginEntity.getActions()) {
-            actionDescriptorMap.put(actionDescriptor.getName(), actionDescriptor);
-            actionsToPlugin.put(actionDescriptor.getName(), pluginEntity.getPluginCoordinates().getArtifactId());
+            actionDescriptorsMap.put(actionDescriptor.getName(), actionDescriptor);
+            actionPluginMap.put(actionDescriptor.getName(), pluginEntity.getPluginCoordinates().getArtifactId());
         }
     }
 
@@ -227,7 +258,7 @@ public class PluginService implements Snapshotter {
         }
         pluginRepo.save(plugin);
 
-        updateActionDescriptors();
+        updateActionMapsNoLockCheck();
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlows(plugin, groupedFlowPlans);
 
@@ -471,11 +502,19 @@ public class PluginService implements Snapshotter {
     }
 
     public void uninstallPlugin(PluginCoordinates pluginCoordinates) {
-        PluginEntity plugin = getPlugin(pluginCoordinates).orElseThrow();
-        pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
-        pluginRepo.delete(plugin);
-        updateActionDescriptors();
-        revalidateFlows();
+        acquireUpdateLock();
+
+        try {
+            PluginEntity plugin = getPlugin(pluginCoordinates).orElseThrow();
+            pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
+            pluginRepo.delete(plugin);
+            updateActionMapsNoLockCheck();
+            revalidateFlows();
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            releaseUpdateLock();
+        }
     }
 
     public Optional<ActionDescriptor> getByActionClass(String type) {
