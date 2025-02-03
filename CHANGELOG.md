@@ -5,6 +5,73 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.6.0] - 2025-02-03
+
+### Added
+- Added test mode indicator to each flow on DeltaFile viewer
+- Add HttpFetchContent transform action 
+- When clicking a new action in the transform builder it now automatically scrolls to the top of the doc. 
+- Create a new event whenever a flow is changed to an invalid state
+- Added the option to use templates in action parameters that pull information from the ActionInput that is sent to the action.  The templates support the Spring Expression Language (SpEL), i.e. you can use things like `{{ deltaFileName.toUpperCase() }}`. The following top level fields are available to use in the templates:
+    - {{ deltaFileName }} - the deltaFileName of the DeltaFile 
+    - {{ did }} - the did of the DeltaFile
+    - {{ metadata }} - the metadata from the first DeltaFileMessage
+    - {{ content }} - the content list from the first DeltaFileMessage
+    - {{ actionContext }} - the actionContext from the ActionInput being sent to the action
+    - {{ deltaFileMessages }} - the full list of DeltaFileMessages, useful for joins
+    - {{ now() }} - helper method to get the current timestamp
+
+### Changed
+- The Metadata dialog now renders newlines in metadata values
+- Events are now created when the state of a flow is changed (i.e. start/stop/paused)
+- Events are now created when test mode is toggled on a flow
+- The `Merge` transform action no longer supports the {{filename}} placeholder in the filename parameter, it is replaced by the common parameter templating
+
+### Fixed
+- Fixed issue with bulk acknowledge on By Message tab of Errors page keeping selected rows even when they've been filtered out.
+- Fixed bug preventing test mode message from displaying properly at the top of the DeltaFile viewer
+- Search Page Calendar now shows the time saved in the url when navigating back to the page 
+- Fixed bug allowing unauthorized access to metrics
+- Fixed issue where embedded grafana charts did not respect UTC settings in the UI
+- Restored TransformResultsAssert#hasChildResultAt(int Predicate<TransformResult>) to fix backwards compatibility
+- When replaying a DeltaFile that was created from a ChildTransformResult (e.g., a Split action), the test mode from the parent being replayed is preserved
+- Fixed an issue where paused flows would become stopped on upgrades
+- Fix bug where contentDeletable flag was not being set on a parent DeltaFile when all children reached a terminal state 
+- Prevent concurrent updates to the action descriptors map which would often leave flows in an `INVALID` state due to missing actions
+- Fixed issue preventing the core from properly routing `/events` and `/unauthorized` to the UI
+
+### Removed
+- Removed the `maven-publish` and publishing section from the org.deltafi.plugin-convention to simplify getting started with new plugins
+
+### Deprecated
+- Deprecated TransformResultsAssert#hasChildResultAt(int Predicate<TransformResult>)
+
+### Upgrade and Migration
+- Plugin projects that used the `org.deltafi.plugin-convention` plugin and require publishing need to add the `maven-publish` to the plugins section of the build.gradle and add the following publishing section:
+```
+publishing {
+    publications {
+        mavenJarPublication(MavenPublication) {
+            artifact bootJar
+        }
+    }
+    repositories {
+        maven {
+            url projectMavenRepo
+            credentials(HttpHeaderCredentials) {
+                name = gitLabTokenType
+                value = gitLabToken
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}
+```
+- Existing flows that use the `Merge` action need to be updated to use the new templating instead of {{filename}}
+- Any action parameters that contain '{{ }}' will be treated as templates. If the template contains text that cannot be mapped to a Spring Expression, the parameter will be considered invalid resulting in an error
+
 ## [2.5.0] - 2025-01-27
 
 ### Added
@@ -3706,7 +3773,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.5.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.0...main
+[2.6.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.5.0...2.6.0
 [2.5.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.4.0...2.5.0
 [2.4.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.1...2.4.0
 [2.3.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.3.0...2.3.1
