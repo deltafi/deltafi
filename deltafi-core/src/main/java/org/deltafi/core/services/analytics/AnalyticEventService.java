@@ -73,6 +73,12 @@ public class AnalyticEventService {
      */
     public void recordEgress(DeltaFile deltaFile, DeltaFileFlow flow) {
         if (isDisabled()) return;
+        if (invalidEvent("egress", deltaFile.getDid(),
+                Map.of(
+                        "timestamp", flow.getModified(),
+                        "dataSource", deltaFile.getDataSource(),
+                        "egressor", flow.getName()
+                ))) return;
 
         TSEgress tsEgress = TSEgress.builder()
                         .key(new TSId(flow.getModified(), deltaFile.getDataSource()))
@@ -104,6 +110,16 @@ public class AnalyticEventService {
      */
     public void recordIngress(UUID did, OffsetDateTime created, String dataSource, long ingressBytes, Map<String, String> annotations) {
         if (isDisabled()) return;
+        if (invalidEvent("ingress", did,
+                Map.of(
+                        "timestamp", created,
+                        "dataSource", dataSource,
+                        "did", did
+                ))) return;
+        if (ingressBytes < 0) {
+            log.warn("Discarding ingress metric for did {}: ingress bytes {} are negative", did, ingressBytes);
+            return;
+        }
 
         TSIngress tsIngress = TSIngress.builder()
                 .key(new TSId(did, created, dataSource))
@@ -136,6 +152,13 @@ public class AnalyticEventService {
      * @param annotations map of annotations
      */
     public void recordAnnotations(UUID did, OffsetDateTime created, String dataSource, Map<String, String> annotations) {
+        if (invalidEvent("annotations", did,
+                Map.of(
+                        "timestamp", created,
+                        "dataSource", dataSource,
+                        "did", did
+                ))) return;
+
         annotations.forEach((k, v) -> {
             TSAnnotation tsAnnotation = TSAnnotation.builder()
                     .id(new TSAnnotationId(did, k))
@@ -159,6 +182,20 @@ public class AnalyticEventService {
      */
     public void recordSurvey(UUID id, OffsetDateTime created, String dataSource, int count, long ingressBytes, Map<String, String> annotations) {
         if (isDisabled()) return;
+        if (invalidEvent("survey", id,
+                Map.of(
+                        "timestamp", created,
+                        "dataSource", dataSource,
+                        "id", id
+                ))) return;
+        if (count < 0) {
+            log.warn("Discarding survey metric for dataSource {}: count {} is negative", dataSource, count);
+            return;
+        }
+        if (ingressBytes < 0) {
+            log.warn("Discarding survey metric for dataSource {}: ingress bytes {} are negative", dataSource, ingressBytes);
+            return;
+        }
 
         TSIngress tsIngress = TSIngress.builder()
                 .key(new TSId(id, created, dataSource))
@@ -190,6 +227,10 @@ public class AnalyticEventService {
      */
     public void recordError(DeltaFile deltaFile, String flow, String action, String cause, OffsetDateTime timestamp) {
         if (isDisabled()) return;
+        if (invalidEvent("error", deltaFile.getDid(),
+                Map.of(
+                        "dataSource", deltaFile.getDataSource()
+                ))) return;
 
         TSError tsError = TSError.builder()
                 .key(new TSId(timestamp == null ? OffsetDateTime.now(clock) : timestamp, deltaFile.getDataSource()))
@@ -221,9 +262,13 @@ public class AnalyticEventService {
      */
     public void recordFilter(DeltaFile deltaFile, String flow, String action, String message, OffsetDateTime timestamp) {
         if (isDisabled()) return;
+        if (invalidEvent("filter", deltaFile.getDid(),
+                Map.of(
+                        "dataSource", deltaFile.getDataSource()
+                ))) return;
 
         TSFilter tsFilter = TSFilter.builder()
-                .key(new TSId(timestamp, deltaFile.getDataSource()))
+                .key(new TSId(timestamp == null ? OffsetDateTime.now(clock) : timestamp, deltaFile.getDataSource()))
                 .flow(flow)
                 .action(action)
                 .message(message)
@@ -249,9 +294,13 @@ public class AnalyticEventService {
      */
     public void recordCancel(DeltaFile deltaFile, OffsetDateTime timestamp) {
         if (isDisabled()) return;
+        if (invalidEvent("cancel", deltaFile.getDid(),
+                Map.of(
+                        "dataSource", deltaFile.getDataSource()
+                ))) return;
 
         TSCancel tsCancel = TSCancel.builder()
-                .key(new TSId(timestamp, deltaFile.getDataSource()))
+                .key(new TSId(timestamp == null ? OffsetDateTime.now(clock) : timestamp, deltaFile.getDataSource()))
                 .build();
 
         deltaFile.annotationMap().forEach((k, v) -> {
@@ -345,5 +394,15 @@ public class AnalyticEventService {
             }
             return false;
         }
+    }
+
+    private boolean invalidEvent(String eventType, UUID did, Map<String, Object> fields) {
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            if (entry.getValue() == null) {
+                log.warn("Discarding {} metric for did {}: {} is null", eventType, did, entry.getKey());
+                return true;
+            }
+        }
+        return false;
     }
 }
