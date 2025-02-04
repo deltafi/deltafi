@@ -17,6 +17,8 @@ spec:
       role: api
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: deltafi-core
       labels:
         app: deltafi-core-scheduler
         group: deltafi-core
