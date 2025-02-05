@@ -540,11 +540,16 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
         if (!sourceFlow.getFlowStatus().getState().equals(targetFlow.getFlowStatus().getState())) {
             if (targetFlow.isInvalid()) {
-                // flow was not invalid before fire an event
+                // flow was not invalid before; fire an event
                 invalidFlowEvent(targetFlow, sourceFlow.getFlowStatus().getState());
             } else {
-                // carry forward the old state (running/paused)
-                targetFlow.getFlowStatus().setState(sourceFlow.getFlowStatus().getState());
+                if (sourceFlow.isInvalid()) {
+                    // previously was invalid, but not anymore
+                    targetFlow.getFlowStatus().setState(FlowState.STOPPED);
+                } else {
+                    // carry forward the old state (running/paused)
+                    targetFlow.getFlowStatus().setState(sourceFlow.getFlowStatus().getState());
+                }
             }
         }
 
