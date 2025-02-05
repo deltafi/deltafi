@@ -23,7 +23,9 @@ import org.deltafi.common.types.ActionExecution;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
+import org.deltafi.core.types.Event;
 import org.deltafi.core.util.TimeFormatter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -31,6 +33,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -40,8 +43,11 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 public class PluginRestartScheduler {
+    private static final String EVENT_SOURCE = "core";
+
     private final CoreEventQueue coreEventQueue;
     private final DeployerService deployerService;
+    private final EventService eventService;
     private final PluginService pluginService;
     private final DeltaFiPropertiesService propertiesService;
 
@@ -59,7 +65,10 @@ public class PluginRestartScheduler {
             if (actionExecution.exceedsDuration(actionExecutionTimeout)) {
                 String plugin = pluginService.getPluginWithAction(actionExecution.clazz());
                 if (plugin != null) {
-                    log.error("Restarting plugin: {} with stuck DeltaFile: {} in action class: {} ({}) that has been running for {}", plugin, actionExecution.did(), actionExecution.clazz(), actionExecution.action(), TimeFormatter.humanReadableTimeSince(actionExecution.startTime()));
+                    createEvent(String.format("Restarting plugin: %s", plugin),
+                            String.format(
+                                    "Restarting plugin '%s' with stuck DeltaFile '%s' in action class '%s' in action '%s' that has been running for %s",
+                                    plugin, actionExecution.did(), actionExecution.clazz(), actionExecution.action(), TimeFormatter.humanReadableTimeSince(actionExecution.startTime())));
                     restartedActionExecutions.add(actionExecution.key());
                     plugins.add(plugin);
                 }
@@ -68,5 +77,16 @@ public class PluginRestartScheduler {
 
         deployerService.restartPlugins(plugins);
         coreEventQueue.removeLongRunningTask(restartedActionExecutions);
+    }
+
+    private void createEvent(String summary, String content) {
+        eventService.createEvent(Event.builder()
+                .timestamp(OffsetDateTime.now())
+                .summary(summary)
+                .content(content)
+                .severity(Event.Severity.ERROR)
+                .notification(true)
+                .source(EVENT_SOURCE).build());
+        log.error(content);
     }
 }
