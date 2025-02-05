@@ -67,6 +67,7 @@ const filteredFlow = ref([]);
 const totalFilteredFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
+const sortField = ref("NAME");
 const sortDirection = ref("DESC");
 const selectedFiltered = ref([]);
 
@@ -117,7 +118,7 @@ onMounted(async () => {
 const fetchFilteredFlow = async () => {
   getPersistedParams();
   loading.value = true;
-  await fetchFilteredSummaryByFlow(offset.value, perPage.value, sortDirection.value, props.flow?.name);
+  await fetchFilteredSummaryByFlow(offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
   filteredFlow.value = response.value.countPerFlow;
   totalFilteredFlow.value = response.value.totalCount;
   loading.value = false;
@@ -157,6 +158,7 @@ const showAllTab = (flowName, flowType, cause) => {
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
+  sortField.value = event.sortField === "flow" ? "NAME" : event.sortField.toUpperCase();
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchFilteredFlow();
 };

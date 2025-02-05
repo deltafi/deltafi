@@ -25,7 +25,7 @@ export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
 
-  const fetchByMessage = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
+  const fetchErrorSummaryByMessage = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParams = {
       errorSummaryByMessage: {
         __args: {
@@ -36,6 +36,7 @@ export default function useErrors() {
             errorAcknowledged: showAcknowledged,
           },
           direction: new EnumType(sortDirection),
+          sortField: new EnumType(sortField),
         },
         count: true,
         totalCount: true,
@@ -80,7 +81,7 @@ export default function useErrors() {
       .value()
   };
 
-  const fetchErrorSummaryByFlow = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
+  const fetchErrorSummaryByFlow = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       errorSummaryByFlow: {
         __args: {
@@ -91,6 +92,7 @@ export default function useErrors() {
             errorAcknowledged: showAcknowledged,
           },
           direction: new EnumType(sortDirection),
+          sortField: new EnumType(sortField),
         },
         count: true,
         totalCount: true,
@@ -106,5 +108,5 @@ export default function useErrors() {
     data.value = response.value.data.errorSummaryByFlow;
   };
 
-  return { data, loading, loaded, fetchUniqueErrorMessages, fetchByMessage, fetchErrorSummaryByFlow, fetchAllMessage, errors };
+  return { data, loading, loaded, fetchUniqueErrorMessages, fetchErrorSummaryByMessage, fetchErrorSummaryByFlow, fetchAllMessage, errors };
 }

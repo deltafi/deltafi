@@ -93,7 +93,7 @@ export default function useFiltered() {
     data.value = response.value.data;
   };
 
-  const fetchFilteredSummaryByFlow = async (offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
+  const fetchFilteredSummaryByFlow = async (offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       filteredSummaryByFlow: {
         __args: {
@@ -103,6 +103,7 @@ export default function useFiltered() {
             flow: flow,
           },
           direction: new EnumType(sortDirection),
+          sortField: new EnumType(sortField),
         },
         count: true,
         totalCount: true,
@@ -118,7 +119,7 @@ export default function useFiltered() {
     data.value = response.value.data.filteredSummaryByFlow;
   };
 
-  const fetchFilteredSummaryByMessage = async (offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
+  const fetchFilteredSummaryByMessage = async (offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParams = {
       filteredSummaryByMessage: {
         __args: {
@@ -128,6 +129,7 @@ export default function useFiltered() {
             flow: flow,
           },
           direction: new EnumType(sortDirection),
+          sortField: new EnumType(sortField),
         },
         count: true,
         totalCount: true,

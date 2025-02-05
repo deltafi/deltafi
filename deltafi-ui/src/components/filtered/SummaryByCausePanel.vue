@@ -64,6 +64,7 @@ const filteredCause = ref([]);
 const totalFilteredMessage = ref(0);
 const offset = ref(0);
 const perPage = ref();
+const sortField = ref("NAME");
 const sortDirection = ref("DESC");
 const selectedFilters = ref([]);
 const emit = defineEmits(["refreshFilters", "showAllTab"]);
@@ -129,7 +130,7 @@ const filterSelectedDids = computed(() => {
 const fetchFilteredMessages = async () => {
   getPersistedParams();
   loading.value = true;
-  await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortDirection.value, props.flow?.name);
+  await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
   filteredCause.value = response.value.countPerMessage;
   totalFilteredMessage.value = response.value.totalCount;
   loading.value = false;
@@ -156,6 +157,7 @@ defineExpose({
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
+  sortField.value = event.sortField === "flow" ? "NAME" : event.sortField.toUpperCase();
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchFilteredMessages();
 };
