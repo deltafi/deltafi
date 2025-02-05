@@ -2493,6 +2493,17 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testRequeueFlowMissingActions() {
+		DeltaFile oneHit = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		oneHit.firstFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", FlowType.TRANSFORM));
+		oneHit.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
+		oneHit.firstFlow().setActions(new ArrayList<>());
+		deltaFileRepo.save(oneHit);
+
+		assertDoesNotThrow(() -> deltaFilesService.requeue());
+	}
+
+	@Test
 	void testRequeuePausedFlows() {
 		DeltaFile multipleTypes = utilService.buildDeltaFile(UUID.randomUUID(), "rest1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
 		multipleTypes.firstFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("rest1", FlowType.REST_DATA_SOURCE));

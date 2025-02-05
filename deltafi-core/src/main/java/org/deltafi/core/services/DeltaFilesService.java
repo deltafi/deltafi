@@ -1398,16 +1398,22 @@ public class DeltaFilesService {
                 deltaFile.getFlows().stream()
                         .filter(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT)
                         .forEach(flow -> {
-                            Action action = flow.lastAction();
-                            if ((action.getState() == QUEUED) &&
-                                    action.getModified().isBefore(modified.minus(getProperties().getRequeueDuration())) &&
-                                    (skipActions == null || !skipActions.contains(action.getName()))) {
-                                WrappedActionInput actionInput = requeueActionInput(deltaFile, flow, action);
-                                if (actionInput != null) {
-                                    action.setModified(modified);
-                                    action.setQueued(modified);
-                                    flow.updateState();
-                                    actionInputs.add(actionInput);
+                            if (flow.getActions().isEmpty()) {
+                                StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, flow);
+                                actionInputs.addAll(stateMachine.advance(List.of(stateMachineInput)));
+                                log.warn("Requeued malformed DeltaFile {} which had a flow with no actions.", deltaFile.getDid());
+                            } else {
+                                Action action = flow.lastAction();
+                                if ((action.getState() == QUEUED) &&
+                                        action.getModified().isBefore(modified.minus(getProperties().getRequeueDuration())) &&
+                                        (skipActions == null || !skipActions.contains(action.getName()))) {
+                                    WrappedActionInput actionInput = requeueActionInput(deltaFile, flow, action);
+                                    if (actionInput != null) {
+                                        action.setModified(modified);
+                                        action.setQueued(modified);
+                                        flow.updateState();
+                                        actionInputs.add(actionInput);
+                                    }
                                 }
                             }
                         });
