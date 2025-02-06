@@ -25,7 +25,7 @@ export default function useIngress() {
   const notify = useNotifications();
   const { currentUser } = useCurrentUser();
 
-  const ingressFile = (file: File, metadata: Record<string, string>, dataSource: string) => {
+  const ingressFile = (file: any, metadata: Record<string, string>, dataSource: string) => {
     const result = reactive({
       dids: [],
       loading: true,
@@ -37,12 +37,12 @@ export default function useIngress() {
 
     const buildHeader = () => {
       const headerObject: any = {};
-      headerObject["Content-Type"] = file.type || "application/octet-stream";
+      headerObject["Content-Type"] = file.customContentType || file.type || "application/octet-stream";
       headerObject["DataSource"] = dataSource;
       headerObject["Filename"] = file.name;
       headerObject["Metadata"] = JSON.stringify({
         ...metadata,
-        uploadedBy: currentUser.name
+        uploadedBy: currentUser.name,
       });
       return headerObject;
     };
@@ -58,7 +58,7 @@ export default function useIngress() {
         },
       })
       .then((res) => {
-        result.dids = res.data.toString().split(',');
+        result.dids = res.data.toString().split(",");
         result.loading = false;
         notify.success("Ingress successful", file.name);
       })

@@ -66,7 +66,21 @@
 
     <div class="mb-3 row">
       <div class="col-12">
-        <FileUpload ref="fileUploader" :multiple="true" choose-label="Add Files" cancel-label="Clear" :custom-upload="true" @uploader="onUpload">
+        <FileUpload ref="fileUploaderRef" :multiple="true" choose-label="Add Files" cancel-label="Clear" :custom-upload="true" @uploader="onUpload">
+          <template #content="{ files, removeFileCallback }">
+            <div class="p-fileupload-files">
+              <div v-for="(file, index) of files" :key="file.name + file.type + file.size" class="p-fileupload-row">
+                <div class="p-fileupload-filename">{{ file.name }}</div>
+                <div>{{ formatSize(file.size) }}</div>
+                <div>
+                  <InputText v-model.trim="file['customContentType']" type=" text" :placeholder="file['type']" />
+                </div>
+                <div>
+                  <Button icon="pi pi-times" @click="onRemoveFile(removeFileCallback, index)" />
+                </div>
+              </div>
+            </div>
+          </template>
           <template #empty>
             <i class="ml-3">Drag and drop files to here to upload.</i>
           </template>
@@ -91,7 +105,9 @@
                 </span>
                 <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
                 <span v-else>
-                  <span v-for="(did, index) in file.data.dids" :key="did"> <DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" /> </span>
+                  <span v-for="(did, index) in file.data.dids" :key="did">
+                    <DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" />
+                  </span>
                 </span>
               </template>
             </Column>
@@ -124,7 +140,6 @@
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DidLink from "@/components/DidLink.vue";
-import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
 import ImportMetadataDialog from "@/components/ImportMetadataDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
@@ -136,11 +151,13 @@ import useNotifications from "@/composables/useNotifications";
 import { computed, onBeforeMount, onMounted, ref, watch } from "vue";
 import { StorageSerializers, useStorage } from "@vueuse/core";
 import _ from "lodash";
+import { usePrimeVue } from "primevue/config";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
+import FileUpload from "primevue/fileupload";
 import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Message from "primevue/message";
@@ -148,12 +165,14 @@ import OverlayPanel from "primevue/overlaypanel";
 import Panel from "primevue/panel";
 import ScrollTop from "primevue/scrolltop";
 
+const primevue = usePrimeVue();
+
 const uploadedTimestamp = ref(new Date());
 const showUploadDialog = ref(false);
 const deltaFilesMenu = ref();
 const selectedDataSource = ref(null);
 const metadata = ref([]);
-const fileUploader = ref();
+const fileUploaderRef = ref();
 const deltaFiles = ref([]);
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 const { ingressFile } = useIngress();
@@ -254,7 +273,7 @@ const ingressFiles = async (event) => {
     result["uploadedMetadata"] = JSON.parse(JSON.stringify(metadata.value));
     deltaFiles.value.unshift(result);
   }
-  fileUploader.value.files = [];
+  fileUploaderRef.value.files = [];
 };
 
 watch(
@@ -343,7 +362,7 @@ onMounted(async () => {
 });
 
 const formatDataSourceNames = () => {
-  formattedDataSourceNames.value = allDataSourceFlowNames.value.restDataSource
+  formattedDataSourceNames.value = allDataSourceFlowNames.value.restDataSource;
 };
 
 const checkActiveFlows = () => {
@@ -440,6 +459,25 @@ const clearMetadataUploadErrors = () => {
 
 const setOverlayPanelPosition = (event) => {
   overlayPanelPosition.value = event;
+};
+
+const formatSize = (bytes) => {
+  const k = 1024;
+  const dm = 3;
+  const sizes = primevue.config.locale.fileSizeTypes;
+
+  if (bytes === 0) {
+    return `0 ${sizes[0]}`;
+  }
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const formattedSize = parseFloat((bytes / Math.pow(k, i)).toFixed(dm));
+
+  return `${formattedSize} ${sizes[i]}`;
+};
+
+const onRemoveFile = (removeFileCallback, index) => {
+  removeFileCallback(index);
 };
 </script>
 

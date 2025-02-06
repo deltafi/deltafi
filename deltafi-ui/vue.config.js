@@ -1,8 +1,8 @@
 const DELTAFI_DOMAIN = process.env.DELTAFI_DOMAIN || "dev.deltafi.org";
-const execSync = require('child_process').execSync;
+const execSync = require("child_process").execSync;
 
 module.exports = {
-  publicPath: '/',
+  publicPath: "/",
   devServer: {
     host: "localhost",
     compress: false,
@@ -10,12 +10,15 @@ module.exports = {
       "^/api": {
         target: `https://${DELTAFI_DOMAIN}`,
         bypass: (req, res) => {
-          if (req.originalUrl === '/api/v2/local-git-branch' && process.env.NODE_ENV === "development") {
-            const branch = execSync('git rev-parse --abbrev-ref HEAD').slice(0, -1).toString()
-            res.json({ branch: branch })
+          if (req.originalUrl === "/api/v2/local-git-branch" && process.env.NODE_ENV === "development") {
+            const branch = execSync("git rev-parse --abbrev-ref HEAD").slice(0, -1).toString();
+            res.json({ branch: branch });
             return null;
           }
         },
+      },
+      "^/visualization": {
+        target: `https://${DELTAFI_DOMAIN}`,
       },
       "^/deltafile/ingress": {
         target: `https://ingress.${DELTAFI_DOMAIN}`,

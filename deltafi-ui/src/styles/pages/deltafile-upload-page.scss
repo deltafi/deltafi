@@ -21,32 +21,74 @@
     .p-panel-header {
       display: block;
     }
+
     .p-inputtext:disabled {
       background: #eeeeee !important;
     }
+
     .p-panel-content {
       max-height: 45vh;
       overflow: auto;
     }
   }
+
   .p-fileupload-empty {
     padding: 1.5rem 1rem;
   }
+
   .p-fileupload-content {
+    position: relative;
     padding: 0 !important;
-    .p-fileupload-row {
-      div:first-child {
-        display: none;
-      }
-      div.p-fileupload-filename {
-        padding-left: 2rem !important;
-      }
-      div:last-child {
-        width: 0;
-        padding-right: 1.25rem !important;
-      }
+  }
+
+  .p-fileupload-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .p-fileupload-row>div {
+    flex: 1 1 auto;
+    width: 25%;
+  }
+
+  .p-fileupload-row>div:last-child {
+    text-align: right;
+  }
+
+  .p-fileupload-content .p-progressbar {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .p-button.p-fileupload-choose {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .p-button.p-fileupload-choose input[type="file"] {
+    display: none;
+  }
+
+  .p-fileupload-choose.p-fileupload-choose-selected input[type="file"] {
+    display: none;
+  }
+
+  .p-fileupload-filename {
+    word-break: break-all;
+  }
+
+  .p-fluid .p-fileupload .p-button {
+    width: auto;
+  }
+
+  .p-fileupload-buttonbar {
+    >* {
+      margin-right: 0.5rem;
     }
   }
+
   .p-fileupload-choose.metadata-upload:not(.p-disabled):hover {
     background: rgba(108, 117, 125, 0.04) !important;
     color: #6c757d !important;
@@ -58,33 +100,42 @@
     color: #6c757d !important;
     border-color: #6c757d !important;
   }
+
   .deltafiles {
     td.did-column {
       width: 16rem;
     }
+
     .filename-column {
       overflow-wrap: anywhere;
     }
+
     .data-source-column {
       width: 15%;
     }
+
     .updated-timestamp-column {
       width: 15%;
     }
+
     .metadata-column {
       width: 12%;
+
       .content-button {
         cursor: pointer !important;
         padding: 0.1rem 0.4rem;
         margin: 0;
         color: #333333;
       }
+
       .content-button:hover {
         color: #666666 !important;
+
         .p-button-label {
           text-decoration: none !important;
         }
       }
+
       .content-button:focus {
         outline: none !important;
         box-shadow: none !important;
