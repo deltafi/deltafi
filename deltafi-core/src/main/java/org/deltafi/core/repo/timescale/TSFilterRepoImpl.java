@@ -30,7 +30,7 @@ public class TSFilterRepoImpl implements TSFilterRepoCustom {
     private static final String INSERT_TS_FILTER = """
         INSERT INTO ts_filters (id, timestamp, data_source, message, flow, action)
         VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
+        ON CONFLICT (timestamp, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 

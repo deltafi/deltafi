@@ -30,7 +30,7 @@ public class TSIngressRepoImpl implements TSIngressRepoCustom {
     private static final String INSERT_TS_INGRESS = """
         INSERT INTO ts_ingresses (id, timestamp, data_source, ingress_bytes, count, survey)
         VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
+        ON CONFLICT (timestamp, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 

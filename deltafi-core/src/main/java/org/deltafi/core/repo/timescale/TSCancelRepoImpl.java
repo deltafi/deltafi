@@ -30,7 +30,7 @@ public class TSCancelRepoImpl implements TSCancelRepoCustom {
     private static final String INSERT_TS_CANCEL = """
         INSERT INTO ts_cancels (id, timestamp, data_source)
         VALUES (?, ?, ?)
-        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
+        ON CONFLICT (timestamp, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 

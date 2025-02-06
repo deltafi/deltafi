@@ -30,7 +30,7 @@ public class TSErrorRepoImpl implements TSErrorRepoCustom {
     private static final String INSERT_TS_ERROR = """
         INSERT INTO ts_errors (id, timestamp, data_source, cause, flow, action)
         VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
+        ON CONFLICT (timestamp, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 

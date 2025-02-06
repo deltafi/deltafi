@@ -30,7 +30,7 @@ public class TSEgressRepoImpl implements TSEgressRepoCustom {
     private static final String INSERT_TS_EGRESS = """
         INSERT INTO ts_egresses (id, timestamp, data_source, egressor, egress_bytes)
         VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT (timestamp, data_source, id) DO NOTHING""";
+        ON CONFLICT (timestamp, egressor, id) DO NOTHING""";
 
     private final JdbcTemplate jdbcTemplate;
 

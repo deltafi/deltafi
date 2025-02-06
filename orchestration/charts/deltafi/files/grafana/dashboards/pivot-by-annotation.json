@@ -48,14 +48,13 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 13,
+  "id": 5511,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${database}"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 2,
@@ -73,7 +72,8 @@
         "content": "<h1><center>Annotation Analysis of <span style='font-family: monospace; color: yellow'>${source_annotation}</span> Grouped by <span style='font-family: monospace; color: yellow'>${annotation_key}</span></center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
+      "title": "",
       "transparent": true,
       "type": "text"
     },
@@ -87,6 +87,7 @@
       },
       "id": 127,
       "panels": [],
+      "title": "",
       "type": "row"
     },
     {
@@ -142,7 +143,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -151,10 +152,19 @@
           },
           "panelId": 119,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
         }
       ],
+      "title": "",
       "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "bytes.*"
+            }
+          }
+        },
         {
           "id": "reduce",
           "options": {
@@ -168,9 +178,9 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${database}"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 2,
@@ -188,7 +198,8 @@
         "content": "<h1><center>Ingress</center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
+      "title": "",
       "transparent": true,
       "type": "text"
     },
@@ -244,19 +255,28 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
             "type": "datasource",
             "uid": "-- Dashboard --"
           },
-          "panelId": 124,
+          "panelId": 119,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
         }
       ],
+      "title": "",
       "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "file.*"
+            }
+          }
+        },
         {
           "id": "reduce",
           "options": {
@@ -333,7 +353,24 @@
           },
           "unit": "decbytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "file_count"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -343,7 +380,7 @@
       },
       "id": 119,
       "interval": "10s",
-      "maxDataPoints": 250,
+      "maxDataPoints": 100,
       "options": {
         "legend": {
           "calcs": [
@@ -360,6 +397,7 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -369,7 +407,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, i.timestamp) AS time,\n    COALESCE(sa.value, 'Not Present') || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(SUM(i.ingress_bytes), 0) AS bytes\nFROM ts_ingresses i\nLEFT JOIN ts_annotations sa ON sa.entity_id = i.id \n    AND sa.key = '$source_annotation' \n    AND $__timeFilter(sa.entity_timestamp)\nLEFT JOIN ts_annotations a ON a.entity_id = i.id \n    AND a.key = '$annotation_key' \n    AND $__timeFilter(a.entity_timestamp)\nWHERE $__timeFilter(i.timestamp)\n    AND i.data_source IN ($datasources)\n    AND (\n        '*' IN ($source_annotation_value)\n        OR (sa.value IS NOT NULL AND sa.value IN ($source_annotation_value))\n        OR ('Not Present' IN ($source_annotation_value) AND sa.value IS NULL)\n    )\n    AND (\n        '*' IN ($annotation_value)\n        OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n        OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, i.timestamp) AS time,\n    COALESCE(sa.value, 'Not Present') || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(SUM(i.ingress_bytes), 0) AS bytes,\n    COALESCE(COUNT(*), 0) AS file_count\nFROM ts_ingresses i\nLEFT JOIN ts_annotations sa ON sa.entity_id = i.id \n    AND sa.key = '$source_annotation' \n    AND $__timeFilter(sa.entity_timestamp)\nLEFT JOIN ts_annotations a ON a.entity_id = i.id \n    AND a.key = '$annotation_key' \n    AND $__timeFilter(a.entity_timestamp)\nWHERE $__timeFilter(i.timestamp)\n    AND i.data_source IN ($datasources)\n    AND (\n        '*' IN ($source_annotation_value)\n        OR (sa.value IS NOT NULL AND sa.value IN ($source_annotation_value))\n        OR ('Not Present' IN ($source_annotation_value) AND sa.value IS NULL)\n    )\n    AND (\n        '*' IN ($annotation_value)\n        OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n        OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -471,7 +509,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -480,7 +518,25 @@
           },
           "panelId": 119,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
+        }
+      ],
+      "title": "",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "bytes.*"
+            }
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
         }
       ],
       "type": "piechart"
@@ -536,25 +592,42 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
             "type": "datasource",
             "uid": "-- Dashboard --"
           },
-          "panelId": 124,
+          "panelId": 119,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
+        }
+      ],
+      "title": "",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "file.*"
+            }
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
         }
       ],
       "type": "piechart"
     },
     {
       "datasource": {
-        "default": false,
-        "type": "grafana-postgresql-datasource",
-        "uid": "${database}"
+        "type": "datasource",
+        "uid": "-- Dashboard --"
       },
       "fieldConfig": {
         "defaults": {
@@ -613,7 +686,24 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bytes"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -640,50 +730,16 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${database}"
+            "type": "datasource",
+            "uid": "-- Dashboard --"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, i.timestamp) AS time,\n    COALESCE(sa.value, 'Not Present') || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(COUNT(*), 0) AS values\nFROM ts_ingresses i\nLEFT JOIN ts_annotations sa ON sa.entity_id = i.id \n    AND sa.key = '$source_annotation' \n    AND $__timeFilter(sa.entity_timestamp)\nLEFT JOIN ts_annotations a ON a.entity_id = i.id \n    AND a.key = '$annotation_key' \n    AND $__timeFilter(a.entity_timestamp)\nWHERE $__timeFilter(i.timestamp)\n    AND i.data_source IN ($datasources)\n    AND (\n        '*' IN ($source_annotation_value)\n        OR (sa.value IS NOT NULL AND sa.value IN ($source_annotation_value))\n        OR ('Not Present' IN ($source_annotation_value) AND sa.value IS NULL)\n    )\n    AND (\n        '*' IN ($annotation_value)\n        OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n        OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "panelId": 119,
           "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [
-                  {
-                    "name": "\"timestamp\"",
-                    "type": "functionParameter"
-                  }
-                ],
-                "type": "function"
-              },
-              {
-                "parameters": [
-                  {
-                    "name": "data_source",
-                    "type": "functionParameter"
-                  }
-                ],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "name": "data_source",
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          },
-          "table": "ts_egresses"
+          "withTransforms": true
         }
       ],
       "title": "Ingressed Files",
@@ -709,6 +765,7 @@
       },
       "id": 131,
       "panels": [],
+      "title": "",
       "type": "row"
     },
     {
@@ -727,7 +784,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red"
+                "color": "red",
+                "value": null
               },
               {
                 "color": "green",
@@ -763,7 +821,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -772,10 +830,19 @@
           },
           "panelId": 135,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
         }
       ],
+      "title": "",
       "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "byte.*"
+            }
+          }
+        },
         {
           "id": "reduce",
           "options": {
@@ -789,9 +856,9 @@
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "${database}"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 2,
@@ -809,7 +876,8 @@
         "content": "<h1><center>Egress</center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
+      "title": "",
       "transparent": true,
       "type": "text"
     },
@@ -829,7 +897,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red"
+                "color": "red",
+                "value": null
               },
               {
                 "color": "green",
@@ -864,19 +933,28 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
             "type": "datasource",
             "uid": "-- Dashboard --"
           },
-          "panelId": 138,
+          "panelId": 135,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
         }
       ],
+      "title": "",
       "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "file.*"
+            }
+          }
+        },
         {
           "id": "reduce",
           "options": {
@@ -942,7 +1020,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -952,7 +1031,24 @@
           },
           "unit": "decbytes"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "file_count"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -962,7 +1058,7 @@
       },
       "id": 135,
       "interval": "10s",
-      "maxDataPoints": 250,
+      "maxDataPoints": 100,
       "options": {
         "legend": {
           "calcs": [
@@ -979,6 +1075,7 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -988,7 +1085,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n    COALESCE(sa.value, 'Not Present') || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(SUM(e.egress_bytes), 0) AS bytes\nFROM ts_egresses e\nLEFT JOIN ts_annotations sa ON sa.entity_id = e.id \n    AND sa.key = '$source_annotation' \n    AND $__timeFilter(sa.entity_timestamp)\nLEFT JOIN ts_annotations a ON a.entity_id = e.id \n    AND a.key = '$annotation_key' \n    AND $__timeFilter(a.entity_timestamp)\nWHERE $__timeFilter(e.timestamp)\n    AND e.data_source IN ($datasources)\n    AND (\n        '*' IN ($source_annotation_value)\n        OR (sa.value IS NOT NULL AND sa.value IN ($source_annotation_value))\n        OR ('Not Present' IN ($source_annotation_value) AND sa.value IS NULL)\n    )\n    AND (\n        '*' IN ($annotation_value)\n        OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n        OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "rawSql": "SELECT\n    time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n    COALESCE(sa.value, 'Not Present') || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n    COALESCE(SUM(e.egress_bytes), 0) AS bytes,\n    COALESCE(COUNT(*), 0) AS file_count\nFROM ts_egresses e\nLEFT JOIN ts_annotations sa ON sa.entity_id = e.id \n    AND sa.key = '$source_annotation' \n    AND $__timeFilter(sa.entity_timestamp)\nLEFT JOIN ts_annotations a ON a.entity_id = e.id \n    AND a.key = '$annotation_key' \n    AND $__timeFilter(a.entity_timestamp)\nWHERE $__timeFilter(e.timestamp)\n    AND e.data_source IN ($datasources)\n    AND (\n        '*' IN ($source_annotation_value)\n        OR (sa.value IS NOT NULL AND sa.value IN ($source_annotation_value))\n        OR ('Not Present' IN ($source_annotation_value) AND sa.value IS NULL)\n    )\n    AND (\n        '*' IN ($annotation_value)\n        OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n        OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n    )\nGROUP BY 1, 2\nORDER BY time, series_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1090,7 +1187,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1099,7 +1196,25 @@
           },
           "panelId": 135,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
+        }
+      ],
+      "title": "",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "bytes.*"
+            }
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
         }
       ],
       "type": "piechart"
@@ -1155,25 +1270,42 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
             "type": "datasource",
             "uid": "-- Dashboard --"
           },
-          "panelId": 138,
+          "panelId": 135,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
+        }
+      ],
+      "title": "",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "file.*"
+            }
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
         }
       ],
       "type": "piechart"
     },
     {
       "datasource": {
-        "default": false,
-        "type": "grafana-postgresql-datasource",
-        "uid": "${database}"
+        "type": "datasource",
+        "uid": "-- Dashboard --"
       },
       "fieldConfig": {
         "defaults": {
@@ -1222,7 +1354,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1231,7 +1364,24 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bytes"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -1258,50 +1408,16 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "${database}"
+            "type": "datasource",
+            "uid": "-- Dashboard --"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT \n   time_bucket_gapfill(($__interval_ms || ' ms')::interval, e.timestamp) AS time,\n   COALESCE(sa.value, 'Not Present') || ' (' || COALESCE(a.value, 'Not Present') || ')' AS series_name,\n   COALESCE(COUNT(*), 0) AS values\nFROM ts_egresses e\nLEFT JOIN ts_annotations sa ON sa.entity_id = e.id \n   AND sa.key = '$source_annotation' \n   AND $__timeFilter(sa.entity_timestamp)\nLEFT JOIN ts_annotations a ON a.entity_id = e.id \n   AND a.key = '$annotation_key' \n   AND $__timeFilter(a.entity_timestamp)\nWHERE $__timeFilter(e.timestamp)\n   AND e.data_source IN ($datasources)\n   AND (\n       '*' IN ($source_annotation_value)\n       OR (sa.value IS NOT NULL AND sa.value IN ($source_annotation_value))\n       OR ('Not Present' IN ($source_annotation_value) AND sa.value IS NULL)\n   )\n   AND (\n       '*' IN ($annotation_value)\n       OR (a.value IS NOT NULL AND a.value IN ($annotation_value))\n       OR ('Not Present' IN ($annotation_value) AND a.value IS NULL)\n   )\nGROUP BY 1, 2\nORDER BY time, series_name;",
+          "panelId": 135,
           "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [
-                  {
-                    "name": "\"timestamp\"",
-                    "type": "functionParameter"
-                  }
-                ],
-                "type": "function"
-              },
-              {
-                "parameters": [
-                  {
-                    "name": "data_source",
-                    "type": "functionParameter"
-                  }
-                ],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "name": "data_source",
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          },
-          "table": "ts_egresses"
+          "withTransforms": true
         }
       ],
       "title": "Egressed Files",
@@ -1357,7 +1473,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "yellow",
@@ -1400,7 +1517,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1412,6 +1529,7 @@
           "withTransforms": true
         }
       ],
+      "title": "",
       "transformations": [
         {
           "id": "reduce",
@@ -1476,7 +1594,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1488,6 +1606,7 @@
           "withTransforms": true
         }
       ],
+      "title": "",
       "transparent": true,
       "type": "piechart"
     },
@@ -1544,7 +1663,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1580,6 +1700,7 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1655,7 +1776,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "light-blue"
+                "color": "light-blue",
+                "value": null
               },
               {
                 "color": "blue",
@@ -1698,7 +1820,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1710,6 +1832,7 @@
           "withTransforms": true
         }
       ],
+      "title": "",
       "transformations": [
         {
           "id": "reduce",
@@ -1774,7 +1897,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1786,6 +1909,7 @@
           "withTransforms": true
         }
       ],
+      "title": "",
       "transparent": true,
       "type": "piechart"
     },
@@ -1842,7 +1966,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1878,6 +2003,7 @@
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -1973,7 +2099,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2072,7 +2199,7 @@
           }
         ]
       },
-      "pluginVersion": "11.2.2+security-01",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -2145,8 +2272,8 @@
       "type": "table"
     }
   ],
-  "revision": 1,
-  "schemaVersion": 39,
+  "preload": false,
+  "schemaVersion": 40,
   "tags": [
     "DeltaFi",
     "Data Flow",
@@ -2156,9 +2283,8 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "value",
-          "value": "value"
+          "text": "asdf",
+          "value": "asdf"
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
@@ -2166,26 +2292,20 @@
         },
         "definition": "SELECT key\nFROM(\nSELECT DISTINCT key\nFROM ts_annotations\nUNION ALL\nSELECT 'No Annotations'\n  WHERE NOT EXISTS (\nSELECT 1\nFROM ts_annotations \nLIMIT 1\n)\n) all_keys\nORDER BY key;",
         "description": "",
-        "hide": 0,
         "includeAll": false,
         "label": "Source Annotation",
-        "multi": false,
         "name": "source_annotation",
         "options": [],
         "query": "SELECT key\nFROM(\nSELECT DISTINCT key\nFROM ts_annotations\nUNION ALL\nSELECT 'No Annotations'\n  WHERE NOT EXISTS (\nSELECT 1\nFROM ts_annotations \nLIMIT 1\n)\n) all_keys\nORDER BY key;",
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 5,
         "type": "query"
       },
       {
         "allValue": "'*'",
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
@@ -2195,7 +2315,6 @@
           "uid": "${database}"
         },
         "definition": "SELECT value\nFROM (\n  SELECT DISTINCT value\n  FROM ts_annotations\n  WHERE $__timeFilter(entity_timestamp)\n    AND data_source IN ($datasources)\n    AND key = '$source_annotation'\n  \n  UNION ALL\n  SELECT 'Not Present'\n) all_values\nORDER BY \n  CASE WHEN value = 'Not Present' THEN 0 ELSE 1 END,\n  value;",
-        "hide": 0,
         "includeAll": true,
         "label": "Source Annotation Value",
         "multi": true,
@@ -2204,15 +2323,12 @@
         "query": "SELECT value\nFROM (\n  SELECT DISTINCT value\n  FROM ts_annotations\n  WHERE $__timeFilter(entity_timestamp)\n    AND data_source IN ($datasources)\n    AND key = '$source_annotation'\n  \n  UNION ALL\n  SELECT 'Not Present'\n) all_values\nORDER BY \n  CASE WHEN value = 'Not Present' THEN 0 ELSE 1 END,\n  value;",
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
         "current": {
-          "selected": false,
-          "text": "value",
-          "value": "value"
+          "text": "asdf",
+          "value": "asdf"
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
@@ -2220,26 +2336,20 @@
         },
         "definition": "SELECT key\nFROM(\nSELECT DISTINCT key\nFROM ts_annotations\nUNION ALL\nSELECT 'No Annotations'\n  WHERE NOT EXISTS (\nSELECT 1\nFROM ts_annotations \nLIMIT 1\n)\n) all_keys\nORDER BY key;",
         "description": "",
-        "hide": 0,
         "includeAll": false,
         "label": "Grouped Annotation",
-        "multi": false,
         "name": "annotation_key",
         "options": [],
         "query": "SELECT key\nFROM(\nSELECT DISTINCT key\nFROM ts_annotations\nUNION ALL\nSELECT 'No Annotations'\n  WHERE NOT EXISTS (\nSELECT 1\nFROM ts_annotations \nLIMIT 1\n)\n) all_keys\nORDER BY key;",
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 5,
         "type": "query"
       },
       {
         "allValue": "'*'",
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
@@ -2249,7 +2359,6 @@
           "uid": "${database}"
         },
         "definition": "SELECT value\nFROM (\n  SELECT DISTINCT value\n  FROM ts_annotations\n  WHERE $__timeFilter(entity_timestamp)\n    AND data_source IN ($datasources)\n    AND key = '$annotation_key'\n  \n  UNION ALL\n  SELECT 'Not Present'\n) all_values\nORDER BY \n  CASE WHEN value = 'Not Present' THEN 0 ELSE 1 END,\n  value;",
-        "hide": 0,
         "includeAll": true,
         "label": "Grouped Annotation Value",
         "multi": true,
@@ -2258,16 +2367,11 @@
         "query": "SELECT value\nFROM (\n  SELECT DISTINCT value\n  FROM ts_annotations\n  WHERE $__timeFilter(entity_timestamp)\n    AND data_source IN ($datasources)\n    AND key = '$annotation_key'\n  \n  UNION ALL\n  SELECT 'Not Present'\n) all_values\nORDER BY \n  CASE WHEN value = 'Not Present' THEN 0 ELSE 1 END,\n  value;",
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
         "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
@@ -2277,7 +2381,6 @@
           "uid": "${database}"
         },
         "definition": "SELECT DISTINCT data_source\nFROM (\n    SELECT DISTINCT data_source FROM ts_ingresses \n    WHERE $__timeFilter(timestamp)\n    UNION\n    SELECT DISTINCT data_source FROM ts_egresses \n    WHERE $__timeFilter(timestamp)\n    UNION\n    SELECT DISTINCT data_source FROM ts_errors \n    WHERE $__timeFilter(timestamp)\n    UNION\n    SELECT DISTINCT data_source FROM ts_filters \n    WHERE $__timeFilter(timestamp)\n) sources\n\nORDER BY data_source;",
-        "hide": 0,
         "includeAll": true,
         "label": "Data Sources",
         "multi": true,
@@ -2286,27 +2389,21 @@
         "query": "SELECT DISTINCT data_source\nFROM (\n    SELECT DISTINCT data_source FROM ts_ingresses \n    WHERE $__timeFilter(timestamp)\n    UNION\n    SELECT DISTINCT data_source FROM ts_egresses \n    WHERE $__timeFilter(timestamp)\n    UNION\n    SELECT DISTINCT data_source FROM ts_errors \n    WHERE $__timeFilter(timestamp)\n    UNION\n    SELECT DISTINCT data_source FROM ts_filters \n    WHERE $__timeFilter(timestamp)\n) sources\n\nORDER BY data_source;",
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 5,
         "type": "query"
       },
       {
         "current": {
-          "selected": false,
           "text": "Postgres",
           "value": "deltafi-postgres"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Database",
-        "multi": false,
         "name": "database",
         "options": [],
         "query": "grafana-postgresql-datasource",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       }
     ]
@@ -2328,6 +2425,6 @@
   "timezone": "",
   "title": "Pivot by Annotation",
   "uid": "pivot-by-annotation",
-  "version": 3,
+  "version": 9,
   "weekStart": ""
 }
