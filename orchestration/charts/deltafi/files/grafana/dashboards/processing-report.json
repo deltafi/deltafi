@@ -859,7 +859,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource!='), '1d', 'sum'), 'dataSource'))"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), '1d', 'sum'), 'dataSource'))"
         },
         {
           "datasource": {
@@ -869,7 +869,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource'))"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource'))"
         }
       ],
       "title": "Processed Files by Data Source",
@@ -934,8 +934,8 @@
               "dataSource\\name": "Data Source",
               "egress": "Egress Files",
               "ingress": "Ingress Files",
-              "stats_counts.bytes_from_source": "Ingress Files",
-              "stats_counts.bytes_to_sink": "Egress Files"
+              "stats_counts.files_from_source": "Ingress Files",
+              "stats_counts.files_to_sink": "Egress Files"
             }
           }
         }
