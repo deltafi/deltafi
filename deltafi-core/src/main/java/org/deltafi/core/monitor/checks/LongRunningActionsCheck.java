@@ -45,12 +45,11 @@ public class LongRunningActionsCheck extends StatusCheck {
             resultBuilder.addHeader("Actions with long running tasks:");
             for (LongAction action : longRunningActions) {
                 resultBuilder.addLine("- " + action.name());
-                Collections.sort(action.dids);
-                for (UUID did : action.dids()) {
-                    String didString = did.toString();
+                for (Map.Entry<UUID, Long> didToTime : action.didTimes().entrySet()) {
+                    String didString = didToTime.getKey().toString();
                     String shortDid = didString.substring(0, 7);
                     String didLink = "[" + shortDid + "](/deltafile/viewer/" + didString + ")";
-                    resultBuilder.addLine("    - " + didLink + " - Running >" + action.duration() + " seconds");
+                    resultBuilder.addLine("    - " + didLink + " - Running >" + didToTime.getValue() + " seconds");
                 }
             }
         } else {
@@ -66,16 +65,16 @@ public class LongRunningActionsCheck extends StatusCheck {
 
         for (ActionExecution actionExecution : longRunningActions) {
             long seconds = actionExecution.heartbeatTime().toEpochSecond() - actionExecution.startTime().toEpochSecond();
-            LongAction task = result.computeIfAbsent(actionExecution.action(), action -> new LongAction(action, seconds));
-            task.dids().add(actionExecution.did());
+            LongAction task = result.computeIfAbsent(actionExecution.action(), LongAction::new);
+            task.didTimes().put(actionExecution.did(), seconds);
         }
 
         return result.values();
     }
 
-    private record LongAction(String name, long duration, List<UUID> dids) {
-        public LongAction(String name, long duration) {
-            this(name, duration, new ArrayList<>());
+    private record LongAction(String name, Map<UUID, Long> didTimes) {
+        public LongAction(String name) {
+            this(name, new TreeMap<>());
         }
     }
 }
