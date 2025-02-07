@@ -10,6 +10,7 @@ plugins {
     id 'org.deltafi.test-summary' version '1.0'
     id 'org.deltafi.git-version' version '2.0.1'
     id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+    id "de.undercouch.download" version "5.6.0"
 }
 
 // Distribution configuration
@@ -40,13 +41,67 @@ ext {
     // Architecture-specific files/directories
     archDistroContents = [
         'linux-amd64': [
-            [source: 'tui/dist/linux/amd64', destination: '.']
+            [source: 'tui/dist/linux/amd64', destination: '.'],
+            [source: layout.buildDirectory.file('jq-linux-amd64').orNull,
+                destination: 'bin',
+                mode: 0755,
+                rename: 'jq'
+            ],
+            [source: layout.buildDirectory.file('yq_linux_amd64').orNull,
+                destination: 'bin',
+                mode: 0755,
+                rename: 'yq'
+            ],
+            [source: layout.buildDirectory.file('lazydocker/linux/amd64/lazydocker').orNull,
+                destination: 'bin',
+                mode: 0755,
+            ],
+            [source: layout.buildDirectory.file('lazydocker/linux/amd64/LICENSE').orNull,
+                destination: 'bin',
+                rename: 'LICENSE.lazydocker',
+            ]
         ],
         'darwin-amd64': [
-            [source: 'tui/dist/darwin/amd64', destination: '.']
+            [source: 'tui/dist/darwin/amd64', destination: '.'],
+            [source: layout.buildDirectory.file('jq-macos-amd64').orNull,
+                destination: 'bin',
+                mode: 0755,
+                rename: 'jq'
+            ],
+            [source: layout.buildDirectory.file('yq_darwin_amd64').orNull,
+                destination: 'bin',
+                mode: 0755,
+                rename: 'yq'
+            ],
+            [source: layout.buildDirectory.file('lazydocker/darwin/amd64/lazydocker').orNull,
+                destination: 'bin',
+                mode: 0755,
+            ],
+            [source: layout.buildDirectory.file('lazydocker/darwin/amd64/LICENSE').orNull,
+                destination: 'bin',
+                rename: 'LICENSE.lazydocker',
+            ]
         ],
         'darwin-arm64': [
-            [source: 'tui/dist/darwin/arm64', destination: '.']
+            [source: 'tui/dist/darwin/arm64', destination: '.'],
+            [source: layout.buildDirectory.file('jq-macos-arm64').orNull,
+                destination: 'bin',
+                mode: 0755,
+                rename: 'jq'
+            ],
+            [source: layout.buildDirectory.file('yq_darwin_arm64').orNull,
+                destination: 'bin',
+                mode: 0755,
+                rename: 'yq'
+            ],
+            [source: layout.buildDirectory.file('lazydocker/darwin/arm64/lazydocker').orNull,
+                destination: 'bin',
+                mode: 0755,
+            ],
+            [source: layout.buildDirectory.file('lazydocker/darwin/arm64/LICENSE').orNull,
+                destination: 'bin',
+                rename: 'LICENSE.lazydocker',
+            ]
         ]
     ]
 }
@@ -79,7 +134,48 @@ ext.deltafiConfig = loadDeltafiConfig();
 task dist {
     group = 'distribution'
     description = 'Creates distribution archives for all supported architectures'
+    dependsOn 'distBinaries'
 }
+
+task distBinaries(type: Download) {
+    src([
+        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.1/lazydocker_0.24.1_Darwin_arm64.tar.gz',
+        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.1/lazydocker_0.24.1_Darwin_x86_64.tar.gz',
+        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.1/lazydocker_0.24.1_Linux_x86_64.tar.gz',
+        'https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64',
+        'https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_darwin_arm64',
+        'https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_darwin_amd64',
+        'https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-macos-amd64',
+        'https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-macos-arm64',
+        'https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64'
+    ])
+    dest layout.buildDirectory
+
+    finalizedBy 'decompressDistBinaries'
+}
+
+def pathToCamelCase(String path) {
+    return path.split(File.separator).collect { String part ->
+        part[0].toUpperCase() + part.substring(1)
+    }.join('')
+}
+
+task decompressDistBinaries {
+    group = 'distribution'
+    description = 'Decompress the distribution binaries'
+}
+
+[ [ source: 'lazydocker_0.24.1_Darwin_arm64.tar.gz', destination: 'lazydocker/darwin/arm64' ],
+  [ source: 'lazydocker_0.24.1_Darwin_x86_64.tar.gz', destination: 'lazydocker/darwin/amd64' ],
+  [ source: 'lazydocker_0.24.1_Linux_x86_64.tar.gz', destination: 'lazydocker/linux/amd64' ] ].each { archive ->
+    task "extract${pathToCamelCase(archive.destination)}" (type: Copy) {
+        from tarTree(layout.buildDirectory.file(archive.source))
+        into layout.buildDirectory.file(archive.destination)
+        dependsOn 'distBinaries'
+    }
+    decompressDistBinaries.dependsOn "extract${pathToCamelCase(archive.destination)}"
+}
+
 
 task tui {
     group = 'build'
@@ -94,6 +190,8 @@ task install {
 // Create tasks for each architecture
 archDistroContents.each { arch, archFiles ->
     def archTask = tasks.create(name: "dist-${arch}", type: Tar) {
+        dependsOn 'distBinaries'
+        dependsOn 'decompressDistBinaries'
         group = 'distribution'
         description = "Creates distribution archive for ${arch}"
 
@@ -124,6 +222,12 @@ archDistroContents.each { arch, archFiles ->
         archFiles.each { item ->
             from(item.source) {
                 into project.version + '/' + item.destination
+                if (item.mode != null) {
+                    fileMode = item.mode
+                }
+                if (item.rename != null) {
+                    rename { _ -> item.rename }
+                }
             }
         }
 

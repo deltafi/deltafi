@@ -735,6 +735,10 @@ images() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" images "$@"
 }
 
+convert() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" convert "$@"
+}
+
 top() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" top "$@"
 }
@@ -823,6 +827,9 @@ case "$SUBCOMMAND" in
     ;;
   uninstall)
     uninstall
+    ;;
+  convert)
+    convert "$@"
     ;;
   images)
     images "$@"
