@@ -5,6 +5,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.7.0] - 2025-02-10
+
+### Added
+- Added support for Content-Type override on Upload page 
+- [deltafi-core] Create an event when a plugin is restarted due to an action execution timeout (GitLab-415)
+
+### Changed
+- Set the `kubectl.kubernetes.io/default-container` annotation on the `core-scheduler` and `core-worker` pods
+
+### Fixed
+- Fixed sorting on the Errors and Filtered pages.
+- [deltafi-core] Rebuilding flows (e.g., after a plugin variable update) now properly clears a flow's INVALID state
+- Validate analytic events for required fields to prevent database insert exceptions
+- Processing Report now showing file counts instead of byte counts in the "Processed Files by Data Source" table
+- Fixed the long-running actions check bug where the same execution time was used for all the dids under an action.
+- Fix null pointer exception on requeue of malformed DeltaFiles 
+
+### Tech-Debt/Refactor
+- Increase timescaleDB chunk size from 1 day to 1 week to ensure typical queries use a single chunk for better performance
+- Improve Annotation by Data Source and Pivot by Annotation dashboard performance
+
+### Upgrade and Migration
+- To change the timescale chunk size the tables must be recreated and migrated. This can be a lengthy migration depending on the size of these tables.
+- `jq`, `yq`, and `lazydocker` are now included in distro files
+
 ## [2.6.1] - 2025-02-03
 
 ### Changed
@@ -3785,7 +3810,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.7.0...main
+[2.7.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.1...2.7.0
 [2.6.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.0...2.6.1
 [2.6.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.5.0...2.6.0
 [2.5.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.4.0...2.5.0
