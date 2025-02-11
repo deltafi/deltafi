@@ -40,8 +40,7 @@ import javax.ws.rs.core.MediaType;
 import java.io.*;
 import java.util.*;
 
-import static org.deltafi.core.action.compress.BatchSizes.BATCH_BYTES;
-import static org.deltafi.core.action.compress.BatchSizes.BATCH_FILES;
+import static org.deltafi.core.action.compress.BatchSizes.*;
 
 @Component
 @Slf4j
@@ -364,7 +363,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     private void unarchive(TransformResult result, LineageMap lineage, String parentDir, String parentName,
                            ActionContent content, ArchiveInputStream<?> archiveInputStream) throws IOException {
         ArrayList<SaveManyContent> saveManyBatch = new ArrayList<>();
-        int currentBatchSize = 0;
+        long currentBatchSize = 0;
 
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
@@ -379,9 +378,10 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 result.addContent(content.subcontent(archiveInputStream.getBytesRead(), entry.getSize(),
                         newContentName, mediaType));
             } else {
-                if (entry.getSize() < 2 * BATCH_BYTES) {
+                // This protects against getSize() returning SIZE_UNKNOWN (-1)
+                if (entry.getSize() >= 0 && entry.getSize() < BATCH_MAX_FILE_SIZE) {
                     SaveManyContent file = new SaveManyContent(newContentName, mediaType, archiveInputStream.readAllBytes());
-                    int fileSize = file.content().length;
+                    long fileSize = file.content().length;
 
                     // Check if adding this file will exceed the batch constraints
                     if (!saveManyBatch.isEmpty() &&

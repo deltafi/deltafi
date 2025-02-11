@@ -32,12 +32,13 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.deltafi.core.action.compress.BatchSizes.BATCH_BYTES;
-import static org.deltafi.core.action.compress.BatchSizes.BATCH_FILES;
+import static org.deltafi.core.action.compress.BatchSizes.*;
 
 @Component
 @Slf4j
 public class SevenZUtil {
+    private static final Tika TIKA = new Tika();
+
     public static void extractSevenZ(TransformResult result, LineageMap lineage, String parentName, InputStream contentInputStream) throws ArchiveException {
         String parentDir = "";
         int lastSlash = parentName.lastIndexOf('/');
@@ -54,13 +55,11 @@ public class SevenZUtil {
         }
     }
 
-    private static final Tika TIKA = new Tika();
-
     private static void unarchiveSevnZ(TransformResult result, LineageMap lineage,
                                        String parentDir, String parentName, SevenZFile sevenZFile) throws IOException {
         SevenZArchiveEntry entry;
         List<SaveManyContent> saveManyBatch = new ArrayList<>();
-        int currentBatchSize = 0;
+        long currentBatchSize = 0;
 
         while ((entry = sevenZFile.getNextEntry()) != null) {
             if (entry.isDirectory()) {
@@ -71,9 +70,10 @@ public class SevenZUtil {
             String mediaType = TIKA.detect(entry.getName());
 
             InputStream inputStream = sevenZFile.getInputStream(entry);
-            if (entry.getSize() < 2 * BATCH_BYTES) {
+            // This protects against getSize() returning SIZE_UNKNOWN (-1)
+            if (entry.getSize() >= 0 && entry.getSize() < BATCH_MAX_FILE_SIZE) {
                 byte[] fileContent = inputStream.readAllBytes();
-                int fileSize = fileContent.length;
+                long fileSize = fileContent.length;
 
                 // Check if adding this file will exceed the batch constraints
                 if (!saveManyBatch.isEmpty() &&

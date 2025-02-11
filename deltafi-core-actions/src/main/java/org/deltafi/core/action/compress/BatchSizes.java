@@ -24,5 +24,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class BatchSizes {
     public static final int BATCH_FILES = 250;
-    public static final int BATCH_BYTES = 100 * 1024 * 1024;
+    public static final long BATCH_BYTES = 104857600L; // 100M
+    public static final long BATCH_MAX_FILE_SIZE = 52428800L; // 50M
 }
