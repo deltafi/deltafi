@@ -43,6 +43,7 @@ public class PluginEntity {
     private String displayName;
     private String description;
     private String actionKitVersion;
+    private String registrationHash;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

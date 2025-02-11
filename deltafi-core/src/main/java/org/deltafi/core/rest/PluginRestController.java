@@ -45,19 +45,23 @@ public class PluginRestController {
         pluginService.acquireUpdateLock();
 
         try {
-            Result result = pluginService.register(pluginRegistration, integrationService);
+            if (pluginService.isRegistrationNew(pluginRegistration)) {
+                Result result = pluginService.register(pluginRegistration, integrationService);
 
-            pluginService.FlushToDB();
+                pluginService.FlushToDB();
 
-            if (result.isSuccess()) {
-                try {
-                    pluginService.revalidateFlows();
-                } catch (Exception ignored) {
-                    // log an error if anything goes wrong revalidating flows, but do not prevent a successful registration
-                    log.error("Problem");
+                if (result.isSuccess()) {
+                    try {
+                        pluginService.revalidateFlows();
+                    } catch (Exception ignored) {
+                        // log an error if anything goes wrong revalidating flows, but do not prevent a successful registration
+                        log.error("Problem");
+                    }
+                } else {
+                    return ResponseEntity.badRequest().body(String.join("\n", result.getErrors()));
                 }
             } else {
-                return ResponseEntity.badRequest().body(String.join("\n", result.getErrors()));
+                log.info("Plugin is already registered {}", pluginRegistration.getPluginCoordinates());
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Plugin registration error: %s. See core logs for more details".formatted(e.getMessage()));

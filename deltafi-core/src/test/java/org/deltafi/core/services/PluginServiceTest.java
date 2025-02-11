@@ -124,7 +124,87 @@ class PluginServiceTest {
         assertTrue(result.isSuccess());
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
+        plugin.setRegistrationHash(PluginService.hashRegistration(pluginRegistration));
         assertEquals(plugin, pluginArgumentCaptor.getValue());
+    }
+
+    @Test
+    void isRegistrationNewNotPreviouslyInstalled() {
+        PluginEntity plugin = new PluginEntity();
+        plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(plugin.getPluginCoordinates())
+                .integrationTests(List.of(makeIntegrationTest()))
+                .build();
+        plugin.setRegistrationHash(PluginService.hashRegistration(pluginRegistration));
+
+        Mockito.when(pluginRepository
+                        .findByKeyGroupIdAndKeyArtifactIdAndVersion(
+                                "group", "artifact", "1.0.0"))
+                .thenReturn(Optional.empty());
+        // plugin with these same coordinates not found
+        assertTrue(pluginService.isRegistrationNew(pluginRegistration));
+    }
+
+    @Test
+    void isRegistrationNewDifferentHash() {
+        PluginEntity plugin = new PluginEntity();
+        plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(plugin.getPluginCoordinates())
+                .integrationTests(List.of(makeIntegrationTest()))
+                .build();
+
+        Mockito.when(pluginRepository
+                        .findByKeyGroupIdAndKeyArtifactIdAndVersion(
+                                "group", "artifact", "1.0.0"))
+                .thenReturn(Optional.of(plugin));
+        // plugin with these coordinate found, but previous registration had a different hash
+        assertTrue(pluginService.isRegistrationNew(pluginRegistration));
+    }
+
+    @Test
+    void isRegistrationNewSameHash() {
+        PluginEntity plugin = new PluginEntity();
+        plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(plugin.getPluginCoordinates())
+                .integrationTests(List.of(makeIntegrationTest()))
+                .build();
+        plugin.setRegistrationHash(PluginService.hashRegistration(pluginRegistration));
+
+        Mockito.when(pluginRepository
+                        .findByKeyGroupIdAndKeyArtifactIdAndVersion(
+                                "group", "artifact", "1.0.0"))
+                .thenReturn(Optional.of(plugin));
+        // plugin with these coordinate found, and previous registration had the same hash
+        assertFalse(pluginService.isRegistrationNew(pluginRegistration));
+    }
+
+    @Test
+    void hashRegistration() {
+        PluginEntity plugin1 = new PluginEntity();
+        plugin1.setPluginCoordinates(PLUGIN_COORDINATES_1);
+        PluginRegistration registration1 = PluginRegistration.builder()
+                .pluginCoordinates(plugin1.getPluginCoordinates())
+                .description("description")
+                .build();
+
+        PluginEntity samePlugin1 = new PluginEntity();
+        samePlugin1.setPluginCoordinates(PLUGIN_COORDINATES_1);
+        PluginRegistration sameRegistration1 = PluginRegistration.builder()
+                .pluginCoordinates(samePlugin1.getPluginCoordinates())
+                .description("description")
+                .build();
+
+        assertEquals(PluginService.hashRegistration(registration1), PluginService.hashRegistration(sameRegistration1));
+
+        PluginRegistration differentDescription = PluginRegistration.builder()
+                .pluginCoordinates(samePlugin1.getPluginCoordinates())
+                .description("description2")
+                .build();
+
+        assertNotEquals(PluginService.hashRegistration(registration1), PluginService.hashRegistration(differentDescription));
     }
 
     @Test
@@ -143,6 +223,7 @@ class PluginServiceTest {
         assertTrue(result.isSuccess());
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
+        plugin.setRegistrationHash(PluginService.hashRegistration(pluginRegistration));
         assertEquals(plugin, pluginArgumentCaptor.getValue());
 
         Mockito.verify(integrationService).save(Mockito.any());
@@ -267,7 +348,7 @@ class PluginServiceTest {
         PluginEntity installedOnly = makePlugin();
         installedOnly.setPluginCoordinates(new PluginCoordinates("org.installed", "installed-plugin", "1.0.0"));
         PluginEntity newVersion = makePlugin();
-        newVersion.setPluginCoordinates( new PluginCoordinates("org.mock", "plugin-2", "1.1.0"));
+        newVersion.setPluginCoordinates(new PluginCoordinates("org.mock", "plugin-2", "1.1.0"));
 
         PluginEntity inBoth = makePlugin();
         PluginCoordinates inSnapshotOnly = new PluginCoordinates("org.unique", "custom-plugin", "1.0.0");

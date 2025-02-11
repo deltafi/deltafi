@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.core.generated.types.Flows;
@@ -239,10 +240,29 @@ public class PluginService implements Snapshotter {
         return flowPlans.stream().filter(fp -> fp.getType() == flowType).toList();
     }
 
+    static String hashRegistration(PluginRegistration pluginRegistration) {
+        return DigestUtils.md5Hex(pluginRegistration.toString());
+    }
+
+    /**
+     * See if the plugin registration is new (a new plugin, a plugin upgrade, an edit
+     * without a version update).
+     *
+     * @param pluginRegistration incoming registration message
+     * @return true if this exact registration is a new in some way, false if it is already installed.
+     */
+    public boolean isRegistrationNew(PluginRegistration pluginRegistration) {
+        // Search for this plugin with same version
+        Optional<PluginEntity> existingPlugin = getPlugin(pluginRegistration.getPluginCoordinates());
+        // If it is not installed, or the registration contents differ, its "new"
+        return existingPlugin.map(pluginEntity -> !hashRegistration(pluginRegistration).equals(pluginEntity.getRegistrationHash())).orElse(true);
+    }
+
     @Transactional
     public Result register(PluginRegistration pluginRegistration, IntegrationService integrationService) {
         log.info("{}", pluginRegistration);
         PluginEntity plugin = new PluginEntity(pluginRegistration.toPlugin());
+        plugin.setRegistrationHash(hashRegistration(pluginRegistration));
         GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);
 
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
