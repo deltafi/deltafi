@@ -18,11 +18,11 @@
 
 <template>
   <span>
-    <ConfirmPopup></ConfirmPopup>
+    <ConfirmPopup />
     <ConfirmPopup :group="rowData.combinedPluginCoordinates">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
           <p class="pl-2">
             {{ slotProps.message.message }}
           </p>
@@ -36,7 +36,7 @@
 <script setup>
 import usePlugins from "@/composables/usePlugins";
 import useNotifications from "@/composables/useNotifications";
-import { defineEmits, defineProps, toRefs } from "vue";
+import { toRefs } from "vue";
 
 import _ from "lodash";
 
@@ -71,13 +71,13 @@ const confirmationPopup = (event, combinedPluginCoordinates, displayName, plugin
       notify.info("Removing Plugin", `Removing Plugin ${displayName}.`, 3000);
       confirmedRemovePlugin(displayName, pluginCoordinates);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
 const confirmedRemovePlugin = async (displayName, pluginCoordinates) => {
-  let response = await uninstallPlugin(pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version);
-  let responseErrors = _.get(response.uninstallPlugin, "errors", null);
+  const response = await uninstallPlugin(pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version);
+  const responseErrors = _.get(response.uninstallPlugin, "errors", null);
   if (!_.isEmpty(responseErrors)) {
     notify.error(`Removing plugin ${displayName} failed`, `Plugin ${displayName} was not removed.`, 4000);
     emit("pluginRemovalErrors", responseErrors);

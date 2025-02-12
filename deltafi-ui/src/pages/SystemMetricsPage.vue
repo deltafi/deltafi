@@ -20,13 +20,19 @@
   <div class="system-metrics-page">
     <PageHeader heading="System Metrics" />
     <Panel header="Nodes" class="table-panel">
-      <DataTable v-model:expandedRows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading" loading-icon="p-datatable-loading-icon pi-spin" sort-field="name" :sort-order="1">
-        <template #empty>No System Metrics available</template>
-        <template #loading>Loading System Metrics Data. Please wait.</template>
+      <DataTable v-model:expanded-rows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading" loading-icon="p-datatable-loading-icon pi-spin" sort-field="name" :sort-order="1">
+        <template #empty>
+          No System Metrics available
+        </template>
+        <template #loading>
+          Loading System Metrics Data. Please wait.
+        </template>
         <Column class="expander-column" :expander="true" />
         <Column header="Node Name" field="name" :sortable="true" />
         <Column header="App Count" class="apps-column">
-          <template #body="node">{{ node.data.apps.length }}</template>
+          <template #body="node">
+            {{ node.data.apps.length }}
+          </template>
         </Column>
         <Column header="CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
           <template #body="node">
@@ -37,13 +43,17 @@
         <Column header="RAM" field="resources.memory.usage" :sortable="true" class="resource-column">
           <template #body="node">
             <span v-if="node.data.resources.memory.usage == 0 || node.data.resources.memory.limit == 0"> Metrics unavailable </span>
-            <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)">{{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%)</ProgressBar>
+            <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)">
+              {{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%)
+            </ProgressBar>
           </template>
         </Column>
         <Column header="Disk" field="resources.disk.usage" :sortable="true" class="resource-column">
           <template #body="node">
             <span v-if="node.data.resources.disk.usage == 0 || node.data.resources.disk.limit == 0"> Metrics unavailable </span>
-            <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">{{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)</ProgressBar>
+            <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">
+              {{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)
+            </ProgressBar>
           </template>
         </Column>
         <template #expansion="node">
@@ -61,7 +71,7 @@
 
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, inject, onMounted, onUnmounted, ref } from "vue";
@@ -97,6 +107,28 @@ const calculatePercent = (numerator, denominator) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/system-metrics-page.scss";
+<style>
+.system-metrics-page {
+  .p-progressbar {
+    background: #dadada;
+
+    .p-progressbar-label {
+      font-weight: inherit;
+      color: #212529 !important;
+      display: block !important;
+    }
+  }
+
+  .p-progressbar .p-progressbar-value {
+    background: #60a0ff;
+  }
+
+  .resource-column {
+    width: 20%;
+  }
+
+  .apps-column {
+    width: 7rem;
+  }
+}
 </style>

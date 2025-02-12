@@ -30,11 +30,15 @@
           <i class="pi pi-search" />
           <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
-        <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage"></Paginator>
+        <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage" />
       </template>
       <DataTable v-model:filters="filters" :value="snapshots" :paginator="true" :first="pageFirst" :rows="pageRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading" data-key="id">
-        <template #empty>No snapshots to display.</template>
-        <template #loading>Loading. Please wait...</template>
+        <template #empty>
+          No snapshots to display.
+        </template>
+        <template #loading>
+          Loading. Please wait...
+        </template>
         <Column field="id" header="ID">
           <template #body="data">
             <a v-tooltip.top="`View Snapshot`" class="cursor-pointer monospace" style="color: black" @click="showSnapshot(data.data)">{{ data.data.id }}</a>
@@ -86,7 +90,7 @@
 </template>
 
 <script setup>
-import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
@@ -172,7 +176,7 @@ const onRevertClick = (snapshotData) => {
     accept: () => {
       onRevert(snapshotData.id);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -186,7 +190,7 @@ const onDeleteClick = (snapshotData) => {
     accept: () => {
       onDelete(snapshotData.id);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -202,7 +206,7 @@ const onDelete = async (id) => {
 };
 
 const onImport = async (snapShotData) => {
-  let clean = cleanUpSnapshot(snapshot);
+  const clean = cleanUpSnapshot(snapshot);
   await importSnapshot(clean);
   if (mutationResponse.value.id === snapShotData.value.id) {
     notify.success("Successfully Imported Snapshot", mutationResponse.value.id);
@@ -215,7 +219,7 @@ const onImport = async (snapShotData) => {
 };
 
 const cleanUpSnapshot = (snapShotData) => {
-  let snap = JSON.parse(JSON.stringify(snapShotData.value));
+  const snap = JSON.parse(JSON.stringify(snapShotData.value));
 
   // support older snapshots by wrapping the snapshot data in the snapshot field if it doesn't exist
   if (!snap.snapshot) {
@@ -225,18 +229,18 @@ const cleanUpSnapshot = (snapShotData) => {
       created,
       reason,
       schemaVersion: 1,
-      snapshot: otherFields
+      snapshot: otherFields,
     };
   }
   return snap;
 };
 
 const onUpload = async (event) => {
-  let file = event.files[0];
-  let reader = new FileReader();
+  const file = event.files[0];
+  const reader = new FileReader();
   reader.readAsText(file);
   reader.onload = function () {
-    let fileJSON = JSON.parse(reader.result);
+    const fileJSON = JSON.parse(reader.result);
     snapshot.value = fileJSON;
     onImport(snapshot);
   };
@@ -260,6 +264,51 @@ const confirmCreate = async () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/system-snapshots-page.scss";
+<style>
+.system-snapshots-page {
+  .system-snapshots-panel {
+    .p-datatable .p-paginator {
+      display: none;
+    }
+
+    .p-panel-header {
+      padding: 0 1.25rem;
+
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+    }
+
+    .date-column {
+      width: 15rem;
+    }
+
+    .p-paginator {
+      background: inherit !important;
+      color: inherit !important;
+      border: none !important;
+      padding: 0.2rem 0 !important;
+      font-size: inherit !important;
+
+      .p-paginator-current {
+        background: unset;
+        color: unset;
+        border: unset;
+      }
+    }
+
+    .p-input-icon-left {
+      padding-top: 0.2rem;
+
+      i {
+        margin-top: -0.4rem;
+      }
+
+      .p-inputtext {
+        padding-top: 6px;
+        padding-bottom: 5px;
+      }
+    }
+  }
+}
 </style>

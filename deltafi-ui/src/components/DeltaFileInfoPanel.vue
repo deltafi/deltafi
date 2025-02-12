@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, reactive } from "vue";
+import { computed, reactive } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
@@ -64,7 +64,7 @@ const props = defineProps({
 const deltaFile = reactive(props.deltaFileData);
 
 const infoFields = computed(() => {
-  let fields = {};
+  const fields = {};
   fields["DID"] = deltaFile.did;
   fields["Data Source"] = deltaFile.dataSource;
   fields["Name"] = deltaFile.name;
@@ -79,23 +79,35 @@ const infoFields = computed(() => {
 
 const latestErrorFlow = computed(() => {
   return _.chain(deltaFile.flows)
-      .filter((flow) => flow.state === "ERROR")
-      .sortBy(["modified"])
-      .last()
-      .value();
+    .filter((flow) => flow.state === "ERROR")
+    .sortBy(["modified"])
+    .last()
+    .value();
 });
 
 const nextActionWithAutoResume = computed(() => {
-  return _
-    .chain(deltaFile.flows)
+  return _.chain(deltaFile.flows)
     .map((flow) => flow.actions)
     .flatten()
     .filter((action) => action.state === "ERROR" && action.nextAutoResume !== null)
     .sortBy(["nextAutoResume"])
     .value()[0];
-})
+});
 </script>
 
-<style lang="scss">
-@import "@/styles/components/deltafile-info-panel.scss";
+<style>
+.information-panel {
+  dd {
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
+  }
+
+  dl {
+    margin-bottom: 1rem;
+  }
+
+  .p-panel-content {
+    padding-bottom: 0.25rem !important;
+  }
+}
 </style>

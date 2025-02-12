@@ -99,7 +99,7 @@ const generateDeepUISchema = (jsonSchema: JsonSchema, schemaElements: UISchemaEl
 
   const types = deriveTypes(jsonSchema);
   if (types.length === 0) {
-    //@ts-ignore
+    //@ts-expect-error TODO
     return null;
   }
 
@@ -121,11 +121,11 @@ const generateDeepUISchema = (jsonSchema: JsonSchema, schemaElements: UISchemaEl
       // traverse properties
       const nextRef: string = currentRef + "/properties";
       Object.keys(jsonSchema.properties).map((propName) => {
-        // @ts-ignore
+        // @ts-expect-error TODO
         let value = jsonSchema.properties[propName];
         const ref = `${nextRef}/${propName}`;
         if (value.$ref !== undefined) {
-          // @ts-ignore
+          // @ts-expect-error TODO
           value = resolveSchema(rootSchema, value.$ref);
         }
         generateDeepUISchema(value, layout.elements, ref, propName, layoutType, rootSchema);
@@ -137,9 +137,9 @@ const generateDeepUISchema = (jsonSchema: JsonSchema, schemaElements: UISchemaEl
 
   if (types[0] === "array") {
     const layout: Layout = createLayout("Control");
-    // @ts-ignore
+    // @ts-expect-error TODO
     delete layout.elements;
-    // @ts-ignore
+    // @ts-expect-error TODO
     layout.scope = currentRef;
 
     schemaElements.push(layout);
@@ -150,7 +150,7 @@ const generateDeepUISchema = (jsonSchema: JsonSchema, schemaElements: UISchemaEl
     if (!Array.isArray(jsonSchema.items)) {
       const value = jsonSchema.items;
       const inArrayUiSchema = generateDeepUISchema(
-        // @ts-ignore
+        // @ts-expect-error TODO
         value,
         [],
         ref,
@@ -179,7 +179,7 @@ const generateDeepUISchema = (jsonSchema: JsonSchema, schemaElements: UISchemaEl
     case "integer":
     /* falls through */
     case "boolean":
-      const controlObject: ControlElement = createControlElement(currentRef); // eslint-disable-line
+      const controlObject: ControlElement = createControlElement(currentRef);  
       schemaElements.push(controlObject);
 
       return controlObject;
@@ -218,7 +218,7 @@ const deriveTypes = (jsonSchema: JsonSchema): string[] => {
 
 export const resolveSchema = (schema: JsonSchema, schemaPath: string, rootSchema?: JsonSchema): JsonSchema => {
   if (_.isEmpty(schema)) {
-    // @ts-ignore
+    // @ts-expect-error TODO
     return undefined;
   }
   const validPathSegments = schemaPath.split("/");
@@ -235,7 +235,7 @@ export const resolveSchema = (schema: JsonSchema, schemaPath: string, rootSchema
     try {
       return retrieveResolvableSchema(schema, resultSchema.$ref);
     } catch (e) {
-      // @ts-ignore
+      // @ts-expect-error TODO
       return retrieveResolvableSchema(rootSchema, resultSchema.$ref);
     }
   }
@@ -288,9 +288,9 @@ const isArraySchema = (schema: JsonSchema): boolean => {
  */
 export const findAllRefs = (schema: JsonSchema, result: ReferenceSchemaMap = {}, resolveTuples = false): ReferenceSchemaMap => {
   if (isObjectSchema(schema)) {
-    // @ts-ignore
+    // @ts-expect-error TODO
     Object.keys(schema.properties).forEach((key) =>
-      // @ts-ignore
+      // @ts-expect-error TODO
       findAllRefs(schema.properties[key], result)
     );
   }
@@ -301,7 +301,7 @@ export const findAllRefs = (schema: JsonSchema, result: ReferenceSchemaMap = {},
         items.forEach((child) => findAllRefs(child, result));
       }
     } else {
-      // @ts-ignore
+      // @ts-expect-error TODO
       findAllRefs(schema.items, result);
     }
   }

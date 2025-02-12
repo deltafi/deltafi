@@ -23,7 +23,7 @@
 <script setup>
 import "highlight.js/styles/lioshi.css";
 import { highlightCode } from "@/workers/highlight.worker";
-import { computed, ref, toRefs, watch, defineProps } from "vue";
+import { computed, ref, toRefs, watch } from "vue";
 
 const props = defineProps({
   highlight: {
@@ -74,6 +74,16 @@ if (highlight.value && result.value.code == null) {
 }
 </script>
 
-<style lang="scss">
-@import "@/styles/components/highlighted-code.scss";
+<style>
+.hljs {
+  overflow: auto;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  height: auto;
+}
 </style>

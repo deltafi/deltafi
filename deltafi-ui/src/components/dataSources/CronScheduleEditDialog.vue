@@ -21,7 +21,7 @@
     <div>
       <dl>
         <dd>
-          <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)"></CronLight>
+          <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)" />
           <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" />
         </dd>
       </dl>
@@ -34,7 +34,7 @@
 
 <script setup>
 import Dialog from "primevue/dialog";
-import { computed, defineProps, ref, useAttrs, watch, defineEmits } from "vue";
+import { computed, ref, useAttrs, watch } from "vue";
 import { CronLight } from "@vue-js-cron/light";
 import "@vue-js-cron/light/dist/light.css";
 
@@ -66,7 +66,7 @@ watch(
 
 const submit = async () => {
   errors.value = [];
-  let response = await setTimedDataSourceCronSchedule(model.value["name"], model.value["cronSchedule"]);
+  const response = await setTimedDataSourceCronSchedule(model.value["name"], model.value["cronSchedule"]);
   if (!_.isEmpty(_.get(response, "errors", null))) {
     errors.value.push(response["errors"][0]["message"]);
   }
@@ -86,7 +86,7 @@ const modelPosition = computed(() => {
 });
 </script>
 
-<style lang="scss">
+<style>
 .inputWidth {
   width: 60% !important;
 }

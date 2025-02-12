@@ -21,7 +21,9 @@
     <PageHeader>
       <template #header>
         <div class="align-items-center btn-group">
-          <h2 class="mb-0">{{ transformBuilderHeader }}</h2>
+          <h2 class="mb-0">
+            {{ transformBuilderHeader }}
+          </h2>
           <div v-if="model.active" class="btn-group">
             <DialogTemplate component-name="transformBuilder/TransformConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" :edit-transform="editExistingTransform" @create-transform="setTransformValues">
               <Button v-tooltip.top="`Edit Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
@@ -35,7 +37,7 @@
         <div class="col pl-2 pr-1">
           <Panel header="Subscribe" :pt="{ content: { class: 'p-1' } }">
             <template #icons>
-              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
             </template>
             <div class="px-0">
               <dd>
@@ -55,17 +57,19 @@
             <Panel header="Transform Actions" class="table-panel">
               <template #icons>
                 <button class="p-panel-header-icon p-link" @click="viewTransformActionsPicker($event)">
-                  <span class="pi pi-plus-circle"></span>
+                  <span class="pi pi-plus-circle" />
                 </button>
               </template>
               <div class="action-panel-content p-2">
                 <template v-if="transformActions.length == 0">
-                  <div class="empty-action pt-2 mb-n3">No Transform Actions</div>
+                  <div class="empty-action pt-2 mb-n3">
+                    No Transform Actions
+                  </div>
                 </template>
                 <draggable id="transformActions" v-model="transformActions" item-key="id" :sort="true" group="transformActions" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
                   <template #item="{ element, index }">
                     <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
-                      <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+                      <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
                       <div class="d-flex align-items-center justify-content-between">
                         <span class="one-line">
                           <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
@@ -93,7 +97,7 @@
         <div class="col pl-2 pr-1">
           <Panel header="Publish" :pt="{ content: { class: 'p-1' } }">
             <template #icons>
-              <Badge v-if="!_.isEmpty(validatePublish)" v-tooltip.left="{ value: `${validatePublish}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+              <Badge v-if="!_.isEmpty(validatePublish)" v-tooltip.left="{ value: `${validatePublish}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
             </template>
             <div class="px-0">
               <dd>
@@ -121,30 +125,42 @@
                 </span>
               </div>
             </template>
-            <template #empty>No Actions found.</template>
-            <template #loading>Loading Actions. Please wait.</template>
+            <template #empty>
+              No Actions found.
+            </template>
+            <template #loading>
+              Loading Actions. Please wait.
+            </template>
             <Column header-style="width: 3em">
               <template #body="{ data }">
                 <draggable ref="draggableRef" class="dragArea list-group align-items-center justify-content-center w-100 h-100" :list="[data]" :group="{ name: 'transformActions', pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
                   <template #item="{ element }">
                     <span class="d-flex align-items-center justify-content-center w-100 h-100">
-                      <i v-tooltip.bottom="`Grabbing ${element.displayName}`" :class="['p-datatable-reorderablerow-handle', 'pi pi-bars', 'd-flex', 'align-items-center', 'justify-content-center', 'w-100', 'h-100']"></i>
+                      <i v-tooltip.bottom="`Grabbing ${element.displayName}`" :class="['p-datatable-reorderablerow-handle', 'pi pi-bars', 'd-flex', 'align-items-center', 'justify-content-center', 'w-100', 'h-100']" />
                     </span>
                   </template>
                 </draggable>
               </template>
             </Column>
-            <Column field="displayName" header="Name"></Column>
+            <Column field="displayName" header="Name" />
             <Column field="pluginCoordinate.groupId" header="Group Id" :sortable="true" class="truncate-column">
               <template #body="{ data }">
-                <div v-if="data.pluginCoordinate.groupId > 16" v-tooltip.top="data.pluginCoordinate.groupId" class="truncate">{{ data.pluginCoordinate.groupId }}</div>
-                <div v-else>{{ data.pluginCoordinate.groupId }}</div>
+                <div v-if="data.pluginCoordinate.groupId > 16" v-tooltip.top="data.pluginCoordinate.groupId" class="truncate">
+                  {{ data.pluginCoordinate.groupId }}
+                </div>
+                <div v-else>
+                  {{ data.pluginCoordinate.groupId }}
+                </div>
               </template>
             </Column>
             <Column field="pluginCoordinate.version" header="Version" :sortable="true" class="truncate-column">
               <template #body="{ data }">
-                <div v-if="data.pluginCoordinate.version > 16" v-tooltip.top="data.pluginCoordinate.version" class="truncate">{{ data.pluginCoordinate.version }}</div>
-                <div v-else>{{ data.pluginCoordinate.version }}</div>
+                <div v-if="data.pluginCoordinate.version > 16" v-tooltip.top="data.pluginCoordinate.version" class="truncate">
+                  {{ data.pluginCoordinate.version }}
+                </div>
+                <div v-else>
+                  {{ data.pluginCoordinate.version }}
+                </div>
               </template>
             </Column>
           </DataTable>
@@ -171,7 +187,7 @@
             <span class="fa-solid fa-copy" />
           </Button>
         </template>
-        <pre class="textAreaWidth" style="text-align: start; white-space: pre-wrap; overflow: auto; border-bottom: none" v-html="prettyPrint(rawOutput)"></pre>
+        <pre class="textAreaWidth" style="text-align: start; white-space: pre-wrap; overflow: auto; border-bottom: none" v-html="prettyPrint(rawOutput)" />
       </Panel>
     </Dialog>
   </div>
@@ -329,7 +345,7 @@ const showHelp = (action) => {
   helpMarkdown.value = action.docsMarkdown || "# No Docs Available";
   helpHeader.value = `${action.displayName} Action Help`;
   helpVisible.value = true;
-  let actionsScrollTopId = document.getElementById("actionsScrollTopId")
+  const actionsScrollTopId = document.getElementById("actionsScrollTopId");
   if (actionsScrollTopId) {
     actionsScrollTopId.click();
   }
@@ -368,22 +384,22 @@ const transformBlueprint = ref(JSON.parse(JSON.stringify(transformTemplate)));
 const transformActions = ref([]);
 
 onBeforeMount(async () => {
-  let topics = await getAllTopicNames();
+  const topics = await getAllTopicNames();
   allTopics.value.length = 0;
   topics.forEach((topic) => allTopics.value.push(topic));
 
-  let responseFlowAction = await getPluginActionSchema();
+  const responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
   getLoadedActions();
 
-  let response = await getAllFlows();
+  const response = await getAllFlows();
   allFlowPlanData.value = response.data.getAllFlows;
 
   if (!_.isEmpty(_.get(linkedTransform.value, "transformParams", null))) {
     if (linkedTransform.value.transformParams.editExistingTransform) {
       editExistingTransform.value = true;
-      let transformInfo = {};
+      const transformInfo = {};
       transformInfo["type"] = _.toUpper(linkedTransform.value.transformParams.type);
       transformInfo["name"] = linkedTransform.value.transformParams.selectedTransformName;
       transformInfo["selectedTransform"] = _.find(allFlowPlanData.value[`${_.toLower(linkedTransform.value.transformParams.type)}`], { name: linkedTransform.value.transformParams.selectedTransformName });
@@ -439,7 +455,7 @@ const actionsDataTable = ref([]);
 const transformJsPlumbInstance = ref({});
 
 const transformBuilderHeader = computed(() => {
-  let header = model.value.name ? `Transform Builder - ${model.value.name}` : "Transform Builder";
+  const header = model.value.name ? `Transform Builder - ${model.value.name}` : "Transform Builder";
   return header;
 });
 
@@ -471,13 +487,13 @@ const setTransformValues = async (transformInfo) => {
 const cloneTransform = async (cloneTransform) => {
   let clonedTransformActions = [];
 
-  let getClonedActionsByTypes = _.cloneDeep(_.get(cloneTransform.selectedTransform, "transformActions"));
+  const getClonedActionsByTypes = _.cloneDeep(_.get(cloneTransform.selectedTransform, "transformActions"));
   if (!_.isEmpty(getClonedActionsByTypes)) {
     clonedTransformActions = clonedTransformActions.concat(getClonedActionsByTypes);
     if (!_.isEmpty(clonedTransformActions)) {
-      for (let clonedAction of clonedTransformActions) {
-        let tmpMergedActionAndActionSchema = _.cloneDeep(_.find(flattenedActions.value, { type: clonedAction.type, flowActionType: "TRANSFORM" }));
-        let mergedActionAndActionSchema = _.merge(tmpMergedActionAndActionSchema, clonedAction);
+      for (const clonedAction of clonedTransformActions) {
+        const tmpMergedActionAndActionSchema = _.cloneDeep(_.find(flattenedActions.value, { type: clonedAction.type, flowActionType: "TRANSFORM" }));
+        const mergedActionAndActionSchema = _.merge(tmpMergedActionAndActionSchema, clonedAction);
         addAction(mergedActionAndActionSchema);
       }
     }
@@ -563,7 +579,7 @@ const connectActions = async () => {
     transformJsPlumbInstance.value = jsPlumb.getInstance();
   }
 
-  let plumbIns = transformJsPlumbInstance.value;
+  const plumbIns = transformJsPlumbInstance.value;
 
   plumbIns.ready(function () {
     // Reset the action connects so we can redraw them.
@@ -573,7 +589,7 @@ const connectActions = async () => {
   });
 
   // Get all the actions in the panel.
-  var actionsInPanel = [];
+  const actionsInPanel = [];
   $(`#transformActions`)
     .find("div")
     .each(function () {
@@ -598,7 +614,7 @@ const connectActions = async () => {
       anchorType = ["Bottom", "Top"];
     }
     plumbIns.ready(function () {
-      let defaultConnectionValues = {
+      const defaultConnectionValues = {
         connector: ["Flowchart", { stub: 5 }],
         endpoint: "Blank",
         overlays: [["Arrow", { width: 8, length: 8, location: 1 }]], // overlay
@@ -620,7 +636,7 @@ const connectActions = async () => {
 };
 
 const addAction = async (action) => {
-  let addNewAction = JSON.parse(JSON.stringify(action));
+  const addNewAction = JSON.parse(JSON.stringify(action));
   addNewAction["id"] = _.uniqueId("transformActions");
 
   transformActions.value.push(addNewAction);
@@ -629,15 +645,15 @@ const addAction = async (action) => {
 
 const transformActionsChanged = () => {
   // Get all the keys from both original and rawOutput
-  let allKeys = _.union(_.keys(originalTransform.value), _.keys(rawOutput.value));
+  const allKeys = _.union(_.keys(originalTransform.value), _.keys(rawOutput.value));
 
   // Detect changes and deletions
-  let changedTransformValues = _.omitBy(_.pick(rawOutput.value, allKeys), function (v, k) {
+  const changedTransformValues = _.omitBy(_.pick(rawOutput.value, allKeys), function (v, k) {
     return JSON.stringify(originalTransform.value[k]) === JSON.stringify(v);
   });
 
   // Detect deletions (keys present in originalTransform but missing in rawOutput)
-  let deletedKeys = _.difference(_.keys(originalTransform.value), _.keys(rawOutput.value));
+  const deletedKeys = _.difference(_.keys(originalTransform.value), _.keys(rawOutput.value));
 
   // If there are no changes or deletions, return false
   if (_.isEmpty(changedTransformValues) && _.isEmpty(deletedKeys)) {
@@ -676,9 +692,9 @@ const isValidTransform = computed(() => {
   }
 
   // If there are missing required fields disable the save
-  let allTransformMissingFields = [];
-  for (let action of _.flatten(transformActions.value)) {
-    let actionMissingRequiredFields = validateAction(action);
+  const allTransformMissingFields = [];
+  for (const action of _.flatten(transformActions.value)) {
+    const actionMissingRequiredFields = validateAction(action);
     if (!_.isEmpty(actionMissingRequiredFields)) {
       allTransformMissingFields.push(actionMissingRequiredFields);
     }
@@ -714,7 +730,7 @@ const validateSubscribe = computed(() => {
     return "Not Subscribing to any Topic.";
   }
 
-  let checkIfSubscribeHasTopic = (key) =>
+  const checkIfSubscribeHasTopic = (key) =>
     model.value["subscribe"].some(
       (obj) =>
         Object.keys(obj).includes(key) &&
@@ -723,7 +739,7 @@ const validateSubscribe = computed(() => {
         })
     );
 
-  var isKeyPresent = checkIfSubscribeHasTopic("topic");
+  const isKeyPresent = checkIfSubscribeHasTopic("topic");
   // If the subscribe field isn't empty but there isn't a topic return "Not Subscribing to any Topic Name."
   if (!isKeyPresent) {
     return "Not Subscribing to any Topic Name.";
@@ -742,7 +758,7 @@ const validatePublish = computed(() => {
     return "Missing publish rules.";
   }
 
-  let checkIfPublishRulesHasTopic = (key) =>
+  const checkIfPublishRulesHasTopic = (key) =>
     model.value["publish"].rules.some(
       (obj) =>
         Object.keys(obj).includes(key) &&
@@ -752,7 +768,7 @@ const validatePublish = computed(() => {
     );
 
   // If the Publish Rules field isn't empty but there isn't a topic return "Not Publishing to any Topic Name."
-  var isKeyPresent = checkIfPublishRulesHasTopic("topic");
+  const isKeyPresent = checkIfPublishRulesHasTopic("topic");
 
   if (!isKeyPresent) {
     return "Not Publishing to any Topic Name.";
@@ -765,9 +781,9 @@ const validateAction = (action) => {
   // List of all missing Fields in the action
   let missingFieldsInAction = [];
   // requiredSchemaFields is a list of all list of all the required fields for the action.
-  let requiredSchemaFields = _.get(action.schema, "required", []);
+  const requiredSchemaFields = _.get(action.schema, "required", []);
   // completedFields is a list of all the keys of the fields that the user has filled in for the action.
-  let completedFields = _.keys(_.get(action, "parameters", {}));
+  const completedFields = _.keys(_.get(action, "parameters", {}));
 
   // Check if the action name is missing if so add it to the list of missing required fields. The action name is required and should not allow the transform to be saved.
   if (_.isEmpty(action.name)) {
@@ -781,7 +797,7 @@ const validateAction = (action) => {
   // All action names within a Transform have to be unique.
   let duplicateActionNames = "";
   if (!_.isEmpty(action.name)) {
-    let duplicateActionNamesInTransform = _.filter(_.flatten(transformActions.value), { name: action.name });
+    const duplicateActionNamesInTransform = _.filter(_.flatten(transformActions.value), { name: action.name });
     if (duplicateActionNamesInTransform.length > 1) {
       duplicateActionNames = `All action names within a Transform have to be unique. Duplicate action name: ${action.name}.`;
     }
@@ -791,7 +807,7 @@ const validateAction = (action) => {
     return null;
   }
 
-  let invalidActionFields = `${_.isEmpty(duplicateActionNames) ? "" : duplicateActionNames} ${!_.isEmpty(duplicateActionNames) && !_.isEmpty(missingFieldsInAction) ? " and " : ""} ${_.isEmpty(missingFieldsInAction) ? "" : `missing required fields: ${missingFieldsInAction.join(", ")}`}`;
+  const invalidActionFields = `${_.isEmpty(duplicateActionNames) ? "" : duplicateActionNames} ${!_.isEmpty(duplicateActionNames) && !_.isEmpty(missingFieldsInAction) ? " and " : ""} ${_.isEmpty(missingFieldsInAction) ? "" : `missing required fields: ${missingFieldsInAction.join(", ")}`}`;
 
   return _.capitalize(invalidActionFields.trim());
 };
@@ -815,7 +831,7 @@ const removeAction = (index) => {
 };
 
 const cloneAction = (clonedAction) => {
-  let addNewClonedAction = JSON.parse(JSON.stringify(clonedAction));
+  const addNewClonedAction = JSON.parse(JSON.stringify(clonedAction));
   addNewClonedAction["id"] = _.uniqueId(addNewClonedAction["flowActionType"]);
   return JSON.parse(JSON.stringify(addNewClonedAction));
 };
@@ -841,10 +857,10 @@ const getLoadedActions = () => {
       action["disableEdit"] = true;
       action["flowActionType"] = action["type"];
       action["type"] = action["name"];
-      let displayName = action.name.split(".").pop();
+      const displayName = action.name.split(".").pop();
       action["displayName"] = displayName;
       action["id"] = _.uniqueId(`${displayName}_`);
-      let coordinateGrouping = action.name.split(".").slice(0, -1).join(".");
+      const coordinateGrouping = action.name.split(".").slice(0, -1).join(".");
       action["coordinateGrouping"] = coordinateGrouping;
       action["pluginCoordinate"] = plugin.pluginCoordinates;
       action["name"] = "";
@@ -873,10 +889,10 @@ const rawOutput = computed(() => {
   if (!_.isEmpty(transformActions.value)) {
     displayOutput["transformActions"] = JSON.parse(JSON.stringify(transformActions.value));
     if (schemaVisible.value) {
-      displayOutput["transformActions"] = displayOutput["transformActions"].map(({ description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
+      displayOutput["transformActions"] = displayOutput["transformActions"].map(({ description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs);
     } else {
       displayOutput["transformActions"] = displayOutput["transformActions"].map(({ ...attrs }) => _.pick(attrs, Object.keys([transformActionsTemplate][0])));
-      displayOutput["transformActions"] = displayOutput["transformActions"].map(({ schema, description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
+      displayOutput["transformActions"] = displayOutput["transformActions"].map(({ schema, description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs);
     }
   }
 
@@ -903,7 +919,7 @@ const prettyPrint = (json) => {
     const stringifiedReplaced = stringified.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
     const regex = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g;
 
-    let test = stringifiedReplaced.replace(regex, (match) => {
+    const test = stringifiedReplaced.replace(regex, (match) => {
       let className = "number";
       if (/^"/.test(match)) {
         if (/:$/.test(match)) {
@@ -1068,6 +1084,217 @@ const publishUISchema = {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/transform-builder-page.scss";
+<style>
+.transform-builder-page {
+  .p-panel .p-panel-header {
+    height: 44px !important;
+  }
+
+  .panel-horizontal-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    padding-left: 0;
+    margin-bottom: 0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    /* This one is important */
+  }
+
+  .empty-action {
+    padding: 3px 15px;
+    border-radius: 10px;
+    position: relative;
+    margin: 0 0 10px;
+  }
+
+  .action-layout {
+    padding: 3px 15px;
+    border-radius: 10px;
+    position: relative;
+    margin: 0 0 10px;
+    width: fit-content;
+  }
+
+  .action-transition-layout {
+    padding: 3px 15px;
+    border-radius: 10px;
+    position: relative;
+    margin: 0 0 10px;
+    width: 150px;
+  }
+
+  .tooltip-width {
+    max-width: none !important;
+  }
+
+  .list-group-item.h-100.d-flex.justify-content-between.sortable-chosen.action-transition-layout {
+    width: fit-content !important;
+    border-radius: 0.25rem !important;
+    margin: 0.5rem !important;
+  }
+
+  .action-transition-layout {
+    filter: blur(1px);
+    background: #c8ebfb !important;
+    width: fit-content !important;
+
+    .p-inputtext {
+      background: #c8ebfb !important;
+      border-radius: none !important;
+      transition: unset !important;
+    }
+  }
+
+  .inputtext-border-remove {
+    border: none !important;
+  }
+
+  .inputtext-border-remove {
+    &.p-inputtext::placeholder {
+      color: red;
+    }
+  }
+
+  .action-panel-content {
+    position: relative;
+    display: block;
+    padding: none;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-bottom-right-radius: 0.25rem !important;
+    border-bottom-left-radius: 0.25rem !important;
+  }
+}
+
+.transform-builder-page-overlay {
+  .p-datatable.p-datatable-sm .p-datatable-tbody>tr>td:first-child {
+    padding: 0 !important;
+
+    .dragArea {
+      height: 33.594px !important;
+      width: 41px !important;
+    }
+  }
+
+  .p-overlaypanel-close.p-link {
+    z-index: 2100 !important;
+  }
+
+  .tree-action {
+    opacity: 0.5;
+    background: #c8ebfb;
+  }
+
+  .p-tree {
+    padding: none !important;
+    border: none !important;
+  }
+
+  /* Clears the blue box shadow around tree actions */
+  .p-tree .p-tree-container .p-treenode:focus>.p-treenode-content {
+    box-shadow: none !important;
+  }
+
+  /* Left aligns child actions within tree by adding a display none to the button class that is hidden */
+  .p-treenode-leaf>.p-treenode-content .p-tree-toggler {
+    visibility: hidden !important;
+    display: none !important;
+  }
+
+  /* Removes extra border around the action tree in the overlay panel */
+  .p-overlaypanel-content {
+    padding: 0 !important;
+  }
+
+  .p-treenode-children {
+    .p-treenode.p-treenode-leaf {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+
+      .p-treenode-content {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+    }
+  }
+
+  .action-item-width {
+    width: 17vw !important;
+  }
+
+  .tree-panel-content-height {
+    max-height: 30rem;
+    overflow: auto;
+    display: block;
+  }
+}
+
+.transform-raw-json-dialog {
+  pre {
+    padding: 3px;
+    margin: 3px;
+  }
+
+  .string {
+    color: #e91e63;
+  }
+
+  .number {
+    color: #00bcd4;
+  }
+
+  .boolean {
+    color: #ff00ff;
+  }
+
+  .null {
+    color: #9e9e9e;
+  }
+
+  .key {
+    color: #3753a9;
+  }
+}
+
+.help-button {
+  padding: 1px 4px !important;
+}
+
+.help-dialog {
+  h2 {
+    margin: 2rem 0 1rem 0 !important;
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1.2;
+    border-bottom: 1px solid gray;
+    padding-bottom: 5px;
+  }
+
+  h3 {
+    margin: 2rem 0 1rem 0 !important;
+    font-size: 1.5rem !important;
+    font-weight: 250;
+    line-height: 1.1;
+  }
+
+  table {
+    margin-bottom: 20px;
+  }
+
+  table,
+  th,
+  td {
+    border-collapse: collapse;
+    border: 1px solid black;
+  }
+
+  th,
+  td {
+    padding: 10px;
+  }
+
+  th {
+    background-color: #eee;
+  }
+}
 </style>

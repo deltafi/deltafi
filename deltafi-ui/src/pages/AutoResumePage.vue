@@ -40,7 +40,9 @@
         <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
       <DataTable v-model:selection="selectedRules" v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" selection-mode="multiple" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['dataSource', 'errorSubstring', 'action']" :row-hover="true" @row-contextmenu="onRowContextMenu" @cell-edit-complete="onCellEditComplete">
-        <template #empty> No Auto Resume rules to display </template>
+        <template #empty>
+          No Auto Resume rules to display
+        </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15%' }">
           <template #body="{ data }">
             <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="View Auto Resume Rule" dialog-width="75vw" :row-data-prop="data" view-auto-resume-rule @reload-resume-rules="fetchAutoResumeRules()">
@@ -48,9 +50,9 @@
             </DialogTemplate>
           </template>
         </Column>
-        <Column field="errorSubstring" header="Error Substring" :sortable="true"></Column>
-        <Column field="dataSource" header="Data Source" :sortable="true"></Column>
-        <Column field="action" header="Action" :sortable="true"></Column>
+        <Column field="errorSubstring" header="Error Substring" :sortable="true" />
+        <Column field="dataSource" header="Data Source" :sortable="true" />
+        <Column field="action" header="Action" :sortable="true" />
         <Column field="priority" header="Priority" :sortable="true" class="priority-column">
           <template #body="{ data, field }">
             <span v-if="data[field] === null">-</span>
@@ -83,19 +85,19 @@ import PageHeader from "@/components/PageHeader.vue";
 import useAutoResumeConfiguration from "@/composables/useAutoResumeConfiguration";
 import useAutoResumeQueryBuilder from "@/composables/useAutoResumeQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { nextTick, onMounted, ref, inject, computed } from "vue";
-import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import ContextMenu from "primevue/contextmenu";
-import Menu from "primevue/menu";
+import { nextTick, onMounted, ref, inject, computed } from "vue";
 
 const hasPermission = inject("hasPermission");
 
+import { FilterMatchMode } from "primevue/api";
 import Button from "primevue/button";
 import Column from "primevue/column";
+import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
+import Menu from "primevue/menu";
 import Panel from "primevue/panel";
 
 import _ from "lodash";
@@ -143,7 +145,7 @@ const menuItems = ref([
 const applyResume = async () => {
   let response = null;
   response = await applyResumePolicies(formatSelectedRules.value);
-  let pluralized = pluralize(formatSelectedRules.value.length, "Auto Resume Rule");
+  const pluralized = pluralize(formatSelectedRules.value.length, "Auto Resume Rule");
   if (response.data.applyResumePolicies.success) {
     notify.success(`${pluralized} Ran Successfully`, " - " + response.data.applyResumePolicies.info.join("<br/> - "));
   } else {
@@ -174,7 +176,7 @@ onMounted(async () => {
 });
 
 const fetchAutoResumeRules = async () => {
-  let autoResumeRulesResponse = await getAllResumePolicies();
+  const autoResumeRulesResponse = await getAllResumePolicies();
   autoResumeRules.value = [];
   uiAutoResumeRules.value = [];
   await nextTick();
@@ -187,7 +189,7 @@ const filters = ref({
 });
 
 const formatExportAutoResumeData = () => {
-  let autoResumeRulesList = JSON.parse(JSON.stringify(autoResumeRules.value));
+  const autoResumeRulesList = JSON.parse(JSON.stringify(autoResumeRules.value));
   // Remove the id key from route
   autoResumeRulesList.forEach((e, index) => (autoResumeRulesList[index] = _.omit(e, ["id"])));
 
@@ -195,10 +197,10 @@ const formatExportAutoResumeData = () => {
 };
 
 const exportAutoResume = () => {
-  let link = document.createElement("a");
-  let downloadFileName = "auto_resume_export_" + new Date(Date.now()).toLocaleDateString();
+  const link = document.createElement("a");
+  const downloadFileName = "auto_resume_export_" + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
-  let blob = new Blob([JSON.stringify(formatExportAutoResumeData(), null, 2)], {
+  const blob = new Blob([JSON.stringify(formatExportAutoResumeData(), null, 2)], {
     type: "application/json",
   });
   link.href = URL.createObjectURL(blob);
@@ -208,7 +210,7 @@ const exportAutoResume = () => {
 };
 
 const onCellEditComplete = async (event) => {
-  let { data, newValue, field } = event;
+  const { data, newValue, field } = event;
   if (!_.isEqual(data.priority, newValue)) {
     const resetValue = data.priority;
     data[field] = newValue;
@@ -216,7 +218,7 @@ const onCellEditComplete = async (event) => {
     uploadNotValid = validateAutoResumeRule(JSON.stringify(data));
     const errorsList = [];
     if (uploadNotValid) {
-      for (let errorMessages of uploadNotValid) {
+      for (const errorMessages of uploadNotValid) {
         errorsList.push(errorMessages.message);
       }
       notify.error(`Auto Resume Rule Validation Errors`, "Priority " + errorsList, 4000);
@@ -240,6 +242,52 @@ const onCellEditComplete = async (event) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/auto-resume-page.scss";
+<style>
+.auto-resume-page {
+  .auto-resume-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+    }
+
+    .list-item::before {
+      content: "•";
+      margin-right: 0.25rem;
+      font-weight: bold;
+    }
+
+    .auto-resume-table {
+      td.priority-column {
+        width: 7rem;
+        padding: 0 !important;
+
+        >span {
+          padding: 0.5rem !important;
+        }
+
+        .value-clickable {
+          cursor: pointer;
+          width: 100%;
+          display: flex;
+        }
+
+        .value-clickable>* {
+          flex: 0 0 auto;
+        }
+
+        .p-inputnumber {
+          padding: 0 !important;
+          margin: 0;
+
+          .p-inputtext {
+            width: 6.5rem;
+          }
+        }
+      }
+    }
+  }
+}
 </style>

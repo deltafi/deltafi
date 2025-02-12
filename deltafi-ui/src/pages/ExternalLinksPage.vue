@@ -31,8 +31,12 @@
     </PageHeader>
     <Panel header="External links" class="external-links-panel table-panel">
       <DataTable v-model:filters="filters" :value="externalLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true" data-key="name">
-        <template #empty>No External Links found</template>
-        <template #loading>Loading External Links. Please wait.</template>
+        <template #empty>
+          No External Links found
+        </template>
+        <template #loading>
+          Loading External Links. Please wait.
+        </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" view-link @reload-external-links="reloadUIConfigs()">
@@ -56,8 +60,12 @@
     </Panel>
     <Panel header="DeltaFile Links" class="external-links-panel table-panel mt-3">
       <DataTable v-model:filters="filters" :value="deltaFileLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
-        <template #empty>No DeltaFile Links found.</template>
-        <template #loading>Loading DeltaFile Links. Please wait.</template>
+        <template #empty>
+          No DeltaFile Links found.
+        </template>
+        <template #loading>
+          Loading DeltaFile Links. Please wait.
+        </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" view-link @reload-external-links="reloadUIConfigs()">
@@ -122,7 +130,7 @@ const reloadUIConfigs = async () => {
   const oldDeltaFileLinks = JSON.stringify(deltaFileLinks.value);
 
   let tries = 0;
-  let interval = setInterval(async () => {
+  const interval = setInterval(async () => {
     await fetchUiConfig(true);
     const newExternalLinks = JSON.stringify(externalLinks.value);
     const newDeltaFileLinks = JSON.stringify(deltaFileLinks.value);
@@ -135,6 +143,26 @@ const reloadUIConfigs = async () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/external-links-page.scss";
+<style>
+.external-links-page {
+  .external-links-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+    }
+
+    .list-item::before {
+      content: "•";
+      margin-right: 0.25rem;
+      font-weight: bold;
+    }
+
+    .external-links-search-txt {
+      font-size: 1rem !important;
+    }
+  }
+}
 </style>

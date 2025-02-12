@@ -17,11 +17,11 @@
 -->
 
 <template>
-  <iframe :src="src" :width="props.width" :height="props.height" frameborder="0"></iframe>
+  <iframe :src="src" :width="props.width" :height="props.height" frameborder="0" />
 </template>
 
 <script setup>
-import { computed, defineProps } from "vue";
+import { computed } from "vue";
 import useUiConfig from "@/composables/useUiConfig";
 
 const { uiConfig } = useUiConfig();
@@ -72,12 +72,12 @@ const props = defineProps({
   keyPairs: {
     type: Object,
     required: false,
-    default: () => {},
+    default: () => { },
   },
 });
 
 const src = computed(() => {
-  let params = {
+  const params = {
     ...props,
     ...props.keyPairs,
   };

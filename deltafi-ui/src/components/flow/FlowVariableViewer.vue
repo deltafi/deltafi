@@ -20,12 +20,14 @@
   <div class="flow-variable-viewer">
     <CollapsiblePanel :header="header" class="table-panel mb-3">
       <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows data-key="name">
-        <template #empty> No Variables Included </template>
-        <Column field="name" header="Name"></Column>
-        <Column field="value" header="Value"> </Column>
-        <Column field="description" header="Description"></Column>
-        <Column field="defaultValue" header="Default Value"></Column>
-        <Column field="dataType" header="Data Type"></Column>
+        <template #empty>
+          No Variables Included
+        </template>
+        <Column field="name" header="Name" />
+        <Column field="value" header="Value" />
+        <Column field="description" header="Description" />
+        <Column field="defaultValue" header="Default Value" />
+        <Column field="dataType" header="Data Type" />
       </DataTable>
     </CollapsiblePanel>
   </div>
@@ -33,7 +35,7 @@
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import { defineProps, reactive } from "vue";
+import { reactive } from "vue";
 
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";

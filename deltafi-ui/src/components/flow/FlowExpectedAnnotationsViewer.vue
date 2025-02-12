@@ -24,11 +24,11 @@
         <small v-if="newAnnotationDataPresent" id="expectedAnnotationsInputId-input-help" class="mt-2">Press enter to add to the list</small>
       </div>
       <div>
-        <ConfirmPopup></ConfirmPopup>
+        <ConfirmPopup />
         <ConfirmPopup :group="flowName">
           <template #message="slotProps">
             <div class="flex btn-group p-4">
-              <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+              <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
               <p class="pl-2" v-html="slotProps.message.message" />
             </div>
           </template>
@@ -42,7 +42,7 @@
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineEmits, defineProps, reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import _ from "lodash";
 
 import Button from "primevue/button";
@@ -107,7 +107,7 @@ const confirmationPopup = (event) => {
       notify.info(`Updating Read Receipts`, `Updating Read Receipts for ${flowName}.`, 3000);
       submitNewReadReceipts();
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 

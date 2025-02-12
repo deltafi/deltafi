@@ -24,13 +24,17 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="filteredCause.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="filteredCause.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
     <DataTable id="filteredSummaryTable" v-model:selection="selectedFilters" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredCause" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-      <template #empty>No results to display.</template>
-      <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Flow" :sortable="true" class="filename-column"> </Column>
-      <Column field="type" header="Flow Type" :sortable="true"> </Column>
+      <template #empty>
+        No results to display.
+      </template>
+      <template #loading>
+        Loading. Please wait...
+      </template>
+      <Column field="flow" header="Flow" :sortable="true" class="filename-column" />
+      <Column field="type" header="Flow Type" :sortable="true" />
       <Column field="count" header="Count" :sortable="true" />
       <Column field="message" header="Cause" :sortable="true">
         <template #body="{ data }">
@@ -52,7 +56,7 @@ import ContextMenu from "primevue/contextmenu";
 import Paginator from "primevue/paginator";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 import useFiltered from "@/composables/useFiltered";
-import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -119,12 +123,11 @@ const showAllTab = (flowName, flowType, cause) => {
 };
 
 const filterSelectedDids = computed(() => {
-  let dids = selectedFilters.value.map((selectedFiltered) => {
+  const dids = selectedFilters.value.map((selectedFiltered) => {
     return selectedFiltered.dids;
   });
-  let allDids = [].concat.apply([], dids);
 
-  return [...new Set(allDids)];
+  return [...new Set(dids)];
 });
 
 const fetchFilteredMessages = async () => {
@@ -188,16 +191,16 @@ const onPage = async (event) => {
 };
 
 const getPersistedParams = async () => {
-  let state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   perPage.value = state.value.perPage || 20;
 };
 
 const setPersistedParams = () => {
-  let state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   state.value = {
     perPage: perPage.value,
   };
 };
 </script>
 
-<style lang="scss"></style>
+<style />

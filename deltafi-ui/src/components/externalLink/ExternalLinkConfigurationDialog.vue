@@ -23,7 +23,9 @@
         <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
           <ul>
             <div v-for="(error, key) in errorsList" :key="key">
-              <li class="text-wrap text-break">{{ error }}</li>
+              <li class="text-wrap text-break">
+                {{ error }}
+              </li>
             </div>
           </ul>
         </Message>
@@ -57,7 +59,7 @@
 
 <script setup>
 import useExternalLinks from "@/composables/useExternalLinks";
-import { computed, defineEmits, defineProps, reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { useMounted } from "@vueuse/core";
 import { EnumType } from "json-to-graphql-query";
 
@@ -139,7 +141,7 @@ const clearErrors = () => {
 };
 
 const submit = () => {
-  let errorMessages = [];
+  const errorMessages = [];
   if (!selectedLinkType.value) {
     errorMessages.push("Link type is a required field");
   }
@@ -162,9 +164,9 @@ const submit = () => {
   }
 
   if (_.isEqual(selectedLinkType.value, "DeltaFile Link")) {
-    model.value.linkType = new EnumType("DELTAFILE_LINK")
+    model.value.linkType = new EnumType("DELTAFILE_LINK");
   } else if (_.isEqual(selectedLinkType.value, "External Link")) {
-    model.value.linkType = new EnumType("EXTERNAL")
+    model.value.linkType = new EnumType("EXTERNAL");
   }
   saveLink(model.value);
   closeDialogCommand.command();
@@ -172,6 +174,26 @@ const submit = () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/externalLink/external-link-configuration-dialog.scss";
+<style>
+.external-link-body {
+  width: 98%;
+
+  .external-link-panel {
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+  }
+
+  .inputWidth {
+    width: 90% !important;
+  }
+}
 </style>

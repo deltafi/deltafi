@@ -22,7 +22,7 @@
 
 <script setup>
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineProps } from "vue";
+import { computed } from "vue";
 
 const { formattedBytes: formatBytes } = useUtilFunctions();
 
@@ -30,7 +30,7 @@ const props = defineProps({
   bytes: {
     type: Number,
     required: true,
-  }
+  },
 });
 
 const tooltip = computed(() => {
@@ -40,5 +40,4 @@ const tooltip = computed(() => {
 const formattedBytes = computed(() => {
   return formatBytes(props.bytes);
 });
-
 </script>

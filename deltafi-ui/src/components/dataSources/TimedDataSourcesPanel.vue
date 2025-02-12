@@ -20,8 +20,12 @@
   <div class="timed-data-source-panel">
     <CollapsiblePanel header="Timed Data Sources" class="table-panel pb-3">
       <DataTable :loading="showLoading" :value="timedDataSources" data-key="name" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines data-sources-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
-        <template #empty>No Timed Data Sources found.</template>
-        <template #loading>Loading Timed Data Sources. Please wait.</template>
+        <template #empty>
+          No Timed Data Sources found.
+        </template>
+        <template #loading>
+          Loading Timed Data Sources. Please wait.
+        </template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
@@ -43,8 +47,8 @@
             </div>
           </template>
         </Column>
-        <Column header="Description" field="description" :sortable="true"></Column>
-        <Column header="Publish" field="topic" :sortable="true"></Column>
+        <Column header="Description" field="description" :sortable="true" />
+        <Column header="Publish" field="topic" :sortable="true" />
         <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
           <template #body="{ data, field }">
             <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false }) + '\n\nClick to edit'" class="cursor-pointer" @click="editCronSchedule(data)">{{ data[field] }} </span>
@@ -79,7 +83,7 @@
     <Dialog v-model:visible="viewDialogVisible" :style="{ width: '30vw' }" :header="dialogHeader" :modal="true" :dismissable-mask="true" class="p-fluid timed-data-source-dialog">
       <div v-for="(label, fieldName) in fields" :key="fieldName" class="mb-3">
         <strong>{{ label }}</strong>
-        <br />
+        <br>
         <span v-if="fieldName == 'lastRun'">
           <Timestamp :timestamp="activeAction.lastRun" />
         </span>
@@ -119,12 +123,12 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
 import StatusBadge from "@/components/dataSources/StatusBadge.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
-import PermissionedRouterLink from "@/components/PermissionedRouterLink";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import TimedDataSourceTestModeInputSwitch from "@/components/dataSources/TimedDataSourceTestModeInputSwitch.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineEmits, onMounted, inject, ref } from "vue";
+import { computed, onMounted, inject, ref } from "vue";
 import CronScheduleEditDialog from "@/components/dataSources/CronScheduleEditDialog.vue";
 
 const cronEditView = ref({
@@ -163,7 +167,7 @@ const onEditComplete = async (event) => {
       data[field] = resetValue;
     }
   } else if (field === "maxErrors" && !_.isEqual(data.maxErrors, newValue)) {
-    let sendValue = _.isEqual(newValue, null) ? -1 : newValue;
+    const sendValue = _.isEqual(newValue, null) ? -1 : newValue;
     const resetValue = data.maxErrors;
     data[field] = newValue;
     await setTimedDataSourceMaxErrors(data.name, sendValue);
@@ -220,7 +224,7 @@ const showAction = (actionName) => {
 // End Dialog
 
 const cloneDataSource = (data) => {
-  let clonedDataSourceObject = _.cloneDeepWith(data);
+  const clonedDataSourceObject = _.cloneDeepWith(data);
   clonedDataSourceObject["name"] = "";
   return clonedDataSourceObject;
 };
@@ -249,7 +253,7 @@ onMounted(() => {
 defineExpose({ refresh });
 </script>
 
-<style lang="scss">
+<style>
 .timed-data-source-panel {
   .table-panel {
     .data-sources-table {

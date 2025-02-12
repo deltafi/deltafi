@@ -19,16 +19,16 @@
 <template>
   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <slot name="header">
-      <h2 class="mb-0">{{ props.heading }}</h2>
+      <h2 class="mb-0">
+        {{ props.heading }}
+      </h2>
     </slot>
 
-    <slot></slot>
+    <slot />
   </div>
 </template>
 
 <script setup>
-import { defineProps } from "vue";
-
 const props = defineProps({
   heading: {
     type: String,

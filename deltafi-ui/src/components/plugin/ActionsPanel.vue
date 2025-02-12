@@ -19,9 +19,11 @@
 <template>
   <CollapsiblePanel header="Actions" class="table-panel">
     <DataTable :value="props.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" data-key="name">
-      <template #empty>No actions included</template>
-      <Column field="name" header="Name" sortable></Column>
-      <Column field="description" header="Description"></Column>
+      <template #empty>
+        No actions included
+      </template>
+      <Column field="name" header="Name" sortable />
+      <Column field="description" header="Description" />
     </DataTable>
   </CollapsiblePanel>
 </template>
@@ -29,8 +31,7 @@
 <script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import CollapsiblePanel from "@/components/CollapsiblePanel";
-import { defineProps } from "vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
 const props = defineProps({
   actions: {

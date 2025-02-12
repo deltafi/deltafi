@@ -31,7 +31,7 @@
 <script setup>
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useFlowConfiguration from "@/composables/useFlowConfiguration";
 import { computed, onMounted } from "vue";
 

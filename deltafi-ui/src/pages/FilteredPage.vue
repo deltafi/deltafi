@@ -21,7 +21,7 @@
     <PageHeader heading="Filtered">
       <div class="time-range btn-toolbar mb-2 mb-md-0 align-items-center">
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mx-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
-          <i class="pi pi-filter" style="font-size: 1rem"></i>
+          <i class="pi pi-filter" style="font-size: 1rem" />
         </Button>
         <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
         <Dropdown v-model="causeSelected" placeholder="Select an Filter Cause" show-clear :options="uniqueMessages" class="deltafi-input-field ml-3 flow-dropdown" />
@@ -29,7 +29,7 @@
       </div>
     </PageHeader>
     <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
-    <TabView v-if="showTabs" v-model:activeIndex="activeTab">
+    <TabView v-if="showTabs" v-model:active-index="activeTab">
       <TabPanel header="All">
         <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" @refresh-filters="onRefresh()" />
       </TabPanel>
@@ -57,7 +57,9 @@ import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
 import useFiltered from "@/composables/useFiltered";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+
+import _ from "lodash";
 
 const filterSummaryMessagePanel = ref();
 const filterSummaryFlowPanel = ref();
@@ -81,7 +83,7 @@ const flowTypeMap = {
   REST_DATA_SOURCE: "restDataSource",
   TIMED_DATA_SOURCE: "timedDataSource",
   DATA_SINK: "dataSink",
-}
+};
 
 const setPersistedParams = () => {
   // Session Storage
@@ -106,14 +108,14 @@ const formatFlowNames = () => {
     restDataSource: "Rest Data Sources",
     timedDataSource: "Timed Data Sources",
     transform: "Transforms",
-    egress: "Data Sinks"
+    egress: "Data Sinks",
   };
   for (const [key, label] of Object.entries(map)) {
     if (!_.isEmpty(allFlowNames.value[key])) {
       let flows = _.map(allFlowNames.value[key], (name) => {
-        return { name: name, type: key }
-      })
-      flows = _.sortBy(flows, ['name']);
+        return { name: name, type: key };
+      });
+      flows = _.sortBy(flows, ["name"]);
       formattedFlows.value.push({ label: label, sources: flows });
     }
   }
@@ -135,8 +137,8 @@ const getPersistedParams = async () => {
     if (params.flowName && params.flowType) {
       flowSelected.value = {
         name: params.flowName,
-        type: params.flowType
-      }
+        type: params.flowType,
+      };
     }
     causeSelected.value = causeSelected.value = params.cause ? decodeURIComponent(params.cause) : filteredPanelState.value.causeSelected;
   } else {
@@ -154,7 +156,7 @@ const setupWatchers = () => {
 };
 
 const refreshButtonIcon = computed(() => {
-  let classes = ["fa", "fa-sync-alt"];
+  const classes = ["fa", "fa-sync-alt"];
   if (loading.value) classes.push("fa-spin");
   return classes.join(" ");
 });
@@ -163,7 +165,7 @@ const showAllTab = (flowName, flowType, cause) => {
   if (flowName && flowType) {
     flowSelected.value = {
       name: flowName,
-      type: flowTypeMap[flowType]
+      type: flowTypeMap[flowType],
     };
   }
 
@@ -193,10 +195,9 @@ onMounted(async () => {
   showTabs.value = true;
   setupWatchers();
 });
-
 </script>
 
-<style lang="scss">
+<style>
 .filtered-page {
   .p-autocomplete-empty-message {
     margin-left: 0.5rem;
@@ -239,7 +240,7 @@ onMounted(async () => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
     color: #ffffff;
 
     a,

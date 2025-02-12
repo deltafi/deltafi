@@ -29,13 +29,15 @@
       </div>
     </div>
     <template #footer>
-      <Button class="p-button-primary" :disabled="!did || !validDID" @click="importFromDID">Import</Button>
+      <Button class="p-button-primary" :disabled="!did || !validDID" @click="importFromDID">
+        Import
+      </Button>
     </template>
   </Dialog>
 </template>
 
 <script setup>
-import { ref, computed, defineEmits } from "vue";
+import { ref, computed } from "vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
@@ -56,7 +58,7 @@ const importFromDID = async () => {
     const metadata = Object.entries(raw.flows[0].actions[0].metadata).map(([key, value]) => {
       return { key, value };
     })
-    let dataValue = {
+    const dataValue = {
       metadata: metadata,
       dataSource: raw.dataSource,
     }

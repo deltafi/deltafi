@@ -21,14 +21,14 @@
     <PageHeader heading="Versions" />
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
     <div v-for="group in groups" v-else :key="group">
-      <VersionsPanel v-if="verionsByGroup[group]" class="mb-3" :header="group" :versions="verionsByGroup[group]"></VersionsPanel>
+      <VersionsPanel v-if="verionsByGroup[group]" class="mb-3" :header="group" :versions="verionsByGroup[group]" />
     </div>
   </div>
 </template>
 
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import VersionsPanel from "@/components/VersionsPanel.vue";
 import useVersion from "@/composables/useVersion";
 import useVersions from "@/composables/useVersions";

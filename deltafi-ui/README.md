@@ -55,7 +55,7 @@ For example, to run the app and point the proxy at your local DeltaFi instance, 
 #### Mocking
 To run the dev server with mocking enabled, run:
 
-    VUE_APP_MOCK_RESPONSES=successResponse npm run dev
+    VITE_MOCK_RESPONSES=successResponse npm run dev
 
 To update mockServiceWorker.js to a newer version add lines to package.json file:
 

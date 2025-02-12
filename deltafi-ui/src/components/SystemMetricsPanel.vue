@@ -27,7 +27,7 @@
     </template>
     <div class="row">
       <div v-for="(panelId, header) in grafanaPanelIdMap" :key="panelId" :class="`col-6 chart`">
-        <GrafanaChartWrapper :key="refreshKey" :header="header" :panel-id="panelId" :key-pairs="keyPairs" refresh-minutes="5" :timeframe-minutes="timeFrame.minutes" :dashboard-id="uiChartID" />
+        <GrafanaChartWrapper :key="refreshKey" :header="header" :panel-id="panelId" :key-pairs="keyPairs" :refresh-minutes="5" :timeframe-minutes="timeFrame.minutes" :dashboard-id="uiChartID" />
       </div>
     </div>
   </Panel>
@@ -43,7 +43,7 @@ import { useStorage, StorageSerializers } from "@vueuse/core";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 
 const { data: nodes, fetch: fetchSystemMetrics } = useSystemMetrics();
-const uiChartID = computed(() => node.value == 'All' ? "ui-charts" : "ui-charts-by-node");
+const uiChartID = computed(() => (node.value == "All" ? "ui-charts" : "ui-charts-by-node"));
 const refreshDashboard = () => (refreshKey.value += 1);
 const refreshKey = ref(0);
 
@@ -93,7 +93,7 @@ const getHostNames = computed(() => {
 });
 
 const optionsDropdown = computed(() => {
-  let options = getHostNames.value;
+  const options = getHostNames.value;
   options.unshift("All");
   return options;
 });
@@ -103,7 +103,7 @@ watch(timeFrame, () => {
 });
 </script>
 
-<style lang="scss">
+<style>
 .metrics-panel {
   .p-panel-content {
     padding-bottom: 0.25rem !important;

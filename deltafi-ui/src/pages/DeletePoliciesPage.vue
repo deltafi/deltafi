@@ -37,7 +37,9 @@
         </span>
       </template>
       <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">
-        <template #empty> No delete policies to display </template>
+        <template #empty>
+          No delete policies to display
+        </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
             <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="25vw" :row-data-prop="data" view-delete-policy @reload-delete-policies="fetchDeletePolicies()">
@@ -45,7 +47,7 @@
             </DialogTemplate>
           </template>
         </Column>
-        <Column field="flow" header="Data Source" :sortable="true" :style="{ width: '30%' }"></Column>
+        <Column field="flow" header="Data Source" :sortable="true" :style="{ width: '30%' }" />
         <Column field="__typename" header="Type" :sortable="true" :style="{ width: '10%' }">
           <template #body="{ data }">
             <i v-tooltip.right="deletePolicyType.get(data.__typename).tooltip" :class="deletePolicyType.get(data.__typename).class" />
@@ -68,7 +70,7 @@
 </template>
 
 <script setup>
-import DeletePolicyImportFile from "@/components/deletePolicy/DeletePolicyImportFile";
+import DeletePolicyImportFile from "@/components/deletePolicy/DeletePolicyImportFile.vue";
 import DeletePolicyRemoveButton from "@/components/deletePolicy/DeletePolicyRemoveButton.vue";
 import DeletePolicyStateInputSwitch from "@/components/deletePolicy/DeletePolicyStateInputSwitch.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
@@ -93,7 +95,7 @@ onMounted(async () => {
 });
 
 const fetchDeletePolicies = async () => {
-  let deletePoliciesResponse = await getDeletePolicies();
+  const deletePoliciesResponse = await getDeletePolicies();
   deletePolicies.value = [];
   await nextTick();
   deletePolicies.value = deletePoliciesResponse.data.getDeletePolicies;
@@ -119,8 +121,8 @@ const uiDeletePoliciesList = computed(() => {
 
 const formatExportPolicyData = () => {
   // Separate the two types of policies into their own list
-  let TimedDeletePolicyList = deletePolicies.value.filter((e) => e.__typename === "TimedDeletePolicy");
-  let DiskSpaceDeletePolicyList = deletePolicies.value.filter((e) => e.__typename === "DiskSpaceDeletePolicy");
+  const TimedDeletePolicyList = deletePolicies.value.filter((e) => e.__typename === "TimedDeletePolicy");
+  const DiskSpaceDeletePolicyList = deletePolicies.value.filter((e) => e.__typename === "DiskSpaceDeletePolicy");
 
   // Remove the __typename key from policies
   TimedDeletePolicyList.forEach((e, index) => (TimedDeletePolicyList[index] = _.omit(e, ["__typename"])));
@@ -130,17 +132,17 @@ const formatExportPolicyData = () => {
   TimedDeletePolicyList.forEach((e, index) => (TimedDeletePolicyList[index] = _.omit(e, ["id"])));
   DiskSpaceDeletePolicyList.forEach((e, index) => (DiskSpaceDeletePolicyList[index] = _.omit(e, ["id"])));
 
-  let formattedDeletePolicies = {};
+  const formattedDeletePolicies = {};
   formattedDeletePolicies["timedPolicies"] = TimedDeletePolicyList;
   formattedDeletePolicies["diskSpacePolicies"] = DiskSpaceDeletePolicyList;
   return formattedDeletePolicies;
 };
 
 const exportDeletePolicies = () => {
-  let link = document.createElement("a");
-  let downloadFileName = "delete_policy_export_" + new Date(Date.now()).toLocaleDateString();
+  const link = document.createElement("a");
+  const downloadFileName = "delete_policy_export_" + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
-  let blob = new Blob([JSON.stringify(formatExportPolicyData(), null, 2)], {
+  const blob = new Blob([JSON.stringify(formatExportPolicyData(), null, 2)], {
     type: "application/json",
   });
   link.href = URL.createObjectURL(blob);
@@ -150,6 +152,32 @@ const exportDeletePolicies = () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/delete-policies-page.scss";
+<style>
+.delete-policies-page {
+  .delete-policy-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+    }
+  }
+
+  .delete-policy-table {
+    td.deletePolicy-state-column {
+      padding: 0 !important;
+
+      .p-inputswitch {
+        padding: 0.25rem !important;
+        margin: 0.25rem 0 0 0.25rem !important;
+      }
+
+      .p-button {
+        padding: 0.25rem !important;
+        margin: 0 0 0 0.25rem !important;
+      }
+    }
+  }
+}
 </style>

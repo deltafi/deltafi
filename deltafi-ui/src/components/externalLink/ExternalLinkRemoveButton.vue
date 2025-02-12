@@ -18,11 +18,11 @@
 
 <template>
   <span>
-    <ConfirmPopup></ConfirmPopup>
+    <ConfirmPopup />
     <ConfirmPopup :group="rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
           <p class="pl-2">
             {{ slotProps.message.message }}
           </p>
@@ -36,7 +36,7 @@
 <script setup>
 import useExternalLinks from "@/composables/useExternalLinks";
 import useNotifications from "@/composables/useNotifications";
-import { defineEmits, defineProps, reactive } from "vue";
+import { reactive } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
 import Button from "primevue/button";
@@ -73,12 +73,12 @@ const confirmationPopup = (event, linkName, linkId) => {
       notify.info(`Removing ${rowLinkType}`, `Removing link ${linkName}.`, 3000);
       confirmedRemoveLink(linkName, linkId);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
 const confirmedRemoveLink = async (linkName, linkId) => {
-  let response = await removeLink(linkId);
+  const response = await removeLink(linkId);
   if (!_.get(response.data, "removeLink")) {
     notify.error(`Removing ${rowLinkType} failed`, `Unable to remove ${linkName}.`, 4000);
   }

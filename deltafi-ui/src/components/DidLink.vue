@@ -20,13 +20,13 @@
   <span ref="link" class="cursor-pointer">
     <router-link class="monospace cursor-pointer" :to="{ path: path }">{{ shortDid }}</router-link>
     <span v-tooltip.right="'Copy full DID to clipboard'" :style="{ visibility: isHovered ? 'visible' : 'hidden' }" class="copy-link" @click.stop="onCopy($event)">
-      <i :class="copyLinkIconClass"></i>
+      <i :class="copyLinkIconClass" />
     </span>
   </span>
 </template>
 
 <script setup>
-import { defineProps, computed, ref } from "vue";
+import {computed, ref } from "vue";
 import { useElementHover } from '@vueuse/core'
 import { useClipboard } from '@vueuse/core'
 import useNotifications from "@/composables/useNotifications";

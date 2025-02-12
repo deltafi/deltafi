@@ -20,7 +20,7 @@
   <span>
     <Tag v-tooltip.bottom="'Click for more info'" class="status-tag" :icon="icon(computedStatus.code)" :severity="tagSeverity(computedStatus.code)" :value="computedStatus.state" @click="openStatusDialog()" />
     <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{ width: '50vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" class="status-dialog">
-      <DataTable v-model:expandedRows="rowsExpanded" :value="computedStatus.checks" data-key="description" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines status-table" @row-collapse="onRowCollapse" @row-expand="onRowExpand">
+      <DataTable v-model:expanded-rows="rowsExpanded" :value="computedStatus.checks" data-key="description" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines status-table" @row-collapse="onRowCollapse" @row-expand="onRowExpand">
         <Column :expander="true" header-style="width: 3rem" class="expander-col" />
         <Column field="code" header="Status" class="severity-col">
           <template #body="slotProps">
@@ -101,7 +101,7 @@ const statusBuilder = (code, state, checkCode, checkDescription, checkMessage, t
 };
 
 const onRowCollapse = (event) => {
-  let index = manRowsExpanded.value.map((e) => e.description).indexOf(event.data.description);
+  const index = manRowsExpanded.value.map((e) => e.description).indexOf(event.data.description);
   if (index >= 0) {
     manRowsExpanded.value.splice(index, 1);
   } else {
@@ -110,7 +110,7 @@ const onRowCollapse = (event) => {
 };
 
 const onRowExpand = (event) => {
-  let index = manRowsCollapsed.value.map((e) => e.description).indexOf(event.data.description);
+  const index = manRowsCollapsed.value.map((e) => e.description).indexOf(event.data.description);
   if (index >= 0) {
     manRowsCollapsed.value.splice(index, 1);
   } else {
@@ -151,7 +151,7 @@ serverSentEvents.addEventListener("status", (event) => {
   try {
     status.value = JSON.parse(event.data);
   } catch (error) {
-    console.error(`Failed to parse SSE status data: ${event.data}`)
+    console.error(`Failed to parse SSE status data: ${event.data}`);
   }
   if (showStatusDialog.value) {
     setExpanded();
@@ -159,7 +159,7 @@ serverSentEvents.addEventListener("status", (event) => {
 });
 
 const isError = (code) => {
-  let index = manRowsCollapsed.value.map((e) => e.description).indexOf(code.description);
+  const index = manRowsCollapsed.value.map((e) => e.description).indexOf(code.description);
   if (code.code > 0 && index < 0) {
     return code;
   }
@@ -175,18 +175,18 @@ const openStatusDialog = async () => {
 };
 
 const tagSeverity = (code) => {
-  let severities = ["success", "warning", "danger"];
+  const severities = ["success", "warning", "danger"];
   return severities[code] || "info";
 };
 
 const messageSeverity = (code) => {
-  let severities = ["success", "warn", "error"];
+  const severities = ["success", "warn", "error"];
   return severities[code] || "info";
 };
 
 const icon = (code) => {
-  let icons = ["check", "exclamation-triangle", "times", "spin pi-spinner"];
-  let icon = icons[code] || "question-circle";
+  const icons = ["check", "exclamation-triangle", "times", "spin pi-spinner"];
+  const icon = icons[code] || "question-circle";
   return `pi pi-${icon}`;
 };
 
@@ -195,6 +195,41 @@ const markdown = (source) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/status-badge.scss";
+<style>
+.status-tag {
+  cursor: pointer;
+}
+
+.status-dialog {
+  .p-dialog-content {
+    padding: 0.5rem !important;
+  }
+}
+
+.status-table {
+  .timestamp-column {
+    font-size: 90%;
+    width: 14rem !important;
+  }
+
+  td.expander-col {
+    padding: 0 0.5rem !important;
+  }
+
+  td.severity-col {
+    padding: 0 0.5rem !important;
+    width: 1rem;
+  }
+
+  .message {
+    margin: 0.5rem;
+  }
+
+  .message pre {
+    background-color: #333333;
+    color: #dddddd;
+    padding: 1em;
+    border-radius: 4px;
+  }
+}
 </style>

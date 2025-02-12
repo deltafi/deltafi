@@ -20,8 +20,10 @@
   <div class="events-page">
     <PageHeader heading="Events">
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
-        <CustomCalendar ref="customCalendarRef" @update:start-time-date:end-time-date="updateInputDateTime"></CustomCalendar>
+        <Button class="p-button-text p-button-sm p-button-secondary" disabled>
+          {{ shortTimezone() }}
+        </Button>
+        <CustomCalendar ref="customCalendarRef" @update:start-time-date:end-time-date="updateInputDateTime" />
         <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="refreshEventsData()" />
       </div>
     </PageHeader>
@@ -34,15 +36,21 @@
         </span>
       </template>
       <DataTable ref="eventsTable" v-model:filters="filters" v-model:selection="selectedEvents" filter-display="menu" :value="events" data-key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true" sort-field="timestamp" :sort-order="-1" :loading="loading">
-        <template #empty> No events to display </template>
-        <template #loading>Loading events. Please wait.</template>
-        <Column selection-mode="multiple" header-style="width: 3rem"></Column>
+        <template #empty>
+          No events to display
+        </template>
+        <template #loading>
+          Loading events. Please wait.
+        </template>
+        <Column selection-mode="multiple" header-style="width: 3rem" />
         <Column field="severity" header="Severity" filter-field="severity" :show-filter-match-modes="false" :filter-menu-style="{ width: '14rem' }" sortable class="severity-col">
           <template #body="{ data }">
             <EventSeverityBadge :severity="data.severity" style="width: 6rem" />
           </template>
           <template #filter="{ filterModel }">
-            <div class="mb-3 font-bold">Severity Picker</div>
+            <div class="mb-3 font-bold">
+              Severity Picker
+            </div>
             <MultiSelect v-model="filterModel.value" :options="severityOptions" placeholder="Any" class="p-column-filter">
               <template #option="slotProps">
                 <span>{{ slotProps.option }}</span>
@@ -62,7 +70,9 @@
             <Tag v-tooltip.top="'Source'" :value="data.source" class="p-tag-secondary" :rounded="true" icon="pi pi-arrow-circle-right" />
           </template>
           <template #filter="{ filterModel }">
-            <div class="mb-3 font-bold">Source Picker</div>
+            <div class="mb-3 font-bold">
+              Source Picker
+            </div>
             <MultiSelect v-model="filterModel.value" :options="sourceOptions" placeholder="Any" class="p-column-filter">
               <template #option="slotProps">
                 <span>{{ slotProps.option }}</span>
@@ -82,7 +92,7 @@
             </span>
           </template>
           <template #body="{ data }">
-            <i v-if="data.notification" class="pi pi-check"></i>
+            <i v-if="data.notification" class="pi pi-check" />
           </template>
           <template #filter="{ filterModel }">
             <TriStateCheckbox v-model="filterModel.value" />
@@ -99,7 +109,7 @@
             </span>
           </template>
           <template #body="{ data }">
-            <i v-if="data.acknowledged" class="pi pi-check"></i>
+            <i v-if="data.acknowledged" class="pi pi-check" />
           </template>
           <template #filter="{ filterModel }">
             <TriStateCheckbox v-model="filterModel.value" />
@@ -110,7 +120,7 @@
           </template>
         </Column>
       </DataTable>
-      <EventViewerDialog v-model:visible="showEventDialog" :event="activeEvent"></EventViewerDialog>
+      <EventViewerDialog v-model:visible="showEventDialog" :event="activeEvent" />
     </Panel>
   </div>
 </template>
@@ -185,7 +195,7 @@ const updateInputDateTime = async (startDate, endDate) => {
 };
 
 const eventCount = computed(() => {
-  let count = _.get(eventsTable.value, "totalRecordsLength", 0);
+  const count = _.get(eventsTable.value, "totalRecordsLength", 0);
   return " (" + count + ")";
 });
 
@@ -302,7 +312,7 @@ watch(endTimeDate, () => {
 });
 </script>
 
-<style lang="scss">
+<style>
 .events-page {
   .input-area-width {
     width: 335px;
@@ -320,6 +330,10 @@ watch(endTimeDate, () => {
 
   .vdpr-datepicker__switch {
     margin-top: 6px;
+  }
+
+  .vdpr-datepicker {
+    position: relative;
   }
 
   .events-panel {

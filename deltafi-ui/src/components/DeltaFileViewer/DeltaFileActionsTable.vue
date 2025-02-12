@@ -38,7 +38,9 @@
         </template>
       </Column>
       <Column field="elapsed" header="Elapsed" class="elapsed-column" :sortable="true">
-        <template #body="action">{{ action.data.elapsed }}</template>
+        <template #body="action">
+          {{ action.data.elapsed }}
+        </template>
       </Column>
       <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Content" class="content-column">
         <template #body="{ data: action }">
@@ -70,7 +72,9 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, reactive, defineProps, inject } from "vue";
+import { computed, reactive, inject } from "vue";
+
+import _ from "lodash";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
@@ -120,8 +124,8 @@ const metadataAsArray = (metadataObject) => {
 
 const deletedMetadata = (deletedMetadataActionName, deletedMetadataActionDeletedKeys) => {
   if (_.isEmpty(deletedMetadataActionDeletedKeys)) return null;
-  let deletedMetadataList = [];
-  let deletedMetadataObject = {};
+  const deletedMetadataList = [];
+  const deletedMetadataObject = {};
   deletedMetadataObject["name"] = deletedMetadataActionName;
   deletedMetadataObject["deleteMetadataKeys"] = deletedMetadataActionDeletedKeys;
   deletedMetadataList.push(deletedMetadataObject);
@@ -135,7 +139,7 @@ const rowClass = (action) => {
 };
 
 const rowClick = (event) => {
-  let action = event.data;
+  const action = event.data;
   if (!["ERROR", "RETRIED", "FILTERED"].includes(action.state)) return;
 
   errorViewer.visible = true;
@@ -143,6 +147,60 @@ const rowClick = (event) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/deltafile-actions-panel.scss";
+<style>
+.actions-panel {
+  tr.action-error {
+    cursor: pointer !important;
+  }
+
+  .content-column,
+  .metadata-column {
+    width: 1%;
+    padding: 0 0.5rem !important;
+
+    .content-button {
+      cursor: pointer !important;
+      padding: 0.1rem 0.4rem;
+      margin: 0;
+      color: #333333;
+    }
+
+    .content-button:hover {
+      color: #666666 !important;
+
+      .p-button-label {
+        text-decoration: none !important;
+      }
+    }
+
+    .content-button:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+  .state-column {
+    width: 8rem;
+  }
+
+  .elapsed-column {
+    width: 6rem;
+  }
+
+  .timestamp-column {
+    width: 16rem;
+  }
+
+  .flow-name-column {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    .branch {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 1.5rem;
+      color: #6c757d;
+      margin-right: 0.25rem;
+    }
+  }
+}
 </style>

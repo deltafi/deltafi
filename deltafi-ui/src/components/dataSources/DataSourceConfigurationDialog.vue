@@ -24,7 +24,9 @@
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
-                <li class="text-wrap text-break">{{ error }}</li>
+                <li class="text-wrap text-break">
+                  {{ error }}
+                </li>
               </div>
             </ul>
           </Message>
@@ -45,7 +47,7 @@
           <template v-if="_.isEqual(model['dataSourceType'], 'Timed Data Source')">
             <dt>Cron Schedule*</dt>
             <dd>
-              <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)"></CronLight>
+              <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)" />
               <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" />
             </dd>
             <dt>Action*</dt>
@@ -65,7 +67,9 @@
               </template>
               <dd v-else>
                 <div class="px-2">
-                  <Message severity="info" :closable="false">No action variables available</Message>
+                  <Message severity="info" :closable="false">
+                    No action variables available
+                  </Message>
                 </div>
               </dd>
             </template>
@@ -91,7 +95,7 @@ import useDataSource from "@/composables/useDataSource";
 import useFlowActions from "@/composables/useFlowActions";
 import useTopics from "@/composables/useTopics";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, inject, nextTick, onMounted, onBeforeMount, onUnmounted, provide, reactive, ref } from "vue";
+import { computed, inject, nextTick, onMounted, onBeforeMount, onUnmounted, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
@@ -191,14 +195,14 @@ const model = computed({
 const flattenedActionsTypes = ref([]);
 
 const getTimedIngressActions = async () => {
-  let tmpFlattenedActionsTypes = [];
+  const tmpFlattenedActionsTypes = [];
   for (const plugins of allActionsData.value) {
     for (const action of plugins["actions"]) {
       if (!_.isEqual(action.type, "TIMED_INGRESS")) continue;
 
       // Reformatting each action.
       action["type"] = action["name"];
-      let name = action.name.split(".").pop();
+      const name = action.name.split(".").pop();
       action["name"] = name;
       action["parameters"] = {};
 
@@ -211,11 +215,11 @@ const getTimedIngressActions = async () => {
 const isMounted = ref(useMounted());
 
 onBeforeMount(async () => {
-  let topics = await getAllTopicNames();
+  const topics = await getAllTopicNames();
   allTopics.value.length = 0;
   topics.forEach((topic) => allTopics.value.push(topic));
 
-  let responseFlowAction = await getPluginActionSchema();
+  const responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
   await fetchAllDataSourceFlowNames();
@@ -233,7 +237,7 @@ onBeforeMount(async () => {
 
   if (_.has(model.value["timedIngressAction"], "name")) {
     if (!_.isEmpty(model.value["timedIngressAction"]["name"])) {
-      let tmpName = model.value["timedIngressAction"]["name"];
+      const tmpName = model.value["timedIngressAction"]["name"];
       model.value["timedIngressActionOption"] = _.find(flattenedActionsTypes.value, { type: model.value["timedIngressAction"]["type"] });
       model.value["timedIngressActionOption"]["name"] = tmpName;
       if (!_.isEmpty(model.value["timedIngressAction"]["parameters"])) {
@@ -320,7 +324,7 @@ const omitFields = (omittingData) => {
 
 const formatData = (formattingData) => {
   formattingData = _.pick(formattingData, Object.keys(dataSourceTemplate));
-  let tmpIngressActionTemplate = _.cloneDeepWith(dataSourceTemplate);
+  const tmpIngressActionTemplate = _.cloneDeepWith(dataSourceTemplate);
   formattingData = _.merge(tmpIngressActionTemplate, formattingData);
   if (!_.isEmpty(model.value.timedIngressActionOption?.name)) {
     formattingData["timedIngressAction"]["name"] = formattingData["timedIngressActionOption"]["name"];
@@ -369,7 +373,7 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(dataSourceObject["name"])) {
-    let isFlowNamedUsed = _.includes(dataSourceNames.value, dataSourceObject["name"]);
+    const isFlowNamedUsed = _.includes(dataSourceNames.value, dataSourceObject["name"]);
 
     if (isFlowNamedUsed && !editDataSource) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
@@ -409,6 +413,59 @@ const clearErrors = () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/dataSources/data-source-configuration-dialog.scss";
+<style>
+.data-source-configuration-dialog {
+  width: 98%;
+
+  .data-source-panel {
+    .deltafi-fieldset {
+      display: block;
+      margin-inline-start: 2px;
+      margin-inline-end: 2px;
+      padding-block-start: 0.35em;
+      padding-inline-start: 0.75em;
+      padding-inline-end: 0.75em;
+      padding-block-end: 0.625em;
+      min-inline-size: min-content;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      border-width: 1px;
+      border-style: groove;
+      border-color: rgb(225, 225, 225);
+      border-image: initial;
+    }
+
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+  }
+
+  .auto-complete-input-width {
+    width: 90% !important;
+
+    >.p-inputtext {
+      width: 100% !important;
+    }
+  }
+
+  .inputWidth {
+    width: 90% !important;
+  }
+
+  .p-filled.capitalizeText {
+    text-transform: uppercase;
+  }
+}
 </style>

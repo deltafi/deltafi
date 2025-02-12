@@ -20,7 +20,7 @@
   <span v-if="states.includes(rowData.flowStatus.state) && $hasPermission('FlowUpdate')">
     <ConfirmDialog :group="dataSourceType + '_' + rowData.name">
       <template #message="slotProps">
-        <span class="p-confirm-dialog-icon pi pi-exclamation-triangle"></span>
+        <span class="p-confirm-dialog-icon pi pi-exclamation-triangle" />
         <span class="p-confirm-dialog-message" v-html="slotProps.message.message" />
       </template>
     </ConfirmDialog>
@@ -36,7 +36,7 @@ import FlowControlButtons from "@/components/FlowControlButtons.vue";
 import useNotifications from "@/composables/useNotifications";
 import useTopics from "@/composables/useTopics";
 import useFlows from "@/composables/useFlows";
-import { computed, defineProps, toRefs, onBeforeMount, ref } from "vue";
+import { computed, toRefs, onBeforeMount, ref } from "vue";
 
 import Tag from "primevue/tag";
 import ConfirmDialog from "primevue/confirmdialog";

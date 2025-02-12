@@ -29,7 +29,7 @@
 <script setup>
 import { computed, inject } from "vue";
 
-const uiConfig = inject('uiConfig');
+const uiConfig = inject("uiConfig");
 
 const textColor = computed(() => {
   return uiConfig.securityBanner.textColor;
@@ -48,6 +48,16 @@ const bannerEnabled = computed(() => {
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/components/footer/footer-banner.scss";
+<style>
+footer.sticky-footer {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  overflow: hidden;
+  display: flex;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 20px;
+}
 </style>

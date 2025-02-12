@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import Tag from "primevue/tag";
 
 const props = defineProps({
@@ -54,9 +54,9 @@ const tagIcon = computed(() => {
 });
 
 const tagText = computed(() => {
-  let text = status.value.charAt(0).toUpperCase() + status.value.slice(1).toLowerCase();
+  const text = status.value.charAt(0).toUpperCase() + status.value.slice(1).toLowerCase();
   return text;
 });
 </script>
 
-<style lang="scss"></style>
+<style />

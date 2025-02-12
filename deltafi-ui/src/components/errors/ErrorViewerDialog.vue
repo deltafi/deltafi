@@ -39,7 +39,7 @@
       </div>
     </div>
     <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
-    <TabView v-model:activeIndex="activeTab">
+    <TabView v-model:active-index="activeTab">
       <TabPanel v-if="cause" header="Cause">
         <div class="error-row">
           <div class="error-col">
@@ -73,12 +73,15 @@
 <script setup>
 import Dialog from "primevue/dialog";
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import { computed, defineProps, ref, useAttrs } from "vue";
+import { computed, ref, useAttrs } from "vue";
 import Timestamp from "@/components/Timestamp.vue";
 import ScrollTop from "primevue/scrolltop";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import ContentSelector from "@/components/ContentSelector.vue";
+
+import _ from "lodash";
+
 const activeTab = ref(0);
 const attrs = useAttrs();
 const props = defineProps({
@@ -97,6 +100,20 @@ const context = computed(() => (["ERROR", "RETRIED"].includes(props.action.state
 const content = computed(() => (props.action.content.length > 0 ? props.action.content : false));
 </script>
 
-<style lang="scss">
-@import "@/styles/components/errors/error-viewer-dialog.scss";
+<style>
+.error-viewer {
+  .error-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .error-col {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 100%;
+    flex: 1;
+  }
+}
 </style>

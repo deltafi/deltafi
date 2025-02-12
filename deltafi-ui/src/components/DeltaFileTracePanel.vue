@@ -19,13 +19,13 @@
 <template>
   <div>
     <CollapsiblePanel id="traceCollapsible" class="trace-panel" header="Trace">
-      <div id="traceChart" preserveAspectRatio="none" class="chart"></div>
+      <div id="traceChart" preserveAspectRatio="none" class="chart" />
     </CollapsiblePanel>
   </div>
 </template>
 
 <script setup>
-import { ref, defineProps, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import * as d3 from "d3";
@@ -43,7 +43,7 @@ const props = defineProps({
 });
 
 const deltaFileFlows = computed(() => {
-  let flows = [];
+  const flows = [];
   deltaFile.value.flows.forEach((action) => {
     action.actions.forEach((a) => {
       flows.push({
@@ -61,22 +61,22 @@ const deltaFileActions = computed(() => {
   let actions = deltaFileFlows.value.map((action) => {
     if (action.queued !== null) {
       action.created = new Date(action.queued);
-      action.createdOrginal = new Date(action.queued);
+      action.createdOriginal = new Date(action.queued);
     } else {
       action.created = new Date(action.created);
-      action.createdOrginal = new Date(action.created);
+      action.createdOriginal = new Date(action.created);
     }
     const timeElapsed = new Date(action.modified) - new Date(action.created);
     action.modified = new Date(action.modified);
-    action.modifiedOrginal = new Date(action.modified);
+    action.modifiedOriginal = new Date(action.modified);
     action.end = new Date(action.created) - new Date(deltaFile.value.created) + timeElapsed;
     action.stop = new Date(action.stop);
-    action.stopOrignal = new Date(action.stop);
+    action.stopOriginal = new Date(action.stop);
     action.start = new Date(action.start);
-    action.startOrignal = new Date(action.start);
+    action.startOriginal = new Date(action.start);
     const startTimeElapsed = new Date(action.stop) - new Date(action.start);
     action.startTimeElapsed = startTimeElapsed > 0 ? startTimeElapsed : 0.1;
-    action.startTimeElapsedOrginal = startTimeElapsed;
+    action.startTimeElapsedOriginal = startTimeElapsed;
     action.startEnd = new Date(action.start) - new Date(deltaFile.value.created) + action.startTimeElapsed;
     if (action.end === 0) {
       action.end = timeElapsed;
@@ -90,26 +90,26 @@ const deltaFileActions = computed(() => {
   if (actions.some((action) => action.state === "RETRIED")) {
     actions = handleRetried(actions);
   }
-  let total = new Date(Math.max(...actions.map((e) => new Date(e.modified)))) - new Date(deltaFile.value.created);
+  const total = new Date(Math.max(...actions.map((e) => new Date(e.modified)))) - new Date(deltaFile.value.created);
 
   actions.unshift({
     name: "DeltaFileFlow",
     elapsed: total,
     end: total,
-    modified: actions[actions.length - 1].modifiedOrginal,
-    created: deltaFile.value.createdOrginal,
+    modified: actions[actions.length - 1].modifiedOriginal,
+    created: deltaFile.value.createdOriginal,
   });
   return actions;
 });
 
 const handleRetried = (newActions) => {
-  let retriedActions = [
+  const retriedActions = [
     {
       name: "",
       modified: Date(),
     },
   ];
-  for (let x in newActions) {
+  for (const x in newActions) {
     if (newActions[x].state === "RETRIED" && !retriedActions.some((retried) => retried.name === newActions[x].name)) {
       retriedActions.push({ name: newActions[x].name, modified: newActions[x].modified });
     } else {
@@ -143,54 +143,56 @@ watch(props.deltaFileData, () => {
 const HorizontalWaterfallChart = (attachTo, data) => {
   const svgWidth = 500;
   const numTicks = 4;
-  const rowWidth = 10; //Height of each row
+  const rowWidth = 10;
   const leftMargin = 30;
   const lineHeight = data.length * rowWidth;
   const svgHeight = lineHeight + 18;
   const maxData = data[0].elapsed;
-  // Append the chart and pad it a bit
+
   d3.select(attachTo).selectAll("svg").remove();
-  let chart = d3
+  const svg = d3
     .select(attachTo)
     .append("svg")
     .attr("class", "chart")
     .attr("preserveAspectRatio", "none")
     .attr("viewBox", `0 10 ${svgWidth} ${svgHeight - rowWidth}`);
 
-  // create tooltip element
   const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "2000").style("visibility", "hidden");
-  const showToolTip = (d, event) => {
-    let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
+
+  const showToolTip = (event, d) => {
+    const tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOriginal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOriginal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOriginal}ms ` : d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
     tooltip
       .html(tipString)
       .style("visibility", "visible")
       .style("top", `${event.offsetY - 14}px`)
       .style("left", `${event.offsetX}px`);
   };
+
   const hideToolTip = () => {
     tooltip.html("").style("visibility", "hidden");
   };
 
-  // Set the x-axis scale
-  let x = d3.scale.linear().domain([0, maxData]).range(["0px", "400px"]);
-  let yScale = d3.scale
-    .linear()
+  const x = d3.scaleLinear().domain([0, maxData]).range([0, 400]);
+  const yScale = d3
+    .scaleLinear()
     .domain([0, data.length])
     .range([svgHeight - 18, 0]);
 
-  // The main graph area
-  chart = chart.append("g").attr("transform", `translate(${leftMargin}, 3)`).attr("class", "gMainGraphArea");
-  let yGridLine = d3.svg
-    .axis()
-    .scale(yScale)
-    .tickSize(svgWidth, 0, 0)
-    .tickFormat("")
-    .tickValues([...Array(data.length).keys()])
-    .orient("right")
-    .ticks(data.length - 1);
-  chart.append("g").style("stroke", "#dddddd").attr("transform", `translate(${leftMargin}, 10)`).call(yGridLine);
+  const chart = svg.append("g").attr("transform", `translate(${leftMargin}, 3)`).attr("class", "gMainGraphArea");
 
-  // Set the vertical lines for axis
+  chart
+    .append("g")
+    .attr("transform", `translate(${leftMargin}, 10)`)
+    .call(
+      d3
+        .axisRight(yScale)
+        .tickSize(svgWidth)
+        .tickFormat("")
+        .tickValues([...Array(data.length).keys()])
+    )
+    .selectAll(".tick line")
+    .attr("stroke", "#dddddd"); // Changes x-axis color line color to gray
+
   chart
     .append("g")
     .attr("transform", `translate(${leftMargin}, 20)`)
@@ -198,8 +200,8 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .data(x.ticks(numTicks))
     .enter()
     .append("line")
-    .attr("x1", x)
-    .attr("x2", x)
+    .attr("x1", (d) => x(d))
+    .attr("x2", (d) => x(d))
     .attr("y1", 0)
     .attr("y2", 0)
     .transition()
@@ -214,42 +216,18 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .data(data)
     .enter()
     .append("rect")
-    .attr("class", "rectWF")
-    .attr("class", function (d) {
-      if (_.isEqual(d.state, "ERROR")) {
-        return "error-bar";
-      } else if (_.isEqual(d.state, "RETRIED") || _.isEqual(d.state, "FILTERED")) {
-        return "warning-bar";
-      } else {
-        return "normal-bar";
-      }
-    })
-    .attr("x", function (d) {
-      return x(d.end - d.elapsed);
-    })
-    .attr("y", function (d, i) {
-      return i * rowWidth + 1;
-    })
+    .attr("class", (d) => (d.state === "ERROR" ? "error-bar" : d.state === "RETRIED" || d.state === "FILTERED" ? "warning-bar" : "normal-bar"))
+    .attr("x", (d) => x(d.end - d.elapsed))
+    .attr("y", (d, i) => i * rowWidth + 1)
     .attr("rx", 2)
     .attr("ry", 2)
     .attr("height", rowWidth - 2)
     .attr("width", 10)
-    .attr("id", (d) => {
-      return d.name;
-    })
-    .on("mouseover", function (d) {
-      showToolTip(d, d3.event);
-      d3.selectAll(".rectWF").style("opacity", 0.5);
-      d3.select(this).style("opacity", 1);
-    })
-    .on("mouseout", function () {
-      hideToolTip();
-    })
+    .on("mouseover", showToolTip)
+    .on("mouseout", hideToolTip)
     .transition()
     .duration(1000)
-    .attr("width", function (d) {
-      return x(d.elapsed);
-    });
+    .attr("width", (d) => x(d.elapsed));
 
   // add start stop
   chart
@@ -277,24 +255,16 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .attr("ry", 2)
     .attr("height", rowWidth - 2)
     .attr("width", 10)
+    .on("mouseover", showToolTip)
+    .on("mouseout", hideToolTip)
     .attr("id", (d) => {
       return d.name;
-    })
-    .on("mouseover", function (d) {
-      showToolTip(d, d3.event);
-      d3.selectAll(".rectWF").style("opacity", 0.5);
-    })
-    .on("mouseout", function () {
-      d3.selectAll(".rectWF").style("opacity", 0);
-      hideToolTip();
     })
     .transition()
     .duration(1000)
     .attr("width", function (d) {
       return d.name !== "DeltaFileFlow" && d.name !== "IngressAction" ? x(d.startTimeElapsed) : x(0);
     });
-
-  // Set the values on the bars
 
   chart
     .append("g")
@@ -303,52 +273,96 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .data(data)
     .enter()
     .append("text")
-    .attr("class", function (d) {
-      if (_.isEqual(d.state, "ERROR")) {
-        return "error-bar";
-      } else if (_.isEqual(d.state, "RETRIED") || _.isEqual(d.state, "FILTERED")) {
-        return "warning-bar";
-      } else {
-        return "normal-bar";
-      }
-    })
-    .on("mouseover", function (d) {
-      showToolTip(d, d3.event);
-    })
-    .attr("x", function (d) {
-      return x(d.end - d.elapsed / 2);
-    })
-    .attr("y", function (d, i) {
-      return i * rowWidth + rowWidth * 0.5;
-    })
-    .attr("dy", "1") // vertical-align: middle
-    .attr("text-anchor", "middle") // text-align: right
-    .text(function (d) {
-      return d.elapsed + "ms";
-    });
+    .attr("class", (d) => (d.state === "ERROR" ? "error-bar" : d.state === "RETRIED" || d.state === "FILTERED" ? "warning-bar" : "normal-bar"))
+    .on("mouseover", showToolTip)
+    .attr("x", (d) => x(d.end - d.elapsed / 2))
+    .attr("y", (d, i) => i * rowWidth + rowWidth * 0.5)
+    .attr("dy", "1")
+    .attr("text-anchor", "middle")
+    .text((d) => `${d.elapsed}ms`);
 
-  // Set the numbering on the lines for axis
-  chart.append("g").attr("transform", `translate(${leftMargin}, 15)`).selectAll(".rule").data(x.ticks(numTicks)).enter().append("text").attr("class", "rule").attr("x", x).attr("y", 0).attr("dy", -3).attr("text-anchor", "middle").text(String);
+  chart
+    .append("g")
+    .attr("transform", `translate(${leftMargin}, 15)`)
+    .selectAll(".rule")
+    .data(x.ticks(numTicks))
+    .enter()
+    .append("text")
+    .attr("class", "rule")
+    .attr("x", (d) => x(d))
+    .attr("y", 0)
+    .attr("dy", -3)
+    .attr("text-anchor", "middle")
+    .text(String);
 
-  let ll = chart.append("g").attr("class", "gAxis");
-
-  ll.selectAll("text")
+  chart
+    .append("g")
+    .attr("class", "gAxis")
+    .selectAll("text")
     .data(data)
     .enter()
     .append("text")
-    .attr("x", leftMargin - 0)
-    .attr("y", function (d, i) {
-      return i * rowWidth + rowWidth * 0.8;
-    })
-    .attr("dx", -5) // padding-right
-    .attr("dy", 13) // vertical-align: middle
-    .attr("text-anchor", "end") // text-align: right
-    .text(function (d) {
-      return d.name.split("", 24).reduce((o, c) => (o.length === 23 ? `${o}${c}...` : `${o}${c}`), "");
-    });
+    .attr("x", leftMargin)
+    .attr("y", (d, i) => i * rowWidth + rowWidth * 0.8)
+    .attr("dx", -5)
+    .attr("dy", 13)
+    .attr("text-anchor", "end")
+    .text((d) => (d.name.length > 24 ? d.name.slice(0, 23) + "..." : d.name));
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/deltafile-trace-panel.scss";
+<style>
+.trace-panel {
+  .domain {
+    display: none !important;
+  }
+
+  .chart {
+    font: 0.3rem sans-serif;
+
+    rect {
+      stroke: #888;
+      stroke-width: 0.2;
+      stroke-linejoin: round;
+    }
+
+    rect.normal-bar {
+      fill: #b8daff;
+    }
+
+    rect.warning-bar {
+      fill: #ffeeba;
+    }
+
+    rect.error-bar {
+      fill: #f5c6cb;
+    }
+
+    rect.start-stop-bar {
+      fill: #fff;
+      opacity: 0.45;
+    }
+
+    text {
+      fill: #333333;
+    }
+  }
+
+  .d3-tooltip {
+    position: absolute;
+    text-align: left;
+    padding: 8px;
+    margin-top: -20px;
+    font: 1rem sans-serif;
+    background: #333333;
+    pointer-events: none;
+    color: white;
+    border-radius: 5px;
+  }
+
+  .gMainGraphArea {
+    margin: 0;
+    padding: 0;
+  }
+}
 </style>

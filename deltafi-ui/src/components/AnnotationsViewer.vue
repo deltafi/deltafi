@@ -19,7 +19,9 @@
 <template>
   <div class="annotations-viewer">
     <div v-if="!_.isEmpty(pendingAnnotations)">
-      <Message severity="warn" :closable="false" class="mb-2 mt-0"> Expected Read Receipts: {{ pendingAnnotations }}</Message>
+      <Message severity="warn" :closable="false" class="mb-2 mt-0">
+        Expected Read Receipts: {{ pendingAnnotations }}
+      </Message>
     </div>
     <div v-for="(annotationsArray, actionName) in props.annotations" :key="actionName">
       <DataTable responsive-layout="scroll" :value="annotationsArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px" data-key="key">
@@ -38,7 +40,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps } from "vue";
+import { computed } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 
 import DataTable from "primevue/datatable";
@@ -66,8 +68,8 @@ const path = computed(() => {
 const panelState = useStorage("search-page-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const setSearchableAnnotations = (rowData) => {
-  let searchableAnnotationsArray = [];
-  let searchableAnnotationsObject = {};
+  const searchableAnnotationsArray = [];
+  const searchableAnnotationsObject = {};
   searchableAnnotationsObject["key"] = rowData.key;
   searchableAnnotationsObject["value"] = rowData.value;
   searchableAnnotationsObject["valid"] = true;

@@ -19,22 +19,22 @@
 <template>
   <div>
     <Dialog v-model:visible="dialogVisible" header="Annotate DeltaFile" :maximizable="false" :modal="true" :draggable="false" :style="{ width: '30vw' }">
-      <MapEdit v-model="metadata"></MapEdit>
+      <MapEdit v-model="metadata" />
       <template #footer>
         <span style="float: left" class="field-checkbox">
           <Checkbox v-model="allowOverwrites" input-id="allOverwrite" :binary="true" />
           <label for="allowOverwrite" class="ml-2">Overwrite?</label>
         </span>
-        <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="cancel"></Button>
-        <Button :label="saveButtonLabel" icon="pi pi-check" :loading="saving" @click="onSaveClick"></Button>
+        <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="cancel" />
+        <Button :label="saveButtonLabel" icon="pi pi-check" :loading="saving" @click="onSaveClick" />
       </template>
     </Dialog>
   </div>
 </template>
 
 <script setup>
-import { defineProps, defineExpose, ref, defineEmits, computed } from "vue";
-import MapEdit from "@/components/plugin/MapEdit";
+import { ref, computed } from "vue";
+import MapEdit from "@/components/plugin/MapEdit.vue";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
 import Checkbox from "primevue/checkbox";
@@ -51,8 +51,8 @@ const emit = defineEmits(["refreshPage"]);
 const { annotate } = useAnnotate();
 const metadata = ref(":");
 const dialogVisible = ref(false);
-const saving = ref(false)
-const saveButtonLabel = computed(() => saving.value ? "Saving" : "Save")
+const saving = ref(false);
+const saveButtonLabel = computed(() => (saving.value ? "Saving" : "Save"));
 const allowOverwrites = ref(false);
 
 const onSaveClick = async () => {
@@ -78,7 +78,7 @@ defineExpose({
 });
 </script>
 
-<style lang="scss">
+<style>
 .field-checkbox {
   display: flex;
 

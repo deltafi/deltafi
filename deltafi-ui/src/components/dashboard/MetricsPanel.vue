@@ -72,7 +72,7 @@ onBeforeMount(async () => {
 watch(timeFrame, () => { setPersistedParams() });
 </script>
 
-<style lang="scss">
+<style>
 .metrics-panel {
   .p-panel-content {
     padding-bottom: 0.25rem !important;

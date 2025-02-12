@@ -25,11 +25,15 @@
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="errors.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="errors.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
-      <DataTable id="errorsTable" v-model:expandedRows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-        <template #empty>No results to display.</template>
-        <template #loading>Loading. Please wait...</template>
+      <DataTable id="errorsTable" v-model:expanded-rows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+        <template #empty>
+          No results to display.
+        </template>
+        <template #loading>
+          Loading. Please wait...
+        </template>
         <Column class="expander-column" :expander="true" />
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
@@ -38,8 +42,12 @@
         </Column>
         <Column field="name" header="Filename" :sortable="true" class="filename-column">
           <template #body="{ data }">
-            <div v-if="data.name > 28" v-tooltip.top="data.name" class="truncate">{{ data.name }}</div>
-            <div v-else>{{ data.name }}</div>
+            <div v-if="data.name > 28" v-tooltip.top="data.name" class="truncate">
+              {{ data.name }}
+            </div>
+            <div v-else>
+              {{ data.name }}
+            </div>
           </template>
         </Column>
         <Column field="dataSource" header="Data Source" :sortable="true" />
@@ -62,7 +70,7 @@
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
+            <DataTable v-model:expanded-rows="expandedRows" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
@@ -129,12 +137,14 @@ import useNotifications from "@/composables/useNotifications";
 import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import useErrorsSummary from "@/composables/useErrorsSummary";
-import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
+
+import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -248,9 +258,9 @@ const filters = ref({
 
 const fetchErrors = async () => {
   await getPersistedParams();
-  let flowName = props.flow?.name != null ? props.flow?.name : null;
-  let flowType = props.flow?.type != null ? props.flow?.type : null;
-  let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
+  const flowName = props.flow?.name != null ? props.flow?.name : null;
+  const flowType = props.flow?.type != null ? props.flow?.type : null;
+  const errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   loading.value = true;
   await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
@@ -298,15 +308,15 @@ const onAcknowledged = (dids, reason) => {
   unSelectAllRows();
   ackErrorsDialog.value.dids = [];
   ackErrorsDialog.value.visible = false;
-  let pluralized = pluralize(dids.length, "Error");
+  const pluralized = pluralize(dids.length, "Error");
   notify.success(`Successfully acknowledged ${pluralized}`, reason);
   fetchErrorCount();
   emit("refreshErrors");
 };
 const autoResumeSelected = computed(() => {
-  let newResumeRule = {};
+  const newResumeRule = {};
   if (!_.isEmpty(selectedErrors.value)) {
-    let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
+    const rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
     newResumeRule["dataSource"] = rowInfo.dataSource;
     newResumeRule["action"] = rowInfo.lastErroredAction.name;
     newResumeRule["errorSubstring"] = rowInfo.lastErroredAction.errorCause;
@@ -317,7 +327,7 @@ const autoResumeSelected = computed(() => {
 });
 
 const filterSelectedDids = computed(() => {
-  let dids = selectedErrors.value.map((selectedError) => {
+  const dids = selectedErrors.value.map((selectedError) => {
     return selectedError.did;
   });
   return dids;
@@ -345,7 +355,7 @@ const actionRowClass = (action) => {
 };
 
 const actionRowClick = (event) => {
-  let action = event.data.actions ? event.data.actions.slice(-1)[0] : event.data;
+  const action = event.data.actions ? event.data.actions.slice(-1)[0] : event.data;
   if (["ERROR", "RETRIED"].includes(action.state)) {
     errorViewer.value.action = action;
     errorViewer.value.visible = true;
@@ -402,7 +412,7 @@ const setupWatchers = () => {
   watch(
     () => filters.value.last_error_cause.value,
     () => {
-      let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
+      const errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
       unSelectAllRows();
       fetchErrors();
       emit("errorMessageChanged:errorMessage", errorMessage);
@@ -418,14 +428,14 @@ onMounted(async () => {
 });
 
 const getPersistedParams = async () => {
-  let state = useStorage("errors-page-all-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("errors-page-all-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   perPage.value = state.value.perPage || 20;
   page.value = state.value.page || 1;
   offset.value = getPage.value;
 };
 
 const setPersistedParams = () => {
-  let state = useStorage("errors-page-all-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("errors-page-all-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   state.value = {
     perPage: perPage.value,
     page: page.value,
@@ -433,7 +443,7 @@ const setPersistedParams = () => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .all-panel {
   td.did-column {
     width: 8rem;

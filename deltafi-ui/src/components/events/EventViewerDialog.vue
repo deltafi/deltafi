@@ -40,7 +40,7 @@
 import EventSeverityBadge from "@/components/events/EventSeverityBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useEvents from "@/composables/useEvents";
-import { defineProps, toRefs } from "vue";
+import { toRefs } from "vue";
 import MarkdownIt from "markdown-it";
 
 import Button from "primevue/button";
@@ -73,10 +73,10 @@ const unacknowledge = () => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .event-dialog {
   .event-badges {
-    > * {
+    >* {
       margin-right: 0.5rem;
     }
   }

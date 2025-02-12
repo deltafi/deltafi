@@ -208,7 +208,8 @@ task copyUi(type: Copy) {
     include 'public/'
     include 'src/'
     include 'package*.json'
-    include 'vue.config.js'
+    include 'vite.config.ts'
+    include 'index.html'
     include 'tsconfig.json'
 }
 

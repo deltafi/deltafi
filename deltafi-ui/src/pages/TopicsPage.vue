@@ -22,8 +22,12 @@
       <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
     </PageHeader>
     <DataTable v-model:filters="filters" responsive-layout="scroll" :value="searchableTopics" striped-rows class="p-datatable-sm topics-table" :loading="showLoading" data-key="name" :global-filter-fields="['name', 'subscriberNames', 'publisherNames']">
-      <template #empty>No topic information available.</template>
-      <template #loading>Loading topics. Please wait.</template>
+      <template #empty>
+        No topic information available.
+      </template>
+      <template #loading>
+        Loading topics. Please wait.
+      </template>
       <Column field="publishers" header="Publishers" :sortable="true">
         <template #body="{ data }">
           <div v-for="publisher in data.publishers" :key="publisher.name" class="my-1">
@@ -36,7 +40,7 @@
       </Column>
       <Column class="arrow">
         <template #body>
-          <i class="fa-solid fa-arrow-right"></i>
+          <i class="fa-solid fa-arrow-right" />
         </template>
       </Column>
       <Column field="name" header="Topic" :sortable="true">
@@ -46,7 +50,7 @@
       </Column>
       <Column class="arrow">
         <template #body>
-          <i class="fa-solid fa-arrow-right"></i>
+          <i class="fa-solid fa-arrow-right" />
         </template>
       </Column>
       <Column field="subscribers" header="Subscribers" :sortable="true">
@@ -97,14 +101,14 @@ const searchableTopics = computed(() => {
 
 const pubsubIcon = (type) => {
   switch (type) {
-  case 'TIMED_DATA_SOURCE':
-    return 'fas fas fa-file-import fa-fw';
-  case 'REST_DATA_SOURCE':
-    return 'fas fas fa-file-import fa-fw';
-  case 'TRANSFORM':
-    return 'fas fa-project-diagram fa-fw';
-  case 'DATA_SINK':
-    return 'fas fas fa-file-export fa-fw';
+    case 'TIMED_DATA_SOURCE':
+      return 'fas fas fa-file-import fa-fw';
+    case 'REST_DATA_SOURCE':
+      return 'fas fas fa-file-import fa-fw';
+    case 'TRANSFORM':
+      return 'fas fa-project-diagram fa-fw';
+    case 'DATA_SINK':
+      return 'fas fas fa-file-export fa-fw';
   }
 };
 
@@ -122,34 +126,42 @@ onUnmounted(() => {
 });
 </script>
 
-<style lang="scss">
+<style>
 .topics-table {
   th {
     width: 24%;
   }
+
   th.arrow {
     width: 14%;
   }
+
   td {
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
   }
+
   .p-tag {
     font-size: 12px;
     color: #333333;
   }
+
   .p-tag.running {
     background-color: #C7DEF0;
   }
+
   .p-tag.stopped {
     background-color: #D4D4D4;
   }
+
   .p-tag.invalid {
     background-color: #F5C5C6;
   }
+
   .p-tag.topic {
     background-color: #D4E5CE;
   }
+
   .p-tag.p-tag-warning {
     background-color: #FFEEC7;
   }

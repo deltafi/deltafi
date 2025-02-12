@@ -29,7 +29,9 @@
         </span>
       </template>
       <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
-        <template #empty>No flows found.</template>
+        <template #empty>
+          No flows found.
+        </template>
         <Column header="Name" field="name" class="name-column" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between">
@@ -56,7 +58,9 @@
         </Column>
         <Column header="Description" field="description" class="truncateDescription">
           <template #body="{ data, field }">
-            <div v-if="_.size(data[field]) > maxDescriptionLength" v-tooltip.bottom="data[field]">{{ displayDescription(data[field]) }}</div>
+            <div v-if="_.size(data[field]) > maxDescriptionLength" v-tooltip.bottom="data[field]">
+              {{ displayDescription(data[field]) }}
+            </div>
             <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
@@ -64,7 +68,7 @@
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
               <div>
-                <SubscribeCell :subscribe-data="data[field]"></SubscribeCell>
+                <SubscribeCell :subscribe-data="data[field]" />
               </div>
             </template>
           </template>
@@ -73,7 +77,7 @@
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
               <div>
-                <PublishCell :publish-data="data[field]"></PublishCell>
+                <PublishCell :publish-data="data[field]" />
               </div>
             </template>
           </template>
@@ -94,12 +98,12 @@
           </template>
         </Column>
       </DataTable>
-      <ConfirmPopup></ConfirmPopup>
+      <ConfirmPopup />
     </CollapsiblePanel>
   </div>
   <ConfirmDialog group="bulkActions">
     <template #message="slotProps">
-      <span class="p-confirm-dialog-icon pi pi-exclamation-triangle"></span>
+      <span class="p-confirm-dialog-icon pi pi-exclamation-triangle" />
       <span class="p-confirm-dialog-message" v-html="slotProps.message.message" />
     </template>
   </ConfirmDialog>
@@ -113,12 +117,12 @@ import FlowStateValidationButton from "@/components/flow/FlowStateValidationButt
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
 import PublishCell from "@/components/PublishCell.vue";
-import PermissionedRouterLink from "@/components/PermissionedRouterLink";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import { defineProps, onBeforeMount, ref, reactive, onUnmounted, watch, defineEmits } from "vue";
+import { onBeforeMount, ref, reactive, onUnmounted, watch } from "vue";
 import ContextMenu from "primevue/contextmenu";
 import Column from "primevue/column";
 import ConfirmPopup from "primevue/confirmpopup";
@@ -132,7 +136,7 @@ const notify = useNotifications();
 const confirm = useConfirm();
 const { removeTransformFlowPlanByName } = useFlowPlanQueryBuilder();
 
-let autoRefresh = null;
+const autoRefresh = null;
 const emit = defineEmits(["updateFlows"]);
 const flowData = ref({});
 const flowDataByPlugin = ref({});
@@ -301,7 +305,7 @@ const confirmationPopup = (event, data) => {
     accept: () => {
       deleteFlow(data);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -324,7 +328,7 @@ const confirmAllFlows = (runType, message) => {
     accept: () => {
       runForAllFlowsForPlugin(runType);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -339,6 +343,37 @@ const setTransformParams = (data, editExistingTransform) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/flow/flow-data-table.scss";
+<style>
+.flows-table {
+  th.name-column {
+    width: 25%;
+  }
+
+  th.bit-rate-column {
+    width: 10rem;
+  }
+
+  th.test-mode-column,
+  th.flow-state-column {
+    width: 7rem !important;
+  }
+
+  td.test-mode-column,
+  td.flow-state-column {
+    padding: 0 !important;
+
+    .p-inputswitch {
+      margin: 0.25rem 0 0 0.25rem !important;
+    }
+
+    .control-buttons {
+      padding: 0.25rem !important;
+      margin: 0 0 0 0.25rem !important;
+    }
+  }
+}
+
+.tooltip-width {
+  max-width: none !important;
+}
 </style>

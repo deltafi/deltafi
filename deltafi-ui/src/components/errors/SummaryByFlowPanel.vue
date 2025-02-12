@@ -24,11 +24,15 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="errorsFlow.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="errorsFlow.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-      <template #empty>No results to display.</template>
-      <template #loading>Loading. Please wait...</template>
+      <template #empty>
+        No results to display.
+      </template>
+      <template #loading>
+        Loading. Please wait...
+      </template>
       <Column field="flow" header="Flow" sortable class="filename-column">
         <template #body="{ data }">
           <a class="monospace" @click="showErrors(null, data.flow, data.type)">{{ data.flow }}</a>
@@ -61,7 +65,7 @@ import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import _ from "lodash";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
@@ -180,7 +184,7 @@ const { data: response, fetchErrorSummaryByFlow } = useErrorsSummary();
 
 const fetchErrorsFlow = async () => {
   getPersistedParams();
-  let flowName = props.flow?.name != null ? props.flow?.name : null;
+  const flowName = props.flow?.name != null ? props.flow?.name : null;
   loading.value = true;
   await fetchErrorSummaryByFlow(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
   errorsFlow.value = response.value.countPerFlow;
@@ -189,12 +193,11 @@ const fetchErrorsFlow = async () => {
 };
 
 const filterSelectedDids = computed(() => {
-  let dids = selectedErrors.value.map((selectedError) => {
+  const dids = selectedErrors.value.map((selectedError) => {
     return selectedError.dids;
   });
-  let allDids = [].concat.apply([], dids);
 
-  return [...new Set(allDids)];
+  return [...new Set(dids)];
 });
 
 const acknowledgeClickConfirm = () => {
@@ -206,16 +209,16 @@ const onAcknowledged = (dids, reason) => {
   unSelectAllRows();
   ackErrorsDialog.value.dids = [];
   ackErrorsDialog.value.visible = false;
-  let pluralized = pluralize(dids.length, "Error");
+  const pluralized = pluralize(dids.length, "Error");
   notify.success(`Successfully acknowledged ${pluralized}`, reason);
   fetchErrorCount();
   emit("refreshErrors");
 };
 
 const autoResumeSelected = computed(() => {
-  let newResumeRule = {};
+  const newResumeRule = {};
   if (!_.isEmpty(selectedErrors.value)) {
-    let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
+    const rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
     newResumeRule["Flow"] = rowInfo.flow;
     return newResumeRule;
   } else {
@@ -282,14 +285,14 @@ const setupWatchers = () => {
   );
 };
 const getPersistedParams = async () => {
-  let state = useStorage("errors-page-by-flow-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("errors-page-by-flow-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   perPage.value = state.value.perPage || 20;
   page.value = state.value.page || 1;
   offset.value = getPage.value;
 };
 
 const setPersistedParams = () => {
-  let state = useStorage("errors-page-by-flow-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("errors-page-by-flow-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   state.value = {
     perPage: perPage.value,
     page: page.value,
@@ -297,4 +300,4 @@ const setPersistedParams = () => {
 };
 </script>
 
-<style lang="scss"></style>
+<style />

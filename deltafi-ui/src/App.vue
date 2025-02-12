@@ -39,11 +39,11 @@
 </template>
 
 <script setup>
-import HeaderBanner from "@/components/header/HeaderBanner";
-import AppTopBar from "@/components/header/AppTopBar";
-import AppMenu from "@/components/sidebar/AppMenu";
-import FooterBanner from "@/components/footer/FooterBanner";
-import CustomToast from "@/components/CustomToast";
+import HeaderBanner from "@/components/header/HeaderBanner.vue";
+import AppTopBar from "@/components/header/AppTopBar.vue";
+import AppMenu from "@/components/sidebar/AppMenu.vue";
+import FooterBanner from "@/components/footer/FooterBanner.vue";
+import CustomToast from "@/components/CustomToast.vue";
 import Dialog from "primevue/dialog";
 import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
@@ -94,7 +94,7 @@ onBeforeUnmount(() => {
 });
 
 const onResize = () => {
-  var windowWidth = window.innerWidth;
+  const windowWidth = window.innerWidth;
 
   if (!sidebarHidden.value && windowWidth < 1024) {
     sidebarHidden.value = true;
@@ -123,5 +123,5 @@ serverSentEvents.addEventListener("announcement", (event) => {
 </script>
 
 <style scoped lang="scss">
-@import "@/styles/app.scss";
+@use "@/styles/app.scss";
 </style>

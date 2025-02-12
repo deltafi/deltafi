@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import Listbox from "primevue/listbox";
 import ContentViewer from "@/components/ContentViewer.vue";
 
@@ -60,6 +60,23 @@ watch(selectedItem, (newItem, oldValue) => {
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/components/content-selector.scss";
+<style>
+.content-selector-container {
+  display: flex;
+  height: 100%;
+
+  .p-listbox {
+    border-radius: 4px 4px 0 0;
+    height: 100%;
+  }
+
+  .left-column {
+    flex: 2;
+    padding-right: 1rem;
+  }
+
+  .right-column {
+    flex: 5;
+  }
+}
 </style>

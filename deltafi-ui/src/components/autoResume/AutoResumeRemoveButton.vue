@@ -18,11 +18,11 @@
 
 <template>
   <span>
-    <ConfirmPopup></ConfirmPopup>
+    <ConfirmPopup />
     <ConfirmPopup :group="rowData.id">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
           <p class="pl-2">
             {{ slotProps.message.message }}
           </p>
@@ -36,7 +36,7 @@
 <script setup>
 import useAutoResumeQueryBuilder from "@/composables/useAutoResumeQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { defineEmits, defineProps, reactive } from "vue";
+import { reactive } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
 import Button from "primevue/button";
@@ -68,7 +68,7 @@ const confirmationPopup = (event, rule) => {
       notify.info("Removing Rule", `Removing rule ${rule.name}.`, 3000);
       confirmedRemoveAutoResumeRule(rule.id);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 

@@ -32,19 +32,17 @@ import useCurrentUser from "@/composables/useCurrentUser";
 import useUiConfig from "@/composables/useUiConfig";
 import usePermissions from "@/composables/usePermissions";
 
-import "bootstrap/dist/css/bootstrap.min.css";
+import "@/styles/bootstrap.scss";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import "primevue/resources/themes/bootstrap4-light-blue/theme.css";
 import "primeicons/primeicons.css";
 import "@fortawesome/fontawesome-free/css/all.css";
-import "vue-time-date-range-picker/src/Styles/DatePicker.scss";
 import "@/styles/icomoon.scss";
 import "@/styles/global.scss";
 
 import auth from "./plugins/auth";
 
-if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
-  const responseType = process.env.VUE_APP_MOCK_RESPONSES ? process.env.VUE_APP_MOCK_RESPONSES : "";
+if (import.meta.env.MODE === "development" || import.meta.env.MODE === "test") {
+  const responseType = import.meta.env.VITE_MOCK_RESPONSES ? import.meta.env.VITE_MOCK_RESPONSES : "";
   if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
     const { worker } = require("./mocks/browser.ts");
     worker.start({

@@ -29,7 +29,7 @@
 <script setup>
 import { computed, inject } from "vue";
 
-const uiConfig = inject('uiConfig');
+const uiConfig = inject("uiConfig");
 
 const textColor = computed(() => {
   return uiConfig.securityBanner.textColor;
@@ -48,6 +48,12 @@ const bannerEnabled = computed(() => {
 });
 </script>
 
-<style scoped lang="scss">
-@import "@/styles/components/header/header-banner.scss";
+<style scoped>
+.navbar-content-center {
+  display: block !important;
+}
+
+.banner-height {
+  height: 20px;
+}
 </style>

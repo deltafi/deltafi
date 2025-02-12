@@ -24,9 +24,9 @@
       <div class="list-group list-group-flush">
         <div style="text-align: right; margin-bottom: 0.5rem">
           <router-link v-slot="{ navigate }" to="/events" custom>
-            <Button label="View All Events" class="p-button-sm p-button-text mr-2" @click="navigate(); closeNotificationsPanel();"></Button>
+            <Button label="View All Events" class="p-button-sm p-button-text mr-2" @click="navigate(); closeNotificationsPanel();" />
           </router-link>
-          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :loading="loading" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="onAckAll()"></Button>
+          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :loading="loading" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="onAckAll()" />
         </div>
         <div v-if="notifications.length > 0">
           <div v-for="msg in notifications" :key="msg.id" :class="severityClass(msg.severity)" @click="showEvent(msg, $event)">
@@ -47,7 +47,7 @@
         </div>
       </div>
     </OverlayPanel>
-    <EventViewerDialog v-model:visible="showEventDialog" :event="activeEvent"></EventViewerDialog>
+    <EventViewerDialog v-model:visible="showEventDialog" :event="activeEvent" />
   </span>
 </template>
 
@@ -152,7 +152,7 @@ const tooltip = computed(() => {
 });
 </script>
 
-<style lang="scss">
+<style>
 .notifications-wrapper {
   .notification-badge {
     cursor: pointer;

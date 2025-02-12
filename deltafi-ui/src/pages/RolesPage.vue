@@ -23,14 +23,16 @@
     </PageHeader>
     <Panel header="Roles" class="roles-panel table-panel">
       <DataTable :value="roles" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
-        <template #empty> No roles to display </template>
+        <template #empty>
+          No roles to display
+        </template>
         <Column v-for="(col, index) of columns" :key="col.field + '_' + index" :field="col.field" :header="col.header" :sortable="col.sortable" :class="col.class">
           <template #body="{ data, field }">
             <span v-if="['permissions'].includes(field)">
               <PermissionPill v-for="permissionName in data.permissions" :key="permissionName" class="mr-1" :permission="appPermissionsByName[permissionName]" />
             </span>
             <span v-else-if="['createdAt', 'updatedAt'].includes(field)">
-              <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss"></Timestamp>
+              <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss" />
             </span>
             <span v-else-if="['name'].includes(field)">
               <span class="cursor-pointer" @click="showRole(data)">{{ data.name }}</span>
@@ -48,7 +50,9 @@
     </Panel>
     <Dialog v-model:visible="roleDialog" :style="{ width: '60vw' }" header="Role Details" :modal="true" class="p-fluid roles-dialog" :dismissable-mask="false">
       <Message v-if="errors.length" severity="error">
-        <div v-for="error in errors" :key="error">{{ error }}</div>
+        <div v-for="error in errors" :key="error">
+          {{ error }}
+        </div>
       </Message>
       <div>
         <dl>
@@ -150,7 +154,7 @@ const newRole = () => {
 };
 
 const saveRole = async () => {
-  const { id, createdAt, updatedAt, ...saveParams } = role.value; // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { id, createdAt, updatedAt, ...saveParams } = role.value;
   try {
     isNew.value ? await create(saveParams) : await updateRole(role.value.id, saveParams);
     await fetchRoles();
@@ -186,6 +190,48 @@ watch(
 );
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/roles-page.scss";
+<style>
+.roles-page {
+  .roles-panel {
+    td.name-col {
+      width: 10rem;
+    }
+
+    td.timestamp-col {
+      font-size: 90%;
+      width: 12rem;
+    }
+  }
+}
+
+.roles-dialog {
+  .deltafi-fieldset {
+    display: block;
+    margin-inline-start: 2px;
+    margin-inline-end: 2px;
+    padding-block-start: 0.35em;
+    padding-inline-start: 0.75em;
+    padding-inline-end: 0.75em;
+    padding-block-end: 0.625em;
+    min-inline-size: min-content;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    border-width: 1px;
+    border-style: groove;
+    border-color: rgb(225, 225, 225);
+    border-image: initial;
+  }
+
+  dt {
+    margin-bottom: 0rem;
+  }
+
+  dd {
+    margin-bottom: 1.2rem;
+  }
+
+  dl {
+    margin-bottom: 1rem;
+  }
+}
 </style>

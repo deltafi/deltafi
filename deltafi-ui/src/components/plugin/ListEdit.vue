@@ -19,7 +19,7 @@
 <template>
   <div class="list-edit">
     <div v-for="(item, i) in list" :key="i" class="list-row mb-2">
-      <InputText v-model="list[i]" class="mr-2"></InputText>
+      <InputText v-model="list[i]" class="mr-2" />
       <Button icon="pi pi-times" class="p-button-secondary p-button-outlined remove-button" @click="removeItem(i)" />
     </div>
     <Button icon="pi pi-plus" label="Add Item" class="p-button-secondary p-button-outlined" @click="addItem" />
@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
@@ -78,16 +78,16 @@ const removeItem = (index) => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .list-edit {
   .list-row {
     width: 100%;
     display: flex;
   }
 
-.list-row > * {
-  flex: 1 1 auto;
-}
+  .list-row>* {
+    flex: 1 1 auto;
+  }
 
   .remove-button {
     flex: 0 0 auto;

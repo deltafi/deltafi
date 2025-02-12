@@ -33,7 +33,9 @@
                 <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
                   <ul>
                     <div v-for="(error, key) in _.uniq(errorsList)" :key="key">
-                      <li class="text-wrap text-break">{{ error }}</li>
+                      <li class="text-wrap text-break">
+                        {{ error }}
+                      </li>
                     </div>
                   </ul>
                 </Message>
@@ -70,7 +72,9 @@
           <template #content="{ files, removeFileCallback }">
             <div class="p-fileupload-files">
               <div v-for="(file, index) of files" :key="file.name + file.type + file.size" class="p-fileupload-row">
-                <div class="p-fileupload-filename">{{ file.name }}</div>
+                <div class="p-fileupload-filename">
+                  {{ file.name }}
+                </div>
                 <div>{{ formatSize(file.size) }}</div>
                 <div>
                   <InputText v-model.trim="file['customContentType']" type=" text" :placeholder="file['type']" />
@@ -106,7 +110,7 @@
                 <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
                 <span v-else>
                   <span v-for="(did, index) in file.data.dids" :key="did">
-                    <DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" />
+                    <DidLink :did="did" /><br v-if="index != file.data.dids.length - 1">
                   </span>
                 </span>
               </template>
@@ -133,16 +137,16 @@
       </div>
     </div>
   </div>
-  <ImportMetadataDialog v-model:visible="showUploadDialog" @meta-data-value="onMetaImport"></ImportMetadataDialog>
+  <ImportMetadataDialog v-model:visible="showUploadDialog" @meta-data-value="onMetaImport" />
 </template>
 
 <script setup>
-import CollapsiblePanel from "@/components/CollapsiblePanel";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DidLink from "@/components/DidLink.vue";
 import ImportMetadataDialog from "@/components/ImportMetadataDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useFlows from "@/composables/useFlows";
 import useIngress from "@/composables/useIngress";
@@ -227,7 +231,7 @@ const deltaFilesMenuToggle = (event) => {
 };
 
 const metadataRecord = computed(() => {
-  let record = {};
+  const record = {};
   if (metadata.value.length > 0) {
     for (const field of metadata.value) {
       if (field.key.length > 0) record[field.key] = field.value;
@@ -245,7 +249,7 @@ const addMetadataField = () => {
 };
 
 const removeMetadataField = (field) => {
-  let index = metadata.value.indexOf(field);
+  const index = metadata.value.indexOf(field);
   metadata.value.splice(index, 1);
 };
 
@@ -267,7 +271,7 @@ const onUpload = (event) => {
 
 const ingressFiles = async (event) => {
   uploadedTimestamp.value = new Date();
-  for (let file of event.files) {
+  for (const file of event.files) {
     const result = ingressFile(file, metadataRecord.value, selectedDataSource.value);
     result["uploadedTimestamp"] = uploadedTimestamp.value;
     result["uploadedMetadata"] = JSON.parse(JSON.stringify(metadata.value));
@@ -370,13 +374,13 @@ const checkActiveFlows = () => {
 };
 
 const formatMetadataForViewer = (filename, uploadedMetadata) => {
-  let metaDataObject = {};
+  const metaDataObject = {};
   metaDataObject[filename] = uploadedMetadata;
   return JSON.parse(JSON.stringify(metaDataObject));
 };
 
 const onExportMetadata = () => {
-  let formattedMetadata = {};
+  const formattedMetadata = {};
   if (_.isEmpty(selectedDataSource.value) && _.isEmpty(metadataRecord.value)) {
     return;
   }
@@ -389,10 +393,10 @@ const onExportMetadata = () => {
 };
 
 const exportMetadataFile = (formattedMetadata) => {
-  let link = document.createElement("a");
-  let downloadFileName = "metadata_export_" + new Date(Date.now()).toLocaleDateString();
+  const link = document.createElement("a");
+  const downloadFileName = "metadata_export_" + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
-  let blob = new Blob([JSON.stringify(formattedMetadata, null, 2)], {
+  const blob = new Blob([JSON.stringify(formattedMetadata, null, 2)], {
     type: "application/json",
   });
   link.href = URL.createObjectURL(blob);
@@ -402,16 +406,16 @@ const exportMetadataFile = (formattedMetadata) => {
 };
 
 const preUploadMetadataValidation = async (request) => {
-  for (let file of request.files) {
-    let reader = new FileReader();
+  for (const file of request.files) {
+    const reader = new FileReader();
 
     reader.readAsText(file);
 
     reader.onload = function () {
-      let uploadNotValid = validateMetadataFile(reader.result);
+      const uploadNotValid = validateMetadataFile(reader.result);
       errorsList.value = [];
       if (uploadNotValid) {
-        for (let errorMessages of uploadNotValid) {
+        for (const errorMessages of uploadNotValid) {
           errorsList.value.push(errorMessages.message);
         }
         deleteMetadataFile();
@@ -425,7 +429,7 @@ const preUploadMetadataValidation = async (request) => {
 };
 
 const uploadMetadataFile = async (file) => {
-  let parseMetadataUpload = JSON.parse(validUpload.value);
+  const parseMetadataUpload = JSON.parse(validUpload.value);
   let dataSourceSelected = {};
   if (!_.isEmpty(_.get(parseMetadataUpload, "dataSource"))) {
     dataSourceSelected = _.get(parseMetadataUpload, "dataSource");
@@ -435,9 +439,9 @@ const uploadMetadataFile = async (file) => {
       notify.warn("Ignoring Invalid Data Source", `The uploaded metadata included an invalid Data Source: ${dataSourceSelected}`);
     }
   }
-  let reformatMetadata = [];
+  const reformatMetadata = [];
   for (const [key, value] of Object.entries(parseMetadataUpload.metadata)) {
-    let formatMetadata = {};
+    const formatMetadata = {};
     formatMetadata["key"] = key;
     formatMetadata["value"] = value;
     reformatMetadata.push(formatMetadata);
@@ -481,6 +485,142 @@ const onRemoveFile = (removeFileCallback, index) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/deltafile-upload-page.scss";
+<style>
+.deltafile-upload-page {
+  .metadata-panel {
+    .p-panel-header {
+      display: block;
+    }
+
+    .p-inputtext:disabled {
+      background: #eeeeee !important;
+    }
+
+    .p-panel-content {
+      max-height: 45vh;
+      overflow: auto;
+    }
+  }
+
+  .p-fileupload-empty {
+    padding: 1.5rem 1rem;
+  }
+
+  .p-fileupload-content {
+    position: relative;
+    padding: 0 !important;
+  }
+
+  .p-fileupload-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .p-fileupload-row>div {
+    flex: 1 1 auto;
+    width: 25%;
+  }
+
+  .p-fileupload-row>div:last-child {
+    text-align: right;
+  }
+
+  .p-fileupload-content .p-progressbar {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .p-button.p-fileupload-choose {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .p-button.p-fileupload-choose input[type="file"] {
+    display: none;
+  }
+
+  .p-fileupload-choose.p-fileupload-choose-selected input[type="file"] {
+    display: none;
+  }
+
+  .p-fileupload-filename {
+    word-break: break-all;
+  }
+
+  .p-fluid .p-fileupload .p-button {
+    width: auto;
+  }
+
+  .p-fileupload-buttonbar {
+    >* {
+      margin-right: 0.5rem;
+    }
+  }
+
+  .p-fileupload-choose.metadata-upload:not(.p-disabled):hover {
+    background: rgba(108, 117, 125, 0.04) !important;
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+  }
+
+  .p-fileupload-choose.metadata-upload:not(.p-disabled):active {
+    background: transparent !important;
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+  }
+
+  .deltafiles {
+    td.did-column {
+      width: 16rem;
+    }
+
+    .filename-column {
+      overflow-wrap: anywhere;
+    }
+
+    .data-source-column {
+      width: 15%;
+    }
+
+    .updated-timestamp-column {
+      width: 15%;
+    }
+
+    .metadata-column {
+      width: 12%;
+
+      .content-button {
+        cursor: pointer !important;
+        padding: 0.1rem 0.4rem;
+        margin: 0;
+        color: #333333;
+      }
+
+      .content-button:hover {
+        color: #666666 !important;
+
+        .p-button-label {
+          text-decoration: none !important;
+        }
+      }
+
+      .content-button:focus {
+        outline: none !important;
+        box-shadow: none !important;
+      }
+    }
+  }
+}
+
+#viewMetadata,
+#replayMetadata {
+  display: inline-block;
+  /* additional code */
+}
+
+.p-dropdown.invalid {
+  border-color: #f87171;
+}
 </style>

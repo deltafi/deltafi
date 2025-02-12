@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, reactive } from "vue";
+import { ref, reactive } from "vue";
 import Dialog from "primevue/dialog";
 import ContentSelector from "@/components/ContentSelector.vue";
 
@@ -53,6 +53,12 @@ const header = ref(content[0].name || `${content[0].did}-${action}`);
 const handleContentSelected = (content) => (header.value = content.name);
 </script>
 
-<style lang="scss">
-@import "@/styles/components/content-dialog.scss";
+<style>
+.p-dialog-content {
+  height: 100%;
+
+  .dialog-container {
+    height: 100%;
+  }
+}
 </style>

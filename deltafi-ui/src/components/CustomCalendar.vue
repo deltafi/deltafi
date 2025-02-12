@@ -18,15 +18,15 @@
 
 <template class="time-range btn-toolbar mb-2 mb-md-0">
   <div class="date-picker-container">
-    <input :value="formattedValue" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width" readonly @click="showCalendar" />
-    <input v-show="showRefreshRange" type="text" :value="helperButtonText" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width refresh-range-input" readonly @click="showCalendar()" />
+    <input :value="formattedValue" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width" readonly @click="showCalendar">
+    <input v-show="showRefreshRange" type="text" :value="helperButtonText" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width refresh-range-input" readonly @click="showCalendar()">
     <CalendarDialog v-if="showCalendarDialog" :key="computedKey" ref="calendarDialogRef" :date-input="calendarDateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[new Date(startTimeDate), new Date(endTimeDate)]" :show-helper-buttons="true" :helper-buttons="helperButtons" @on-apply="updateInputDateTime" @on-reset="resetDateTime" @select-date="dateSelected" />
   </div>
 </template>
 
 <script setup>
-import { CalendarDialog } from "vue-time-date-range-picker/src/Components/DatePicker";
-import { computed, defineExpose, defineProps, inject, onBeforeMount, ref, watch } from "vue";
+import { CalendarDialog } from "vue-time-date-range-picker";
+import { computed, inject, onBeforeMount, ref, watch } from "vue";
 import { useNow } from "@vueuse/core";
 
 import dayjs from "dayjs";
@@ -187,7 +187,7 @@ const showCalendar = () => {
 };
 
 const refreshUpdateDateTime = () => {
-  let refreshValue = _.find(helperButtons.value, { name: helperButtonText.value });
+  const refreshValue = _.find(helperButtons.value, { name: helperButtonText.value });
 
   if (refreshValue) {
     emit("update:startTimeDate:endTimeDate", refreshValue.from, refreshValue.to);
@@ -196,7 +196,7 @@ const refreshUpdateDateTime = () => {
 
 defineExpose({
   refreshUpdateDateTime,
-  setDateTimeToday
+  setDateTimeToday,
 });
 
 const calculateFromTime = (fromTime) => {
@@ -282,7 +282,7 @@ const helperButtons = ref([
   },
 ]);
 </script>
-<style lang="scss">
+<style>
 .date-picker-container {
   position: relative;
 }
@@ -305,5 +305,9 @@ const helperButtons = ref([
 
 .vdpr-datepicker__switch {
   margin-top: 6px;
+}
+
+.vdpr-datepicker {
+  position: relative;
 }
 </style>

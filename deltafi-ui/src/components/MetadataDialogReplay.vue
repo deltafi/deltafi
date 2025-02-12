@@ -23,8 +23,12 @@
         <strong>Modify Metadata</strong>
       </template>
       <div v-if="modifiedMetadata !== 'undefined'" class="metadata-body">
-        <Message v-if="hasDuplicateKeys" severity="error" :closable="false">No duplicate keys permitted</Message>
-        <Message v-if="modifiedMetadata.length == 0" severity="info" :closable="false">No metadata to display</Message>
+        <Message v-if="hasDuplicateKeys" severity="error" :closable="false">
+          No duplicate keys permitted
+        </Message>
+        <Message v-if="modifiedMetadata.length == 0" severity="info" :closable="false">
+          No metadata to display
+        </Message>
         <div v-for="field in modifiedMetadata" :key="field" class="row p-fluid mb-4">
           <div class="col-5">
             <InputText v-if="field.changed === 'new'" v-model="field.key" type="text" placeholder="Key" @change="onInputChange(field)" />
@@ -73,12 +77,12 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useMetadata from "@/composables/useMetadata";
 import useNotifications from "@/composables/useNotifications";
 import useReplay from "@/composables/useReplay";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineEmits, defineExpose, defineProps, ref } from "vue";
+import { computed, ref } from "vue";
 import _ from "lodash";
 
 import Button from "primevue/button";
@@ -120,7 +124,7 @@ const showMetadataDialog = async () => {
 };
 
 const getAllMeta = async () => {
-  let batchedDids = getBatchDids(props.did);
+  const batchedDids = getBatchDids(props.did);
   displayMetadataBatchingDialog.value = props.did.length > batchSize ? true : false;
   batchCompleteValue.value = 0;
   let completedBatches = 0;
@@ -128,7 +132,7 @@ const getAllMeta = async () => {
   for (const dids of batchedDids) {
     await meta(dids);
     if (batchMetadata.value.length > 0) {
-      let tmp = [...batchMetadata.value, ...allMetadata.value];
+      const tmp = [...batchMetadata.value, ...allMetadata.value];
       allMetadata.value = tmp;
     }
     completedBatches += dids.length;
@@ -140,7 +144,7 @@ const getAllMeta = async () => {
 };
 
 const getUniqueMetadataKeys = async (originalMetadata) => {
-  let data = JSON.parse(JSON.stringify(originalMetadata));
+  const data = JSON.parse(JSON.stringify(originalMetadata));
   let current = [];
   for (let i = 0; i < data.length; i++) {
     current = data[i];
@@ -181,7 +185,7 @@ const removeMetadataField = (field) => {
   if (field.changed !== "new") {
     removedMetadata.value.push(field.key);
   }
-  let index = modifiedMetadata.value.indexOf(field);
+  const index = modifiedMetadata.value.indexOf(field);
   modifiedMetadata.value.splice(index, 1);
 };
 
@@ -191,7 +195,7 @@ const replayClick = () => {
 };
 
 const onInputChange = (field) => {
-  let index = modifiedMetadata.value.indexOf(field);
+  const index = modifiedMetadata.value.indexOf(field);
   if (modifiedMetadata.value[index].changed === "new" || modifiedMetadata.value[index].changed === "error") {
     modifiedMetadata.value[index].changed = checkDuplicates(field.key);
   } else {
@@ -211,7 +215,7 @@ const checkDuplicates = (key) => {
 };
 
 const hasDuplicateKeys = computed(() => {
-  let keys = modifiedMetadata.value.map((object) => object.key);
+  const keys = modifiedMetadata.value.map((object) => object.key);
   return _.some(Object.values(_.countBy(keys)), (count) => count > 1);
 });
 
@@ -235,7 +239,7 @@ const replayClean = () => {
 
 const requestReplay = async () => {
   let response;
-  let batchedDids = getBatchDids(props.did);
+  const batchedDids = getBatchDids(props.did);
   let success = false;
   let completedBatches = 0;
   try {
@@ -245,7 +249,7 @@ const requestReplay = async () => {
     for (const dids of batchedDids) {
       response = await replay(dids, removedMetadata.value, getModifiedMetadata());
       if (response.value.data !== undefined && response.value.data !== null) {
-        let successReplayBatch = new Array();
+        const successReplayBatch = new Array();
         for (const replayStatus of response.value.data.replay) {
           if (replayStatus.success) {
             successReplayBatch.push(replayStatus);
@@ -264,7 +268,7 @@ const requestReplay = async () => {
     displayBatchingDialogReplay.value = false;
     batchCompleteValue.value = 0;
     if (success) {
-      let pluralized = pluralize(newDids.length, "DeltaFile");
+      const pluralized = pluralize(newDids.length, "DeltaFile");
       const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
       notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
       emit("update");
@@ -277,7 +281,7 @@ const requestReplay = async () => {
 
 const getModifiedMetadata = () => {
   if (modifiedMetadata.value !== null) {
-    let filteredMetadata = modifiedMetadata.value.filter((metadata) => metadata.changed === "new" || metadata.changed === "yes");
+    const filteredMetadata = modifiedMetadata.value.filter((metadata) => metadata.changed === "new" || metadata.changed === "yes");
     return filteredMetadata.map((metadata) => {
       return {
         key: metadata.key,
@@ -303,6 +307,8 @@ defineExpose({
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/components/metadata-dialog.scss";
+<style>
+.metadata-body {
+  width: 98%;
+}
 </style>

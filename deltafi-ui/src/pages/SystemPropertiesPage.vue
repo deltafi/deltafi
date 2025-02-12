@@ -38,7 +38,7 @@
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
 import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import PropertySet from "@/components/PropertySet.vue";
 import usePlugins from "@/composables/usePlugins";
 import usePropertySets from "@/composables/usePropertySets";
@@ -69,6 +69,26 @@ const pluginsList = computed(() => {
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/system-properties-page.scss";
+<style>
+.system-properties-page {
+  .property-set {
+    .p-panel-content {
+      padding: 0;
+      border: none;
+    }
+
+    .p-cell-editing {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+
+      input {
+        width: 100%;
+      }
+    }
+
+    i.text-muted {
+      color: rgb(165, 165, 165) !important;
+    }
+  }
+}
 </style>

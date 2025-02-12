@@ -23,14 +23,14 @@
 </template>
 
 <script setup>
-import Avatar from 'primevue/avatar';
+import Avatar from "primevue/avatar";
 import useCurrentUser from "@/composables/useCurrentUser";
 import { ref, onMounted } from "vue";
 
 const { currentUser } = useCurrentUser();
 
-const tooltip = ref('Unknown');
-const label = ref('?');
+const tooltip = ref("Unknown");
+const label = ref("?");
 
 onMounted(() => {
   tooltip.value = currentUser.name;
@@ -38,6 +38,12 @@ onMounted(() => {
 });
 </script>
 
-<style scoped lang="scss">
-@import "@/styles/components/user-badge.scss";
+<style scoped>
+.user-badge {
+  color: var(--white);
+  background-color: var(--gray-700);
+  border: 1px solid var(--gray-600);
+  font-weight: 500;
+  cursor: default;
+}
 </style>

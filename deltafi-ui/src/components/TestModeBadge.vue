@@ -21,13 +21,13 @@
 </template>
 
 <script setup>
-import { computed, defineProps } from "vue";
+import { computed } from "vue";
 
 const props = defineProps({
   reason: {
     type: String,
     required: false,
-    default: "N/A"
+    default: "N/A",
   },
 });
 

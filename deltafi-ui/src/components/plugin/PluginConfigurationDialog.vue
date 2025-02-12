@@ -24,7 +24,9 @@
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errorsList" :key="key">
-                <li class="text-wrap text-break">{{ error }}</li>
+                <li class="text-wrap text-break">
+                  {{ error }}
+                </li>
               </div>
             </ul>
           </Message>
@@ -38,7 +40,8 @@
           <dd>
             <InputText v-model.trim="model.imageTag" :placeholder="pluginConfigurationMap.get('imageTag').placeholder" class="inputWidth" />
           </dd>
-          <dt>{{ pluginConfigurationMap.get("imagePullSecret").header }}
+          <dt>
+            {{ pluginConfigurationMap.get("imagePullSecret").header }}
             <i v-tooltip="pluginConfigurationMap.get('imagePullSecret').tooltip" class="ml-0 text-muted fas fa-info-circle fa-fw" />
           </dt>
           <dd>
@@ -59,7 +62,7 @@
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, nextTick, reactive, ref } from "vue";
+import { computed, nextTick, reactive, ref } from "vue";
 
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
@@ -80,7 +83,7 @@ const props = defineProps({
 
 const pluginInstallDetails = {
   image: null,
-  imagePullSecret: null
+  imagePullSecret: null,
 };
 
 const notify = useNotifications();
@@ -144,10 +147,10 @@ const pluginUpdateFlow = async () => {
   notify.info(`Installing plugin ${model.value.image}`, `Attempting to install ${model.value.image}.`, 4000);
 
   // Install the plugin
-  let response = await installPlugin(model.value.image, model.value.imagePullSecret);
-  let responseErrors = _.get(response?.installPlugin, "errors", null) ?? errors.value;
+  const response = await installPlugin(model.value.image, model.value.imagePullSecret);
+  const responseErrors = _.get(response?.installPlugin, "errors", null) ?? errors.value;
   if (!_.isEmpty(responseErrors)) {
-    for (let errorMessage of responseErrors) {
+    for (const errorMessage of responseErrors) {
       if (Object.hasOwn(errorMessage, "message")) {
         errorsList.value.push(errorMessage.message);
       } else {
@@ -166,6 +169,34 @@ const disableSubmit = computed(() => {
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/components/plugin-configuration-dialog.scss";
+<style>
+.plugin-configuration-dialog {
+  width: 98%;
+
+  .install-plugin-panel {
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+
+    i.text-muted {
+      color: rgb(165, 165, 165) !important;
+    }
+  }
+
+  .inputWidth {
+    width: 100% !important;
+  }
+}
 </style>

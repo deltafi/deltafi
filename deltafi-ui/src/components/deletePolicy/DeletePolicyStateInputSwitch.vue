@@ -18,11 +18,11 @@
 
 <template>
   <span v-if="$hasPermission('DeletePolicyUpdate')" class="pr-2">
-    <ConfirmPopup></ConfirmPopup>
+    <ConfirmPopup />
     <ConfirmPopup :group="rowData.id + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
           <p class="pl-2">
             {{ slotProps.message.message }}
           </p>
@@ -39,7 +39,7 @@
 <script setup>
 import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineEmits, defineProps, reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 
 import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";
@@ -84,7 +84,7 @@ const confirmationPopup = (event, policyId, policyName, state) => {
         notify.info("Disabling Delete Policy", `Disabling policy ${policyName}.`, 3000);
         toggleDeletePolicyState(policyId, !state);
       },
-      reject: () => {},
+      reject: () => { },
     });
   } else {
     toggleDeletePolicyState(policyId, !state);

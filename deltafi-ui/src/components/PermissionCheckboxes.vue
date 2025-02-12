@@ -28,13 +28,13 @@
           <PermissionPill :permission="permission" :enabled="modelValue.includes(permission.name)" />
         </label>
       </span>
-      <div class="spacer"></div>
+      <div class="spacer" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits, watch, onMounted, ref } from 'vue'
+import { watch, onMounted, ref } from 'vue'
 import Divider from 'primevue/divider';
 import Checkbox from 'primevue/checkbox';
 import PermissionPill from "@/components/PermissionPill.vue";
@@ -64,7 +64,7 @@ watch(selectedPermissions, () => {
 })
 </script>
 
-<style lang="scss">
+<style>
 .permission-checkboxes {
   .spacer {
     clear: both;

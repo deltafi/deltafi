@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
   permission: {
@@ -31,20 +31,20 @@ const props = defineProps({
   enabled: {
     type: Boolean,
     required: false,
-    default: true
-  }
+    default: true,
+  },
 });
 
 const classes = computed(() => {
   const classes = ["badge", "badge-pill"];
   classes.push(props.enabled ? "badge-primary" : "badge-disabled");
   return classes.join(" ");
-})
+});
 </script>
 
-<style lang="scss">
+<style>
 .badge-disabled {
   background-color: #919ca6;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 </style>

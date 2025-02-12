@@ -27,7 +27,7 @@
 
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { defineProps, nextTick, toRefs, defineEmits } from "vue";
+import { nextTick, toRefs } from "vue";
 
 import Button from "primevue/button";
 import _ from "lodash";
@@ -47,10 +47,10 @@ const { rowDataProp: rowData } = toRefs(props);
 const validationRetry = async (flowName, flowType) => {
   let validatedFlowStatus = {};
   if (_.isEqual(flowType, "transform")) {
-    let response = await validateTransformFlow(flowName);
+    const response = await validateTransformFlow(flowName);
     validatedFlowStatus = response.data.validateTransformFlow;
   } else if (_.isEqual(flowType, "dataSink")) {
-    let response = await validateDataSink(flowName);
+    const response = await validateDataSink(flowName);
     validatedFlowStatus = response.data.validateDataSink;
   }
   await nextTick();

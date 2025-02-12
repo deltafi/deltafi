@@ -18,7 +18,9 @@
 <template>
   <div class="flow-viewer">
     <dl>
-      <dt class="pb-1">Description</dt>
+      <dt class="pb-1">
+        Description
+      </dt>
       <dd>
         {{ flowData.description }}
       </dd>
@@ -29,7 +31,9 @@
           <Message severity="error" :closable="false" class="mb-2 mt-0">
             <ul>
               <div v-for="(error, errorKey) in flowData.flowStatus.errors" :key="errorKey">
-                <li class="text-wrap text-break">{{ error.message }}</li>
+                <li class="text-wrap text-break">
+                  {{ error.message }}
+                </li>
               </div>
             </ul>
           </Message>
@@ -48,7 +52,9 @@
                               <dt>{{ _.startCase(actionInfoKey) }}</dt>
                               <dd v-if="['parameters', 'join'].includes(actionInfoKey)" class="d-flex">
                                 <ul>
-                                  <li v-for="(pVal, pKey) in value" :key="pKey">{{ pKey }}: {{ pVal }}</li>
+                                  <li v-for="(pVal, pKey) in value" :key="pKey">
+                                    {{ pKey }}: {{ pVal }}
+                                  </li>
                                 </ul>
                               </dd>
                               <dd v-else class="d-flex">
@@ -76,7 +82,9 @@
                             <dt>{{ _.startCase(actionInfoKey) }}</dt>
                             <dd v-if="['parameters', 'join'].includes(actionInfoKey)" class="d-flex">
                               <ul>
-                                <li v-for="(pVal, pKey) in value" :key="pKey">{{ pKey }}: {{ pVal }}</li>
+                                <li v-for="(pVal, pKey) in value" :key="pKey">
+                                  {{ pKey }}: {{ pVal }}
+                                </li>
                               </ul>
                             </dd>
                             <dd v-else class="d-flex">
@@ -106,7 +114,7 @@
       </TabPanel>
       <template v-if="!_.isEmpty(flowData?.variables)">
         <TabPanel header="Flow Variables">
-          <FlowVariableViewer :header="header" :variables="flowData?.variables"></FlowVariableViewer>
+          <FlowVariableViewer :header="header" :variables="flowData?.variables" />
         </TabPanel>
       </template>
       <TabPanel header="Subscribe">
@@ -115,7 +123,7 @@
       </TabPanel>
       <template v-if="['dataSink'].includes(flowType)">
         <TabPanel header="Read Receipts">
-          <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)"></FlowExpectedAnnotationsViewer>
+          <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)" />
         </TabPanel>
       </template>
       <template v-else>
@@ -133,7 +141,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FlowExpectedAnnotationsViewer from "@/components/flow/FlowExpectedAnnotationsViewer.vue";
 import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { computed, defineProps, inject, onBeforeMount, reactive, ref } from "vue";
+import { computed, inject, onBeforeMount, reactive, ref } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import PublishCell from "@/components/PublishCell.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
@@ -212,6 +220,36 @@ const actionLogLink = (actionNameForLink) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/flow/flow-viewer.scss";
+<style>
+.flow-viewer {
+  .flow-viewer-panel {
+    dd {
+      margin-bottom: 0;
+      overflow-wrap: anywhere;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+  }
+
+  .disable-grafana-link {
+    pointer-events: none !important;
+  }
+
+  .p-tabview-panels {
+    padding: 1.25rem 0;
+  }
+
+  .p-panel .p-panel-content {
+    padding: 0.5rem 0.2rem;
+  }
+
+  .truncateDescription {
+    overflow: hidden;
+    max-width: 15rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 </style>

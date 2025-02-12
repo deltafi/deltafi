@@ -16,9 +16,9 @@
    limitations under the License.
 */
 
-import { ref, Ref } from 'vue'
-import useGraphQL from './useGraphQL';
-import useApi from './useApi';
+import { ref, Ref } from "vue";
+import useGraphQL from "./useGraphQL";
+import useApi from "./useApi";
 
 const version: Ref = ref("");
 
@@ -26,7 +26,7 @@ export default function useVersion() {
   const { response, queryGraphQL } = useGraphQL();
 
   const query = {
-    version: true
+    version: true,
   };
 
   const fetchVersion = async () => {
@@ -35,16 +35,16 @@ export default function useVersion() {
       version.value = response.value.data.version;
 
       // For development only
-      if (process.env.NODE_ENV === "development") {
+      if (import.meta.env.NODE_ENV === "development") {
         const { response: apiResponse, get } = useApi();
-        await get('local-git-branch');
+        await get("local-git-branch");
         const branch = apiResponse.value.branch;
-        if (branch) version.value += ` (${branch})`
+        if (branch) version.value += ` (${branch})`;
       }
     } catch {
       // Continue regardless of error
     }
-  }
+  };
 
   return { version, fetchVersion };
 }

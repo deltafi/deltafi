@@ -30,8 +30,12 @@
       <Splitter style="height: 77vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
         <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
           <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" data-key="displayName">
-            <template #empty>No Plugins found.</template>
-            <template #loading>Loading Plugins. Please wait.</template>
+            <template #empty>
+              No Plugins found.
+            </template>
+            <template #loading>
+              Loading Plugins. Please wait.
+            </template>
             <Column header="Name" field="displayName" :sortable="true" />
             <Column header="Description" field="description" />
             <Column header="Version" field="pluginCoordinates.version" />
@@ -64,7 +68,9 @@
     <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
       <ul>
         <div v-for="(error, key) in _.uniq(errorsList)" :key="key">
-          <li class="text-wrap text-break">{{ error }}</li>
+          <li class="text-wrap text-break">
+            {{ error }}
+          </li>
         </div>
       </ul>
     </Message>
@@ -77,7 +83,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import PluginActionsPanel from "@/components/plugin/ActionsPanel.vue";
 import PluginRemoveButton from "@/components/plugin/PluginRemoveButton.vue";
 import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
@@ -127,7 +133,7 @@ const pluginsList = computed(() => {
 
 const isReadOnly = (plugin) => {
   return plugin.pluginCoordinates.groupId === "org.deltafi" && ["deltafi-core-actions", "system-plugin"].includes(plugin.pluginCoordinates.artifactId);
-}
+};
 
 const loadPlugins = async () => {
   await fetchPlugins();
@@ -196,7 +202,7 @@ const splitterSize = (slitSize) => {
 
 const pluginRemovalErrors = (removalErrors) => {
   clearUploadErrors();
-  for (let errorMessages of removalErrors) {
+  for (const errorMessages of removalErrors) {
     errorsList.value.push(errorMessages);
   }
   errorOverlayDialog.value = true;
@@ -212,6 +218,42 @@ const clearUploadErrors = () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/plugin-page.scss";
+<style>
+.plugins-page {
+  .p-splitter {
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+  }
+
+  .plugin-table {
+    table tr th {
+      border-top: none;
+    }
+
+    table tr th:first-child {
+      border-left: none;
+    }
+
+    table tr th:last-child {
+      border-right: none;
+    }
+
+    table tr td:first-child {
+      border-left: none;
+    }
+
+    table tr td:last-child {
+      border-right: none;
+    }
+
+    td.plugin-actions-column {
+      padding: 0 !important;
+
+      .p-button {
+        padding: 0.25rem !important;
+        margin: 0 0 0 0.25rem !important;
+      }
+    }
+  }
+}
 </style>

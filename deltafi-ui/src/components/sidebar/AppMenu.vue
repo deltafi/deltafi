@@ -32,8 +32,15 @@
                 {{ item.name }}
               </router-link>
               <a v-else-if="item.url" :href="item.url" target="_blank" :class="menuItemClass(item)">
-                <i :class="item.icon" />
-                {{ item.name }}
+                <span class="d-flex justify-content-between">
+                  <span>
+                    <i :class="item.icon" />
+                    {{ item.name }}
+                  </span>
+                  <span>
+                    <i class="fas fa-external-link-alt" />
+                  </span>
+                </span>
               </a>
             </li>
             <div v-for="child in item.children" :key="child" :class="{ hidden: !item.expand, submenu: true }">
@@ -264,15 +271,15 @@ const staticMenuItems = ref([
 ]);
 
 const menuItems = computed(() => {
-  let items = staticMenuItems.value;
+  const items = staticMenuItems.value;
   if (externalLinks.value.length > 0) {
     const index = items.findIndex((obj) => obj.name == "External Links");
     const menu = items[index];
     menu.children = externalLinks.value.map((link) => {
       return {
         ...link,
-        visible: true
-      }
+        visible: true,
+      };
     });
     menu.expand = true;
     menu.visible = true;
@@ -293,7 +300,7 @@ const folderIcon = (item) => {
 };
 
 const menuItemClass = (item, isChild = false) => {
-  let classes = ["nav-link", "noselect"];
+  const classes = ["nav-link", "noselect"];
   if (isChild) classes.push("indent");
   if (item.children) classes.push("folder");
   if (item.name === "Dashboard") {
@@ -318,6 +325,68 @@ onMounted(() => {
 });
 </script>
 
-<style scoped lang="scss">
-@import "@/styles/components/sidebar/app-menu.scss";
+<style scoped>
+.menu {
+  position: fixed;
+  height: 100vh;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
+  width: 300px;
+
+  .nav-link {
+    font-weight: 500;
+    color: #333;
+
+    .badge {
+      line-height: 1.3;
+      padding: 0.27rem 0.6rem 0 0.6rem;
+      font-weight: 600;
+    }
+  }
+
+  .nav-link.folder {
+    font-weight: 300;
+    color: #999;
+    cursor: pointer;
+  }
+
+  .nav-link.indent {
+    padding-left: 40px;
+  }
+
+  .nav-link i {
+    margin-right: 0.25rem;
+    color: #999;
+  }
+
+  .nav-link:hover {
+    background-color: #f0f0f0;
+  }
+
+  .nav-link.active {
+    font-weight: 600;
+    background-color: #e6e6e6;
+  }
+
+  .submenu {
+    transition: all 0.2s ease;
+    max-height: 4rem;
+  }
+
+  .submenu.hidden {
+    max-height: 0px;
+    opacity: 0;
+    overflow: hidden;
+  }
+}
+
+.sidebar-scroller {
+  overflow-y: scroll;
+  padding-bottom: 80px;
+}
+
+@media (max-width: 768px) {
+  .menu {
+    width: 150px !important;
+  }
+}
 </style>

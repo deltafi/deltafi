@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 import { ControlElement } from "@jsonforms/core";
-import { computed, defineProps, reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
 
@@ -75,7 +75,7 @@ const optionList = computed(() => {
 
 const search = async (event: any) => {
   setTimeout(() => {
-    let topics = schemaData.control.schema.enum ?? [];
+    const topics = schemaData.control.schema.enum ?? [];
     if (!event.query.trim().length) {
       topicList.value = topics;
     } else {
@@ -113,7 +113,8 @@ const optionsDisplay = computed(() => {
 <style>
 .auto-complete-input-width {
   width: 100% !important;
-  > .p-inputtext {
+
+  >.p-inputtext {
     width: 100% !important;
   }
 }

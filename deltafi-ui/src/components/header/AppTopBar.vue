@@ -21,7 +21,7 @@
     <span class="navbar-brand-wrapper">
       <div class="navbar-brand col mr-0 px-3">
         <div class="row">
-          <img class="logo" src="/logo.png" />
+          <img class="logo" src="/logo.png">
           <div class="col title" :style="{ color: textColor }">{{ uiConfig.title }}</div>
           <div class="col text-right">
             <button v-tooltip.right="'Toggle sidebar menu'" class="navbar-toggler btn btn-sm" @click="toggleSidebar">
@@ -44,8 +44,8 @@
 </template>
 
 <script setup>
-import Clock from "@/components/Clock";
-import StatusBadge from "@/components/StatusBadge";
+import Clock from "@/components/Clock.vue";
+import StatusBadge from "@/components/StatusBadge.vue";
 import NotificationBadge from "@/components/NotificationBadge.vue";
 import UserBadge from "@/components/UserBadge.vue";
 import Version from "@/components/Version.vue";
@@ -70,5 +70,69 @@ const toggleSidebar = () => (sidebarHidden.value = !sidebarHidden.value);
 </script>
 
 <style scoped lang="scss">
-@import "@/styles/components/header/app-top-bar.scss";
+@use '/src/styles/global.scss';
+
+.navbar-brand-wrapper {
+  width: 300px;
+}
+
+.navbar-brand {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  font-size: 1.1rem;
+  background-color: rgba(0, 0, 0, 0.25);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
+  -ms-flex: 0 0 300px;
+  flex: 0 0 300px;
+}
+
+.navbar-brand .title {
+  align-items: center;
+  display: flex;
+  font-weight: 300;
+}
+
+.navbar-brand .navbar-toggler:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.navbar .form-control {
+  padding: 0.75rem 1rem;
+  border-width: 0;
+  border-radius: 0;
+}
+
+@media (max-width: 768px) {
+  .navbar-brand {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+    font-size: 1.1rem;
+    background-color: rgba(0, 0, 0, 0.25);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
+    -ms-flex: 0 0 150px;
+    flex: 0 0 150px;
+  }
+}
+
+.logo {
+  margin-left: 1rem;
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.navbar-toggler {
+  color: hsla(0, 0%, 100%, .5) !important;
+  border-color: hsla(0, 0%, 100%, .1) !important;
+
+  &:hover,
+  &:focus,
+  &:active {
+    outline: none !important;
+    box-shadow: none !important;
+    color: hsla(0, 0%, 100%, .5) !important;
+    border-color: hsla(0, 0%, 100%, .1) !important;
+    /* Styles here */
+  }
+}
 </style>

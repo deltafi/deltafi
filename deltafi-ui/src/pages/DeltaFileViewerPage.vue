@@ -31,16 +31,24 @@
         <div class="col-4">
           <div class="p-inputgroup">
             <InputText v-model="did" placeholder="DID (UUID)" :class="{ 'p-invalid': did && !validDID }" @keyup.enter="navigateToDID" />
-            <Button class="p-button-primary" :disabled="!did || !validDID" @click="navigateToDID">View</Button>
+            <Button class="p-button-primary" :disabled="!did || !validDID" @click="navigateToDID">
+              View
+            </Button>
           </div>
           <small v-if="did && !validDID" class="p-error ml-1">Invalid UUID</small>
         </div>
       </div>
     </div>
     <div v-else-if="loaded">
-      <Message v-if="deltaFile.pinned" severity="warn" :closable="false">This DeltaFile is pinned and won't be deleted by delete policies</Message>
-      <Message v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
-      <Message v-if="testMode" severity="info" :closable="false">This DeltaFile was processed in test mode.</Message>
+      <Message v-if="deltaFile.pinned" severity="warn" :closable="false">
+        This DeltaFile is pinned and won't be deleted by delete policies
+      </Message>
+      <Message v-if="contentDeleted" severity="warn" :closable="false">
+        The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }}
+      </Message>
+      <Message v-if="testMode" severity="info" :closable="false">
+        This DeltaFile was processed in test mode.
+      </Message>
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileInfoPanel :delta-file-data="deltaFile" />
@@ -99,7 +107,7 @@ import DeltaFileParentChildPanel from "@/components/DeltaFileViewer/DeltaFilePar
 import ContentTagsPanel from "@/components/DeltaFileViewer/ContentTagsPanel.vue";
 import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import MetadataDialog from "@/components/MetadataDialogReplay.vue";
 import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
@@ -110,6 +118,8 @@ import useNotifications from "@/composables/useNotifications";
 import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import DialogTemplate from "@/components/DialogTemplate.vue";
+
+import _ from "lodash";
 
 import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
@@ -225,7 +235,7 @@ const staticMenuItems = reactive([
 ]);
 
 const refreshButtonIcon = computed(() => {
-  let classes = ["fa", "fa-sync-alt"];
+  const classes = ["fa", "fa-sync-alt"];
   if (loading.value) classes.push("fa-spin");
   return classes.join(" ");
 });
@@ -272,12 +282,12 @@ watch(
 );
 
 const fetchPendingAnnotations = async () => {
-  let response = await pendingAnnotations(did.value.toLowerCase());
+  const response = await pendingAnnotations(did.value.toLowerCase());
   deltaFile["pendingAnnotations"] = response.data.pendingAnnotations.join(", ");
 };
 
 const menuItems = computed(() => {
-  let items = staticMenuItems;
+  const items = staticMenuItems;
   const customLinks = deltaFileLinks.value.map((link) => {
     return {
       label: link.name,
@@ -320,7 +330,7 @@ const canBeCancelled = computed(() => {
 });
 
 const pageHeader = computed(() => {
-  let header = ["DeltaFile Viewer"];
+  const header = ["DeltaFile Viewer"];
   if (did.value && !showForm.value) header.push(did.value);
   return header.join(": ");
 });
@@ -407,7 +417,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -449,10 +459,10 @@ const latestError = (deltaFile) => {
 };
 
 const autoResumeSelected = computed(() => {
-  let newResumeRule = {};
+  const newResumeRule = {};
   if (!_.isEmpty(deltaFile) && isError.value) {
-    let rowInfo = JSON.parse(JSON.stringify(deltaFile));
-    let errorInfo = latestError(rowInfo);
+    const rowInfo = JSON.parse(JSON.stringify(deltaFile));
+    const errorInfo = latestError(rowInfo);
     newResumeRule["dataSource"] = rowInfo.dataSource;
     newResumeRule["action"] = errorInfo.name;
     newResumeRule["errorSubstring"] = errorInfo.errorCause;
@@ -463,6 +473,22 @@ const autoResumeSelected = computed(() => {
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/deltafile-viewer-page.scss";
+<style>
+.deltafile-viewer-page {
+  .row {
+    .links-panel {
+      .p-panel-content {
+        padding: 0;
+
+        strong {
+          font-weight: 600;
+        }
+
+        .list-group-flush {
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+}
 </style>

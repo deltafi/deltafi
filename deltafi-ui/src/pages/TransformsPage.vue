@@ -32,14 +32,14 @@
     </PageHeader>
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
     <div v-else>
-      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @update-flows="fetchFlows()"></FlowDataTable>
+      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @update-flows="fetchFlows()" />
     </div>
   </div>
 </template>
 
 <script setup>
-import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import FlowDataTable from "@/components/flow/FlowDataTable.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
@@ -65,18 +65,15 @@ onBeforeMount(async () => {
 });
 
 const fetchFlows = async () => {
-  let response = await getAllFlows();
+  const response = await getAllFlows();
   allFlowData.value = response.data.getAllFlows;
   pluginNames.value = pluginNamesList(allFlowData.value);
   flowData.value = formatData(allFlowData.value);
-  flowDataByPlugin.value = _.chain(flowData.value.transform)
-    .sortBy("artifactId")
-    .groupBy("artifactId")
-    .value();
+  flowDataByPlugin.value = _.chain(flowData.value.transform).sortBy("artifactId").groupBy("artifactId").value();
 };
 
 const pluginNamesList = (allFlowData) => {
-  let mvnCoordinatesArray = [];
+  const mvnCoordinatesArray = [];
   Object.values(allFlowData).forEach((flowTypes) => {
     Object.values(flowTypes).forEach((flow) => {
       let mvnCoordinates = "";
@@ -89,15 +86,15 @@ const pluginNamesList = (allFlowData) => {
 };
 
 const formatData = (allFlowData) => {
-  let formattedFlowData = JSON.parse(JSON.stringify(allFlowData));
+  const formattedFlowData = JSON.parse(JSON.stringify(allFlowData));
   const flowTypes = ["transform"];
 
   for (const flowType of flowTypes) {
     formattedFlowData[flowType.toString()].forEach((flow) => {
       flow["flowType"] = flowType;
-      let mvnCoordinates = "";
+      const mvnCoordinates = "";
       flow["mvnCoordinates"] = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
-      let searchableFlowKeys = (({ name, description, mvnCoordinates, publish }) => ({ name, description, mvnCoordinates, publish }))(flow);
+      const searchableFlowKeys = (({ name, description, mvnCoordinates, publish }) => ({ name, description, mvnCoordinates, publish }))(flow);
       flow["searchField"] = JSON.stringify(Object.values(searchableFlowKeys));
       flow["artifactId"] = flow.sourcePlugin.artifactId;
     });
@@ -106,6 +103,15 @@ const formatData = (allFlowData) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/transforms-page.scss";
+<style>
+.transforms-page {
+  .flow-panel-search-txt {
+    font-size: 1rem !important;
+  }
+
+  .p-divider.p-component.p-divider-vertical.p-divider-solid.p-divider-center.mx-0.flow-divider-color:before {
+    border-left: 1px #f7f8fa !important;
+    border-left-style: solid !important;
+  }
+}
 </style>

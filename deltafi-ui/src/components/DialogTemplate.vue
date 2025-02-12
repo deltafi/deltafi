@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, defineEmits, inject, ref, useAttrs } from "vue";
+import { computed, defineAsyncComponent, inject, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
 import _ from "lodash";
 
@@ -45,7 +45,7 @@ const closeDialogCommand = ref({
 });
 
 const loadComponent = computed(() => {
-  return defineAsyncComponent(() => import(`./${attrs["component-name"]}.vue`));
+  return defineAsyncComponent(() => import(/* @vite-ignore */`./${attrs["component-name"]}.vue`));
 });
 
 const dialogSize = computed(() => {
@@ -78,7 +78,7 @@ const openDialogTemplate = () => {
 
 const dialogVisible = ref(false);
 const showDialog = () => {
-  let requiredPermission = _.get(attrs, "required-permission", null);
+  const requiredPermission = _.get(attrs, "required-permission", null);
 
   if (requiredPermission) {
     if (hasPermission(requiredPermission)) {
@@ -96,4 +96,4 @@ const closeDialog = () => {
 };
 </script>
 
-<style lang="scss"></style>
+<style />

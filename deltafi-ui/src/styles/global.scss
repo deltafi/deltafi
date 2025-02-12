@@ -104,6 +104,14 @@ a {
   max-width: 20rem;
 }
 
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  color: #495057;
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  color: #6c757d;
+}
+
 .p-link:focus,
 .p-tabview-nav-link:focus {
   outline: none !important;
@@ -180,4 +188,10 @@ td.inline-edit-column {
       width: 6.5rem;
     }
   }
+}
+
+.list-group-item-action {
+  width: 100%;
+  color: #495057;
+  text-align: inherit;
 }

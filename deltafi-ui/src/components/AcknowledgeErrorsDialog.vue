@@ -38,10 +38,10 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, ref, defineProps, defineEmits, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
@@ -70,7 +70,7 @@ const reasonInvalid = ref(false);
 
 const acknowledgeButtonLabel = computed(() => {
   if (props.dids.length === 1) return "Acknowledge Error";
-  let pluralized = pluralize(props.dids.length, "Error");
+  const pluralized = pluralize(props.dids.length, "Error");
   return `Acknowledge ${pluralized}`;
 });
 
@@ -84,7 +84,7 @@ watch(
 const acknowledge = async () => {
   if (reason.value) {
     try {
-      let batchedDids = getBatchDids(props.dids);
+      const batchedDids = getBatchDids(props.dids);
       if (props.dids.length > batchSize) {
         close();
         displayBatchingDialog.value = true;
@@ -127,6 +127,4 @@ const close = () => {
 };
 </script>
 
-<style lang="scss">
-
-</style>
+<style />

@@ -23,8 +23,12 @@
       <div class="col-12">
         <Panel header="Queues" class="table-panel">
           <DataTable responsive-layout="scroll" :value="queueMetrics" striped-rows row-hover class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="showLoading" data-key="name">
-            <template #empty>No action queue metrics available.</template>
-            <template #loading>Loading action queue metrics data. Please wait.</template>
+            <template #empty>
+              No action queue metrics available.
+            </template>
+            <template #loading>
+              Loading action queue metrics data. Please wait.
+            </template>
             <Column header="Queue Name" field="name" :sortable="true" />
             <Column header="Queue Size" field="size" :sortable="true" class="metric-column" />
             <Column header="Last Updated" field="timestamp" :sortable="true" class="timestamp-column">
@@ -70,6 +74,4 @@ onUnmounted(() => {
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/queue-metrics-page.scss";
-</style>
+<style />

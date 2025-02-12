@@ -57,10 +57,35 @@ const columns = reactive({
 });
 
 const loadComponent = (element) => {
-  return defineAsyncComponent(() => import(`@/components/dashboard/${element}.vue`));
+  return defineAsyncComponent(async () => await import(`@/components/dashboard/${element}.vue`));
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/dashboard-page.scss";
+<style>
+.dashboard-page {
+  .row {
+    .col-6.one {
+      padding-right: 8px;
+    }
+
+    .col-6.two {
+      padding-left: 8px;
+    }
+
+    .links-panel,
+    .chart-panel {
+      .p-panel-content {
+        padding: 0;
+
+        strong {
+          font-weight: 600;
+        }
+
+        .list-group-flush {
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+}
 </style>

@@ -21,7 +21,7 @@
     <Transition>
       <span v-if="copied" class="mr-1">Copied!</span>
     </Transition>
-    <Tag v-tooltip.left="tooltip" icon="pi pi-clock" :value="time" @contextmenu.prevent="onRightClick" @click.prevent="onClick"></Tag>
+    <Tag v-tooltip.left="tooltip" icon="pi pi-clock" :value="time" @contextmenu.prevent="onRightClick" @click.prevent="onClick" />
   </span>
 </template>
 
@@ -71,7 +71,7 @@ setInterval(() => {
 }, 1000);
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .clock {
   color: var(--gray-300);
 

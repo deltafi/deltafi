@@ -21,7 +21,9 @@
     <div>
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
-          <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>{{ shortTimezone() }}</Button>
+          <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
+            {{ shortTimezone() }}
+          </Button>
           <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
           <Button class="p-button p-button-outlined deltafi-input-field ml-1" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="refreshDeltaFilesData()" />
         </div>
@@ -36,7 +38,7 @@
                 <span class="p-panel-title align-advanced-options-header">Advanced Search Options</span>
                 <span>
                   <Button v-tooltip.right="{ value: `Clear Options`, disabled: !activeAdvancedOptions }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${activeAdvancedOptions ? 'p-column-filter-menu-button-active' : null}`" :disabled="!activeAdvancedOptions" @click="clearOptions()">
-                    <i class="pi pi-filter" style="font-size: 1rem"></i>
+                    <i class="pi pi-filter" style="font-size: 1rem" />
                   </Button>
                 </span>
               </span>
@@ -72,10 +74,12 @@
                   </Dropdown>
                   <InputNumber v-if="_.isEqual(formInfo.componentType, 'InputNumber')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :input-style="{ width: '6rem' }" :placeholder="formInfo.placeholder" :class="formInfo.class" />
                   <div v-if="_.isEqual(formInfo.componentType, 'Annotations')" :id="`${formInfo.field}` + 'Id'" class="annotations-chips">
-                    <Chip v-for="item in model.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
+                    <Chip v-for="item in model.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)">
+                      {{ item.key }}: {{ item.value }}
+                    </Chip>
                     <Chip class="add-annotations-btn" @click="showAnnotationsOverlay">
                       &nbsp;
-                      <i class="pi pi-plus"></i>
+                      <i class="pi pi-plus" />
                       &nbsp;
                     </Chip>
                   </div>
@@ -97,11 +101,15 @@
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="results.length > 0" :rows="model.perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="results.length > 0" :rows="model.perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
       <DataTable v-model:selection="selectedDids" :value="results" data-key="did" selection-mode="multiple" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner" :rows="model.perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-        <template #empty>No DeltaFiles match the provided search criteria.</template>
-        <template #loading>Loading results. Please wait.</template>
+        <template #empty>
+          No DeltaFiles match the provided search criteria.
+        </template>
+        <template #loading>
+          Loading results. Please wait.
+        </template>
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
             <DidLink :did="data.did" />
@@ -112,7 +120,7 @@
         <Column field="stage" header="Stage" :sortable="true">
           <template #body="{ data }">
             {{ data.stage }}
-            <i v-if="data.paused" v-tooltip="'Paused'" style="color: #888888" class="fa-solid fa-circle-pause"></i>
+            <i v-if="data.paused" v-tooltip="'Paused'" style="color: #888888" class="fa-solid fa-circle-pause" />
           </template>
         </Column>
         <Column field="created" header="Created" :sortable="true">
@@ -131,7 +139,9 @@
           </template>
         </Column>
         <Column field="elapsed" header="Elapsed" :sortable="false">
-          <template #body="row">{{ row.data.elapsed }}</template>
+          <template #body="row">
+            {{ row.data.elapsed }}
+          </template>
         </Column>
       </DataTable>
       <ScrollTop target="window" :threshold="150" icon="pi pi-arrow-up" />
@@ -168,7 +178,7 @@ import _ from "lodash";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import Dialog from "primevue/dialog";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 
 import Button from "primevue/button";
 import Chip from "primevue/chip";
@@ -343,7 +353,7 @@ const formatDataSourceNames = () => {
 };
 
 const fetchStages = async () => {
-  let enumsStageTypes = await getEnumValuesByEnumType("DeltaFileStage");
+  const enumsStageTypes = await getEnumValuesByEnumType("DeltaFileStage");
   stageOptions.value = _.uniq(_.map(enumsStageTypes.data.__type.enumValues, "name"));
 };
 
@@ -467,8 +477,8 @@ const advanceOptionsPanelInfo = computed(() => {
 });
 
 const calculatedAggregateParams = computed(() => {
-  let multiplier = sizeUnitsOptionsMap.value.get(model.value.sizeUnit).multiplier;
-  let reformatAnnotations = [...model.value.validatedAnnotations];
+  const multiplier = sizeUnitsOptionsMap.value.get(model.value.sizeUnit).multiplier;
+  const reformatAnnotations = [...model.value.validatedAnnotations];
   // Reformat the annotations by removing the 'valid' key before sending to the backend
   if (reformatAnnotations.length > 0) {
     reformatAnnotations.forEach((e, index) => (reformatAnnotations[index] = _.omit(e, ["valid"])));
@@ -507,7 +517,7 @@ const showAnnotationsOverlay = (event) => {
 };
 
 const removeAnnotationItem = (item) => {
-  let index = model.value.validatedAnnotations.indexOf(item);
+  const index = model.value.validatedAnnotations.indexOf(item);
   model.value.validatedAnnotations.splice(index, 1);
   model.value.annotations.splice(index, 1);
 };
@@ -529,7 +539,7 @@ const fetchDeltaFilesDataNoDebounce = async () => {
   model.value = _.merge(model.value, calculatedAggregateParams.value);
   setPersistedParams();
   loading.value = true;
-  let data = await getDeltaFileSearchData(dateToISOString(model.value.startTimeDate), dateToISOString(model.value.endTimeDate), model.value);
+  const data = await getDeltaFileSearchData(dateToISOString(model.value.startTimeDate), dateToISOString(model.value.endTimeDate), model.value);
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
@@ -649,7 +659,7 @@ const setPersistedParams = async () => {
   // Set url search params
   //null out param keys before setting new ones
   Object.keys(params).forEach((i) => (params[i] = null));
-  for (var key in persistedQueryState) {
+  for (const key in persistedQueryState) {
     params[key] = persistedQueryState[key];
   }
 
@@ -750,7 +760,7 @@ const menuItems = ref([
 ]);
 
 const filterSelectedDids = computed(() => {
-  let dids = selectedDids.value.map((selectedDID) => {
+  const dids = selectedDids.value.map((selectedDID) => {
     return selectedDID.did;
   });
   return dids;
@@ -765,7 +775,7 @@ const activeAdvancedOptions = computed(() => {
 });
 
 const onCancelClick = () => {
-  let pluralized = pluralize(selectedDids.value.length, "DeltaFile");
+  const pluralized = pluralize(selectedDids.value.length, "DeltaFile");
   confirm.require({
     message: `Are you sure you want to cancel ${pluralized}?`,
     header: "Confirm Cancel",
@@ -780,7 +790,7 @@ const onCancelClick = () => {
 };
 
 const onCancel = async () => {
-  let batchedDids = getBatchDids(filterSelectedDids.value);
+  const batchedDids = getBatchDids(filterSelectedDids.value);
   displayCancelBatchingDialog.value = selectedDids.value.length > batchSize ? true : false;
   batchCompleteValue.value = 0;
   let completedBatches = 0;
@@ -817,6 +827,203 @@ const getBatchDids = (allDids) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/pages/deltafile-search-page.scss";
+<style>
+.deltafile-search-page {
+  .align-advanced-options-header-title {
+    align-content: flex-start;
+  }
+
+  .align-advanced-options-header {
+    align-self: center;
+  }
+
+  label {
+    font-weight: 500;
+  }
+
+  .p-multiselect.p-multiselect-chip .p-multiselect-token {
+    padding-bottom: 1px;
+    padding-top: 1px;
+  }
+
+  .input-area-height {
+    height: 32px;
+  }
+
+  .input-area-width {
+    width: 335px;
+  }
+
+  .vdpr-datepicker__calendar-dialog {
+    margin-left: -275px;
+  }
+
+  .vdpr-datepicker__button-reset {
+    color: white;
+    background-color: #dc3545;
+    border-color: #d00f27;
+  }
+
+  .vdpr-datepicker__switch {
+    margin-top: 6px;
+  }
+
+  .vdpr-datepicker {
+    position: relative;
+  }
+
+  .p-panel-content {
+    padding: 1.25rem 0.75rem 1.5rem !important;
+  }
+
+  .search-options-wrapper {
+    display: flex;
+  }
+
+  .flex-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .flex-column {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 100%;
+    flex: 2;
+    margin: 0 0.75rem;
+  }
+
+  .flex-column-small {
+    flex: 1;
+  }
+
+  .advanced-search-button-container {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    button {
+      width: 10rem;
+    }
+  }
+
+  .invalid-chip {
+    background: var(--warning);
+    color: var(--black);
+  }
+
+  .valid-chip {
+    background: var(--info);
+    color: var(--white);
+  }
+
+  .add-annotations-btn {
+    cursor: pointer;
+    background: var(--secondary);
+    color: var(--primary-color-text);
+    padding: 0 0.25rem;
+  }
+
+  .size-container {
+    >* {
+      vertical-align: middle !important;
+    }
+  }
+
+  .icon-index {
+    z-index: 1;
+  }
+
+  td.filename-column {
+    overflow-wrap: anywhere;
+  }
+
+  td.did-column {
+    width: 8rem;
+  }
+
+  .results {
+    .p-paginator-current {
+      margin-right: 0.75rem;
+      font-weight: 500;
+    }
+
+    .p-panel-header {
+      padding: 0 1.25rem;
+
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+
+      .p-panel-header-icon {
+        margin-top: 0.25rem;
+        margin-right: 0;
+      }
+    }
+
+    .p-panel-content {
+      padding: 0 !important;
+      border: none;
+
+      td.filename-column {
+        overflow-wrap: anywhere;
+      }
+    }
+  }
+
+  .p-paginator {
+    background: inherit !important;
+    color: inherit !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+
+    .p-paginator-current {
+      background: unset;
+      color: unset;
+      border: unset;
+    }
+  }
+
+  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+    color: #ffffff;
+
+    a,
+    button {
+      color: #eeeeee;
+    }
+  }
+
+  /* This order matters */
+  @media (min-width: 1024px) {
+    .responsive-width {
+      min-width: 32rem;
+      max-width: 32rem;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .responsive-width {
+      min-width: 36rem;
+      max-width: 36rem;
+    }
+  }
+
+  @media (min-width: 1600px) {
+    .responsive-width {
+      min-width: 42rem;
+      max-width: 42rem;
+    }
+  }
+
+  @media (min-width: 1900px) {
+    .responsive-width {
+      min-width: 44rem;
+      max-width: 44rem;
+    }
+  }
+}
 </style>

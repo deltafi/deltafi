@@ -13,8 +13,12 @@
         <strong>Subscriptions</strong>
       </div>
       <div v-for="(subscribe, index) in subscribeData" :key="index" class="ml-2">
-        <div v-if="!_.isEmpty(subscribe.topic)">Topic Name: {{ subscribe.topic }}</div>
-        <div v-if="!_.isEmpty(subscribe.condition)">Condition: {{ subscribe.condition }}</div>
+        <div v-if="!_.isEmpty(subscribe.topic)">
+          Topic Name: {{ subscribe.topic }}
+        </div>
+        <div v-if="!_.isEmpty(subscribe.condition)">
+          Condition: {{ subscribe.condition }}
+        </div>
         <Divider v-if="subscribeData.length > index + 1" class="mt-1 mb-3" />
       </div>
     </OverlayPanel>
@@ -22,7 +26,7 @@
 </template>
 
 <script setup>
-import { defineProps, reactive, ref } from "vue";
+import { reactive, ref } from "vue";
 import Divider from "primevue/divider";
 import OverlayPanel from "primevue/overlaypanel";
 import _ from "lodash";
@@ -44,4 +48,4 @@ const hideOverlayPanel = (event) => {
   subscribeOverlayPanel.value.hide(event);
 };
 </script>
-<style lang="scss"></style>
+<style />

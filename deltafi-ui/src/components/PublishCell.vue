@@ -18,8 +18,12 @@
             <u>Topics</u>
           </div>
           <div v-for="(rule, index) in publishData.rules" :key="index" class="ml-2">
-            <div v-if="!_.isEmpty(rule.topic)">Topic Name: {{ rule.topic }}</div>
-            <div v-if="!_.isEmpty(rule.condition)">Condition: {{ rule.condition }}</div>
+            <div v-if="!_.isEmpty(rule.topic)">
+              Topic Name: {{ rule.topic }}
+            </div>
+            <div v-if="!_.isEmpty(rule.condition)">
+              Condition: {{ rule.condition }}
+            </div>
             <Divider v-if="publishData.rules.length > index + 1" class="mt-1 mb-3" />
           </div>
         </template>
@@ -44,7 +48,7 @@
 </template>
 
 <script setup>
-import { defineProps, reactive, ref } from "vue";
+import { reactive, ref } from "vue";
 import Divider from "primevue/divider";
 import OverlayPanel from "primevue/overlaypanel";
 import _ from "lodash";
@@ -76,4 +80,4 @@ const formatDisplayValue = (valueToDisplay) => {
   }
 };
 </script>
-<style lang="scss"></style>
+<style />

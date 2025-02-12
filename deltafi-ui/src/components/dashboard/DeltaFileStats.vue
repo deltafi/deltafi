@@ -24,12 +24,16 @@
     <div v-else class="list-group list-group-flush">
       <div class="row">
         <div v-for="label in statLabels" :key="label" class="col-4 text-center">
-          <div class="stat-label">{{ label }}</div>
+          <div class="stat-label">
+            {{ label }}
+          </div>
         </div>
       </div>
       <div class="row">
         <div v-for="value in statValues" :key="value" class="col-4 text-center">
-          <div class="stat-data">{{ value }}</div>
+          <div class="stat-data">
+            {{ value }}
+          </div>
         </div>
       </div>
     </div>
@@ -75,7 +79,7 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="scss">
+<style>
 .stat-data {
   padding-bottom: 0.3rem;
   font-size: x-large;

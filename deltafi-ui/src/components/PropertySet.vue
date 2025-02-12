@@ -26,7 +26,9 @@
         </span>
       </template>
       <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" :row-hover="true" data-key="key" @cell-edit-complete="onCellEditComplete">
-        <template #empty>No properties in this property set.</template>
+        <template #empty>
+          No properties in this property set.
+        </template>
         <Column header="Key" field="key" :sortable="true">
           <template #body="property">
             <span :class="{ 'text-muted': !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.key }}</span>
@@ -58,10 +60,10 @@
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import InputText from "primevue/inputtext";
-import CollapsiblePanel from "@/components/CollapsiblePanel";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import useNotifications from "@/composables/useNotifications";
 import usePropertySets from "@/composables/usePropertySets";
-import { computed, defineProps, defineEmits, inject, reactive } from "vue";
+import { computed, inject, reactive } from "vue";
 
 const hasPermission = inject("hasPermission");
 
@@ -80,7 +82,7 @@ const { data: propertySetData, update } = usePropertySets();
 const visibleProperties = computed(() => propertySet.properties.filter((p) => !p.hidden));
 
 const tooltipText = (property) => {
-  let parts = [];
+  const parts = [];
   if (property.description) parts.push(property.description);
   if (!hasPermission("SystemPropertiesUpdate")) parts.push("(Read-only)");
   return parts.join(" ");
@@ -106,7 +108,7 @@ const updateProperty = async (key, value, refreshable) => {
 };
 
 const onCellEditComplete = (event) => {
-  let { data, newValue, value } = event;
+  const { data, newValue, value } = event;
   if (value !== newValue) {
     updateProperty(data.key, newValue, data.refreshable);
     data.value = newValue;
@@ -114,12 +116,12 @@ const onCellEditComplete = (event) => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .property-set {
   td.value-column {
     padding: 0 !important;
 
-    > span {
+    >span {
       padding: 0.5rem !important;
     }
 
@@ -129,7 +131,7 @@ const onCellEditComplete = (event) => {
       display: flex;
     }
 
-    .value-clickable > * {
+    .value-clickable>* {
       flex: 0 0 auto;
     }
   }

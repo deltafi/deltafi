@@ -1,0 +1,11 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/mixins";
+
+@layer bootstrap {
+  @import 'bootstrap/scss/bootstrap';
+}
+
+@layer bootstraptheme {
+  @import "primevue/resources/themes/bootstrap4-light-blue/theme";
+}

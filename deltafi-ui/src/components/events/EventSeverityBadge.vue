@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import Tag from "primevue/tag";
 
 const props = defineProps({
@@ -49,10 +49,9 @@ const tagIcon = computed(() => {
 });
 
 const badgeText = computed(() => {
-  let text = severity.value.charAt(0).toUpperCase() + severity.value.slice(1);
+  const text = severity.value.charAt(0).toUpperCase() + severity.value.slice(1);
   return text === 'Warn' ? 'Warning' : text;
 });
 </script>
 
-<style lang="scss">
-</style>
+<style />

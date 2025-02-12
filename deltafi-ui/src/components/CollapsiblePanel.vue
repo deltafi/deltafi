@@ -32,7 +32,7 @@ import { ref } from "vue";
 const panelRef = ref(null);
 
 const panelHeaderToggle = (event) => {
-  let panelHeader = event.target.getAttribute("class");
+  const panelHeader = event.target.getAttribute("class");
   if (panelHeader == "p-panel-header") {
     panelRef.value.toggle(event);
   }

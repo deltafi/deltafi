@@ -19,12 +19,12 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions" class="pb-2">
     <dl>
-      <span class="btn-group align-items-center">
+      <div class="btn-group align-items-center">
         <dt class="pr-2">{{ computedLabel }}</dt>
         <dd>
           <Checkbox :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" :class="schemaData.styles.control.input" :binary="true" class="pt-1" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </dd>
-      </span>
+      </div>
       <div class="mt-n1">
         <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
       </div>
@@ -36,7 +36,7 @@
 import useSchemaComposition from "@/components/jsonSchemaRenderers/defaultRenderers/util/useSchemaComposition";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
 import { ControlElement } from "@jsonforms/core";
-import { computed, defineProps, reactive } from "vue";
+import { computed, reactive } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 
 import _ from "lodash";

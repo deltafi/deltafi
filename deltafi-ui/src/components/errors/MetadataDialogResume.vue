@@ -19,7 +19,9 @@
 <template>
   <div class="metadataDialog">
     <Dialog v-model:visible="metadataDialogVisible" header="Metadata" :modal="true" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '60vw' }">
-      <Message v-if="hasDuplicateKeys" severity="error" :closable="false">No duplicate keys permitted</Message>
+      <Message v-if="hasDuplicateKeys" severity="error" :closable="false">
+        No duplicate keys permitted
+      </Message>
       <template #header>
         <strong>Modify Metadata</strong>
       </template>
@@ -76,18 +78,18 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useErrorResume from "@/composables/useErrorResume";
 import useMetadata from "@/composables/useMetadata";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineEmits, defineExpose, defineProps, ref } from "vue";
+import { computed, ref } from "vue";
 import _ from "lodash";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
 const emit = defineEmits(["update"]);
 const { pluralize } = useUtilFunctions();
@@ -120,7 +122,7 @@ const showMetadataDialog = async () => {
 };
 
 const getAllMeta = async () => {
-  let batchedDids = getBatchDids(props.did);
+  const batchedDids = getBatchDids(props.did);
   displayMetadataBatchingDialog.value = props.did.length > batchSize;
   batchCompleteValue.value = 0;
   let completedBatches = 0;
@@ -128,7 +130,7 @@ const getAllMeta = async () => {
   for (const dids of batchedDids) {
     await meta(dids);
     if (batchMetadata.value.length > 0) {
-      let tmp = [...batchMetadata.value, ...allMetadata.value];
+      const tmp = [...batchMetadata.value, ...allMetadata.value];
       allMetadata.value = tmp;
     }
     completedBatches += dids.length;
@@ -153,7 +155,7 @@ const closeConfirmDialog = () => {
 };
 
 const addMetadataField = (flowValue, actionValue) => {
-  let index = modifiedMetadata.value.findIndex((action) => action.flow === flowValue && action.action === actionValue);
+  const index = modifiedMetadata.value.findIndex((action) => action.flow === flowValue && action.action === actionValue);
   modifiedMetadata.value[index].keyVals.push({
     values: "",
     changed: "new",
@@ -162,8 +164,8 @@ const addMetadataField = (flowValue, actionValue) => {
 };
 
 const removeMetadataField = (keyVal, flow, action) => {
-  let index = modifiedMetadata.value.findIndex((object) => object.flow === flow && object.action === action);
-  let field = modifiedMetadata.value[index].keyVals.findIndex((object) => object.key === keyVal.key);
+  const index = modifiedMetadata.value.findIndex((object) => object.flow === flow && object.action === action);
+  const field = modifiedMetadata.value[index].keyVals.findIndex((object) => object.key === keyVal.key);
   if (field.changed !== "new" && field.changed !== "error") {
     modifiedMetadata.value[index].keyVals[field].changed = "deleted";
   } else {
@@ -177,8 +179,8 @@ const resumeClick = () => {
 };
 
 const onCellEditComplete = (keyVal, flow, action) => {
-  let index = modifiedMetadata.value.findIndex((object) => object.flow === flow && object.action === action);
-  let field = modifiedMetadata.value[index].keyVals.findIndex((object) => object.key === keyVal.key);
+  const index = modifiedMetadata.value.findIndex((object) => object.flow === flow && object.action === action);
+  const field = modifiedMetadata.value[index].keyVals.findIndex((object) => object.key === keyVal.key);
   if (keyVal.changed === "new" || keyVal.changed === "error") {
     modifiedMetadata.value[index].keyVals[field].changed = checkDuplicates(keyVal.key, index);
   } else {
@@ -199,7 +201,7 @@ const checkDuplicates = (key, actionIndex) => {
 const hasDuplicateKeys = computed(() => {
   let isError = false;
   modifiedMetadata.value.map((metadata) => {
-    let keys = metadata.keyVals.map((object) => object.key);
+    const keys = metadata.keyVals.map((object) => object.key);
     if (isError === true) {
       return true;
     } else {
@@ -233,7 +235,7 @@ const resumeClean = () => {
 
 const requestResume = async () => {
   let response;
-  let batchedDids = getBatchDids(props.did);
+  const batchedDids = getBatchDids(props.did);
   let success = false;
   let completedBatches = 0;
   try {
@@ -242,7 +244,7 @@ const requestResume = async () => {
     for (const dids of batchedDids) {
       response = await resume(dids, getAllModifiedMetadata());
       if (response.value.data !== undefined && response.value.data !== null) {
-        let successResume = [];
+        const successResume = [];
         for (const resumeStatus of response.value.data.resume) {
           if (resumeStatus.success) {
             successResume.push(resumeStatus);
@@ -262,7 +264,7 @@ const requestResume = async () => {
     if (success) {
       const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
       if (props.did.length > maxSuccessDisplay) links.push("...");
-      let pluralized = pluralize(props.did.length, "DeltaFile");
+      const pluralized = pluralize(props.did.length, "DeltaFile");
       notify.success(`Resume request sent successfully for ${pluralized}`, links.join(", "));
       emit("update");
     }
@@ -272,10 +274,10 @@ const requestResume = async () => {
 };
 
 const getAllModifiedMetadata = () => {
-  let results = [];
+  const results = [];
   modifiedMetadata.value.forEach((metadata) => {
-    let removedMetadata = [];
-    let cleanMetadata = [];
+    const removedMetadata = [];
+    const cleanMetadata = [];
     metadata.keyVals.forEach((keyVal) => {
       if (keyVal.changed === "deleted") {
         removedMetadata.push(keyVal.key);
@@ -310,6 +312,8 @@ defineExpose({
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/components/metadata-dialog.scss";
+<style>
+.metadata-body {
+  width: 98%;
+}
 </style>

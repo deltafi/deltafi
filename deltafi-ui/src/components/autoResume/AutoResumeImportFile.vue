@@ -37,10 +37,10 @@
 import useAutoResumeConfiguration from "@/composables/useAutoResumeConfiguration";
 import useAutoResumeQueryBuilder from "@/composables/useAutoResumeQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
+import FileUpload from "@/components/deprecatedPrimeVue/FileUpload.vue";
 import Message from "primevue/message";
 import OverlayPanel from "primevue/overlaypanel";
-import { defineEmits, ref } from "vue";
+import { ref } from "vue";
 
 import _ from "lodash";
 
@@ -56,17 +56,17 @@ const errorOverlayPanel = ref(null);
 const overlayPanelPosition = ref({});
 
 const preUploadValidation = async (request) => {
-  for (let file of request.files) {
-    let reader = new FileReader();
+  for (const file of request.files) {
+    const reader = new FileReader();
 
     reader.readAsText(file);
 
     reader.onload = function () {
-      let uploadNotValid = validateFile(reader.result);
+      const uploadNotValid = validateFile(reader.result);
 
       errorsList.value = [];
       if (uploadNotValid) {
-        for (let errorMessages of uploadNotValid) {
+        for (const errorMessages of uploadNotValid) {
           errorsList.value.push(errorMessages.message);
         }
         deleteUploadFile();
@@ -80,7 +80,7 @@ const preUploadValidation = async (request) => {
 };
 
 const uploadFile = async (file) => {
-  let response = await loadResumePolicies(JSON.parse(validUpload.value));
+  const response = await loadResumePolicies(JSON.parse(validUpload.value));
   if (!_.isEmpty(_.get(response, "errors", null))) {
     notify.error(`Upload failed for ${file.name}`, `Removing ${file.name}.`, 4000);
   } else {
@@ -104,6 +104,18 @@ const setOverlayPanelPosition = (event) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/autoResume/auto-resume-import-file.scss";
+<style>
+.auto-resume-import-file {
+  .p-fileupload-choose:not(.p-disabled):hover {
+    background: rgba(108, 117, 125, 0.04) !important;
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+  }
+
+  .p-fileupload-choose:not(.p-disabled):active {
+    background: transparent !important;
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+  }
+}
 </style>

@@ -24,7 +24,9 @@
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errorsList" :key="key">
-                <li class="text-wrap text-break">{{ error }}</li>
+                <li class="text-wrap text-break">
+                  {{ error }}
+                </li>
               </div>
             </ul>
           </Message>
@@ -107,7 +109,7 @@ import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuild
 import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
 import { useMounted } from "@vueuse/core";
-import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
@@ -190,7 +192,7 @@ const formatDataSourceNames = () => {
 };
 
 const createNewPolicy = () => {
-  let newDeletePolicy = {};
+  const newDeletePolicy = {};
   newDeletePolicyUpload.value = {};
   newDeletePolicyUpload.value["timedPolicies"] = [];
   newDeletePolicyUpload.value["diskSpacePolicies"] = [];
@@ -222,15 +224,15 @@ const createNewPolicy = () => {
 const submit = async () => {
   createNewPolicy();
 
-  let uploadNotValid = validateDeletePolicyFile(JSON.stringify(newDeletePolicyUpload.value));
+  const uploadNotValid = validateDeletePolicyFile(JSON.stringify(newDeletePolicyUpload.value));
   errorsList.value = [];
   if (uploadNotValid) {
-    for (let errorMessages of uploadNotValid) {
+    for (const errorMessages of uploadNotValid) {
       errorsList.value.push(errorMessages.message);
     }
     notify.error(`Delete Policy Validation Errors`, `Unable to upload Delete Policy `, 4000);
   } else {
-    let response = await loadDeletePolicies(newDeletePolicyUpload.value);
+    const response = await loadDeletePolicies(newDeletePolicyUpload.value);
     if (!_.isEmpty(_.get(response, "errors", null))) {
       notify.error(`Upload failed`, `Unable to update Delete Policy.`, 4000);
     }
@@ -244,6 +246,51 @@ const clearErrors = () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/deletePolicy/delete-policy-configuration-dialog.scss";
+<style>
+.delete-policy-configuration-dialog {
+  width: 98%;
+
+  .delete-policy-panel {
+    .deltafi-fieldset {
+      display: block;
+      margin-inline-start: 2px;
+      margin-inline-end: 2px;
+      padding-block-start: 0.35em;
+      padding-inline-start: 0.75em;
+      padding-inline-end: 0.75em;
+      padding-block-end: 0.625em;
+      min-inline-size: min-content;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      border-width: 1px;
+      border-style: groove;
+      border-color: rgb(225, 225, 225);
+      border-image: initial;
+    }
+
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+  }
+
+  .inputWidth {
+    width: 90% !important;
+  }
+
+  .p-filled.capitalizeText {
+    text-transform: uppercase;
+  }
+}
 </style>

@@ -109,7 +109,7 @@ export default function useSchemaComposition() {
     }
 
     const translate = computed(() => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+       
       return jsonforms.i18n!.translate!;
     });
 

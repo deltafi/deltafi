@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { ControlElement } from "@jsonforms/core";
-import { defineProps, computed, reactive } from "vue";
+import { computed, reactive } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 import InputNumber from "primevue/inputnumber";
 import { default as ControlWrapper } from "./ControlWrapper.vue";

@@ -26,7 +26,7 @@
           </template>
           <template #end>
             <span class="mr-3">
-              <ContentTag v-for="tag in content.tags" :key="tag" :value="tag" class="ml-2"/>
+              <ContentTag v-for="tag in content.tags" :key="tag" :value="tag" class="ml-2" />
             </span>
             <Divider v-if="content.tags.length > 0" layout="vertical" />
             <Button :label="content.mediaType" class="p-button-text p-button-secondary" disabled />
@@ -38,8 +38,12 @@
             <ContentViewerMenu :model="items" />
           </template>
         </Toolbar>
-        <Message v-for="error in errors" :key="error" severity="error" :closable="true" class="mb-0 mt-0">{{ error }}</Message>
-        <Message v-for="warning in warnings" :key="warning" severity="warn" :closable="true" class="mb-0 mt-0">{{ warning }}</Message>
+        <Message v-for="error in errors" :key="error" severity="error" :closable="true" class="mb-0 mt-0">
+          {{ error }}
+        </Message>
+        <Message v-for="warning in warnings" :key="warning" severity="warn" :closable="true" class="mb-0 mt-0">
+          {{ warning }}
+        </Message>
         <div class="scrollable-content content-viewer-content">
           <div class="content-wrapper">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
@@ -60,7 +64,7 @@ import ContentViewerMenu from "@/components/ContentViewerMenu.vue";
 import ContentTag from "@/components/ContentTag.vue";
 import useContent from "@/composables/useContent";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineProps, onMounted, ref, toRefs, watch, reactive } from "vue";
+import { computed, onMounted, ref, toRefs, watch, reactive } from "vue";
 import { useClipboard } from "@vueuse/core";
 import useNotifications from "@/composables/useNotifications";
 import FormattedBytes from "@/components/FormattedBytes.vue";
@@ -226,7 +230,7 @@ const embeddedContent = computed(() => "content" in content.value);
 const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
 
 const warnings = computed(() => {
-  let warnings = [];
+  const warnings = [];
   if (contentLoaded.value && contentBuffer.value.byteLength == 0) warnings.push("No content to display.");
   if (partialContent.value) warnings.push(`Content size is over the preview limit. Only showing the first ${formattedMaxPreviewSize.value}.`);
   return warnings;
@@ -243,9 +247,9 @@ const download = () => {
     const request = {
       ...content.value,
       ...content.value.name.value,
-    }
-    delete request.tags
-    let url = downloadURL(request);
+    };
+    delete request.tags;
+    const url = downloadURL(request);
     window.open(url);
   }
 };
@@ -256,7 +260,7 @@ const loadContent = async () => {
     loadEmbeddedContent();
     return;
   }
-  let request = {
+  const request = {
     ...content.value,
     size: partialContent.value ? maxPreviewSize : content.value.size,
   };
@@ -277,10 +281,10 @@ const loadEmbeddedContent = () => {
 };
 
 const downloadEmbeddedContent = () => {
-  let link = document.createElement("a");
-  let downloadFileName = content.value.filename || content.value.name;
+  const link = document.createElement("a");
+  const downloadFileName = content.value.filename || content.value.name;
   link.download = downloadFileName.toLowerCase();
-  let blob = new Blob([content.value.content], {
+  const blob = new Blob([content.value.content], {
     type: content.value.mediaType,
   });
   link.href = URL.createObjectURL(blob);
@@ -290,6 +294,42 @@ const downloadEmbeddedContent = () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/content-viewer.scss";
+<style>
+.content-viewer {
+  height: 100%;
+
+  .p-toolbar {
+    border-radius: 4px 4px 0 0;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .p-message {
+    border-radius: 0;
+
+    .p-message-wrapper {
+      padding: 0.5rem 0.75rem;
+    }
+  }
+
+  .content-viewer-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .content-viewer-section {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .scrollable-content {
+      background-color: #303030;
+      font-family: "Courier New", Courier, monospace;
+      flex-grow: 1;
+      overflow: auto;
+      min-height: 0;
+    }
+  }
+}
 </style>

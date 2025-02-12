@@ -24,7 +24,9 @@
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errorsList" :key="key">
-                <li class="text-wrap text-break">{{ error }}</li>
+                <li class="text-wrap text-break">
+                  {{ error }}
+                </li>
               </div>
             </ul>
           </Message>
@@ -105,7 +107,7 @@
         <Button label="Save and Run Now" class="p-button-secondary p-button-outlined" @click="confirmApply($event)" />
         <Button label="Save" class="p-button-primary p-button" @click="submit()" />
       </div>
-      <ConfirmPopup></ConfirmPopup>
+      <ConfirmPopup />
     </teleport>
   </div>
 </template>
@@ -116,7 +118,7 @@ import useAutoResumeQueryBuilder from "@/composables/useAutoResumeQueryBuilder";
 import useFlows from "@/composables/useFlows";
 import useNotifications from "@/composables/useNotifications";
 import { useMounted } from "@vueuse/core";
-import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
 import { useConfirm } from "primevue/useconfirm";
@@ -156,7 +158,7 @@ const confirmApply = (event) => {
     accept: () => {
       submitApply();
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -218,7 +220,7 @@ const clearErrors = () => {
 const createNewRule = () => {
   autoResumeRuleUpload.value = null;
 
-  let autoResumeRule = {};
+  const autoResumeRule = {};
 
   if (ruleId.value) {
     autoResumeRule["id"] = ruleId.value;
@@ -246,7 +248,7 @@ const createNewRule = () => {
     autoResumeRule["priority"] = selectedPriority.value;
   }
 
-  var backOffObject = {};
+  const backOffObject = {};
   if (selectedRuleDelay.value != null) {
     backOffObject["delay"] = selectedRuleDelay.value;
   }
@@ -299,7 +301,7 @@ const submit = async () => {
   }
   errorsList.value = [];
   if (uploadNotValid) {
-    for (let errorMessages of uploadNotValid) {
+    for (const errorMessages of uploadNotValid) {
       errorsList.value.push(errorMessages.message);
     }
     notify.error(`Auto Resume Rule Validation Errors`, `Unable to upload Auto Resume Rule`, 4000);
@@ -315,7 +317,7 @@ const submit = async () => {
     }
 
     if (!_.isEmpty(_.get(uploadErrorsList[0], "errors", null))) {
-      for (let errorMessages of uploadErrorsList[0].errors) {
+      for (const errorMessages of uploadErrorsList[0].errors) {
         errorsList.value.push(errorMessages);
       }
       notify.error(`Auto Resume Upload failed`, "Unable to update Auto Resume Rules", 4000);
@@ -327,6 +329,56 @@ const submit = async () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/autoResume/auto-resume-configuration-dialog.scss";
+<style>
+.auto-resume-body {
+  width: 98%;
+
+  .auto-resume-panel {
+    .deltafi-fieldset {
+      display: block;
+      margin-inline-start: 2px;
+      margin-inline-end: 2px;
+      padding-block-start: 0.35em;
+      padding-inline-start: 0.75em;
+      padding-inline-end: 0.75em;
+      padding-block-end: 0.625em;
+      min-inline-size: min-content;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      border-width: 1px;
+      border-style: groove;
+      border-color: rgb(225, 225, 225);
+      border-image: initial;
+    }
+
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+  }
+
+  .inputWidth {
+    width: 90% !important;
+  }
+
+  .p-chips .p-chips-multiple-container {
+    padding: 0.25rem 0.75rem;
+    width: 100% !important;
+  }
+
+  .chipInputWidth {
+    width: 100% !important;
+  }
+}
 </style>

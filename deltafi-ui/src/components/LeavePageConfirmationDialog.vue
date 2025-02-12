@@ -21,7 +21,6 @@
 </template>
 
 <script setup>
-import { defineProps } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 
 import ConfirmDialog from "primevue/confirmdialog";
@@ -54,7 +53,7 @@ onBeforeRouteLeave((to, from, next) => {
       accept: () => {
         next();
       },
-      reject: () => {},
+      reject: () => { },
     });
   } else {
     next();

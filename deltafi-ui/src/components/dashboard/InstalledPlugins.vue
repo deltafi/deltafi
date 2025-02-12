@@ -35,8 +35,8 @@
 </template>
 
 <script setup>
-import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import usePlugins from "@/composables/usePlugins";
 import { computed, onMounted } from "vue";
 
@@ -64,7 +64,7 @@ const pluginsList = computed(() => {
 const buildId = (pluginCoordinates) => [pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version].join(":");
 </script>
 
-<style lang="scss">
+<style>
 .no-data-panel-content {
   padding: 0.5rem 1.25rem;
 }

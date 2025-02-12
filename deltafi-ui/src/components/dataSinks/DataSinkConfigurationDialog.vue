@@ -17,14 +17,16 @@
 -->
 
 <template>
-  <div id="error-message" class="egress-action-configuration-dialog">
-    <div class="egress-action-panel">
+  <div id="error-message" class="data-sink-configuration-dialog">
+    <div class="data-sink-panel">
       <div class="pb-0">
         <div v-if="!_.isEmpty(errors)" class="pt-2">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
-                <li class="text-wrap text-break">{{ error }}</li>
+                <li class="text-wrap text-break">
+                  {{ error }}
+                </li>
               </div>
             </ul>
           </Message>
@@ -41,7 +43,7 @@
           <dt class="d-flex inputWidth justify-content-between">
             <div>Subscribe*</div>
             <div>
-              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
             </div>
           </dt>
           <dd>
@@ -68,7 +70,9 @@
             </template>
             <dd v-else>
               <div class="px-2">
-                <Message severity="info" :closable="false">No action variables available</Message>
+                <Message severity="info" :closable="false">
+                  No action variables available
+                </Message>
               </div>
             </dd>
           </template>
@@ -88,7 +92,7 @@ import useDataSink from "@/composables/useDataSink";
 import useFlowActions from "@/composables/useFlowActions";
 import useTopics from "@/composables/useTopics";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, inject, nextTick, onMounted, onBeforeMount, onUnmounted, provide, reactive, ref } from "vue";
+import { computed, inject, nextTick, onMounted, onBeforeMount, onUnmounted, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
@@ -184,14 +188,14 @@ const model = computed({
 const flattenedActionsTypes = ref([]);
 
 const getEgressActions = async () => {
-  let tmpFlattenedActionsTypes = [];
+  const tmpFlattenedActionsTypes = [];
   for (const plugins of allActionsData.value) {
     for (const action of plugins["actions"]) {
       if (!_.isEqual(action.type, "EGRESS")) continue;
 
       // Reformatting each action.
       action["type"] = action["name"];
-      let name = action.name.split(".").pop();
+      const name = action.name.split(".").pop();
       action["name"] = name;
       action["parameters"] = {};
 
@@ -202,11 +206,11 @@ const getEgressActions = async () => {
 };
 
 onBeforeMount(async () => {
-  let topics = await getAllTopicNames();
+  const topics = await getAllTopicNames();
   allTopics.value.length = 0;
   topics.forEach((topic) => allTopics.value.push(topic));
 
-  let responseFlowAction = await getPluginActionSchema();
+  const responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
   const response = await getAllDataSinks();
@@ -215,7 +219,7 @@ onBeforeMount(async () => {
   flattenedActionsTypes.value = await getEgressActions();
 
   if (!_.isEmpty(model.value["egressAction"]["name"])) {
-    let tmpName = model.value["egressAction"]["name"];
+    const tmpName = model.value["egressAction"]["name"];
     model.value["egressActionOption"] = _.find(flattenedActionsTypes.value, { type: model.value["egressAction"]["type"] });
     model.value["egressActionOption"]["name"] = tmpName;
     if (!_.isEmpty(model.value["egressAction"]["parameters"])) {
@@ -244,7 +248,7 @@ const schemaProvided = (schema) => {
 
 const formatData = (formattingData) => {
   formattingData = _.pick(formattingData, Object.keys(dataSinkTemplate));
-  let tmpEgressActionTemplate = JSON.parse(JSON.stringify(dataSinkTemplate));
+  const tmpEgressActionTemplate = JSON.parse(JSON.stringify(dataSinkTemplate));
   formattingData = _.merge(tmpEgressActionTemplate, formattingData);
   if (!_.isEmpty(model.value.egressActionOption?.name)) {
     formattingData["egressAction"]["name"] = formattingData["egressActionOption"]["name"];
@@ -271,7 +275,7 @@ const validateSubscribe = computed(() => {
     return "Not Subscribing to any Topic.";
   }
 
-  let checkIfSubscribeHasTopic = (key) =>
+  const checkIfSubscribeHasTopic = (key) =>
     model.value["subscribe"].some(
       (obj) =>
         Object.keys(obj).includes(key) &&
@@ -280,7 +284,7 @@ const validateSubscribe = computed(() => {
         })
     );
 
-  var isKeyPresent = checkIfSubscribeHasTopic("topic");
+  const isKeyPresent = checkIfSubscribeHasTopic("topic");
   // If the subscribe field isn't empty but there isn't a topic return "Not Subscribing to any Topic Name."
   if (!isKeyPresent) {
     return "Not Subscribing to any Topic Name.";
@@ -307,8 +311,8 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(egressActionObject["name"])) {
-    let activeSystemEgressActionNames = _.map(dataSinks.value, "name");
-    let isFlowNamedUsed = _.includes(activeSystemEgressActionNames, egressActionObject["name"]);
+    const activeSystemEgressActionNames = _.map(dataSinks.value, "name");
+    const isFlowNamedUsed = _.includes(activeSystemEgressActionNames, egressActionObject["name"]);
 
     if (isFlowNamedUsed && !editEgressAction) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
@@ -320,7 +324,7 @@ const submit = async () => {
     return;
   }
 
-  let response = await saveDataSinkPlan(egressActionObject);
+  const response = await saveDataSinkPlan(egressActionObject);
 
   if (!_.isEmpty(_.get(response, "errors", null))) {
     errors.value.push(response["errors"][0]["message"]);
@@ -360,6 +364,59 @@ const subscribeSchema = {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/egressAction/egress-action-configuration-dialog.scss";
+<style>
+.data-sink-configuration-dialog {
+  width: 98%;
+
+  .data-sink-panel {
+    .deltafi-fieldset {
+      display: block;
+      margin-inline-start: 2px;
+      margin-inline-end: 2px;
+      padding-block-start: 0.35em;
+      padding-inline-start: 0.75em;
+      padding-inline-end: 0.75em;
+      padding-block-end: 0.625em;
+      min-inline-size: min-content;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      border-width: 1px;
+      border-style: groove;
+      border-color: rgb(225, 225, 225);
+      border-image: initial;
+    }
+
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+  }
+
+  .auto-complete-input-width {
+    width: 90% !important;
+
+    >.p-inputtext {
+      width: 100% !important;
+    }
+  }
+
+  .inputWidth {
+    width: 90% !important;
+  }
+
+  .p-filled.capitalizeText {
+    text-transform: uppercase;
+  }
+}
 </style>

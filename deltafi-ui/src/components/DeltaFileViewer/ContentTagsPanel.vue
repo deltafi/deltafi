@@ -20,10 +20,12 @@
   <div class="deltafile-content-tags-panel">
     <CollapsiblePanel header="Content Tags" class="table-panel">
       <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="contentTags" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}" data-key="did">
-        <template #empty>No Content Tags</template>
+        <template #empty>
+          No Content Tags
+        </template>
         <Column header="Tag" field="tag">
           <template #body="{ data }">
-            <ContentTag :value="data.tag" class="ml-2"/>
+            <ContentTag :value="data.tag" class="ml-2" />
           </template>
         </Column>
         <Column header="Content" class="content-column">
@@ -39,7 +41,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, reactive } from "vue";
+import { computed, reactive } from "vue";
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -79,23 +81,27 @@ const contentTags = computed(() => {
 
 </script>
 
-<style lang="scss">
+<style>
 .deltafile-content-tags-panel {
   .content-column {
     width: 1%;
     padding: 0 0.5rem !important;
+
     .content-button {
       cursor: pointer !important;
       padding: 0.1rem 0.4rem;
       margin: 0;
       color: #333333;
     }
+
     .content-button:hover {
       color: #666666 !important;
+
       .p-button-label {
         text-decoration: none !important;
       }
     }
+
     .content-button:focus {
       outline: none !important;
       box-shadow: none !important;

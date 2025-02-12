@@ -20,14 +20,14 @@
   <span :class="containerClass">
     <template v-for="(item, i) of model" :key="i.toString()">
       <!-- Disabled Button -->
-      <span v-if="(!item.isEnabled)" v-tooltip.top="disabledLabel(item)">
+      <span v-if="!item.isEnabled" v-tooltip.top="disabledLabel(item)">
         <!-- Disabled Stacked Icons Button -->
         <span v-if="!_.isEmpty(item.alternateIcon)">
           <span class="button-padding">
             <Button type="button" class="p-button-text p-button-secondary stacked-icons" :disabled="!item.isEnabled">
               <span class="fa-stack">
-                <i :class="item.icon"></i>
-                <i :class="item.alternateIcon + ' fa-stack-2x'" style="color:#ed969e"></i>
+                <i :class="item.icon" />
+                <i :class="item.alternateIcon + ' fa-stack-2x'" style="color: #ed969e" />
               </span>
             </Button>
           </span>
@@ -41,11 +41,11 @@
 
       <!-- Stacked Icons Button -->
       <span v-else-if="!_.isEmpty(item.alternateIcon)">
-        <span v-if="(_.isEmpty(item.toggled) && item.toggled)" class="button-padding">
+        <span v-if="_.isEmpty(item.toggled) && item.toggled" class="button-padding">
           <Button v-tooltip.top="item.label" type="button" class="p-button-text p-button-secondary stacked-icons" :disabled="!item.isEnabled" @click="itemClick(item)">
             <span class="fa-stack">
-              <i :class="item.icon"></i>
-              <i :class="item.alternateIcon + ' fa-stack-2x'" style="color:#ed969e"></i>
+              <i :class="item.icon" />
+              <i :class="item.alternateIcon + ' fa-stack-2x'" style="color: #ed969e" />
             </span>
           </Button>
         </span>
@@ -64,29 +64,29 @@
 
 <script setup>
 import Button from "primevue/button";
-import { computed, defineProps, toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import _ from "lodash";
 
 const props = defineProps({
   model: {
     type: Array,
-    default: null
-  }
+    default: null,
+  },
 });
 
 const { model } = toRefs(props);
 
 const containerClass = computed(() => {
-  return ['content-viewer-hover-menu p-link p-component'];
+  return ["content-viewer-hover-menu p-link p-component"];
 });
 
 const disabledLabel = (item) => {
-  return !_.isEmpty(item.disabledLabel) ? item.disabledLabel : 'Disabled ' + item.label;
+  return !_.isEmpty(item.disabledLabel) ? item.disabledLabel : "Disabled " + item.label;
 };
 
 const itemClick = (event) => {
   const item = event;
-  if ('toggled' in item) {
+  if ("toggled" in item) {
     item.toggled = !item.toggled;
   }
   if (item.command) {
@@ -95,6 +95,20 @@ const itemClick = (event) => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/content-viewer-hover-menu.scss";
+<style>
+.content-viewer-hover-menu {
+  .button-padding {
+    padding-left: 1px !important;
+    padding-right: 1px !important;
+  }
+
+  .stacked-icons {
+    width: 2.357rem;
+    padding: 0.2rem 0;
+  }
+
+  .transparent-icon {
+    background-color: transparent;
+  }
+}
 </style>

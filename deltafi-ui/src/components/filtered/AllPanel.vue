@@ -25,11 +25,15 @@
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="filtered.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFiltered" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="filtered.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFiltered" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
-      <DataTable id="filteredTable" v-model:expandedRows="expandedRows" v-model:selection="selectedDids" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filtered" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFiltered" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-        <template #empty>No results to display.</template>
-        <template #loading>Loading. Please wait...</template>
+      <DataTable id="filteredTable" v-model:expanded-rows="expandedRows" v-model:selection="selectedDids" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filtered" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFiltered" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+        <template #empty>
+          No results to display.
+        </template>
+        <template #loading>
+          Loading. Please wait...
+        </template>
         <Column class="expander-column" :expander="true" />
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
@@ -38,8 +42,12 @@
         </Column>
         <Column field="name" header="Filename" :sortable="true" class="filename-column">
           <template #body="{ data }">
-            <div v-if="data.name.length > 28" v-tooltip.top="data.name" class="truncate">{{ data.name }}</div>
-            <div v-else>{{ data.name }}</div>
+            <div v-if="data.name.length > 28" v-tooltip.top="data.name" class="truncate">
+              {{ data.name }}
+            </div>
+            <div v-else>
+              {{ data.name }}
+            </div>
           </template>
         </Column>
         <Column field="dataSource" header="Data Source" :sortable="true" class="flow-column" />
@@ -60,7 +68,7 @@
         </Column>
         <template #expansion="filter">
           <div class="filtered-Subtable">
-            <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" :value="filter.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="flowRowClass">
+            <DataTable v-model:expanded-rows="expandedRows" responsive-layout="scroll" :value="filter.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="flowRowClass">
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
@@ -123,7 +131,7 @@ import DidLink from "@/components/DidLink.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useFiltered from "@/composables/useFiltered";
 
-import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 
 const hasPermission = inject("hasPermission");
@@ -202,8 +210,8 @@ const flowRowClass = (action) => {
 
 const fetchFiltered = async () => {
   await getPersistedParams();
-  let flowName = props.flow?.name != null ? props.flow?.name : null;
-  let flowType = props.flow?.type != null ? props.flow?.type : null;
+  const flowName = props.flow?.name != null ? props.flow?.name : null;
+  const flowType = props.flow?.type != null ? props.flow?.type : null;
   loading.value = true;
   await getFiltered(offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, props.cause);
   filtered.value = response.value.deltaFiles.deltaFiles;
@@ -226,7 +234,7 @@ const onPanelRightClick = (event) => {
 };
 
 const filterSelectedDids = computed(() => {
-  let dids = selectedDids.value.map((selectedDids) => {
+  const dids = selectedDids.value.map((selectedDids) => {
     return selectedDids.did;
   });
   return dids;
@@ -286,19 +294,19 @@ onMounted(async () => {
 });
 
 const getPersistedParams = async () => {
-  let state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   perPage.value = state.value.perPage || 20;
 };
 
 const setPersistedParams = () => {
-  let state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   state.value = {
     perPage: perPage.value,
   };
 };
 </script>
 
-<style lang="scss">
+<style>
 .all-panel {
   td.last-filter-column {
     width: auto;

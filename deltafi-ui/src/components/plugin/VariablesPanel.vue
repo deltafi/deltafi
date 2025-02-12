@@ -19,7 +19,9 @@
 <template>
   <CollapsiblePanel :header="header" class="property-set table-panel">
     <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines table-striped plugin-variables-table" :row-hover="true" sort-field="name" :sort-order="1" data-key="name">
-      <template #empty>No variables included </template>
+      <template #empty>
+        No variables included
+      </template>
       <Column field="name" header="Name" :style="{ width: '50%' }" sortable>
         <template #body="{ data }">
           {{ data.name }}
@@ -31,7 +33,7 @@
           <PluginVariableEditDialog :plugin-coordinates-prop="pluginCoordinates" :variable-prop="data" @saved="$emit('updated')">
             <div class="value-clickable">
               <span v-if="data.value !== null && data.value !== data.defaultValue" class="override-icon">
-                <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted"></i>
+                <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
               </span>
               <span v-if="data.value == null">
                 <span v-if="data.defaultValue == null"><em>null</em></span>
@@ -56,9 +58,9 @@
 <script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import CollapsiblePanel from "@/components/CollapsiblePanel";
-import PluginVariableEditDialog from "@/components/plugin/VariableEditDialog";
-import { defineEmits, defineProps, toRefs } from "vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import PluginVariableEditDialog from "@/components/plugin/VariableEditDialog.vue";
+import { toRefs } from "vue";
 
 defineEmits(["updated"]);
 
@@ -85,7 +87,7 @@ const viewList = (value) => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .plugin-variables-table {
   td.value-column {
     padding: 0 !important;
@@ -98,7 +100,7 @@ const viewList = (value) => {
     display: flex;
   }
 
-  .value-clickable > * {
+  .value-clickable>* {
     flex: 0 0 auto;
   }
 

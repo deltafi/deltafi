@@ -24,7 +24,9 @@
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
             <ul>
               <div v-for="(error, key) in errors" :key="key">
-                <li class="text-wrap text-break">{{ error }}</li>
+                <li class="text-wrap text-break">
+                  {{ error }}
+                </li>
               </div>
             </ul>
           </Message>
@@ -56,7 +58,7 @@
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
@@ -125,7 +127,7 @@ watch(
 );
 
 onMounted(async () => {
-  let response = await getAllFlows();
+  const response = await getAllFlows();
 
   allTransforms.value = response.data.getAllFlows;
 });
@@ -153,8 +155,8 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(model.value.name) && !_.isEmpty(model.value.type)) {
-    let activeSystemFlowNames = _.map(allTransforms.value[`${_.toLower(model.value.type)}`], "name");
-    let isFlowNameUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
+    const activeSystemFlowNames = _.map(allTransforms.value[`${_.toLower(model.value.type)}`], "name");
+    const isFlowNameUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
 
     if (isFlowNameUsed && !editTransform) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
@@ -170,6 +172,30 @@ const submit = async () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/flowBuilder/flow-configuration-dialog.scss";
+<style>
+.transform-configuration-dialog {
+  width: 98%;
+
+  .transform-configuration-panel {
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+  }
+
+  .inputWidth {
+    width: 97% !important;
+  }
+}
 </style>

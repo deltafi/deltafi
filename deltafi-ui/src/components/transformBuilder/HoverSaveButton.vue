@@ -39,7 +39,7 @@
 
 <script setup>
 import Button from "primevue/button";
-import { computed, defineProps, toRefs } from "vue";
+import { computed, toRefs } from "vue";
 import _ from "lodash";
 
 const props = defineProps({
@@ -78,7 +78,7 @@ const itemClick = (event) => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .hover-save-button {
   position: fixed;
   bottom: 20px;

@@ -18,11 +18,11 @@
 
 <template>
   <span>
-    <ConfirmPopup></ConfirmPopup>
+    <ConfirmPopup />
     <ConfirmPopup :group="rowData.id + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
           <p class="pl-2">
             {{ slotProps.message.message }}
           </p>
@@ -36,7 +36,7 @@
 <script setup>
 import useDeletePolicyQueryBuilder from "@/composables/useDeletePolicyQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { defineEmits, defineProps, reactive } from "vue";
+import { reactive } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
 import Button from "primevue/button";
@@ -68,7 +68,7 @@ const confirmationPopup = (event, policyId, policyName) => {
       notify.info("Removing Delete Policy", `Removing policy ${policyName}.`, 3000);
       confirmedRemoveDeletePolicy(policyId);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 

@@ -23,14 +23,16 @@
         <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
           <ul>
             <div v-for="(error, key) in errors" :key="key">
-              <li class="text-wrap text-break">{{ error }}</li>
+              <li class="text-wrap text-break">
+                {{ error }}
+              </li>
             </div>
           </ul>
         </Message>
       </div>
       <dl>
         <template v-for="displayActionInfo of getDisplayValues(rowData)" :key="displayActionInfo">
-          <template v-if="displayFieldTest(displayActionInfo)"> </template>
+          <template v-if="displayFieldTest(displayActionInfo)" />
           <template v-else>
             <dt>{{ displayMap.get(displayActionInfo).header }}</dt>
             <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')">
@@ -41,12 +43,16 @@
                 <template v-if="rowData[displayActionInfo].includes('any')">
                   <DialogTemplate component-name="plugin/ListEdit" :model-value="rowData[displayActionInfo]" :header="`Add New ${displayMap.get(displayActionInfo).header}`" dialog-width="25vw">
                     <div class="p-inputtext p-component">
-                      <div v-for="item in rowData[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
+                      <div v-for="item in rowData[displayActionInfo]" :key="item" class="list-item">
+                        {{ item }}
+                      </div>
                     </div>
                   </DialogTemplate>
                 </template>
                 <template v-else>
-                  <div v-for="item in rowData[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
+                  <div v-for="item in rowData[displayActionInfo]" :key="item" class="list-item">
+                    {{ item }}
+                  </div>
                 </template>
               </template>
               <template v-if="_.isEqual(displayActionInfo, 'schema')">
@@ -62,22 +68,22 @@
                     <dt>maxAge</dt>
                     <dd>
                       <InputText v-model="joinData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
-                      <small :id="join-maxAge-input-help" style="display: inline-block;">The maximum duration (ISO 8601) to wait after the first DeltaFile is received for a join group before this action is executed</small>
+                      <small :id="join - maxAge - input - help" style="display: inline-block">The maximum duration (ISO 8601) to wait after the first DeltaFile is received for a join group before this action is executed</small>
                     </dd>
                     <dt>minNum</dt>
                     <dd>
                       <InputNumber v-model="joinData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
-                      <small :id="join-minNum-input-help" style="display: inline-block;">The minimum number of DeltaFiles to join within maxAge. If this number is not reached, all DeltaFiles received for the join group will have this action marked in error.</small>
+                      <small :id="join - minNum - input - help" style="display: inline-block">The minimum number of DeltaFiles to join within maxAge. If this number is not reached, all DeltaFiles received for the join group will have this action marked in error.</small>
                     </dd>
                     <dt>maxNum</dt>
                     <dd>
                       <InputNumber v-model="joinData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
-                      <small :id="join-maxNum-input-help" style="display: inline-block;">The maximum number of DeltaFiles to join before this action is executed</small>
+                      <small :id="join - maxNum - input - help" style="display: inline-block">The maximum number of DeltaFiles to join before this action is executed</small>
                     </dd>
                     <dt>metadataKey</dt>
                     <dd>
                       <InputText v-model="joinData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
-                      <small :id="join-metadataKey-input-help" style="display: inline-block;">An optional metadata key used to get the value to group joins by. If not set, DeltaFiles are not grouped when joining.</small>
+                      <small :id="join - metadataKey - input - help" style="display: inline-block">An optional metadata key used to get the value to group joins by. If not set, DeltaFiles are not grouped when joining.</small>
                     </dd>
                   </div>
                 </div>
@@ -98,7 +104,7 @@
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, nextTick, provide, reactive, ref } from "vue";
+import { computed, nextTick, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
@@ -163,7 +169,7 @@ const displayMap = new Map([
 const displayKeysList = ["name", "type", "description", "schema"];
 
 const getDisplayValues = (obj) => {
-  let displayValues = _.intersection(Object.keys(obj), displayKeysList);
+  const displayValues = _.intersection(Object.keys(obj), displayKeysList);
   if (obj.supportsJoin) {
     displayValues.push("join");
   }
@@ -172,7 +178,7 @@ const getDisplayValues = (obj) => {
 };
 
 const displayFieldTest = (displayActionInfo) => {
-  let fieldsCheck = ["requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
+  const fieldsCheck = ["requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
   return (fieldsCheck.includes(displayActionInfo) && _.isEmpty(rowData[displayActionInfo])) || (_.isEqual(displayActionInfo, "schema") && _.isEmpty(_.get(rowData, "schema.properties", null)));
 };
 
@@ -187,15 +193,15 @@ const clearErrors = () => {
 const submit = async () => {
   clearErrors();
   // Remove any value that have not changed from the original originalJoinData value it was set at
-  let changedJoinValues = _.omitBy(joinData.value, function (v, k) {
+  const changedJoinValues = _.omitBy(joinData.value, function (v, k) {
     return JSON.stringify(originalJoinData[k]) === JSON.stringify(v);
   });
 
-  let newJoin = {};
+  const newJoin = {};
   if (!_.isEmpty(changedJoinValues)) {
     if (!_.isEmpty(joinData.value["maxAge"])) {
       const regexPattern = new RegExp("^P([0-9]+(?:[,.][0-9]+)?Y)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?D)?(?:T([0-9]+(?:[,.][0-9]+)?H)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?S)?)?$");
-      let match = regexPattern.test(joinData.value["maxAge"]);
+      const match = regexPattern.test(joinData.value["maxAge"]);
 
       if (!match) {
         errors.value.push("maxAge is not a valid ISO8601 Duration");
@@ -245,6 +251,47 @@ const submit = async () => {
 };
 </script>
 
-<style lang="scss">
-@import "@/styles/components/flowBuilder/action-configuration-dialog.scss";
+<style>
+.action-configuration-dialog {
+  width: 98%;
+
+  .action-configuration-panel {
+    .deltafi-fieldset {
+      display: block;
+      margin-inline-start: 2px;
+      margin-inline-end: 2px;
+      padding-block-start: 0.35em;
+      padding-inline-start: 0.75em;
+      padding-inline-end: 0.75em;
+      padding-block-end: 0.625em;
+      min-inline-size: min-content;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      border-width: 1px;
+      border-style: groove;
+      border-color: rgb(225, 225, 225);
+      border-image: initial;
+    }
+
+    dt {
+      margin-bottom: 0rem;
+    }
+
+    dd {
+      margin-bottom: 1.2rem;
+    }
+
+    dl {
+      margin-bottom: 1rem;
+    }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
+  }
+
+  .inputWidth {
+    width: 97% !important;
+  }
+}
 </style>

@@ -31,7 +31,9 @@
       </CollapsiblePanel>
       <CollapsiblePanel v-if="!_.isEmpty(props.deletedMetadata)" header="Deleted Metadata" class="table-panel mt-3">
         <DataTable responsive-layout="scroll" :value="deletedMetadata" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px" data-key="name">
-          <template #empty>No Deleted Metadata found.</template>
+          <template #empty>
+            No Deleted Metadata found.
+          </template>
           <Column field="name" header="Action" :style="{ width: '25%' }" :sortable="true" />
           <Column field="deleteMetadataKeys" header="Deleted Metadata Keys" :style="{ width: '75%' }" :sortable="true">
             <template #body="{ data }">
@@ -51,7 +53,7 @@
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import { ref, defineProps, defineExpose } from "vue";
+import { ref } from "vue";
 import { useMounted } from "@vueuse/core";
 
 import Button from "primevue/button";
@@ -79,23 +81,23 @@ const props = defineProps({
 });
 
 const onExportMetadata = () => {
-  let formattedMetadata = {};
+  const formattedMetadata = {};
   if (!_.isEmpty(props.flowName)) {
     formattedMetadata["flow"] = props.flowName;
   }
 
   // Combine objects of Key Name and Value Name into a key value pair
-  let combineKeyValue = Object.values(props.metadata)[0].reduce((r, { key, value }) => ((r[key] = value), r), {});
+  const combineKeyValue = Object.values(props.metadata)[0].reduce((r, { key, value }) => ((r[key] = value), r), {});
   formattedMetadata["metadata"] = combineKeyValue;
 
   exportMetadataFile(formattedMetadata);
 };
 
 const exportMetadataFile = (formattedMetadata) => {
-  let link = document.createElement("a");
-  let downloadFileName = "metadata_export_" + new Date(Date.now()).toLocaleDateString();
+  const link = document.createElement("a");
+  const downloadFileName = "metadata_export_" + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
-  let blob = new Blob([JSON.stringify(formattedMetadata, null, 2)], {
+  const blob = new Blob([JSON.stringify(formattedMetadata, null, 2)], {
     type: "application/json",
   });
   link.href = URL.createObjectURL(blob);
@@ -115,7 +117,7 @@ defineExpose({
 });
 </script>
 
-<style lang="scss">
+<style>
 .metadata-value {
   pre {
     margin: 0;

@@ -20,8 +20,12 @@
   <div class="egress-actions-panel">
     <CollapsiblePanel header="Data Sinks" class="table-panel pb-3">
       <DataTable v-model:filters="filters" :loading="showLoading" :value="egressActionsList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
-        <template #empty>No Data Sinks found.</template>
-        <template #loading>Loading Data Sinks. Please wait.</template>
+        <template #empty>
+          No Data Sinks found.
+        </template>
+        <template #loading>
+          Loading Data Sinks. Please wait.
+        </template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
@@ -49,11 +53,11 @@
             </div>
           </template>
         </Column>
-        <Column header="Description" field="description" :sortable="true"></Column>
+        <Column header="Description" field="description" :sortable="true" />
         <Column header="Subscribe" field="subscribe" :style="{ width: '20%' }">
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
-              <SubscribeCell :subscribe-data="data[field]"></SubscribeCell>
+              <SubscribeCell :subscribe-data="data[field]" />
             </template>
           </template>
         </Column>
@@ -79,9 +83,9 @@ import EgressActionRemoveButton from "@/components/dataSinks/DataSinkRemoveButto
 import StateInputSwitch from "@/components/dataSinks/StateInputSwitch.vue";
 import EgressTestModeInputSwitch from "@/components/dataSinks/DataSinkTestModeInputSwitch.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
-import PermissionedRouterLink from "@/components/PermissionedRouterLink";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import useDataSink from "@/composables/useDataSink";
-import { computed, defineEmits, defineProps, inject, onMounted, ref, watch } from "vue";
+import { computed, inject, onMounted, ref, watch } from "vue";
 
 import _ from "lodash";
 
@@ -130,7 +134,7 @@ const errorTooltip = (data) => {
 };
 
 const cloneEgressAction = (data) => {
-  let clonedEgressActionObject = _.cloneDeepWith(data);
+  const clonedEgressActionObject = _.cloneDeepWith(data);
   clonedEgressActionObject["name"] = "";
   return clonedEgressActionObject;
 };
@@ -155,7 +159,7 @@ const flowViewerPopup = () => {
 defineExpose({ refresh });
 </script>
 
-<style lang="scss">
+<style>
 .egress-actions-panel {
   .table-panel {
     .egress-action-table {
@@ -173,6 +177,7 @@ defineExpose({ refresh });
           margin: 0 0 0 0.25rem !important;
         }
       }
+
       td.egress-action-state-column {
         padding: 0 !important;
 

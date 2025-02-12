@@ -32,8 +32,8 @@
 </template>
 
 <script setup>
-import CollapsiblePanel from "@/components/CollapsiblePanel";
-import { defineProps, computed } from "vue";
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import { computed } from "vue";
 
 const props = defineProps({
   info: {

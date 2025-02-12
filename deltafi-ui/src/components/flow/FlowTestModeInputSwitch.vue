@@ -18,11 +18,11 @@
 
 <template>
   <span v-if="$hasPermission('FlowUpdate')">
-    <ConfirmPopup></ConfirmPopup>
+    <ConfirmPopup />
     <ConfirmPopup :group="rowData.flowType + '_testmode_' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
+          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
           <p class="pl-2" v-html="slotProps.message.message" />
         </div>
       </template>
@@ -37,7 +37,7 @@
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineProps, toRefs, ref } from "vue";
+import { computed, toRefs, ref } from "vue";
 
 import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";

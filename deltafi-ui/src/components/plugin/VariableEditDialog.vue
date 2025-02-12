@@ -25,25 +25,29 @@
       <template #header>
         <div class="p-dialog-title">
           Editing {{ localVariable.name }}
-          <div class="subtitle">{{ localVariable.description }}</div>
+          <div class="subtitle">
+            {{ localVariable.description }}
+          </div>
         </div>
       </template>
-      <Message v-for="error of errors" :key="error.message" severity="error">{{ error.message }}</Message>
-      <ListEdit v-if="localVariable.dataType === 'LIST'" v-model="localVariable.value"></ListEdit>
-      <MapEdit v-if="localVariable.dataType === 'MAP'" v-model="localVariable.value"></MapEdit>
-      <InputText v-if="localVariable.dataType === 'STRING'" v-model="localVariable.value" style="width: 100%"></InputText>
-      <InputNumber v-if="localVariable.dataType === 'NUMBER'" v-model="localVariable.value" style="width: 100%"></InputNumber>
+      <Message v-for="error of errors" :key="error.message" severity="error">
+        {{ error.message }}
+      </Message>
+      <ListEdit v-if="localVariable.dataType === 'LIST'" v-model="localVariable.value" />
+      <MapEdit v-if="localVariable.dataType === 'MAP'" v-model="localVariable.value" />
+      <InputText v-if="localVariable.dataType === 'STRING'" v-model="localVariable.value" style="width: 100%" />
+      <InputNumber v-if="localVariable.dataType === 'NUMBER'" v-model="localVariable.value" style="width: 100%" />
       <span v-if="localVariable.dataType === 'BOOLEAN'">
-        <Checkbox v-model="localVariable.value" :binary="true"></Checkbox>
+        <Checkbox v-model="localVariable.value" :binary="true" />
         {{ localVariable.value }}
       </span>
       <template #footer>
         <div class="d-flex">
           <span class="mr-auto">
-            <Button v-if="overridden" v-tooltip.bottom="revertTooltip" label="Revert" icon="pi pi-replay" class="p-button-secondary p-button-outlined" :disabled="saving" @click="revert"></Button>
+            <Button v-if="overridden" v-tooltip.bottom="revertTooltip" label="Revert" icon="pi pi-replay" class="p-button-secondary p-button-outlined" :disabled="saving" @click="revert" />
           </span>
-          <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="cancel"></Button>
-          <Button :label="saveBtnLabel" :icon="saveBtnIcon" :disabled="saving" @click="onSaveClick"></Button>
+          <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="cancel" />
+          <Button :label="saveBtnLabel" :icon="saveBtnIcon" :disabled="saving" @click="onSaveClick" />
         </div>
       </template>
     </Dialog>
@@ -51,7 +55,7 @@
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, inject, toRefs, ref } from "vue";
+import { computed, inject, toRefs, ref } from "vue";
 
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
@@ -60,8 +64,8 @@ import InputNumber from "primevue/inputnumber";
 import Checkbox from "primevue/checkbox";
 import Message from "primevue/message";
 
-import ListEdit from "@/components/plugin/ListEdit";
-import MapEdit from "@/components/plugin/MapEdit";
+import ListEdit from "@/components/plugin/ListEdit.vue";
+import MapEdit from "@/components/plugin/MapEdit.vue";
 
 import usePlugins from "@/composables/usePlugins";
 import useNotifications from "@/composables/useNotifications";
@@ -160,7 +164,7 @@ const onShow = () => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .subtitle {
   font-size: 0.75rem;
   font-weight: 300;

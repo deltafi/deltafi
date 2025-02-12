@@ -24,11 +24,15 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="filteredFlow.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="filteredFlow.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
     <DataTable id="filteredSummaryTable" v-model:selection="selectedFiltered" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-      <template #empty>No results to display.</template>
-      <template #loading>Loading. Please wait...</template>
+      <template #empty>
+        No results to display.
+      </template>
+      <template #loading>
+        Loading. Please wait...
+      </template>
       <Column field="flow" header="Flow" :sortable="true" class="filename-column">
         <template #body="{ data }">
           <a class="monospace" @click="showAllTab(data.flow, data.type)">{{ data.flow }}</a>
@@ -51,7 +55,7 @@ import ContextMenu from "primevue/contextmenu";
 import Paginator from "primevue/paginator";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 
-import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import useFiltered from "@/composables/useFiltered";
 
@@ -75,7 +79,7 @@ const props = defineProps({
   flow: {
     type: Object,
     required: false,
-    default: undefined
+    default: undefined,
   },
 });
 
@@ -125,12 +129,11 @@ const fetchFilteredFlow = async () => {
 };
 
 const selectedDids = computed(() => {
-  let dids = selectedFiltered.value.map((selectedFiltered) => {
+  const dids = selectedFiltered.value.map((selectedFiltered) => {
     return selectedFiltered.dids;
   });
-  let allDids = [].concat.apply([], dids);
 
-  return [...new Set(allDids)];
+  return [...new Set(dids)];
 });
 
 const toggleMenu = (event) => {
@@ -180,16 +183,16 @@ const setupWatchers = () => {
   );
 };
 const getPersistedParams = async () => {
-  let state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   perPage.value = state.value.perPage || 20;
 };
 
 const setPersistedParams = () => {
-  let state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  const state = useStorage("filtered-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   state.value = {
     perPage: perPage.value,
   };
 };
 </script>
 
-<style lang="scss"></style>
+<style />

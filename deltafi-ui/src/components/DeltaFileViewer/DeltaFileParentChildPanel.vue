@@ -20,8 +20,12 @@
   <div class="deltafile-parent-child-panel">
     <CollapsiblePanel :header="header" class="table-panel">
       <DataTable :paginator="didsList.length < 10 ? false : true" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="didsList" :loading="loading && !loaded" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}" data-key="did">
-        <template v-if="!loading" #empty>{{ `No ${header} found.` }}</template>
-        <template #loading>Loading {{ header }}. Please wait.</template>
+        <template v-if="!loading" #empty>
+          {{ `No ${header} found.` }}
+        </template>
+        <template #loading>
+          Loading {{ header }}. Please wait.
+        </template>
         <Column field="did" header="DID" class="did-col">
           <template #body="{ data }">
             <DidLink :did="data.did" />
@@ -40,7 +44,7 @@ import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DidLink from "@/components/DidLink.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
-import { computed, defineProps, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import _ from "lodash";
 
 const { getDeltaFilesByDIDs } = useDeltaFilesQueryBuilder();
@@ -71,11 +75,11 @@ const header = computed(() => {
 });
 
 const fetchDidsArrayData = async () => {
-  let didLists = [];
+  const didLists = [];
   if (!_.isEmpty(deltaFile[props.field])) {
-    let didsArrayData = await getDeltaFilesByDIDs(deltaFile[props.field]);
-    let deltaFilesObjectsArray = didsArrayData;
-    for (let deltaFi of deltaFilesObjectsArray) {
+    const didsArrayData = await getDeltaFilesByDIDs(deltaFile[props.field]);
+    const deltaFilesObjectsArray = didsArrayData;
+    for (const deltaFi of deltaFilesObjectsArray) {
       didLists.push(deltaFi);
     }
   }
@@ -90,6 +94,55 @@ const actionRowClass = (data) => {
   return data.stage === "ERROR" ? "table-danger action-error" : null;
 };
 </script>
-<style lang="scss">
-@import "@/styles/components/deltafile-parent-child-panel.scss";
+<style>
+.deltafile-parent-child-panel {
+  dd {
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
+  }
+
+  dl {
+    margin-bottom: 1rem;
+  }
+
+  .p-paginator {
+    background: inherit !important;
+    color: inherit !important;
+    border: none !important;
+    font-size: inherit !important;
+
+    .p-paginator-current {
+      background: unset;
+      color: unset;
+      border: unset;
+    }
+  }
+
+  .p-panel-content {
+    padding-bottom: 0.25rem !important;
+  }
+
+  .p-paginator-bottom {
+    border-width: 0 1px 1px 1px !important;
+  }
+
+  .parent-child-table {
+    .p-paginator-bottom {
+      border-left: 1px solid #dee2e6;
+      border-right: 1px solid #dee2e6;
+      border-bottom: 1px solid #dee2e6;
+      border-top: none;
+      border-bottom-right-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .did-col {
+      width: 8rem;
+    }
+
+    .stage-col {
+      width: 10rem;
+    }
+  }
+}
 </style>

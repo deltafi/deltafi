@@ -19,11 +19,11 @@
 <template>
   <Toast>
     <template #message="slotProps">
-      <span :class="iconClass(slotProps.message.severity)"></span>
+      <span :class="iconClass(slotProps.message.severity)" />
       <div class="p-toast-message-text">
         <span class="p-toast-summary">{{ slotProps.message.summary }}</span>
         <div class="p-toast-detail">
-          <div v-html="formatString(slotProps.message.detail)"></div>
+          <div v-html="formatString(slotProps.message.detail)" />
         </div>
       </div>
     </template>

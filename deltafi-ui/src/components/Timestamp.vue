@@ -26,7 +26,7 @@
 
 <script setup>
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineProps, toRef, inject } from "vue";
+import { computed,toRef, inject } from "vue";
 import { useTimeAgo } from '@vueuse/core'
 
 const { formatTimestamp } = useUtilFunctions();
@@ -54,7 +54,7 @@ const format = toRef(props, 'format');
 const showTimeAgo = toRef(props, 'showTimeAgo');
 
 const time = computed(() => {
-  let adjustFormat = (uiConfig.useUTC) ? format.value + '[Z]' : format.value
+  const adjustFormat = (uiConfig.useUTC) ? format.value + '[Z]' : format.value
   return formatTimestamp(timestamp.value, adjustFormat)
 });
 

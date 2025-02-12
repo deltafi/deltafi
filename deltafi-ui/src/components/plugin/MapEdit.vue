@@ -19,8 +19,8 @@
 <template>
   <div class="map-edit">
     <div v-for="(pair, i) in pairs" :key="i" class="map-row mb-2">
-      <InputText v-model="pair.key" class="mr-2"></InputText>
-      <InputText v-model="pair.value" class="mr-2"></InputText>
+      <InputText v-model="pair.key" class="mr-2" />
+      <InputText v-model="pair.value" class="mr-2" />
       <Button icon="pi pi-times" class="p-button-secondary p-button-outlined remove-button" @click="removeItem(i)" />
     </div>
     <Button icon="pi pi-plus" label="Add Item" class="p-button-secondary p-button-outlined" @click="addItem" />
@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
@@ -76,7 +76,7 @@ const removeItem = (index) => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .map-edit {
   .map-row {
     width: 100%;

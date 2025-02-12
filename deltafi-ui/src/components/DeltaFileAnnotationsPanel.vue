@@ -46,7 +46,7 @@
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, defineProps, reactive } from "vue";
+import { computed, reactive } from "vue";
 import _ from "lodash";
 
 const props = defineProps({
@@ -64,10 +64,10 @@ const annotations = computed(() => {
     return {};
   }
 
-  let formattedAnnotations = {};
-  let arrayOfNewObjects = [];
-  for (var k in deltaFile.annotations) {
-    var newKeyValueObj = {};
+  const formattedAnnotations = {};
+  const arrayOfNewObjects = [];
+  for (const k in deltaFile.annotations) {
+    const newKeyValueObj = {};
     newKeyValueObj["key"] = k;
     newKeyValueObj["value"] = deltaFile.annotations[k];
     arrayOfNewObjects.push(newKeyValueObj);
@@ -79,6 +79,19 @@ const annotations = computed(() => {
 });
 </script>
 
-<style lang="scss">
-@import "@/styles/components/deltafile-annotations-panel.scss";
+<style>
+.annotations-panel {
+  .no-data-panel-content {
+    padding: 0.5rem 1.25rem;
+  }
+
+  .list-group-item {
+    padding: 0;
+    cursor: pointer;
+
+    .content-viewer-button {
+      padding: 0.75rem 1.25rem;
+    }
+  }
+}
 </style>

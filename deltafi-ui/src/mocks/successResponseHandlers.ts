@@ -18,28 +18,23 @@
 
 import { rest, graphql } from "msw";
 
-const requestDelay = parseInt(process.env.VUE_APP_MOCK_REQUEST_DELAY || "500");
+const requestDelay = parseInt(import.meta.env.VITE_MOCK_REQUEST_DELAY || "500");
 console.log("Mock Request Delay: ", requestDelay);
 
 export default [
-  rest.get("/api/v*/sse", (req, res, ctx) => {
-    const status = require(`./api/v2/status.ts`);
+  rest.get("/api/v*/sse", async (req, res, ctx) => {
+    const status = await import(`./api/v2/status.ts`);
     const errorCount = 2;
 
     return res(ctx.set("Connection", "keep-alive"), ctx.set("Content-Type", "text/event-stream"), ctx.status(200, "Mocked status"), ctx.body(`event: errorCount\ndata: ${errorCount}\n\nevent: status\ndata: ${JSON.stringify(status)}\n\n`));
   }),
 
-  rest.get("/api/v*/metrics/graphite", (req, res, ctx) => {
+  rest.get("/api/v*/metrics/graphite", async (req, res, ctx) => {
     try {
       const url = new URL(req.url.href);
       const params = new URLSearchParams(url.search);
 
-      if (require.resolve(`.${req.url.pathname}/${params.get("title")}`)) {
-        const module = require.resolve(`.${req.url.pathname}/${params.get("title")}`);
-        delete require.cache[module];
-      }
-
-      const mockModule = require(`.${req.url.pathname}/${params.get("title")}`);
+      const mockModule = await import(/* @vite-ignore */ `.${req.url.pathname}/${params.get("title")}`);
       const responseJson = "default" in mockModule ? mockModule.default : mockModule;
       return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
     } catch (e) {
@@ -48,13 +43,13 @@ export default [
     }
   }),
 
-  rest.get("/api/v*/content", (req, res, ctx) => {
+  rest.get("/api/v*/content", async (req, res, ctx) => {
     try {
       const contentBase64: string = req.url.searchParams.get("content") || "";
       const contentJson = window.atob(contentBase64);
       const content = JSON.parse(contentJson);
 
-      const mockContentModule = require(`.${req.url.pathname}`);
+      const mockContentModule = await import(/* @vite-ignore */ `.${req.url.pathname}`);
       const responseData = mockContentModule.default(content);
       return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(responseData));
     } catch (e) {
@@ -63,14 +58,9 @@ export default [
     }
   }),
 
-  rest.get("/api/v*/*", (req, res, ctx) => {
+  rest.get("/api/v*/*", async (req, res, ctx) => {
     try {
-      if (require.resolve(`.${req.url.pathname}`)) {
-        const module = require.resolve(`.${req.url.pathname}`);
-        delete require.cache[module];
-      }
-
-      const mockModule = require(`.${req.url.pathname}`);
+      const mockModule = await import(/* @vite-ignore */ `.${req.url.pathname}`);
       const responseJson = "default" in mockModule ? mockModule.default : mockModule;
       return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
     } catch (e) {
@@ -79,24 +69,19 @@ export default [
     }
   }),
 
-  graphql.query(/.*/, (req, res, ctx) => {
+  graphql.query(/.*/, async (req, res, ctx) => {
     try {
       if (req.body && "operationName" in req.body) {
-        if (require.resolve(`./graphql/${req.body.operationName}`)) {
-          const module = require.resolve(`./graphql/${req.body.operationName}`);
-          delete require.cache[module];
-        }
-
-        const mockModule = require(`./graphql/${req.body.operationName}`);
+        const mockModule = await import(/* @vite-ignore */ `./graphql/${req.body.operationName}`);
         let responseJson;
         if ("default" in mockModule) {
-          if (typeof mockModule.default === 'function') {
-            responseJson = mockModule.default(req)
+          if (typeof mockModule.default === "function") {
+            responseJson = mockModule.default(req);
           } else {
-            responseJson = mockModule.default
+            responseJson = mockModule.default;
           }
         } else {
-          responseJson = mockModule
+          responseJson = mockModule;
         }
         return res(ctx.delay(requestDelay), ctx.data(responseJson));
       }
@@ -106,15 +91,10 @@ export default [
     }
   }),
 
-  graphql.mutation(/.*/, (req, res, ctx) => {
+  graphql.mutation(/.*/, async (req, res, ctx) => {
     try {
       if (req.body && "operationName" in req.body) {
-        if (require.resolve(`./graphql/mutations/${req.body.operationName}`)) {
-          const module = require.resolve(`./graphql/mutations/${req.body.operationName}`);
-          delete require.cache[module];
-        }
-
-        const mockModule = require(`./graphql/mutations/${req.body.operationName}`);
+        const mockModule = await import(/* @vite-ignore */ `./graphql/mutations/${req.body.operationName}`);
         const responseJson = "default" in mockModule ? mockModule.default : mockModule;
         return res(ctx.delay(requestDelay), ctx.data(responseJson));
       }

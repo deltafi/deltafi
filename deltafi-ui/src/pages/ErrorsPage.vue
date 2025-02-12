@@ -20,7 +20,7 @@
     <PageHeader heading="Errors">
       <div class="time-range btn-toolbar mb-2 mb-md-0 align-items-center">
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-0 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
-          <i class="pi pi-filter" style="font-size: 1rem"></i>
+          <i class="pi pi-filter" style="font-size: 1rem" />
         </Button>
         <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
         <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" class="deltafi-input-field ml-3 flow-dropdown" />
@@ -29,7 +29,7 @@
       </div>
     </PageHeader>
     <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
-    <TabView v-if="showTabs" v-model:activeIndex="activeTab" @tab-change="unSelectAllRows">
+    <TabView v-if="showTabs" v-model:active-index="activeTab" @tab-change="unSelectAllRows">
       <TabPanel header="All">
         <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
@@ -59,7 +59,9 @@ import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import Dropdown from "primevue/dropdown";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+
+import _ from "lodash";
 
 const errorMessageSelected = ref("");
 const refreshInterval = 5000; // 5 seconds
@@ -169,7 +171,7 @@ const setupWatchers = () => {
 };
 
 const refreshButtonIcon = computed(() => {
-  let classes = ["fa", "fa-sync-alt"];
+  const classes = ["fa", "fa-sync-alt"];
   if (loading.value) classes.push("fa-spin");
   return classes.join(" ");
 });
@@ -181,7 +183,7 @@ const showErrors = (errorMessage, flowName, flowType) => {
 };
 
 const refreshButtonClass = computed(() => {
-  let classes = ["p-button", "deltafi-input-field", "ml-3"];
+  const classes = ["p-button", "deltafi-input-field", "ml-3"];
   if (newErrorsCount.value > 0) {
     classes.push("p-button-warning");
   } else {
@@ -191,7 +193,7 @@ const refreshButtonClass = computed(() => {
 });
 
 const refreshButtonTooltip = computed(() => {
-  let pluralized = pluralize(newErrorsCount.value, "error");
+  const pluralized = pluralize(newErrorsCount.value, "error");
   return {
     value: `${pluralized} occurred since last refresh.`,
     disabled: newErrorsCount.value === 0,
@@ -212,7 +214,7 @@ const onRefresh = () => {
 };
 
 const pollNewErrors = async () => {
-  let count = await fetchErrorCountSince(lastServerContact.value);
+  const count = await fetchErrorCountSince(lastServerContact.value);
   if (count > 0) {
     lastServerContact.value = new Date();
     newErrorsCount.value += count;
@@ -263,8 +265,69 @@ const formatFlowNames = () => {
 };
 </script>
 
-<style lang="scss">
+<style>
 .errors-page {
+
+  .time-range .form-control:disabled,
+  .time-range .form-control[readonly] {
+    background-color: #ffffff;
+  }
+
+  .show-acknowledged-toggle {
+    width: 14rem;
+  }
+
+  .p-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+
+      .p-panel-title {
+        padding: 1rem 0;
+      }
+
+      .p-panel-header-icon {
+        margin-top: 0.25rem;
+        margin-right: 0;
+      }
+    }
+
+    .p-panel-content {
+      padding: 0;
+      border: none;
+
+      td.filename-column {
+        overflow-wrap: anywhere;
+      }
+    }
+  }
+
+  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+    color: #ffffff;
+
+    a,
+    button {
+      color: #eeeeee;
+    }
+  }
+
+  tr.action-error {
+    cursor: pointer !important;
+  }
+
+  .p-paginator {
+    background: inherit !important;
+    color: inherit !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+
+    .p-paginator-current {
+      background: unset;
+      color: unset;
+      border: unset;
+    }
+  }
+
   .p-autocomplete-empty-message {
     margin-left: 0.5rem;
   }
@@ -281,6 +344,4 @@ const formatFlowNames = () => {
     width: 11rem;
   }
 }
-
-@import "@/styles/pages/errors-page.scss";
 </style>
