@@ -23,6 +23,9 @@ import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.SystemService;
 
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_RED;
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
+
 @MonitorProfile
 public class ContentStorageCheck extends StatusCheck {
 
@@ -42,13 +45,13 @@ public class ContentStorageCheck extends StatusCheck {
             int usage = systemService.contentNodeDiskMetrics().percentUsedFloor();
 
             if (usage > threshold) {
-                resultBuilder.code(1);
+                resultBuilder.code(CODE_YELLOW);
                 resultBuilder.addHeader("Content storage usage (" + usage + "%)" +
                         " is over the configured threshold (" + threshold + "%):");
                 resultBuilder.addLine("_Threshold property: checkContentStoragePercentThreshold_");
             }
         } catch (StorageCheckException e) {
-            resultBuilder.code(2);
+            resultBuilder.code(CODE_RED);
             resultBuilder.addLine(e.getMessage());
         }
 

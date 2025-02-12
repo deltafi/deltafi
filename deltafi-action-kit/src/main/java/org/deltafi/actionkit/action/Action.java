@@ -57,6 +57,9 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
 
     private ActionExecution actionExecution = null;
 
+    @Setter
+    private int threadNum = 0;
+
     /**
      * Deep introspection to get the ActionParameters type class.  This keeps subclasses
      * from having to pass this type info as a constructor parameter.
@@ -106,7 +109,7 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
         }
 
         actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(),
-                actionInput.getActionContext().getDid(), OffsetDateTime.now(), appName);
+                threadNum, actionInput.getActionContext().getDid(), OffsetDateTime.now(), appName);
 
         if (actionInput.getActionContext().getJoin() != null) {
             return executeJoinAction(actionInput);

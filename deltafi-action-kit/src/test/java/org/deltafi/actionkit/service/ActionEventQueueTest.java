@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ActionEventQueueTest {
-    private static final ActionExecution ACTION_EXECUTION = new ActionExecution("TestClass", "testAction", UUID.randomUUID(), OffsetDateTime.now(), "appName");
+    private static final ActionExecution ACTION_EXECUTION = new ActionExecution("TestClass", "testAction",0,  UUID.randomUUID(), OffsetDateTime.now(), "appName");
 
     @Test
     @SneakyThrows

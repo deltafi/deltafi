@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
+
 @MonitorProfile
 @Slf4j
 public class IngressStatusCheck extends StatusCheck {
@@ -70,7 +72,7 @@ public class IngressStatusCheck extends StatusCheck {
             return;
         }
 
-        resultBuilder.code(1);
+        resultBuilder.code(CODE_YELLOW);
         resultBuilder.addHeader("Ingress is disabled");
         resultBuilder.addLine("Reenable the system property 'ingressEnabled' to restart ingress.");
     }
@@ -79,7 +81,7 @@ public class IngressStatusCheck extends StatusCheck {
         try {
             doCheckForStorageDisabledIngress(resultBuilder);
         } catch (StorageCheckException e) {
-            resultBuilder.code(1);
+            resultBuilder.code(CODE_YELLOW);
             resultBuilder.addHeader("Failed to get storage usage information");
             resultBuilder.addLine(e.getMessage());
         }
@@ -95,7 +97,7 @@ public class IngressStatusCheck extends StatusCheck {
             Bytes remainingBytes = Bytes.bytes(remaining);
             Bytes requiredBytes = Bytes.bytes(required);
             notifyStorageDisabled(remainingBytes, requiredBytes);
-            resultBuilder.code(1);
+            resultBuilder.code(CODE_YELLOW);
             resultBuilder.addHeader("Ingress is disabled due to lack of content storage");
             resultBuilder.addLine("Required bytes in content storage: " + requiredBytes.fullString + " (" + requiredBytes.humanReadable + ")\n");
             resultBuilder.addLine("Remaining bytes in content storage: " + remainingBytes.fullString + " (" + remainingBytes.humanReadable + ")\n");
@@ -126,7 +128,7 @@ public class IngressStatusCheck extends StatusCheck {
             return;
         }
 
-        resultBuilder.code(1);
+        resultBuilder.code(CODE_YELLOW);
         resultBuilder.addHeader("Ingress is disabled for flows with too many errors");
         resultBuilder.addLine("Acknowledge or resolve errors on these flows to continue:");
         for (DataSourceErrorState disabledFlow : errorsExceededFlows) {

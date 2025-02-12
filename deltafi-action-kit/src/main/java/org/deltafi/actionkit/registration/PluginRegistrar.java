@@ -24,9 +24,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import feign.Retryer;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.ActionParametersSchemaGenerator;
+import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.transform.Join;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.*;
@@ -40,24 +43,19 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.util.*;
 
+@RequiredArgsConstructor
 @Slf4j
 public class PluginRegistrar {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-    private final List<Action<?, ?, ?>> actions;
+    private final ActionRunner actionRunner;
     private final BuildProperties buildProperties;
     private final ApplicationContext applicationContext;
     private final Environment environment;
 
-    public PluginRegistrar(List<Action<?, ?, ?>> actions, BuildProperties buildProperties, ApplicationContext applicationContext, Environment environment) {
-        this.actions = actions;
-        this.buildProperties = buildProperties;
-        this.applicationContext = applicationContext;
-        this.environment = environment;
-    }
-
+    @PostConstruct
     public void register() {
         String coreUrl = Objects.requireNonNull(environment.getProperty("CORE_URL"));
         PluginRegistration pluginRegistration = buildPluginRegistration();
@@ -83,7 +81,7 @@ public class PluginRegistrar {
                 .description(buildProperties.get("description"))
                 .actionKitVersion(buildProperties.get("actionKitVersion"))
                 .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
-                .actions(actions.stream().map(this::buildActionDescriptor).toList());
+                .actions(actionRunner.getSingletonActions().stream().map(this::buildActionDescriptor).toList());
 
         Resource flowsDirectory = applicationContext.getResource("classpath:flows");
         if (flowsDirectory.exists()) {
@@ -184,7 +182,7 @@ public class PluginRegistrar {
         List<FlowPlan> flowPlans = new ArrayList<>();
         for (Resource flowPlanResource : flowPlanResources) {
             String filename = flowPlanResource.getFilename();
-            if (filename == null || filename.startsWith("variables.") || !validExtension(filename)) {
+            if (filename == null || filename.startsWith("variables.") || invalidExtension(filename)) {
                 continue;
             }
             try {
@@ -213,7 +211,7 @@ public class PluginRegistrar {
         List<IntegrationTest> tests = new ArrayList<>();
         for (Resource testResource : testResources) {
             String filename = testResource.getFilename();
-            if (filename == null || !validExtension(filename)) {
+            if (filename == null || invalidExtension(filename)) {
                 continue;
             }
             try {
@@ -225,7 +223,7 @@ public class PluginRegistrar {
         return tests;
     }
 
-    private boolean validExtension(String filename) {
-        return filename.endsWith(".json") || filename.endsWith(".yaml") || filename.endsWith(".yml");
+    private boolean invalidExtension(String filename) {
+        return !filename.endsWith(".json") && !filename.endsWith(".yaml") && !filename.endsWith(".yml");
     }
 }

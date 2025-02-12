@@ -283,8 +283,8 @@ class CoreEventQueueTest {
     @SneakyThrows
     void testLongRunningTaskExists() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                -> when(mockJackey.getLongRunningTask("TestClass:testAction:" + DID))
-                .thenReturn(OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1)))))) {
+                -> when(mockJackey.getLongRunningTasks())
+                .thenReturn(Map.of("TestClass:testAction:" + DID, OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1))))))) {
 
             CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
             boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);
@@ -296,8 +296,8 @@ class CoreEventQueueTest {
     @SneakyThrows
     void testLongRunningTaskExistsExpired() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                -> when(mockJackey.getLongRunningTask("TestClass:testAction:" + DID))
-                .thenReturn(OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(100)))))) {
+                -> when(mockJackey.getLongRunningTasks())
+                .thenReturn(Map.of("TestClass:testAction:" + DID, OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(100))))))) {
 
             CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
             boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);

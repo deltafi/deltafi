@@ -62,8 +62,8 @@ public class ActionKitAutoConfiguration {
     }
 
     @Bean
-    public PluginRegistrar pluginRegistrar(List<Action<?, ?, ?>> actions, BuildProperties buildProperties, ApplicationContext applicationContext, Environment environment) {
-        return new PluginRegistrar(actions, buildProperties, applicationContext, environment);
+    public PluginRegistrar pluginRegistrar(ActionRunner actionRunner, BuildProperties buildProperties, ApplicationContext applicationContext, Environment environment) {
+        return new PluginRegistrar(actionRunner, buildProperties, applicationContext, environment);
     }
 
     @Bean

@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
+
 @MonitorProfile
 public class ActionQueueCheck extends StatusCheck {
 
@@ -106,7 +108,7 @@ public class ActionQueueCheck extends StatusCheck {
             return;
         }
 
-        resultBuilder.code(1);
+        resultBuilder.code(CODE_YELLOW);
         resultBuilder.addHeader("Action queues with size over the configured threshold (" + threshold + "):");
         for (Map.Entry<String, Long> fatQueue : fatQueues.entrySet()) {
             resultBuilder.addLine("- " + fatQueue.getKey() + ": __" + fatQueue.getValue() + "__");
@@ -119,7 +121,7 @@ public class ActionQueueCheck extends StatusCheck {
             return;
         }
 
-        resultBuilder.code(1);
+        resultBuilder.code(CODE_YELLOW);
         resultBuilder.addHeader("Orphan Queues");
         for (Map.Entry<String, Long> orphanQueue : orphans.entrySet()) {
             resultBuilder.addLine("- " + orphanQueue.getKey() + ": __" + orphanQueue.getValue() + "__");

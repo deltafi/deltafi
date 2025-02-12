@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_RED;
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
+
 @Slf4j
 @Service
 @Profile("kubernetes & " + MonitorProfile.MONITOR)
@@ -60,7 +63,7 @@ public class K8sResourcesCheck extends StatusCheck {
         ConfigMap configMap = k8sClient.configMaps().withName(DELTAFI_STATUS_CHECKS).get();
 
         if (configMap == null) {
-            resultBuilder.code(1);
+            resultBuilder.code(CODE_YELLOW);
             resultBuilder.addHeader("Missing the " + DELTAFI_STATUS_CHECKS + " ConfigMap");
             resultBuilder.addLine("Run the installer:");
             resultBuilder.addLine("\n\t$ deltafi install");
@@ -87,13 +90,13 @@ public class K8sResourcesCheck extends StatusCheck {
         try {
             String expectedYaml = configData.get(type);
             if (expectedYaml == null) {
-                resultBuilder.code(2);
+                resultBuilder.code(CODE_RED);
                 resultBuilder.addHeader("Missing expected list for " + type);
                 return true;
             }
             expected = YAML_MAPPER.readValue(expectedYaml, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
-            resultBuilder.code(2);
+            resultBuilder.code(CODE_RED);
             resultBuilder.addHeader("Invalid expected list for " + type);
             return true;
         }
@@ -102,7 +105,7 @@ public class K8sResourcesCheck extends StatusCheck {
         expected.removeAll(actualNames);
 
         if (!expected.isEmpty()) {
-            resultBuilder.code(2);
+            resultBuilder.code(CODE_RED);
             resultBuilder.addHeader("Missing " + type + "(s)");
             expected.forEach(missing -> resultBuilder.addLine("- " + missing));
             return true;
@@ -119,7 +122,7 @@ public class K8sResourcesCheck extends StatusCheck {
             return;
         }
 
-        resultBuilder.code(1);
+        resultBuilder.code(CODE_YELLOW);
         resultBuilder.addHeader("Pods with issues");
         invalidPods.forEach(p -> resultBuilder.addLine("- " + p.getMetadata().getName()));
 

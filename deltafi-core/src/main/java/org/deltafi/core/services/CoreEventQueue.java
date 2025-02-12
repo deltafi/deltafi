@@ -185,9 +185,16 @@ public class CoreEventQueue {
                     String[] keyParts = entry.getKey().split(":");
                     String clazz = keyParts[0];
                     String action = keyParts[1];
+                    int threadNum = 0;
+
+                    if (action.contains("#")) {
+                        String[] parts = action.split("#", 2);
+                        action = parts[0];
+                        threadNum = Integer.parseInt(parts[1]);
+                    }
                     UUID did = UUID.fromString(keyParts[2]);
 
-                    longRunningTasks.add(new ActionExecution(clazz, action, did, value.startTime, value.heartbeatTime, value.appName));
+                    longRunningTasks.add(new ActionExecution(clazz, action, threadNum, did, value.startTime, value.heartbeatTime, value.appName));
                 }
             } catch (JsonProcessingException e) {
                 log.error("Unable to deserialize long running task information from JSON: {} = {}", key, valueStr, e);
@@ -211,21 +218,11 @@ public class CoreEventQueue {
      */
     @SuppressWarnings("ununsed")
     public boolean longRunningTaskExists(String clazz, String action, UUID did) {
-        String key = ActionExecution.key(clazz, action, did);
-        String serializedValue = valkeyKeyedBlockingQueue.getLongRunningTask(key);
-
-        if (serializedValue == null) {
-            return false;
-        }
-
-        try {
-            Value value = parseValue(serializedValue);
-            return value != null && !value.isHeartbeatStale();
-
-        } catch (JsonProcessingException e) {
-            log.error("Unable to deserialize long running task information from JSON for key: {}", key, e);
-            return false;
-        }
+        return getLongRunningTasks().stream()
+                .anyMatch(task -> task.clazz().equals(clazz) &&
+                        task.action().equals(action) &&
+                        task.did().equals(did) &&
+                        !task.heartbeatTime().plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now()));
     }
 
     /**

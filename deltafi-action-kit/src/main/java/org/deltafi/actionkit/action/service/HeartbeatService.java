@@ -32,15 +32,15 @@ public class HeartbeatService {
     @Autowired
     private ActionEventQueue actionEventQueue;
 
-    @Autowired(required = false)
-    private List<Action<?, ?, ?>> actions = Collections.emptyList();
+    @Autowired
+    private ActionRunner actionRunner;
 
     private static final Duration LONG_RUNNING_TASK_DURATION = Duration.ofSeconds(5);
     private List<ActionExecution> longRunningActions = Collections.emptyList();
 
     @Scheduled(fixedRate = 10000)
     void setHeartbeat() {
-        for (Action<?, ?, ?> action : actions) {
+        for (Action<?, ?, ?> action : actionRunner.getAllActions()) {
             actionEventQueue.setHeartbeat(action.getClassCanonicalName());
         }
     }
@@ -50,7 +50,7 @@ public class HeartbeatService {
         List<ActionExecution> oldList = new ArrayList<>(longRunningActions);
         longRunningActions = new ArrayList<>();
 
-        actions.stream().filter(action -> action.getActionExecution() != null &&
+        actionRunner.getAllActions().stream().filter(action -> action.getActionExecution() != null &&
                 action.getActionExecution().exceedsDuration(LONG_RUNNING_TASK_DURATION)).forEach(action -> {
                     ActionExecution actionExecution = action.getActionExecution();
                     longRunningActions.add(actionExecution);

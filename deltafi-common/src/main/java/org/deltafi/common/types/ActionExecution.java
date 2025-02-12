@@ -21,10 +21,10 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-public record ActionExecution(String clazz, String action, UUID did, OffsetDateTime startTime, OffsetDateTime heartbeatTime, String appName) {
+public record ActionExecution(String clazz, String action, int threadNum, UUID did, OffsetDateTime startTime, OffsetDateTime heartbeatTime, String appName) {
 
-    public ActionExecution(String clazz, String action, UUID did, OffsetDateTime startTime, String appName) {
-        this(clazz, action, did, startTime, null, appName);
+    public ActionExecution(String clazz, String action, int threadNum, UUID did, OffsetDateTime startTime, String appName) {
+        this(clazz, action, threadNum, did, startTime, null, appName);
     }
 
     public boolean exceedsDuration(Duration duration) {
@@ -32,10 +32,10 @@ public record ActionExecution(String clazz, String action, UUID did, OffsetDateT
     }
 
     public String key() {
-        return key(clazz, action, did);
+        return key(clazz, action, threadNum, did);
     }
 
-    public static String key(String clazz, String action, UUID did) {
-        return String.format("%s:%s:%s", clazz, action, did);
+    public static String key(String clazz, String action, int threadNum, UUID did) {
+        return String.format("%s:%s#%d:%s", clazz, action, threadNum, did);
     }
 }

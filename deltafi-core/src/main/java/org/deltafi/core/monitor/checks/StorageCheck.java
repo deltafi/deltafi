@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
+
 @MonitorProfile
 public class StorageCheck extends StatusCheck {
 
@@ -53,7 +55,7 @@ public class StorageCheck extends StatusCheck {
         }
 
         if (!errors.isEmpty()) {
-            resultBuilder.code(1);
+            resultBuilder.code(CODE_YELLOW);
             resultBuilder.addHeader("Nodes with disk usage over threshold (" + threshold + "%)");
             errors.forEach(e -> resultBuilder.addLine("- " + e));
         }

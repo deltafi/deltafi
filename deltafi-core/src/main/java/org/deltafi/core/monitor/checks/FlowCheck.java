@@ -27,6 +27,8 @@ import org.deltafi.core.types.Flow;
 
 import java.util.List;
 
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
+
 @MonitorProfile
 public class FlowCheck extends StatusCheck {
 
@@ -64,7 +66,7 @@ public class FlowCheck extends StatusCheck {
             return;
         }
 
-        resultBuilder.code(1);
+        resultBuilder.code(CODE_YELLOW);
         resultBuilder.addHeader("Invalid " + flowType);
         for (Flow flow : flows) {
             resultBuilder.addLine("\n - __" + flow.getName() + "__ (" + flow.getSourcePlugin() + ")");

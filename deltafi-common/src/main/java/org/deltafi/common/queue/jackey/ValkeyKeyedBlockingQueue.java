@@ -216,18 +216,6 @@ public class ValkeyKeyedBlockingQueue {
     }
 
     /**
-     * Retrieves the value associated with the given key from the long-running tasks
-     *
-     * @param key the key used to retrieve the value
-     * @return the value associated with the given key, or null if the key is not found
-     */
-    public String getLongRunningTask(String key) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.hget(LONG_RUNNING_TASKS_HASH, key);
-        }
-    }
-
-    /**
      * Records a long running task in the long-running tasks
      *
      * @param key the key used to retrieve the value

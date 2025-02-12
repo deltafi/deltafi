@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.service;
 
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ActionKitException;
@@ -27,7 +28,6 @@ import org.deltafi.actionkit.exception.ExpectedContentException;
 import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.actionkit.exception.StartupException;
 import org.deltafi.actionkit.properties.ActionsProperties;
-import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.content.ActionContentStorageService;
@@ -37,18 +37,17 @@ import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -64,44 +63,65 @@ public class ActionRunner {
     private HostnameService hostnameService;
 
     @Autowired(required = false)
-    private List<Action<?, ?, ?>> actions = Collections.emptyList();
+    @Getter
+    private List<Action<?, ?, ?>> singletonActions = Collections.emptyList();
 
     @Autowired
     BuildProperties buildProperties;
 
     @Autowired
-    PluginRegistrar pluginRegistrar;
+    ContentStorageService contentStorageService;
 
     @Autowired
-    ContentStorageService contentStorageService;
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private ConfigurableListableBeanFactory beanFactory;
+
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+
+    @Getter
+    private final List<Action<?, ?, ?>> allActions = new ArrayList<>();
 
     @Value("${APP_NAME:null}")
     private String appName;
-
-    private final Map<String, ExecutorService> executors = new HashMap<>();
 
     /**
      * Automatically called after construction to initiate polling for inbound actions to be executed
      */
     @PostConstruct
-    public void startActions() {
-        if (actions.isEmpty()) {
-            log.warn("No actions found! This may be a flow-only plugin.");
-        }
+    private void initialize() {
+        registerAdditionalActions();
+        startActions();
+    }
 
-        pluginRegistrar.register();
-
-        for (Action<?, ?, ?> action : actions) {
+    private void registerAdditionalActions() {
+        for (Action<?, ?, ?> action : singletonActions) {
             action.setAppName(appName);
-            String actionName = action.getClassCanonicalName();
+            String actionName = action.getClass().getCanonicalName();
             int numThreads = actionsProperties.getActionThreads().getOrDefault(actionName, 1);
-            ExecutorService executor = Executors.newFixedThreadPool(numThreads);
-            executors.put(actionName, executor);
 
-            for (int i = 0; i < numThreads; i++) {
-                log.info("Starting action: {}{}", actionName, numThreads > 1 ? " (thread %s)".formatted(i + 1) : "");
-                executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
+            List<Action<?, ?, ?>> instances = new ArrayList<>();
+            instances.add(action);
+
+            for (int i = 1; i < numThreads; i++) {
+                String beanName = actionName + "#" + i;
+                if (!beanFactory.containsBeanDefinition(beanName)) {
+                    Action<?, ?, ?> newInstance = applicationContext.getAutowireCapableBeanFactory().createBean(action.getClass());
+                    newInstance.setThreadNum(i);
+                    newInstance.setAppName(appName);
+                    beanFactory.registerSingleton(beanName, newInstance);
+                    instances.add(newInstance);
+                }
             }
+            allActions.addAll(instances);
+        }
+    }
+
+    private void startActions() {
+        for (Action<?, ?, ?> action : allActions) {
+            log.info("Starting action: {} (thread {})", action.getClassCanonicalName(), action.getThreadNum());
+            executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
         }
 
         markRunning();
@@ -125,8 +145,7 @@ public class ActionRunner {
             Thread.currentThread().interrupt();
         } catch (Throwable e) {
             log.error("Unexpected exception caught at {} thread execution level: ", action.getClassCanonicalName(), e);
-            ExecutorService actionExecutor = executors.get(action.getClassCanonicalName());
-            actionExecutor.submit(() -> listen(action, actionsProperties.getActionPollingPeriodMs()));
+            executor.submit(() -> listen(action, actionsProperties.getActionPollingPeriodMs()));
         }
         log.warn("Shutting down action thread: {}", action.getClassCanonicalName());
     }

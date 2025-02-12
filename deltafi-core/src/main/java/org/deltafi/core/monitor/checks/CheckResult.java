@@ -24,13 +24,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record CheckResult(String description, int code, String message, OffsetDateTime timestamp) {
+    public static final int CODE_GREEN = 0;
+    public static final int CODE_YELLOW = 1;
+    public static final int CODE_RED = 2;
+
     public CheckResult(String description, int code, String message) {
         this(description, code, message, OffsetDateTime.now());
     }
 
     public static class ResultBuilder {
         @Getter
-        private int code = 0;
+        private int code = CODE_GREEN;
         private final List<String> messageLines = new ArrayList<>();
 
         public void code(int code) {
