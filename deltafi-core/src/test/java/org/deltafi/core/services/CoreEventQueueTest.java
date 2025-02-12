@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CoreEventQueueTest {
+class CoreEventQueueTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -148,7 +148,7 @@ public class CoreEventQueueTest {
             """.formatted(DID.toString());
 
     @Test
-    public void testConvertBasic() throws JsonProcessingException, URISyntaxException {
+    void testConvertBasic() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
                              -> when(mockJackey.take(DGS_QUEUE_NAME))
@@ -162,7 +162,7 @@ public class CoreEventQueueTest {
     }
 
     @Test
-    public void testConvertUnicode() throws JsonProcessingException, URISyntaxException {
+    void testConvertUnicode() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
                              -> when(mockJackey.take(DGS_QUEUE_NAME))
@@ -176,7 +176,7 @@ public class CoreEventQueueTest {
     }
 
     @Test
-    public void testExtraFieldsIgnored() throws JsonProcessingException, URISyntaxException {
+    void testExtraFieldsIgnored() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
                              -> when(mockJackey.take(DGS_QUEUE_NAME))
@@ -190,7 +190,7 @@ public class CoreEventQueueTest {
     }
 
     @Test
-    public void testWrongJsonType() throws URISyntaxException {
+    void testWrongJsonType() throws URISyntaxException {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
 
@@ -207,7 +207,7 @@ public class CoreEventQueueTest {
     }
 
     @Test
-    public void testInvalidConversion() throws URISyntaxException {
+    void testInvalidConversion() throws URISyntaxException {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
 
@@ -224,7 +224,7 @@ public class CoreEventQueueTest {
     }
 
     @Test
-    public void testIllegalControlChars() throws URISyntaxException {
+    void testIllegalControlChars() throws URISyntaxException {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
 
@@ -241,7 +241,7 @@ public class CoreEventQueueTest {
     }
 
     @Test
-    public void testMetricsOverflow() throws URISyntaxException {
+    void testMetricsOverflow() throws URISyntaxException {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
 
@@ -264,7 +264,7 @@ public class CoreEventQueueTest {
 
     @Test
     @SneakyThrows
-    public void testGetLongRunningTasks() {
+    void testGetLongRunningTasks() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
                 -> when(mockJackey.getLongRunningTasks())
                 .thenReturn(Map.of("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(5))),
@@ -281,7 +281,7 @@ public class CoreEventQueueTest {
 
     @Test
     @SneakyThrows
-    public void testLongRunningTaskExists() {
+    void testLongRunningTaskExists() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
                 -> when(mockJackey.getLongRunningTask("TestClass:testAction:" + DID))
                 .thenReturn(OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1)))))) {
@@ -294,7 +294,7 @@ public class CoreEventQueueTest {
 
     @Test
     @SneakyThrows
-    public void testLongRunningTaskExistsExpired() {
+    void testLongRunningTaskExistsExpired() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
                 -> when(mockJackey.getLongRunningTask("TestClass:testAction:" + DID))
                 .thenReturn(OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(100)))))) {
@@ -307,7 +307,7 @@ public class CoreEventQueueTest {
 
     @Test
     @SneakyThrows
-    public void testRemoveExpiredLongRunningTasks() {
+    void testRemoveExpiredLongRunningTasks() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
                 -> when(mockJackey.getLongRunningTasks())
                 .thenReturn(Map.of("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(30), OffsetDateTime.now().minusMinutes(25))),

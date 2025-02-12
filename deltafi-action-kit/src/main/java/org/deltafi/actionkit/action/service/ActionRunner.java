@@ -37,6 +37,7 @@ import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 
 import java.io.IOException;
@@ -74,6 +75,9 @@ public class ActionRunner {
     @Autowired
     ContentStorageService contentStorageService;
 
+    @Value("${APP_NAME:null}")
+    private String appName;
+
     private final Map<String, ExecutorService> executors = new HashMap<>();
 
     /**
@@ -88,6 +92,7 @@ public class ActionRunner {
         pluginRegistrar.register();
 
         for (Action<?, ?, ?> action : actions) {
+            action.setAppName(appName);
             String actionName = action.getClassCanonicalName();
             int numThreads = actionsProperties.getActionThreads().getOrDefault(actionName, 1);
             ExecutorService executor = Executors.newFixedThreadPool(numThreads);

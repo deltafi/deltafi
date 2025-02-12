@@ -28,7 +28,7 @@ LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks"
 
 
 class ActionEventQueue:
-    def __init__(self, url, max_connections, password):
+    def __init__(self, url, max_connections, password, app_name):
         parsed = urlparse(url)
         self.pool = redis.ConnectionPool(
             max_connections=max_connections,
@@ -36,6 +36,7 @@ class ActionEventQueue:
             port=parsed.port,
             password=password)
         self.connection = None
+        self.app_name = app_name
 
     def get_connection(self):
         if self.connection is None:
@@ -68,7 +69,10 @@ class ActionEventQueue:
             key = action_execution.key
             start_time = action_execution.start_time.isoformat().replace("+00:00", "Z")
             heartbeat_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            value = json.dumps([start_time, heartbeat_time])
+            values = [start_time, heartbeat_time]
+            if self.app_name is not None:
+                values.append(self.app_name)
+            value = json.dumps(values)
             conn = self.get_connection()
             conn.hset(LONG_RUNNING_TASKS_HASH, key, value)
         except Exception as e:

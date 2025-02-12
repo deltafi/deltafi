@@ -242,6 +242,10 @@ env:
     valueFrom:
       fieldRef:
         fieldPath: spec.nodeName
+  - name: APP_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
   - name: SPRING_PROFILES_ACTIVE
     value: kubernetes
 {{- include "commonEnvVars" . | nindent 2 }}

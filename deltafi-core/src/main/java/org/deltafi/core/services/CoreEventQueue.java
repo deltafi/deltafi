@@ -175,30 +175,22 @@ public class CoreEventQueue {
 
         for (Map.Entry<String, String> entry : allTasks.entrySet()) {
             String key = entry.getKey(); // "class:action:did" string
-            String value = entry.getValue(); // Serialized "[startTime, heartbeatTime]" string
-
-            // Deserialize the value to extract startTime and heartbeatTime
+            String valueStr = entry.getValue(); // Serialized "[startTime, heartbeatTime, appName]" string
             try {
-                List<OffsetDateTime> times = OBJECT_MAPPER.readValue(value, new TypeReference<>() {});
-                if (times.size() != 2) {
-                    log.error("Unable to deserialize long running task time information from JSON");
-                    continue;
-                }
-                OffsetDateTime startTime = times.get(0);
-                OffsetDateTime heartbeatTime = times.get(1);
+                Value value = parseValue(valueStr);
 
                 // Check if the heartbeat exceeds the threshold
-                if (!heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now())) {
+                if (value != null && !value.heartbeatTime().plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now())) {
                     // Split the key to extract class, action, and did
-                    String[] keyParts = key.split(":");
+                    String[] keyParts = entry.getKey().split(":");
                     String clazz = keyParts[0];
                     String action = keyParts[1];
                     UUID did = UUID.fromString(keyParts[2]);
 
-                    longRunningTasks.add(new ActionExecution(clazz, action, did, startTime, heartbeatTime));
+                    longRunningTasks.add(new ActionExecution(clazz, action, did, value.startTime, value.heartbeatTime, value.appName));
                 }
             } catch (JsonProcessingException e) {
-                log.error("Unable to deserialize long running task information from JSON: {} = {}", key, value, e);
+                log.error("Unable to deserialize long running task information from JSON: {} = {}", key, valueStr, e);
             }
         }
 
@@ -219,8 +211,7 @@ public class CoreEventQueue {
      */
     @SuppressWarnings("ununsed")
     public boolean longRunningTaskExists(String clazz, String action, UUID did) {
-        ActionExecution taskToCheck = new ActionExecution(clazz, action, did, null);  // Passing null since we don't care about the startTime for this check.
-        String key = taskToCheck.key();
+        String key = ActionExecution.key(clazz, action, did);
         String serializedValue = valkeyKeyedBlockingQueue.getLongRunningTask(key);
 
         if (serializedValue == null) {
@@ -228,14 +219,8 @@ public class CoreEventQueue {
         }
 
         try {
-            List<OffsetDateTime> times = OBJECT_MAPPER.readValue(serializedValue, new TypeReference<>() {});
-            if (times.size() != 2) {
-                log.error("Malformed long-running task data in Valkey for key: {}", key);
-                return false;
-            }
-
-            OffsetDateTime heartbeatTime = times.get(1);
-            return !heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now());
+            Value value = parseValue(serializedValue);
+            return value != null && !value.isHeartbeatStale();
 
         } catch (JsonProcessingException e) {
             log.error("Unable to deserialize long running task information from JSON for key: {}", key, e);
@@ -256,20 +241,16 @@ public class CoreEventQueue {
 
         for (Map.Entry<String, String> entry : allTasks.entrySet()) {
             String key = entry.getKey();
-            String value = entry.getValue();
 
             try {
-                List<OffsetDateTime> times = OBJECT_MAPPER.readValue(value, new TypeReference<>() {});
-
-                if (times.size() != 2) {
+                Value value = parseValue(entry.getValue());
+                if (value == null) {
                     valkeyKeyedBlockingQueue.removeLongRunningTask(key);
-                    log.warn("Removed long-running task with malformed data (unexpected length) with key: {}", key);
+                    log.warn("Removed long-running task with malformed data (unexpected length or unparseable dateTimes) with key: {}", key);
                     continue;
                 }
 
-                OffsetDateTime heartbeatTime = times.get(1);
-
-                if (heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now())) {
+                if (value.isHeartbeatStale()) {
                     valkeyKeyedBlockingQueue.removeLongRunningTask(key);
                     log.info("Removed expired long-running task with key: {}", key);
                 }
@@ -278,5 +259,29 @@ public class CoreEventQueue {
                 log.error("Unable to deserialize long running task information from JSON for key: {}. Removed the key.", key, e);
             }
         }
+    }
+
+    private record Value(OffsetDateTime startTime, OffsetDateTime heartbeatTime, String appName) {
+        public boolean isHeartbeatStale() {
+            return heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now());
+        }
+    }
+
+    private Value parseValue(String value) throws JsonProcessingException {
+        List<String> values = OBJECT_MAPPER.readValue(value, new TypeReference<>() {});
+        if (values.size() < 2) {
+            log.error("Unable to deserialize long running task time information from JSON");
+            return null;
+        }
+
+        OffsetDateTime startTime = OBJECT_MAPPER.convertValue(values.get(0), OffsetDateTime.class);
+        OffsetDateTime heartbeatTime = OBJECT_MAPPER.convertValue(values.get(1), OffsetDateTime.class);
+        if (startTime == null || heartbeatTime == null) {
+            log.error("Unable to deserialize long running task time information from JSON");
+            return null;
+        }
+
+        String appName = values.size() == 3 ? values.get(2) : null;
+        return new Value(startTime, heartbeatTime, appName);
     }
 }

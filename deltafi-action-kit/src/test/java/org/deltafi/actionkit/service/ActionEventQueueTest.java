@@ -17,13 +17,10 @@
  */
 package org.deltafi.actionkit.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.SneakyThrows;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
-import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
-import org.deltafi.common.types.ActionInput;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedConstruction;
@@ -36,29 +33,26 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ActionEventQueueTest {
-
-    private static final UUID DID = UUID.randomUUID();
+class ActionEventQueueTest {
+    private static final ActionExecution ACTION_EXECUTION = new ActionExecution("TestClass", "testAction", UUID.randomUUID(), OffsetDateTime.now(), "appName");
 
     @Test
     @SneakyThrows
-    public void testRecordLongRunningTask() {
-        ActionExecution actionExecution = new ActionExecution("TestClass", "testAction", DID, OffsetDateTime.now());
+    void testRecordLongRunningTask() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
             ActionEventQueue actionEventQueue = new ActionEventQueue(new EventQueueProperties(), 2);
-            actionEventQueue.recordLongRunningTask(actionExecution);
+            actionEventQueue.recordLongRunningTask(ACTION_EXECUTION);
             verify(mock.constructed().getFirst(), times(1)).recordLongRunningTask(anyString(), anyString());
         }
     }
 
     @Test
     @SneakyThrows
-    public void testRemoveLongRunningTask() {
-        ActionExecution actionExecution = new ActionExecution("TestClass", "testAction", DID, OffsetDateTime.now());
+    void testRemoveLongRunningTask() {
         try (MockedConstruction<ValkeyKeyedBlockingQueue> mock = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
             ActionEventQueue actionEventQueue = new ActionEventQueue(new EventQueueProperties(), 2);
-            actionEventQueue.removeLongRunningTask(actionExecution);
-            verify(mock.constructed().getFirst(), times(1)).removeLongRunningTask(actionExecution.key());
+            actionEventQueue.removeLongRunningTask(ACTION_EXECUTION);
+            verify(mock.constructed().getFirst(), times(1)).removeLongRunningTask(ACTION_EXECUTION.key());
         }
     }
 }

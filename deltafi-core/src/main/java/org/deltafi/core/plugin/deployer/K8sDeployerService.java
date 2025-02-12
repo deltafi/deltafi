@@ -88,6 +88,15 @@ public class K8sDeployerService extends BaseDeployerService {
         }
     }
 
+    @Override
+    public void restartApp(String podOrContainer) {
+        try {
+            k8sClient.pods().withName(podOrContainer).delete();
+        } catch (Exception e) {
+            log.error("Could not restart {} via a delete", podOrContainer, e);
+        }
+    }
+
     private DeployResult createOrReplace(Deployment deployment, InstallDetails installDetails) {
         Deployment existingDeployment = k8sClient.apps().deployments().withName(deployment.getMetadata().getName()).get();
 

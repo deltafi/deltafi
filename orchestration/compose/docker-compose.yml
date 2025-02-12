@@ -80,6 +80,8 @@ services:
     depends_on:
       deltafi-core-scheduler:
         condition: service_healthy
+    environment:
+      APP_NAME: deltafi-core-actions
     env_file:
       - ${ENV_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env

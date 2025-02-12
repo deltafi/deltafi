@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
@@ -50,6 +51,9 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
     private final String description;
 
     private final Class<P> paramClass = getGenericParameterType();
+    // name of the pod or container running this action
+    @Setter
+    public String appName;
 
     private ActionExecution actionExecution = null;
 
@@ -102,7 +106,7 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
         }
 
         actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(),
-                actionInput.getActionContext().getDid(), OffsetDateTime.now());
+                actionInput.getActionContext().getDid(), OffsetDateTime.now(), appName);
 
         if (actionInput.getActionContext().getJoin() != null) {
             return executeJoinAction(actionInput);

@@ -99,6 +99,12 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .forEach(container -> dockerClient.restartContainerCmd(container.getId()).exec());
     }
 
+    @Override
+    public void restartApp(String podOrContainer) {
+        // reuse the general restartPlugin - in compose there is only one container per plugin to start
+        restartPlugin(podOrContainer);
+    }
+
     private void install(InstallDetails installDetails) {
         Map<String, String> containerLabels = Map.of(DELTAFI_GROUP, "deltafi-plugins", "logging", "promtail", "logging_jobname", "containerlogs");
 
@@ -107,6 +113,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         if (StringUtils.isNotBlank(installDetails.imagePullSecret())) {
             envVars.add(IMAGE_PULL_SECRET + "=" + installDetails.imagePullSecret());
         }
+        envVars.add("APP_NAME=" + installDetails.appName());
 
         CreateContainerResponse containerResponse = null;
         try (CreateContainerCmd containerCmd = dockerClient.createContainerCmd(installDetails.image())

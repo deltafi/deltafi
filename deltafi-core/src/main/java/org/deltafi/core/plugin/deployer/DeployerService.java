@@ -53,4 +53,18 @@ public interface DeployerService {
      * @param plugin name of the plugin to bounce
      */
     void restartPlugin(String plugin);
+
+    /**
+     * Restart (or delete) the resources with the given names
+     * @param podOrContainers set of resources to restart
+     */
+    default void restartApps(Set<String> podOrContainers) {
+        podOrContainers.forEach(this::restartApp);
+    }
+
+    /**
+     * Restart (or delete) the resource with the given name
+     * @param podOrContainer name of the resource to restart
+     */
+    void restartApp(String podOrContainer);
 }

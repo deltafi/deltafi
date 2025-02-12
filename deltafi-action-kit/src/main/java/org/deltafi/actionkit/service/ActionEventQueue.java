@@ -116,8 +116,11 @@ public class ActionEventQueue {
      */
     public void recordLongRunningTask(ActionExecution actionExecution) {
         try {
-            valkeyKeyedBlockingQueue.recordLongRunningTask(actionExecution.key(),
-                    OBJECT_MAPPER.writeValueAsString(List.of(actionExecution.startTime().toString(), OffsetDateTime.now().toString())));
+            List<String> values = new ArrayList<>(List.of(actionExecution.startTime().toString(), OffsetDateTime.now().toString()));
+            if (actionExecution.appName() != null) {
+                values.add(actionExecution.appName());
+            }
+            valkeyKeyedBlockingQueue.recordLongRunningTask(actionExecution.key(), OBJECT_MAPPER.writeValueAsString(values));
         } catch (JsonProcessingException e) {
             log.error("Unable to convert long running task information to JSON", e);
         }

@@ -60,26 +60,43 @@ public class PluginRestartScheduler {
         }
 
         Set<String> plugins = new HashSet<>();
+        Set<String> apps = new HashSet<>();
         Set<String> restartedActionExecutions = new HashSet<>();
         for (ActionExecution actionExecution : coreEventQueue.getLongRunningTasks()) {
             if (actionExecution.exceedsDuration(actionExecutionTimeout)) {
                 String plugin = pluginService.getPluginWithAction(actionExecution.clazz());
-                if (plugin != null) {
-                    createEvent(String.format("Restarting plugin: %s", plugin),
-                            String.format(
-                                    "Restarting plugin '%s' with stuck DeltaFile '%s' in action class '%s' in action '%s' that has been running for %s",
-                                    plugin, actionExecution.did(), actionExecution.clazz(), actionExecution.action(), TimeFormatter.humanReadableTimeSince(actionExecution.startTime())));
+                String podOrContainer = actionExecution.appName();
+                if (plugin != null || actionExecution.appName() != null) {
+                    createEvent(plugin, actionExecution);
                     restartedActionExecutions.add(actionExecution.key());
-                    plugins.add(plugin);
+                    // only keep the more specific resource to restart
+                    if (podOrContainer != null) {
+                        apps.add(podOrContainer);
+                    } else {
+                        plugins.add(plugin);
+                    }
                 }
             }
         }
 
         deployerService.restartPlugins(plugins);
+        deployerService.restartApps(apps);
         coreEventQueue.removeLongRunningTask(restartedActionExecutions);
     }
 
-    private void createEvent(String summary, String content) {
+    private void createEvent(String plugin, ActionExecution actionExecution) {
+        String summary = "Restarting ";
+        if (plugin != null) {
+            summary += "plugin: " + plugin;
+        }
+
+        if (actionExecution.appName() != null) {
+            summary += plugin != null ? " (" + actionExecution.appName() + ")" : actionExecution.appName();
+        }
+
+        String content = summary +  " with stuck DeltaFile '%s' in action class '%s' in action '%s' that has been running for %s"
+                .formatted(actionExecution.did(), actionExecution.clazz(), actionExecution.action(), TimeFormatter.humanReadableTimeSince(actionExecution.startTime()));
+
         eventService.createEvent(Event.builder()
                 .timestamp(OffsetDateTime.now())
                 .summary(summary)

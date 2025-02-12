@@ -118,7 +118,8 @@ def _find_variables_filename(names: List[str]):
 def _setup_queue(max_connections):
     url = os.getenv('VALKEY_URL', 'http://deltafi-valkey-master:6379')
     password = os.getenv('VALKEY_PASSWORD')
-    return ActionEventQueue(url, max_connections, password)
+    app_name = os.getenv('APP_NAME')
+    return ActionEventQueue(url, max_connections, password, app_name)
 
 
 def _setup_content_service():
