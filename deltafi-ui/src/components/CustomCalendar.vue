@@ -282,7 +282,9 @@ const helperButtons = ref([
   },
 ]);
 </script>
-<style>
+<style lang="scss">
+@use 'vue-time-date-range-picker/dist/style.css';
+
 .date-picker-container {
   position: relative;
 }
