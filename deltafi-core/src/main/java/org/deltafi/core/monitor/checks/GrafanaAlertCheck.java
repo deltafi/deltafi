@@ -36,6 +36,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -107,6 +108,7 @@ public class GrafanaAlertCheck extends StatusCheck {
 
     private Event createEvent(String summary, String content, String severity) {
         return Event.builder()
+                .timestamp(OffsetDateTime.now())
                 .summary(summary)
                 .content(content)
                 .severity(severity)

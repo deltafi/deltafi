@@ -26,6 +26,7 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -179,6 +180,7 @@ public class IngressStatusCheck extends StatusCheck {
 
     private void createEvent(String summary, String content, String severity) {
         eventService.createEvent(Event.builder()
+                .timestamp(OffsetDateTime.now())
                 .summary(summary)
                 .content(content)
                 .severity(severity)

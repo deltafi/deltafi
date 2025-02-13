@@ -80,6 +80,10 @@ public class EventService {
         if (StringUtils.isBlank(event.getSeverity()) || !VALID_SEVERITIES.contains(event.getSeverity())) {
             throw new ValidationException("Severity must be info, success, warn, or error (given severity: " + event.getSeverity() + ")");
         }
+
+        if (event.getTimestamp() == null) {
+            event.setTimestamp(OffsetDateTime.now());
+        }
     }
 
     private Supplier<EntityNotFound> notFound(UUID id) {
