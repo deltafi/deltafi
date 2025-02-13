@@ -20,10 +20,10 @@
   <div>
     <PageHeader heading="Data Sinks">
       <div class="btn-toolbar mb-2">
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
-          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt mx-1" />
-        </span>
+        <IconField iconPosition="left">
+          <InputIcon class="pi pi-search"> </InputIcon>
+          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
+        </IconField>
         <DialogTemplate component-name="dataSinks/DataSinkConfigurationDialog" header="Add New Data Sink" dialog-width="50vw" @reload-egress-actions="refresh">
           <Button v-has-permission:FlowUpdate label="Add Data Sink" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
@@ -40,6 +40,8 @@ import DataSinksPanel from "@/components/dataSinks/DataSinksPanel.vue";
 import { ref, inject, onMounted, provide, onUnmounted } from "vue";
 
 import Button from "primevue/button";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
 const refreshInterval = 5000; // 5 seconds

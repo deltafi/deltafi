@@ -20,9 +20,9 @@
   <Panel header="Metrics" class="metrics-panel pb-3">
     <template #icons>
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="timeFrame" :options="timeFrames" option-label="name" style="min-width: 11rem" class="ml-3" />
-        <Dropdown v-model="node" :options="optionsDropdown" style="min-width: 11rem" class="ml-3" />
-        <Button class="p-button p-button-outlined ml-3" icon="fa fa-sync-alt" label="Refresh" @click="refreshDashboard" />
+        <Dropdown v-model="timeFrame" :options="timeFrames" option-label="name" style="min-width: 11rem" class="mx-1 deltafi-input-field" />
+        <Dropdown v-model="node" :options="optionsDropdown" style="min-width: 11rem" class="mx-1 deltafi-input-field" />
+        <Button class="p-button-sm p-button-outlined mx-1" icon="fa fa-sync-alt" label="Refresh" @click="refreshDashboard" />
       </div>
     </template>
     <div class="row">

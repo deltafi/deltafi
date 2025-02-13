@@ -19,12 +19,12 @@
   <div class="errors-page">
     <PageHeader heading="Errors">
       <div class="time-range btn-toolbar mb-2 mb-md-0 align-items-center">
-        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-0 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
+        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mx-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem" />
         </Button>
-        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
-        <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" class="deltafi-input-field ml-3 flow-dropdown" />
-        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ml-3 ack-dropdown" />
+        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field mx-1 flow-dropdown" />
+        <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" class="deltafi-input-field mx-1 flow-dropdown" />
+        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field mx-1 ack-dropdown" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
     </PageHeader>
@@ -63,7 +63,7 @@ import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 
 import _ from "lodash";
 
-const errorMessageSelected = ref("");
+const errorMessageSelected = ref(null);
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
@@ -146,7 +146,7 @@ const getPersistedParams = async () => {
 };
 
 const clearOptions = () => {
-  errorMessageSelected.value = "";
+  errorMessageSelected.value = null;
   flowSelected.value = null;
   selectedAckOption.value = 0;
   setPersistedParams();
@@ -183,7 +183,7 @@ const showErrors = (errorMessage, flowName, flowType) => {
 };
 
 const refreshButtonClass = computed(() => {
-  const classes = ["p-button", "deltafi-input-field", "ml-3"];
+  const classes = ["p-button", "deltafi-input-field", "mx-1"];
   if (newErrorsCount.value > 0) {
     classes.push("p-button-warning");
   } else {

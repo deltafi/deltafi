@@ -20,23 +20,19 @@
   <div class="external-links-page">
     <PageHeader heading="External Links">
       <div class="btn-toolbar mb-2 mb-md-0">
+        <IconField iconPosition="left">
+          <InputIcon class="pi pi-search"> </InputIcon>
+          <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Description'" placeholder="Search" class="deltafi-input-field mx-1" />
+        </IconField>
         <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Add New Link" dialog-width="25vw" :row-data-prop="{}" @reload-external-links="reloadUIConfigs()">
           <Button label="Add Link" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-2" />
         </DialogTemplate>
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Description'" placeholder="Search" class="p-inputtext-sm deltafi-input-field links-search-tx" />
-        </span>
       </div>
     </PageHeader>
     <Panel header="External links" class="external-links-panel table-panel">
       <DataTable v-model:filters="filters" :value="externalLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true" data-key="name">
-        <template #empty>
-          No External Links found
-        </template>
-        <template #loading>
-          Loading External Links. Please wait.
-        </template>
+        <template #empty> No External Links found </template>
+        <template #loading> Loading External Links. Please wait. </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" view-link @reload-external-links="reloadUIConfigs()">
@@ -60,12 +56,8 @@
     </Panel>
     <Panel header="DeltaFile Links" class="external-links-panel table-panel mt-3">
       <DataTable v-model:filters="filters" :value="deltaFileLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
-        <template #empty>
-          No DeltaFile Links found.
-        </template>
-        <template #loading>
-          Loading DeltaFile Links. Please wait.
-        </template>
+        <template #empty> No DeltaFile Links found. </template>
+        <template #loading> Loading DeltaFile Links. Please wait. </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
             <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" view-link @reload-external-links="reloadUIConfigs()">
@@ -101,6 +93,8 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import { FilterMatchMode } from "primevue/api";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
 import Panel from "primevue/panel";

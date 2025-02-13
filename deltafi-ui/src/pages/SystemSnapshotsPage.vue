@@ -26,19 +26,17 @@
     </PageHeader>
     <Panel header="Snapshots" class="table-panel system-snapshots-panel">
       <template #icons>
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" placeholder="Search" />
-        </span>
-        <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage" />
+        <div class="btn-group align-items-center">
+          <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage" />
+          <IconField iconPosition="left">
+            <InputIcon class="pi pi-search"> </InputIcon>
+            <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
+          </IconField>
+        </div>
       </template>
       <DataTable v-model:filters="filters" :value="snapshots" :paginator="true" :first="pageFirst" :rows="pageRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading" data-key="id">
-        <template #empty>
-          No snapshots to display.
-        </template>
-        <template #loading>
-          Loading. Please wait...
-        </template>
+        <template #empty> No snapshots to display. </template>
+        <template #loading> Loading. Please wait... </template>
         <Column field="id" header="ID">
           <template #body="data">
             <a v-tooltip.top="`View Snapshot`" class="cursor-pointer monospace" style="color: black" @click="showSnapshot(data.data)">{{ data.data.id }}</a>
@@ -104,6 +102,8 @@ import ConfirmDialog from "primevue/confirmdialog";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import { FilterMatchMode } from "primevue/api";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";

@@ -62,9 +62,7 @@
               </template>
               <div class="action-panel-content p-2">
                 <template v-if="transformActions.length == 0">
-                  <div class="empty-action pt-2 mb-n3">
-                    No Transform Actions
-                  </div>
+                  <div class="empty-action pt-2 mb-n3">No Transform Actions</div>
                 </template>
                 <draggable id="transformActions" v-model="transformActions" item-key="id" :sort="true" group="transformActions" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
                   <template #item="{ element, index }">
@@ -119,18 +117,14 @@
           <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedTransformAction" v-model:filters="filters" :value="actionsDataTable" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" :global-filter-fields="['displayName', 'pluginCoordinate.groupId', 'pluginCoordinate.version']" data-key="id">
             <template #header>
               <div class="flex justify-content-end">
-                <span class="p-input-icon-right">
-                  <i class="pi pi-search" />
-                  <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
-                </span>
+                <IconField iconPosition="left">
+                  <InputIcon class="pi pi-search"> </InputIcon>
+                  <InputText v-model="filters['global'].value" class="deltafi-input-field" placeholder="Keyword Search" />
+                </IconField>
               </div>
             </template>
-            <template #empty>
-              No Actions found.
-            </template>
-            <template #loading>
-              Loading Actions. Please wait.
-            </template>
+            <template #empty> No Actions found. </template>
+            <template #loading> Loading Actions. Please wait. </template>
             <Column header-style="width: 3em">
               <template #body="{ data }">
                 <draggable ref="draggableRef" class="dragArea list-group align-items-center justify-content-center w-100 h-100" :list="[data]" :group="{ name: 'transformActions', pull: 'clone', put: false }" item-key="displayName" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action">
@@ -218,6 +212,8 @@ import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
 import Divider from "primevue/divider";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
 import ScrollTop from "primevue/scrolltop";

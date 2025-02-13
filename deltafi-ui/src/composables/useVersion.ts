@@ -35,7 +35,7 @@ export default function useVersion() {
       version.value = response.value.data.version;
 
       // For development only
-      if (import.meta.env.NODE_ENV === "development") {
+      if (import.meta.env.MODE === "development") {
         const { response: apiResponse, get } = useApi();
         await get("local-git-branch");
         const branch = apiResponse.value.branch;

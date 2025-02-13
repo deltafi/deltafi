@@ -9,8 +9,6 @@ export default ({ mode }) => {
   process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
 
   const DELTAFI_DOMAIN = process.env.DELTAFI_DOMAIN || "dev.deltafi.org";
-  // import.meta.env.VITE_NAME available here with: process.env.VITE_NAME
-  // import.meta.env.VITE_PORT available here with: process.env.VITE_PORT
 
   return defineConfig({
     plugins: [vue(), tsconfigPaths(), commonjs()],
@@ -21,6 +19,7 @@ export default ({ mode }) => {
         "/api": {
           target: `https://${DELTAFI_DOMAIN}`,
           changeOrigin: true,
+          secure: false,
           configure: (proxy, options) => {
             proxy.on("proxyReq", (proxyReq, req, res) => {
               if (req.url === "/api/v2/local-git-branch" && mode === "development") {
@@ -34,14 +33,17 @@ export default ({ mode }) => {
         "/visualization": {
           target: `https://${DELTAFI_DOMAIN}`,
           changeOrigin: true,
+          secure: false
         },
         "/deltafile/ingress": {
           target: `https://ingress.${DELTAFI_DOMAIN}`,
           changeOrigin: true,
+          secure: false
         },
         "/deltafile/annotate": {
           target: `https://${DELTAFI_DOMAIN}`,
           changeOrigin: true,
+          secure: false
         },
       },
     },

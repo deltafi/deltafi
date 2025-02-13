@@ -30,19 +30,19 @@
     <Panel header="Rules" class="auto-resume-panel table-panel" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" placeholder="Search" />
-        </span>
-        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
-          <span class="fas fa-bars" />
-        </Button>
+        <div class="btn-group align-items-center">
+          <IconField iconPosition="left">
+            <InputIcon class="pi pi-search"> </InputIcon>
+            <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
+          </IconField>
+          <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+            <span class="fas fa-bars" />
+          </Button>
+        </div>
         <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
       <DataTable v-model:selection="selectedRules" v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" selection-mode="multiple" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['dataSource', 'errorSubstring', 'action']" :row-hover="true" @row-contextmenu="onRowContextMenu" @cell-edit-complete="onCellEditComplete">
-        <template #empty>
-          No Auto Resume rules to display
-        </template>
+        <template #empty> No Auto Resume rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15%' }">
           <template #body="{ data }">
             <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="View Auto Resume Rule" dialog-width="75vw" :row-data-prop="data" view-auto-resume-rule @reload-resume-rules="fetchAutoResumeRules()">
@@ -95,6 +95,8 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
 import Menu from "primevue/menu";

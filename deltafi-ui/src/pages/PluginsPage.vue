@@ -19,7 +19,7 @@
 <template>
   <div class="plugins-page">
     <PageHeader heading="Plugins">
-      <div class="d-flex mb-2">
+      <div class="d-flex mb-2 btn-toolbar">
         <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="40vw" @reload-plugins="loadPlugins()">
           <Button v-has-permission:PluginInstall label="Install Plugin" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>

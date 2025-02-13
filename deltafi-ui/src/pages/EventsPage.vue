@@ -30,27 +30,21 @@
     <Panel :header="'Events' + eventCount" class="events-panel table-panel" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
-          <InputText v-model="filters['global'].value" placeholder="Search" />
-        </span>
+        <IconField iconPosition="left">
+          <InputIcon class="pi pi-search"> </InputIcon>
+          <InputText v-model="filters['global'].value" class="deltafi-input-field" placeholder="Search" />
+        </IconField>
       </template>
       <DataTable ref="eventsTable" v-model:filters="filters" v-model:selection="selectedEvents" filter-display="menu" :value="events" data-key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true" sort-field="timestamp" :sort-order="-1" :loading="loading">
-        <template #empty>
-          No events to display
-        </template>
-        <template #loading>
-          Loading events. Please wait.
-        </template>
+        <template #empty> No events to display </template>
+        <template #loading> Loading events. Please wait. </template>
         <Column selection-mode="multiple" header-style="width: 3rem" />
         <Column field="severity" header="Severity" filter-field="severity" :show-filter-match-modes="false" :filter-menu-style="{ width: '14rem' }" sortable class="severity-col">
           <template #body="{ data }">
             <EventSeverityBadge :severity="data.severity" style="width: 6rem" />
           </template>
           <template #filter="{ filterModel }">
-            <div class="mb-3 font-bold">
-              Severity Picker
-            </div>
+            <div class="mb-3 font-bold">Severity Picker</div>
             <MultiSelect v-model="filterModel.value" :options="severityOptions" placeholder="Any" class="p-column-filter">
               <template #option="slotProps">
                 <span>{{ slotProps.option }}</span>
@@ -70,9 +64,7 @@
             <Tag v-tooltip.top="'Source'" :value="data.source" class="p-tag-secondary" :rounded="true" icon="pi pi-arrow-circle-right" />
           </template>
           <template #filter="{ filterModel }">
-            <div class="mb-3 font-bold">
-              Source Picker
-            </div>
+            <div class="mb-3 font-bold">Source Picker</div>
             <MultiSelect v-model="filterModel.value" :options="sourceOptions" placeholder="Any" class="p-column-filter">
               <template #option="slotProps">
                 <span>{{ slotProps.option }}</span>
@@ -143,6 +135,8 @@ import Column from "primevue/column";
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
 import { FilterMatchMode } from "primevue/api";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import Panel from "primevue/panel";

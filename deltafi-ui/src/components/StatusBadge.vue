@@ -20,7 +20,7 @@
   <span>
     <Tag v-tooltip.bottom="'Click for more info'" class="status-tag" :icon="icon(computedStatus.code)" :severity="tagSeverity(computedStatus.code)" :value="computedStatus.state" @click="openStatusDialog()" />
     <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{ width: '50vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" class="status-dialog">
-      <DataTable v-model:expanded-rows="rowsExpanded" :value="computedStatus.checks" data-key="description" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines status-table" @row-collapse="onRowCollapse" @row-expand="onRowExpand">
+      <DataTable v-model:expanded-rows="rowsExpanded" :value="computedStatus.checks" data-key="description" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines status-table">
         <Column :expander="true" header-style="width: 3rem" class="expander-col" />
         <Column field="code" header="Status" class="severity-col">
           <template #body="slotProps">
@@ -73,8 +73,6 @@ const showStatusDialog = ref(false);
 const { serverSentEvents, connectionStatus } = useServerSentEvents();
 const { fetchStatus, loading: apiLoading } = useStatus();
 const rowsExpanded = ref([]);
-const manRowsExpanded = ref([]);
-const manRowsCollapsed = ref([]);
 
 onMounted(async () => {
   status.value = await fetchStatus();
@@ -100,24 +98,6 @@ const statusBuilder = (code, state, checkCode, checkDescription, checkMessage, t
   };
 };
 
-const onRowCollapse = (event) => {
-  const index = manRowsExpanded.value.map((e) => e.description).indexOf(event.data.description);
-  if (index >= 0) {
-    manRowsExpanded.value.splice(index, 1);
-  } else {
-    manRowsCollapsed.value.push(event.data);
-  }
-};
-
-const onRowExpand = (event) => {
-  const index = manRowsCollapsed.value.map((e) => e.description).indexOf(event.data.description);
-  if (index >= 0) {
-    manRowsCollapsed.value.splice(index, 1);
-  } else {
-    manRowsExpanded.value.push(event.data);
-  }
-};
-
 const computedStatus = computed(() => {
   if (connectionStatus.value === "CONNECTING" || apiLoading.value) {
     return statusBuilder(3, "Connecting", 3, "API Connection", "Establishing connection to API...");
@@ -130,14 +110,6 @@ const computedStatus = computed(() => {
     return status.value;
   }
 });
-
-const setExpanded = () => {
-  if (status.value.checks !== undefined) {
-    rowsExpanded.value = status.value.checks.filter(isError).concat(manRowsExpanded.value);
-  } else {
-    rowsExpanded.value = [];
-  }
-};
 
 const timeSinceLastStatusInWords = computed(() => {
   if (timeSinceLastStatus.value < 60) {
@@ -153,25 +125,11 @@ serverSentEvents.addEventListener("status", (event) => {
   } catch (error) {
     console.error(`Failed to parse SSE status data: ${event.data}`);
   }
-  if (showStatusDialog.value) {
-    setExpanded();
-  }
 });
-
-const isError = (code) => {
-  const index = manRowsCollapsed.value.map((e) => e.description).indexOf(code.description);
-  if (code.code > 0 && index < 0) {
-    return code;
-  }
-};
 
 const openStatusDialog = async () => {
   rowsExpanded.value = [];
-  manRowsExpanded.value = [];
-  manRowsCollapsed.value = [];
   showStatusDialog.value = true;
-  await nextTick();
-  setExpanded();
 };
 
 const tagSeverity = (code) => {

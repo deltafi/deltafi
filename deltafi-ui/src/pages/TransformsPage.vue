@@ -19,12 +19,12 @@
 <template>
   <div class="transforms-page">
     <PageHeader heading="Transforms">
-      <div class="btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field mx-1" />
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
-          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt mx-1" />
-        </span>
+      <div class="btn-toolbar mb-2 mb-md-0 align-items-center">
+        <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field mx-1 transform-dropdown" />
+        <IconField iconPosition="left">
+          <InputIcon class="pi pi-search"> </InputIcon>
+          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
+        </IconField>
         <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder' }">
           <Button v-has-permission:FlowCreate label="Add Transform" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </PermissionedRouterLink>
@@ -48,6 +48,8 @@ import _ from "lodash";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
 const { getAllFlows, loaded, loading } = useFlowQueryBuilder();
@@ -105,8 +107,8 @@ const formatData = (allFlowData) => {
 
 <style>
 .transforms-page {
-  .flow-panel-search-txt {
-    font-size: 1rem !important;
+  .transform-dropdown {
+    width: 16rem;
   }
 
   .p-divider.p-component.p-divider-vertical.p-divider-solid.p-divider-center.mx-0.flow-divider-color:before {

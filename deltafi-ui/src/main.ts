@@ -44,7 +44,7 @@ import auth from "./plugins/auth";
 if (import.meta.env.MODE === "development" || import.meta.env.MODE === "test") {
   const responseType = import.meta.env.VITE_MOCK_RESPONSES ? import.meta.env.VITE_MOCK_RESPONSES : "";
   if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
-    const { worker } = require("./mocks/browser.ts");
+    const { worker } = await import("./mocks/browser.ts");
     worker.start({
       // turn off MSW warnings for specific routes
       onUnhandledRequest(req: any, print: any) {
