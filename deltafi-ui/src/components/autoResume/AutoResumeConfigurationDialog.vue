@@ -176,11 +176,11 @@ const errorsList = ref([]);
 
 const autoResumeConfigurationMap = new Map([
   ["name", { header: "Name*", placeholder: "e.g. Auto resume smoke error", type: "string", disabled: viewAutoResumeRule }],
-  ["dataSource", { header: "Data Source^", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewAutoResumeRule }],
-  ["action", { header: "Action^", placeholder: "e.g. smoke.SmokeEgressAction", type: "string", disabled: viewAutoResumeRule }],
+  ["dataSource", { header: "Data Source", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewAutoResumeRule }],
+  ["action", { header: "Action", placeholder: "e.g. smoke.SmokeEgressAction", type: "string", disabled: viewAutoResumeRule }],
   ["maxAttempts", { header: "Max Attempts*", placeholder: "A number 2 or greater", type: "number", min: 2, max: null, disabled: viewAutoResumeRule }],
   ["priority", { header: "Priority", placeholder: "A number 0 or greater", type: "number", disabled: viewAutoResumeRule }],
-  ["errorSubstring", { header: "Error Substring^", placeholder: "Exact substring match; e.g. post failure", type: "string", disabled: viewAutoResumeRule }],
+  ["errorSubstring", { header: "Error Substring", placeholder: "Exact substring match; e.g. post failure", type: "string", disabled: viewAutoResumeRule }],
   ["delay", { header: "Delay*", placeholder: "A number 0 or greater", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["maxDelay", { header: "Max Delay", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["multiplier", { header: "Multiplier", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],

@@ -247,7 +247,6 @@ const autoResumeSelected = computed(() => {
   const newResumeRule = {};
   if (!_.isEmpty(selectedErrors.value)) {
     const rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
-    newResumeRule["dataSource"] = rowInfo.flow;
     newResumeRule["errorSubstring"] = rowInfo.message;
     return newResumeRule;
   } else {
