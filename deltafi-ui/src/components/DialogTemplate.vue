@@ -32,6 +32,7 @@ import { computed, defineAsyncComponent, inject, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
 import _ from "lodash";
 
+const components = import.meta.glob('@/components/**/*.vue')
 const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate"]);
 const hasPermission = inject("hasPermission");
 
@@ -45,7 +46,7 @@ const closeDialogCommand = ref({
 });
 
 const loadComponent = computed(() => {
-  return defineAsyncComponent(() => import(/* @vite-ignore */`./${attrs["component-name"]}.vue`));
+  return defineAsyncComponent(async() => await components[`/src/components/${attrs["component-name"]}.vue`]());
 });
 
 const dialogSize = computed(() => {
