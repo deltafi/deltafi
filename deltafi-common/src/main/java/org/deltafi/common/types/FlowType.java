@@ -29,4 +29,8 @@ public enum FlowType {
     DATA_SINK("data sink");
 
     private final String displayName;
+
+    public boolean isDataSource() {
+        return this == REST_DATA_SOURCE || this == TIMED_DATA_SOURCE;
+    }
 }

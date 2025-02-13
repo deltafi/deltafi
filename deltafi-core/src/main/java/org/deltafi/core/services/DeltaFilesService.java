@@ -925,16 +925,19 @@ public class DeltaFilesService {
                         } else {
                             OffsetDateTime now = OffsetDateTime.now(clock);
                             DeltaFileFlow firstFlow = deltaFile.firstFlow();
+                            Flow flowConfig = getFlowConfig(firstFlow);
 
                             DeltaFileFlow flow = DeltaFileFlow.builder()
                                     .flowDefinition(firstFlow.getFlowDefinition())
-                                    .state(DeltaFileFlowState.COMPLETE)
+                                    .state(flowConfig.isPaused() ? DeltaFileFlowState.PAUSED : DeltaFileFlowState.COMPLETE)
                                     .input(firstFlow.getInput())
                                     .created(now)
                                     .modified(now)
-                                    .testMode(firstFlow.isTestMode())
-                                    .testModeReason(firstFlow.getTestModeReason())
+                                    .testMode(firstFlow.getType().isDataSource() ? flowConfig.isTestMode() : firstFlow.isTestMode())
                                     .build();
+                            if (flow.isTestMode()) {
+                                flow.setTestModeReason(firstFlow.getType().isDataSource() ? firstFlow.getName() : firstFlow.getTestModeReason());
+                            }
 
                             List<UUID> parentDids = new ArrayList<>(List.of(deltaFile.getDid()));
                             Action replayAction;
@@ -949,11 +952,6 @@ public class DeltaFilesService {
                                 List<Content> content = startFromAction.getContent();
                                 replayAction = flow.addAction(REPLAY_ACTION_NAME, startFromAction.getType(), ActionState.COMPLETE, now);
                                 replayAction.setContent(content);
-                            }
-
-                            Flow flowConfig = getFlowConfig(flow);
-                            if (flowConfig.isPaused()) {
-                                flow.setState(DeltaFileFlowState.PAUSED);
                             }
 
                             if (!removeSourceMetadata.isEmpty()) {
@@ -1060,7 +1058,9 @@ public class DeltaFilesService {
         }
 
         flow.setPendingActions(nextActions.stream().map(ActionConfiguration::getName).toList());
-        flow.setState(nextActions.isEmpty() ? DeltaFileFlowState.COMPLETE : DeltaFileFlowState.IN_FLIGHT);
+        if (flow.getState() != DeltaFileFlowState.PAUSED) {
+            flow.setState(nextActions.isEmpty() ? DeltaFileFlowState.COMPLETE : DeltaFileFlowState.IN_FLIGHT);
+        }
 
         if (startFromAction == null) {
             throw new IllegalStateException("No start action found to inherit for dataSource " + flow.getName() + " where replay should begin");
