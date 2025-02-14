@@ -18,8 +18,10 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -80,6 +82,48 @@ func (c *Client) Get(path string, result interface{}, opts *RequestOpts) error {
 	return nil
 }
 
+// Post sends a JSON-encoded object and returns a typed response
+func (c *Client) Post(path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to encode request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", c.baseURL+path, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	if opts != nil {
+		for key, value := range opts.Headers {
+			req.Header.Set(key, value)
+		}
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Printf("failed to close responsebody %s", err)
+		}
+	}(resp.Body)
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status code: %d - %s: %s", resp.StatusCode, c.baseURL+path, body)
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return nil
+}
+
 // Do performs the provided HTTP request and returns the response.
 //
 // The request will be sent with the X-User-Permissions and X-User-Name headers
@@ -100,4 +144,22 @@ func (c *Client) Status() (*StatusResponse, error) {
 	var status StatusResponse
 	err := c.Get("/api/v2/status", &status, nil)
 	return &status, err
+}
+
+func (c *Client) Events() ([]Event, error) {
+	var events []Event
+	err := c.Get("/api/v2/events", &events, nil)
+	return events, err
+}
+
+func (c *Client) Event(id string) (*Event, error) {
+	var event Event
+	err := c.Get("/api/v2/events/"+id, &event, nil)
+	return &event, err
+}
+
+func (c *Client) CreatEvent(event Event) (*Event, error) {
+	var newEvent Event
+	err := c.Post("/api/v2/events", event, &newEvent, nil)
+	return &newEvent, err
 }
