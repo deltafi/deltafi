@@ -103,16 +103,26 @@ _command_check() {
 
 export DELTAFICLI_WORKDIR=$(cd $(dirname $(_readlink -f $0)) && pwd)
 export DELTAFI_DIR=$(dirname "$DELTAFICLI_WORKDIR")
+export DELTAFICLI_K8S_NAMESPACE=deltafi
 
 # shellcheck source=common
 . "$DELTAFICLI_WORKDIR/common"
 
-[ ! -f "$DELTAFICLI_WORKDIR/config" ] \
-  && echo "ERROR: No $DELTAFICLI_WORKDIR/config file found. " \
-  && echo "cp $DELTAFICLI_WORKDIR/config.template $DELTAFICLI_WORKDIR/config and adjust." \
-  && exit 1
+if [ "$DELTAFI_MODE" ]; then
+  __DELTAFI_MODE="$DELTAFI_MODE"
+fi
 
-. "$DELTAFICLI_WORKDIR/config"
+if [ -f "$DELTAFICLI_WORKDIR/config" ]; then
+  . "$DELTAFICLI_WORKDIR/config"
+fi
+
+if [ "$__DELTAFI_MODE" ]; then
+  export DELTAFI_MODE="$__DELTAFI_MODE"
+fi
+
+if [ -z "$DELTAFI_MODE" ]; then
+  export DELTAFI_MODE=STANDALONE
+fi
 
 if [ "$2" == "-v" ]; then
   cli_log "ENV variables"
@@ -140,6 +150,7 @@ cli_help() {
   echo "
 DeltaFi CLI
 Version: $(cat $DELTAFI_DIR/VERSION)
+Mode:    ${DELTAFI_MODE}
 
 Usage: $cli_name [command]
 
