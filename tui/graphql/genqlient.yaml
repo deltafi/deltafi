@@ -4,10 +4,11 @@ schema:
 - schema/*.graphql
 operations:
 - plugin.graphql
+- transforms.graphql
 generated: generated.go
 client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
 context_type: "-"
-optional: value
+optional: pointer
 bindings:
   DateTime:
     type: time.Time

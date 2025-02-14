@@ -67,17 +67,18 @@ var listCmd = &cobra.Command{
 		rows := [][]string{}
 
 		for _, plugin := range resp.Plugins {
-			image := ""
-			if plugin.ImageName != "" {
-				if plugin.ImageTag != "" {
-					image = plugin.ImageName + ":" + plugin.ImageTag
+			//image := ""
+			var image strings.Builder
+			if plugin.ImageName != nil {
+				if plugin.ImageTag != nil {
+					image.WriteString(*plugin.ImageName + ":" + *plugin.ImageTag)
 				} else {
-					image = plugin.ImageName
+					image.WriteString(*plugin.ImageName)
 				}
 			}
 			rows = append(rows, []string{
 				plugin.DisplayName,
-				image,
+				image.String(),
 				plugin.PluginCoordinates.Version,
 			})
 			sort.Slice(rows, func(i, j int) bool {
@@ -120,7 +121,7 @@ var installCmd = &cobra.Command{
 				errored = true
 			} else {
 				if !resp.InstallPlugin.Success {
-					fmt.Println("\n         Error: " + app.FormatError(strings.Join(resp.InstallPlugin.Errors, "\n                ")))
+					fmt.Println("\n         Error: " + app.FormatErrors(resp.InstallPlugin.Errors))
 					fmt.Println(app.FAIL(image))
 					errored = true
 				} else {
@@ -182,12 +183,12 @@ var uninstallCmd = &cobra.Command{
 				}
 
 				for _, info := range resp.UninstallPlugin.Info {
-					fmt.Println("         " + info)
+					fmt.Println("         " + *info)
 				}
 
 				// Uninstall was not successful
 				if !resp.UninstallPlugin.Success {
-					fmt.Println("         Error: (" + displayName + ") " + app.FormatError(strings.Join(resp.UninstallPlugin.Errors, "\n                ")))
+					fmt.Println("         Error: (" + displayName + ") " + app.FormatErrors(resp.UninstallPlugin.Errors))
 					errored = true
 					continue
 				}

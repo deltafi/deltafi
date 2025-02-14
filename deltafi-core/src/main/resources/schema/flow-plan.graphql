@@ -248,6 +248,7 @@ type RestDataSource implements DataSource {
 
 type TransformFlow {
   name: String!
+  type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
   subscribe: [Rule!]!

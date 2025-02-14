@@ -33,6 +33,7 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -62,8 +63,20 @@ func Execute() {
 	rootCmd.Version = app.Version
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 
+	rootCmd.SilenceErrors = true
+	rootCmd.SilenceUsage = true
+
 	err := rootCmd.Execute()
+
 	if err != nil {
+		// always print the error first
+		fmt.Println(err)
+
+		// check if the usage should be shown (ie missing flag, unknown command)
+		var cmdErr *Error
+		if !errors.As(err, &cmdErr) {
+			_ = rootCmd.Usage()
+		}
 		os.Exit(1)
 	}
 }
@@ -109,5 +122,4 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
-
 }

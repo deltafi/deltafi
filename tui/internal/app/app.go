@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/Khan/genqlient/graphql"
@@ -161,8 +162,21 @@ func (a *App) FormatWarning(msg string) string {
 	return styles.WarningStyle.Render(msg)
 }
 
+func (a *App) FormatErrors(errorPointers []*string) string {
+	errors := make([]string, len(errorPointers))
+	for i, errorStr := range errorPointers {
+		errors[i] = *errorStr
+	}
+
+	return a.FormatError(strings.Join(errors, "\n                "))
+}
+
 func (a *App) FormatError(msg string) string {
 	return styles.ErrorStyle.Render(msg)
+}
+
+func (a *App) FormatErrorObj(errorObj error) string {
+	return styles.ErrorStyle.Render(errorObj.Error())
 }
 
 func (a *App) FormatSuccess(msg string) string {
