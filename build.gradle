@@ -114,6 +114,7 @@ import org.yaml.snakeyaml.Yaml
 def loadDeltafiConfig() {
     def retval = [:];
     File testFile = new File('../../deltafi.yaml');
+    if ( !testFile.isFile() ) { testFile = new File('../../../deltafi.yaml'); }
     if ( !testFile.isFile() ) { testFile = new File('../deltafi.yaml'); }
     if ( !testFile.isFile() ) { testFile = new File('./deltafi.yaml'); }
     if ( testFile.isFile() ) {

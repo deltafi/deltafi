@@ -18,13 +18,14 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -97,7 +98,7 @@ var initKeys = initKeyMap{
 		key.WithHelp("enter", "select"),
 	),
 	Back: key.NewBinding(
-		key.WithKeys("esc", "backspace"),
+		key.WithKeys("esc"),
 		key.WithHelp("esc", "back"),
 	),
 	Help: key.NewBinding(
@@ -105,8 +106,8 @@ var initKeys = initKeyMap{
 		key.WithHelp("?", "toggle help"),
 	),
 	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c"),
-		key.WithHelp("q", "quit"),
+		key.WithKeys("ctrl+c"),
+		key.WithHelp("^c", "quit"),
 	),
 }
 
@@ -134,14 +135,14 @@ func NewInitCommand() *InitCommand {
 	return &InitCommand{
 		BaseCommand:    NewBaseCommand(),
 		step:           welcomeStep,
-		config:         app.DefaultConfig(),
+		config:         app.LoadConfigOrDefault(),
 		help:           help,
 		keys:           initKeys,
 		selectedOption: 0,
 		deploymentModes: []string{
 			"Deployment",
-			"CoreDevelopment",
 			"PluginDevelopment",
+			"CoreDevelopment",
 		},
 		orchestrationModes: []string{
 			"Compose",
@@ -194,6 +195,11 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.help.Width = msg.Width
 		c.ready = true
 
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		c.spinner, cmd = c.spinner.Update(msg)
+		return c, cmd
+
 	case cloneFinishedMsg:
 		if msg.err != nil {
 			c.cloneError = msg.err
@@ -208,7 +214,32 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch c.step {
 		case welcomeStep:
 			if key.Matches(msg, c.keys.Select) {
+				c.selectedOption = int(c.config.OrchestrationMode)
+				c.step = orchestrationStep
+			}
+
+		case orchestrationStep:
+			switch {
+			case key.Matches(msg, c.keys.Up):
+				if c.selectedOption > 0 {
+					c.selectedOption--
+				}
+			case key.Matches(msg, c.keys.Down):
+				if c.selectedOption < len(c.orchestrationModes)-1 {
+					c.selectedOption++
+				}
+			case key.Matches(msg, c.keys.Select):
+				c.config.OrchestrationMode = orchestration.OrchestrationMode(c.selectedOption)
+				c.selectedOption = int(c.config.DeploymentMode)
 				c.step = deploymentStep
+				if c.config.OrchestrationMode == orchestration.Kubernetes {
+					// Kubernetes skips the deployment step
+					c.config.DeploymentMode = app.Deployment
+					c.step = confirmationStep
+				}
+			case key.Matches(msg, c.keys.Back):
+				c.selectedOption = 0
+				c.step = welcomeStep
 			}
 
 		case deploymentStep:
@@ -224,23 +255,6 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, c.keys.Select):
 				c.config.DeploymentMode = app.DeploymentMode(c.selectedOption)
 				c.selectedOption = 0
-				c.step = orchestrationStep
-			case key.Matches(msg, c.keys.Back):
-				c.step = welcomeStep
-			}
-
-		case orchestrationStep:
-			switch {
-			case key.Matches(msg, c.keys.Up):
-				if c.selectedOption > 0 {
-					c.selectedOption--
-				}
-			case key.Matches(msg, c.keys.Down):
-				if c.selectedOption < len(c.orchestrationModes)-1 {
-					c.selectedOption++
-				}
-			case key.Matches(msg, c.keys.Select):
-				c.config.OrchestrationMode = orchestration.OrchestrationMode(c.selectedOption)
 				if c.needsCoreSetup() {
 					if c.config.Development.CoreRepo == "" {
 						c.config.Development.CoreRepo = "git@gitlab.com:systolic/deltafi/deltafi.git"
@@ -252,14 +266,15 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					c.step = confirmationStep
 				}
 			case key.Matches(msg, c.keys.Back):
-				c.selectedOption = 0
-				c.step = deploymentStep
+				c.selectedOption = int(c.config.OrchestrationMode)
+				c.step = orchestrationStep
 			}
 
 		case coreRepoStep:
 			switch {
 			case key.Matches(msg, c.keys.Back):
-				c.step = orchestrationStep
+				c.selectedOption = int(c.config.DeploymentMode)
+				c.step = deploymentStep
 				c.repoInput.Blur()
 			case key.Matches(msg, c.keys.Select):
 				c.config.Development.CoreRepo = c.repoInput.Value()
@@ -298,7 +313,13 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if c.needsCoreSetup() {
 					c.step = cloneConfirmStep
 				} else {
-					c.step = orchestrationStep
+					if c.config.OrchestrationMode == orchestration.Kubernetes {
+						c.selectedOption = int(c.config.OrchestrationMode)
+						c.step = orchestrationStep
+					} else {
+						c.selectedOption = int(c.config.DeploymentMode)
+						c.step = deploymentStep
+					}
 				}
 			}
 
@@ -326,20 +347,22 @@ func (c *InitCommand) View() string {
 	}
 
 	mainStyle := lipgloss.NewStyle().
-		Width(c.width).
-		Height(c.height).
-		Align(lipgloss.Center)
+		Padding(1).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.Blue).
+		Width(c.width - 2).
+		Height(c.height - 2)
 
 	contentStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.Crust).
-		Padding(1).
-		Width(c.width / 2)
+		Padding(0).
+		MarginLeft(1).
+		MarginRight(1)
 
 	headerStyle := lipgloss.NewStyle().
 		Foreground(styles.Blue).
 		Bold(true).
-		Padding(1)
+		MarginLeft(2).
+		MarginBottom(1)
 
 	var content string
 	switch c.step {
@@ -364,8 +387,12 @@ func (c *InitCommand) View() string {
 	header := headerStyle.Render("DeltaFi System Initialization")
 	box := contentStyle.Render(content)
 
-	help := c.help.View(c.keys)
-	fullView := lipgloss.JoinVertical(lipgloss.Center,
+	help := lipgloss.NewStyle().
+		MarginLeft(2).
+		PaddingTop(1).
+		Render(c.help.View(c.keys))
+
+	fullView := lipgloss.JoinVertical(lipgloss.Left,
 		header,
 		box,
 		help,
@@ -376,68 +403,14 @@ func (c *InitCommand) View() string {
 
 func (c *InitCommand) renderWelcome() string {
 	welcomeStyle := lipgloss.NewStyle().
-		Align(lipgloss.Center).
-		Padding(1)
+		PaddingLeft(1).
+		PaddingRight(1)
 
 	text := "Welcome to DeltaFi!\n\n" +
 		"This wizard will help you configure your DeltaFi installation.\n\n" +
 		"Press ENTER to continue..."
 
 	return welcomeStyle.Render(text)
-}
-
-func (c *InitCommand) renderDeploymentMode() string {
-	content := "Select Deployment Mode:\n\n"
-
-	for i, mode := range c.deploymentModes {
-		item := "  " + mode
-		if i == c.selectedOption {
-			item = "> " + styles.SelectedMenuItemStyle.Render(mode)
-		}
-		content += item + "\n"
-	}
-
-	return content
-}
-
-func (c *InitCommand) renderOrchestrationMode() string {
-	content := "Select Orchestration Mode:\n\n"
-
-	for i, mode := range c.orchestrationModes {
-		item := "  " + mode
-		if i == c.selectedOption {
-			item = "> " + styles.SelectedMenuItemStyle.Render(mode)
-		}
-		content += item + "\n"
-	}
-
-	return content
-}
-
-func (c *InitCommand) renderCoreRepo() string {
-	return fmt.Sprintf(
-		"Configure Core Repository URL:\n\n%s\n\nPress ENTER to continue...",
-		c.repoInput.View(),
-	)
-}
-
-func (c *InitCommand) renderCloneConfirm() string {
-	content := "Would you like to clone the core repository?\n\n"
-
-	yes := "  Yes"
-	no := "  No"
-
-	if c.selectedOption == 0 {
-		yes = "> " + styles.SelectedMenuItemStyle.Render("Yes")
-	} else {
-		no = "> " + styles.SelectedMenuItemStyle.Render("No")
-	}
-
-	return content + yes + "\n" + no
-}
-
-func (c *InitCommand) renderCloning() string {
-	return c.spinner.View() + " Cloning repository..."
 }
 
 func (c *InitCommand) renderConfirmation() string {
@@ -454,12 +427,100 @@ func (c *InitCommand) renderConfirmation() string {
 
 	content += "\n\nPress ENTER to save configuration..."
 
-	return content
+	return lipgloss.NewStyle().
+		PaddingLeft(1).
+		PaddingRight(1).
+		Render(content)
 }
 
-func (c *InitCommand) renderComplete() string {
-	content := "Configuration saved successfully!\n\n" +
-		"Press ENTER to exit..."
+func (c *InitCommand) renderTwoPane(totalWidth, leftWidth int, left, right string) string {
+	rightWidth := totalWidth - leftWidth
+	horizontal := true
+	if rightWidth < 30 {
+		horizontal = false
+		rightWidth = totalWidth
+	}
+	if rightWidth > 80 {
+		rightWidth = 80
+	}
+	leftStyle := lipgloss.NewStyle().Width(leftWidth).Margin(0).PaddingRight(1)
+	rightStyle := lipgloss.NewStyle().Width(rightWidth).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.Surface2).
+		Margin(0).
+		Padding(0, 1)
 
-	return content
+	if horizontal {
+		return lipgloss.JoinHorizontal(lipgloss.Top, leftStyle.Render(left), rightStyle.MarginTop(1).Render(right))
+	} else {
+		return lipgloss.JoinVertical(lipgloss.Left, rightStyle.Render(right), "", leftStyle.Render(left))
+	}
+}
+
+func (c *InitCommand) renderMenu(items []string, header string) string {
+	var menu []string
+	menu = append(menu, styles.SubheaderStyle.PaddingBottom(1).Render(header))
+	for i, item := range items {
+		if i == c.selectedOption {
+			item = styles.MenuMarkerStyle.PaddingRight(1).Render("▶") + styles.SelectedMenuItemStyle.Padding(0, 1).Render(item)
+		} else {
+			item = styles.MenuItemStyle.PaddingLeft(3).Render(item)
+		}
+		menu = append(menu, item)
+	}
+
+	return strings.Join(menu, "\n")
+}
+
+// Update the deployment mode selection to use the new layout
+func (c *InitCommand) renderDeploymentMode() string {
+
+	menu := c.renderMenu(c.deploymentModes, "Select Operational Mode")
+	menu = lipgloss.NewStyle().MarginLeft(1).Render(menu)
+
+	description := app.DeploymentMode(c.selectedOption).Description()
+
+	return c.renderTwoPane(c.width-8, 40, menu, description)
+}
+
+// Update the core repo step to use the new layout
+func (c *InitCommand) renderCoreRepo() string {
+	inputStyle := lipgloss.NewStyle().
+		PaddingLeft(1).
+		PaddingRight(1)
+
+	return inputStyle.Render(
+		"Configure Core Repository URL:\n\n" +
+			c.repoInput.View() + "\n\n" +
+			"Press ENTER to continue",
+	)
+}
+
+// Update the cloning step to use the new layout
+func (c *InitCommand) renderCloning() string {
+	return lipgloss.NewStyle().
+		PaddingLeft(1).
+		Render(c.spinner.View() + " Cloning repository...")
+}
+
+// Update the complete step to use the new layout
+func (c *InitCommand) renderComplete() string {
+	return lipgloss.NewStyle().
+		PaddingLeft(1).
+		PaddingRight(1).
+		Render("Configuration saved successfully!\n\n" +
+			"Press ENTER to exit...")
+}
+
+func (c *InitCommand) renderOrchestrationMode() string {
+	menu := c.renderMenu(c.orchestrationModes, "Select Orchestration Mode")
+	menu = lipgloss.NewStyle().MarginLeft(1).Render(menu)
+
+	description := "Orchestration mode controls how containers for DeltaFi services and plugins are managed.\n\n" + orchestration.OrchestrationMode(c.selectedOption).Description()
+	return c.renderTwoPane(c.width-8, 40, menu, description)
+
+}
+
+func (c *InitCommand) renderCloneConfirm() string {
+	return c.renderMenu([]string{"Yes", "No"}, "Would you like to clone the core repository?")
 }

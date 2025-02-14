@@ -55,6 +55,8 @@ var (
 	Lavender   = lipgloss.AdaptiveColor{Light: "#7287fd", Dark: "#b4befe"} // Lavender
 	LightBlue  = lipgloss.AdaptiveColor{Light: "#1e66f5", Dark: "#89b4fa"} // Blue
 	LightGreen = lipgloss.AdaptiveColor{Light: "#40a02b", Dark: "#a6e3a1"} // Green
+	Gray       = lipgloss.AdaptiveColor{Light: "#7e8294", Dark: "#9299ba"} // Gray
+	DarkGray   = lipgloss.AdaptiveColor{Light: "#565f89", Dark: "#565f89"} // DarkGray
 )
 
 // UI Component styles
@@ -64,11 +66,11 @@ var (
 			Background(Base)
 
 	HeaderStyle = lipgloss.NewStyle().
-			Foreground(Mauve).
+			Foreground(Blue).
 			Bold(true)
 
 	SubheaderStyle = lipgloss.NewStyle().
-			Foreground(Blue).
+			Foreground(LightBlue).
 			Bold(true)
 
 	ErrorStyle = lipgloss.NewStyle().
@@ -117,9 +119,13 @@ var (
 	MenuItemStyle = lipgloss.NewStyle().
 			Foreground(Text)
 
+	MenuMarkerStyle = lipgloss.NewStyle().
+			Foreground(DarkGray).
+			Bold(true)
+
 	SelectedMenuItemStyle = lipgloss.NewStyle().
-				Background(Surface1).
-				Foreground(Mauve).
+				Background(Surface0).
+				Foreground(LightBlue).
 				Bold(true)
 )
 

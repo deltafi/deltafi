@@ -32,6 +32,7 @@ const (
 )
 
 var orchestrationModeNames []string
+var orchestrationModeDescriptions []string
 var orchestrationModeNameToValue map[string]OrchestrationMode
 
 func init() {
@@ -39,6 +40,11 @@ func init() {
 		"Compose",
 		"Kubernetes",
 		"KinD",
+	}
+	orchestrationModeDescriptions = []string{
+		"Compose mode uses Docker Compose to orchestrate DeltaFi services.",
+		"Kubernetes mode uses Kubernetes to orchestrate DeltaFi services.",
+		"KinD mode uses KinD (Kubernetes in Docker) to orchestrate DeltaFi services.  This is a developmental mode and should not be used in production environments.",
 	}
 	orchestrationModeNameToValue = make(map[string]OrchestrationMode)
 	for i, name := range orchestrationModeNames {
@@ -69,4 +75,11 @@ func (e *OrchestrationMode) UnmarshalText(text []byte) (err error) {
 	name := string(text)
 	*e, err = Parse(name)
 	return
+}
+
+func (e OrchestrationMode) Description() string {
+	if e < 0 || int(e) >= len(orchestrationModeDescriptions) {
+		panic(fmt.Errorf("invalid orchestration mode code: %d", e))
+	}
+	return orchestrationModeDescriptions[e]
 }

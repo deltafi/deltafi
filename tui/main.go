@@ -32,7 +32,6 @@ limitations under the License.
 */
 package main
 
-import "github.com/spf13/viper"
 import "github.com/deltafi/tui/cmd"
 import "github.com/deltafi/tui/internal/app"
 
@@ -48,7 +47,4 @@ func main() {
 
 func Init() {
 	app.SetVersion(Version)
-	viper.SetDefault("coreVersion", Version)
-	viper.SetDefault("orchestrationMode", "compose")
-	viper.SetDefault("deploymentMode", "deployment")
 }

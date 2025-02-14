@@ -26,19 +26,32 @@ type DeploymentMode int
 
 const (
 	Deployment DeploymentMode = iota
-	CoreDevelopment
 	PluginDevelopment
+	CoreDevelopment
 	unknownDeploymentMode
 )
 
 var deploymentModeNames []string
+var deploymentModeDisplayNames []string
+var deploymentModeDescriptions []string
 var deploymentModeNameToValue map[string]DeploymentMode
 
 func init() {
 	deploymentModeNames = []string{
 		"Deployment",
-		"CoreDevelopment",
 		"PluginDevelopment",
+		"CoreDevelopment",
+	}
+	deploymentModeDisplayNames = []string{
+		"Deployment",
+		"Plugin Development",
+		"Core Development",
+	}
+	deploymentModeDescriptions = []string{
+		"Deployment mode should be selected for production and test systems. " +
+			"  Other modes should only be selected if you intend to use this system for local core or plugin development.",
+		"Plugin Development mode configures your environment for local plugin development.",
+		"Core Development mode enables local development of the DeltaFi core services and plugins.",
 	}
 	deploymentModeNameToValue = make(map[string]DeploymentMode)
 	for i, name := range deploymentModeNames {
@@ -51,6 +64,20 @@ func (e DeploymentMode) String() string {
 		panic(fmt.Errorf("invalid deployment mode code: %d", e))
 	}
 	return deploymentModeNames[e]
+}
+
+func (e DeploymentMode) DisplayName() string {
+	if e < 0 || int(e) >= len(deploymentModeDisplayNames) {
+		panic(fmt.Errorf("invalid deployment mode code: %d", e))
+	}
+	return deploymentModeDisplayNames[e]
+}
+
+func (e DeploymentMode) Description() string {
+	if e < 0 || int(e) >= len(deploymentModeDescriptions) {
+		panic(fmt.Errorf("invalid deployment mode code: %d", e))
+	}
+	return deploymentModeDescriptions[e]
 }
 
 func ParseDeploymentMode(text string) (DeploymentMode, error) {

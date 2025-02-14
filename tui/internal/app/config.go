@@ -57,7 +57,7 @@ func DefaultConfig() Config {
 
 func DefaultDevelopmentConfig() DevelopmentConfig {
 	return DevelopmentConfig{
-		CoreRepo: "git@gitlab.com:systolic/deltafi/deltafi.git",
+		CoreRepo: "git@gitlab.com:deltafi/deltafi.git",
 	}
 }
 
@@ -87,6 +87,11 @@ func LoadConfig() (Config, error) {
 	}
 
 	return config, nil
+}
+
+func LoadConfigOrDefault() Config {
+	config, _ := LoadConfig()
+	return config
 }
 
 // loadFromFile loads configuration from a yaml file
