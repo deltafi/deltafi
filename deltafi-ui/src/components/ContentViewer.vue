@@ -28,7 +28,7 @@
             <span class="mr-3">
               <ContentTag v-for="tag in content.tags" :key="tag" :value="tag" class="ml-2" />
             </span>
-            <Divider v-if="content.tags.length > 0" layout="vertical" />
+            <Divider v-if="content.tags?.length > 0" layout="vertical" />
             <Button :label="content.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
             <Button class="p-button-text p-button-secondary" disabled>
@@ -59,16 +59,20 @@
 </template>
 
 <script setup>
-import HighlightedCode from "@/components/HighlightedCode.vue";
-import ContentViewerMenu from "@/components/ContentViewerMenu.vue";
 import ContentTag from "@/components/ContentTag.vue";
+import ContentViewerMenu from "@/components/ContentViewerMenu.vue";
+import FormattedBytes from "@/components/FormattedBytes.vue";
+import HighlightedCode from "@/components/HighlightedCode.vue";
 import useContent from "@/composables/useContent";
+import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
+import { prettyPrint } from "@/workers/prettyPrint.worker";
 import { computed, onMounted, ref, toRefs, watch, reactive } from "vue";
 import { useClipboard } from "@vueuse/core";
-import useNotifications from "@/composables/useNotifications";
-import FormattedBytes from "@/components/FormattedBytes.vue";
-import { prettyPrint } from "@/workers/prettyPrint.worker";
+
+import hexy from "hexy";
+import _ from "lodash";
+import { Buffer } from "buffer";
 
 import Button from "primevue/button";
 import Divider from "primevue/divider";
@@ -76,10 +80,6 @@ import Dropdown from "primevue/dropdown";
 import Message from "primevue/message";
 import Toolbar from "primevue/toolbar";
 import ScrollTop from "primevue/scrolltop";
-
-import hexy from "hexy";
-import _ from "lodash";
-import { Buffer } from "buffer";
 
 const props = defineProps({
   content: {

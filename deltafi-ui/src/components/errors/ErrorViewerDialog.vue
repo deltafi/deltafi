@@ -40,24 +40,21 @@
     </div>
     <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
     <TabView v-model:active-index="activeTab">
-      <TabPanel v-if="cause" header="Cause">
-        <div class="error-row">
+      <TabPanel v-if="cause || context" header="Cause">
+        <div v-if="cause" class="error-row">
           <div class="error-col">
             <strong>Cause</strong>
             <HighlightedCode :highlight="false" :code="cause" />
           </div>
         </div>
-      </TabPanel>
-      <TabPanel v-else header="Cause" :disabled="true" />
-      <TabPanel v-if="context" header="Context">
-        <div class="error-row">
+        <div v-if="context" class="error-row">
           <div class="error-col">
             <strong>Context</strong>
             <HighlightedCode :highlight="false" :code="context" />
           </div>
         </div>
       </TabPanel>
-      <TabPanel v-else header="Context" :disabled="true" />
+      <TabPanel v-else header="Cause" :disabled="true" />
       <TabPanel v-if="content" header="Content">
         <div class="error-row">
           <div class="error-col">
@@ -71,16 +68,17 @@
 </template>
 
 <script setup>
-import Dialog from "primevue/dialog";
+import ContentSelector from "@/components/ContentSelector.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import { computed, ref, useAttrs } from "vue";
 import Timestamp from "@/components/Timestamp.vue";
+import { computed, ref, useAttrs } from "vue";
+
+import _ from "lodash";
+
+import Dialog from "primevue/dialog";
 import ScrollTop from "primevue/scrolltop";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
-import ContentSelector from "@/components/ContentSelector.vue";
-
-import _ from "lodash";
 
 const activeTab = ref(0);
 const attrs = useAttrs();
