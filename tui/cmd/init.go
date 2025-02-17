@@ -308,6 +308,16 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					c.err = err
 					return c, nil
 				}
+
+				// Configure shell if possible
+				shell := app.DetectShell()
+				if app.IsKnownShell(shell) {
+					if err := app.ConfigureShell(shell, app.TuiPath()); err != nil {
+						c.err = err
+						return c, nil
+					}
+				}
+
 				c.step = completeStep
 			case key.Matches(msg, c.keys.Back):
 				if c.needsCoreSetup() {
@@ -415,8 +425,9 @@ func (c *InitCommand) renderWelcome() string {
 
 func (c *InitCommand) renderConfirmation() string {
 	content := "Configuration Summary:\n\n" +
-		"Deployment Mode: " + c.config.DeploymentMode.String() + "\n" +
-		"Orchestration Mode: " + c.config.OrchestrationMode.String()
+		"Deployment Mode:     " + c.config.DeploymentMode.String() + "\n" +
+		"Orchestration Mode:  " + c.config.OrchestrationMode.String() + "\n" +
+		"Shell hooks:         " + string(app.DetectShell())
 
 	if c.config.DeploymentMode == app.CoreDevelopment {
 		content += "\nCore Repository: " + c.config.Development.CoreRepo

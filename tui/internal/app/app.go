@@ -86,13 +86,19 @@ func build() {
 
 	orchestration.NewOrchestrator(config.OrchestrationMode)
 
-	// FIXME
+	distroPath := ""
+	if config.DeploymentMode == CoreDevelopment {
+		distroPath = filepath.Join(TuiPath(), "repos", "deltafi")
+	} else {
+		distroPath = filepath.Join(TuiPath(), Version)
+	}
 
 	instance = &App{
 		config:       &config,
 		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode),
 		os:           runtime.GOOS,
 		arch:         runtime.GOARCH,
+		distroPath:   distroPath,
 	}
 
 	err := instance.initializeAPI()
@@ -113,6 +119,10 @@ func TuiPath() string {
 
 func GetOrchestrator() orchestration.Orchestrator {
 	return GetInstance().orchestrator
+}
+
+func GetOrchestrationMode() orchestration.OrchestrationMode {
+	return GetInstance().config.OrchestrationMode
 }
 
 func (a *App) initializeAPI() error {

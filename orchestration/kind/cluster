@@ -140,8 +140,22 @@ PV_DIR=$ORCHESTRATION_PATH/data
 SUDO=$(which sudo)
 KIND_DIR="${ROOT}/deltafi/orchestration/kind"
 
-# shellcheck source=common
-. "$DELTAFI_PATH/deltafi-cli/config"
+if [ "$DELTAFI_MODE" ]; then
+  __DELTAFI_MODE="$DELTAFI_MODE"
+fi
+
+if [ -f "$DELTAFICLI_WORKDIR/config" ]; then
+  # shellcheck source=common
+  . "$DELTAFICLI_WORKDIR/config"
+fi
+
+if [ "$__DELTAFI_MODE" ]; then
+  export DELTAFI_MODE="$__DELTAFI_MODE"
+fi
+
+if [ -z "$DELTAFI_MODE" ]; then
+  export DELTAFI_MODE=STANDALONE
+fi
 
 _base64() {
   local TEMPFILE
@@ -161,7 +175,7 @@ _base64() {
   base64 $BASE64_ARGS
 }
 
-if [[ "$(basename "$0")" == "deltafi" ]]; then
+if [[ "$(basename "$0")" == "deltafi" || "$DELTAFI_WRAPPER" == "true" ]]; then
   # Deltafi wrapper mode
   if [[ "$DELTAFI_MODE" == "STANDALONE" ]]; then
     "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
@@ -217,7 +231,6 @@ _require kubectl
 _require kubens
 _require kind
 _require yq
-_require deltafi
 
 ___start=$(date +%s)
 

@@ -61,10 +61,6 @@ func DefaultDevelopmentConfig() DevelopmentConfig {
 	}
 }
 
-func getDistroPath(version string) string {
-	return filepath.Join(TuiPath(), version)
-}
-
 func configFile() string {
 	return filepath.Join(TuiPath(), defaultConfigFileName)
 }
