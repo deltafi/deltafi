@@ -28,12 +28,8 @@
         <Paginator v-if="filtered.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFiltered" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
       <DataTable id="filteredTable" v-model:expanded-rows="expandedRows" v-model:selection="selectedDids" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filtered" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFiltered" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-        <template #empty>
-          No results to display.
-        </template>
-        <template #loading>
-          Loading. Please wait...
-        </template>
+        <template #empty> No results to display. </template>
+        <template #loading> Loading. Please wait... </template>
         <Column class="expander-column" :expander="true" />
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
@@ -68,7 +64,7 @@
         </Column>
         <template #expansion="filter">
           <div class="filtered-Subtable">
-            <DataTable v-model:expanded-rows="expandedRows" responsive-layout="scroll" :value="filter.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="flowRowClass">
+            <DataTable v-model:expanded-rows="expandedRows" data-key="name" responsive-layout="scroll" :value="filter.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="flowRowClass">
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
@@ -89,7 +85,7 @@
               </Column>
               <template #expansion="actions">
                 <div class="filtered-Subtable">
-                  <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions.data.actions" :row-class="actionRowClass">
+                  <DataTable responsive-layout="scroll" data-key="name" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions.data.actions" :row-class="actionRowClass">
                     <Column field="name" header="Action" :sortable="true" />
                     <Column field="state" header="State" class="state-column" :sortable="true" />
                     <Column field="created" header="Created" class="timestamp-column" :sortable="true">
@@ -116,23 +112,22 @@
 </template>
 
 <script setup>
-import Column from "primevue/column";
-
-import DataTable from "primevue/datatable";
-import Button from "primevue/button";
-import Panel from "primevue/panel";
-import Menu from "primevue/menu";
-import ContextMenu from "primevue/contextmenu";
-import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
-import _ from 'lodash';
-
-import Paginator from "primevue/paginator";
 import DidLink from "@/components/DidLink.vue";
+import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useFiltered from "@/composables/useFiltered";
-
 import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
+
+import _ from "lodash";
+
+import Button from "primevue/button";
+import ContextMenu from "primevue/contextmenu";
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import Menu from "primevue/menu";
+import Paginator from "primevue/paginator";
+import Panel from "primevue/panel";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -207,7 +202,6 @@ const flowRowClass = (action) => {
   if (action.state === "RETRIED") return "table-warning action-error";
 };
 
-
 const fetchFiltered = async () => {
   await getPersistedParams();
   const flowName = props.flow?.name != null ? props.flow?.name : null;
@@ -242,20 +236,19 @@ const filterSelectedDids = computed(() => {
 
 const lastFilteredCauseActions = (actions) => {
   return _.chain(actions)
-    .filter((action) => action.state === 'FILTERED')
-    .sortBy(['modified'])
+    .filter((action) => action.state === "FILTERED")
+    .sortBy(["modified"])
     .reverse()
-    .value()[0]
-    ?.filteredCause;
-}
+    .value()[0]?.filteredCause;
+};
 
 const lastFilteredCauseFlow = (flows) => {
   const actions = _.chain(flows)
     .map((flow) => flow.actions)
     .flatten()
-    .value()
-  return lastFilteredCauseActions(actions)
-}
+    .value();
+  return lastFilteredCauseActions(actions);
+};
 
 const onPage = async (event) => {
   offset.value = event.first;

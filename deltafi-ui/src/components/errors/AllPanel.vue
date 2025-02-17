@@ -70,7 +70,7 @@
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable v-model:expanded-rows="expandedRows" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
+            <DataTable v-model:expanded-rows="expandedRows" data-key="name" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
@@ -84,9 +84,9 @@
                   <Timestamp :timestamp="row.data.modified" />
                 </template>
               </Column>
-              <template #expansion="actions">
+              <template #expansion="slotProps">
                 <div class="errors-Subtable">
-                  <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions.data.actions" :row-class="actionRowClass" @row-click="actionRowClick">
+                  <DataTable responsive-layout="scroll" data-key="name" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="slotProps.data.actions" :row-class="actionRowClass" @row-click="actionRowClick">
                     <Column field="name" header="Action" :sortable="true" />
                     <Column field="state" header="State" class="state-column" :sortable="true" />
                     <Column field="created" header="Created" class="timestamp-column" :sortable="true">
@@ -119,32 +119,34 @@
 </template>
 
 <script setup>
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
-import Button from "primevue/button";
-import Panel from "primevue/panel";
-import Menu from "primevue/menu";
-import ContextMenu from "primevue/contextmenu";
-import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
-import Paginator from "primevue/paginator";
-import DidLink from "@/components/DidLink.vue";
-import Timestamp from "@/components/Timestamp.vue";
-import useErrors from "@/composables/useErrors";
-import useErrorCount from "@/composables/useErrorCount";
-import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
-import useNotifications from "@/composables/useNotifications";
-import { FilterMatchMode } from "primevue/api";
-import useUtilFunctions from "@/composables/useUtilFunctions";
-import useErrorsSummary from "@/composables/useErrorsSummary";
-import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
-import { useStorage, StorageSerializers } from "@vueuse/core";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
-import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
+import DidLink from "@/components/DidLink.vue";
+import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
+import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
+import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
+import Timestamp from "@/components/Timestamp.vue";
+import useErrors from "@/composables/useErrors";
+import useErrorsSummary from "@/composables/useErrorsSummary";
+import useErrorCount from "@/composables/useErrorCount";
+import useNotifications from "@/composables/useNotifications";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
+import { useStorage, StorageSerializers } from "@vueuse/core";
+
 
 import _ from "lodash";
+
+import Button from "primevue/button";
+import Column from "primevue/column";
+import ContextMenu from "primevue/contextmenu";
+import DataTable from "primevue/datatable";
+import Menu from "primevue/menu";
+import Paginator from "primevue/paginator";
+import Panel from "primevue/panel";
+import { FilterMatchMode } from "primevue/api";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");

@@ -52,7 +52,6 @@ const listboxItems = computed(() => {
 });
 const selectedItem = ref(listboxItems.value[0]);
 const selectedContent = computed(() => content[selectedItem.value.index]);
-emit("contentSelected", selectedContent.value);
 
 watch(selectedItem, (newItem, oldValue) => {
   if (newItem === null) selectedItem.value = oldValue;
