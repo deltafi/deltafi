@@ -19,7 +19,7 @@ ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 QUERY="query { actionDescriptors { name schema }}"
-RESULT=$(deltafi query "$QUERY")
+RESULT=$(deltafi cli query "$QUERY")
 
 if [[ " ${ARGS[@]} " =~ " --json " || " ${ARGS[@]} " =~ " -j " ]]; then
   echo "$RESULT"

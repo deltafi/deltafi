@@ -19,7 +19,7 @@ ARGS=("$@")
 
 FIELDS="{ name description sourcePlugin {groupId artifactId version}}"
 QUERY="query { getAllFlowPlans { restDataSources $FIELDS timedDataSources $FIELDS transformPlans $FIELDS dataSinkPlans $FIELDS}}"
-RESULT=$(deltafi query "$QUERY")
+RESULT=$(deltafi cli query "$QUERY")
 
 print_plans() {
   FLOW_TYPE=$(tr '[:lower:]' '[:upper:]' <<< ${1:0:1})${1:1}

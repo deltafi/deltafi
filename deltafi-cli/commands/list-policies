@@ -34,7 +34,7 @@ QUERY="query {
   }
 }"
 QUERY=$(echo $QUERY)
-RESULT=$(deltafi query "$QUERY")
+RESULT=$(deltafi cli query "$QUERY")
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
 if [[ "$DGS_ERRORS" != "" ]]; then
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"

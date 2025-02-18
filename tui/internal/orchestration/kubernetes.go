@@ -19,18 +19,22 @@ package orchestration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 type KubernetesOrchestrator struct {
 	Orchestrator
-	namespace string
+	distroPath string
+	namespace  string
 }
 
-func NewKubernetesOrchestrator() *KubernetesOrchestrator {
+func NewKubernetesOrchestrator(distroPath string) *KubernetesOrchestrator {
 	return &KubernetesOrchestrator{
-		namespace: "deltafi",
+		namespace:  "deltafi",
+		distroPath: distroPath,
 	}
 }
 
@@ -56,10 +60,6 @@ func (o *KubernetesOrchestrator) GetMasterPod(selector string) (string, error) {
 }
 
 func (o *KubernetesOrchestrator) GetServiceIP(service string) (string, error) {
-	// if IsStandalone() {
-	// 	return fmt.Sprintf("%s:8042", service), nil
-	// }
-
 	cmd := exec.Command("kubectl",
 		"get", "service", service,
 		"-n", o.namespace,
@@ -127,4 +127,42 @@ func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, er
 	cmd := exec.Command("kubectl", cmdArgs...)
 
 	return *cmd, nil
+}
+
+func (o *KubernetesOrchestrator) Deploy(args []string) error {
+
+	mode := "CLUSTER"
+	env := os.Environ()
+	env = append(env, "DELTAFI_MODE="+mode)
+
+	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
+
+	args = append([]string{"install"}, args...)
+
+	c := *exec.Command(executable, args...)
+	c.Env = env
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	return c.Run()
+}
+
+func (o *KubernetesOrchestrator) Destroy(args []string) error {
+
+	mode := "CLUSTER"
+	env := os.Environ()
+	env = append(env, "DELTAFI_MODE="+mode)
+
+	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
+
+	args = append([]string{"uninstall"}, args...)
+
+	c := *exec.Command(executable, args...)
+	c.Env = env
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	return c.Run()
 }

@@ -215,6 +215,8 @@ Flags:
   exit 1
 }
 
+[[ "$1" == "cli" ]] && shift
+
 case "$1" in
   configure-plugin-ssl)
       "$DELTAFICLI_WORKDIR/commands/configure-plugin-ssl" "$@"
@@ -360,7 +362,7 @@ case "$1" in
   versions)
     "$DELTAFICLI_WORKDIR/commands/versions" "$@"
     ;;
-  version)
+  version | --version)
     cat "$DELTAFI_DIR"/VERSION
     ;;
   logo)

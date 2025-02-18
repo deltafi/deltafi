@@ -1,6 +1,6 @@
 #    DeltaFi - Data transformation and enrichment platform
 #
-#    Copyright 2021-2024 DeltaFi Contributors <deltafi@deltafi.org>
+#    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 #    limitations under the License.
 
 .DEFAULT_GOAL := build
-APP_NAME := deltafi2
+APP_NAME := deltafi
 
 # Binary names
 BUILD_DIR ?= $(realpath $(CURDIR)/..)
@@ -42,7 +42,7 @@ GOBINPATH = $(GOPATH)/bin
 
 # Docker settings
 DOCKER_IMAGE := golang:1.23.5
-DOCKER_WORKDIR := /go/src/deltafi2
+DOCKER_WORKDIR := /go/src/deltafi
 DOCKER_GOPATH := $(DOCKER_WORKDIR)/.go
 DOCKER_CMD := docker run --rm \
               -v $(CURDIR):$(DOCKER_WORKDIR) \
@@ -150,7 +150,7 @@ dist: $(GENERATED_FILES)
 			$(eval GOARCH=$(word 2,$(subst /, ,$p))) \
 			$(shell mkdir -p $(DIST_DIR)/$(GOOS)/$(GOARCH)) \
 			GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBUILD) $(LDFLAGS) \
-				-o $(DIST_DIR)/$(GOOS)/$(GOARCH)/deltafi2 ./main.go; \
+				-o $(DIST_DIR)/$(GOOS)/$(GOARCH)/deltafi ./main.go; \
 	)
 
 test: check-env build
@@ -163,7 +163,7 @@ clean:
 
 very-clean: clean
 	$(GOCLEAN) -modcache
-	rm -rf $(GOPATH) $(BIN_DIR)/deltafi2 
+	rm -rf $(GOPATH) $(BIN_DIR)/deltafi
 
 lint: deps
 	@echo "Pulling dependencies"

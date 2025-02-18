@@ -34,14 +34,14 @@ _compose_uninstall() {
 }
 
 _drop_postgres_tables() {
-  TABLES=$(deltafi postgres-eval "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" | sed '1d;2d;$d' | sed '$d' | sed 's/^ *//; s/ *$//' | tr -d '\r')
+  TABLES=$(deltafi cli postgres-eval "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" | sed '1d;2d;$d' | sed '$d' | sed 's/^ *//; s/ *$//' | tr -d '\r')
 
   if [ -n "$TABLES" ]; then
     for TABLE in $TABLES
     do
       CMD="DROP TABLE IF EXISTS \"$TABLE\" CASCADE;"
       echo "  $CMD"
-      if ! deltafi postgres-eval "$CMD" >/dev/null 2>&1; then
+      if ! deltafi cli postgres-eval "$CMD" >/dev/null 2>&1; then
         echo "    Error dropping table $TABLE"
       else
         echo "    Table $TABLE dropped successfully"

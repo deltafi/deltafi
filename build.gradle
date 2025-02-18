@@ -41,7 +41,7 @@ ext {
     // Architecture-specific files/directories
     archDistroContents = [
         'linux-amd64': [
-            [source: 'tui/dist/linux/amd64', destination: '.'],
+            [source: 'tui/dist/linux/amd64', destination: '.', topLevel: true],
             [source: layout.buildDirectory.file('jq-linux-amd64').orNull,
                 destination: 'bin',
                 mode: 0755,
@@ -62,7 +62,7 @@ ext {
             ]
         ],
         'darwin-amd64': [
-            [source: 'tui/dist/darwin/amd64', destination: '.'],
+            [source: 'tui/dist/darwin/amd64', destination: '.', topLevel: true],
             [source: layout.buildDirectory.file('jq-macos-amd64').orNull,
                 destination: 'bin',
                 mode: 0755,
@@ -83,7 +83,7 @@ ext {
             ]
         ],
         'darwin-arm64': [
-            [source: 'tui/dist/darwin/arm64', destination: '.'],
+            [source: 'tui/dist/darwin/arm64', destination: '.', topLevel: true],
             [source: layout.buildDirectory.file('jq-macos-arm64').orNull,
                 destination: 'bin',
                 mode: 0755,
@@ -113,15 +113,15 @@ java.util.LinkedHashMap.metaClass.pprint = { -> new JsonBuilder(delegate).toPret
 import org.yaml.snakeyaml.Yaml
 def loadDeltafiConfig() {
     def retval = [:];
-    File testFile = new File('../../deltafi.yaml');
-    if ( !testFile.isFile() ) { testFile = new File('../../../deltafi.yaml'); }
-    if ( !testFile.isFile() ) { testFile = new File('../deltafi.yaml'); }
-    if ( !testFile.isFile() ) { testFile = new File('./deltafi.yaml'); }
+
+    def homeDir = System.getenv('HOME');
+    File testFile = new File(homeDir + '/.deltafi/config.yaml');
+
     if ( testFile.isFile() ) {
         retval = new Yaml().load(testFile.newInputStream());
-        println ('Loaded ' + testFile.getPath());
+        println ('Loaded configuration from ' + testFile.getPath());
     } else {
-        println ('WARNING: deltafi.yaml not found');
+        println ('WARNING: ' + testFile.getPath() + ' not found');
     }
     retval = retval ?: [:]
 
@@ -185,7 +185,7 @@ task tui {
 
 task install {
     group = 'install'
-    description = 'Install DeltaFi built from this repo into the current development environment'
+    description = 'Install DeltaFi images built from this repo into the current development environment'
 }
 
 // Create tasks for each architecture
@@ -228,6 +228,17 @@ archDistroContents.each { arch, archFiles ->
                 }
                 if (item.rename != null) {
                     rename { _ -> item.rename }
+                }
+            }
+            if (item.topLevel) {
+                from(item.source) {
+                    into '.'
+                    if (item.mode != null) {
+                        fileMode = item.mode
+                    }
+                    if (item.rename != null) {
+                        rename { _ -> item.rename }
+                    }
                 }
             }
         }

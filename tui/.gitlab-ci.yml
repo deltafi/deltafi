@@ -9,4 +9,4 @@ build:TUI:
       pushd tui
       make
       popd
-      ./deltafi2 || echo "Oopsie..."
+      ./deltafi || echo "Oopsie..."

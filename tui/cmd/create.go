@@ -23,12 +23,13 @@ import (
 )
 
 var CreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Creates a DeltaFi resource",
+	Use:     "create",
+	Short:   "Creates a DeltaFi resource",
+	GroupID: "flow",
 	Long: `Creates a DeltaFi resource, such as a new event or snapshot
 
 # Example creating a new event
-deltafi2 create event "my event summary"
+deltafi create event "my event summary"
 `,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

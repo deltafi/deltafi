@@ -57,14 +57,14 @@ ARGS=("$@")
 [[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
 
 DATA_SOURCE=$2
-INGRESS_HOST=$(deltafi serviceip deltafi-ingress-service)
+INGRESS_HOST=$(deltafi cli serviceip deltafi-ingress-service)
 INGRESS_PATH="/api/v2/deltafile/ingress"
 INGRESS_URL="http://${INGRESS_HOST}${INGRESS_PATH}"
 
 get_stage() {
   local did=$1
   local query="query { deltaFile(did: \"$did\") { stage } }"
-  local stage=$(deltafi query "$query" | jq -r '.data.deltaFile.stage')
+  local stage=$(deltafi cli query "$query" | jq -r '.data.deltaFile.stage')
   echo $stage
 }
 
@@ -99,11 +99,11 @@ for FILE in "${@:3}"; do
       if [ "$stage" != "COMPLETE" ]; then
         cli_log "${red}Ingress failed for file ${bold}${BASENAME}${normal}${red} with did(s) ${bold}${DIDS}${normal}"
         echo -e "${red}Error: Timeout reached waiting for stage \"COMPLETE\"${normal}"
-        deltafi trace $DID
+        deltafi cli trace $DID
         continue
       else
         cli_log "Ingress complete for file ${cyan}${BASENAME}${normal} with did(s) ${cyan}${DIDS}${normal}"
-        deltafi trace $DID
+        deltafi cli trace $DID
       fi
     else
       cli_log "Ingress complete for file ${cyan}${BASENAME}${normal} with did(s) ${cyan}${DIDS}${normal}"

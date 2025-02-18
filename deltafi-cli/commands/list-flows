@@ -19,7 +19,7 @@ ARGS=("$@")
 
 FIELDS="{ name flowStatus {state}}"
 QUERY="query { getAllFlows { restDataSource $FIELDS timedDataSource $FIELDS transform $FIELDS dataSink $FIELDS}}"
-RESULT=$(deltafi query "$QUERY")
+RESULT=$(deltafi cli query "$QUERY")
 
 print_flows() {
   FLOW_TYPE=$(tr '[:lower:]' '[:upper:]' <<< ${1:0:1})${1:1}

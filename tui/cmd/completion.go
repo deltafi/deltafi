@@ -29,7 +29,7 @@ var completionCmd = &cobra.Command{
 	Long: `Generate completion script.
 
 For zsh completion add the following to .zshrc:
-[[ deltafi2 ]] && source <(deltafi2 completion zsh)
+[[ deltafi ]] && source <(deltafi completion zsh)
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		switch args[0] {
@@ -37,7 +37,7 @@ For zsh completion add the following to .zshrc:
 			_ = cmd.Root().GenBashCompletion(os.Stdout)
 		case "zsh":
 			_ = cmd.Root().GenZshCompletion(os.Stdout)
-			_, _ = fmt.Fprintf(os.Stdout, "compdef _deltafi2 deltafi2")
+			_, _ = fmt.Fprintf(os.Stdout, "compdef _deltafi deltafi")
 		case "fish":
 			_ = cmd.Root().GenFishCompletion(os.Stdout, true)
 		case "powershell":

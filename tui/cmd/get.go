@@ -25,15 +25,16 @@ import (
 )
 
 var GetCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get the resources of a given type",
+	Use:     "get",
+	Short:   "Get the resources of a given type",
+	GroupID: "flow",
 	Long: `Get the resources loaded in DeltaFi For example:
 
 # Get a specific resource by name
-deltafi2 get transform passthrough-transform
+deltafi get transform passthrough-transform
 
 # Get a list of the resources by resource type
-deltafi2 get transforms
+deltafi get transforms
 `,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

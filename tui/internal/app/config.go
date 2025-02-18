@@ -31,10 +31,12 @@ type Config struct {
 	OrchestrationMode orchestration.OrchestrationMode `yaml:"orchestrationMode"`
 	DeploymentMode    DeploymentMode                  `yaml:"deploymentMode"`
 	CoreVersion       string                          `yaml:"coreVersion"`
+	InstallDirectory  string                          `yaml:"installDirectory"`
 	Development       DevelopmentConfig               `yaml:"development"`
 }
 
 type DevelopmentConfig struct {
+	RepoPath string `yaml:"repoPath"`
 	CoreRepo string `yaml:"coreRepo"`
 }
 
@@ -43,7 +45,7 @@ type DeploymentConfig struct {
 }
 
 const (
-	defaultConfigFileName = "deltafi.yaml"
+	defaultConfigFileName = "config.yaml"
 )
 
 func DefaultConfig() Config {
@@ -51,18 +53,36 @@ func DefaultConfig() Config {
 		OrchestrationMode: orchestration.Compose,
 		DeploymentMode:    Deployment,
 		CoreVersion:       Version,
+		InstallDirectory:  TuiPath(),
 		Development:       DefaultDevelopmentConfig(),
 	}
 }
 
 func DefaultDevelopmentConfig() DevelopmentConfig {
 	return DevelopmentConfig{
+		RepoPath: filepath.Join(TuiPath(), "repos"),
 		CoreRepo: "git@gitlab.com:deltafi/deltafi.git",
 	}
 }
 
 func configFile() string {
-	return filepath.Join(TuiPath(), defaultConfigFileName)
+	return filepath.Join(ConfigPath(), defaultConfigFileName)
+}
+
+func ConfigExists() bool {
+	_, err := os.Stat(configFile())
+	return !os.IsNotExist(err)
+}
+
+func CreateConfig() error {
+	err := os.MkdirAll(ConfigPath(), 0755)
+
+	if err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	config := DefaultConfig()
+	return config.Save()
 }
 
 // LoadConfig loads the application configuration from the config file
@@ -73,13 +93,13 @@ func LoadConfig() (Config, error) {
 	if fileInfo, err := os.Stat(configFile); err == nil {
 		if fileInfo.Size() > 0 {
 			if err := loadFromFile(configFile, &config); err != nil {
-				return config, fmt.Errorf("deltafi.yaml file is invalid: \n%v", err)
+				return config, fmt.Errorf("config.yaml file is invalid: \n%v", err)
 			}
 		}
 	} else if os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "Warning: deltafi.yaml file does not exist (%s)\n", configFile)
+		fmt.Fprintf(os.Stderr, "Warning: config.yaml file does not exist (%s)\n", configFile)
 	} else {
-		return config, fmt.Errorf("deltafi.yaml unreadable: %v", err)
+		return config, fmt.Errorf("config.yaml unreadable: %v", err)
 	}
 
 	return config, nil

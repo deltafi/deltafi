@@ -293,7 +293,7 @@ _base64() {
 DELTAFI_COMPOSE_PATH=$(cd $(dirname $(_readlink -f $0)) && pwd)
 DELTAFI_PATH=$(cd $(dirname $(_readlink -f $0))/../.. && pwd)
 COMPOSE_FILE="${DELTAFI_COMPOSE_PATH}/docker-compose.yml"
-VERSION=$(deltafi version)
+VERSION=$(deltafi --version)
 
 # TODO make the data directory configurable
 DATA_DIR="${DELTAFI_COMPOSE_PATH}/data"

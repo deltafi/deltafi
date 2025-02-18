@@ -112,11 +112,15 @@ var initKeys = initKeyMap{
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize DeltaFi system",
-	Long:  `Interactive wizard to initialize DeltaFi system`,
+	Use:     "init",
+	Short:   "Initialize DeltaFi system",
+	Long:    `Interactive wizard to initialize DeltaFi system`,
+	GroupID: "orchestration",
 	Run: func(cmd *cobra.Command, args []string) {
-		runProgram(NewInitCommand())
+		command := NewInitCommand()
+		runProgram(command)
+
+		app.GetOrchestrator().Deploy([]string{})
 	},
 }
 
@@ -165,8 +169,8 @@ type cloneFinishedMsg struct{ err error }
 
 func (c *InitCommand) cloneRepo() tea.Cmd {
 	return func() tea.Msg {
-		repoPath := filepath.Join(app.TuiPath(), "repos", "deltafi")
-		cmd := exec.Command("git", "clone", c.config.Development.CoreRepo, repoPath)
+		coreRepo := filepath.Join(c.config.Development.RepoPath, "deltafi")
+		cmd := exec.Command("git", "clone", c.config.Development.CoreRepo, coreRepo)
 		err := cmd.Run()
 		return cloneFinishedMsg{err}
 	}
@@ -177,8 +181,8 @@ func (c *InitCommand) needsCoreSetup() bool {
 		return false
 	}
 
-	repoPath := filepath.Join(app.TuiPath(), "repos", "deltafi")
-	if _, err := os.Stat(repoPath); err == nil {
+	coreRepo := filepath.Join(c.config.Development.RepoPath, "deltafi")
+	if _, err := os.Stat(coreRepo); err == nil {
 		return false
 	}
 

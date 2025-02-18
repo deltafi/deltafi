@@ -19,16 +19,19 @@ package orchestration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 type ComposeOrchestrator struct {
 	Orchestrator
+	distroPath string
 }
 
-func NewComposeOrchestrator() *KubernetesOrchestrator {
-	return &KubernetesOrchestrator{}
+func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
+	return &ComposeOrchestrator{distroPath: distroPath}
 }
 
 func (o *ComposeOrchestrator) GetServiceIP(service string) (string, error) {
@@ -53,4 +56,42 @@ func (o *ComposeOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error
 	cmdArgs = append(cmdArgs, psqlCmd)
 
 	return *exec.Command("docker", cmdArgs...), nil
+}
+
+func (o *ComposeOrchestrator) Deploy(args []string) error {
+
+	mode := "STANDALONE"
+	env := os.Environ()
+	env = append(env, "DELTAFI_MODE="+mode)
+
+	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
+
+	args = append([]string{"install"}, args...)
+
+	c := *exec.Command(executable, args...)
+	c.Env = env
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	return c.Run()
+}
+
+func (o *ComposeOrchestrator) Destroy(args []string) error {
+
+	mode := "STANDALONE"
+	env := os.Environ()
+	env = append(env, "DELTAFI_MODE="+mode)
+
+	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
+
+	args = append([]string{"uninstall"}, args...)
+
+	c := *exec.Command(executable, args...)
+	c.Env = env
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	return c.Run()
 }

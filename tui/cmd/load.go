@@ -28,12 +28,13 @@ import (
 )
 
 var LoadCmd = &cobra.Command{
-	Use:   "load <resource>",
-	Short: "Load creates or updates a DeltaFi resource",
+	Use:     "load <resource>",
+	Short:   "Load creates or updates a DeltaFi resource",
+	GroupID: "flow",
 	Long: `Load creates or updates a DeltaFi resource, such as a new data source or transform.
 
 # Example creating a new transform flow
-deltafi2 load transform --file path_to_file.yaml
+deltafi load transform --file path_to_file.yaml
 `,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

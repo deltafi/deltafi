@@ -84,18 +84,16 @@ func build() {
 		config = DefaultConfig()
 	}
 
-	orchestration.NewOrchestrator(config.OrchestrationMode)
-
 	distroPath := ""
-	if config.DeploymentMode == CoreDevelopment {
-		distroPath = filepath.Join(TuiPath(), "repos", "deltafi")
+	if config.DeploymentMode == CoreDevelopment || strings.Contains(Version, "SNAPSHOT") {
+		distroPath = filepath.Join(config.Development.RepoPath, "deltafi")
 	} else {
 		distroPath = filepath.Join(TuiPath(), Version)
 	}
 
 	instance = &App{
 		config:       &config,
-		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode),
+		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath),
 		os:           runtime.GOOS,
 		arch:         runtime.GOARCH,
 		distroPath:   distroPath,
@@ -106,6 +104,14 @@ func build() {
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
+	}
+}
+
+func ConfigPath() string {
+	if configPath := os.Getenv("DELTAFI_CONFIG_PATH"); configPath != "" {
+		return configPath
+	} else {
+		return filepath.Join(os.Getenv("HOME"), ".deltafi")
 	}
 }
 
@@ -142,10 +148,13 @@ func (a *App) initializeAPI() error {
 }
 
 func (a *App) getAPIBaseURL() (string, error) {
-	coreServiceURL := fmt.Sprintf("http://%s:%d",
-		"deltafi-core-service",
-		8042) // FIXME this needs to come from serviceip
+	serviceip, error := a.orchestrator.GetServiceIP("deltafi-core-service")
 
+	if error != nil {
+		return "", error
+	}
+
+	coreServiceURL := fmt.Sprintf("http://%s", serviceip)
 	return coreServiceURL, nil
 }
 

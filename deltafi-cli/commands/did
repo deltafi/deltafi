@@ -19,4 +19,4 @@ FILENAME=${ARGS[@]:1}
 
 QUERY="query { lastWithName(name: \"$FILENAME\") { did } }"
 
-deltafi query "$QUERY" | jq -r '.data.lastWithName.did'
+deltafi cli query "$QUERY" | jq -r '.data.lastWithName.did'

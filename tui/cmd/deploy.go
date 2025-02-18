@@ -15,28 +15,31 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package orchestration
+package cmd
 
-import "os/exec"
+import (
+	"github.com/deltafi/tui/internal/app"
+	"github.com/spf13/cobra"
+)
 
-type Orchestrator interface {
-	GetServiceIP(string) (string, error)
-	GetPostgresCmd([]string) (exec.Cmd, error)
-	GetPostgresExecCmd([]string) (exec.Cmd, error)
-	Deploy([]string) error
-	Destroy([]string) error
+var deployCmd = &cobra.Command{
+	Use:   "deploy",
+	Short: "Create or update the DeltaFi cluster",
+	Long: `Create or update the DeltaFi cluster.
+
+	If there is no cluster running, a new cluster will be created according to the provisioned orchestration mode.
+
+	If a cluster is already running, the cluster will be updated with the latest configuration changes.  This operation is idempotent.`,
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	GroupID:       "orchestration",
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		return app.GetOrchestrator().Deploy(args)
+
+	},
 }
 
-func NewOrchestrator(mode OrchestrationMode, distroPath string) Orchestrator {
-
-	switch mode {
-	case Kubernetes:
-		return &KubernetesOrchestrator{distroPath: distroPath}
-	case Compose:
-		return &ComposeOrchestrator{distroPath: distroPath}
-	case Kind:
-		return &KubernetesOrchestrator{distroPath: distroPath}
-	default:
-		return &ComposeOrchestrator{distroPath: distroPath}
-	}
+func init() {
+	rootCmd.AddCommand(deployCmd)
 }

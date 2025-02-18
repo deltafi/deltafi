@@ -32,7 +32,7 @@ QUERY="query {
         }
         "
 
-RESULT=$(deltafi query "$QUERY")
+RESULT=$(deltafi cli query "$QUERY")
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
 if [[ "$DGS_ERRORS" != "" ]]; then
   cli_log "${red}${BASENAME}: Failed to export rest data source plan: $PLANNAME${normal}"

@@ -31,15 +31,15 @@ ARGS=("$@")
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
 INPUT=${ARGS[@]:1}
-ZIPKIN_IP=$(deltafi serviceip deltafi-zipkin)
+ZIPKIN_IP=$(deltafi cli serviceip deltafi-zipkin)
 if [[ $INPUT =~ ^\{?[A-F0-9a-f]{8}-[A-F0-9a-f]{4}-[A-F0-9a-f]{4}-[A-F0-9a-f]{4}-[A-F0-9a-f]{12}\}?$ ]]; then
   DID=$INPUT
 else
-  DID=$(deltafi did $INPUT)
+  DID=$(deltafi cli did $INPUT)
 fi
 
 QUERY="query { deltaFile(did: \"$DID\") { stage sourceInfo { filename flow } actions { name } } }"
-RESULT=$(deltafi query "$QUERY")
+RESULT=$(deltafi cli query "$QUERY")
 STAGE=$(echo $RESULT | jq -r '.data.deltaFile.stage')
 FLOW=$(echo $RESULT | jq -r '.data.deltaFile.sourceInfo.flow')
 FILENAME=$(echo $RESULT | jq -r '.data.deltaFile.sourceInfo.filename')
@@ -91,7 +91,7 @@ echo "$TRACES" | jq  'sort_by(.timestamp) | [.[] | {name: .name, timestamp: (.ti
 echo
 
 ERROR_QUERY="query { deltaFile(did: \"$DID\") { actions { name state errorCause } } }"
-ERRORS=$(deltafi query $ERROR_QUERY)
+ERRORS=$(deltafi cli query $ERROR_QUERY)
 DELIM="ॐ"
 JQ_SELECT=".data.deltaFile.actions[] | select(.state==\"ERROR\") | (.name + \"$DELIM\" + .errorCause)"
 echo $ERRORS | jq -r "$JQ_SELECT" | _sed_prepend "======$DELIM=====" | _sed_prepend "Action${DELIM}Error" | column -t -s$DELIM

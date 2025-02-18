@@ -207,11 +207,11 @@ if [[ "$(basename "$0")" == "deltafi" || "$DELTAFI_WRAPPER" == "true" ]]; then
         shift 2
         mkdir -p "${INGRESS_DIR}"
         cp "$filename" "${INGRESS_DIR}"
-        docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi ingress "$flow" "/data/deltafi/ingress/$(basename "$filename")"
+        docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev -e DELTAFI_MODE=CLUSTER ${CLUSTER_NAME}-control-plane deltafi ingress "$flow" "/data/deltafi/ingress/$(basename "$filename")"
         rm "${INGRESS_DIR}/$(basename "$filename")"
         ;;
       *)
-        docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev ${CLUSTER_NAME}-control-plane deltafi "$@"
+        docker exec -it -u="$(id -u):$(id -g)" -w /usr/dev -e DELTAFI_MODE=CLUSTER ${CLUSTER_NAME}-control-plane deltafi "$@"
         ;;
     esac
     exit 0

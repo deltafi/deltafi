@@ -49,7 +49,7 @@ QUERY="{
          }
        }"
 QUERY=$(echo $QUERY)
-RESULT=$(deltafi query "$QUERY")
+RESULT=$(deltafi cli query "$QUERY")
 
 if [[ " ${ARGS[@]} " =~ " --json " || " ${ARGS[@]} " =~ " -j " ]]; then
   echo "$RESULT" | jq -r ".data.plugins"

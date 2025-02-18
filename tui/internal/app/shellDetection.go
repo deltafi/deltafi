@@ -35,13 +35,6 @@ const (
 	UnknownShell ShellType = "unknown"
 )
 
-// Required configuration line for each shell type
-const (
-	BashConfig = "[[ -f $HOME/.bashrc.deltafi ]] && . $HOME/.bashrc.deltafi # Required for DeltaFi configuration"
-	ZshConfig  = "[[ -f $HOME/.zshrc.deltafi ]] && source $HOME/.zshrc.deltafi # Required for DeltaFi configuration"
-	FishConfig = "test -f $HOME/.config/fish/conf.d/deltafi.fish && source $HOME/.config/fish/conf.d/deltafi.fish # Required for DeltaFi configuration"
-)
-
 // DetectShell determines the current shell being used
 func DetectShell() ShellType {
 	// Check SHELL environment variable first
@@ -109,22 +102,28 @@ func ConfigureShell(shell ShellType, tuiPath string) error {
 
 // configureBash sets up bash configuration
 func configureBash(tuiPath string) error {
-	// Add configuration to .bashrc if it doesn't exist
-	rcPath := filepath.Join(os.Getenv("HOME"), ".bashrc")
-	if err := ensureConfigLine(rcPath, BashConfig); err != nil {
-		return fmt.Errorf("failed to configure .bashrc: %w", err)
+	rc := filepath.Join(os.Getenv("HOME"), ".bashrc")
+	config := filepath.Join(ConfigPath(), "rc.bash")
+	configLine := "[[ -f " + config + " ]] && source " + config + " # Required for DeltaFi configuration"
+
+	// Create config directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(config), 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	// Create or overwrite .bashrc.deltafi
-	deltafircPath := filepath.Join(os.Getenv("HOME"), ".bashrc.deltafi")
+	// Create or overwrite config
 	content := fmt.Sprintf(`#!/bin/bash
 export PATH="%s":$PATH:"%s/bin"
 [[ $(command -v deltafi > /dev/null) ]] && source <(deltafi completion bash)
-[[ $(command -v deltafi2 > /dev/null) ]] && source <(deltafi2 completion bash)
 `, tuiPath, tuiPath)
 
-	if err := os.WriteFile(deltafircPath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("failed to write .bashrc.deltafi: %w", err)
+	if err := os.WriteFile(config, []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to write rc config: %w", err)
+	}
+
+	// Add configuration to .bashrc if it doesn't exist
+	if err := ensureConfigLine(rc, configLine); err != nil {
+		return fmt.Errorf("failed to configure .bashrc: %w", err)
 	}
 
 	return nil
@@ -132,22 +131,28 @@ export PATH="%s":$PATH:"%s/bin"
 
 // configureZsh sets up zsh configuration
 func configureZsh(tuiPath string) error {
-	// Add configuration to .zshrc if it doesn't exist
-	rcPath := filepath.Join(os.Getenv("HOME"), ".zshrc")
-	if err := ensureConfigLine(rcPath, ZshConfig); err != nil {
-		return fmt.Errorf("failed to configure .zshrc: %w", err)
+	rc := filepath.Join(os.Getenv("HOME"), ".zshrc")
+	config := filepath.Join(ConfigPath(), "rc.zsh")
+	configLine := "[[ -f " + config + " ]] && source " + config + " # Required for DeltaFi configuration"
+
+	// Create config directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(config), 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	// Create or overwrite .zshrc.deltafi
-	deltafircPath := filepath.Join(os.Getenv("HOME"), ".zshrc.deltafi")
+	// Create or overwrite config
 	content := fmt.Sprintf(`#!/bin/zsh
 export PATH="%s":$PATH:"%s/bin"
 [[ $(command -v deltafi > /dev/null) ]] && source <(deltafi completion zsh)
-[[ $(command -v deltafi2 > /dev/null) ]] && source <(deltafi2 completion zsh)
 `, tuiPath, tuiPath)
 
-	if err := os.WriteFile(deltafircPath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("failed to write .zshrc.deltafi: %w", err)
+	if err := os.WriteFile(config, []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to write rc config: %w", err)
+	}
+
+	// Add configuration to .zshrc if it doesn't exist
+	if err := ensureConfigLine(rc, configLine); err != nil {
+		return fmt.Errorf("failed to configure .zshrc: %w", err)
 	}
 
 	return nil
@@ -155,33 +160,31 @@ export PATH="%s":$PATH:"%s/bin"
 
 // configureFish sets up fish configuration
 func configureFish(tuiPath string) error {
+	rc := filepath.Join(os.Getenv("HOME"), ".config/fish/config.fish")
+	config := filepath.Join(ConfigPath(), "rc.fish")
+	configLine := "[[ -f " + config + " ]] && source " + config + " # Required for DeltaFi configuration"
+
 	// Create fish config directory if it doesn't exist
-	configDir := filepath.Join(os.Getenv("HOME"), ".config/fish/conf.d")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(config), 0755); err != nil {
 		return fmt.Errorf("failed to create fish config directory: %w", err)
 	}
 
-	// Add configuration to config.fish if it doesn't exist
-	configPath := filepath.Join(os.Getenv("HOME"), ".config/fish/config.fish")
-	if err := ensureConfigLine(configPath, FishConfig); err != nil {
-		return fmt.Errorf("failed to configure config.fish: %w", err)
-	}
-
-	// Create or overwrite deltafi.fish
-	deltafiPath := filepath.Join(configDir, "deltafi.fish")
+	// Create or overwrite rc.fish
 	content := fmt.Sprintf(`#!/bin/fish
 fish_add_path "%s"
 fish_add_path "%s/bin"
 if command -v deltafi >/dev/null
     deltafi completion fish | source
 end
-if command -v deltafi2 >/dev/null
-    deltafi2 completion fish | source
-end
 `, tuiPath, tuiPath)
 
-	if err := os.WriteFile(deltafiPath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("failed to write deltafi.fish: %w", err)
+	if err := os.WriteFile(config, []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to write rc.fish: %w", err)
+	}
+
+	// Add configuration to config.fish if it doesn't exist
+	if err := ensureConfigLine(rc, configLine); err != nil {
+		return fmt.Errorf("failed to configure config.fish: %w", err)
 	}
 
 	return nil
