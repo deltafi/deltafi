@@ -25,7 +25,7 @@ import (
 	"strconv"
 )
 
-var GetTransformFlow = &cobra.Command{
+var getTransformFlow = &cobra.Command{
 	Use:   "transform",
 	Short: "Get transform flows",
 	Long: `Get the list of transform flows when no argument is given.
@@ -66,6 +66,39 @@ Otherwise, this command will create a new transform flow with the given name.`,
 		}
 
 		return prettyPrint(cmd, resp.SaveTransformFlowPlan)
+	},
+}
+
+var startTransformFlow = &cobra.Command{
+	Use:               "transform",
+	Short:             "Start a transform flow",
+	Long:              `Start a transform flow with the given name.`,
+	Args:              cobra.MinimumNArgs(1),
+	ValidArgsFunction: getTransformNames,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return startFlow(graphql.FlowTypeTransform, args[0])
+	},
+}
+
+var stopTransformFlow = &cobra.Command{
+	Use:               "transform",
+	Short:             "Stop a transform flow",
+	Long:              `Stop a transform flow with the given name.`,
+	Args:              cobra.MinimumNArgs(1),
+	ValidArgsFunction: getTransformNames,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return stopFlow(graphql.FlowTypeTransform, args[0])
+	},
+}
+
+var pauseTransformFlow = &cobra.Command{
+	Use:               "transform",
+	Short:             "Pause a transform flow",
+	Long:              `Pause a transform flow with the given name.`,
+	Args:              cobra.MinimumNArgs(1),
+	ValidArgsFunction: getTransformNames,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return pauseFlow(graphql.FlowTypeTransform, args[0])
 	},
 }
 
@@ -131,7 +164,10 @@ func fetchRemoteTransformNames() ([]string, error) {
 }
 
 func init() {
-	GetCmd.AddCommand(GetTransformFlow)
+	GetCmd.AddCommand(getTransformFlow)
 	LoadCmd.AddCommand(loadTransformFlow)
-	GetTransformFlow.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
+	StartCmd.AddCommand(startTransformFlow)
+	StopCmd.AddCommand(stopTransformFlow)
+	PauseCmd.AddCommand(pauseTransformFlow)
+	getTransformFlow.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 }

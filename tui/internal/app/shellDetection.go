@@ -114,7 +114,7 @@ func configureBash(tuiPath string) error {
 	// Create or overwrite config
 	content := fmt.Sprintf(`#!/bin/bash
 export PATH="%s":$PATH:"%s/bin"
-[[ $(command -v deltafi > /dev/null) ]] && source <(deltafi completion bash)
+[[ $(command -v deltafi) ]] && source <(deltafi completion bash)
 `, tuiPath, tuiPath)
 
 	if err := os.WriteFile(config, []byte(content), 0644); err != nil {
@@ -143,7 +143,7 @@ func configureZsh(tuiPath string) error {
 	// Create or overwrite config
 	content := fmt.Sprintf(`#!/bin/zsh
 export PATH="%s":$PATH:"%s/bin"
-[[ $(command -v deltafi > /dev/null) ]] && source <(deltafi completion zsh)
+[[ $(command -v deltafi) ]] && source <(deltafi completion zsh)
 `, tuiPath, tuiPath)
 
 	if err := os.WriteFile(config, []byte(content), 0644); err != nil {
@@ -173,7 +173,7 @@ func configureFish(tuiPath string) error {
 	content := fmt.Sprintf(`#!/bin/fish
 fish_add_path "%s"
 fish_add_path "%s/bin"
-if command -v deltafi >/dev/null
+if command -v deltafi
     deltafi completion fish | source
 end
 `, tuiPath, tuiPath)

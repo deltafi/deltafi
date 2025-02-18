@@ -5,6 +5,7 @@ schema:
 operations:
 - plugin.graphql
 - transforms.graphql
+- flow_controls.graphql
 generated: generated.go
 client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
 context_type: "-"
