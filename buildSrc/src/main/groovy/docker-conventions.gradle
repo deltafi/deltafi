@@ -13,7 +13,7 @@ if (!deltafiConfig.isEmpty()) {
         group = 'install'
         var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
         if (orchestrationMode == 'compose') {
-            dependsOn 'dockerPushDeltafi'
+            dependsOn 'dockerTagDeltafi'
         } else if (orchestrationMode == 'kind') {
             dependsOn 'dockerPushLocal'
         } else {
