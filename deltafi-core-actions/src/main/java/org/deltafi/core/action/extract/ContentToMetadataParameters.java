@@ -29,7 +29,7 @@ import org.deltafi.core.action.ContentSelectionParameters;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class ExtractContentParameters extends ContentSelectionParameters {
+public class ContentToMetadataParameters extends ContentSelectionParameters {
     @JsonProperty(defaultValue = "METADATA")
     @JsonPropertyDescription("Extract to metadata or annotation.")
     private ExtractTarget extractTarget = ExtractTarget.METADATA;

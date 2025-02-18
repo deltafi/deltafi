@@ -30,13 +30,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class ExtractContent extends TransformAction<ExtractContentParameters> {
-    public ExtractContent() {
-        super("Read first content and writes the string as metadata.");
+public class ContentToMetadata extends TransformAction<ContentToMetadataParameters> {
+    public ContentToMetadata() {
+        super("Move selected content to metadata or annotation");
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context, @NotNull ExtractContentParameters params,
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull ContentToMetadataParameters params,
                                          @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
 

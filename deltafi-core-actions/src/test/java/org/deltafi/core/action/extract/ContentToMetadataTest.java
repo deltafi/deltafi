@@ -27,14 +27,14 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-class ExtractContentTest {
+class ContentToMetadataTest {
 
-    ExtractContent action = new ExtractContent();
+    ContentToMetadata action = new ContentToMetadata();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
 
     @Test
     void testToMetadata() {
-        ExtractContentParameters params = new ExtractContentParameters();
+        ContentToMetadataParameters params = new ContentToMetadataParameters();
         params.setKey("theKey");
         params.setMaxSize(3);
         params.setContentIndexes(List.of(0));
@@ -54,7 +54,7 @@ class ExtractContentTest {
 
     @Test
     void testToAnnotation() {
-        ExtractContentParameters params = new ExtractContentParameters();
+        ContentToMetadataParameters params = new ContentToMetadataParameters();
         params.setKey("theKey");
         params.setRetainExistingContent(true);
         params.setExtractTarget(ExtractTarget.ANNOTATIONS);
