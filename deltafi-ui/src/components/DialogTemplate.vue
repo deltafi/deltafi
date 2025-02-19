@@ -21,20 +21,21 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog id="dialogTemplate" v-model:visible="dialogVisible" :header="$attrs['header']" :position="modelPosition" :style="{ width: dialogSize }" :maximizable="true" :modal="!disableModel" :dismissable-mask="dismissableMask" :draggable="false" :closable="isClosable" @hide="closeDialogTemplate" @show="openDialogTemplate">
+    <Dialog id="dialogTemplate" ref="dialogTemplate" v-model:visible="dialogVisible" :header="$attrs['header']" :position="modelPosition" :style="{ width: dialogSize }" :maximizable="true" :modal="!disableModel" :dismissable-mask="dismissableMask" :draggable="false" :closable="isClosable" @hide="closeDialogTemplate" @show="openDialogTemplate">
       <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" :close-dialog-command="closeDialogCommand" />
     </Dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, inject, ref, useAttrs } from "vue";
+import { computed, defineAsyncComponent, inject, nextTick, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
 import _ from "lodash";
 
 const components = import.meta.glob('@/components/**/*.vue')
 const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate"]);
 const hasPermission = inject("hasPermission");
+const dialogTemplate = ref(null);
 
 //View dynamic props being sent down
 const attrs = useAttrs();
@@ -46,7 +47,7 @@ const closeDialogCommand = ref({
 });
 
 const loadComponent = computed(() => {
-  return defineAsyncComponent(async() => await components[`/src/components/${attrs["component-name"]}.vue`]());
+  return defineAsyncComponent(async () => await components[`/src/components/${attrs["component-name"]}.vue`]());
 });
 
 const dialogSize = computed(() => {
@@ -78,7 +79,13 @@ const openDialogTemplate = () => {
 };
 
 const dialogVisible = ref(false);
-const showDialog = () => {
+const showDialog = async () => {
+  // The PrimeVue Dialog component automatically tries to focus the first focusable element inside the dialog when it opens.
+  // Since we are trying to load in a dynamic component it's not there yet and its trying to access .nextSibling on null,
+  // causing the error. Ensure a focusable element exists.
+  await nextTick();
+  if (dialogTemplate.value) dialogTemplate.value.focus();
+
   const requiredPermission = _.get(attrs, "required-permission", null);
 
   if (requiredPermission) {
