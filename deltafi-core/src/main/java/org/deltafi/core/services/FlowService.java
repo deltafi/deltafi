@@ -241,6 +241,14 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return validateAndSaveFlow(getFlowOrThrow(flowName));
     }
 
+    public void validateSystemPlanName(String planName, PluginCoordinates systemPlugin) {
+        Flow flow = flowRepo.findByNameAndType(planName, flowType, flowClass).orElse(null);
+
+        if (flow != null && !systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
+            throw new IllegalArgumentException("A " + flowType.getDisplayName() + " named " + planName + " exists in plugin " + flow.getSourcePlugin());
+        }
+    }
+
     FlowT validateAndSaveFlow(FlowT flow) {
         FlowState originalState = flow.getFlowStatus().getState();
         List<FlowConfigError> errors = new ArrayList<>(flow.getFlowStatus()

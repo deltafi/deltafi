@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -38,7 +39,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class TransformFlowServiceTest {
@@ -144,6 +145,43 @@ class TransformFlowServiceTest {
         assertThat(result.getInfo()).hasSize(2)
                 .contains("Flow missing is no longer installed")
                 .contains("Flow: invalid is invalid and cannot be started");
+    }
+
+    @Test
+    void validateSystemPlanName() {
+        PluginCoordinates system = PluginCoordinates.builder().artifactId(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID).groupId(PluginService.SYSTEM_PLUGIN_GROUP_ID).version("1").build();
+        TransformFlow existing = transformFlow("my-flow", FlowState.STOPPED, false);
+        existing.setSourcePlugin(PluginCoordinates.builder().artifactId("a").groupId("b").version("1").build());
+
+        // mock an existing flow with a different plugin coord
+        Mockito.when(transformFlowRepo.findByNameAndType("my-flow", FlowType.TRANSFORM, TransformFlow.class))
+                .thenReturn(Optional.of(existing));
+        assertThatThrownBy(() -> transformFlowService.validateSystemPlanName("my-flow", system))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("A transform named my-flow exists in plugin b:a:1");
+    }
+
+    @Test
+    void validateSystemPlanName_isUnique() {
+        PluginCoordinates system = PluginCoordinates.builder().artifactId(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID).groupId(PluginService.SYSTEM_PLUGIN_GROUP_ID).version("1").build();
+
+        // mock an existing flow with a different plugin coord
+        Mockito.when(transformFlowRepo.findByNameAndType("my-flow", FlowType.TRANSFORM, TransformFlow.class))
+                .thenReturn(Optional.empty());
+        assertThatNoException().isThrownBy(() -> transformFlowService.validateSystemPlanName("my-flow", system));
+    }
+
+    @Test
+    void validateSystemPlanName_existingSystemPlan() {
+        PluginCoordinates system = PluginCoordinates.builder().artifactId(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID).groupId(PluginService.SYSTEM_PLUGIN_GROUP_ID).version("2").build();
+
+        TransformFlow transformFlow = transformFlow("my-flow", FlowState.RUNNING, false);
+        transformFlow.setSourcePlugin(PluginCoordinates.builder().artifactId(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID).groupId(PluginService.SYSTEM_PLUGIN_GROUP_ID).version("2").build());
+
+        // mock an existing system flow (version doesn't matter)
+        Mockito.when(transformFlowRepo.findByNameAndType("my-flow", FlowType.TRANSFORM, TransformFlow.class))
+                .thenReturn(Optional.of(transformFlow));
+        assertThatNoException().isThrownBy(() -> transformFlowService.validateSystemPlanName("my-flow", system));
     }
 
     TransformFlow transformFlow(String name, FlowState flowState, boolean testMode) {

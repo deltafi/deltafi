@@ -62,7 +62,7 @@ public class FlowPlanDatafetcher {
     private final CoreAuditLogger auditLogger;
     private final FlowCacheService flowCacheService;
     private final PluginService pluginService;
-    private final DataSinkPlanValidator DataSinkPlanValidator;
+    private final DataSinkPlanValidator dataSinkPlanValidator;
     private final RestDataSourcePlanValidator restDataSourcePlanValidator;
     private final TimedDataSourcePlanValidator timedDataSourcePlanValidator;
     private final TransformFlowPlanValidator transformFlowPlanValidator;
@@ -128,9 +128,11 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public DataSink saveDataSinkPlan(@InputArgument DataSinkPlanInput dataSinkPlan) {
         auditLogger.audit("saved data sink plan {}", dataSinkPlan.getName());
+        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
+        dataSinkService.validateSystemPlanName(dataSinkPlan.getName(), systemPluginCoordinates);
         DataSinkPlan flowPlan = OBJECT_MAPPER.convertValue(dataSinkPlan, DataSinkPlan.class);
-        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
-        DataSinkPlanValidator.validate(flowPlan);
+        flowPlan.setSourcePlugin(systemPluginCoordinates);
+        dataSinkPlanValidator.validate(flowPlan);
         pluginService.addFlowPlanToSystemPlugin(flowPlan);
         return dataSinkService.buildAndSaveFlow(flowPlan);
     }
@@ -169,8 +171,10 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public DataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved timed source plan {}", dataSourcePlan.getName());
+        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
+        timedDataSourceService.validateSystemPlanName(dataSourcePlan.getName(), systemPluginCoordinates);
         TimedDataSourcePlan flowPlan = OBJECT_MAPPER.convertValue(dataSourcePlan, TimedDataSourcePlan.class);
-        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+        flowPlan.setSourcePlugin(systemPluginCoordinates);
         timedDataSourcePlanValidator.validate(flowPlan);
         pluginService.addFlowPlanToSystemPlugin(flowPlan);
         return timedDataSourceService.buildAndSaveFlow(flowPlan);
@@ -180,8 +184,10 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public DataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved rest source plan {}", dataSourcePlan.getName());
+        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
+        restDataSourceService.validateSystemPlanName(dataSourcePlan.getName(), systemPluginCoordinates);
         RestDataSourcePlan flowPlan = OBJECT_MAPPER.convertValue(dataSourcePlan, RestDataSourcePlan.class);
-        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+        flowPlan.setSourcePlugin(systemPluginCoordinates);
         restDataSourcePlanValidator.validate(flowPlan);
         pluginService.addFlowPlanToSystemPlugin(flowPlan);
         return restDataSourceService.buildAndSaveFlow(flowPlan);
@@ -233,8 +239,10 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
         auditLogger.audit("saved transform plan {}", transformFlowPlan.getName());
+        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
+        transformFlowService.validateSystemPlanName(transformFlowPlan.getName(), systemPluginCoordinates);
         TransformFlowPlan flowPlan = OBJECT_MAPPER.convertValue(transformFlowPlan, TransformFlowPlan.class);
-        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+        flowPlan.setSourcePlugin(systemPluginCoordinates);
         transformFlowPlanValidator.validate(flowPlan);
         pluginService.addFlowPlanToSystemPlugin(flowPlan);
         return transformFlowService.buildAndSaveFlow(flowPlan);
