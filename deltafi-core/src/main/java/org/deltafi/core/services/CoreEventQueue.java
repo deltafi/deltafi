@@ -180,7 +180,7 @@ public class CoreEventQueue {
                 Value value = parseValue(valueStr);
 
                 // Check if the heartbeat exceeds the threshold
-                if (value != null && !value.heartbeatTime().plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now())) {
+                if (value != null && !value.isHeartbeatStale()) {
                     // Split the key to extract class, action, and did
                     String[] keyParts = entry.getKey().split(":");
                     String clazz = keyParts[0];
@@ -222,7 +222,7 @@ public class CoreEventQueue {
                 .anyMatch(task -> task.clazz().equals(clazz) &&
                         task.action().equals(action) &&
                         task.did().equals(did) &&
-                        !task.heartbeatTime().plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now()));
+                        !isHeartbeatStale(task));
     }
 
     /**
@@ -262,6 +262,10 @@ public class CoreEventQueue {
         public boolean isHeartbeatStale() {
             return heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now());
         }
+    }
+
+    private boolean isHeartbeatStale(ActionExecution actionExecution) {
+        return actionExecution.heartbeatTime().plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now());
     }
 
     private Value parseValue(String value) throws JsonProcessingException {

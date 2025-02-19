@@ -82,6 +82,9 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the plugin. This must be greater than 30 seconds (or 0 to turn it off) and should be less than the requeueDuration.  By default, there is no timeout set. To turn off this feature set the value to null or 0s")
     private Duration actionExecutionTimeout;
 
+    @PropertyInfo(description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated (or 0 to disable).  Disabled by default. To disable this feature set the value to null or 0s")
+    private Duration actionExecutionWarning;
+
     @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10")
     private int checkActionQueueSizeThreshold = 10;
 
@@ -196,6 +199,14 @@ public class DeltaFiProperties {
             throw new IllegalArgumentException("The actionExecutionTimeout property must be larger than 30 seconds or set to 0 to disable this timeout but was " + actionExecutionTimeout);
         }
         this.actionExecutionTimeout = actionExecutionTimeout;
+    }
+
+    public void setActionExecutionWarning(Duration actionExecutionWarning) {
+        long timeout = actionExecutionWarning != null ? actionExecutionWarning.toMillis() : 0L;
+        if (timeout != 0L) {
+            positiveLongCheck(timeout, "actionExecutionWarning");
+        }
+        this.actionExecutionWarning = actionExecutionWarning;
     }
 
     public void setCheckActionQueueSizeThreshold(int checkActionQueueSizeThreshold) {

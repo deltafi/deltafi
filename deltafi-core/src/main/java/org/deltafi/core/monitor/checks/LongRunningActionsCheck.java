@@ -21,32 +21,41 @@ import org.deltafi.common.types.ActionExecution;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.services.CoreEventQueue;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+
+import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
 
 @MonitorProfile
 public class LongRunningActionsCheck extends StatusCheck {
 
     private static final String DESCRIPTION = "Long Running Actions Check";
     private final CoreEventQueue coreEventQueue;
+    private final DeltaFiPropertiesService propertiesService;
 
-    public LongRunningActionsCheck(CoreEventQueue coreEventQueue) {
+    public LongRunningActionsCheck(CoreEventQueue coreEventQueue, DeltaFiPropertiesService propertiesService) {
         super(DESCRIPTION);
         this.coreEventQueue = coreEventQueue;
+        this.propertiesService = propertiesService;
     }
 
     @Override
     public CheckResult check() {
+        long warningThreshold = propertiesService.getDeltaFiProperties().getActionExecutionWarning() != null ? propertiesService.getDeltaFiProperties().getActionExecutionWarning().getSeconds() : 0L;
         Collection<LongAction> longRunningActions = longRunningActions();
         ResultBuilder resultBuilder = new ResultBuilder();
 
         if (!longRunningActions.isEmpty()) {
-            this.setDescription( DESCRIPTION + " (" + longRunningActions.size() + ")");
+            this.setDescription(DESCRIPTION + " (" + longRunningActions.size() + ")");
             resultBuilder.addHeader("Actions with long running tasks:");
             for (LongAction action : longRunningActions) {
                 resultBuilder.addLine("- " + action.name());
                 for (Map.Entry<LongActionDetails, Long> didToTime : action.didTimes().entrySet()) {
+                    if (warningThreshold != 0L&& didToTime.getValue() >= warningThreshold) {
+                        resultBuilder.code(CODE_YELLOW);
+                    }
                     String didString = didToTime.getKey().did.toString();
                     String shortDid = didString.substring(0, 7);
                     String didLink = "[" + shortDid + "](/deltafile/viewer/" + didString + ")";
@@ -56,7 +65,6 @@ public class LongRunningActionsCheck extends StatusCheck {
         } else {
             this.setDescription(DESCRIPTION);
         }
-
 
         return result(resultBuilder);
     }
