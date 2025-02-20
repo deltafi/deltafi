@@ -28,6 +28,7 @@ from deltafi.storage import ContentService, Segment
 class ActionExecution(NamedTuple):
     clazz: str
     action: str
+    thread_num: int
     did: str
     start_time: datetime
 
@@ -36,7 +37,7 @@ class ActionExecution(NamedTuple):
 
     @property
     def key(self) -> str:
-        return f"{self.clazz}:{self.action}:{self.did}"
+        return f"{self.clazz}:{self.action}#{self.thread_num}:{self.did}"
 
 
 class Context(NamedTuple):
@@ -163,9 +164,9 @@ class Content:
             Content: A deep copy of the Content object.
         """
         new_copy = Content(name=self.name,
-                       segments=copy.deepcopy(self.segments),
-                       media_type=self.media_type,
-                       content_service=self.content_service)
+                           segments=copy.deepcopy(self.segments),
+                           media_type=self.media_type,
+                           content_service=self.content_service)
         new_copy.add_tags(self.tags.copy())
         return new_copy
 

@@ -19,12 +19,13 @@
 from abc import ABC, abstractmethod
 from typing import Any, List
 
+from pydantic import BaseModel
+
 from deltafi.actiontype import ActionType
-from deltafi.domain import Context, DeltaFileMessage
+from deltafi.domain import DeltaFileMessage
 from deltafi.genericmodel import GenericModel
 from deltafi.input import EgressInput, TransformInput
 from deltafi.result import *
-from pydantic import BaseModel
 
 
 class Join(ABC):
@@ -42,7 +43,6 @@ class Action(ABC):
         self.action_type = action_type
         self.description = description
         self.valid_result_types = valid_result_types
-        self.action_execution = None
 
     @abstractmethod
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):

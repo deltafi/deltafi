@@ -33,6 +33,7 @@ from typing import List
 
 import requests
 import yaml
+
 from deltafi.action import Action, Join
 from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event, ActionExecution
@@ -129,6 +130,17 @@ def _setup_content_service():
                           os.getenv('MINIO_SECRETKEY'))
 
 
+class ActionThread(object):
+    def __init__(self, clazz: Action, thread_num: int, name: str, execution: ActionExecution = None):
+        self.clazz = clazz
+        self.thread_num = thread_num
+        self.name = name
+        self.execution = execution
+
+    def logger_name(self):
+        return f"{self.name}#{self.thread_num}"
+
+
 class PluginCoordinates(object):
     def __init__(self, group_id: str, artifact_id: str, version: str):
         self.group_id = group_id
@@ -148,7 +160,8 @@ LONG_RUNNING_TASK_DURATION = timedelta(seconds=5)
 
 class Plugin(object):
     def __init__(self, description: str, plugin_name: str = None, plugin_coordinates: PluginCoordinates = None,
-                 actions: List = None, action_package: str = None):
+                 actions: List = None, action_package: str = None,
+                 thread_config: dict = None):
         """
         Initialize the plugin object
         :param plugin_name: Name of the plugin project
@@ -157,12 +170,17 @@ class Plugin(object):
                                    environment variables
         :param actions: list of action classes to run
         :param action_package: name of the package containing the actions to run
+        :param  thread_config: map of action class name and thread count. Actions not found default to 1 thread.
         """
         self.logger = get_logger()
 
         self.content_service = None
         self.queue = None
-        self.actions = []
+        self.singleton_actions = []
+        self.action_threads = []
+        self.thread_config = {}
+        if thread_config is not None:
+            self.thread_config = thread_config
         self.core_url = os.getenv('CORE_URL')
         self.image = os.getenv('IMAGE')
         self.image_pull_secret = os.getenv('IMAGE_PULL_SECRET')
@@ -176,7 +194,7 @@ class Plugin(object):
                 action_classes.extend(found_actions)
 
         unique_actions = dict.fromkeys(action_classes)
-        self.actions = [action() for action in unique_actions]
+        self.singleton_actions = [action() for action in unique_actions]
 
         self.description = description
         self.display_name = os.getenv('PROJECT_NAME') if plugin_name is None else plugin_name
@@ -191,7 +209,7 @@ class Plugin(object):
         else:
             self.hostname = 'UNKNOWN'
 
-        self.logger.debug(f"Initialized ActionRunner with actions {self.actions}")
+        self.logger.debug(f"Initialized ActionRunner with actions {self.singleton_actions}")
 
     @staticmethod
     def find_actions(package_name) -> List[object]:
@@ -280,7 +298,7 @@ class Plugin(object):
             variables = self.load_variables(flows_path, flow_files)
 
         flows = _load__all_resource(flows_path, flow_files)
-        actions = [self._action_json(action) for action in self.actions]
+        actions = [self._action_json(action) for action in self.singleton_actions]
 
         test_files = self.load_integration_tests(tests_path)
         if len(test_files) == 0:
@@ -317,11 +335,25 @@ class Plugin(object):
 
     def run(self):
         self.logger.info("Plugin starting")
-        self.queue = _setup_queue(len(self.actions) + 1)
+
+        for action in self.singleton_actions:
+            num_threads = 1;
+            if self.action_name(action) in self.thread_config:
+                maybe_num_threads = self.thread_config[self.action_name(action)]
+                if type(maybe_num_threads) == int and maybe_num_threads > 0:
+                    num_threads = maybe_num_threads
+                else:
+                    self.logger.error(f"Ignoring non-int or invalid thread value {maybe_num_threads}")
+            for i in range(num_threads):
+                action_thread = ActionThread(action, i, self.action_name(action))
+                self.action_threads.append(action_thread)
+
+        self.queue = _setup_queue(len(self.action_threads) + 1)
         self.content_service = _setup_content_service()
         self._register()
-        for action in self.actions:
-            threading.Thread(target=self._do_action, args=(action,)).start()
+
+        for action_thread in self.action_threads:
+            threading.Thread(target=self._do_action, args=(action_thread,)).start()
 
         hb_thread = threading.Thread(target=self._heartbeat)
         hb_thread.start()
@@ -339,14 +371,14 @@ class Plugin(object):
         while True:
             try:
                 # Set heartbeats
-                for action in self.actions:
-                    self.queue.heartbeat(self.action_name(action))
+                for action_thread in self.action_threads:
+                    self.queue.heartbeat(action_thread.name)
 
                 # Record long running tasks
                 new_long_running_actions = set()
-                for action in self.actions:
-                    if action.action_execution and action.action_execution.exceeds_duration(LONG_RUNNING_TASK_DURATION):
-                        action_execution = action.action_execution
+                for action_thread in self.action_threads:
+                    action_execution = action_thread.execution
+                    if action_execution and action_execution.exceeds_duration(LONG_RUNNING_TASK_DURATION):
                         new_long_running_actions.add(action_execution)
                         self.queue.record_long_running_task(action_execution)
 
@@ -378,22 +410,23 @@ class Plugin(object):
             response[result.result_key] = result.response()
         return response
 
-    def _do_action(self, action):
-        action_logger = get_logger(self.action_name(action))
+    def _do_action(self, action_thread: ActionThread):
+        action_logger = get_logger(action_thread.logger_name())
+        action_logger.info(f"Listening on {action_thread.name}")
 
-        action_logger.info(f"Listening on {self.action_name(action)}")
         while True:
             try:
-                event_string = self.queue.take(self.action_name(action))
+                event_string = self.queue.take(action_thread.name)
                 event = Event.create(json.loads(event_string), self.content_service, action_logger)
                 start_time = time.time()
                 action_logger.debug(f"Processing event for did {event.context.did}")
 
-                action.action_execution = ActionExecution(self.action_name(action), event.context.action_name,
-                                                          event.context.did, datetime.now(timezone.utc))
+                action_thread.execution = ActionExecution(action_thread.name, event.context.action_name,
+                                                          action_thread.thread_num, event.context.did,
+                                                          datetime.now(timezone.utc))
 
                 try:
-                    result = action.execute_action(event)
+                    result = action_thread.clazz.execute_action(event)
                 except ExpectedContentException as e:
                     result = ErrorResult(event.context,
                                          f"Action attempted to look up element {e.index + 1} (index {e.index}) from "
@@ -407,7 +440,7 @@ class Plugin(object):
                     result = ErrorResult(event.context,
                                          f"Action execution {type(e)} exception", f"{str(e)}\n{traceback.format_exc()}")
 
-                action.action_execution = None
+                action_thread.execution = None
 
                 response = Plugin.to_response(
                     event, start_time, time.time(), result)
