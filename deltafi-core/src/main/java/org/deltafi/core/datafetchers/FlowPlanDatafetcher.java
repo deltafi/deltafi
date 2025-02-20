@@ -35,10 +35,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.*;
-import org.deltafi.core.validation.DataSinkPlanValidator;
-import org.deltafi.core.validation.RestDataSourcePlanValidator;
-import org.deltafi.core.validation.TimedDataSourcePlanValidator;
-import org.deltafi.core.validation.TransformFlowPlanValidator;
+import org.deltafi.core.validation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -128,13 +125,13 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public DataSink saveDataSinkPlan(@InputArgument DataSinkPlanInput dataSinkPlan) {
         auditLogger.audit("saved data sink plan {}", dataSinkPlan.getName());
-        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
-        dataSinkService.validateSystemPlanName(dataSinkPlan.getName(), systemPluginCoordinates);
-        DataSinkPlan flowPlan = OBJECT_MAPPER.convertValue(dataSinkPlan, DataSinkPlan.class);
-        flowPlan.setSourcePlugin(systemPluginCoordinates);
-        dataSinkPlanValidator.validate(flowPlan);
-        pluginService.addFlowPlanToSystemPlugin(flowPlan);
-        return dataSinkService.buildAndSaveFlow(flowPlan);
+        return (DataSink) saveFlowPlanToSystemPlugin(dataSinkPlan, DataSinkPlan.class, dataSinkService, dataSinkPlanValidator);
+    }
+
+    private <P extends FlowPlan> Flow saveFlowPlanToSystemPlugin(Object input, Class<P> flowPlanClass,
+            FlowService<P, ?, ?, ?> flowService, FlowPlanValidator<P> flowPlanValidator) {
+        P flowPlan = OBJECT_MAPPER.convertValue(input, flowPlanClass);
+        return pluginService.addFlowPlanToSystemPlugin(flowPlan, flowService, flowPlanValidator);
     }
 
     @DgsMutation
@@ -171,26 +168,14 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public DataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved timed source plan {}", dataSourcePlan.getName());
-        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
-        timedDataSourceService.validateSystemPlanName(dataSourcePlan.getName(), systemPluginCoordinates);
-        TimedDataSourcePlan flowPlan = OBJECT_MAPPER.convertValue(dataSourcePlan, TimedDataSourcePlan.class);
-        flowPlan.setSourcePlugin(systemPluginCoordinates);
-        timedDataSourcePlanValidator.validate(flowPlan);
-        pluginService.addFlowPlanToSystemPlugin(flowPlan);
-        return timedDataSourceService.buildAndSaveFlow(flowPlan);
+        return (DataSource) saveFlowPlanToSystemPlugin(dataSourcePlan, TimedDataSourcePlan.class, timedDataSourceService, timedDataSourcePlanValidator);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public DataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved rest source plan {}", dataSourcePlan.getName());
-        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
-        restDataSourceService.validateSystemPlanName(dataSourcePlan.getName(), systemPluginCoordinates);
-        RestDataSourcePlan flowPlan = OBJECT_MAPPER.convertValue(dataSourcePlan, RestDataSourcePlan.class);
-        flowPlan.setSourcePlugin(systemPluginCoordinates);
-        restDataSourcePlanValidator.validate(flowPlan);
-        pluginService.addFlowPlanToSystemPlugin(flowPlan);
-        return restDataSourceService.buildAndSaveFlow(flowPlan);
+        return (DataSource) saveFlowPlanToSystemPlugin(dataSourcePlan, RestDataSourcePlan.class, restDataSourceService, restDataSourcePlanValidator);
     }
 
     @DgsMutation
@@ -239,13 +224,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
         auditLogger.audit("saved transform plan {}", transformFlowPlan.getName());
-        PluginCoordinates systemPluginCoordinates = pluginService.getSystemPluginCoordinates();
-        transformFlowService.validateSystemPlanName(transformFlowPlan.getName(), systemPluginCoordinates);
-        TransformFlowPlan flowPlan = OBJECT_MAPPER.convertValue(transformFlowPlan, TransformFlowPlan.class);
-        flowPlan.setSourcePlugin(systemPluginCoordinates);
-        transformFlowPlanValidator.validate(flowPlan);
-        pluginService.addFlowPlanToSystemPlugin(flowPlan);
-        return transformFlowService.buildAndSaveFlow(flowPlan);
+        return (TransformFlow) saveFlowPlanToSystemPlugin(transformFlowPlan, TransformFlowPlan.class, transformFlowService, transformFlowPlanValidator);
     }
 
     @DgsMutation

@@ -48,7 +48,7 @@ public class PluginRestController {
             if (pluginService.isRegistrationNew(pluginRegistration)) {
                 Result result = pluginService.register(pluginRegistration, integrationService);
 
-                pluginService.FlushToDB();
+                pluginService.flushToDB();
 
                 if (result.isSuccess()) {
                     try {

@@ -32,6 +32,7 @@ import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.validation.FlowPlanValidator;
 import org.deltafi.core.validation.PluginValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
@@ -43,8 +44,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class PluginService implements Snapshotter {
 
@@ -82,7 +83,7 @@ public class PluginService implements Snapshotter {
         }
     }
 
-    public void FlushToDB() {
+    public void flushToDB() {
         pluginRepo.flush();
     }
 
@@ -118,8 +119,6 @@ public class PluginService implements Snapshotter {
         acquireUpdateLock();
         try {
             updateActionMapsNoLockCheck();
-        } catch (Exception e) {
-            throw e;
         } finally {
             releaseUpdateLock();
         }
@@ -161,7 +160,17 @@ public class PluginService implements Snapshotter {
         return plugin;
     }
 
-    public void addFlowPlanToSystemPlugin(FlowPlan flowPlan) {
+    public <P extends FlowPlan> Flow addFlowPlanToSystemPlugin(P flowPlan, FlowService<P, ?, ?, ?> flowService,
+            FlowPlanValidator<P> flowPlanValidator) {
+        PluginCoordinates systemPluginCoordinates = getSystemPluginCoordinates();
+        flowService.validateSystemPlanName(flowPlan.getName(), systemPluginCoordinates);
+        flowPlan.setSourcePlugin(systemPluginCoordinates);
+        flowPlanValidator.validate(flowPlan);
+        addFlowPlanToSystemPlugin(flowPlan);
+        return flowService.buildAndSaveFlow(flowPlan);
+    }
+
+    private void addFlowPlanToSystemPlugin(FlowPlan flowPlan) {
         PluginEntity systemPlugin = getSystemPlugin();
         if (systemPlugin.getFlowPlans() == null) {
             systemPlugin.setFlowPlans(new ArrayList<>());
@@ -531,8 +540,6 @@ public class PluginService implements Snapshotter {
             pluginRepo.delete(plugin);
             updateActionMapsNoLockCheck();
             revalidateFlows();
-        } catch (Exception e) {
-            throw e;
         } finally {
             releaseUpdateLock();
         }
