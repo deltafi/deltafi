@@ -18,29 +18,23 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 )
 
-var CreateCmd = &cobra.Command{
-	Use:     "create",
-	Short:   "Creates a DeltaFi resource",
-	GroupID: "flow",
-	Long: `Creates a DeltaFi resource, such as a new event or snapshot
-
-# Example creating a new event
-deltafi create event "my event summary"
-`,
-	Args: cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("There is no type " + args[0] + " to create")
-		return cmd.Usage()
-	},
+func AddFormatFlag(cmd *cobra.Command) {
+	cmd.Flags().StringP("format", "o", "json", "Output format (json|yaml)")
+	_ = cmd.RegisterFlagCompletionFunc("format", formatCompletion)
 }
 
-func init() {
-	rootCmd.AddCommand(CreateCmd)
+func formatCompletion(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+	return []string{"json", "yaml"}, cobra.ShellCompDirectiveNoFileComp
+}
 
-	CreateCmd.PersistentFlags().StringP("format", "o", "json", "Output format (json or yaml)")
-	_ = CreateCmd.RegisterFlagCompletionFunc("format", formatCompletion)
+func AddLoadFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringP("file", "f", "", "Path to file to load (file must have a json or yaml/yml extension)")
+	_ = cmd.MarkPersistentFlagFilename("file", "yaml", "yml", "json")
+	_ = cmd.MarkPersistentFlagRequired("file")
+
+	// flags to control the output format after loading the resource
+	AddFormatFlag(loadTransformFlow)
 }

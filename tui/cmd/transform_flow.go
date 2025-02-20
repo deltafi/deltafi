@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/spf13/cobra"
@@ -25,28 +26,40 @@ import (
 	"strconv"
 )
 
+var transformCmd = &cobra.Command{
+	Use:     "transform",
+	Short:   "Manage the transform flows in DeltaFi",
+	Long:    `Manage the transform flows in DeltaFi`,
+	GroupID: "flow",
+	Args:    cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Println("Unknown subcommand " + args[0])
+		return cmd.Usage()
+	},
+}
+
+var listTransformFlows = &cobra.Command{
+	Use:   "list",
+	Short: "List transform flows",
+	Long:  `Get the list of transform flows.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return listAll(cmd)
+	},
+}
+
 var getTransformFlow = &cobra.Command{
-	Use:   "transform",
-	Short: "Get transform flows",
-	Long: `Get the list of transform flows when no argument is given.
-When a name is given get the details of the specified transform.`,
-	Aliases:           []string{"transforms"},
+	Use:               "get",
+	Short:             "Get a transform flow",
+	Long:              `Get the details of the specified transform.`,
+	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
-
-		var err error
-		if len(args) == 0 {
-			err = listAll(cmd)
-		} else {
-			err = get(cmd, args[0])
-		}
-
-		return err
+		return get(cmd, args[0])
 	},
 }
 
 var loadTransformFlow = &cobra.Command{
-	Use:   "transform",
+	Use:   "load",
 	Short: "Create or update a transform flow",
 	Long: `Creates or update a transform flow with the given input.
 If the a flow already exists with the same name this will replace the flow.
@@ -70,7 +83,7 @@ Otherwise, this command will create a new transform flow with the given name.`,
 }
 
 var startTransformFlow = &cobra.Command{
-	Use:               "transform",
+	Use:               "start",
 	Short:             "Start a transform flow",
 	Long:              `Start a transform flow with the given name.`,
 	Args:              cobra.MinimumNArgs(1),
@@ -81,7 +94,7 @@ var startTransformFlow = &cobra.Command{
 }
 
 var stopTransformFlow = &cobra.Command{
-	Use:               "transform",
+	Use:               "stop",
 	Short:             "Stop a transform flow",
 	Long:              `Stop a transform flow with the given name.`,
 	Args:              cobra.MinimumNArgs(1),
@@ -92,7 +105,7 @@ var stopTransformFlow = &cobra.Command{
 }
 
 var pauseTransformFlow = &cobra.Command{
-	Use:               "transform",
+	Use:               "pause",
 	Short:             "Pause a transform flow",
 	Long:              `Pause a transform flow with the given name.`,
 	Args:              cobra.MinimumNArgs(1),
@@ -164,10 +177,15 @@ func fetchRemoteTransformNames() ([]string, error) {
 }
 
 func init() {
-	GetCmd.AddCommand(getTransformFlow)
-	LoadCmd.AddCommand(loadTransformFlow)
-	StartCmd.AddCommand(startTransformFlow)
-	StopCmd.AddCommand(stopTransformFlow)
-	PauseCmd.AddCommand(pauseTransformFlow)
-	getTransformFlow.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
+	rootCmd.AddCommand(transformCmd)
+	transformCmd.AddCommand(listTransformFlows)
+	transformCmd.AddCommand(getTransformFlow)
+	transformCmd.AddCommand(loadTransformFlow)
+	transformCmd.AddCommand(startTransformFlow)
+	transformCmd.AddCommand(stopTransformFlow)
+	transformCmd.AddCommand(pauseTransformFlow)
+
+	listTransformFlows.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
+	AddFormatFlag(getTransformFlow)
+	AddLoadFlags(loadTransformFlow)
 }

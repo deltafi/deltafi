@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/app"
 	"github.com/google/uuid"
@@ -28,19 +29,33 @@ import (
 	"time"
 )
 
-var GetEvents = &cobra.Command{
+var eventCmd = &cobra.Command{
 	Use:   "event",
-	Short: "Get events",
-	Long: `Get the list of events when no arguments are given.
-When an id is given get the details of the specified event.`,
-	Aliases: []string{"events"},
+	Short: "Manage events in DeltaFi",
+	Long:  `Manage events in DeltaFi.`,
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := app.GetInstance().GetAPIClient()
-		if len(args) == 0 {
-			return listAllEvents(cmd, client)
-		} else {
-			return getEvent(cmd, args[0], client)
-		}
+		fmt.Println("Unknown subcommand " + args[0])
+		return cmd.Usage()
+	},
+}
+
+var listEvents = &cobra.Command{
+	Use:   "list",
+	Short: "List the events",
+	Long:  "List the events",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return listAllEvents(cmd)
+	},
+}
+
+var getEvent = &cobra.Command{
+	Use:   "get",
+	Short: "Get an event",
+	Long:  `Get the details of the specified event.`,
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return doGetEvent(cmd, args[0])
 	},
 }
 
@@ -55,8 +70,8 @@ var (
 
 var warnFlag, errorFlag, successFlag bool
 
-var CreateEventCmd = &cobra.Command{
-	Use:   "event",
+var createEventCmd = &cobra.Command{
+	Use:   "create",
 	Short: "Create a new event",
 	Long: `Create an event with a required summary text. 
 The event can include optional source, content, severity level, and notification flags.`,
@@ -108,7 +123,8 @@ The event can include optional source, content, severity level, and notification
 	},
 }
 
-func getEvent(cmd *cobra.Command, uuid string, client *api.Client) error {
+func doGetEvent(cmd *cobra.Command, uuid string) error {
+	client := app.GetInstance().GetAPIClient()
 	var resp, err = client.Event(uuid)
 
 	if err != nil {
@@ -118,7 +134,8 @@ func getEvent(cmd *cobra.Command, uuid string, client *api.Client) error {
 	return prettyPrint(cmd, resp)
 }
 
-func listAllEvents(cmd *cobra.Command, client *api.Client) error {
+func listAllEvents(cmd *cobra.Command) error {
+	client := app.GetInstance().GetAPIClient()
 	var events, err = client.Events()
 
 	if err != nil {
@@ -149,25 +166,27 @@ func listAllEvents(cmd *cobra.Command, client *api.Client) error {
 }
 
 func init() {
-	GetCmd.AddCommand(GetEvents)
-	CreateCmd.AddCommand(CreateEventCmd)
+	rootCmd.AddCommand(eventCmd)
+	eventCmd.AddCommand(listEvents)
+	eventCmd.AddCommand(getEvent)
+	eventCmd.AddCommand(createEventCmd)
 
-	CreateEventCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet mode, no event output")
-	CreateEventCmd.Flags().StringVarP(&source, "source", "s", "cli", "Set event source (default 'cli')")
-	CreateEventCmd.Flags().StringVarP(&content, "content", "c", "", "Set event content (default null)")
-	CreateEventCmd.Flags().StringSliceVarP(&severities, "level", "l", nil, "Set event severity (warn, error, info, success)")
-	CreateEventCmd.Flags().StringSliceVar(&severities, "severity", nil, "Equivalent to --level")
-	CreateEventCmd.Flags().BoolVarP(&notification, "notification", "n", false, "Set the notification flag")
-	CreateEventCmd.Flags().BoolVar(&warnFlag, "warn", false, "Set severity to warn")
-	CreateEventCmd.Flags().BoolVar(&errorFlag, "error", false, "Set severity to error")
-	CreateEventCmd.Flags().BoolVar(&successFlag, "success", false, "Set severity to success")
+	createEventCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet mode, no event output")
+	createEventCmd.Flags().StringVarP(&source, "source", "s", "cli", "Set event source (default 'cli')")
+	createEventCmd.Flags().StringVarP(&content, "content", "c", "", "Set event content (default null)")
+	createEventCmd.Flags().StringSliceVarP(&severities, "level", "l", nil, "Set event severity (warn, error, info, success)")
+	createEventCmd.Flags().StringSliceVar(&severities, "severity", nil, "Equivalent to --level")
+	createEventCmd.Flags().BoolVarP(&notification, "notification", "n", false, "Set the notification flag")
+	createEventCmd.Flags().BoolVar(&warnFlag, "warn", false, "Set severity to warn")
+	createEventCmd.Flags().BoolVar(&errorFlag, "error", false, "Set severity to error")
+	createEventCmd.Flags().BoolVar(&successFlag, "success", false, "Set severity to success")
 
-	CreateEventCmd.Flags().StringP("format", "o", "json", "output format (json or yaml)")
-	_ = GetCmd.RegisterFlagCompletionFunc("format", formatCompletion)
+	createEventCmd.MarkFlagsMutuallyExclusive("level", "severity", "warn", "error", "success")
+	_ = createEventCmd.RegisterFlagCompletionFunc("level", severityArgs)
+	_ = createEventCmd.RegisterFlagCompletionFunc("severity", severityArgs)
 
-	CreateEventCmd.MarkFlagsMutuallyExclusive("level", "severity", "warn", "error", "success")
-	_ = CreateEventCmd.RegisterFlagCompletionFunc("level", severityArgs)
-	_ = CreateEventCmd.RegisterFlagCompletionFunc("severity", severityArgs)
+	AddFormatFlag(createEventCmd)
+	AddFormatFlag(getEvent)
 }
 
 func severityArgs(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {

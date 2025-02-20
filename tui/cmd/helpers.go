@@ -18,8 +18,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/spf13/cobra"
 	"os"
+	"path/filepath"
+	"sigs.k8s.io/yaml"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/deltafi/tui/internal/api"
@@ -42,4 +47,58 @@ func runProgram(model tea.Model) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func parseFile(cmd *cobra.Command, out interface{}) error {
+	filename, _ := cmd.Flags().GetString("file")
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return wrapInError("Could not read the file "+filename, err)
+	}
+
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".json":
+		if err := json.Unmarshal(content, out); err != nil {
+			return wrapInError("Error reading Json", err)
+		}
+	case ".yaml", ".yml":
+		if err := yaml.Unmarshal(content, out); err != nil {
+			return wrapInError("Error reading YAML", err)
+		}
+	default:
+		return newError("Unsupported file extension: "+ext, "The extension must be json, yaml, or yml")
+	}
+	return nil
+}
+
+func prettyPrint(cmd *cobra.Command, data interface{}) error {
+	format, _ := cmd.Flags().GetString("format")
+	switch format {
+	case "json":
+		return printJSON(data)
+	case "yaml":
+		return printYAML(data)
+	default:
+		return newError("Invalid argument "+format, "Please use json or yaml")
+	}
+}
+
+func printJSON(data interface{}) error {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return wrapInError("Error reading Json", err)
+	}
+	fmt.Println(string(jsonData))
+	return nil
+}
+
+func printYAML(data interface{}) error {
+	yamlData, err := yaml.Marshal(data)
+	if err != nil {
+		return wrapInError("Error reading YAML", err)
+	}
+
+	fmt.Println(string(yamlData))
+	return nil
 }
