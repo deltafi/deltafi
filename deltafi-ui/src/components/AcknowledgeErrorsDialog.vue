@@ -43,6 +43,8 @@ import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, ref, watch } from "vue";
 
+import _ from "lodash";
+
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
@@ -94,7 +96,7 @@ const acknowledge = async () => {
       let completedBatches = 0;
       batchCompleteValue.value = 0;
       for (const dids of batchedDids) {
-        await PostAcknowledgeErrors(dids, reason.value);
+        await PostAcknowledgeErrors(_.flatten(dids), reason.value);
         completedBatches += dids.length;
         batchCompleteValue.value = Math.round((completedBatches / props.dids.length) * 100);
       }
