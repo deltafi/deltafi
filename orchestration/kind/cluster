@@ -154,7 +154,7 @@ if [ "$__DELTAFI_MODE" ]; then
 fi
 
 if [ -z "$DELTAFI_MODE" ]; then
-  export DELTAFI_MODE=STANDALONE
+  export DELTAFI_MODE=CLUSTER
 fi
 
 _base64() {
