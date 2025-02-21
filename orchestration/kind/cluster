@@ -601,14 +601,72 @@ _k8s_add_pv() {
   local size=${2:-1G}
   local owner=${3:-1000}
   local namespace=${4:-deltafi}
+
+  # Optionally create a StorageClass instead of a PVC
+  # Put in place because the Zalando postgres operator insists on creating its own PVC
+  # which can only be tied to the PV via StorageClass
+  local storage_class=${5:-}
+
   if _is_linux; then
     ${SUDO} mkdir -p -m 2775 "${localpath}"
     ${SUDO} chown "${owner}:${owner}" "${localpath}"
   else
     mkdir -p "${localpath}"
   fi
-  if ! ${KUBECTL} get persistentvolumeclaim "$name" > /dev/null 2>&1 ; then
+
+  # StorageClass
+  if [ -n "$storage_class" ] && ! ${KUBECTL} get storageclass "$storage_class" > /dev/null 2>&1; then
+    cat <<EOF | _conditional "StorageClass: $storage_class" _annotated_subshell ${KUBECTL} apply -f -
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: $storage_class
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+EOF
+  fi
+
+  # Define claimRef if storageClass is not set and PVC is being created
+  local claim_ref_yaml=""
+  if [ -z "$storage_class" ]; then
+    claim_ref_yaml=$(cat <<EOF
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: $name
+    namespace: $namespace
+EOF
+  )
+  fi
+
+  # PersistentVolume
+  if ! ${KUBECTL} get persistentvolume "$name" > /dev/null 2>&1; then
     cat <<EOF | _conditional "Persistent volume: $name ($path)" _annotated_subshell ${KUBECTL} apply -f -
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: $name
+  labels:
+      app: $name
+      type: local
+spec:
+  storageClassName: ${storage_class:-manual}  # Use provided storage class or "manual"
+$(if [ -n "$claim_ref_yaml" ]; then echo "$claim_ref_yaml"; fi)
+  capacity:
+    storage: $size
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "$path"
+EOF
+  fi
+
+  # PersistentVolumeClaim
+  if [ -z "$storage_class" ] && ! ${KUBECTL} get persistentvolumeclaim "$name" -n "$namespace" > /dev/null 2>&1; then
+    cat <<EOF | _conditional "Persistent volume claim: $name ($path)" _annotated_subshell ${KUBECTL} apply -f -
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -616,38 +674,15 @@ metadata:
   name: $name
   namespace: $namespace
 spec:
-  storageClassName: manual
+  storageClassName: ${storage_class:-manual}  # Use provided storage class or "manual"
   selector:
     matchLabels:
       app: $name
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: $size
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: $name
-  labels:
-    app: $name
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: $size
-  claimRef:
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    name: $name
-    namespace: $namespace
-  accessModes:
-  - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  hostPath:
-    path: "$path"
----
 EOF
   fi
 }
@@ -698,7 +733,7 @@ _k8s_init() {
   _k8s_add_pv loki "${PV_STORAGE}" 10001
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000
   _k8s_add_pv auth "${PV_STORAGE}" 1000
-  _k8s_add_pv postgres "${PV_STORAGE}" 1001
+  _k8s_add_pv postgres 10Gi 1001 deltafi "deltafi-postgres"
   _k8s_add_pv docker-registry "${PV_STORAGE}" 1000
 
   _ok "Kubernetes prerequisites"

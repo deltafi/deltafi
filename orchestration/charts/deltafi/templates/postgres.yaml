@@ -47,7 +47,7 @@ spec:
 
   volume:
     size: 10Gi
-#    storageClass: my-sc
+    storageClass: deltafi-postgres
 #    iops: 1000  # for EBS gp3
 #    throughput: 250  # in MB/s for EBS gp3
 #    selector:
@@ -219,6 +219,14 @@ spec:
 #              operator: In
 #              values:
 #                - enabled
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: "node-role.deltafi.org/storage"
+              operator: In
+              values:
+                - "true"
 
 # Enables change data capture streams for defined database tables
 #  streams:
