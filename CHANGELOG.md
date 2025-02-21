@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.9.0] - 2025-02-20
+
+### Added
+- New system property `actionExecutionWarning` changes the Long Running Tasks check from normal to warning for times meeting this threshold (GitLab-420)
+- [python-action-kit] Plugin class now supports a `thread_config` map which can be used to scale action threads 
+
+### Changed
+- [core-actions] Renamed `ExtractContent` action to `ContentToMetadata`
+
+### Fixed
+- Console nextSibling error no longer appears when the DialogTemplate Component is used.
+- Fixed bug where we weren't flattening DID array while acknowledging errors on Errors page
+- Fixed a bug where saving a system flow plan would overwrite existing plugin flows with the same name
+
 ## [2.8.0] - 2025-02-18
 
 ### Added
@@ -3842,7 +3856,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.8.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.9.0...main
+[2.9.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.8.0...2.9.0
 [2.8.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.7.1...2.8.0
 [2.7.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.7.0...2.7.1
 [2.7.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.6.1...2.7.0
