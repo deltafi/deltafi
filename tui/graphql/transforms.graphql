@@ -15,81 +15,63 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-mutation SaveTransform($input:TransformFlowPlanInput!) {
-    saveTransformFlowPlan(transformFlowPlan:$input) {
+
+fragment TransformFlowFields on TransformFlow {
+    name
+    type
+    description
+    subscribe {
+        topic
+        condition
+    }
+    flowStatus {
+        state
+        errors {
+            configName
+            errorType
+            message
+        }
+    }
+    transformActions {
         name
+        actionType
         type
-        description
-        subscribe {
+        parameters
+        join {
+            maxAge
+            minNum
+            maxNum
+            metadataKey
+        }
+    }
+    publish {
+        matchingPolicy
+        defaultRule {
+            defaultBehavior
+            topic
+        }
+        rules {
             topic
             condition
         }
-        flowStatus {
-            state
-            errors {
-                configName
-                errorType
-                message
-            }
-        }
-        transformActions {
-            name
-            actionType
-            type
-            parameters
-            join {
-                maxAge
-                minNum
-                maxNum
-                metadataKey
-            }
-        }
-        publish {
-            matchingPolicy
-            defaultRule {
-                defaultBehavior
-                topic
-            }
-            rules {
-                topic
-                condition
-            }
-        }
+    }
+}
+
+mutation SaveTransform($input:TransformFlowPlanInput!) {
+    saveTransformFlowPlan(transformFlowPlan:$input) {
+        ...TransformFlowFields
+    }
+}
+
+query ValidateTransform($name: String!) {
+    validateTransformFlow(flowName: $name) {
+        ...TransformFlowFields
     }
 }
 
 query GetTransform($name: String!) {
     getTransformFlow(flowName:$name) {
-        name
-        type
-        description
-        description
-        subscribe {
-            topic
-            condition
-        }
-        transformActions {
-            name
-            type
-            parameters
-            join {
-                maxAge
-                minNum
-                maxNum
-                metadataKey
-            }
-        }
-        publish {
-            matchingPolicy
-            defaultRule {
-                defaultBehavior
-                topic
-            }
-            rules {
-                topic
-                condition
-            }
-        }
+        ...TransformFlowFields
     }
 }
 

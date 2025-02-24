@@ -78,7 +78,18 @@ Otherwise, this command will create a new transform flow with the given name.`,
 			return wrapInError("Error saving transform", err)
 		}
 
-		return prettyPrint(cmd, resp.SaveTransformFlowPlan)
+		return prettyPrint(cmd, resp.SaveTransformFlowPlan.TransformFlowFields)
+	},
+}
+
+var validateTransformCmd = &cobra.Command{
+	Use:               "validate",
+	Short:             "Validate a transform flow",
+	Long:              `Validate the transform flow with the given name.`,
+	Args:              cobra.MinimumNArgs(1),
+	ValidArgsFunction: getTransformNames,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return validateTransform(cmd, args[0])
 	},
 }
 
@@ -122,7 +133,17 @@ func get(cmd *cobra.Command, name string) error {
 		return wrapInError("Error during getting the transform "+name, err)
 	}
 
-	return prettyPrint(cmd, resp.GetTransformFlow)
+	return prettyPrint(cmd, resp.GetTransformFlow.TransformFlowFields)
+}
+
+func validateTransform(cmd *cobra.Command, name string) error {
+	var resp, err = graphql.ValidateTransform(name)
+
+	if err != nil {
+		return wrapInError("Error during getting the transform "+name, err)
+	}
+
+	return prettyPrint(cmd, resp.ValidateTransformFlow.TransformFlowFields)
 }
 
 func listAll(cmd *cobra.Command) error {
@@ -131,7 +152,7 @@ func listAll(cmd *cobra.Command) error {
 		return wrapInError("Error getting the list of transforms", err)
 	}
 
-	rows := [][]string{}
+	var rows [][]string
 
 	for _, transform := range resp.GetAllFlows.GetTransform() {
 		rows = append(rows, []string{
@@ -153,7 +174,7 @@ func listAll(cmd *cobra.Command) error {
 	return nil
 }
 
-func getTransformNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func getTransformNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	suggestions, err := fetchRemoteTransformNames()
 	if err != nil {
 		// TODO - log this somewhere, how should this be handled?
@@ -184,8 +205,9 @@ func init() {
 	transformCmd.AddCommand(startTransformFlow)
 	transformCmd.AddCommand(stopTransformFlow)
 	transformCmd.AddCommand(pauseTransformFlow)
+	transformCmd.AddCommand(validateTransformCmd)
 
 	listTransformFlows.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
-	AddFormatFlag(getTransformFlow)
+	AddFormatFlag(getTransformFlow, validateTransformCmd)
 	AddLoadFlags(loadTransformFlow)
 }

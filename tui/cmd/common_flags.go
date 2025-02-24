@@ -21,9 +21,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func AddFormatFlag(cmd *cobra.Command) {
-	cmd.Flags().StringP("format", "o", "json", "Output format (json|yaml)")
-	_ = cmd.RegisterFlagCompletionFunc("format", formatCompletion)
+func AddFormatFlag(cmds ...*cobra.Command) {
+	for _, cmd := range cmds {
+		cmd.Flags().StringP("format", "o", "json", "Output format (json|yaml)")
+		_ = cmd.RegisterFlagCompletionFunc("format", formatCompletion)
+	}
 }
 
 func formatCompletion(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
