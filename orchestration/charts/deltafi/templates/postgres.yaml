@@ -40,7 +40,13 @@ spec:
     parameters:
       shared_buffers: "128MB"
       max_connections: "1000"
-      log_statement: "info"
+      log_statement: "ddl"
+      log_min_duration_statement: "1000"
+      log_destination: "stderr"
+      logging_collector: "off"
+      log_autovacuum_min_duration: "-1"
+      log_connections: "off"
+      log_disconnections: "off"
 #  env:
 #  - name: wal_s3_bucket
 #    value: my-custom-bucket
