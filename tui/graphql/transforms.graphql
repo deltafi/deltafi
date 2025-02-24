@@ -86,3 +86,11 @@ query ListTransforms {
         }
     }
 }
+
+mutation EnableTransformTestMode($name: String!) {
+    enableTransformTestMode(flowName: $name)
+}
+
+mutation DisableTransformTestMode($name: String!) {
+    disableTransformTestMode(flowName: $name)
+}

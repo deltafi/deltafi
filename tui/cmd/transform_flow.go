@@ -126,6 +126,29 @@ var pauseTransformFlow = &cobra.Command{
 	},
 }
 
+var setTestMode = &cobra.Command{
+	Use:               "test-mode",
+	Short:             "Enable or disable test mode",
+	Long:              `Enable or disable test mode for a given transform.`,
+	Args:              cobra.MinimumNArgs(1),
+	ValidArgsFunction: getTransformNames,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		on, _ := cmd.Flags().GetBool("enable")
+		off, _ := cmd.Flags().GetBool("disable")
+
+		if !on && !off {
+			fmt.Println("Either --disable or --enable must be set on the test-mode command")
+			return cmd.Usage()
+		}
+
+		if on {
+			return enableTransformTestMode(args[0])
+		} else {
+			return disableTransformTestMode(args[0])
+		}
+	},
+}
+
 func get(cmd *cobra.Command, name string) error {
 	var resp, err = graphql.GetTransform(name)
 
@@ -174,6 +197,24 @@ func listAll(cmd *cobra.Command) error {
 	return nil
 }
 
+func enableTransformTestMode(flowName string) error {
+	_, err := graphql.EnableTransformTestMode(flowName)
+	if err != nil {
+		return wrapInError("Could not enable test mode for transform "+flowName, err)
+	}
+	fmt.Println("Successfully enabled test mode for transform " + flowName)
+	return nil
+}
+
+func disableTransformTestMode(flowName string) error {
+	_, err := graphql.DisableTransformTestMode(flowName)
+	if err != nil {
+		return wrapInError("Could not disable test mode for transform "+flowName, err)
+	}
+	fmt.Println("Successfully disabled test mode for transform " + flowName)
+	return nil
+}
+
 func getTransformNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	suggestions, err := fetchRemoteTransformNames()
 	if err != nil {
@@ -206,8 +247,13 @@ func init() {
 	transformCmd.AddCommand(stopTransformFlow)
 	transformCmd.AddCommand(pauseTransformFlow)
 	transformCmd.AddCommand(validateTransformCmd)
+	transformCmd.AddCommand(setTestMode)
 
 	listTransformFlows.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
+	setTestMode.Flags().BoolP("enable", "y", false, "Turn on test mode")
+	setTestMode.Flags().BoolP("disable", "n", false, "Turn off test mode")
+	setTestMode.MarkFlagsMutuallyExclusive("enable", "disable")
+
 	AddFormatFlag(getTransformFlow, validateTransformCmd)
 	AddLoadFlags(loadTransformFlow)
 }
