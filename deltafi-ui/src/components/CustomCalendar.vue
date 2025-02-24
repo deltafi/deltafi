@@ -28,6 +28,7 @@
 import { CalendarDialog } from "vue-time-date-range-picker";
 import { computed, inject, onBeforeMount, ref, watch } from "vue";
 import { useNow } from "@vueuse/core";
+import _ from "lodash";
 
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
