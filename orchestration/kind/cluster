@@ -1229,8 +1229,20 @@ _plugin_build() {
 }
 
 _local_push_one() {
-  docker push "$1" 1>/dev/null
-  run crictl pull "$1" 1>/dev/null
+  local image="$1"
+  local local_digest remote_manifest remote_digest
+
+  local_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image" 2>/dev/null | cut -d'@' -f2)
+  remote_manifest=$(run crictl inspecti "$image" 2>/dev/null || echo "")
+  remote_digest=$(echo "$remote_manifest" | jq -r '.status.repoDigests[0]' | sed 's/.*@//')
+  if [ -n "$local_digest" ] && [ "$local_digest" = "$remote_digest" ]; then
+    _info -a "Skipping $image: already up-to-date"
+  else
+    _info -a "Syncing $image"
+    docker push "$image" 1>/dev/null
+  fi
+
+  run crictl pull "$image" 1>/dev/null
 }
 
 _local_push() {
@@ -1238,7 +1250,6 @@ _local_push() {
   _attention "Syncing docker images"
   _info -s "Starting sync"
   for img in $(docker images | grep "localhost.*latest" | cut -f1 -d' '); do
-    _info -a "Syncing $img"
     _local_push_one "$img" &
     pids+=($!)
   done
