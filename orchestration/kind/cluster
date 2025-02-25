@@ -825,10 +825,25 @@ TERM=screen-256color $@
 EOF
 }
 
+_delete_pv_directory() {
+  _attention "Deleting PV directory: $PV_DIR"
+  if [ -d "$PV_DIR" ]; then
+    if _is_linux; then
+      ${SUDO} rm -rf "$PV_DIR"
+    else
+      rm -rf "$PV_DIR"
+    fi
+    _ok "PV directory deleted"
+  else
+    _info "PV directory does not exist: $PV_DIR"
+  fi
+}
+
 describe uninstall "Uninstall the DeltaFi instance, leaving cluster intact"
 uninstall() {
   _attention "Uninstalling DeltaFi"
   _conditional "Uninstall DeltaFi" deltafi uninstall
+  _delete_pv_directory
 }
 
 describe loc "Control local builds and local installation to the cluster"

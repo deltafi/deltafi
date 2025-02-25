@@ -15,41 +15,16 @@ ARGS=("$@")
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
 _k8s_uninstall() {
-  # remove the core first so that database tables are not recreated
-  $KUBECTL_BIN delete deployments,pods,statefulsets -l group=deltafi-core --grace-period=0 --force 2>/dev/null || :
-
-  _drop_postgres_tables
-
   # perform a helm uninstall
   helm uninstall $DELTAFICLI_PROJECT_NAME
 
   # sweep up whatever helm missed, but keep secrets
-  $KUBECTL_BIN delete pods,daemonsets,services,statefulsets,replicasets,deployments -n deltafi --grace-period=0 --force --all 2>&1 | grep -v Warning
+  $KUBECTL_BIN delete pods,daemonsets,services,statefulsets,replicasets,deployments,poddisruptionbudgets -n deltafi --grace-period=0 --force --all 2>&1 | grep -v Warning
+  $KUBECTL_BIN patch pv deltafi-postgres -p '{"spec":{"claimRef": null}}'
 }
 
 _compose_uninstall() {
-  "${DELTAFICLI_COMPOSE_PATH}"/compose stop-services deltafi-core deltafi-ingress
-  _drop_postgres_tables
   "${DELTAFICLI_COMPOSE_PATH}"/compose uninstall
-}
-
-_drop_postgres_tables() {
-  TABLES=$(deltafi cli postgres-eval "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" | sed '1d;2d;$d' | sed '$d' | sed 's/^ *//; s/ *$//' | tr -d '\r')
-
-  if [ -n "$TABLES" ]; then
-    for TABLE in $TABLES
-    do
-      CMD="DROP TABLE IF EXISTS \"$TABLE\" CASCADE;"
-      echo "  $CMD"
-      if ! deltafi cli postgres-eval "$CMD" >/dev/null 2>&1; then
-        echo "    Error dropping table $TABLE"
-      else
-        echo "    Table $TABLE dropped successfully"
-      fi
-    done
-  else
-    echo "No tables found in the public schema."
-  fi
 }
 
 read -r -p "☢️  Uninstalling DeltaFi is a destructive operation that will remove configuration and anything in the database.
