@@ -96,7 +96,7 @@ const acknowledge = async () => {
       let completedBatches = 0;
       batchCompleteValue.value = 0;
       for (const dids of batchedDids) {
-        await PostAcknowledgeErrors(_.flatten(dids), reason.value);
+        await PostAcknowledgeErrors(dids, reason.value);
         completedBatches += dids.length;
         batchCompleteValue.value = Math.round((completedBatches / props.dids.length) * 100);
       }
@@ -115,12 +115,7 @@ const acknowledge = async () => {
 };
 
 const getBatchDids = (allDids) => {
-  const res = [];
-  for (let i = 0; i < allDids.length; i += batchSize) {
-    const chunk = allDids.slice(i, i + batchSize);
-    res.push(chunk);
-  }
-  return res;
+  return _.chunk(allDids, batchSize);
 };
 
 const close = () => {

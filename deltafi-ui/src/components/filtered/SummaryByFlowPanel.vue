@@ -46,18 +46,20 @@
 </template>
 
 <script setup>
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
-import Button from "primevue/button";
-import Panel from "primevue/panel";
-import Menu from "primevue/menu";
-import ContextMenu from "primevue/contextmenu";
-import Paginator from "primevue/paginator";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
-
+import useFiltered from "@/composables/useFiltered";
 import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import useFiltered from "@/composables/useFiltered";
+
+import _ from "lodash";
+
+import Button from "primevue/button";
+import Column from "primevue/column";
+import ContextMenu from "primevue/contextmenu";
+import DataTable from "primevue/datatable";
+import Menu from "primevue/menu";
+import Paginator from "primevue/paginator";
+import Panel from "primevue/panel";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -133,7 +135,7 @@ const selectedDids = computed(() => {
     return selectedFiltered.dids;
   });
 
-  return [...new Set(dids)];
+  return _.flatten([...new Set(dids)]);
 });
 
 const toggleMenu = (event) => {

@@ -52,24 +52,26 @@
 </template>
 
 <script setup>
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
-import Button from "primevue/button";
-import Panel from "primevue/panel";
-import Menu from "primevue/menu";
-import ContextMenu from "primevue/contextmenu";
-import Paginator from "primevue/paginator";
+import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
+import AnnotateDialog from "@/components/AnnotateDialog.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
+import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import useErrorCount from "@/composables/useErrorCount";
-import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
-import DialogTemplate from "@/components/DialogTemplate.vue";
 import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import AnnotateDialog from "@/components/AnnotateDialog.vue";
+
 import _ from "lodash";
+
+import Button from "primevue/button";
+import Column from "primevue/column";
+import ContextMenu from "primevue/contextmenu";
+import DataTable from "primevue/datatable";
+import Paginator from "primevue/paginator";
+import Panel from "primevue/panel";
+import Menu from "primevue/menu";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -188,7 +190,7 @@ const filterSelectedDids = computed(() => {
     return selectedError.dids;
   });
 
-  return [...new Set(dids)];
+  return _.flatten([...new Set(dids)]);
 });
 
 const fetchErrorsMessages = async () => {

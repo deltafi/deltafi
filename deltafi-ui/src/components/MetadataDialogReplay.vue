@@ -83,6 +83,7 @@ import useNotifications from "@/composables/useNotifications";
 import useReplay from "@/composables/useReplay";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, ref } from "vue";
+
 import _ from "lodash";
 
 import Button from "primevue/button";
@@ -294,12 +295,7 @@ const getModifiedMetadata = () => {
 };
 
 const getBatchDids = (allDids) => {
-  const res = [];
-  for (let i = 0; i < allDids.length; i += batchSize) {
-    const chunk = allDids.slice(i, i + batchSize);
-    res.push(chunk);
-  }
-  return res;
+  return _.chunk(allDids, batchSize);
 };
 
 defineExpose({
