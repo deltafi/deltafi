@@ -23,7 +23,7 @@ RUN yarn install
 COPY graphiql .
 RUN yarn build
 
-FROM deltafi/deltafi-java-jre:21.0.5-alpine-1
+FROM deltafi/deltafi-java-jre:21.0.6-alpine-0
 VOLUME /tmp
 COPY deltafi-*.jar deltafi-app.jar
 COPY probe.sh .
