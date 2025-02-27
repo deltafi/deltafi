@@ -457,7 +457,7 @@ dependencies:
   grafana: deltafi/grafana:11.5.2-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
   loki: grafana/loki:2.9.10
-  minio: quay.io/minio/minio:RELEASE.2024-08-17T01-24-54Z
+  minio: quay.io/minio/minio:RELEASE.2025-02-18T16-25-55Z
   nginx: nginx:1.27.1-alpine3.20
   promtail: grafana/promtail:2.9.10
   mongodb: bitnami/mongodb:5.0.17

@@ -47,7 +47,7 @@ minio:
     MINIO_SCANNER_SPEED: slow
     MINIO_BROWSER: off
   image:
-    tag: RELEASE.2024-08-17T01-24-54Z
+    tag: RELEASE.2025-02-18T16-25-55Z
   mode: standalone
   existingSecret: minio-keys
   resources:
