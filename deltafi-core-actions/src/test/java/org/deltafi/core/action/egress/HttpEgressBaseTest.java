@@ -42,12 +42,10 @@ import java.net.http.HttpClient;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static org.deltafi.common.constant.DeltaFiConstants.BYTES_OUT;
-import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class HttpEgressBaseTest {
+class HttpEgressBaseTest {
     private static class TestHttpEgress extends HttpEgressBase<HttpEgressParameters> {
         public TestHttpEgress(HttpService httpService) {
             super("Test HTTP egress", httpService);
@@ -78,7 +76,7 @@ public class HttpEgressBaseTest {
     }
 
     @Test
-    public void egresses() {
+    void egresses() {
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
                 .withHeader("header-1", WireMock.equalTo("value-1"))
@@ -99,7 +97,7 @@ public class HttpEgressBaseTest {
     }
 
     @Test
-    public void egressesAfterRetry() {
+    void egressesAfterRetry() {
         // First POST fails with status 999
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
@@ -134,7 +132,7 @@ public class HttpEgressBaseTest {
     }
 
     @Test
-    public void errorsAfterMaxRetries() {
+    void errorsAfterMaxRetries() {
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
                 .withHeader("header-1", WireMock.equalTo("value-1"))
@@ -159,13 +157,12 @@ public class HttpEgressBaseTest {
     }
 
     @Test
-    public void errorsOnHttpPostException() {
+    void errorsOnHttpPostException() {
         HttpService mockHttpService = Mockito.mock(HttpService.class);
-        Mockito.when(mockHttpService.post(Mockito.eq(wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT),
-                        Mockito.anyMap(), Mockito.any(), Mockito.anyString()))
+        Mockito.when(mockHttpService.execute(Mockito.any()))
                 .thenThrow(new HttpPostException("class", "post exception"));
 
-        TestHttpEgress action = new TestHttpEgress(mockHttpService);
+        TestHttpEgress testAction = new TestHttpEgress(mockHttpService);
 
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
@@ -176,7 +173,7 @@ public class HttpEgressBaseTest {
         params.setUrl(url);
         params.setRetryCount(1);
         params.setRetryDelayMs(0);
-        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
+        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
         assertEquals("Service post failure", ((ErrorResult) egressResultType).getErrorCause());
@@ -210,8 +207,8 @@ public class HttpEgressBaseTest {
         HttpEgressParameters params = new HttpEgressParameters();
         String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
         params.setUrl(url);
-        IOExceptionOpeningInputStream action = new IOExceptionOpeningInputStream(httpService);
-        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
+        IOExceptionOpeningInputStream testAction = new IOExceptionOpeningInputStream(httpService);
+        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
         assertEquals("Unable to open input stream", ((ErrorResult) egressResultType).getErrorCause());

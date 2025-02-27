@@ -40,7 +40,7 @@ public class HttpService {
 
     private final HttpClient httpClient;
 
-    private static HttpRequest.Builder newRequestBuilder(@NotNull String url, @NotNull Map<String, String> headers, @NotNull String mediaType) {
+    public static HttpRequest.Builder newRequestBuilder(@NotNull String url, @NotNull Map<String, String> headers, @NotNull String mediaType) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url));
         headers.forEach(requestBuilder::header);
@@ -50,7 +50,7 @@ public class HttpService {
         return requestBuilder;
     }
 
-    private HttpResponse<InputStream> execute(@NotNull HttpRequest request) throws HttpSendException {
+    public HttpResponse<InputStream> execute(@NotNull HttpRequest request) throws HttpSendException {
         try {
             // TODO: Should exceptions be thrown for 4xx return codes?
             return httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofInputStream());

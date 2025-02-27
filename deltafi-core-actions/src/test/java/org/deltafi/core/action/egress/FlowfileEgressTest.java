@@ -44,13 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.deltafi.common.constant.DeltaFiConstants.BYTES_OUT;
-import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
 import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class FlowfileEgressTest {
+class FlowfileEgressTest {
     private static final String URL_CONTEXT = "/endpoint";
     private static final String CONTENT = "This is the test content.";
 
@@ -72,7 +70,7 @@ public class FlowfileEgressTest {
     }
 
     @Test
-    public void egresses() throws IOException {
+    void egresses() throws IOException {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)

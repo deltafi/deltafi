@@ -19,6 +19,7 @@ package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
@@ -32,6 +33,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.Map;
@@ -46,11 +49,11 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
         this.httpService = httpService;
     }
 
-    @SuppressWarnings("BusyWait")
     public EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input) {
         return egressWithMethod(context, params, HttpRequestMethod.POST, input);
     }
 
+    @SuppressWarnings("BusyWait")
     protected EgressResultType egressWithMethod(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
         int tries = 0;
 
@@ -78,27 +81,18 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
 
     private EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
         try {
-            // The stream is automatically closed by HttpClient when the end of stream is reached.
-            HttpResponse<InputStream> response = switch (method) {
-                case PATCH -> httpService.patch(params.getUrl(), buildHeaders(context, params, input),
-                        openInputStream(context, input), getMediaType(input));
-                case POST -> httpService.post(params.getUrl(), buildHeaders(context, params, input),
-                        openInputStream(context, input), getMediaType(input));
-                case PUT -> httpService.put(params.getUrl(), buildHeaders(context, params, input),
-                        openInputStream(context, input), getMediaType(input));
-                case DELETE -> httpService.delete(params.getUrl(), buildHeaders(context, params, input),
-                        getMediaType(input));
-            };
+            HttpRequest.Builder httpRequestBuilder = HttpService.newRequestBuilder(params.getUrl(), buildHeaders(context, params, input), getMediaType(input));
+            switch (method) {
+                case PATCH -> httpRequestBuilder.method("PATCH", bodyPublisher(context, input));
+                case POST -> httpRequestBuilder.POST(bodyPublisher(context, input));
+                case PUT -> httpRequestBuilder.PUT(bodyPublisher(context, input));
+                case DELETE -> httpRequestBuilder.DELETE();
+            }
 
+            HttpResponse<InputStream> response = httpService.execute(httpRequestBuilder.build());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-                try (InputStream body = response.body()) {
-                    return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode(),
-                            new String(body.readAllBytes())).logErrorTo(log);
-                } catch (IOException e) {
-                    return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode(),
-                            "Unable to read response body: " + e.getMessage()).logErrorTo(log);
-                }
+                return processErrorResponse(context, response);
             }
         } catch (JsonProcessingException e) {
             return new ErrorResult(context, "Unable to build post headers", e).logErrorTo(log);
@@ -109,6 +103,13 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
         }
 
         return new EgressResult(context);
+    }
+
+    protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
+        ActionContent bodyContent = input.getContent();
+        // The stream is automatically closed by HttpClient when the end of stream is reached
+        InputStream inputStream = this.openInputStream(context, input);
+        return HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.ofInputStream(() -> inputStream), bodyContent.getSize());
     }
 
     protected InputStream openInputStream(@NotNull ActionContext context, @NotNull EgressInput input)
@@ -123,5 +124,15 @@ public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull P params,
                                                @NotNull EgressInput input) throws JsonProcessingException {
         return Collections.emptyMap();
+    }
+
+    protected ErrorResult processErrorResponse(ActionContext context, HttpResponse<InputStream> response) {
+        try (InputStream body = response.body()) {
+            return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode(),
+                    new String(body.readAllBytes())).logErrorTo(log);
+        } catch (IOException e) {
+            return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode(),
+                    "Unable to read response body: " + e.getMessage()).logErrorTo(log);
+        }
     }
 }

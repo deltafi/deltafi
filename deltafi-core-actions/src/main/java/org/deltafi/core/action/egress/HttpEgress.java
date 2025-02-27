@@ -47,11 +47,12 @@ public class HttpEgress extends HttpEgressBase<HttpEgress.Parameters> {
         super("Egress to an HTTP endpoint with configurable method", httpService);
     }
 
-    @SuppressWarnings("BusyWait")
+    @Override
     public EgressResultType egress(@NotNull ActionContext context, @NotNull HttpEgress.Parameters params, @NotNull EgressInput input) {
         return egressWithMethod(context, params, params.getMethod(), input);
     }
 
+    @Override
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull HttpEgress.Parameters params,
                                                @NotNull EgressInput input) throws JsonProcessingException {
         Map<String, String> headers = new HashMap<>(Map.of(params.getMetadataKey(),
