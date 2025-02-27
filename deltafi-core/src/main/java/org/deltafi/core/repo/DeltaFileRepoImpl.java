@@ -81,7 +81,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public List<DeltaFile> findForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
         StringBuilder sqlQuery = new StringBuilder("""
-            SELECT DISTINCT did
+            SELECT DISTINCT delta_file_id
             FROM delta_file_flows dff
             JOIN delta_files df
             ON dff.delta_file_id = df.did
@@ -779,23 +779,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     @Transactional
     public void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason) {
-        if (dids == null || dids.isEmpty()) {
-            return;
-        }
-
-        String sql = """
-            UPDATE delta_files
-            SET content_deleted = :now,
-                content_deleted_reason = :reason,
-                content_deletable = false
-            WHERE did IN (:dids)
-        """;
-
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("now", now);
-        query.setParameter("reason", reason);
-        query.setParameter("dids", dids);
-        query.executeUpdate();
+        if (dids == null || dids.isEmpty()) return;
+        List<Object[]> batchParams = dids.stream()
+                .map(did -> new Object[] { now, reason, did })
+                .toList();
+        jdbcTemplate.batchUpdate(
+                "UPDATE delta_files SET content_deleted = ?, content_deleted_reason = ?, content_deletable = false WHERE did = ?",
+                batchParams
+        );
     }
 
     private static final String INSERT_DELTA_FILES = """
@@ -986,29 +977,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     @Transactional
     public void batchedBulkDeleteByDidIn(List<UUID> dids) {
-        if (dids == null || dids.isEmpty()) {
-            return;
-        }
-
-        String sql = """
-        WITH deleted_delta_file_flows AS (
-            DELETE FROM delta_file_flows
-            WHERE delta_file_id IN (:dids)
-        ),
-        deleted_annotations AS (
-            DELETE FROM annotations
-            WHERE delta_file_id IN (:dids)
-        ),
-        deleted_delta_files AS (
-            DELETE FROM delta_files
-            WHERE did IN (:dids)
-        )
-        SELECT 1;
-        """;
-
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("dids", dids);
-        query.getSingleResult();
+        if (dids == null || dids.isEmpty()) return;
+        List<Object[]> params = dids.stream()
+                .map(did -> new Object[] { did })
+                .toList();
+        jdbcTemplate.batchUpdate("DELETE FROM delta_file_flows WHERE delta_file_id = ?", params);
+        jdbcTemplate.batchUpdate("DELETE FROM annotations WHERE delta_file_id = ?", params);
+        jdbcTemplate.batchUpdate("DELETE FROM delta_files WHERE did = ?", params);
     }
 
     @Override
