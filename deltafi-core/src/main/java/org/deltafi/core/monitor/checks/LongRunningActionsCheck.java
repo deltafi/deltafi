@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.monitor.checks;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.deltafi.common.types.ActionExecution;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
@@ -91,9 +92,12 @@ public class LongRunningActionsCheck extends StatusCheck {
     private record LongActionDetails(UUID did, int threadNum, String appName) implements Comparable<LongActionDetails> {
         @Override
         public int compareTo(@NotNull LongActionDetails o) {
-            return did.compareTo(o.did) != 0 ? did.compareTo(o.did)
-                    : threadNum != o.threadNum ? Integer.compare(threadNum, o.threadNum)
-                    : appName.compareTo(o.appName);
+            int cmp = did.compareTo(o.did);
+            if (cmp != 0) {
+                return cmp;
+            }
+            return threadNum != o.threadNum ? Integer.compare(threadNum, o.threadNum) :
+                    ObjectUtils.compare(appName, o.appName);
         }
     }
 }
