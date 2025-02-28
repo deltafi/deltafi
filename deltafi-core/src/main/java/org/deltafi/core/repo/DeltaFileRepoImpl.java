@@ -85,9 +85,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             FROM delta_file_flows dff
             JOIN delta_files df
             ON dff.delta_file_id = df.did
-            WHERE dff.modified < :requeueThreshold
-            AND df.modified < :requeueThreshold
-            AND dff.state = 'IN_FLIGHT'
+            WHERE df.modified < :requeueThreshold
             AND df.stage = 'IN_FLIGHT'
             AND dff.cold_queued = false""");
 
