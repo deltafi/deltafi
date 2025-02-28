@@ -101,10 +101,16 @@ func build() {
 		running:      true,
 	}
 
+	// Initialize the API and hit the me endpoint to verify running DeltaFi
 	err := instance.initializeAPI()
 
 	if err != nil {
 		instance.running = false
+	} else {
+		_, apiErr := instance.apiClient.Me()
+		if apiErr != nil {
+			instance.running = false
+		}
 	}
 }
 

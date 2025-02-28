@@ -37,7 +37,7 @@ func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL: baseURL,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 3 * time.Second,
 		},
 	}
 }
@@ -70,6 +70,15 @@ func (c *Client) Get(path string, result interface{}, opts *RequestOpts) error {
 		return fmt.Errorf("failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
+
+	// body, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	fmt.Printf("Error reading response body: %v\n", err)
+	// }
+
+	// // Print the response body
+	// fmt.Println("Response body:")
+	// fmt.Println(string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d - %s", resp.StatusCode, c.baseURL+path)
@@ -144,6 +153,12 @@ func (c *Client) Status() (*StatusResponse, error) {
 	var status StatusResponse
 	err := c.Get("/api/v2/status", &status, nil)
 	return &status, err
+}
+
+func (c *Client) Me() (*MeResponse, error) {
+	var me MeResponse
+	err := c.Get("/api/v2/me", &me, nil)
+	return &me, err
 }
 
 func (c *Client) Events() ([]Event, error) {
