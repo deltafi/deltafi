@@ -151,7 +151,8 @@ load_plan() {
 	  return
   fi
 
-  local VARIABLES="{\"flowPlan\": ${JSON} }"
+  local SOURCEREMOVED=`echo ${JSON} | jq 'del(.sourcePlugin)'`
+  local VARIABLES="{\"flowPlan\": ${SOURCEREMOVED} }"
 
   if [[ "${JSON}" == *"\"type\": \"REST_DATA_SOURCE\""* ]]; then
     local LOAD_TYPE="rest data source plan"
