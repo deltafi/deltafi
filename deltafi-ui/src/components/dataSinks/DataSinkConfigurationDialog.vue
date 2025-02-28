@@ -360,6 +360,7 @@ const subscribeSchema = {
         title: "Condition (Optional)",
       },
     },
+    required: ["topic"],
   },
 };
 </script>

@@ -65,11 +65,11 @@ const booleanDecider = (boolVal: any) => {
 };
 
 const computedLabel = computed(() => {
-  if (schemaData.control.config.defaultLabels) {
-    return schemaData.control.label;
-  }
+  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 
-  return schemaData.control.i18nKeyPrefix.split(".").pop();
+  label = (schemaData.control.required) ? label + "*" : label;
+
+  return label;
 });
 </script>
 <style>

@@ -19,7 +19,6 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <div class="py-2 align-items-center">
-      <dt>Additional properties String renderer</dt>
       <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
       <dd>
         <template v-if="suggestions !== undefined">
@@ -66,11 +65,11 @@ const suggestions = computed(() => {
 });
 
 const computedLabel = computed(() => {
-  if (schemaData.control.config.defaultLabels) {
-    return schemaData.control.label;
-  }
+  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 
-  return schemaData.control.i18nKeyPrefix.split(".").pop();
+  label = (schemaData.control.required) ? label + "*" : label;
+
+  return label;
 });
 </script>
 

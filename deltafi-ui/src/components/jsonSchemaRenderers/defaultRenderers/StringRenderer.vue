@@ -19,7 +19,7 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl>
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel() }}</dt>
+      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
       <dd>
         <template v-if="_.isEqual(schemaData.control.i18nKeyPrefix.split('.').pop(), 'topic')">
           <AutoComplete :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' auto-complete-input-width'" :suggestions="topicList" @complete="search" @change="schemaData.onChange(schemaData.control.data)" />
@@ -93,13 +93,13 @@ const undefinedStringCheck = (value: any) => {
   return value;
 };
 
-const computedLabel = () => {
-  if (schemaData.control.config.defaultLabels) {
-    return schemaData.control.label;
-  }
+const computedLabel = computed(() => {
+  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 
-  return schemaData.control.i18nKeyPrefix.split(".").pop();
-};
+  label = (schemaData.control.required) ? label + "*" : label;
+
+  return label;
+});
 
 const optionsDisplay = computed(() => {
   if (schemaData.control.config.defaultLabels) {

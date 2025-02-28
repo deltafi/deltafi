@@ -20,8 +20,7 @@
   <div v-if="jsonSchema.control.visible" class="px-0 pb-2">
     <div class="d-flex w-100 justify-content-between">
       <div class="px-0 py-0">
-        <dt>Additional properties renderer</dt>
-        <dd class="pt-3">{{ additionalPropertiesTitle }}</dd>
+        <dt class="pt-3">{{ additionalPropertiesTitle }}</dt>
       </div>
       <div class="btn-group">
         <div class="flex-column additionPropsInputBox">
