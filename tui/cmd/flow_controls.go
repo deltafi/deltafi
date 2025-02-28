@@ -30,6 +30,7 @@ var flowDisplay = map[graphql.FlowType]string{
 }
 
 func startFlow(flowType graphql.FlowType, flowName string) error {
+	RequireRunningDeltaFi()
 	_, err := setFlowState(flowType, flowName, graphql.FlowStateRunning)
 
 	display := flowDisplay[flowType]
@@ -42,6 +43,7 @@ func startFlow(flowType graphql.FlowType, flowName string) error {
 }
 
 func stopFlow(flowType graphql.FlowType, flowName string) error {
+	RequireRunningDeltaFi()
 	_, err := setFlowState(flowType, flowName, graphql.FlowStateStopped)
 
 	display := flowDisplay[flowType]
@@ -54,6 +56,7 @@ func stopFlow(flowType graphql.FlowType, flowName string) error {
 }
 
 func pauseFlow(flowType graphql.FlowType, flowName string) error {
+	RequireRunningDeltaFi()
 	_, err := setFlowState(flowType, flowName, graphql.FlowStatePaused)
 
 	display := flowDisplay[flowType]
@@ -66,5 +69,6 @@ func pauseFlow(flowType graphql.FlowType, flowName string) error {
 }
 
 func setFlowState(flowType graphql.FlowType, flowName string, state graphql.FlowState) (*graphql.SetFlowStateResponse, error) {
+	RequireRunningDeltaFi()
 	return graphql.SetFlowState(flowType, flowName, state)
 }

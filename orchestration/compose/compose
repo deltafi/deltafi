@@ -5,6 +5,7 @@ set -e
 cli_help_command() {
   echo "
 Command: compose
+Data Directory: ${DATA_DIR}
 
 Subcommands:
   start                       start all of the services
@@ -296,7 +297,7 @@ COMPOSE_FILE="${DELTAFI_COMPOSE_PATH}/docker-compose.yml"
 VERSION=$(deltafi --version)
 
 # TODO make the data directory configurable
-DATA_DIR="${DELTAFI_COMPOSE_PATH}/data"
+DATA_DIR="${DELTAFI_DATA_DIR:-${DELTAFI_COMPOSE_PATH}/data}"
 SETTINGS_DIR="${DELTAFI_COMPOSE_PATH}/settings"
 SECRETS_DIR="${SETTINGS_DIR}/secrets"
 ENV_DIR="${SETTINGS_DIR}/env"

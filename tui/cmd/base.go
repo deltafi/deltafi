@@ -18,11 +18,15 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/orchestration"
+	"github.com/deltafi/tui/internal/ui/styles"
 )
 
 // BaseCommand provides common functionality for all commands
@@ -144,4 +148,21 @@ func (b *BaseCommand) SetError(err error) {
 
 func (b *BaseCommand) GetSpinner() spinner.Model {
 	return b.spinner
+}
+
+func RequireRunningDeltaFi() {
+	if !app.IsRunning() {
+		fmt.Println(newError("\nDeltaFi is not running",
+			fmt.Sprintf(`
+To configure a new DeltaFi instance, use the init wizard:
+
+    %s
+
+To start a DeltaFi with your current configuration:
+
+    %s
+
+		`, styles.AccentStyle.Render("deltafi init"), styles.AccentStyle.Render("deltafi deploy"))))
+		os.Exit(1)
+	}
 }

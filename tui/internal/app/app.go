@@ -41,6 +41,7 @@ type App struct {
 	distroPath    string
 	os            string
 	arch          string
+	running       bool
 }
 
 // Global singleton instance
@@ -93,17 +94,17 @@ func build() {
 
 	instance = &App{
 		config:       &config,
-		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath),
+		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory),
 		os:           runtime.GOOS,
 		arch:         runtime.GOARCH,
 		distroPath:   distroPath,
+		running:      true,
 	}
 
 	err := instance.initializeAPI()
 
 	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
+		instance.running = false
 	}
 }
 
@@ -125,6 +126,10 @@ func TuiPath() string {
 
 func GetOrchestrator() orchestration.Orchestrator {
 	return GetInstance().orchestrator
+}
+
+func IsRunning() bool {
+	return GetInstance().running
 }
 
 func GetOrchestrationMode() orchestration.OrchestrationMode {

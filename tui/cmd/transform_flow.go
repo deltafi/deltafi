@@ -43,6 +43,7 @@ var listTransformFlows = &cobra.Command{
 	Short: "List transform flows",
 	Long:  `Get the list of transform flows.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return listAll(cmd)
 	},
 }
@@ -54,6 +55,7 @@ var getTransformFlow = &cobra.Command{
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return get(cmd, args[0])
 	},
 }
@@ -66,6 +68,7 @@ If the a flow already exists with the same name this will replace the flow.
 Otherwise, this command will create a new transform flow with the given name.`,
 	Aliases: []string{"transforms"},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		var transformFlowPlan graphql.TransformFlowPlanInput
 		var err = parseFile(cmd, &transformFlowPlan)
 		if err != nil {
@@ -89,6 +92,7 @@ var validateTransformCmd = &cobra.Command{
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return validateTransform(cmd, args[0])
 	},
 }
@@ -100,6 +104,7 @@ var startTransformFlow = &cobra.Command{
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return startFlow(graphql.FlowTypeTransform, args[0])
 	},
 }
@@ -111,6 +116,7 @@ var stopTransformFlow = &cobra.Command{
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return stopFlow(graphql.FlowTypeTransform, args[0])
 	},
 }
@@ -122,6 +128,7 @@ var pauseTransformFlow = &cobra.Command{
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return pauseFlow(graphql.FlowTypeTransform, args[0])
 	},
 }
@@ -133,6 +140,7 @@ var setTestMode = &cobra.Command{
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		on, _ := cmd.Flags().GetBool("enable")
 		off, _ := cmd.Flags().GetBool("disable")
 

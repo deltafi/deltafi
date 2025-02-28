@@ -136,7 +136,7 @@ ORCHESTRATION_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
 DELTAFI_PATH="$( cd "$ORCHESTRATION_PATH/.." &> /dev/null && pwd)"
 ROOT="$( cd "$DELTAFI_PATH/.." &> /dev/null && pwd)"
 CLUSTER_NAME=deltafi
-PV_DIR=$ORCHESTRATION_PATH/data
+PV_DIR=${DELTAFI_DATA_DIR:-$ORCHESTRATION_PATH/data}
 SUDO=$(which sudo)
 KIND_DIR="${ROOT}/deltafi/orchestration/kind"
 
@@ -782,6 +782,7 @@ help() {
   cat <<EOF
 DeltaFi KinD cluster CLI
 Version: $(cat "${DELTAFI_PATH}/VERSION")
+Data directory: ${PV_DIR}
 
 Usage:
   cluster [flags] [command] [command arguments]

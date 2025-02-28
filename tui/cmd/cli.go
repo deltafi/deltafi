@@ -46,6 +46,7 @@ var deprecatedCliCmd = &cobra.Command{
 			mode = "STANDALONE"
 		}
 		env = append(env, "DELTAFI_MODE="+mode)
+		env = append(env, "DELTAFI_DATA_DIR="+app.GetInstance().GetConfig().DataDirectory)
 
 		executable := filepath.Join(app.GetDistroPath(), "deltafi-cli", "deltafi")
 		if app.GetOrchestrationMode() == orchestration.Kind {
@@ -83,6 +84,7 @@ var deprecatedClusterCmd = &cobra.Command{
 
 		mode := "CLUSTER"
 		env = append(env, "DELTAFI_MODE="+mode)
+		env = append(env, "DELTAFI_DATA_DIR="+app.GetInstance().GetConfig().DataDirectory)
 
 		executable := filepath.Join(app.GetDistroPath(), "orchestration", "kind", "cluster")
 
@@ -115,6 +117,7 @@ var deprecatedComposeCmd = &cobra.Command{
 
 		mode := "STANDALONE"
 		env = append(env, "DELTAFI_MODE="+mode)
+		env = append(env, "DELTAFI_DATA_DIR="+app.GetInstance().GetConfig().DataDirectory)
 
 		executable := filepath.Join(app.GetDistroPath(), "orchestration", "compose", "compose")
 

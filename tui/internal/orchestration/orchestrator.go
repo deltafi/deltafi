@@ -27,16 +27,16 @@ type Orchestrator interface {
 	Destroy([]string) error
 }
 
-func NewOrchestrator(mode OrchestrationMode, distroPath string) Orchestrator {
+func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string) Orchestrator {
 
 	switch mode {
 	case Kubernetes:
-		return &KubernetesOrchestrator{distroPath: distroPath}
+		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	case Compose:
-		return &ComposeOrchestrator{distroPath: distroPath}
+		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	case Kind:
-		return &KubernetesOrchestrator{distroPath: distroPath}
+		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	default:
-		return &ComposeOrchestrator{distroPath: distroPath}
+		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	}
 }

@@ -28,6 +28,7 @@ import (
 type ComposeOrchestrator struct {
 	Orchestrator
 	distroPath string
+	dataPath   string
 }
 
 func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
@@ -36,8 +37,8 @@ func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
 
 func (o *ComposeOrchestrator) GetServiceIP(service string) (string, error) {
 
-	// return fmt.Sprintf("%s:8042", strings.TrimSpace(service)), nil
-	return "localhost", nil // FIXME - this is a hack
+	return fmt.Sprintf("%s:8042", strings.TrimSpace(service)), nil
+	// return "localhost", nil // FIXME - this is a hack
 }
 
 func (o *ComposeOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
@@ -63,6 +64,7 @@ func (o *ComposeOrchestrator) Deploy(args []string) error {
 	mode := "STANDALONE"
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
+	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
@@ -82,6 +84,7 @@ func (o *ComposeOrchestrator) Destroy(args []string) error {
 	mode := "STANDALONE"
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
+	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 

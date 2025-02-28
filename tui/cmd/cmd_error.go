@@ -18,10 +18,12 @@
 package cmd
 
 import (
-	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/term"
 	"os"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/deltafi/tui/internal/ui/styles"
+	"golang.org/x/term"
 )
 
 type Error struct {
@@ -64,10 +66,7 @@ func renderError(summary, context string) string {
 		Width(width).
 		Align(lipgloss.Left)
 
-	contextStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("9")). // Light red
-		Width(width).
-		Align(lipgloss.Left)
+	contextStyle := styles.CommentStyle.Width(width).Align(lipgloss.Left)
 
 	// Create separator line
 	separator := separatorStyle.Render(strings.Repeat("─", width))

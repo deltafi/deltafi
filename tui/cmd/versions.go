@@ -33,6 +33,8 @@ var versionsCmd = &cobra.Command{
 	GroupID: "orchestration",
 	Run: func(cmd *cobra.Command, args []string) {
 
+		RequireRunningDeltaFi()
+
 		app := app.GetInstance()
 		client := app.GetAPIClient()
 

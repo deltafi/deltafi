@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/deltafi/tui/internal/api"
+	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/ui/styles"
 )
 
@@ -38,6 +39,7 @@ var statusCmd = &cobra.Command{
 	Long:    `Display current health and status for DeltaFi system`,
 	GroupID: "orchestration",
 	Run: func(cmd *cobra.Command, args []string) {
+
 		runProgram(NewStatusCommand())
 	},
 }
@@ -85,6 +87,7 @@ var (
 )
 
 func NewStatusCommand() *StatusCommand {
+	RequireRunningDeltaFi()
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
@@ -282,11 +285,7 @@ func (c *StatusCommand) getStatusIcon(code int) string {
 }
 
 func (c *StatusCommand) fetchStatus() tea.Msg {
-	serviceip, oops := c.orchestrator.GetServiceIP("deltafi-core-service")
-	if oops != nil {
-		return oops
-	}
-	client := api.NewClient("http://" + serviceip)
+	client := app.GetInstance().GetAPIClient()
 	var result api.StatusResponse
 	err := client.Get("/api/v2/status", &result, nil)
 	if err != nil {

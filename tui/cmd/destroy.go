@@ -24,16 +24,16 @@ import (
 
 var destroyCmd = &cobra.Command{
 	Use:   "destroy",
-	Short: "Create or update the DeltaFi cluster",
-	Long: `Create or update the DeltaFi cluster.
+	Short: "Destroy the DeltaFi cluster",
+	Long: `Destroy the DeltaFi cluster.
 
-	If there is no cluster running, a new cluster will be created according to the provisioned orchestration mode.
-
-	If a cluster is already running, the cluster will be updated with the latest configuration changes.  This operation is idempotent.`,
+	This is a destructive operation and will result in the loss of all persistent data.
+	`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	GroupID:       "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 
 		return app.GetOrchestrator().Destroy(args)
 

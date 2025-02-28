@@ -43,6 +43,7 @@ var listCmd = &cobra.Command{
 	Short: "List installed plugins",
 	Long:  `List installed plugins`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireRunningDeltaFi()
 
 		resp, err := graphql.GetPlugins()
 
@@ -86,6 +87,8 @@ var installCmd = &cobra.Command{
 	Short: "Install one or more plugins",
 	Long:  `Install one or more plugins`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
 		app := app.GetInstance()
 
 		if len(args) < 1 {
@@ -129,6 +132,8 @@ var uninstallCmd = &cobra.Command{
 	Short: "Uninstall one or more plugins",
 	Long:  `Uninstall one or more plugins`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
 		app := app.GetInstance()
 
 		if len(args) < 1 {

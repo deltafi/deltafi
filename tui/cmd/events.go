@@ -45,6 +45,7 @@ var listEvents = &cobra.Command{
 	Short: "List the events",
 	Long:  "List the events",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return listAllEvents(cmd)
 	},
 }
@@ -55,6 +56,7 @@ var getEvent = &cobra.Command{
 	Long:  `Get the details of the specified event.`,
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		return doGetEvent(cmd, args[0])
 	},
 }
@@ -77,6 +79,7 @@ var createEventCmd = &cobra.Command{
 The event can include optional source, content, severity level, and notification flags.`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
 		summary := args[0]
 
 		if warnFlag {

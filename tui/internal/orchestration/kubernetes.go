@@ -28,6 +28,7 @@ import (
 type KubernetesOrchestrator struct {
 	Orchestrator
 	distroPath string
+	dataPath   string
 	namespace  string
 }
 
@@ -134,6 +135,7 @@ func (o *KubernetesOrchestrator) Deploy(args []string) error {
 	mode := "CLUSTER"
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
+	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
@@ -153,6 +155,7 @@ func (o *KubernetesOrchestrator) Destroy(args []string) error {
 	mode := "CLUSTER"
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
+	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
