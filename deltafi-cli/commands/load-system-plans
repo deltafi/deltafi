@@ -160,7 +160,7 @@ load_plan() {
   elif [[ "${JSON}" == *"\"type\": \"DATA_SINK\""* ]]; then
     local LOAD_TYPE="dataSink plan"
     local OPERATION_NAME="saveDataSinkPlan"
-    local QUERY="mutation(\$flowPlan: DataSinkPlanInput!) {saveDataSinkPlan(DataSinkPlan: \$flowPlan) { name }}"
+    local QUERY="mutation(\$flowPlan: DataSinkPlanInput!) {saveDataSinkPlan(dataSinkPlan: \$flowPlan) { name }}"
   elif [[ "${JSON}" == *"\"type\": \"TIMED_DATA_SOURCE\""* ]]; then
            local LOAD_TYPE="timed data source plan"
            local OPERATION_NAME="saveTimedDataSourcePlan"

@@ -65,6 +65,12 @@ fragment ActionFields on ActionConfiguration {
         condition
       }
       transformActions {
+        join {
+          maxAge
+          minNum
+          maxNum
+          metadataKey
+        }
         ...ActionFields
       }
       publish {
