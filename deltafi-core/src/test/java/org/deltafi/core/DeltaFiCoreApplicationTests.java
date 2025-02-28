@@ -316,9 +316,6 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	UtilService utilService;
 
-	@Autowired
-	FlowDefinitionRepo flowDefinitionRepo;
-
 	@MockBean
 	@SuppressWarnings("unused")
 	PlatformService platformService;
@@ -346,6 +343,7 @@ class DeltaFiCoreApplicationTests {
 	private final OffsetDateTime NOW = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
 
 	abstract static class DeltaFileMixin {
+		@SuppressWarnings("unused")
 		@JsonDeserialize(contentAs = DeltaFileFlow.class)
 		abstract Set<DeltaFileFlow> getFlows();
 	}
