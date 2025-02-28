@@ -150,8 +150,7 @@ load_plan() {
 	  import_plans $FLOW_PLAN_FILE
 	  return
   fi
-
-  local SOURCEREMOVED=`echo ${JSON} | jq 'del(.sourcePlugin)'`
+  local SOURCEREMOVED=$(read_file "${FLOW_PLAN_FILE}" | jq 'del(.sourcePlugin)')
   local VARIABLES="{\"flowPlan\": ${SOURCEREMOVED} }"
 
   if [[ "${JSON}" == *"\"type\": \"REST_DATA_SOURCE\""* ]]; then
