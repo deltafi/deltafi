@@ -38,12 +38,12 @@
               </span>
               <span>
                 <span class="d-flex align-items-center">
-                  <EgressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-egress-actions="refresh" />
+                  <EgressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-egress-actions="refresh" />
                   <DialogTemplate ref="updateEgressDialog" component-name="dataSinks/DataSinkConfigurationDialog" header="Edit Egress Action" dialog-width="50vw" :row-data-prop="data" edit-egress-action @reload-egress-actions="refresh">
-                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" />
                   </DialogTemplate>
                   <DialogTemplate ref="updateEgressDialog" component-name="dataSinks/DataSinkConfigurationDialog" header="Create Egress Action" dialog-width="50vw" :row-data-prop="cloneEgressAction(data)" @reload-egress-actions="refresh">
-                    <i v-tooltip.top="`Clone`" icon="pi pi-clone" class="ml-2 text-muted pi pi-clone cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-if="$hasPermission('FlowPlanCreate')" v-tooltip.top="`Clone`" icon="pi pi-clone" class="ml-2 text-muted pi pi-clone cursor-pointer" />
                   </DialogTemplate>
                   <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
                     <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />

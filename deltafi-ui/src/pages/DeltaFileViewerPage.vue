@@ -183,7 +183,7 @@ const staticMenuItems = reactive([
   {
     label: "Pin",
     icon: "fas fa-thumb-tack fa-fw",
-    visible: () => deltaFile.stage == "COMPLETE" && !deltaFile.pinned,
+    visible: () => deltaFile.stage == "COMPLETE" && !deltaFile.pinned && hasPermission("DeletePolicyDelete"),
     command: () => {
       onPin();
     },
@@ -191,7 +191,7 @@ const staticMenuItems = reactive([
   {
     label: "Unpin",
     icon: "fas fa-thumb-tack fa-fw",
-    visible: () => deltaFile.pinned,
+    visible: () => deltaFile.pinned && hasPermission("DeletePolicyDelete"),
     command: () => {
       onUnpin();
     },

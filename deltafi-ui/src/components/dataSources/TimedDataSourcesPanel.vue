@@ -20,24 +20,20 @@
   <div class="timed-data-source-panel">
     <CollapsiblePanel header="Timed Data Sources" class="table-panel pb-3">
       <DataTable :loading="showLoading" :value="timedDataSources" data-key="name" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines data-sources-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
-        <template #empty>
-          No Timed Data Sources found.
-        </template>
-        <template #loading>
-          Loading Timed Data Sources. Please wait.
-        </template>
+        <template #empty> No Timed Data Sources found. </template>
+        <template #loading> Loading Timed Data Sources. Please wait. </template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-data-sources="refresh" />
+                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-data-sources="refresh" />
                   <DialogTemplate ref="updateDataSourceDialog" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @reload-data-sources="refresh">
-                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" />
                   </DialogTemplate>
                   <DialogTemplate ref="updateDataSourceDialog" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="cloneDataSource(data)" @reload-data-sources="refresh">
-                    <i v-tooltip.top="`Clone`" class="ml-2 text-muted pi pi-clone cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-if="$hasPermission('FlowPlanCreate')" v-tooltip.top="`Clone`" class="ml-2 text-muted pi pi-clone cursor-pointer" />
                   </DialogTemplate>
                   <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
                     <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />
@@ -51,7 +47,12 @@
         <Column header="Publish" field="topic" :sortable="true" />
         <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
           <template #body="{ data, field }">
-            <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false }) + '\n\nClick to edit'" class="cursor-pointer" @click="editCronSchedule(data)">{{ data[field] }} </span>
+            <template v-if="$hasPermission('FlowUpdate')">
+              <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false }) + '\n\nClick to edit'" class="cursor-pointer" @click="editCronSchedule(data)">{{ data[field] }} </span>
+            </template>
+            <template v-else>
+              <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false })">{{ data[field] }} </span>
+            </template>
           </template>
         </Column>
         <Column header="Max Errors" field="maxErrors" class="max-error-column">
@@ -60,7 +61,7 @@
             <span v-else>{{ data[field] }}</span>
           </template>
           <template #editor="{ data, field }">
-            <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
+            <InputNumber v-has-permission:FlowUpdate v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
           </template>
         </Column>
         <Column header="Status" field="ingressStatus" :sortable="true">
@@ -83,7 +84,7 @@
     <Dialog v-model:visible="viewDialogVisible" :style="{ width: '30vw' }" :header="dialogHeader" :modal="true" :dismissable-mask="true" class="p-fluid timed-data-source-dialog">
       <div v-for="(label, fieldName) in fields" :key="fieldName" class="mb-3">
         <strong>{{ label }}</strong>
-        <br>
+        <br />
         <span v-if="fieldName == 'lastRun'">
           <Timestamp :timestamp="activeAction.lastRun" />
         </span>

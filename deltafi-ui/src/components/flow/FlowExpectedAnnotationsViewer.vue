@@ -20,7 +20,7 @@
   <div class="flow-expected-annotations-viewer">
     <div class="btn-group">
       <div class="btn-group-vertical">
-        <Chips id="expectedAnnotationsInputId" ref="expectedAnnotationsInputRef" v-model="readReceiptsList" :class="newAnnotationDataPresent ? 'p-invalid' : ''" />
+        <Chips id="expectedAnnotationsInputId" ref="expectedAnnotationsInputRef" v-model="readReceiptsList" :class="newAnnotationDataPresent ? 'p-invalid' : ''" :disabled="!$hasPermission('FlowUpdate')" />
         <small v-if="newAnnotationDataPresent" id="expectedAnnotationsInputId-input-help" class="mt-2">Press enter to add to the list</small>
       </div>
       <div>
@@ -33,7 +33,7 @@
             </div>
           </template>
         </ConfirmPopup>
-        <Button label="Save" icon="pi pi-check" :disabled="submitDisabled" class="ml-2" @click="confirmationPopup($event)" />
+        <Button v-if="$hasPermission('FlowUpdate')" label="Save" icon="pi pi-check" :disabled="submitDisabled" class="ml-2" @click="confirmationPopup($event)" />
       </div>
     </div>
   </div>

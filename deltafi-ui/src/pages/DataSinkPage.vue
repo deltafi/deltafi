@@ -25,7 +25,7 @@
           <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
         </IconField>
         <DialogTemplate component-name="dataSinks/DataSinkConfigurationDialog" header="Add New Data Sink" dialog-width="50vw" @reload-egress-actions="refresh">
-          <Button v-has-permission:FlowUpdate label="Add Data Sink" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+          <Button v-has-permission:FlowPlanCreate label="Add Data Sink" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
     </PageHeader>

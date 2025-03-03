@@ -43,13 +43,13 @@
                 </DialogTemplate>
               </span>
               <span>
-                <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
+                <span v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
                   <i class="ml-2 text-muted fa-solid fa-trash-can" />
                 </span>
-                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data, true)">
+                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data, true)">
                   <i v-tooltip.top="{ value: `Edit`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-pencil" />
                 </PermissionedRouterLink>
-                <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data)">
+                <PermissionedRouterLink v-if="$hasPermission('FlowPlanCreate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data)">
                   <i v-tooltip.top="{ value: `Clone`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-clone" />
                 </PermissionedRouterLink>
               </span>

@@ -25,8 +25,8 @@
           <InputIcon class="pi pi-search"> </InputIcon>
           <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
         </IconField>
-        <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'transform-builder' }">
-          <Button v-has-permission:FlowCreate label="Add Transform" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+        <PermissionedRouterLink :disabled="!$hasPermission('FlowPlanCreate')" :to="{ path: 'transform-builder' }">
+          <Button v-has-permission:FlowPlanCreate label="Add Transform" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </PermissionedRouterLink>
       </div>
     </PageHeader>

@@ -64,7 +64,7 @@ const generateData = () => {
       // "UserRead",
       // "UserUpdate",
       // "VersionsView"
-    ]
+    ],
   };
 };
 

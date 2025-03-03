@@ -32,12 +32,12 @@
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-data-sources="refresh" />
+                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-data-sources="refresh" />
                   <DialogTemplate ref="updateDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @reload-data-sources="refresh">
-                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" />
                   </DialogTemplate>
                   <DialogTemplate ref="updateDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="cloneDataSource(data)" @reload-data-sources="refresh">
-                    <i v-tooltip.top="`Clone`" class="ml-2 text-muted pi pi-clone cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-if="$hasPermission('FlowPlanCreate')" v-tooltip.top="`Clone`" class="ml-2 text-muted pi pi-clone cursor-pointer" />
                   </DialogTemplate>
                   <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
                     <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />
@@ -55,7 +55,7 @@
             <span v-else>{{ data[field] }}</span>
           </template>
           <template #editor="{ data, field }">
-            <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
+            <InputNumber v-has-permission:FlowUpdate v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
           </template>
         </Column>
         <Column header="Test Mode" class="switch-column">

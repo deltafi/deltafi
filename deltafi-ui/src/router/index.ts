@@ -128,7 +128,7 @@ const routes: Array<RouteRecordRaw> = [
     name: "Transform Builder",
     component: TransformBuilderPage,
     meta: {
-      permission: "FlowUpdate",
+      permission: "FlowPlanCreate",
     },
   },
   {
