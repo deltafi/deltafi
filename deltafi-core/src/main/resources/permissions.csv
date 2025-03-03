@@ -22,6 +22,8 @@ DeltaFiles,DeltaFileIngress,Grants the ability to ingress DeltaFiles
 Flows,FlowView,Grants the ability to view flows
 Flows,FlowValidate,Grants the ability to validate flows
 Flows,FlowUpdate,Grants the ability to change flow state and update flows
+Flows,FlowPlanDelete,Grants the ability to remove flow plans from the system plugin
+Flows,FlowPlanCreate,Grants the ability to save flow plans in the system plugin
 Plugins,PluginsView,Grants the ability to view installed Plugins
 Plugins,PluginInstall,Grants the ability to install Plugins
 Plugins,PluginUninstall,Grants the ability to uninstall Plugins
