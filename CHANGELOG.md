@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.10.2] - 2025-03-04
+
+### Added
+- File Ingress Service, a directory watcher for ingress, added to compose stack
+
 ## [2.10.1] - 2025-03-03
 
 ### Added
@@ -3901,7 +3906,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.2...main
+[2.10.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.1...2.10.2
 [2.10.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.0...2.10.1
 [2.10.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.9.0...2.10.0
 [2.9.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.8.0...2.9.0
