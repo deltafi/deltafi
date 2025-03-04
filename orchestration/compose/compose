@@ -444,6 +444,9 @@ deltafi:
   api:
     image: ${repo}/deltafi-api:${tag}
     workers: 8
+  file_ingress:
+    enabled: true
+    image: ${repo}/deltafi-file-ingress:${tag}
   egress_sink:
     enabled: true
     image: ${repo}/deltafi-egress-sink:${tag}
@@ -514,8 +517,12 @@ _append_common_from_values() {
 _append_compose_profiles() {
   profiles=()
   egress_sink_enabled=$(_from_values ".deltafi.egress_sink.enabled")
+  file_ingress_enabled=$(_from_values ".deltafi.file_ingress.enabled")
   entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
 
+  if [[ "${file_ingress_enabled}" = "true" ]]; then
+    profiles+=("file-ingress")
+  fi
   if [[ "${egress_sink_enabled}" = "true" ]]; then
     profiles+=("egress-sink")
   fi
@@ -542,6 +549,7 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_ENTITY_RESOLVER" ".deltafi.auth.entityResolver.image"
   _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
   _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
+  _append_startup_from_values "DELTAFI_FILE_INGRESS" ".deltafi.file_ingress.image"
   _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"

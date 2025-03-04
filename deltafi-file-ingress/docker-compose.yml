@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  deltafi-file-ingress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: deltafi-file-ingress:latest
+    container_name: deltafi-file-ingress
+    volumes:
+      # Mount the watch directory. Adjust the source path as needed
+      - ./watched-dir:/watched-dir
+    environment:
+      # Required: The base URL of the DeltaFi core service
+      - DELTAFI_URL=http://deltafi-core-service
+      # Optional: The ingress API endpoint (default: /api/v2/deltafile/ingress)
+      - DELTAFI_INGRESS_API=/api/v2/deltafile/ingress
+      # Optional: Override the watch directory (default: /watched-dir)
+      - DELTAFI_WATCH_DIR=/watched-dir
+      # Optional: Number of concurrent workers (default: 5)
+      - DELTAFI_WORKERS=10
+      # Optional: Buffer size for file streaming in bytes (default: 32MB)
+      - DELTAFI_BUFFER_SIZE=33554432
+      # Optional: Maximum allowed file size in bytes (default: 2GB)
+      - DELTAFI_MAX_FILE_SIZE=2147483648
+      # Optional: Retry period in seconds for failed uploads (default: 300)
+      - DELTAFI_RETRY_PERIOD=300
+    restart: unless-stopped
+    # Ensure the container has access to the deltafi network
+    networks:
+      - deltafi
+
+networks:
+  deltafi:
+    name: deltafi
+    external: true 

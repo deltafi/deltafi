@@ -119,6 +119,32 @@ services:
     volumes:
       - ${DATA_DIR}:/data
       - /var/run/docker.sock:/var/run/docker.sock
+  deltafi-file-ingress:
+    image: ${DELTAFI_FILE_INGRESS}
+    container_name: deltafi-file-ingress-service
+    depends_on:
+      deltafi-core-scheduler:
+        condition: service_started
+    environment:
+      DELTAFI_WATCH_DIR: /watched-dir
+      DELTAFI_WORKERS: 5
+      DELTAFI_RETRY_PERIOD: 60
+      DELTAFI_MAX_FILE_SIZE: 2147483648
+      DELTAFI_URL: http://deltafi-core-scheduler:8080
+    env_file:
+      - ${ENV_DIR}/common.env
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      deltafi:
+        aliases:
+          - "deltafi-file-ingress-service"
+    profiles: ["file-ingress"]
+    restart: unless-stopped
+    volumes:
+      - ${DATA_DIR}/file-ingress:/watched-dir
+    user: "${USER_ID}"
   deltafi-egress-sink:
     image: ${DELTAFI_EGRESS_SINK}
     container_name: deltafi-egress-sink-service
