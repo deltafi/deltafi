@@ -5,6 +5,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.10.1] - 2025-03-03
+
+### Added
+- Added asterisks to labels that require values in JsonRenderers 
+
+### Changed
+- MINIO_API_DELETE_CLEANUP_INTERVAL changed to 30s
+- The HttpEgress action now includes the `Content-Length` header  
+- Clear all PV data on KinD cluster reinstall
+
+### Fixed
+- Fixed issues with Acknowledging, Annotating, Replaying, and Resuming Dids. 
+- Updated UI to use correct permissions when editing and deleting flows 
+- Corrected cluster command to default to CLUSTER mode
+- [cli] load-system-plans was inadvertently expanding the `*` in the cronSchedule value of timed data sources
+- Fix postgres issues with KinD cluster reinstalls 
+- [cli] When loading a single system plan using `load-system-plans`, drop the "sourcePlugin" element if present. Allows using with outpout from `export-data-sink-plan` and other similar export commands
+- Allow multiple minio CLI clients to connect in Kubernetes
+- Handle null appNames when sorting LongActionDetails for the long running actions monitor check
+- Postgres logs to stderr for viewing in docker logs
+- Relax requeue query criteria to pick up DeltaFiles that are not in the expected state 
+- Fixed bug causing an error when using the Refresh button on the Search page
+- [cli] export-system-plans was missing `join` data for transform actions 
+- [cli] Fixed load-system-plans capitalization error
+- Permissions "FlowPlanDelete" and "FlowPlanCreate" were missing from the "Flows" role category
+
+### Tech-Debt/Refactor
+- Consolidated FlowPlanDatafetcher save*Plan methods. Moved logic to PluginService.
+- cluster command checks if images need to be synced to KinD before syncing 
+- Postgres query and index optimizations 
+
+### Upgrade and Migration
+- Refresh clustermonitor base image and kubectl (1.32.2)
+- Grafana upgraded to 11.5.2
+- Upgrade Minio to RELEASE.2025-02-18T16-25-55Z
+- Upgrade Minio client to RELEASE.2025-02-15T10-36-16Z
+- Base image upgrades for Java apps and nodemonitor
+- Upgrade Java to 21.0.6
+
 ## [2.10.0] - 2025-02-20
 
 ### Fixed
@@ -3862,7 +3901,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.1...main
+[2.10.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.0...2.10.1
 [2.10.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.9.0...2.10.0
 [2.9.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.8.0...2.9.0
 [2.8.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.7.1...2.8.0
