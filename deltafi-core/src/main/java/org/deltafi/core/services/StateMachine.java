@@ -119,11 +119,23 @@ public class StateMachine {
     }
 
     private List<WrappedActionInput> advanceDataSink(StateMachineInput input, Map<String, Long> pendingQueued) {
-        DataSink dataSink = dataSinkService.getActiveFlowByName(input.flow().getName());
-        ActionConfiguration nextEgressAction = dataSink.getEgressAction();
+        ActionConfiguration nextEgressAction;
+        DataSink dataSink = null;
+
+        try {
+            dataSink = dataSinkService.getActiveFlowByName(input.flow().getName());
+            nextEgressAction = dataSink.getEgressAction();
+        } catch (MissingFlowException missingFlowException) {
+            if (input.flow().lastAction().getState() == ActionState.COMPLETE) {
+                // the flow has been turned off but we've already completed egress
+                nextEgressAction = null;
+            } else {
+                nextEgressAction = new ActionConfiguration(MISSING_FLOW_ACTION, ActionType.UNKNOWN, "");
+            }
+        }
 
         if (nextEgressAction == null || input.flow().hasFinalAction(nextEgressAction.getName())) {
-            Set<String> expectedAnnotations = dataSink.getExpectedAnnotations();
+            Set<String> expectedAnnotations = (dataSink == null) ? null : dataSink.getExpectedAnnotations();
             if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
                 Set<String> pendingAnnotations = input.deltaFile().getPendingAnnotations(expectedAnnotations);
                 input.flow().setPendingAnnotations(pendingAnnotations);
@@ -328,5 +340,4 @@ public class StateMachine {
 
         return joinEntry;
     }
-
 }

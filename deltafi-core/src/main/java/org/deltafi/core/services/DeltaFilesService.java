@@ -1268,7 +1268,6 @@ public class DeltaFilesService {
         OffsetDateTime now = OffsetDateTime.now(clock);
         Action action = flow.queueNewAction(MISSING_FLOW_ACTION, ActionType.UNKNOWN, false, now);
         processErrorEvent(deltaFile, flow, action, buildMissingFlowErrorEvent(deltaFile, now, missingFlowException));
-        deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFileCacheService.save(deltaFile);
     }
 
@@ -1638,6 +1637,7 @@ public class DeltaFilesService {
                             StringWriter stackWriter = new StringWriter();
                             e.printStackTrace(new PrintWriter(stackWriter));
                             log.error("Exception processing incoming action event: \n{}\n{}", e.getMessage(), stackWriter);
+                            deltaFileCacheService.remove(event.getDid());
                             break;
                         }
                     }
