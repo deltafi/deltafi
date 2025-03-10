@@ -301,48 +301,38 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    @Transactional
     public int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, int batchSize) {
         if (createdBefore == null && completedBefore == null) return 0;
 
-        StringBuilder queryBuilder = new StringBuilder("SELECT did FROM delta_files WHERE content_deleted IS NOT NULL");
-        Map<String, Object> parameters = new HashMap<>();
+        StringBuilder conditions = new StringBuilder(" content_deleted IS NOT NULL ");
+        List<Object> params = new ArrayList<>();
 
         if (createdBefore != null) {
-            queryBuilder.append(" AND created < :createdBefore");
-            parameters.put("createdBefore", createdBefore);
+            conditions.append(" AND created < ?");
+            params.add(createdBefore);
         }
         if (completedBefore != null) {
-            queryBuilder.append(" AND modified < :completedBefore AND terminal = true");
-            parameters.put("completedBefore", completedBefore);
+            conditions.append(" AND modified < ? AND terminal = true");
+            params.add(completedBefore);
         }
         if (flow != null) {
-            queryBuilder.append(" AND data_source = :flow");
-            parameters.put("flow", flow);
+            conditions.append(" AND data_source = ?");
+            params.add(flow);
         }
         if (minBytes > 0L) {
-            queryBuilder.append(" AND total_bytes >= :minBytes");
-            parameters.put("minBytes", minBytes);
+            conditions.append(" AND total_bytes >= ?");
+            params.add(minBytes);
         }
-        queryBuilder.append(" LIMIT :batchSize");
-        parameters.put("batchSize", batchSize);
 
-        Query selectQuery = entityManager.createNativeQuery(queryBuilder.toString());
-        parameters.forEach(selectQuery::setParameter);
+        String deleteFilesSql = "WITH batch AS ( " +
+                " SELECT did FROM delta_files " +
+                " WHERE " + conditions + " " +
+                " LIMIT " + batchSize +
+                ") " +
+                "DELETE FROM delta_files " +
+                "WHERE did IN (SELECT did FROM batch)";
 
-        @SuppressWarnings("unchecked")
-        List<UUID> ids = selectQuery.getResultList();
-        if (ids.isEmpty()) return 0;
-
-        List<Object[]> batchParams = ids.stream()
-                .map(id -> new Object[] { id })
-                .toList();
-
-        jdbcTemplate.batchUpdate("DELETE FROM delta_file_flows WHERE delta_file_id = ?", batchParams);
-        jdbcTemplate.batchUpdate("DELETE FROM annotations WHERE delta_file_id = ?", batchParams);
-        jdbcTemplate.batchUpdate("DELETE FROM delta_files WHERE did = ?", batchParams);
-
-        return ids.size();
+        return jdbcTemplate.update(deleteFilesSql, params.toArray());
     }
 
     @Override
@@ -961,8 +951,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         List<Object[]> params = dids.stream()
                 .map(did -> new Object[] { did })
                 .toList();
-        jdbcTemplate.batchUpdate("DELETE FROM delta_file_flows WHERE delta_file_id = ?", params);
-        jdbcTemplate.batchUpdate("DELETE FROM annotations WHERE delta_file_id = ?", params);
         jdbcTemplate.batchUpdate("DELETE FROM delta_files WHERE did = ?", params);
     }
 

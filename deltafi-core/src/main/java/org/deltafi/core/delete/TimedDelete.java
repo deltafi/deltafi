@@ -47,10 +47,10 @@ public class TimedDelete extends DeletePolicyWorker {
         flow = policy.getFlow();
     }
 
-    public boolean run() {
+    public boolean run(int batchSize) {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime createdBefore = afterCreate == null ? null : now.minus(afterCreate);
         OffsetDateTime completedBefore = afterComplete == null ? null : now.minus(afterComplete);
-        return deltaFilesService.timedDelete(createdBefore, completedBefore, minBytes, flow, name, deleteMetadata);
+        return deltaFilesService.timedDelete(createdBefore, completedBefore, minBytes, flow, name, deleteMetadata, batchSize);
     }
 }

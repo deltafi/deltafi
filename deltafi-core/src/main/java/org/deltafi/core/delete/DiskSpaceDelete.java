@@ -41,7 +41,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
         this.flow = policy.getFlow();
     }
 
-    public boolean run() {
+    public boolean run(int batchSize) {
         DiskMetrics contentMetrics = null;
         try {
             contentMetrics = diskSpaceService.contentMetrics();
@@ -56,33 +56,32 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
         log.info("Disk delete policy for {} executing: current used = {}%, maximum = {}%", flow == null ? "all flows" : flow, String.format("%.2f", contentMetrics.percentUsed()), maxPercent);
         long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
         log.info("Deleting up to {} bytes", bytesToDelete);
-        while (bytesToDelete > 0) {
-            List<DeltaFileDeleteDTO> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name);
+        List<DeltaFileDeleteDTO> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name, batchSize);
 
-            long bytesDeleted = deleted.stream().map(DeltaFileDeleteDTO::getTotalBytes).reduce(0L, Long::sum);
-            bytesToDelete -= bytesDeleted;
+        long bytesDeleted = deleted.stream().map(DeltaFileDeleteDTO::getTotalBytes).reduce(0L, Long::sum);
+        bytesToDelete -= bytesDeleted;
 
-            if (deleted.isEmpty()) {
-                log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
-                return false;
-            }
+        if (deleted.isEmpty()) {
+            log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
+            return false;
+        }
 
-            log.info("Deleted batch of {} files, {} bytes. Remaining: {} bytes", deleted.size(), bytesDeleted, Math.max(0, bytesToDelete));
+        log.info("Deleted batch of {} files, {} bytes. Remaining: {} bytes", deleted.size(), bytesDeleted, Math.max(0, bytesToDelete));
 
-            if (bytesToDelete > 0) {
-                try {
-                    contentMetrics = diskSpaceService.contentMetrics();
-                    if (contentMetrics.percentUsed() <= maxPercent) {
-                        log.info("Disk space delete batching stopped early due to disk usage below threshold.");
-                        break;
-                    }
-                } catch (StorageCheckException ignored) {
-                    // if the API is unreachable, continue deleting as planned
+        if (bytesToDelete > 0) {
+            try {
+                contentMetrics = diskSpaceService.contentMetrics();
+                if (contentMetrics.percentUsed() <= maxPercent) {
+                    log.info("Disk space delete batching stopped early due to disk usage below threshold.");
+                    return false;
                 }
+
+                return true;
+            } catch (StorageCheckException ignored) {
+                return true;
             }
         }
 
-        // disk space delete always runs until no more files should be deleted
         return false;
     }
 }

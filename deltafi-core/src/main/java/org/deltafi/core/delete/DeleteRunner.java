@@ -33,6 +33,7 @@ public class DeleteRunner {
     private final DeltaFilesService deltaFilesService;
     private final DiskSpaceService diskSpaceService;
     private final DeletePolicyService deletePolicyService;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     public void runDeletes() {
         // refresh policies places disk delete policies first
@@ -40,16 +41,21 @@ public class DeleteRunner {
         // timed policies only run the first batch and return true if there's more to be deleted
         // instead of running timed policy batches back-to-back, recheck disk policies first
         // so that timed policies don't loop and block while disk is filling
-        List<DeletePolicyWorker> policiesScheduled = refreshPolicies();
-        boolean rerun = true;
-        while(rerun) {
+        boolean rerun;
+        do {
+            // run this inside the loop in case policies change while deletes are running
+            List<DeletePolicyWorker> policiesScheduled = refreshPolicies();
             rerun = false;
             for (DeletePolicyWorker policy : policiesScheduled) {
-                if (policy.run()) {
+                if (policy.run(deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize())) {
                     rerun = true;
                 }
+                if (rerun && policy instanceof DiskSpaceDelete) {
+                    // disk needs attention, stop running other policies, restart the outer loop
+                    break;
+                }
             }
-        }
+        } while (rerun);
     }
 
     public List<DeletePolicyWorker> refreshPolicies() {

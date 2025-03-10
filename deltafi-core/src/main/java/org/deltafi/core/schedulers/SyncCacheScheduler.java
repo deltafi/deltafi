@@ -19,7 +19,6 @@ package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.services.DeltaFileCacheService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

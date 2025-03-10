@@ -1294,36 +1294,35 @@ public class DeltaFilesService {
      * @param  flow            the dataSource of the DeltaFiles to be deleted
      * @param  policy          the policy of the DeltaFiles to be deleted
      * @param  deleteMetadata  whether to delete the metadata of the DeltaFiles in addition to the content
+     * @param batchSize        maximum size of the batch to delete
      * @return                 true if there are more DeltaFiles to delete, false otherwise
      */
     public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow,
-            String policy, boolean deleteMetadata) {
-        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
-
+                               String policy, boolean deleteMetadata, int batchSize) {
         int alreadyDeleted = 0;
+
+        logBatch(batchSize, policy);
+
         if (deleteMetadata) {
-            boolean hasMore = true;
-            while (hasMore) {
-                int deletedInBatch = deltaFileRepo.deleteIfNoContent(createdBefore, completedBefore, minBytes, flow, batchSize);
-                hasMore = deletedInBatch == batchSize;
-                alreadyDeleted += deletedInBatch;
-            }
+            alreadyDeleted = deltaFileRepo.deleteIfNoContent(createdBefore, completedBefore, minBytes, flow, batchSize);
 
             if (alreadyDeleted > 0) {
                 log.info("Deleted {} deltaFiles with no content for policy {}", alreadyDeleted, policy);
             }
+            if (alreadyDeleted == batchSize) {
+                return true;
+            }
         }
-        logBatch(batchSize, policy);
-        List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes,
-                flow, deleteMetadata, policy.equals(TTL_SYSTEM_POLICY), batchSize);
+
+        List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(
+                createdBefore, completedBefore, minBytes, flow, deleteMetadata,
+                policy.equals(TTL_SYSTEM_POLICY), batchSize - alreadyDeleted);
         delete(deltaFiles, policy, deleteMetadata, alreadyDeleted);
 
         return deltaFiles.size() == batchSize;
     }
 
-    public List<DeltaFileDeleteDTO> diskSpaceDelete(long bytesToDelete, String flow, String policy) {
-        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
-
+    public List<DeltaFileDeleteDTO> diskSpaceDelete(long bytesToDelete, String flow, String policy, int batchSize) {
         logBatch(batchSize, policy);
         return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize), policy, false, 0);
     }

@@ -28,6 +28,8 @@ public abstract class DeletePolicyWorker {
     protected final String name;
 
     /** Run the policy
-     * @return whether more files need to be deleted  */
-    public abstract boolean run();
+     * @param batchSize maximum number of deltaFiles to delete
+     * @return whether more files need to be deleted
+     * */
+    public abstract boolean run(int batchSize);
 }

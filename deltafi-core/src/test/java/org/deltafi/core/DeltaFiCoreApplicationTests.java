@@ -4632,7 +4632,7 @@ class DeltaFiCoreApplicationTests {
 		}
 		deltaFileRepo.insertBatch(deltaFiles);
 		assertEquals(1500, deltaFileRepo.count());
-		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
+		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now(), null, 0L, null, "policyName", true, 1000);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 10000).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);
@@ -4681,7 +4681,7 @@ class DeltaFiCoreApplicationTests {
 		errorAcked.updateFlags();
 
 		deltaFileRepo.saveAll(List.of(error, complete, errorAcked));
-		deltaFilesService.diskSpaceDelete(500, null, "policyName");
+		deltaFilesService.diskSpaceDelete(500, null, "policyName", 1000);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 6).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);
@@ -4711,7 +4711,7 @@ class DeltaFiCoreApplicationTests {
 		contentDeleted.updateFlags();
 
 		deltaFileRepo.saveAll(List.of(complete, contentDeleted));
-		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(5), null, 0L, null, "policyName", true);
+		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(5), null, 0L, null, "policyName", true, 1000);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 1).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);

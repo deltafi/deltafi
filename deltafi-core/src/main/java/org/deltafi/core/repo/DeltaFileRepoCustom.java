@@ -87,8 +87,8 @@ public interface DeltaFileRepoCustom {
      * @param createdBefore if non-null find DeltaFiles created before this date
      * @param completedBefore if non-null find DeltaFiles in the completed stage that were last modified before this date
      * @param minBytes only delete deltaFiles greater than or equal to this size
-     * @param flow if non-null the DeltaFiles must have this flow set in the source info
-     * @param batchSize maximum number to delete
+     * @param flow if non-null the deltaFiles must have this flow set in the source info
+     * @param batchSize the maximum number of deltaFiles to delete
      * @return the number of rows deleted
      */
     int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, int batchSize);
