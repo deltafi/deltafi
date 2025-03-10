@@ -64,7 +64,13 @@ send_to_valkey() {
     local metric_value="$3"
     local timestamp="$4"
 
-    echo -e "AUTH ${VALKEY_PASSWORD}\nHSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}]\"" | nc -N "${VALKEY_HOST}" "${VALKEY_PORT}" >/dev/null
+    # Optional 5th param to store partition name
+    if [[ -n "$5" ]]; then
+        local partition="$5"
+        echo -e "AUTH ${VALKEY_PASSWORD}\nHSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}, \\\"${partition}\\\"]\"" | nc -N "${VALKEY_HOST}" "${VALKEY_PORT}" >/dev/null
+    else
+        echo -e "AUTH ${VALKEY_PASSWORD}\nHSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}]\"" | nc -N "${VALKEY_HOST}" "${VALKEY_PORT}" >/dev/null
+    fi
 }
 
 # CPU metrics
@@ -112,16 +118,96 @@ report_cpu_metrics() {
 }
 
 report_disk_metrics() {
-    LIMIT=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f2)
-    USAGE=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f3)
+    local TIMESTAMP
+    local base_usage base_limit base_part
+    if [[ -d /data/deltafi ]]; then
+        base_limit=$(df /data/deltafi -P -B 1 | tail -1 | awk '{print $2}')
+        base_usage=$(df /data/deltafi -P -B 1 | tail -1 | awk '{print $3}')
+        base_part=$(df /data/deltafi -P -B 1 | tail -1 | awk '{print $1}')
+    fi
+
+    local token_file="/var/run/secrets/kubernetes.io/serviceaccount/token"
+    local ca_file="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+
+    if [[ ! -f "$token_file" || ! -f "$ca_file" ]]; then
+        _debug "No Kubernetes token/CA found, skipping partition metrics for minio/postgres."
+        TIMESTAMP=$(date +%s)
+        metrics+="gauge.node.disk.usage;service=all;hostname=$NODE_NAME $base_usage $TIMESTAMP\n"
+        metrics+="gauge.node.disk.limit;service=all;hostname=$NODE_NAME $base_limit $TIMESTAMP\n"
+        return
+    fi
+
+    local token pods_json
+    token=$(cat "$token_file")
+    pods_json=$(curl -sS --cacert "$ca_file" -H "Authorization: Bearer $token" \
+      "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/pods?fieldSelector=spec.nodeName=${NODE_NAME}")
+
+    local has_minio has_postgres
+    if echo "$pods_json" | grep -q '"name":.*deltafi-minio' && [[ -d /data/deltafi/minio ]]; then
+        has_minio=true
+    fi
+    if echo "$pods_json" | grep -q '"name":.*deltafi-postgres' && [[ -d /data/deltafi/postgres ]]; then
+        has_postgres=true
+    fi
+
     TIMESTAMP=$(date +%s)
-    metrics+="gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP\n"
-    metrics+="gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP\n"
 
-    send_to_valkey "gauge.node.disk.usage" "$NODE_NAME" "$USAGE" "$TIMESTAMP"
-    send_to_valkey "gauge.node.disk.limit" "$NODE_NAME" "$LIMIT" "$TIMESTAMP"
+    local minio_usage minio_limit minio_part
+    if [[ $has_minio ]]; then
+        minio_limit=$(df /data/deltafi/minio -P -B 1 | tail -1 | awk '{print $2}')
+        minio_usage=$(df /data/deltafi/minio -P -B 1 | tail -1 | awk '{print $3}')
+        minio_part=$(df /data/deltafi/minio -P -B 1 | tail -1 | awk '{print $1}')
+    fi
 
-    _debug "$NODE_NAME: Using $USAGE of $LIMIT bytes on disk (/data)"
+    local pg_usage pg_limit pg_part
+    if [[ $has_postgres ]]; then
+        pg_limit=$(df /data/deltafi/postgres -P -B 1 | tail -1 | awk '{print $2}')
+        pg_usage=$(df /data/deltafi/postgres -P -B 1 | tail -1 | awk '{print $3}')
+        pg_part=$(df /data/deltafi/postgres -P -B 1 | tail -1 | awk '{print $1}')
+    fi
+
+    # Determine if any additional partition exists beyond the base (/data/deltafi)
+    local extra_partition=false
+    if [[ $has_minio && "$minio_part" != "$base_part" ]]; then
+        extra_partition=true
+    fi
+    if [[ $has_postgres && "$pg_part" != "$base_part" ]]; then
+        extra_partition=true
+    fi
+
+    # Base metric: if extra partitions exist, label as "other"; otherwise "all"
+    local base_service="all"
+    [[ "$extra_partition" == true ]] && base_service="other"
+    metrics+="gauge.node.disk.usage;service=${base_service};hostname=$NODE_NAME $base_usage $TIMESTAMP\n"
+    metrics+="gauge.node.disk.limit;service=${base_service};hostname=$NODE_NAME $base_limit $TIMESTAMP\n"
+
+    # Minio metric: add only if on a different partition than base.
+    if [[ $has_minio && "$minio_part" != "$base_part" ]]; then
+        local minio_service="minio"
+        if [[ $has_postgres && "$pg_part" == "$minio_part" ]]; then
+            minio_service="minio+postgres"
+        fi
+        metrics+="gauge.node.disk.usage;service=${minio_service};hostname=$NODE_NAME $minio_usage $TIMESTAMP\n"
+        metrics+="gauge.node.disk.limit;service=${minio_service};hostname=$NODE_NAME $minio_limit $TIMESTAMP\n"
+    fi
+
+    # Postgres metric: add only if on a different partition than base and not already grouped with minio.
+    if [[ $has_postgres && "$pg_part" != "$base_part" ]]; then
+        if ! ([[ $has_minio && "$pg_part" == "$minio_part" ]]); then
+            metrics+="gauge.node.disk.usage;service=postgres;hostname=$NODE_NAME $pg_usage $TIMESTAMP\n"
+            metrics+="gauge.node.disk.limit;service=postgres;hostname=$NODE_NAME $pg_limit $TIMESTAMP\n"
+        fi
+    fi
+
+    if [[ $has_minio ]]; then
+        send_to_valkey "gauge.node.disk-minio.usage" "$NODE_NAME" "$minio_usage" "$TIMESTAMP" "$minio_part"
+        send_to_valkey "gauge.node.disk-minio.limit" "$NODE_NAME" "$minio_limit" "$TIMESTAMP" "$minio_part"
+    fi
+
+    if [[ $has_postgres ]]; then
+        send_to_valkey "gauge.node.disk-postgres.usage" "$NODE_NAME" "$pg_usage" "$TIMESTAMP" "$pg_part"
+        send_to_valkey "gauge.node.disk-postgres.limit" "$NODE_NAME" "$pg_limit" "$TIMESTAMP" "$pg_part"
+    fi
 }
 
 report_memory_metrics() {

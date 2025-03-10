@@ -45,7 +45,9 @@ public class SystemService {
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule());
     private static final List<String> METRIC_KEYS = List.of("gauge.node.memory.usage", "gauge.node.memory.limit",
-            "gauge.node.disk.usage", "gauge.node.disk.limit", "gauge.node.cpu.usage", "gauge.node.cpu.limit");
+            "gauge.node.disk-minio.usage", "gauge.node.disk-minio.limit",
+            "gauge.node.disk-postgres.usage", "gauge.node.disk-postgres.limit",
+            "gauge.node.cpu.usage", "gauge.node.cpu.limit");
 
     private final PlatformService platformService;
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
@@ -99,7 +101,7 @@ public class SystemService {
             throw new StorageCheckException("Unable to get content storage metrics, received metrics " + allMetrics + ", searching for node " + minioNode);
         }
 
-        return minioMetrics.resources().get("disk");
+        return minioMetrics.resources().get("disk-minio");
     }
 
     public DiskMetrics contentNodeDiskMetrics() throws StorageCheckException {
@@ -122,7 +124,7 @@ public class SystemService {
 
     private DiskMetrics toDiskMetrics(NodeMetrics nodeMetrics) {
         if (hasValidDiskMetric(nodeMetrics)) {
-            Map<String, Long> diskResources = nodeMetrics.resources().get("disk");
+            Map<String, Long> diskResources = nodeMetrics.resources().get("disk-minio");
             return new DiskMetrics(diskResources.get("limit"), diskResources.get("usage"));
         }
 
@@ -146,7 +148,7 @@ public class SystemService {
             return false;
         }
 
-        Map<String, Long> values = nodeMetrics.resources().get("disk");
+        Map<String, Long> values = nodeMetrics.resources().get("disk-minio");
         if (values == null) {
             return false;
         }
@@ -170,12 +172,13 @@ public class SystemService {
             for (Map.Entry<String, String> valueHash : metricEntry.getValue().entrySet()) {
                 String hostname = valueHash.getKey();
                 NodeMetrics nodeMetric = nodeMetrics.computeIfAbsent(hostname, NodeMetrics::new);
-                List<Long> metrics = metricList(valueHash.getValue());
-                if (metrics.size() != 2 || isStale(metrics.getLast())) {
+                // contains 2 or 3 entries: value, timestamp[, partition]
+                List<Object> metrics = metricList(valueHash.getValue());
+                if (metrics.size() < 2 || isStale(((Number) metrics.get(1)).longValue())) {
                     continue;
                 }
 
-                nodeMetric.addMetric(resourceName, metricName, metrics.getFirst());
+                nodeMetric.addMetric(resourceName, metricName, ((Number) metrics.getFirst()).longValue());
             }
         }
         return nodeMetrics;
@@ -186,7 +189,7 @@ public class SystemService {
         return value == null || (System.currentTimeMillis() / 1000) - value > 60;
     }
 
-    private List<Long> metricList(String value) {
+    private List<Object> metricList(String value) {
         try {
             return MAPPER.readValue(value, new TypeReference<>() {});
         } catch (Exception e) {

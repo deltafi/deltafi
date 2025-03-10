@@ -266,7 +266,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage'), 'hostname'), true, true)"
+          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage'), 'hostname', 'service'), true, true)"
         }
       ],
       "type": "timeseries"

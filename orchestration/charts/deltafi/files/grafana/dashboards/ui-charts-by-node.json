@@ -650,7 +650,7 @@
           },
           "hide": false,
           "refId": "A",
-          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage', 'hostname=${hostName:regex}'), 'hostname'), true, true)"
+          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage', 'hostname=${hostName:regex}'), 'hostname', 'service'), true, true)"
         }
       ],
       "type": "timeseries"

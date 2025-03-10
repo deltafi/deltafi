@@ -2657,7 +2657,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage'), 'hostname'), true, true)"
+          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage'), 'hostname', 'service'), true, true)"
         }
       ],
       "title": "Disk utilization over time",
@@ -2740,7 +2740,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(sortByName(seriesByTag('name=~gauge.node.disk'), true, true), 'hostname')"
+          "target": "aliasByTags(sortByName(seriesByTag('name=~gauge.node.disk'), true, true), 'hostname', 'service')"
         }
       ],
       "transformations": [

@@ -50,7 +50,7 @@ public class StorageCheck extends StatusCheck {
         for (Map.Entry<String, DiskMetrics> entry : allDiskMetrics.entrySet()) {
             int used = entry.getValue().percentUsedFloor();
             if (used > threshold) {
-                errors.add("__" + entry.getKey() + ":/data__ is at __" + used + "%__");
+                errors.add("__" + entry.getKey() + ":/data/deltafi__ is at __" + used + "%__");
             }
         }
 

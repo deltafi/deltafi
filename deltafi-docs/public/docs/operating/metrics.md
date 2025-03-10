@@ -12,22 +12,22 @@ These metrics can be queried from the Graphite database or referenced by Grafana
 
 The following metrics are generated to the Graphite time-series database by default:
 
-| Name | Tags | Description |
-|------|------|-------------|
-| stats_counts.bytes_in | action, ingressFlow, source | Number of bytes ingressed by a flow (only produced on action='ingress') |
-| stats_counts.files_in | action, ingressFlow, source | Number of files ingressed by an action (action='ingress' provides the ingressed files) |
-| stats_counts.files_errored | action, ingressFlow, source | Number of files errored (action='ingress' provides the ingressed files) |
-| stats_counts.files_filtered | action, ingressFlow, source | Number of files filtered (action='ingress' provides the ingressed files) |
-| stats_counts.files_dropped | action, ingressFlow, source | Number of files dropped (action='ingress' provides the ingressed files) |
-| stats_counts.bytes_out | action, ingressFlow, source, dataSink, destination | Number of bytes egressed (only produced on action='egress') |
-| stats_counts.files_out | action, ingressFlow, source, dataSink, destination | Number of files egressed (only produced on action='egress') |
-| gauge.action_queue.queue_size | queue_name | An instantaneous gauge for the size of an action_queue (number of DeltaFiles waiting on the queue) |
-| gauge.node.disk.limit | hostname | An instantaneous gauge for the maximum aggregate storage limit on a node (bytes) |
-| gauge.node.disk.usage | hostname | An instantaneous gauge for current storage utilization on a node (bytes) |
-| stats_counts.survey.bytes | surveyFlow, surveyDirection | Number of bytes surveyed on a flow |
-| stats_counts.survey.files | surveyFlow, surveyDirection | Number of files surveyed on a flow |
-| stats_counts.survey.subflow.bytes | surveyFlow, surveySubflow, surveyDirection | Number of bytes surveyed on a subflow |
-| stats_counts.survey.subflow.files | surveyFlow, surveySubflow, surveyDirection | Number of files surveyed on a subflow |
+| Name                              | Tags                                               | Description                                                                                           |
+|-----------------------------------|----------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| stats_counts.bytes_in             | action, ingressFlow, source                        | Number of bytes ingressed by a flow (only produced on action='ingress')                               |
+| stats_counts.files_in             | action, ingressFlow, source                        | Number of files ingressed by an action (action='ingress' provides the ingressed files)                |
+| stats_counts.files_errored        | action, ingressFlow, source                        | Number of files errored (action='ingress' provides the ingressed files)                               |
+| stats_counts.files_filtered       | action, ingressFlow, source                        | Number of files filtered (action='ingress' provides the ingressed files)                              |
+| stats_counts.files_dropped        | action, ingressFlow, source                        | Number of files dropped (action='ingress' provides the ingressed files)                               |
+| stats_counts.bytes_out            | action, ingressFlow, source, dataSink, destination | Number of bytes egressed (only produced on action='egress')                                           |
+| stats_counts.files_out            | action, ingressFlow, source, dataSink, destination | Number of files egressed (only produced on action='egress')                                           |
+| gauge.action_queue.queue_size     | queue_name                                         | An instantaneous gauge for the size of an action_queue (number of DeltaFiles waiting on the queue)    |
+| gauge.node.disk.limit             | hostname, service                                  | An instantaneous gauge for the maximum aggregate storage limit per node and service partition (bytes) |
+| gauge.node.disk.usage             | hostname, service                                  | An instantaneous gauge for current storage utilization per node and service partition (bytes)                              |
+| stats_counts.survey.bytes         | surveyFlow, surveyDirection                        | Number of bytes surveyed on a flow                                                                    |
+| stats_counts.survey.files         | surveyFlow, surveyDirection                        | Number of files surveyed on a flow                                                                    |
+| stats_counts.survey.subflow.bytes | surveyFlow, surveySubflow, surveyDirection         | Number of bytes surveyed on a subflow                                                                 |
+| stats_counts.survey.subflow.files | surveyFlow, surveySubflow, surveyDirection         | Number of files surveyed on a subflow                                                                 |
 
 ## Custom Metrics in Action Kits
 
