@@ -812,7 +812,7 @@ shell() {
 }
 
 _kind_deltafi() {
-  docker exec -i -u="$(id -u):$(id -g)" ${CLUSTER_NAME}-control-plane bash <<EOF
+  docker exec -i -u="$(id -u):$(id -g)" -e DELTAFI_MODE=CLUSTER ${CLUSTER_NAME}-control-plane bash <<EOF
 cd /usr/dev
 TERM=screen-256color deltafi $@ 2>&1
 EOF
