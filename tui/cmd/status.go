@@ -39,14 +39,27 @@ var statusCmd = &cobra.Command{
 	Long:    `Display current health and status for DeltaFi system`,
 	GroupID: "orchestration",
 	Run: func(cmd *cobra.Command, args []string) {
+		watch, _ := cmd.Flags().GetBool("watch")
+		status := NewStatusCommand(watch)
 
-		runProgram(NewStatusCommand())
+		if watch {
+			runProgram(status)
+		} else {
+			client := app.GetInstance().GetAPIClient()
+			var result api.StatusResponse
+			err := client.Get("/api/v2/status", &result, nil)
+			if err != nil {
+				cmd.PrintErrf("Error fetching status: %v\n", err)
+				return
+			}
+			cmd.Print(status.renderStatus(result))
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
-	versionsCmd.Flags().BoolP("follow", "f", false, "Get status updates continuously")
+	statusCmd.Flags().BoolP("watch", "w", false, "Watch status updates continuously")
 
 	// Here you will define your flags and configuration settings.
 
@@ -63,41 +76,52 @@ type tickMsg time.Time
 
 type StatusCommand struct {
 	BaseCommand
-	status     api.StatusResponse
-	spinner    spinner.Model
-	points     string
-	width      int
-	height     int
-	ready      bool
-	lastUpdate time.Time
-	renderer   *glamour.TermRenderer
-	loading    bool
+	status      api.StatusResponse
+	spinner     spinner.Model
+	points      string
+	width       int
+	height      int
+	ready       bool
+	lastUpdate  time.Time
+	renderer    *glamour.TermRenderer
+	loading     bool
+	interactive bool
 }
 
 var (
-	// primaryBlue   = lipgloss.AdaptiveColor{Light: "#0366d6", Dark: "#58a6ff"}
-	// secondaryBlue = lipgloss.AdaptiveColor{Light: "#0969da", Dark: "#79c0ff"}
-
-	iconColumn   = lipgloss.NewStyle().Width(2).Align(lipgloss.Center)
-	messageStyle = lipgloss.NewStyle().
-			MarginLeft(4).
-			Foreground(styles.Crust)
-
+	iconColumn     = lipgloss.NewStyle().Width(2).Align(lipgloss.Center)
 	updateInterval = time.Second
 )
 
-func NewStatusCommand() *StatusCommand {
+func NewStatusCommand(interactive bool) *StatusCommand {
 	RequireRunningDeltaFi()
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
-	return &StatusCommand{
+	cmd := &StatusCommand{
 		BaseCommand: NewBaseCommand(),
 		spinner:     s,
 		loading:     true,
 		points:      "⋅",
+		interactive: interactive,
 	}
+
+	// Initialize renderer for both interactive and non-interactive modes
+	style, err := cmd.getMarkdownStyle()
+	if err == nil {
+		width := 80
+		if !interactive {
+			width = 80
+		}
+		r, _ := glamour.NewTermRenderer(
+			glamour.WithStylesFromJSONBytes([]byte(style)),
+			glamour.WithWordWrap(width),
+		)
+		cmd.renderer = r
+	}
+
+	return cmd
 }
 
 func (c *StatusCommand) waitThenFetch() tea.Cmd {
@@ -107,6 +131,9 @@ func (c *StatusCommand) waitThenFetch() tea.Cmd {
 }
 
 func (c *StatusCommand) Init() tea.Cmd {
+	if !c.interactive {
+		return nil
+	}
 	return tea.Batch(
 		tea.EnterAltScreen,
 		c.spinner.Tick,
@@ -120,22 +147,31 @@ func (c *StatusCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.width = msg.Width
 		c.height = msg.Height
 		c.ready = true
-
-		// Initialize or reinitialize glamour renderer with new width
-		r, _ := glamour.NewTermRenderer(
-			glamour.WithAutoStyle(),
-			glamour.WithWordWrap(max(c.width-8, 20)), // Account for borders and minimum width
-		)
-		c.renderer = r
+		style, err := c.getMarkdownStyle()
+		if err == nil {
+			r, _ := glamour.NewTermRenderer(
+				glamour.WithStylesFromJSONBytes([]byte(style)),
+				glamour.WithWordWrap(max(c.width-8, 20)),
+			)
+			c.renderer = r
+		}
 
 	case tea.KeyMsg:
+		if msg.Type == tea.KeyCtrlC || msg.Type == tea.KeyEsc {
+			c.interactive = false // Prevent final render
+			return c, tea.Batch(
+				tea.ExitAltScreen,
+				tea.Quit,
+			)
+		}
 		if handled, cmd := c.HandleKeyMsg(msg); handled {
-			return c, tea.Batch(cmd, tea.ExitAltScreen)
+			c.interactive = false // Prevent final render
+			return c, tea.Batch(cmd, tea.ExitAltScreen, tea.Quit)
 		}
 
 	case spinner.TickMsg:
-		var cmd tea.Cmd
 		if c.loading {
+			var cmd tea.Cmd
 			c.spinner, cmd = c.spinner.Update(msg)
 			return c, cmd
 		}
@@ -156,7 +192,6 @@ func (c *StatusCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.status = msg
 		c.loading = false
 		c.lastUpdate = time.Now()
-		// Update points spinner
 		c.points = nextPoints(c.points)
 		return c, c.waitThenFetch()
 	}
@@ -164,18 +199,90 @@ func (c *StatusCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, nil
 }
 
-func (c *StatusCommand) renderMarkdown(text string) string {
-	if c.renderer == nil {
-		return text
+func (c *StatusCommand) getStatusStyle(color string) lipgloss.Style {
+	style := lipgloss.NewStyle().Bold(true)
+	switch color {
+	case "green":
+		return style.Foreground(styles.SuccessStyle.GetForeground())
+	case "yellow":
+		return style.Foreground(styles.WarningStyle.GetForeground())
+	case "red":
+		return style.Foreground(styles.ErrorStyle.GetForeground())
+	default:
+		return style
 	}
-	rendered, err := c.renderer.Render(text)
-	if err != nil {
-		return text
+}
+
+func (c *StatusCommand) getStatusIcon(code int) string {
+	switch code {
+	case 0:
+		return "✓"
+	case 1:
+		return "!"
+	case 2:
+		return "✗"
+	default:
+		return "•"
 	}
-	return strings.TrimSpace(rendered)
+}
+
+func (c *StatusCommand) getIconStyle(code int) lipgloss.Style {
+	style := lipgloss.NewStyle()
+	switch code {
+	case 0:
+		return style.Foreground(styles.SuccessStyle.GetForeground())
+	case 1:
+		return style.Foreground(styles.WarningStyle.GetForeground())
+	case 2:
+		return style.Foreground(styles.ErrorStyle.GetForeground())
+	default:
+		return style.Foreground(styles.Blue)
+	}
+}
+
+func (c *StatusCommand) renderStatus(status api.StatusResponse) string {
+	var sb strings.Builder
+
+	// Title and overall status
+	titleStyle := lipgloss.NewStyle().
+		Foreground(styles.Blue).
+		Bold(true)
+
+	sb.WriteString(titleStyle.Render("DeltaFi System Status"))
+	sb.WriteString("\n")
+
+	// Status state with color
+	stateStyle := c.getStatusStyle(status.Status.Color)
+	sb.WriteString(stateStyle.Render(status.Status.State))
+	sb.WriteString("\n\n")
+
+	// Status checks
+	for _, check := range status.Status.Checks {
+		iconStyle := c.getIconStyle(check.Code)
+		icon := c.getStatusIcon(check.Code)
+
+		// Render check with icon
+		checkLine := lipgloss.JoinHorizontal(lipgloss.Left,
+			iconColumn.Render(iconStyle.Render(icon)),
+			check.Description,
+		)
+		sb.WriteString(checkLine)
+		sb.WriteString("\n")
+
+		if check.Message != "" {
+			sb.WriteString(c.renderMarkdown(check.Message))
+			sb.WriteString("\n")
+		}
+	}
+
+	return sb.String()
 }
 
 func (c *StatusCommand) View() string {
+	if !c.interactive {
+		return ""
+	}
+
 	if !c.ready {
 		return "\n  Initializing..."
 	}
@@ -184,12 +291,7 @@ func (c *StatusCommand) View() string {
 		return c.spinner.View() + " Loading..."
 	}
 
-	// if c.err != nil {
-	// 	return components.NewErrorBox("Status Error", c.err.Error()).Render()
-	// }
-
-	// Calculate available width for content
-	contentWidth := max(c.width-4, 20) // Minimum 20 columns
+	contentWidth := max(c.width-4, 20)
 
 	mainStyle := lipgloss.NewStyle().
 		Width(c.width).
@@ -205,12 +307,7 @@ func (c *StatusCommand) View() string {
 	titleStyle := lipgloss.NewStyle().
 		Foreground(styles.Blue).
 		Bold(true).
-		Width(contentWidth - 2). // Account for padding
-		Align(lipgloss.Center)
-
-	stateStyle := lipgloss.NewStyle().
-		Bold(true).
-		Width(contentWidth - 2). // Account for padding
+		Width(contentWidth - 2).
 		Align(lipgloss.Center)
 
 	spinnerStyle := lipgloss.NewStyle().
@@ -218,14 +315,9 @@ func (c *StatusCommand) View() string {
 		Align(lipgloss.Right).
 		Width(contentWidth - 2)
 
-	switch c.status.Status.Color {
-	case "green":
-		stateStyle = styles.SuccessStyle
-	case "yellow":
-		stateStyle = styles.WarningStyle
-	case "red":
-		stateStyle = styles.ErrorStyle
-	}
+	stateStyle := c.getStatusStyle(c.status.Status.Color).
+		Width(contentWidth - 2).
+		Align(lipgloss.Center)
 
 	header := lipgloss.JoinVertical(lipgloss.Center,
 		spinnerStyle.Render(c.points),
@@ -236,52 +328,26 @@ func (c *StatusCommand) View() string {
 
 	var checks []string
 	for _, check := range c.status.Status.Checks {
-		style := lipgloss.NewStyle()
+		iconStyle := c.getIconStyle(check.Code)
 		icon := c.getStatusIcon(check.Code)
 
-		switch check.Code {
-		case 0:
-			style = styles.SuccessStyle
-		case 1:
-			style = styles.WarningStyle
-		case 2:
-			style = styles.ErrorStyle
-		}
-
-		// Render the description with the icon
 		checkLine := lipgloss.JoinHorizontal(lipgloss.Left,
-			iconColumn.Render(style.Render(icon)),
-			c.renderMarkdown(check.Description),
+			iconColumn.Render(iconStyle.Render(icon)),
+			check.Description,
 		)
 		checks = append(checks, checkLine)
 
-		// Add message on a new line if present
 		if check.Message != "" {
-			checks = append(checks, messageStyle.Render(check.Message))
+			checks = append(checks, c.renderMarkdown(check.Message))
 		}
 	}
 
-	content := lipgloss.JoinVertical(lipgloss.Left,
+	content := lipgloss.JoinVertical(lipgloss.Center,
 		header,
 		lipgloss.JoinVertical(lipgloss.Left, checks...),
 	)
 
-	return mainStyle.Render(
-		contentStyle.Render(content),
-	)
-}
-
-func (c *StatusCommand) getStatusIcon(code int) string {
-	switch code {
-	case 0:
-		return "✓"
-	case 1:
-		return "!"
-	case 2:
-		return "✗"
-	default:
-		return "•"
-	}
+	return mainStyle.Render(contentStyle.Render(content))
 }
 
 func (c *StatusCommand) fetchStatus() tea.Msg {
@@ -312,4 +378,116 @@ func nextPoints(current string) string {
 	default:
 		return "⋅"
 	}
+}
+
+func (c *StatusCommand) renderMarkdown(text string) string {
+	var r *glamour.TermRenderer
+	var err error
+
+	style, err := c.getMarkdownStyle()
+	if err != nil {
+		return text
+	}
+
+	if c.renderer == nil {
+		// For non-interactive mode
+		r, err = glamour.NewTermRenderer(
+			glamour.WithStylesFromJSONBytes([]byte(style)),
+			glamour.WithWordWrap(80),
+		)
+		if err != nil {
+			return text
+		}
+	} else {
+		r = c.renderer
+	}
+
+	rendered, err := r.Render(text)
+	if err != nil {
+		return text
+	}
+
+	// Clean up the rendered text
+	rendered = strings.TrimSpace(rendered)
+	rendered = strings.ReplaceAll(rendered, "\n\n", "\n")
+
+	// If this is non-interactive mode, add padding for alignment
+	if !c.interactive {
+		lines := strings.Split(rendered, "\n")
+		for i, line := range lines {
+			if i > 0 { // Don't pad the first line since it comes after the icon
+				lines[i] = "  " + line
+			}
+		}
+		rendered = strings.Join(lines, "\n")
+	}
+
+	return rendered
+}
+
+func (c *StatusCommand) getMarkdownStyle() (string, error) {
+	return `{
+		"document": {
+			"margin": 4,
+			"color": "39"
+		},
+		"block_quote": {
+			"indent": 2,
+			"indent_token": "│ "
+		},
+		"paragraph": {
+		    "indent": 0,
+			"color": "8",
+			"margin": 0
+		},
+		"list": {
+			"margin": 0,
+			"level_indent": 2
+		},
+		"heading": {
+			"block_suffix": "",
+			"margin": 2,
+			"level_1": {
+				"bold": true,
+				"color": "39",
+				"prefix": "",
+				"suffix": ""
+			},
+			"level_2": {
+				"bold": true,
+				"color": "39",
+				"prefix": "",
+				"suffix": ""
+			},
+			"level_3": {
+				"bold": true,
+				"color": "39",
+				"prefix": "",
+				"suffix": ""
+			},
+			"level_4": {
+				"bold": true,
+				"color": "39",
+				"prefix": "",
+				"suffix": ""
+			}
+		},
+		"code_block": {
+			"margin": 0,
+			"theme": "dracula"
+		},
+		"code": {
+			"color": "203"
+		},
+		"bold": {
+			"bold": true
+		},
+		"italic": {
+			"italic": true
+		},
+		"link": {
+			"color": "39",
+			"underline": true
+		}
+	}`, nil
 }
