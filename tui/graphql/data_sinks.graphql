@@ -1,0 +1,130 @@
+# Get all flows
+query ListDataSinks {
+  getAllFlows {
+    dataSink {
+      name
+      flowStatus {
+        state
+        testMode
+      }
+    }
+  }
+}
+
+# Get a specific data sink flow
+query GetDataSink($flowName: String!) {
+  getDataSink(flowName: $flowName) {
+    name
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    flowStatus {
+      state
+      testMode
+    }
+    subscribe {
+      topic
+      condition
+    }
+    expectedAnnotations
+    egressAction {
+      name
+      type
+      parameters
+    }
+    variables {
+      name
+      description
+      dataType
+      required
+      defaultValue
+      value
+      masked
+    }
+  }
+}
+
+# Validate a data sink flow
+query ValidateDataSink($flowName: String!) {
+  validateDataSink(flowName: $flowName) {
+    name
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    flowStatus {
+      state
+      testMode
+    }
+    subscribe {
+      topic
+      condition
+    }
+    expectedAnnotations
+    egressAction {
+      name
+      type
+      parameters
+    }
+    variables {
+      name
+      description
+      dataType
+      required
+      defaultValue
+      value
+      masked
+    }
+  }
+}
+
+# Save a data sink flow
+mutation SaveDataSink($dataSinkPlan: DataSinkPlanInput!) {
+  saveDataSinkPlan(dataSinkPlan: $dataSinkPlan) {
+    name
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    flowStatus {
+      state
+      testMode
+    }
+    subscribe {
+      topic
+      condition
+    }
+    expectedAnnotations
+    egressAction {
+      name
+      type
+      parameters
+    }
+    variables {
+      name
+      description
+      dataType
+      required
+      defaultValue
+      value
+      masked
+    }
+  }
+}
+
+# Enable test mode for a data sink flow
+mutation EnableDataSinkTestMode($flowName: String!) {
+  enableDataSinkTestMode(flowName: $flowName)
+}
+
+# Disable test mode for a data sink flow
+mutation DisableDataSinkTestMode($flowName: String!) {
+  disableDataSinkTestMode(flowName: $flowName)
+} 

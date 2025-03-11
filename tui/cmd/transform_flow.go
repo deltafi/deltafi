@@ -19,11 +19,12 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
+
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/spf13/cobra"
-	"sort"
-	"strconv"
 )
 
 var transformCmd = &cobra.Command{
@@ -98,26 +99,66 @@ var validateTransformCmd = &cobra.Command{
 }
 
 var startTransformFlow = &cobra.Command{
-	Use:               "start",
-	Short:             "Start a transform flow",
-	Long:              `Start a transform flow with the given name.`,
-	Args:              cobra.MinimumNArgs(1),
+	Use:   "start [flowNames...]",
+	Short: "Start transform flows",
+	Long: `Start one or more transform flows with the given names.
+If --all is specified, starts all transform flows, ignoring any explicitly listed flows.`,
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
-		return startFlow(graphql.FlowTypeTransform, args[0])
+		all, _ := cmd.Flags().GetBool("all")
+
+		if all {
+			names, err := fetchRemoteTransformNames()
+			if err != nil {
+				return wrapInError("Error fetching transform names", err)
+			}
+			args = names
+		} else if len(args) == 0 {
+			return fmt.Errorf("at least one flow name must be specified when --all is not used")
+		}
+
+		var lastErr error
+		for _, flowName := range args {
+			err := startFlow(graphql.FlowTypeTransform, flowName)
+			if err != nil {
+				fmt.Printf("Error starting transform flow %s: %v\n", flowName, err)
+				lastErr = err
+			}
+		}
+		return lastErr
 	},
 }
 
 var stopTransformFlow = &cobra.Command{
-	Use:               "stop",
-	Short:             "Stop a transform flow",
-	Long:              `Stop a transform flow with the given name.`,
-	Args:              cobra.MinimumNArgs(1),
+	Use:   "stop [flowNames...]",
+	Short: "Stop transform flows",
+	Long: `Stop one or more transform flows with the given names.
+If --all is specified, stops all transform flows, ignoring any explicitly listed flows.`,
 	ValidArgsFunction: getTransformNames,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
-		return stopFlow(graphql.FlowTypeTransform, args[0])
+		all, _ := cmd.Flags().GetBool("all")
+
+		if all {
+			names, err := fetchRemoteTransformNames()
+			if err != nil {
+				return wrapInError("Error fetching transform names", err)
+			}
+			args = names
+		} else if len(args) == 0 {
+			return fmt.Errorf("at least one flow name must be specified when --all is not used")
+		}
+
+		var lastErr error
+		for _, flowName := range args {
+			err := stopFlow(graphql.FlowTypeTransform, flowName)
+			if err != nil {
+				fmt.Printf("Error stopping transform flow %s: %v\n", flowName, err)
+				lastErr = err
+			}
+		}
+		return lastErr
 	},
 }
 
@@ -261,6 +302,9 @@ func init() {
 	setTestMode.Flags().BoolP("enable", "y", false, "Turn on test mode")
 	setTestMode.Flags().BoolP("disable", "n", false, "Turn off test mode")
 	setTestMode.MarkFlagsMutuallyExclusive("enable", "disable")
+
+	startTransformFlow.Flags().Bool("all", false, "Start all transform flows")
+	stopTransformFlow.Flags().Bool("all", false, "Stop all transform flows")
 
 	AddFormatFlag(getTransformFlow, validateTransformCmd)
 	AddLoadFlags(loadTransformFlow)

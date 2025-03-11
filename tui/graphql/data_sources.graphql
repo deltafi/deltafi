@@ -1,0 +1,147 @@
+# Get all flows
+query ListDataSources {
+  getAllFlows {
+    restDataSource {
+      name
+      flowStatus {
+        state
+        testMode
+      }
+    }
+    timedDataSource {
+      name
+      flowStatus {
+        state
+        testMode
+      }
+    }
+  }
+}
+
+# Get a specific REST data source flow
+query GetRestDataSource($name: String!) {
+  getRestDataSource(name: $name) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    maxErrors
+    flowStatus {
+      state
+      testMode
+    }
+    topic
+  }
+}
+
+# Get a specific timed data source flow
+query GetTimedDataSource($name: String!) {
+  getTimedDataSource(name: $name) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    maxErrors
+    flowStatus {
+      state
+      testMode
+    }
+    topic
+    cronSchedule
+    lastRun
+    nextRun
+    memo
+    currentDid
+    executeImmediate
+    ingressStatus
+    ingressStatusMessage
+    timedIngressAction {
+      name
+      type
+      parameters
+    }
+    variables {
+      name
+      description
+      dataType
+      required
+      defaultValue
+      value
+      masked
+    }
+  }
+}
+
+# Save a REST data source flow
+mutation SaveRestDataSource($dataSourcePlan: RestDataSourcePlanInput!) {
+  saveRestDataSourcePlan(dataSourcePlan: $dataSourcePlan) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    maxErrors
+    flowStatus {
+      state
+      testMode
+    }
+    topic
+  }
+}
+
+# Save a timed data source flow
+mutation SaveTimedDataSource($dataSourcePlan: TimedDataSourcePlanInput!) {
+  saveTimedDataSourcePlan(dataSourcePlan: $dataSourcePlan) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    maxErrors
+    flowStatus {
+      state
+      testMode
+    }
+    topic
+    cronSchedule
+    timedIngressAction {
+      name
+      type
+      parameters
+    }
+  }
+}
+
+# Enable test mode for a REST data source flow
+mutation EnableRestDataSourceTestMode($name: String!) {
+  enableRestDataSourceTestMode(name: $name)
+}
+
+# Enable test mode for a timed data source flow
+mutation EnableTimedDataSourceTestMode($name: String!) {
+  enableTimedDataSourceTestMode(name: $name)
+}
+
+# Disable test mode for a REST data source flow
+mutation DisableRestDataSourceTestMode($name: String!) {
+  disableRestDataSourceTestMode(name: $name)
+}
+
+# Disable test mode for a timed data source flow
+mutation DisableTimedDataSourceTestMode($name: String!) {
+  disableTimedDataSourceTestMode(name: $name)
+} 

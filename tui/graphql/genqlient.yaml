@@ -1,11 +1,15 @@
 # Default genqlient config; for full documentation see:
 # https://github.com/Khan/genqlient/blob/main/docs/genqlient.yaml
 schema:
-- schema/*.graphql
+- ./schema/deltafi.graphql
+- ./schema/*.graphql
 operations:
 - plugin.graphql
 - transforms.graphql
 - flow_controls.graphql
+- data_sources.graphql
+- data_sinks.graphql
+- flow_graph.graphql
 generated: generated.go
 client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
 context_type: "-"

@@ -1,0 +1,50 @@
+# @genqlient
+query GetFlowGraph {
+  getFlows {
+    restDataSources {
+      name
+      type
+      flowStatus {
+        state
+        testMode
+      }
+      topic
+    }
+    timedDataSources {
+      name
+      type
+      flowStatus {
+        state
+        testMode
+      }
+      topic
+    }
+    transformFlows {
+      name
+      flowStatus {
+        state
+        testMode
+      }
+      subscribe {
+        topic
+        condition
+      }
+      publish {
+        rules {
+          topic
+        }
+      }
+    }
+    dataSinks {
+      name
+      flowStatus {
+        state
+        testMode
+      }
+      subscribe {
+        topic
+        condition
+      }
+    }
+  }
+} 

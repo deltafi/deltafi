@@ -33,10 +33,7 @@ var destroyCmd = &cobra.Command{
 	SilenceErrors: true,
 	GroupID:       "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		RequireRunningDeltaFi()
-
 		return app.GetOrchestrator().Destroy(args)
-
 	},
 }
 
