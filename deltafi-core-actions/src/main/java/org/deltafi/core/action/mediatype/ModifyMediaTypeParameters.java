@@ -42,4 +42,8 @@ public class ModifyMediaTypeParameters extends ActionParameters {
     @JsonProperty(defaultValue = "true")
     @JsonPropertyDescription("Autodetect media type if not found in mediaTypeMap or indexMediaTypeMap.")
     private boolean autodetect = true;
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("If true, restrict autodetection by name only. Otherwise, detect by file content and name.")
+    private boolean autodetectByNameOnly = false;
 }

@@ -17,17 +17,10 @@
  */
 package org.deltafi.core.action.mediatype;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.Tika;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -38,11 +31,11 @@ import java.util.Map;
 
 @Component
 public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> {
-    private final TikaConfig tika = new TikaConfig();
-
-    public ModifyMediaType() throws TikaException, IOException {
+    public ModifyMediaType() {
         super("Modifies content media types.");
     }
+
+    private static final Tika TIKA = new Tika();
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull ModifyMediaTypeParameters params,
@@ -78,13 +71,14 @@ public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> 
             }
 
             if ((mediaType == null) && params.isAutodetect()) {
-                Metadata metadata = new Metadata();
-                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, content.getName());
-                try {
-                    mediaType = tika.getDetector().detect(
-                            TikaInputStream.get(content.loadInputStream()), metadata).toString();
-                } catch (IOException ignored) {
-                    // do not set the mediaType if there is an exception, but continue processing
+                if (params.isAutodetectByNameOnly()) {
+                    mediaType = TIKA.detect(content.getName());
+                } else {
+                    try {
+                        mediaType = TIKA.detect(content.loadInputStream(), content.getName());
+                    } catch (IOException ignored) {
+                        // do not set the mediaType if there is an exception, but continue processing
+                    }
                 }
             }
 

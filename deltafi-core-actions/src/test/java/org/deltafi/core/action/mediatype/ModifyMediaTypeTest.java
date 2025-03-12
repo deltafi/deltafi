@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.action.mediatype;
 
-import org.apache.tika.exception.TikaException;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
@@ -26,7 +25,6 @@ import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -37,9 +35,6 @@ class ModifyMediaTypeTest {
     ModifyMediaType action = new ModifyMediaType();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup("ModifyMediaTypeTest");
     ActionContext context = runner.actionContext();
-
-    ModifyMediaTypeTest() throws TikaException, IOException {
-    }
 
     @Test
     void modifiesMediaTypes() {
@@ -83,12 +78,13 @@ class ModifyMediaTypeTest {
     @Test
     void autodetectsMediaTypes() {
         TransformInput input = TransformInput.builder()
-                .content(runner.saveContentFromResource("foobar.tar", "foobar.zip", "thing1.txt", "stix1.xml"))
+                .content(runner.saveContentFromResource("foobar.tar", "foobar.zip", "thing1.txt", "stix1.xml", "unknown.abc"))
                 .build();
         input.getContent().get(0).setMediaType("application/data");
         input.getContent().get(1).setMediaType("application/data");
         input.getContent().get(2).setMediaType("*/*");
         input.getContent().get(3).setMediaType("text/xml");
+        input.getContent().get(4).setMediaType("*/*");
 
         TransformResultType result = action.transform(runner.actionContext(), new ModifyMediaTypeParameters(), input);
 
@@ -96,6 +92,30 @@ class ModifyMediaTypeTest {
                 .hasContentMatchingAt(0, input.content(0).getName(), "application/x-tar", input.content(0).loadBytes())
                 .hasContentMatchingAt(1, input.content(1).getName(), "application/zip", input.content(1).loadBytes())
                 .hasContentMatchingAt(2, input.content(2).getName(), "text/plain", input.content(2).loadBytes())
-                .hasContentMatchingAt(3, input.content(3).getName(), "application/xml", input.content(3).loadBytes());
+                .hasContentMatchingAt(3, input.content(3).getName(), "application/xml", input.content(3).loadBytes())
+                .hasContentMatchingAt(4, input.content(4).getName(), "text/plain", input.content(4).loadBytes());
+    }
+
+    @Test
+    void autodetectsMediaTypesByNameOnly() {
+        TransformInput input = TransformInput.builder()
+                .content(runner.saveContentFromResource("foobar.tar", "foobar.zip", "thing1.txt", "stix1.xml", "unknown.abc"))
+                .build();
+        input.getContent().get(0).setMediaType("application/data");
+        input.getContent().get(1).setMediaType("application/data");
+        input.getContent().get(2).setMediaType("*/*");
+        input.getContent().get(3).setMediaType("text/xml");
+        input.getContent().get(4).setMediaType("*/*");
+
+        ModifyMediaTypeParameters params = new ModifyMediaTypeParameters();
+        params.setAutodetectByNameOnly(true);
+        TransformResultType result = action.transform(runner.actionContext(), params, input);
+
+        TransformResultAssert.assertThat(result)
+                .hasContentMatchingAt(0, input.content(0).getName(), "application/x-tar", input.content(0).loadBytes())
+                .hasContentMatchingAt(1, input.content(1).getName(), "application/zip", input.content(1).loadBytes())
+                .hasContentMatchingAt(2, input.content(2).getName(), "text/plain", input.content(2).loadBytes())
+                .hasContentMatchingAt(3, input.content(3).getName(), "application/xml", input.content(3).loadBytes())
+                .hasContentMatchingAt(4, input.content(4).getName(), "application/octet-stream", input.content(4).loadBytes());
     }
 }
