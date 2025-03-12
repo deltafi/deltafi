@@ -117,7 +117,7 @@ services:
       - deltafi
     restart: unless-stopped
     volumes:
-      - ${DATA_DIR}:/data
+      - ${DATA_DIR}:/data/deltafi
       - /var/run/docker.sock:/var/run/docker.sock
   deltafi-file-ingress:
     image: ${DELTAFI_FILE_INGRESS}

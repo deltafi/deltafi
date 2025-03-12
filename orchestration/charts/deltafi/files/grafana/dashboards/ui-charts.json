@@ -48,9 +48,8 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 7,
+  "id": 3,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "datasource": {
@@ -157,11 +156,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -173,6 +173,7 @@
           "target": "aliasByTags(groupByTags(removeEmptySeries(seriesByTag('name=~gauge.app.memory')), 'sum', 'app'), 'app')"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -253,11 +254,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -269,6 +271,7 @@
           "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage'), 'hostname', 'service'), true, true)"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -374,11 +377,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -399,6 +403,7 @@
           "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.cpu.usage'), 'hostname'), true, true)"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -506,11 +511,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -522,6 +528,7 @@
           "target": "aliasByTags(groupByTags(removeEmptySeries(seriesByTag('name=~gauge.app.cpu')), 'sum', 'app'), 'app')"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -600,10 +607,12 @@
           "showLegend": false
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -616,6 +625,7 @@
           "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -695,10 +705,12 @@
           "showLegend": false
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -711,6 +723,7 @@
           "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSink'), 'dataSink'), true, false)"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -837,11 +850,12 @@
           "showLegend": false
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -850,7 +864,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Max Disk Usage",
-          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.disk.usage')), 'Content Storage')"
+          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.disk.usage', 'service=~.*minio.*', 'undefined=')), 'Content Storage')"
         },
         {
           "datasource": {
@@ -860,9 +874,10 @@
           "hide": false,
           "refCount": 0,
           "refId": "Disk Limit",
-          "target": "alias(maxSeries(seriesByTag('name=gauge.node.disk.limit')), 'Content Storage Limit')"
+          "target": "alias(maxSeries(seriesByTag('name=gauge.node.disk.limit', 'service=~.*minio.*')), 'Content Storage Limit')"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -943,11 +958,12 @@
           "showLegend": false
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -960,6 +976,7 @@
           "target": "aliasByTags(seriesByTag('name=stats_counts.deleted.bytes'), 'policy')"
         }
       ],
+      "title": "",
       "type": "timeseries"
     },
     {
@@ -1064,11 +1081,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "8.5.3",
+      "pluginVersion": "11.5.2",
       "targets": [
         {
           "datasource": {
@@ -1089,11 +1107,13 @@
           "target": "sortByMaxima(sortByName(aliasByTags(seriesByTag('name=~gauge.node.memory.usage'), 'hostname'), true, true))"
         }
       ],
+      "title": "",
       "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": "5m",
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [
     "DeltaFi-UI"
   ],
@@ -1101,26 +1121,20 @@
     "list": [
       {
         "current": {
-          "selected": false,
           "text": "Graphite",
           "value": "deltafi-graphite"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Graphite Data",
-        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "graphite",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "current": {
-          "selected": true,
           "text": [
             "All"
           ],
@@ -1133,7 +1147,6 @@
           "uid": "${datasource}"
         },
         "definition": "tag_values(dataSource)",
-        "hide": 0,
         "includeAll": true,
         "label": "Data Source",
         "multi": true,
@@ -1146,7 +1159,6 @@
         },
         "refresh": 2,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       }
@@ -1172,6 +1184,6 @@
   "timezone": "",
   "title": "UI Charts",
   "uid": "ui-charts",
-  "version": 19,
+  "version": 1,
   "weekStart": ""
 }
