@@ -144,7 +144,7 @@ import static org.mockito.Mockito.times;
 		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DeltaFiCoreApplicationTests {
 	public static final DockerImageName TS_POSTGRES_IMAGE = DockerImageName
-			.parse("timescale/timescaledb:latest-pg16")
+			.parse("deltafi/timescaledb:2.18.2-pg16")
 			.asCompatibleSubstituteFor("postgres");
 	@Container
 	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(TS_POSTGRES_IMAGE);

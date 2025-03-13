@@ -467,7 +467,7 @@ dependencies:
   mongodb: bitnami/mongodb:5.0.17
   valkey: bitnami/valkey:8.0.1
   docker_web_gui: deltafi/docker-web-gui:1.0.1-0
-  postgres: timescale/timescaledb:2.18.2-pg16
+  postgres: deltafi/timescaledb:2.18.2-pg16
 EOF
 }
 
