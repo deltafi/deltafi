@@ -258,6 +258,15 @@ public class CoreEventQueue {
         }
     }
 
+    public void removeOrphanedDgsQueues() {
+        Set<String> orphans = valkeyKeyedBlockingQueue.getOldDgsQueues();
+        if (!orphans.isEmpty()) {
+            log.warn("Dropping orphaned DGS queues: {}", orphans);
+            valkeyKeyedBlockingQueue.drop(orphans);
+            valkeyKeyedBlockingQueue.removeHeartbeats(orphans);
+        }
+    }
+
     private record Value(OffsetDateTime startTime, OffsetDateTime heartbeatTime, String appName) {
         public boolean isHeartbeatStale() {
             return heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now());

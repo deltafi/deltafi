@@ -32,7 +32,7 @@ import java.time.Instant;
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
-public class LongRunningTaskEvictScheduler {
+public class QueueCleanupScheduler {
 
     private final CoreEventQueue coreEventQueue;
     private final TaskScheduler taskScheduler;
@@ -42,10 +42,19 @@ public class LongRunningTaskEvictScheduler {
 
     @PostConstruct
     public void schedule() {
-        taskScheduler.scheduleAtFixedRate(this::removeExpiredLongRunningTasks, Instant.now().plusSeconds(INITIAL_DELAY), Duration.ofSeconds(PERIOD));
+        taskScheduler.scheduleAtFixedRate(this::cleanupQueues, Instant.now().plusSeconds(INITIAL_DELAY), Duration.ofSeconds(PERIOD));
+    }
+
+    public void cleanupQueues() {
+        removeExpiredLongRunningTasks();
+        removeOrphanedDgsQueues();
     }
 
     public void removeExpiredLongRunningTasks() {
         coreEventQueue.removeExpiredLongRunningTasks();
+    }
+
+    public void removeOrphanedDgsQueues() {
+        coreEventQueue.removeOrphanedDgsQueues();
     }
 }

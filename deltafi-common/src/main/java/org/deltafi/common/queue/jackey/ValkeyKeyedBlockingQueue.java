@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * A keyed blocking queue based on the Jackey client library for Valkey.
@@ -96,13 +97,13 @@ public class ValkeyKeyedBlockingQueue {
      *
      * @param keys list of keys
      */
-    public void drop(List<String> keys) {
+    public void drop(Collection<String> keys) {
         try (Jedis jedis = jedisPool.getResource()) {
             drop(jedis, keys);
         }
     }
 
-    private void drop(Jedis jedis, List<String> keys) {
+    private void drop(Jedis jedis, Collection<String> keys) {
         keys.forEach(jedis::del);
     }
 
@@ -151,19 +152,27 @@ public class ValkeyKeyedBlockingQueue {
      * @return list of
      */
     public Set<String> getRecentQueues() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            OffsetDateTime staleMarker = OffsetDateTime.now().minusMinutes(1);
-            Set<String> queueNames = new HashSet<>();
-            Map<String,String> heartbeats = jedis.hgetAll(HEARTBEAT_HASH);
-            for (Map.Entry<String,String> entry : heartbeats.entrySet()) {
-                OffsetDateTime heartbeat = OffsetDateTime.parse(entry.getValue());
-                if (heartbeat.isAfter(staleMarker)) {
-                    queueNames.add(entry.getKey());
-                }
-            }
+        OffsetDateTime staleMarker = OffsetDateTime.now().minusMinutes(1);
+        return heartbeats(null, heartbeat -> heartbeat.isAfter(staleMarker));
+    }
 
-            return queueNames;
+    public Set<String> getOldDgsQueues() {
+        return heartbeats("dgs-", heartbeat -> heartbeat.isBefore(OffsetDateTime.now().minusMinutes(5)));
+    }
+
+    private Set<String> heartbeats(String prefix, Predicate<OffsetDateTime> heartbeatCheck) {
+        Set<String> queueNames = new HashSet<>();
+        Map<String,String> heartbeats = hgetAll(HEARTBEAT_HASH);
+        for (Map.Entry<String,String> entry : heartbeats.entrySet()) {
+            if (prefix != null && !entry.getKey().startsWith(prefix)) {
+                continue;
+            }
+            OffsetDateTime heartbeat = OffsetDateTime.parse(entry.getValue());
+            if (heartbeatCheck.test(heartbeat)) {
+                queueNames.add(entry.getKey());
+            }
         }
+        return queueNames;
     }
 
     /**
@@ -210,9 +219,7 @@ public class ValkeyKeyedBlockingQueue {
      * @return a map containing the long running tasks
      */
     public Map<String, String> getLongRunningTasks() {
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.hgetAll(LONG_RUNNING_TASKS_HASH);
-        }
+        return hgetAll(LONG_RUNNING_TASKS_HASH);
     }
 
     /**
@@ -241,14 +248,18 @@ public class ValkeyKeyedBlockingQueue {
     /**
      * Remove a long-running tasks with the specified keys
      *
-     * @param keys the collection of keys of the tasks to be removed
+     * @param fields the collection of keys of the tasks to be removed
      */
-    public void removeLongRunningTasks(Collection<String> keys) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            for (String key : keys) {
-                jedis.hdel(LONG_RUNNING_TASKS_HASH, key);
-            }
-        }
+    public void removeLongRunningTasks(Collection<String> fields) {
+        hdel(LONG_RUNNING_TASKS_HASH, fields);
+    }
+
+    /**
+     * Remove the given heartbeat fields from the heartbeat hash
+     * @param queueName list of queue names to remove
+     */
+    public void removeHeartbeats(Collection<String> queueName) {
+        hdel(HEARTBEAT_HASH, queueName);
     }
 
     /**
@@ -318,6 +329,21 @@ public class ValkeyKeyedBlockingQueue {
             }
 
             return queueCnts;
+        }
+    }
+
+    private Map<String, String> hgetAll(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.hgetAll(key);
+        }
+    }
+
+    private void hdel(String key, Collection<String> fields) {
+        if (fields == null || fields.isEmpty()) {
+            return;
+        }
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.hdel(key, fields.toArray(new String[0]));
         }
     }
 }
