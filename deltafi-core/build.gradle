@@ -7,6 +7,8 @@ plugins {
 description = 'DeltaFi Core'
 
 dependencies {
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.39' // For CVEs
+
     implementation project(':deltafi-common')
 
     implementation 'org.apache.commons:commons-collections4:4.4'
