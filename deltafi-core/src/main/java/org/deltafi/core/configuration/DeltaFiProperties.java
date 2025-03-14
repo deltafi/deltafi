@@ -129,6 +129,9 @@ public class DeltaFiProperties {
             "checked against the join.maxLockDuration", defaultValue = "PT1M")
     private Duration joinLockCheckInterval = Duration.ofMinutes(1);
 
+    @PropertyInfo(description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false")
+    private boolean autoCleanPostgres = false;
+
     public long getIngressDiskSpaceRequirementInBytes() {
         return ingressDiskSpaceRequirementInMb * 1000000;
     }

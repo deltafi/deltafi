@@ -47,7 +47,12 @@ spec:
       log_autovacuum_min_duration: "-1"
       log_connections: "off"
       log_disconnections: "off"
-#  env:
+      wal_level: "logical"
+      max_replication_slots: "1"
+
+  env:
+    - name: ENABLE_LOGICAL_REPLICATION
+      value: "true"
 #  - name: wal_s3_bucket
 #    value: my-custom-bucket
 
