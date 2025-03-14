@@ -94,3 +94,8 @@ mutation EnableTransformTestMode($name: String!) {
 mutation DisableTransformTestMode($name: String!) {
     disableTransformTestMode(flowName: $name)
 }
+
+# Delete a transform flow
+mutation DeleteTransform($name: String!) {
+  removeTransformFlowPlan(name: $name)
+}

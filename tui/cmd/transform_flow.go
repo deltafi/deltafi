@@ -32,10 +32,9 @@ var transformCmd = &cobra.Command{
 	Short:   "Manage the transform flows in DeltaFi",
 	Long:    `Manage the transform flows in DeltaFi`,
 	GroupID: "flow",
-	Args:    cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Unknown subcommand " + args[0])
-		return cmd.Usage()
+		cmd.Help()
+		return fmt.Errorf("subcommand is required")
 	},
 }
 
@@ -198,6 +197,21 @@ var setTestMode = &cobra.Command{
 	},
 }
 
+var deleteTransformFlow = &cobra.Command{
+	Use:               "delete [transformName]",
+	Short:             "Delete a transform",
+	Long:              `Delete the specified transform if it is removable.`,
+	ValidArgsFunction: getTransformNames,
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+		if len(args) == 0 {
+			return cmd.Usage()
+		}
+		return deleteTransform(cmd, args[0])
+	},
+}
+
 func get(cmd *cobra.Command, name string) error {
 	var resp, err = graphql.GetTransform(name)
 
@@ -287,6 +301,53 @@ func fetchRemoteTransformNames() ([]string, error) {
 	return names, nil
 }
 
+func deleteTransform(cmd *cobra.Command, name string) error {
+	// First check if it exists and get its state
+	resp, err := graphql.GetTransform(name)
+	if err != nil {
+		return newTransformError(fmt.Sprintf("Error getting transform %s: %v", name, err))
+	}
+
+	if resp.GetTransformFlow.FlowStatus.State == graphql.FlowStateRunning {
+		fmt.Printf("Transform %s is currently running. Do you want to stop it? [y/N] ", name)
+		var response string
+		fmt.Scanln(&response)
+		if response != "y" && response != "Y" {
+			return newTransformError("Operation cancelled")
+		}
+
+		// Stop if running
+		err := stopFlow(graphql.FlowTypeTransform, name)
+		if err != nil {
+			return newTransformError(fmt.Sprintf("Error stopping transform %s: %v", name, err))
+		}
+	}
+
+	// Now try to delete it
+	deleteResp, err := graphql.DeleteTransform(name)
+	if err != nil {
+		return newTransformError(fmt.Sprintf("Error deleting transform %s: %v", name, err))
+	}
+	if !deleteResp.RemoveTransformFlowPlan {
+		return newTransformError(fmt.Sprintf("Unable to delete transform"))
+	}
+	fmt.Printf("Successfully deleted transform %s\n", name)
+	return nil
+}
+
+// TransformError represents an error from transform commands
+type TransformError struct {
+	message string
+}
+
+func (e *TransformError) Error() string {
+	return e.message
+}
+
+func newTransformError(message string) *TransformError {
+	return &TransformError{message: message}
+}
+
 func init() {
 	rootCmd.AddCommand(transformCmd)
 	transformCmd.AddCommand(listTransformFlows)
@@ -297,6 +358,7 @@ func init() {
 	transformCmd.AddCommand(pauseTransformFlow)
 	transformCmd.AddCommand(validateTransformCmd)
 	transformCmd.AddCommand(setTestMode)
+	transformCmd.AddCommand(deleteTransformFlow)
 
 	listTransformFlows.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 	setTestMode.Flags().BoolP("enable", "y", false, "Turn on test mode")

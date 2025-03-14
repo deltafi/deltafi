@@ -144,4 +144,14 @@ mutation DisableRestDataSourceTestMode($name: String!) {
 # Disable test mode for a timed data source flow
 mutation DisableTimedDataSourceTestMode($name: String!) {
   disableTimedDataSourceTestMode(name: $name)
+}
+
+# Delete a REST data source flow
+mutation DeleteRestDataSource($name: String!) {
+  removeRestDataSourcePlan(name: $name)
+}
+
+# Delete a timed data source flow
+mutation DeleteTimedDataSource($name: String!) {
+  removeTimedDataSourcePlan(name: $name)
 } 

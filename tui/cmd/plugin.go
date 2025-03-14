@@ -32,10 +32,15 @@ import (
 )
 
 var pluginCmd = &cobra.Command{
-	Use:     "plugin",
-	Short:   "Plugin management commands",
-	Long:    `Plugin management commands`,
-	GroupID: "flow",
+	Use:          "plugin",
+	Short:        "Plugin management commands",
+	Long:         `Plugin management commands`,
+	GroupID:      "flow",
+	SilenceUsage: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.Help()
+		return fmt.Errorf("subcommand is required")
+	},
 }
 
 var listCmd = &cobra.Command{

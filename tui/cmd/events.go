@@ -19,24 +19,25 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/deltafi/tui/internal/api"
-	"github.com/deltafi/tui/internal/app"
-	"github.com/google/uuid"
-	"github.com/spf13/cobra"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/deltafi/tui/internal/api"
+	"github.com/deltafi/tui/internal/app"
+	"github.com/google/uuid"
+	"github.com/spf13/cobra"
 )
 
 var eventCmd = &cobra.Command{
-	Use:   "event",
-	Short: "Manage events in DeltaFi",
-	Long:  `Manage events in DeltaFi.`,
-	Args:  cobra.MinimumNArgs(1),
+	Use:          "event",
+	Short:        "Manage events in DeltaFi",
+	Long:         `Manage events in DeltaFi.`,
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Unknown subcommand " + args[0])
-		return cmd.Usage()
+		cmd.Help()
+		return fmt.Errorf("subcommand is required")
 	},
 }
 
@@ -73,12 +74,16 @@ var (
 var warnFlag, errorFlag, successFlag bool
 
 var createEventCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create [summary]",
 	Short: "Create a new event",
 	Long: `Create an event with a required summary text. 
 The event can include optional source, content, severity level, and notification flags.`,
-	Args: cobra.MinimumNArgs(1),
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			cmd.Help()
+			return fmt.Errorf("summary argument is required")
+		}
 		RequireRunningDeltaFi()
 		summary := args[0]
 

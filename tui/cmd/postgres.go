@@ -26,9 +26,14 @@ import (
 )
 
 var postgresCmd = &cobra.Command{
-	Use:   "postgres",
-	Short: "Command line access to the running DeltaFi Postgres instance",
-	Long:  `Command line access to the running DeltaFi Postgres instance`,
+	Use:          "postgres",
+	Short:        "Command line access to the running DeltaFi Postgres instance",
+	Long:         `Command line access to the running DeltaFi Postgres instance`,
+	SilenceUsage: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.Help()
+		return fmt.Errorf("subcommand is required")
+	},
 }
 
 var cliCmd = &cobra.Command{

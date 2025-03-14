@@ -28,21 +28,23 @@ import (
 )
 
 var dataSourceCmd = &cobra.Command{
-	Use:     "data-source",
-	Short:   "Manage the data sources in DeltaFi",
-	Long:    `Manage the data sources in DeltaFi`,
-	GroupID: "flow",
-	Args:    cobra.MinimumNArgs(1),
+	Use:                "data-source",
+	Short:              "Manage the data sources in DeltaFi",
+	Long:               `Manage the data sources in DeltaFi`,
+	GroupID:            "flow",
+	SilenceUsage:       true,
+	DisableSuggestions: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Unknown subcommand " + args[0])
-		return cmd.Usage()
+		cmd.Help()
+		return fmt.Errorf("subcommand is required")
 	},
 }
 
 var listDataSourceFlows = &cobra.Command{
-	Use:   "list",
-	Short: "List data sources",
-	Long:  `Get the list of data sources.`,
+	Use:          "list",
+	Short:        "List data sources",
+	Long:         `Get the list of data sources.`,
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		return listAllDataSources(cmd)
@@ -55,6 +57,7 @@ var getDataSourceFlow = &cobra.Command{
 	Long:              `Get the details of the specified data source.`,
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getDataSourceNames,
+	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		return getDataSource(cmd, args[0])
@@ -67,6 +70,7 @@ var loadRestDataSourceFlow = &cobra.Command{
 	Long: `Creates or update a REST data source with the given input.
 If a data source already exists with the same name this will replace it.
 Otherwise, this command will create a new REST data source with the given name.`,
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		var restDataSourcePlan graphql.RestDataSourcePlanInput
@@ -91,6 +95,7 @@ var loadTimedDataSourceFlow = &cobra.Command{
 	Long: `Creates or update a timed data source with the given input.
 If a data source already exists with the same name this will replace it.
 Otherwise, this command will create a new timed data source with the given name.`,
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		var timedDataSourcePlan graphql.TimedDataSourcePlanInput
@@ -115,6 +120,7 @@ var startDataSourceFlow = &cobra.Command{
 	Long: `Start one or more data sources with the given names.
 If --all is specified, starts all data sources, ignoring any explicitly listed flows.`,
 	ValidArgsFunction: getDataSourceNames,
+	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		all, _ := cmd.Flags().GetBool("all")
@@ -154,6 +160,7 @@ var stopDataSourceFlow = &cobra.Command{
 	Long: `Stop one or more data sources with the given names.
 If --all is specified, stops all data sources, ignoring any explicitly listed flows.`,
 	ValidArgsFunction: getDataSourceNames,
+	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		all, _ := cmd.Flags().GetBool("all")
@@ -193,6 +200,7 @@ var pauseDataSourceFlow = &cobra.Command{
 	Long:              `Pause a data source with the given name.`,
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getDataSourceNames,
+	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		// Try REST data source first
@@ -216,6 +224,7 @@ var setDataSourceTestMode = &cobra.Command{
 	Long:              `Enable or disable test mode for a given data source.`,
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getDataSourceNames,
+	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		on, _ := cmd.Flags().GetBool("enable")
@@ -223,7 +232,7 @@ var setDataSourceTestMode = &cobra.Command{
 
 		if !on && !off {
 			fmt.Println("Either --disable or --enable must be set on the test-mode command")
-			return cmd.Usage()
+			return fmt.Errorf("Either --disable or --enable must be set")
 		}
 
 		if on {
@@ -232,6 +241,34 @@ var setDataSourceTestMode = &cobra.Command{
 			return disableDataSourceTestMode(args[0])
 		}
 	},
+}
+
+var deleteDataSourceFlow = &cobra.Command{
+	Use:               "delete [dataSourceName]",
+	Short:             "Delete a data source",
+	Long:              `Delete the specified data source if it is removable.`,
+	ValidArgsFunction: getDataSourceNames,
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+		if len(args) == 0 {
+			return cmd.Usage()
+		}
+		return deleteDataSource(cmd, args[0])
+	},
+}
+
+// DataSourceError represents an error from data source commands
+type DataSourceError struct {
+	message string
+}
+
+func (e *DataSourceError) Error() string {
+	return e.message
+}
+
+func newDataSourceError(message string) *DataSourceError {
+	return &DataSourceError{message: message}
 }
 
 func getDataSource(cmd *cobra.Command, name string) error {
@@ -357,6 +394,74 @@ func fetchRemoteDataSourceNames() ([]string, error) {
 	return names, nil
 }
 
+func deleteDataSource(cmd *cobra.Command, name string) error {
+	// First check if it's a REST data source and get its state
+	restResp, err := graphql.GetRestDataSource(name)
+	if err == nil {
+		if restResp.GetRestDataSource.FlowStatus.State == graphql.FlowStateRunning {
+			fmt.Printf("Data source %s is currently running. Do you want to stop it? [y/N] ", name)
+			var response string
+			fmt.Scanln(&response)
+			if response != "y" && response != "Y" {
+				return newDataSourceError("Operation cancelled")
+			}
+		}
+
+		// Stop if running
+		if restResp.GetRestDataSource.FlowStatus.State == graphql.FlowStateRunning {
+			err := stopFlow(graphql.FlowTypeRestDataSource, name)
+			if err != nil {
+				return newDataSourceError(fmt.Sprintf("Error stopping REST data source %s: %v", name, err))
+			}
+		}
+
+		// Now try to delete it
+		deleteResp, err := graphql.DeleteRestDataSource(name)
+		if err != nil {
+			return newDataSourceError(fmt.Sprintf("Error deleting REST data source %s: %v", name, err))
+		}
+		if !deleteResp.RemoveRestDataSourcePlan {
+			return newDataSourceError(fmt.Sprintf("Unable to delete REST data source"))
+		}
+		fmt.Printf("Successfully deleted REST data source %s\n", name)
+		return nil
+	}
+
+	// If not a REST data source, try timed data source
+	timedResp, err := graphql.GetTimedDataSource(name)
+	if err == nil {
+		if timedResp.GetTimedDataSource.FlowStatus.State == graphql.FlowStateRunning {
+			fmt.Printf("Data source %s is currently running. Do you want to stop it? [y/N] ", name)
+			var response string
+			fmt.Scanln(&response)
+			if response != "y" && response != "Y" {
+				return newDataSourceError("Operation cancelled")
+			}
+		}
+
+		// Stop if running
+		if timedResp.GetTimedDataSource.FlowStatus.State == graphql.FlowStateRunning {
+			err := stopFlow(graphql.FlowTypeTimedDataSource, name)
+			if err != nil {
+				return newDataSourceError(fmt.Sprintf("Error stopping timed data source %s: %v", name, err))
+			}
+		}
+
+		// Now try to delete it
+		deleteResp, err := graphql.DeleteTimedDataSource(name)
+		if err != nil {
+			return newDataSourceError(fmt.Sprintf("Error deleting timed data source %s: %v", name, err))
+		}
+		if !deleteResp.RemoveTimedDataSourcePlan {
+			return newDataSourceError(fmt.Sprintf("Unable to delete timed data source"))
+		}
+		fmt.Printf("Successfully deleted timed data source %s\n", name)
+		return nil
+	}
+
+	return newDataSourceError(fmt.Sprintf("Error deleting data source %s: %v", name, err))
+}
+
 func init() {
 	rootCmd.AddCommand(dataSourceCmd)
 
@@ -368,6 +473,7 @@ func init() {
 	dataSourceCmd.AddCommand(stopDataSourceFlow)
 	dataSourceCmd.AddCommand(pauseDataSourceFlow)
 	dataSourceCmd.AddCommand(setDataSourceTestMode)
+	dataSourceCmd.AddCommand(deleteDataSourceFlow)
 
 	startDataSourceFlow.Flags().Bool("all", false, "Start all data sources")
 	stopDataSourceFlow.Flags().Bool("all", false, "Stop all data sources")

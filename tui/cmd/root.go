@@ -18,13 +18,13 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/command"
 	"github.com/deltafi/tui/internal/ui/art"
+	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
 )
 
@@ -38,6 +38,7 @@ var rootCmd = &cobra.Command{
 	Short:   "The DeltaFi Text User Interface",
 	Long: art.Logo + `
 	Text User Interface (TUI) for DeltaFi`,
+	SilenceUsage: true,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -58,13 +59,8 @@ func Execute() {
 
 	if err != nil {
 		// always print the error first
-		fmt.Println(err)
+		fmt.Println(styles.ErrorStyle.Render(err.Error()))
 
-		// check if the usage should be shown (ie missing flag, unknown command)
-		var cmdErr *Error
-		if !errors.As(err, &cmdErr) {
-			_ = rootCmd.Usage()
-		}
 		os.Exit(1)
 	}
 }

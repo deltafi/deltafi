@@ -32,10 +32,9 @@ var dataSinkCmd = &cobra.Command{
 	Short:   "Manage the data sinks in DeltaFi",
 	Long:    `Manage the data sinks in DeltaFi`,
 	GroupID: "flow",
-	Args:    cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Unknown subcommand " + args[0])
-		return cmd.Usage()
+		cmd.Help()
+		return fmt.Errorf("subcommand is required")
 	},
 }
 
@@ -185,6 +184,21 @@ var setDataSinkTestMode = &cobra.Command{
 	},
 }
 
+var deleteDataSinkFlow = &cobra.Command{
+	Use:               "delete [dataSinkName]",
+	Short:             "Delete a data sink",
+	Long:              `Delete the specified data sink if it is removable.`,
+	ValidArgsFunction: getDataSinkNames,
+	SilenceUsage:      true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+		if len(args) == 0 {
+			return cmd.Usage()
+		}
+		return deleteDataSink(cmd, args[0])
+	},
+}
+
 func getDataSink(cmd *cobra.Command, name string) error {
 	resp, err := graphql.GetDataSink(name)
 
@@ -262,6 +276,53 @@ func fetchRemoteDataSinkNames() ([]string, error) {
 	return names, nil
 }
 
+func deleteDataSink(cmd *cobra.Command, name string) error {
+	// First check if it exists and get its state
+	resp, err := graphql.GetDataSink(name)
+	if err != nil {
+		return newDataSinkError(fmt.Sprintf("Error getting data sink %s: %v", name, err))
+	}
+
+	if resp.GetDataSink.FlowStatus.State == graphql.FlowStateRunning {
+		fmt.Printf("Data sink %s is currently running. Do you want to stop it? [y/N] ", name)
+		var response string
+		fmt.Scanln(&response)
+		if response != "y" && response != "Y" {
+			return newDataSinkError("Operation cancelled")
+		}
+
+		// Stop if running
+		err := stopFlow(graphql.FlowTypeDataSink, name)
+		if err != nil {
+			return newDataSinkError(fmt.Sprintf("Error stopping data sink %s: %v", name, err))
+		}
+	}
+
+	// Now try to delete it
+	deleteResp, err := graphql.DeleteDataSink(name)
+	if err != nil {
+		return newDataSinkError(fmt.Sprintf("Error deleting data sink %s: %v", name, err))
+	}
+	if !deleteResp.RemoveDataSinkPlan {
+		return newDataSinkError(fmt.Sprintf("Unable to delete data sink"))
+	}
+	fmt.Printf("Successfully deleted data sink %s\n", name)
+	return nil
+}
+
+// DataSinkError represents an error from data sink commands
+type DataSinkError struct {
+	message string
+}
+
+func (e *DataSinkError) Error() string {
+	return e.message
+}
+
+func newDataSinkError(message string) *DataSinkError {
+	return &DataSinkError{message: message}
+}
+
 func init() {
 	rootCmd.AddCommand(dataSinkCmd)
 
@@ -272,6 +333,7 @@ func init() {
 	dataSinkCmd.AddCommand(stopDataSinkFlow)
 	dataSinkCmd.AddCommand(pauseDataSinkFlow)
 	dataSinkCmd.AddCommand(setDataSinkTestMode)
+	dataSinkCmd.AddCommand(deleteDataSinkFlow)
 
 	startDataSinkFlow.Flags().Bool("all", false, "Start all data sinks")
 	stopDataSinkFlow.Flags().Bool("all", false, "Stop all data sinks")

@@ -11,6 +11,11 @@ query ListDataSinks {
   }
 }
 
+# Delete a data sink flow
+mutation DeleteDataSink($name: String!) {
+  removeDataSinkPlan(name: $name)
+}
+
 # Get a specific data sink flow
 query GetDataSink($flowName: String!) {
   getDataSink(flowName: $flowName) {
