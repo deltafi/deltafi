@@ -18,37 +18,35 @@
 
 <template>
   <div>
-    <CollapsiblePanel :header="propertySet.displayName" class="property-set mb-3 table-panel">
+    <CollapsiblePanel :header="propertySet.displayName" class="mb-3 table-panel">
       <template #header>
         <span class="p-panel-title">
           {{ propertySet.displayName }}
           <i v-if="propertySet.description" v-tooltip.right="propertySet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
-      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" :row-hover="true" data-key="key" @cell-edit-complete="onCellEditComplete">
+      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines property-set-table" :row-hover="true" data-key="key">
         <template #empty>
           No properties in this property set.
         </template>
-        <Column header="Key" field="key" :sortable="true">
+        <Column header="Key" field="key" :sortable="true" :style="{ width: '50%' }">
           <template #body="property">
             <span :class="{ 'text-muted': !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.key }}</span>
             <i v-if="tooltipText(property.data)" v-tooltip.right="tooltipText(property.data)" class="ml-2 text-muted fas fa-info-circle fa-fw" />
           </template>
         </Column>
-        <Column header="Value" field="value" :sortable="true" class="value-column">
-          <template #body="property">
-            <span :class="{ 'value-clickable': $hasPermission('SystemPropertiesUpdate') }">
-              <span :class="{ 'text-muted': !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.value }}</span>
-            </span>
-          </template>
-          <template #editor="{ data, field }">
-            <span v-if="!$hasPermission('SystemPropertiesUpdate')" class="text-muted">{{ data.value }}</span>
-            <InputText v-else v-model="data[field]" class="p-inputtext-sm" autofocus />
-          </template>
-        </Column>
-        <Column header="Source" field="propertySource" :sortable="true">
-          <template #body="property">
-            <span :class="{ 'text-muted': !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.propertySource }}</span>
+        <Column header="Value" field="value" :sortable="true" class="value-column" :style="{ width: '50%' }">
+          <template #body="{ data }">
+            <PropertyEditDialog :property="data" @saved="onSaved($event)">
+              <div :class="{ 'value-clickable': $hasPermission('SystemPropertiesUpdate') }">
+                <span v-if="data.value !== data.defaultValue" class="override-icon">
+                  <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
+                </span>
+                <span v-if="data.value == null"><em>null</em></span>
+                <span v-else-if="data.value === ''"><em>empty string</em></span>
+                <span v-else>{{ data.value }}</span>
+              </div>
+            </PropertyEditDialog>
           </template>
         </Column>
       </DataTable>
@@ -59,11 +57,10 @@
 <script setup>
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import InputText from "primevue/inputtext";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import useNotifications from "@/composables/useNotifications";
-import usePropertySets from "@/composables/usePropertySets";
+import PropertyEditDialog from "@/components/properties/PropertyEditDialog.vue";
 import { computed, inject, reactive } from "vue";
+import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 
@@ -77,8 +74,6 @@ const props = defineProps({
 const emit = defineEmits(["updated"]);
 
 const propertySet = reactive(props.propSet);
-const notify = useNotifications();
-const { data: propertySetData, update } = usePropertySets();
 const visibleProperties = computed(() => propertySet.properties.filter((p) => !p.hidden));
 
 const tooltipText = (property) => {
@@ -88,52 +83,28 @@ const tooltipText = (property) => {
   return parts.join(" ");
 };
 
-const updateProperty = async (key, value, refreshable) => {
-  await update([
-    {
-      key: key,
-      value: value,
-    },
-  ]);
-  if (propertySetData.value.updateProperties > 0) {
-    emit("updated");
-    if (refreshable) {
-      notify.success("Property update successful", key);
-    } else {
-      notify.warn("Property update successful", "System restart required for change to take effect!");
-    }
-  } else {
-    notify.error("Property update failed");
-  }
+const onSaved = (property) => {
+  _.find(propertySet.properties, { 'key': property.key }).value = property.value;
+  emit("updated");
 };
 
-const onCellEditComplete = (event) => {
-  const { data, newValue, value } = event;
-  if (value !== newValue) {
-    updateProperty(data.key, newValue, data.refreshable);
-    data.value = newValue;
-  }
-};
 </script>
 
 <style>
-.property-set {
+.property-set-table {
   td.value-column {
     padding: 0 !important;
+  }
 
-    >span {
-      padding: 0.5rem !important;
-    }
+  .value-clickable {
+    cursor: pointer;
+    padding: 0.5rem !important;
+    width: 100%;
+    display: flex;
+  }
 
-    .value-clickable {
-      cursor: pointer;
-      width: 100%;
-      display: flex;
-    }
-
-    .value-clickable>* {
-      flex: 0 0 auto;
-    }
+  .value-clickable>* {
+    flex: 0 0 auto;
   }
 }
 </style>

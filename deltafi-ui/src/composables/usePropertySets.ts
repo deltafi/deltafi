@@ -31,6 +31,7 @@ export default function usePropertySets() {
       properties: {
         key: true,
         value: true,
+        defaultValue: true,
         refreshable: true,
         description: true,
         propertySource: true
@@ -56,7 +57,23 @@ export default function usePropertySets() {
       },
     };
     try {
-      await queryGraphQL(query, "updatePropertySets", "mutation");
+      await queryGraphQL(query, "updateProperties", "mutation");
+      data.value = response.value.data;
+    } catch {
+      // Continue regardless of error
+    }
+  }
+
+  const reset = async (propertyName: String) => {
+    const query = {
+      removePropertyOverrides: {
+        __args: {
+          propertyNames: propertyName,
+        },
+      },
+    };
+    try {
+      await queryGraphQL(query, "removePropertyOverrides", "mutation");
       data.value = response.value.data;
     } catch {
       // Continue regardless of error
@@ -64,5 +81,5 @@ export default function usePropertySets() {
   }
 
 
-  return { data, loading, loaded, fetch, update, errors };
+  return { data, loading, loaded, fetch, update, reset, errors };
 }
