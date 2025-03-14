@@ -54,7 +54,7 @@
             </span>
           </template>
         </Column>
-        <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Input" class="content-column">
+        <Column v-if="!contentDeleted && $hasPermission('DeltaFileContentView')" header="Input" class="content-column">
           <template #body="{ data: flow }">
             <span v-if="flow.input.hasOwnProperty('content') && flow.input.content.length > 0">
               <ContentDialog :content="flow.input.content" :action="flow.input.content.name">

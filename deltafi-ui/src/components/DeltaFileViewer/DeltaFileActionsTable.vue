@@ -42,7 +42,7 @@
           {{ action.data.elapsed }}
         </template>
       </Column>
-      <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Content" class="content-column">
+      <Column v-if="!contentDeleted && $hasPermission('DeltaFileContentView')" header="Content" class="content-column">
         <template #body="{ data: action }">
           <span v-if="action.hasOwnProperty('content') && action.content.length > 0">
             <ContentDialog :content="action.content" :action="action.name">

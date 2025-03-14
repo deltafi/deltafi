@@ -28,7 +28,7 @@
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-data-sources="refresh" />
+                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-data-sources="refresh" />
                   <DialogTemplate ref="updateDataSourceDialog" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @reload-data-sources="refresh">
                     <i v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" />
                   </DialogTemplate>
