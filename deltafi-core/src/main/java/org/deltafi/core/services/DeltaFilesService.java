@@ -254,7 +254,6 @@ public class DeltaFilesService {
 
         Action ingressAction = Action.builder()
                 .name(ingressActionName)
-                .number(0)
                 .replayStart(true)
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
@@ -1067,7 +1066,6 @@ public class DeltaFilesService {
         }
         return Action.builder()
                 .name(startFromAction.getName())
-                .number(startFromAction.getNumber())
                 .type(startFromAction.getType())
                 .state(ActionState.COMPLETE)
                 .created(now)

@@ -185,15 +185,17 @@ public class DeltaFileFlow {
     }
 
     public Action firstAction() {
-        return actions.stream()
-                .min(Comparator.comparingInt(Action::getNumber))
-                .orElse(null);
+        if (actions.isEmpty()) {
+            return null;
+        }
+        return actions.getFirst();
     }
 
     public Action lastAction() {
-        return actions.stream()
-                .max(Comparator.comparingInt(Action::getNumber))
-                .orElse(null);
+        if (actions.isEmpty()) {
+            return null;
+        }
+        return actions.getLast();
     }
 
     public void enableAutoResume(OffsetDateTime nextResume, String nextResumeReason) {
@@ -250,7 +252,6 @@ public class DeltaFileFlow {
     public Action addAction(String name, ActionType type, ActionState state, OffsetDateTime now) {
         Action action = Action.builder()
                 .name(name)
-                .number(actions.size())
                 .type(type)
                 .state(state)
                 .created(now)

@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
@@ -37,15 +38,13 @@ import java.util.*;
 @Builder
 @EqualsAndHashCode
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Action {
   static final private int MAX_CAUSE_SIZE = 100_000;
 
   @JsonProperty("n")
   @JsonAlias("name")
   private String name;
-  @JsonProperty("nu")
-  @JsonAlias("number")
-  private int number;
   @Builder.Default
   @JsonProperty("t")
   @JsonAlias("type")
@@ -107,7 +106,6 @@ public class Action {
 
   public Action(Action other) {
     this.name = other.name;
-    this.number = other.number;
     this.type = other.type;
     this.state = other.state;
     this.created = other.created;
@@ -232,7 +230,6 @@ public class Action {
 
   public Action createChildAction() {
     Action childAction = new Action();
-    childAction.setNumber(number);
     childAction.setCreated(created);
     childAction.setModified(modified);
     childAction.setStart(start);

@@ -110,7 +110,6 @@ enum SummaryByMessageSort {
 
 type Action {
   name: String!
-  number: Int!
   type: ActionType!
   state: ActionState!
   created: DateTime!

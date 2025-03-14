@@ -253,7 +253,6 @@ class ResumePolicyServiceTest {
     private DeltaFile getDeltaFile(String prefix, boolean withErrorAction) {
         Action action1 = Action.builder()
                 .name(prefix + ACTION)
-                .number(0)
                 .type(ActionType.TRANSFORM)
                 .state(ActionState.COMPLETE)
                 .attempt(1)
@@ -263,7 +262,6 @@ class ResumePolicyServiceTest {
         if (withErrorAction) {
             action2 = Action.builder()
                     .name(prefix + ACTION)
-                    .number(1)
                     .type(ActionType.TRANSFORM)
                     .state(ActionState.ERROR)
                     .attempt(1)
@@ -273,7 +271,6 @@ class ResumePolicyServiceTest {
         } else {
             action2 = Action.builder()
                     .name(prefix + ACTION)
-                    .number(1)
                     .type(ActionType.TRANSFORM)
                     .state(ActionState.COMPLETE)
                     .attempt(1)

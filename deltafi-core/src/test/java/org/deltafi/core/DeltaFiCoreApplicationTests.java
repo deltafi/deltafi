@@ -2345,33 +2345,33 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFindReadyForAutoResume() {
 		DeltaFile shouldResume = utilService.buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW);
-		shouldResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1), autoResumeHit(NOW, 2)));
+		shouldResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW), autoResumeOther(NOW), autoResumeHit(NOW)));
 		shouldResume.firstFlow().updateState();
 		shouldResume.setVersion(1);
 
 		DeltaFile shouldNotResume = utilService.buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(1));
-		shouldNotResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeMiss(NOW, 1)));
+		shouldNotResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW), autoResumeMiss(NOW)));
 		shouldNotResume.firstFlow().updateState();
 		shouldNotResume.setVersion(1);
 
 		DeltaFile notResumable = utilService.buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(2));
-		notResumable.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeNotSet(NOW, 1)));
+		notResumable.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW), autoResumeNotSet(NOW)));
 		notResumable.firstFlow().updateState();
 		notResumable.setVersion(1);
 
 		DeltaFile cancelled = utilService.buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.CANCELLED, NOW, NOW.minusSeconds(3));
-		cancelled.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1), autoResumeHit(NOW, 2)));
+		cancelled.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW), autoResumeOther(NOW), autoResumeHit(NOW)));
 		cancelled.firstFlow().updateState();
 		cancelled.setVersion(1);
 
 		DeltaFile contentDeleted = utilService.buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(4));
-		contentDeleted.firstFlow().setActions(List.of(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1),autoResumeHit(NOW, 2)));
+		contentDeleted.firstFlow().setActions(List.of(autoResumeIngress(NOW), autoResumeOther(NOW),autoResumeHit(NOW)));
 		contentDeleted.setContentDeleted(NOW);
 		contentDeleted.firstFlow().updateState();
 		contentDeleted.setVersion(1);
 
 		DeltaFile shouldAlsoResume = utilService.buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, NOW, NOW.minusSeconds(5));
-		shouldAlsoResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW, 0), autoResumeOther(NOW, 1), autoResumeHit(NOW, 2)));
+		shouldAlsoResume.firstFlow().setActions(Arrays.asList(autoResumeIngress(NOW), autoResumeOther(NOW), autoResumeHit(NOW)));
 		shouldAlsoResume.firstFlow().updateState();
 		shouldAlsoResume.setVersion(1);
 
@@ -4036,7 +4036,6 @@ class DeltaFiCoreApplicationTests {
 	private Action filteredAction(String message, OffsetDateTime time, int num) {
 		Action action = new Action();
 		action.setName("someAction");
-		action.setNumber(num);
 		action.setFilteredCause(message);
 		action.setState(ActionState.FILTERED);
 		action.setCreated(time);

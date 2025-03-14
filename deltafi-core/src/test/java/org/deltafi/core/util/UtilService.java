@@ -225,7 +225,7 @@ public class UtilService {
 
         Assertions.assertThat(actual).hasSize(expected.size());
         for (int i = 0; i < expected.size(); i++) {
-            assertActionEqualIgnoringDates(expected.stream().sorted(Comparator.comparingInt(Action::getNumber)).toList().get(i), actual.stream().sorted(Comparator.comparingInt(Action::getNumber)).toList().get(i));
+            assertActionEqualIgnoringDates(expected.get(i), actual.get(i));
         }
     }
 
@@ -234,7 +234,6 @@ public class UtilService {
             Assertions.assertThat(actual).isEqualTo(expected);
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
-            Assertions.assertThat(actual.getNumber()).isEqualTo(expected.getNumber());
             Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
@@ -326,27 +325,27 @@ public class UtilService {
         return OffsetDateTime.now(clock);
     }
 
-    public static Action autoResumeIngress(OffsetDateTime time, int actionNum) {
-        return Action.builder().name("ingress").modified(time).state(ActionState.COMPLETE).number(actionNum).build();
+    public static Action autoResumeIngress(OffsetDateTime time) {
+        return Action.builder().name("ingress").modified(time).state(ActionState.COMPLETE).build();
     }
 
-    public static Action autoResumeHit(OffsetDateTime time, int actionNum) {
-        Action hit = Action.builder().name("hit").modified(time).state(ActionState.ERROR).number(actionNum).build();
+    public static Action autoResumeHit(OffsetDateTime time) {
+        Action hit = Action.builder().name("hit").modified(time).state(ActionState.ERROR).build();
         hit.setNextAutoResume(time.minusSeconds(1000));
         return hit;
     }
 
-    public static Action autoResumeMiss(OffsetDateTime time, int actionNum) {
-        Action miss = Action.builder().name("miss").modified(time).state(ActionState.ERROR).number(actionNum).build();
+    public static Action autoResumeMiss(OffsetDateTime time) {
+        Action miss = Action.builder().name("miss").modified(time).state(ActionState.ERROR).build();
         miss.setNextAutoResume(time.plusSeconds(1000));
         return miss;
     }
 
-    public static Action autoResumeNotSet(OffsetDateTime time, int actionNum) {
-        return Action.builder().name("notSet").modified(time).state(ActionState.ERROR).number(actionNum).build();
+    public static Action autoResumeNotSet(OffsetDateTime time) {
+        return Action.builder().name("notSet").modified(time).state(ActionState.ERROR).build();
     }
 
-    public static Action autoResumeOther(OffsetDateTime time, int actionNum) {
-        return Action.builder().name("other").modified(time).state(ActionState.COMPLETE).number(actionNum).build();
+    public static Action autoResumeOther(OffsetDateTime time) {
+        return Action.builder().name("other").modified(time).state(ActionState.COMPLETE).build();
     }
 }
