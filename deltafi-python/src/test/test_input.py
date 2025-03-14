@@ -33,6 +33,10 @@ def test_transform_input():
     input = TransformInput(content=event.delta_file_messages[0].content_list,
                            metadata=event.delta_file_messages[0].metadata)
 
+    assert input.content_named('CONTENT_NAME').name == "CONTENT_NAME"
+    assert input.content_named('CONTENT 2').name == "CONTENT 2"
+    assert input.content_named('CONTENT 3') is None
+
     assert input.get_metadata("plKey1") == "valueA"
     assert input.get_metadata_or_else("plkeyX", "not-found") == "not-found"
     with pytest.raises(MissingMetadataException):

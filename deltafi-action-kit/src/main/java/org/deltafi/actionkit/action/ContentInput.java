@@ -24,8 +24,7 @@ import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Action input that may include content or metadata
@@ -81,5 +80,14 @@ public class ContentInput extends MetadataInput {
         }
 
         return content.get(index);
+    }
+
+    /**
+     * Gets the content with the specified name.
+     * @param name the name to match
+     * @return an Optional containing the matched content or an empty Optional if no content is matched
+     */
+    public Optional<ActionContent> content(String name) {
+        return content.stream().filter(content -> content.getName().equals(name)).findFirst();
     }
 }

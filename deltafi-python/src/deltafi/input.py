@@ -19,6 +19,7 @@
 from deltafi.domain import *
 from deltafi.exception import MissingMetadataException, ExpectedContentException
 
+
 class EgressInput(NamedTuple):
     content: Content
     metadata: dict
@@ -35,6 +36,9 @@ class TransformInput(NamedTuple):
         if len(self.content) < index + 1:
             raise ExpectedContentException(index, len(self.content))
         return self.content[index]
+
+    def content_named(self, name: str) -> Content:
+        return next((c for c in self.content if c.name == name), None)
 
     def first_content(self):
         return self.content_at(0)

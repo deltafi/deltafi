@@ -52,7 +52,7 @@ def make_content_dict(name):
 def make_delta_file_message_dict():
     return {
         'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'},
-        'contentList': [make_content_dict('CONTENT_NAME')]
+        'contentList': [make_content_dict('CONTENT_NAME'), make_content_dict('CONTENT 2')]
     }
 
 
