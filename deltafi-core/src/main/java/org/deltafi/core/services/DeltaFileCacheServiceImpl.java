@@ -41,7 +41,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     final Clock clock;
 
     public DeltaFileCacheServiceImpl(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService, DidMutexService didMutexService, Clock clock) {
-        super(deltaFileRepo);
+        super(deltaFileRepo, deltaFiPropertiesService);
         this.deltaFileCache = new ConcurrentHashMap<>();
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.didMutexService = didMutexService;
@@ -149,5 +149,4 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
             updateRepo(deltaFile);
         }
     }
-
 }

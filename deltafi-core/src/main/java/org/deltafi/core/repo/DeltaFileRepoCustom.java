@@ -143,7 +143,7 @@ public interface DeltaFileRepoCustom {
     void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason);
 
     void insertOne(DeltaFile deltaFile);
-    void insertBatch(List<DeltaFile> deltaFiles);
+    void insertBatch(List<DeltaFile> deltaFiles, int batchSize);
     void batchedBulkDeleteByDidIn(List<UUID> dids);
 
     /**

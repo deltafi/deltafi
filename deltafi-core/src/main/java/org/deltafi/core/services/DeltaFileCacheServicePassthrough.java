@@ -33,8 +33,8 @@ import java.util.UUID;
 public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
     final Clock clock;
 
-    public DeltaFileCacheServicePassthrough(DeltaFileRepo deltaFileRepo, Clock clock) {
-        super(deltaFileRepo);
+    public DeltaFileCacheServicePassthrough(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService propertiesService, Clock clock) {
+        super(deltaFileRepo, propertiesService);
         this.clock = clock;
     }
 

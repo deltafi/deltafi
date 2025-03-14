@@ -474,7 +474,7 @@ public class DeltaFilesService {
                 stateMachineInput.deltaFile().firstFlow().setState(DeltaFileFlowState.PAUSED);
                 stateMachineInput.deltaFile().setPaused(true);
             }
-            deltaFileRepo.insertBatch(stateMachineInputs.stream().map(StateMachineInput::deltaFile).toList());
+            deltaFileRepo.insertBatch(stateMachineInputs.stream().map(StateMachineInput::deltaFile).toList(), deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
         } else {
             advanceAndSave(stateMachineInputs, false);
         }
@@ -742,7 +742,7 @@ public class DeltaFilesService {
         collector.add(deltaFile);
 
         if (collector.size() == batchSize) {
-            deltaFileRepo.insertBatch(collector);
+            deltaFileRepo.insertBatch(collector, deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
             collector.clear();
         }
     }
@@ -1255,7 +1255,7 @@ public class DeltaFilesService {
 
         Set<DeltaFile> deltaFiles = inputs.stream().map(StateMachineInput::deltaFile).collect(Collectors.toSet());
         if (insertAndForget) {
-            deltaFileRepo.insertBatch(new ArrayList<>(deltaFiles));
+            deltaFileRepo.insertBatch(new ArrayList<>(deltaFiles), deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
         } else {
             deltaFileCacheService.saveAll(deltaFiles);
         }

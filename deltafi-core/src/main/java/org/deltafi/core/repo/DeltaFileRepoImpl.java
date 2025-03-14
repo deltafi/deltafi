@@ -814,7 +814,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     @Transactional
-    public void insertBatch(List<DeltaFile> deltaFiles) {
+    public void insertBatch(List<DeltaFile> deltaFiles, int batchSize) {
         if (deltaFiles.size() == 1) {
             insertOne(deltaFiles.getFirst());
             return;
@@ -822,6 +822,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return;
         }
 
+        for (int i = 0; i < deltaFiles.size(); i += batchSize) {
+            insertBatch(deltaFiles.subList(i, Math.min(i + batchSize, deltaFiles.size())));
+        }
+    }
+
+    private void insertBatch(List<DeltaFile> deltaFiles) {
         jdbcTemplate.execute(new PreparedStatementCreator() {
             @NotNull
             @Override

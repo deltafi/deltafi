@@ -61,6 +61,9 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "1000")
     private int deletePolicyBatchSize = 1000;
 
+    @PropertyInfo(description = "Maximum DeltaFiles to insert in a batch", defaultValue = "1000")
+    private int insertBatchSize = 1000;
+
     @PropertyInfo(description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
     private Duration cacheSyncDuration = Duration.ofSeconds(30);
 
@@ -179,6 +182,11 @@ public class DeltaFiProperties {
     public void setDeletePolicyBatchSize(int deletePolicyBatchSize) {
         minCheck(deletePolicyBatchSize, 1, "deletePolicyBatchSize");
         this.deletePolicyBatchSize = deletePolicyBatchSize;
+    }
+
+    public void setInsertBatchSize(int insertBatchSize) {
+        minCheck(insertBatchSize, 1, "insertBatchSize");
+        this.insertBatchSize = insertBatchSize;
     }
 
     public void setCacheSyncDuration(Duration cacheSyncDuration) {

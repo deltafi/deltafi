@@ -19,10 +19,11 @@ package org.deltafi.core.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.types.DeltaFile;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +33,7 @@ import java.util.UUID;
 public abstract class DeltaFileCacheService {
 
     final DeltaFileRepo deltaFileRepo;
+    final DeltaFiPropertiesService deltaFiPropertiesService;
 
     public abstract void flush();
 
@@ -48,9 +50,18 @@ public abstract class DeltaFileCacheService {
     public abstract void save(DeltaFile deltaFile);
 
     public void saveAll(Collection<DeltaFile> deltaFiles) {
+        List<DeltaFile> newDeltaFiles = new ArrayList<>();
         for (DeltaFile deltaFile : deltaFiles) {
-            save(deltaFile);
+            if (deltaFile.getVersion() == 0 && deltaFile.getCacheTime() == null) {
+                newDeltaFiles.add(deltaFile);
+            } else {
+                save(deltaFile);
+            }
         }
+        if (!newDeltaFiles.isEmpty()) {
+            deltaFileRepo.insertBatch(newDeltaFiles, deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
+        }
+        newDeltaFiles.forEach(this::put);
     }
 
     protected DeltaFile getFromRepo(UUID did) {
