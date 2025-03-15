@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.12.0] - 2025-03-15
+
+### Added
+- Add Filter Analysis grafana dashboard
+
+### Tech-Debt/Refactor
+- Overhaul analytics to improve performance 
+- Replace Data Source by Annotation and Pivot by Annotation dashboards with Dataflow Analytics grafana dashboard
+
+### Upgrade and Migration
+- Old analytic metrics data will be deleted
+- Custom grafana dashboards built with the old data model will no longer work
+- Set values for configutation properties allowedAnalyticsAnnotations and analyticsGroupName. See analytics documentation for more details
+
 ## [2.11.0] - 2025-03-14
 
 ### Added
@@ -3947,7 +3961,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.11.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.12.0...main
+[2.12.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.11.0...2.12.0
 [2.11.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.2...2.11.0
 [2.10.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.1...2.10.2
 [2.10.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.0...2.10.1
