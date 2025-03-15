@@ -21,6 +21,9 @@ import com.networknt.schema.utils.StringUtils;
 import lombok.Data;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Holds the system properties. To add a new property that will be exposed
@@ -51,6 +54,12 @@ public class DeltaFiProperties {
 
     @PropertyInfo(description = "Enable reporting of metrics", defaultValue = "true", refreshable = false)
     private boolean metricsEnabled = true;
+
+    @PropertyInfo(description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
+    private String analyticsGroupName;
+
+    @PropertyInfo(description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.")
+    private String allowedAnalyticsAnnotations;
 
     @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13")
     private int ageOffDays = 13;
@@ -255,6 +264,22 @@ public class DeltaFiProperties {
     public void setJoinLockCheckInterval(Duration joinLockCheckInterval) {
         positiveDurationCheck(joinLockCheckInterval, "joinLockCheckInterval");
         this.joinLockCheckInterval = joinLockCheckInterval;
+    }
+
+    /**
+     * Returns the allowed analytics annotations as a list of trimmed strings.
+     * If the property is null or empty, returns an empty list.
+     *
+     * @return a List of allowed analytics annotation keys
+     */
+    public List<String> allowedAnalyticsAnnotationsList() {
+        if (allowedAnalyticsAnnotations == null || allowedAnalyticsAnnotations.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(allowedAnalyticsAnnotations.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 
     private void minCheck(int value, int min, String name) {

@@ -372,7 +372,7 @@ public class DeltaFilesDatafetcher {
       OffsetDateTime baseTimestamp = startTime.plusSeconds(random.nextLong(timeRangeSeconds));
 
       annotations.clear();
-      int numAnnotations = 2 + random.nextInt(3);
+      int numAnnotations = 3 + random.nextInt(2);
       for (int j = 0; j < numAnnotations; j++) {
         int keyIndex = random.nextInt(6);
         annotations.put(annotationKeys[keyIndex],
@@ -387,16 +387,21 @@ public class DeltaFilesDatafetcher {
       deltaFile.setDid(did);
       deltaFile.setDataSource(dataSource);
       deltaFile.addAnnotations(annotations);
+      DeltaFileFlow firstFlow = DeltaFileFlow.builder()
+              .flowDefinition(flowDefinitionService.getOrCreateFlow(dataSource, FlowType.REST_DATA_SOURCE))
+              .build();
+      deltaFile.getFlows().add(firstFlow);
 
       // Record ingress
       long ingressBytes = 1024L + random.nextLong(10 * 1024 * 1024);
-      analyticEventService.recordIngress(did, baseTimestamp, dataSource, ingressBytes, annotations);
+      analyticEventService.recordIngress(did, baseTimestamp, dataSource, FlowType.REST_DATA_SOURCE, ingressBytes, annotations);
 
       // Most files should have 1-3 result paths
       int numBranches = random.nextInt(100) < 80 ? 1 : 2 + random.nextInt(2); // 80% single branch, 20% 2-3 branches
 
       for (int branch = 0; branch < numBranches; branch++) {
         OffsetDateTime branchTime = baseTimestamp.plusSeconds(random.nextInt(60));
+        deltaFile.setModified(branchTime);
 
         // 90% success path (egress), 5% error, 4% filter, 1% cancel
         int outcome = random.nextInt(100);
@@ -417,9 +422,11 @@ public class DeltaFilesDatafetcher {
         } else if (outcome < 95) {
           // Error
           String actionName = actions[random.nextInt(actions.length)];
+
           analyticEventService.recordError(
                   deltaFile,
                   flow,
+                  FlowType.TRANSFORM,
                   actionName,
                   "Test error: Invalid data format in field " + random.nextInt(10),
                   branchTime);
@@ -429,12 +436,13 @@ public class DeltaFilesDatafetcher {
           analyticEventService.recordFilter(
                   deltaFile,
                   flow,
+                  FlowType.TRANSFORM,
                   actionName,
                   "Filtered by " + actionName,
                   branchTime);
         } else {
           // Cancel
-          analyticEventService.recordCancel(deltaFile, branchTime);
+          analyticEventService.recordCancel(deltaFile);
         }
       }
     }

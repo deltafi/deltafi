@@ -174,7 +174,7 @@ class PublisherServiceTest {
 
         Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
 
-        Mockito.verify(analyticEventService).recordError(eq(deltaFile), eq(deltaFileFlow.getName()), eq(NO_SUBSCRIBERS), eq(NO_SUBSCRIBER_CAUSE), any());
+        Mockito.verify(analyticEventService).recordError(eq(deltaFile), eq(deltaFileFlow.getName()), eq(deltaFileFlow.getType()), eq(NO_SUBSCRIBERS), eq(NO_SUBSCRIBER_CAUSE), any());
 
         // null publish rules will result no matches
         Assertions.assertThat(subscribers).isEmpty();
@@ -199,7 +199,7 @@ class PublisherServiceTest {
 
         Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
 
-        Mockito.verify(analyticEventService).recordFilter(eq(deltaFile), eq(deltaFileFlow.getName()), eq(NO_SUBSCRIBERS), eq(NO_SUBSCRIBER_CAUSE), any());
+        Mockito.verify(analyticEventService).recordFilter(eq(deltaFile), eq(deltaFileFlow.getName()), eq(deltaFileFlow.getType()), eq(NO_SUBSCRIBERS), eq(NO_SUBSCRIBER_CAUSE), any());
 
         // null publish rules will result no matches
         Assertions.assertThat(subscribers).isEmpty();

@@ -246,7 +246,7 @@ public class PublisherService {
         action.setContent(toCopy);
         flow.updateState();
         deltaFile.updateState(OffsetDateTime.now(clock));
-        analyticEventService.recordError(deltaFile, flow.getName(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
+        analyticEventService.recordError(deltaFile, flow.getName(), flow.getType(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
     }
 
     private void filterDeltaFile(DeltaFile deltaFile, DeltaFileFlow flow, String context) {
@@ -256,7 +256,7 @@ public class PublisherService {
         action.setFilteredContext(context);
         flow.updateState();
         deltaFile.updateState(OffsetDateTime.now(clock));
-        analyticEventService.recordFilter(deltaFile, flow.getName(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
+        analyticEventService.recordFilter(deltaFile, flow.getName(), flow.getType(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
     }
 
     private Action queueSyntheticAction(DeltaFileFlow flow) {

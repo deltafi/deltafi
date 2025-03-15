@@ -17,54 +17,52 @@
  */
 package org.deltafi.core.services.analytics;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.repo.timescale.*;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.core.types.timescale.*;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.deltafi.common.types.FlowType;
+import org.deltafi.core.repo.AnalyticsRepo;
+import org.deltafi.core.repo.EventAnnotationsRepo;
+import org.deltafi.core.services.*;
+import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.IntStream;
 
 /**
  * Generate analytic events.
  */
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 @Service
+@Transactional
 public class AnalyticEventService {
-    private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final TSCancelRepo tsCancelRepo;
-    private final TSEgressRepo tsEgressRepo;
-    private final TSErrorRepo tsErrorRepo;
-    private final TSIngressRepo tsIngressRepo;
-    private final TSFilterRepo tsFilterRepo;
-    private final TSAnnotationRepo tsAnnotationRepo;
-    private final Clock clock;
 
-    private final ConcurrentLinkedQueue<TSEgress> egressQueue = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<TSIngress> ingressQueue = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<TSError> errorQueue = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<TSFilter> filterQueue = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<TSCancel> cancelQueue = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<TSAnnotation> annotationQueue = new ConcurrentLinkedQueue<>();
+    private final AnalyticsRepo analyticsRepo;
+    private final EventAnnotationsRepo eventAnnotationsRepo;
+    private final FlowDefinitionService flowDefinitionService;
+    private final EventGroupService eventGroupService;
+    private final AnnotationKeyService annotationKeyService;
+    private final AnnotationValueService annotationValueService;
+    private final ActionNameService actionNameService;
+    private final ErrorCauseService errorCauseService;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final static String DEFAULT_EVENT_GROUP = "No Group";
+    private final static int BATCH_SIZE = 1000;
+    private final static int MAX_QUEUE_SIZE = 200000;
+
+    private interface QueuedEvent {}
+    public record QueuedAnalyticsEntity(AnalyticsEntity entity) implements QueuedEvent {}
+    public record QueuedAnnotationEvent(UUID did, Map<String, String> annotations) implements QueuedEvent {}
+
+    private final ConcurrentLinkedDeque<QueuedEvent> eventQueue = new ConcurrentLinkedDeque<>();
 
     private boolean isDisabled() {
         return !deltaFiPropertiesService.getDeltaFiProperties().isMetricsEnabled();
     }
-
-    private final static int BATCH_SIZE = 1000;
-    // this limit is only applied when database inserts fail
-    // determines whether metrics are requeued or dropped
-    private final static int MAX_QUEUE_SIZE = 10000;
 
     /**
      * Generate an analytic event for DeltaFile egress
@@ -80,23 +78,23 @@ public class AnalyticEventService {
                         "egressor", flow.getName()
                 ))) return;
 
-        TSEgress tsEgress = TSEgress.builder()
-                        .key(new TSId(flow.getModified(), deltaFile.getDataSource()))
-                        .egressor(flow.getName())
-                        .egressBytes(flow.lastContentSize())
-                        .build();
+        // it doesn't matter whether the data source was rest or timed and we may not be able to determine
+        // we just need a key that can be looked up later
+        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+        FlowDefinition egressFlow = flowDefinitionService.getOrCreateFlow(flow.getName(), flow.getType());
+        Map<String, String> annotations = Annotation.toMap(deltaFile.getAnnotations());
+        int eventGroupId = resolveEventGroupOrDefault(annotations);
 
-        deltaFile.annotationMap().forEach((k, v) -> {
-            TSAnnotation tsAnnotation = TSAnnotation.builder()
-                    .id(new TSAnnotationId(tsEgress.getKey().getId(), k))
-                    .dataSource(deltaFile.getDataSource())
-                    .entityTimestamp(flow.getModified())
-                    .value(v)
-                    .build();
-            annotationQueue.offer(tsAnnotation);
-        });
+        AnalyticsEntity entity = new AnalyticsEntity();
+        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), flow.getModified()));
+        entity.setDataSourceId(dataSourceFlow.getId());
+        entity.setFlowId(egressFlow.getId());
+        entity.setEventGroupId(eventGroupId);
+        entity.setEventType(EventTypeEnum.EGRESS);
+        entity.setBytesCount(flow.lastContentSize());
+        entity.setFileCount(1);
 
-        egressQueue.offer(tsEgress);
+        eventQueue.add(new QueuedAnalyticsEntity(entity));
     }
 
     /**
@@ -105,10 +103,16 @@ public class AnalyticEventService {
      * @param did the DeltaFile id
      * @param created creation time
      * @param dataSource the data source
+     * @param dataSourceType the data source type
      * @param ingressBytes bytes ingressed
-     * @param annotations map of annotations
+     * @param annotations set of annotations
      */
-    public void recordIngress(UUID did, OffsetDateTime created, String dataSource, long ingressBytes, Map<String, String> annotations) {
+    public void recordIngress(UUID did,
+                              OffsetDateTime created,
+                              String dataSource,
+                              FlowType dataSourceType,
+                              long ingressBytes,
+                              Map<String, String> annotations) {
         if (isDisabled()) return;
         if (invalidEvent("ingress", did,
                 Map.of(
@@ -121,53 +125,23 @@ public class AnalyticEventService {
             return;
         }
 
-        TSIngress tsIngress = TSIngress.builder()
-                .key(new TSId(did, created, dataSource))
-                .ingressBytes(ingressBytes)
-                .count(1)
-                .survey(false)
-                .build();
+        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(dataSource, dataSourceType);
+        int eventGroupId = resolveEventGroupOrDefault(annotations);
 
-        annotations.forEach((k, v) -> {
-            TSAnnotation tsAnnotation = TSAnnotation.builder()
-                    .id(new TSAnnotationId(tsIngress.getKey().getId(), k))
-                    .dataSource(dataSource)
-                    .entityTimestamp(created)
-                    .value(v)
-                    .build();
-            annotationQueue.offer(tsAnnotation);
-        });
+        AnalyticsEntity entity = new AnalyticsEntity();
+        entity.setId(new AnalyticsEntityId(did, created));
+        entity.setDataSourceId(dataSourceFlow.getId());
+        entity.setEventGroupId(eventGroupId);
+        entity.setEventType(EventTypeEnum.INGRESS);
+        entity.setBytesCount(ingressBytes);
+        entity.setFileCount(1);
+        entity.setSurvey(false);
 
-        ingressQueue.offer(tsIngress);
-    }
+        eventQueue.add(new QueuedAnalyticsEntity(entity));
 
-    /*
-     * Record annotations for a DeltaFile. Delegates to recordIngress to upsert the entire record if it's not present,
-     * which can happen due to timing, else only the annotations will be merged with the existing record.
-     *
-     * @param did the DeltaFile id
-     * @param created creation time
-     * @param dataSource the data source
-     * @param ingressBytes bytes ingressed
-     * @param annotations map of annotations
-     */
-    public void recordAnnotations(UUID did, OffsetDateTime created, String dataSource, Map<String, String> annotations) {
-        if (invalidEvent("annotations", did,
-                Map.of(
-                        "timestamp", created,
-                        "dataSource", dataSource,
-                        "did", did
-                ))) return;
-
-        annotations.forEach((k, v) -> {
-            TSAnnotation tsAnnotation = TSAnnotation.builder()
-                    .id(new TSAnnotationId(did, k))
-                    .dataSource(dataSource)
-                    .entityTimestamp(created)
-                    .value(v)
-                    .build();
-            annotationQueue.offer(tsAnnotation);
-        });
+        if (!annotations.isEmpty()) {
+            eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
+        }
     }
 
     /**
@@ -197,123 +171,121 @@ public class AnalyticEventService {
             return;
         }
 
-        TSIngress tsIngress = TSIngress.builder()
-                .key(new TSId(id, created, dataSource))
-                .ingressBytes(ingressBytes)
-                .count(count)
-                .survey(true)
-                .build();
+        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(dataSource, FlowType.REST_DATA_SOURCE);
+        int eventGroupId = resolveEventGroupOrDefault(annotations);
 
-        annotations.forEach((k, v) -> {
-            TSAnnotation tsAnnotation = TSAnnotation.builder()
-                    .id(new TSAnnotationId(tsIngress.getKey().getId(), k))
-                    .dataSource(dataSource)
-                    .entityTimestamp(created)
-                    .value(v)
-                    .build();
-            annotationQueue.offer(tsAnnotation);
-        });
+        AnalyticsEntity entity = new AnalyticsEntity();
+        entity.setId(new AnalyticsEntityId(id, created));
+        entity.setDataSourceId(dataSourceFlow.getId());
+        entity.setEventGroupId(eventGroupId);
+        entity.setEventType(EventTypeEnum.INGRESS);
+        entity.setBytesCount(ingressBytes);
+        entity.setFileCount(count);
+        entity.setSurvey(true);
 
-        ingressQueue.offer(tsIngress);
+        eventQueue.add(new QueuedAnalyticsEntity(entity));
+
+        if (!annotations.isEmpty()) {
+            eventQueue.add(new QueuedAnnotationEvent(id, new HashMap<>(annotations)));
+        }
     }
 
     /**
-     * Generate an analytic event for DeltaFile error.
-     * @param deltaFile - errored DeltaFile
-     * @param flow - name of the dataSource
-     * @param action - name of the action that errored
-     * @param cause - cause of the error
-     * @param timestamp - timestamp of the error
+     * Records an analytic event for a DeltaFile error.
+     *
+     * @param deltaFile  the DeltaFile that encountered an error
+     * @param flowName   the name of the flow in which the error occurred
+     * @param flowType   the type of the flow in which the error occurred
+     * @param actionName the name of the action associated with the error
+     * @param cause      a string representing the error cause
+     * @param eventTime  the time when the error event occurred
      */
-    public void recordError(DeltaFile deltaFile, String flow, String action, String cause, OffsetDateTime timestamp) {
+    public void recordError(DeltaFile deltaFile, String flowName, FlowType flowType, String actionName, String cause, OffsetDateTime eventTime) {
         if (isDisabled()) return;
         if (invalidEvent("error", deltaFile.getDid(),
                 Map.of(
+                        "timestamp", eventTime,
                         "dataSource", deltaFile.getDataSource()
                 ))) return;
 
-        TSError tsError = TSError.builder()
-                .key(new TSId(timestamp == null ? OffsetDateTime.now(clock) : timestamp, deltaFile.getDataSource()))
-                .cause(cause)
-                .flow(flow)
-                .action(action)
-                .build();
+        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+        FlowDefinition errorFlow = flowDefinitionService.getOrCreateFlow(flowName, flowType);
+        int eventGroupId = resolveEventGroupOrDefault(Annotation.toMap(deltaFile.getAnnotations()));
+        int causeId = errorCauseService.getOrCreateCause(cause);
+        int actionId = actionNameService.getOrCreateActionName(actionName);
 
-        deltaFile.annotationMap().forEach((k, v) -> {
-            TSAnnotation tsAnnotation = TSAnnotation.builder()
-                    .id(new TSAnnotationId(tsError.getKey().getId(), k))
-                    .dataSource(deltaFile.getDataSource())
-                    .entityTimestamp(timestamp)
-                    .value(v)
-                    .build();
-            annotationQueue.offer(tsAnnotation);
-        });
+        AnalyticsEntity entity = new AnalyticsEntity();
+        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), eventTime));
+        entity.setDataSourceId(dataSourceFlow.getId());
+        entity.setFlowId(errorFlow.getId());
+        entity.setEventGroupId(eventGroupId);
+        entity.setEventType(EventTypeEnum.ERROR);
+        entity.setCauseId(causeId);
+        entity.setActionId(actionId);
+        entity.setFileCount(1);
 
-        errorQueue.offer(tsError);
+        eventQueue.add(new QueuedAnalyticsEntity(entity));
     }
 
     /**
      * Generate an analytic event for DeltaFile filter.
      * @param deltaFile - filtered DeltaFile
-     * @param flow - name of the dataSource
-     * @param action - name of the action that fitlered
-     * @param message - cause of the filter
-     * @param timestamp - timestamp of the filter
+     * @param flowName   the name of the flow in which the filter occurred
+     * @param flowType   the type of the flow in which the filter occurred
+     * @param actionName the name of the action associated with the filter
+     * @param cause      a string representing the filter cause
+     * @param eventTime  the time when the filter event occurred
      */
-    public void recordFilter(DeltaFile deltaFile, String flow, String action, String message, OffsetDateTime timestamp) {
+    public void recordFilter(DeltaFile deltaFile, String flowName, FlowType flowType, String actionName, String cause, OffsetDateTime eventTime) {
         if (isDisabled()) return;
         if (invalidEvent("filter", deltaFile.getDid(),
                 Map.of(
+                        "timestamp", eventTime,
                         "dataSource", deltaFile.getDataSource()
                 ))) return;
 
-        TSFilter tsFilter = TSFilter.builder()
-                .key(new TSId(timestamp == null ? OffsetDateTime.now(clock) : timestamp, deltaFile.getDataSource()))
-                .flow(flow)
-                .action(action)
-                .message(message)
-                .build();
+        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+        FlowDefinition errorFlow = flowDefinitionService.getOrCreateFlow(flowName, flowType);
+        int eventGroupId = resolveEventGroupOrDefault(Annotation.toMap(deltaFile.getAnnotations()));
+        int causeId = errorCauseService.getOrCreateCause(cause);
+        int actionId = actionNameService.getOrCreateActionName(actionName);
 
-        deltaFile.annotationMap().forEach((k, v) -> {
-            TSAnnotation tsAnnotation = TSAnnotation.builder()
-                    .id(new TSAnnotationId(tsFilter.getKey().getId(), k))
-                    .dataSource(deltaFile.getDataSource())
-                    .entityTimestamp(timestamp)
-                    .value(v)
-                    .build();
-            annotationQueue.offer(tsAnnotation);
-        });
+        AnalyticsEntity entity = new AnalyticsEntity();
+        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), eventTime));
+        entity.setDataSourceId(dataSourceFlow.getId());
+        entity.setFlowId(errorFlow.getId());
+        entity.setEventGroupId(eventGroupId);
+        entity.setEventType(EventTypeEnum.FILTER);
+        entity.setCauseId(causeId);
+        entity.setActionId(actionId);
+        entity.setFileCount(1);
 
-        filterQueue.offer(tsFilter);
+        eventQueue.add(new QueuedAnalyticsEntity(entity));
     }
 
     /**
      * Generate an analytic event for DeltaFile cancel.
-     * @param deltaFile - filtered DeltaFile
-     * @param timestamp - timestamp of the filter
+     * @param deltaFile - cancelled DeltaFile
      */
-    public void recordCancel(DeltaFile deltaFile, OffsetDateTime timestamp) {
+    public void recordCancel(DeltaFile deltaFile) {
         if (isDisabled()) return;
         if (invalidEvent("cancel", deltaFile.getDid(),
                 Map.of(
+                        "timestamp", deltaFile.getModified(),
                         "dataSource", deltaFile.getDataSource()
                 ))) return;
 
-        TSCancel tsCancel = TSCancel.builder()
-                .key(new TSId(timestamp == null ? OffsetDateTime.now(clock) : timestamp, deltaFile.getDataSource()))
-                .build();
+        FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
+        int eventGroupId = resolveEventGroupOrDefault(Annotation.toMap(deltaFile.getAnnotations()));
 
-        deltaFile.annotationMap().forEach((k, v) -> {
-            TSAnnotation tsAnnotation = TSAnnotation.builder()
-                    .id(new TSAnnotationId(tsCancel.getKey().getId(), k))
-                    .dataSource(deltaFile.getDataSource())
-                    .entityTimestamp(timestamp)
-                    .value(v)
-                    .build();
-            annotationQueue.offer(tsAnnotation);
-        });
+        AnalyticsEntity entity = new AnalyticsEntity();
+        entity.setId(new AnalyticsEntityId(deltaFile.getDid(), deltaFile.getModified()));
+        entity.setDataSourceId(dataSourceFlow.getId());
+        entity.setEventGroupId(eventGroupId);
+        entity.setEventType(EventTypeEnum.CANCEL);
+        entity.setFileCount(1);
 
-        cancelQueue.offer(tsCancel);
+        eventQueue.add(new QueuedAnalyticsEntity(entity));
     }
 
     /**
@@ -337,7 +309,6 @@ public class AnalyticEventService {
                 .mapToObj(i -> new SurveyError(i, surveyEvents.get(i)))
                 .toList();
 
-
         // if there were errors do not process any of the survey entries
         if (!surveyErrors.isEmpty()) {
             return surveyErrors;
@@ -347,6 +318,158 @@ public class AnalyticEventService {
         return List.of();
     }
 
+    /**
+     * Queue annotations for batch processing
+     * @param did DeltaFile ID
+     * @param annotations Map of annotations
+     */
+    public void queueAnnotations(UUID did, Map<String, String> annotations) {
+        if (isDisabled() || annotations.isEmpty()) return;
+        eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
+    }
+
+    /**
+     * Scheduled job to process analytics and annotation batches
+     */
+    public void processEventBatch() {
+        if (isDisabled() || eventQueue.isEmpty()) return;
+
+        do {
+            List<QueuedAnalyticsEntity> analyticsBatch = new ArrayList<>(BATCH_SIZE);
+            List<QueuedAnnotationEvent> annotationBatch = new ArrayList<>(BATCH_SIZE);
+            // Poll items until the size of one batch reaches BATCH_SIZE,
+            // or until there are no more items in the queue.
+            label:
+            while (analyticsBatch.size() < BATCH_SIZE || annotationBatch.size() < BATCH_SIZE) {
+                QueuedEvent item = eventQueue.poll();
+                switch (item) {
+                    case null:
+                        break label;
+                    case QueuedAnalyticsEntity ae:
+                        analyticsBatch.add(ae);
+                        break;
+                    case QueuedAnnotationEvent an:
+                        annotationBatch.add(an);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            // Process analytics events.
+            if (!analyticsBatch.isEmpty()) {
+                try {
+                    List<AnalyticsEntity> entities = analyticsBatch.stream()
+                            .map(QueuedAnalyticsEntity::entity)
+                            .toList();
+                    analyticsRepo.batchInsert(entities);
+                } catch (Exception e) {
+                    if (eventQueue.size() < MAX_QUEUE_SIZE) {
+                        log.error("Error processing analytics batch. Re-queueing items.", e);
+                        // Re-queue the items at the front of the deque to maintain order.
+                        for (int i = annotationBatch.size() - 1; i >= 0; i--) {
+                            eventQueue.offerFirst(annotationBatch.get(i));
+                        }
+                        for (int i = analyticsBatch.size() - 1; i >= 0; i--) {
+                            eventQueue.offerFirst(analyticsBatch.get(i));
+                        }
+                    } else {
+                        log.error("Error processing analytics batch. Max queue size exceeded, dropping items.", e);
+                    }
+                    break;
+                }
+            }
+
+            // Process annotation events.
+            if (!annotationBatch.isEmpty()) {
+                try {
+                    insertAnnotationsBulk(annotationBatch);
+                } catch (Exception e) {
+                    if (eventQueue.size() < MAX_QUEUE_SIZE) {
+                        log.error("Error processing annotation batch: {}. Re-queueing items.", e.getMessage(), e);
+                        for (int i = annotationBatch.size() - 1; i >= 0; i--) {
+                            eventQueue.offerFirst(annotationBatch.get(i));
+                        }
+                    } else {
+                        log.error("Error processing annotation batch: {}. Max queue size exceeded, dropping items.", e.getMessage(), e);
+                    }
+                }
+            }
+        } while (eventQueue.size() >= BATCH_SIZE && !isDisabled());
+    }
+
+    /**
+     * Bulk insert annotations
+     */
+    private void insertAnnotationsBulk(List<QueuedAnnotationEvent> batch) {
+        // Prepare bulk annotation inserts
+        List<Object[]> batchParams = new ArrayList<>();
+        for (QueuedAnnotationEvent event : batch) {
+            Map<String, String> annotations = event.annotations();
+            UUID did = event.did();
+
+            for (Map.Entry<String, String> anno : annotations.entrySet()) {
+                String keyName = anno.getKey();
+                if (!deltaFiPropertiesService.getDeltaFiProperties().allowedAnalyticsAnnotationsList().contains(keyName)) {
+                    continue;
+                }
+                String valName = anno.getValue();
+                int keyId = annotationKeyService.getOrCreateKeyId(keyName);
+                int valId = annotationValueService.getOrCreateValueId(valName);
+
+                batchParams.add(new Object[]{did, keyId, valId});
+            }
+        }
+
+        if (!batchParams.isEmpty()) {
+            eventAnnotationsRepo.bulkUpsertAnnotations(batchParams);
+        }
+
+        // Group annotations by did for group id and updated field updates
+        Map<UUID, Map<String, String>> didToAnnotations = new HashMap<>();
+        for (QueuedAnnotationEvent event : batch) {
+            didToAnnotations.put(event.did(), event.annotations());
+        }
+
+        // "notify" analytics that they have been updated
+        OffsetDateTime now = OffsetDateTime.now();
+        List<Object[]> updatesWithGroup = new ArrayList<>();
+        List<Object[]> updatesWithoutGroup = new ArrayList<>();
+
+        for (Map.Entry<UUID, Map<String, String>> entry : didToAnnotations.entrySet()) {
+            UUID did = entry.getKey();
+            Integer eventGroup = resolveEventGroupOrNull(entry.getValue());
+            if (eventGroup != null) {
+                updatesWithGroup.add(new Object[]{ eventGroup, now, did });
+            } else {
+                updatesWithoutGroup.add(new Object[]{ now, did });
+            }
+        }
+
+        if (!updatesWithGroup.isEmpty()) {
+            analyticsRepo.batchUpdateEventGroupIdAndUpdated(updatesWithGroup);
+        }
+
+        if (!updatesWithoutGroup.isEmpty()) {
+            analyticsRepo.batchUpdateUpdated(updatesWithoutGroup);
+        }
+    }
+
+    private int resolveEventGroupOrDefault(Map<String, String> annotationMap) {
+        if (!annotationMap.containsKey(deltaFiPropertiesService.getDeltaFiProperties().getAnalyticsGroupName())) {
+            return eventGroupService.getOrCreateEventGroupId(DEFAULT_EVENT_GROUP);
+        }
+        String groupValue = annotationMap.get(deltaFiPropertiesService.getDeltaFiProperties().getAnalyticsGroupName());
+        return eventGroupService.getOrCreateEventGroupId(groupValue);
+    }
+
+    private Integer resolveEventGroupOrNull(Map<String, String> annotationMap) {
+        if (!annotationMap.containsKey(deltaFiPropertiesService.getDeltaFiProperties().getAnalyticsGroupName())) {
+            return null;
+        }
+        String groupValue = annotationMap.get(deltaFiPropertiesService.getDeltaFiProperties().getAnalyticsGroupName());
+        return eventGroupService.getOrCreateEventGroupId(groupValue);
+    }
+
     public record SurveyError(String error, SurveyEvent surveyEvent) {
         public SurveyError(int index, SurveyEvent surveyEvent) {
             this("Invalid survey data at " + index, surveyEvent);
@@ -354,47 +477,6 @@ public class AnalyticEventService {
     }
 
     public static class DisabledAnalyticsException extends RuntimeException { }
-
-    @Scheduled(fixedDelay = 5000)
-    public void processBatch() {
-        if (isDisabled()) return;
-
-        boolean fullBatchProcessed;
-        do {
-            fullBatchProcessed = processQueue(egressQueue, tsEgressRepo::batchInsert) ||
-                    processQueue(ingressQueue, tsIngressRepo::batchInsert) ||
-                    processQueue(errorQueue, tsErrorRepo::batchInsert) ||
-                    processQueue(filterQueue, tsFilterRepo::batchInsert) ||
-                    processQueue(cancelQueue, tsCancelRepo::batchInsert) ||
-                    processQueue(annotationQueue, tsAnnotationRepo::batchUpsert);
-        } while (fullBatchProcessed);
-    }
-
-    private <T> boolean processQueue(Queue<T> queue, Consumer<List<T>> saveFunction) {
-        List<T> batch = new ArrayList<>();
-
-        T item;
-        while (batch.size() < BATCH_SIZE && (item = queue.poll()) != null) {
-            batch.add(item);
-        }
-
-        if (batch.isEmpty()) {
-            return false;
-        }
-
-        try {
-            saveFunction.accept(batch);
-            return batch.size() == BATCH_SIZE;
-        } catch (Exception e) {
-            if (queue.size() < MAX_QUEUE_SIZE) {
-                log.error("Error processing batch. Re-queueing items.", e);
-                queue.addAll(batch);
-            } else {
-                log.error("Error processing batch. Max queue size exceeded, dropping items.", e);
-            }
-            return false;
-        }
-    }
 
     private boolean invalidEvent(String eventType, UUID did, Map<String, Object> fields) {
         for (Map.Entry<String, Object> entry : fields.entrySet()) {

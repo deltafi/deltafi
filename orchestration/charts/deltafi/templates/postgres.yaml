@@ -47,9 +47,10 @@ spec:
       log_autovacuum_min_duration: "-1"
       log_connections: "off"
       log_disconnections: "off"
+      max_worker_processes: "16"
+      timescaledb.max_background_workers: "16"
       wal_level: "logical"
       max_replication_slots: "1"
-
   env:
     - name: ENABLE_LOGICAL_REPLICATION
       value: "true"

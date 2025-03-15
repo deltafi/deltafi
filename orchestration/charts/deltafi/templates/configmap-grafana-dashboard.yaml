@@ -134,19 +134,19 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: data-source-by-annotation
+  name: dashboard-filter-analysis
   labels:
     grafana_dashboard: "1"
 data:
-  data-source-by-annotation.json: |-
-{{ .Files.Get "files/grafana/dashboards/data-source-by-annotation.json" | indent 4 }}
+  filter-analysis.json: |-
+{{ .Files.Get "files/grafana/dashboards/filter-analysis.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: pivot-by-annotation
+  name: dataflow-analytics
   labels:
     grafana_dashboard: "1"
 data:
-  pivot-by-annotation.json: |-
-{{ .Files.Get "files/grafana/dashboards/pivot-by-annotation.json" | indent 4 }}
+  dataflow-analytics.json: |-
+{{ .Files.Get "files/grafana/dashboards/dataflow-analytics.json" | indent 4 }}

@@ -22,7 +22,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -48,5 +51,10 @@ public class Annotation implements Comparable<org.deltafi.core.types.Annotation>
             return keyComparison;
         }
         return this.value.compareTo(other.value);
+    }
+
+    public static Map<String, String> toMap(Set<Annotation> annotations) {
+        return annotations.stream()
+                .collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
     }
 }

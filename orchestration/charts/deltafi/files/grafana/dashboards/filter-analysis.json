@@ -44,11 +44,11 @@
       }
     ]
   },
-  "description": "Error analysis by data source and annotation",
+  "description": "Filter analysis by data source and annotation",
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 15,
+  "id": 14,
   "links": [],
   "panels": [
     {
@@ -164,7 +164,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  SUM(error_files) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  SUM(filter_files) AS filter_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'FILTERS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nGROUP BY time\nORDER BY time",
           "refId": "A",
           "sql": {
             "columns": [
@@ -201,7 +201,7 @@
           "table": "ts_egresses"
         }
       ],
-      "title": "Errored Files",
+      "title": "Filtered Files",
       "transparent": true,
       "type": "timeseries"
     },
@@ -215,7 +215,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Errors",
+          "displayName": "Filtered",
           "mappings": [
             {
               "options": {
@@ -285,7 +285,7 @@
           },
           "panelId": 147,
           "refId": "A",
-          "withTransforms": true
+          "withTransforms": false
         }
       ],
       "title": "",
@@ -403,7 +403,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  annotation_value,\n  SUM(error_files) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, annotation_value\nORDER BY time, annotation_value;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  annotation_value,\n  SUM(filter_files) AS filter_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'FILTERS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, annotation_value\nORDER BY time, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -440,7 +440,7 @@
           "table": "ts_egresses"
         }
       ],
-      "title": "Errored Files By Annotation Key: $annotationKey",
+      "title": "Filtered Files By $annotationKey",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -554,7 +554,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  datasource_name AS data_source,\n  SUM(error_files) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, datasource_name\nORDER BY time, data_source;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  datasource_name AS data_source,\n  SUM(filter_files) AS filter_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'FILTERS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, datasource_name\nORDER BY time, data_source;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -591,7 +591,7 @@
           "table": "ts_egresses"
         }
       ],
-      "title": "Errored Files by Data Source",
+      "title": "Filtered Files by Data Source",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -705,7 +705,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  cause,\n  SUM(error_files) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, cause\nORDER BY time, cause;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  cause,\n  SUM(filter_files) AS filter_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'FILTERS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, cause\nORDER BY time, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -742,7 +742,7 @@
           "table": "ts_egresses"
         }
       ],
-      "title": "Errored Files By Cause",
+      "title": "Filtered Files By Cause",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -856,7 +856,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  group_name AS event_group,\n  SUM(error_files) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, group_name\nORDER BY time, event_group;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  group_name AS event_group,\n  SUM(filter_files) AS filter_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'FILTERS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, group_name\nORDER BY time, event_group;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -893,7 +893,7 @@
           "table": "ts_egresses"
         }
       ],
-      "title": "Errored Files By Group",
+      "title": "Filtered Files By Group",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -986,7 +986,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS data_source,\n  cause,\n  SUM(error_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY datasource_name, cause\nORDER BY data_source, cause;",
+          "rawSql": "SELECT\n  datasource_name AS data_source,\n  cause,\n  SUM(filter_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'FILTERS'\n)\nGROUP BY datasource_name, cause\nORDER BY data_source, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1118,7 +1118,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  group_name AS event_group,\n  cause,\n  SUM(error_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY group_name, cause\nORDER BY event_group, cause;",
+          "rawSql": "SELECT\n  group_name AS event_group,\n  cause,\n  SUM(filter_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'FILTERS'\n)\nGROUP BY group_name, cause\nORDER BY event_group, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1251,7 +1251,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS data_source,\n  annotation_value,\n  SUM(error_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY datasource_name, annotation_value\nORDER BY data_source, annotation_value;",
+          "rawSql": "SELECT\n  datasource_name AS data_source,\n  annotation_value,\n  SUM(filter_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'FILTERS'\n)\nGROUP BY datasource_name, annotation_value\nORDER BY data_source, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1383,7 +1383,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  group_name AS event_group,\n  annotation_value,\n  SUM(error_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY group_name, annotation_value\nORDER BY event_group, annotation_value;",
+          "rawSql": "SELECT\n  group_name AS event_group,\n  annotation_value,\n  SUM(filter_files) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'FILTERS'\n)\nGROUP BY group_name, annotation_value\nORDER BY event_group, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1422,7 +1422,7 @@
           "table": "ts_ingresses"
         }
       ],
-      "title": "$annotationKey Value Error Frequency by Group",
+      "title": "$annotationKey Value Filter Frequency by Group",
       "transformations": [
         {
           "id": "organize",
@@ -1515,7 +1515,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS flow_name,\n  action_name,\n  SUM(error_files) AS total_errors\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY datasource_name, action_name\nORDER BY flow_name, action_name;",
+          "rawSql": "SELECT\n  datasource_name AS flow_name,\n  action_name,\n  SUM(filter_files) AS total_filters\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'FILTERS'\n)\nGROUP BY datasource_name, action_name\nORDER BY flow_name, action_name;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1554,7 +1554,7 @@
           "table": "ts_ingresses"
         }
       ],
-      "title": "Error Frequency by Flow and Action",
+      "title": "Filter Frequency by Flow and Action",
       "transformations": [
         {
           "id": "organize",
@@ -1575,7 +1575,7 @@
               "frequency": "Count",
               "ingress_files": "Ingress Files",
               "total_egress_bytes": "Egress Bytes",
-              "total_errors": "Count",
+              "total_filters": "Count",
               "total_ingress_bytes": "Ingress Bytes"
             }
           }
@@ -1724,8 +1724,8 @@
     ]
   },
   "timezone": "",
-  "title": "Error Analysis",
-  "uid": "error-analysis",
+  "title": "Filter Analysis",
+  "uid": "filter-analysis",
   "version": 1,
   "weekStart": ""
 }

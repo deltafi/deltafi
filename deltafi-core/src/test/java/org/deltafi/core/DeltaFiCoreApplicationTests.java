@@ -140,7 +140,7 @@ import static org.mockito.Mockito.times;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
-@Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, flows, plugins, properties, resume_policies, ts_errors, flow_definitions CASCADE",
+@Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, flows, plugins, properties, resume_policies, analytics, event_annotations, flow_definitions CASCADE",
 		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DeltaFiCoreApplicationTests {
 	public static final DockerImageName TS_POSTGRES_IMAGE = DockerImageName
