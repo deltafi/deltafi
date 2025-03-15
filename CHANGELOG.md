@@ -5,6 +5,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.11.0] - 2025-03-14
+
+### Added
+- Added an `insertBatchSize` property to configure the number of DeltaFiles to insert at once
+- Added a method to ContentInput to get content by name
+- Added an option to ModifyMediaType to detect by name only
+- Added partition and node-specific disk metrics for minio and postgres 
+- Compose: TimescaleDB with pg_squeeze extension
+- Testing: Using custom timescaledb with pg_squeeze extension
+
+### Changed
+- System Properties are now edited in a Dialog and can better handle larger values
+- DeltaFileCacheService now uses bulkInsert for new DeltaFiles from the saveAll method 
+- Automatically reclaim space in delta_files, delta_file_flows, and annotations tables when dead records reach >20% of total table size using pg_squeeze. 
+
+### Fixed
+- Fixed issues with permissions causing cloned or created timed-data-sources not to appear in Data Sources Page. 
+- Remove DeltaFile from the cache when an unhandled exception occurs to prevent inconsistent state from being saved
+- Fix a race condition where missing or inactive data sinks were not properly handled
+- Fix an issue that would prevent a DeltaFile from completing other transforms when one forked transform has errored
+- Recheck delete policies after each batch to ensure they are still running
+- Remove DGS queues when they have not written a heartbeat in over 5 minutes
+- Have existing disk metrics check /data/deltafi instead of /data, since these can be on different partitions
+
+### Tech-Debt/Refactor
+- Increase speed of deleting DeltaFiles when there is no content present 
+- Remove unused action number 
+- Add compression to actions column in delta_file_flows
+
+### Upgrade and Migration
+- Update python dependencies to match new base image deltafi/python:3.12.9-0
+- Postgres spilo base image upgrade
+  - pg_squeeze 1.8 (new)
+  - timescaledb 2.18.2 (from 2.14.2)
+  - patroni 3.3.6 (from 3.3.3)
+- Upgrade to GraphQL DGS version 10.0.4
+- Upgrade to Spring Boot 3.3.6
+- Small patches appled to various dependences for CVE cleanup
+- Upgrade timescale version in compose to 2.18.2
+- Migrated to using custom timescaledb image: deltafi/timescaledb:2.18.2-pg16
+
 ## [2.10.2] - 2025-03-04
 
 ### Added
@@ -3906,7 +3947,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.11.0...main
+[2.11.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.2...2.11.0
 [2.10.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.1...2.10.2
 [2.10.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.0...2.10.1
 [2.10.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.9.0...2.10.0
