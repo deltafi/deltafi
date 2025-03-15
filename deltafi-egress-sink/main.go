@@ -70,6 +70,7 @@ func blackholeHandler(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(latency)
 	}
 	logger.Info("Processed blackhole request")
+	w.Header().Set("Content-Length", "0")
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -99,6 +100,7 @@ func fileSinkHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error saving file: %v", err), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Length", "0")
 	w.WriteHeader(http.StatusOK)
 }
 
