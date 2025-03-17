@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 14,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -656,8 +656,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -807,8 +806,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -942,8 +940,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1074,8 +1071,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1207,8 +1203,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1339,8 +1334,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1471,8 +1465,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -1632,13 +1625,13 @@
           "type": "grafana-postgresql-datasource",
           "uid": "${database}"
         },
-        "definition": "SELECT DISTINCT\n  eg.name AS __text,\n  eg.name AS __value\nFROM (\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_anno\n  UNION ALL\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_noanno\n) a\nJOIN flow_definitions fd ON a.data_source_id = fd.id\nJOIN event_groups eg ON a.event_group_id = eg.id\nWHERE $__timeFilter(a.bucket_start)\n  AND ('All' = ANY(STRING_TO_ARRAY($dataSources, ',')) OR fd.name = ANY(STRING_TO_ARRAY($dataSources, ',')))",
+        "definition": "SELECT DISTINCT\n  eg.name AS __text,\n  eg.name AS __value \nFROM (\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_anno\n  UNION ALL\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_noanno\n) a\nJOIN flow_definitions fd ON a.data_source_id = fd.id\nJOIN event_groups eg ON a.event_group_id = eg.id\nWHERE $__timeFilter(a.bucket_start)\n  AND ('All' in ($dataSources) OR fd.name in ($dataSources));",
         "includeAll": true,
         "label": "Groups",
         "multi": true,
         "name": "groups",
         "options": [],
-        "query": "SELECT DISTINCT\n  eg.name AS __text,\n  eg.name AS __value\nFROM (\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_anno\n  UNION ALL\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_noanno\n) a\nJOIN flow_definitions fd ON a.data_source_id = fd.id\nJOIN event_groups eg ON a.event_group_id = eg.id\nWHERE $__timeFilter(a.bucket_start)\n  AND ('All' = ANY(STRING_TO_ARRAY($dataSources, ',')) OR fd.name = ANY(STRING_TO_ARRAY($dataSources, ',')))",
+        "query": "SELECT DISTINCT\n  eg.name AS __text,\n  eg.name AS __value \nFROM (\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_anno\n  UNION ALL\n  SELECT event_group_id, data_source_id, bucket_start\n  FROM analytics_5m_noanno\n) a\nJOIN flow_definitions fd ON a.data_source_id = fd.id\nJOIN event_groups eg ON a.event_group_id = eg.id\nWHERE $__timeFilter(a.bucket_start)\n  AND ('All' in ($dataSources) OR fd.name in ($dataSources));",
         "refresh": 1,
         "regex": "",
         "sort": 5,
@@ -1655,13 +1648,13 @@
           "type": "grafana-postgresql-datasource",
           "uid": "${database}"
         },
-        "definition": "SELECT DISTINCT\n  ak.key_name AS __text,\n  ak.key_name AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' = ANY(STRING_TO_ARRAY($dataSources, ',')) OR fd.name = ANY(STRING_TO_ARRAY($dataSources, ',')))\n  AND ('All' = ANY(STRING_TO_ARRAY($groups, ',')) OR eg.name = ANY(STRING_TO_ARRAY($groups, ',')))",
+        "definition": "SELECT DISTINCT\n  ak.key_name AS __text,\n  ak.key_name AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))",
         "description": "",
         "includeAll": true,
         "label": "Annotation Key",
         "name": "annotationKey",
         "options": [],
-        "query": "SELECT DISTINCT\n  ak.key_name AS __text,\n  ak.key_name AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' = ANY(STRING_TO_ARRAY($dataSources, ',')) OR fd.name = ANY(STRING_TO_ARRAY($dataSources, ',')))\n  AND ('All' = ANY(STRING_TO_ARRAY($groups, ',')) OR eg.name = ANY(STRING_TO_ARRAY($groups, ',')))",
+        "query": "SELECT DISTINCT\n  ak.key_name AS __text,\n  ak.key_name AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))",
         "refresh": 2,
         "regex": "",
         "sort": 5,
@@ -1682,13 +1675,13 @@
           "type": "grafana-postgresql-datasource",
           "uid": "${database}"
         },
-        "definition": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' = ANY(STRING_TO_ARRAY($dataSources, ',')) OR fd.name = ANY(STRING_TO_ARRAY($dataSources, ',')))\n  AND ('All' = ANY(STRING_TO_ARRAY($groups, ',')) OR eg.name = ANY(STRING_TO_ARRAY($groups, ',')))\n  AND ak.key_name = $annotationKey \n  AND $annotationKey != 'All'",
+        "definition": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))\n  AND ak.key_name = $annotationKey \n  AND $annotationKey != 'All'",
         "includeAll": true,
         "label": "Annotation Values",
         "multi": true,
         "name": "annotationValues",
         "options": [],
-        "query": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' = ANY(STRING_TO_ARRAY($dataSources, ',')) OR fd.name = ANY(STRING_TO_ARRAY($dataSources, ',')))\n  AND ('All' = ANY(STRING_TO_ARRAY($groups, ',')) OR eg.name = ANY(STRING_TO_ARRAY($groups, ',')))\n  AND ak.key_name = $annotationKey \n  AND $annotationKey != 'All'",
+        "query": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))\n  AND ak.key_name = $annotationKey \n  AND $annotationKey != 'All'",
         "refresh": 2,
         "regex": "",
         "sort": 5,
