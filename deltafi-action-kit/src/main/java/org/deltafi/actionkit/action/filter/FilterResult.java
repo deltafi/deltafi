@@ -45,10 +45,7 @@ public class FilterResult extends AnnotationsResult<FilterResult> implements Egr
      * @param filteredCause Message explaining the reason for the filtered action
      */
     public FilterResult(@NotNull ActionContext context, @NotNull String filteredCause) {
-        super(context, ActionEventType.FILTER);
-
-        this.filteredCause = filteredCause;
-        this.filteredContext = null;
+        this(context, filteredCause, null);
     }
 
     /**

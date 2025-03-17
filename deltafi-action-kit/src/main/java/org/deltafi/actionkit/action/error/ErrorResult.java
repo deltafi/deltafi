@@ -47,34 +47,40 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
     /**
      * @param context Execution context of the errored action
      * @param errorMessage Message explaining the error result
-     * @param throwable An exception that indicates the reason for the error
+     * @param errorDetails Additional details about the error
+     * @param throwable An exception that indicates the reason for the error. The stack trace will be appended to errorDetails
      */
-    public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull Throwable throwable) {
+    public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, String errorDetails, Throwable throwable) {
         super(context, ActionEventType.ERROR);
 
         this.errorCause = errorMessage;
 
-        StringWriter stackWriter = new StringWriter();
-        throwable.printStackTrace(new PrintWriter(stackWriter));
-        this.errorContext = throwable + "\n" + stackWriter;
-        this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
+        if (errorDetails != null && throwable != null) {
+            StringWriter stackWriter = new StringWriter();
+            throwable.printStackTrace(new PrintWriter(stackWriter));
+            this.errorContext = errorDetails + "\n" + throwable + "\n" + stackWriter;
+            this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
+        } else if (errorDetails != null) {
+            this.errorContext = errorDetails;
+            this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorDetails;
+        } else if (throwable != null) {
+            StringWriter stackWriter = new StringWriter();
+            throwable.printStackTrace(new PrintWriter(stackWriter));
+            this.errorContext = throwable + "\n" + stackWriter;
+            this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
+        } else {
+            this.errorContext = "";
+            this.errorSummary = errorMessage + ": " + context.getDid();
+        }
     }
 
     /**
      * @param context Execution context of the errored action
      * @param errorMessage Message explaining the error result
-     * @param errorDetails Additional details about the error
-     * @param throwable An exception that indicates the reason for the error. The stack trace will be appended to errorDetails
+     * @param throwable An exception that indicates the reason for the error
      */
-    public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull String errorDetails, @NotNull Throwable throwable) {
-        super(context, ActionEventType.ERROR);
-
-        this.errorCause = errorMessage;
-
-        StringWriter stackWriter = new StringWriter();
-        throwable.printStackTrace(new PrintWriter(stackWriter));
-        this.errorContext = errorDetails + "\n" + throwable + "\n" + stackWriter;
-        this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
+    public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull Throwable throwable) {
+        this(context, errorMessage, null, throwable);
     }
 
     /**
@@ -83,11 +89,7 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
      */
     @SuppressWarnings("unused")
     public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage) {
-        super(context, ActionEventType.ERROR);
-
-        this.errorCause = errorMessage;
-        this.errorContext = "";
-        this.errorSummary = errorMessage + ": " + context.getDid();
+        this(context, errorMessage,  null, null);
     }
 
     /**
@@ -97,11 +99,7 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
      */
     @SuppressWarnings("unused")
     public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull String errorDetails) {
-        super(context, ActionEventType.ERROR);
-
-        this.errorCause = errorMessage;
-        this.errorContext = errorDetails;
-        this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorDetails;
+        this(context, errorMessage,  errorDetails, null);
     }
 
     /**

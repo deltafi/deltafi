@@ -24,6 +24,8 @@ import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ActionKitException;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.error.ErrorResultException;
+import org.deltafi.actionkit.action.filter.FilterResultException;
 import org.deltafi.actionkit.exception.ExpectedContentException;
 import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.actionkit.exception.StartupException;
@@ -160,6 +162,10 @@ public class ActionRunner {
             if (result == null) {
                 throw new RuntimeException("Action " + context.getActionName() + " returned null Result for did " + context.getDid());
             }
+        } catch (ErrorResultException e) {
+            result = e.toErrorResult(context);
+        } catch (FilterResultException e) {
+            result = e.toFilterResult(context);
         } catch (ExpectedContentException e) {
             result = new ErrorResult(context, "Action received no content", e).logErrorTo(log);
         } catch (MissingMetadataException e) {
