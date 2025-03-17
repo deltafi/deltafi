@@ -17,14 +17,31 @@
  */
 package org.deltafi.core.action.egress;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class DeltaFiEgressParameters extends HttpEgressParameters {
-    @JsonPropertyDescription("Name of the flow on the receiving DeltaFi")
+public class DeltaFiEgressParameters extends ActionParameters implements IHttpEgressParameters {
+    @JsonPropertyDescription("The URL to send the DeltaFile to")
+    private String url;
+
+    @JsonProperty(defaultValue = "3")
+    @JsonPropertyDescription("Number of times to retry a failing HTTP request")
+    private Integer retryCount = 3;
+
+    @JsonProperty(defaultValue = "150")
+    @JsonPropertyDescription("Number of milliseconds to wait for an HTTP retry")
+    private Integer retryDelayMs = 150;
+
+    @JsonPropertyDescription("Name of the data source on the receiving DeltaFi")
     private String flow;
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("Send to the local DeltaFi; determines URL automatically")
+    private boolean sendLocal = false;
 }

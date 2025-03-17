@@ -25,6 +25,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.http.HttpSendException;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
@@ -36,12 +37,10 @@ import java.io.InputStream;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpResponse;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
-public class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction<P> {
+public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> extends EgressAction<P> {
     protected final HttpService httpService;
 
     public HttpEgressBase(String description, HttpService httpService) {
