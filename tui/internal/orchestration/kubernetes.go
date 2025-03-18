@@ -132,17 +132,12 @@ func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, er
 
 func (o *KubernetesOrchestrator) Deploy(args []string) error {
 
-	mode := "CLUSTER"
-	env := os.Environ()
-	env = append(env, "DELTAFI_MODE="+mode)
-	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
-
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
 	args = append([]string{"install"}, args...)
 
 	c := *exec.Command(executable, args...)
-	c.Env = env
+	c.Env = o.Environment()
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
@@ -152,20 +147,24 @@ func (o *KubernetesOrchestrator) Deploy(args []string) error {
 
 func (o *KubernetesOrchestrator) Destroy(args []string) error {
 
-	mode := "CLUSTER"
-	env := os.Environ()
-	env = append(env, "DELTAFI_MODE="+mode)
-	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
-
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
 	args = append([]string{"uninstall"}, args...)
 
 	c := *exec.Command(executable, args...)
-	c.Env = env
+	c.Env = o.Environment()
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
 	return c.Run()
+}
+
+func (o *KubernetesOrchestrator) Environment() []string {
+	mode := "CLUSTER"
+	env := os.Environ()
+	env = append(env, "DELTAFI_MODE="+mode)
+	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
+	env = append(env, "DELTAFI_WRAPPER=true")
+	return env
 }

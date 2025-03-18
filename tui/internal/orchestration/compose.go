@@ -27,8 +27,11 @@ import (
 
 type ComposeOrchestrator struct {
 	Orchestrator
-	distroPath string
-	dataPath   string
+	distroPath        string
+	dataPath          string
+	orchestrationPath string
+	secretsPath       string
+	configPath        string
 }
 
 func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
@@ -36,9 +39,7 @@ func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
 }
 
 func (o *ComposeOrchestrator) GetServiceIP(service string) (string, error) {
-
 	return fmt.Sprintf("%s:8042", strings.TrimSpace(service)), nil
-	// return "localhost", nil // FIXME - this is a hack
 }
 
 func (o *ComposeOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
@@ -61,40 +62,28 @@ func (o *ComposeOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error
 
 func (o *ComposeOrchestrator) Deploy(args []string) error {
 
-	mode := "STANDALONE"
-	env := os.Environ()
-	env = append(env, "DELTAFI_MODE="+mode)
-	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
-
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
 	args = append([]string{"install"}, args...)
 
-	c := *exec.Command(executable, args...)
-	c.Env = env
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-
-	return c.Run()
+	return ShellExec(executable, o.Environment(), args)
 }
 
-func (o *ComposeOrchestrator) Destroy(args []string) error {
-
+func (o *ComposeOrchestrator) Environment() []string {
 	mode := "STANDALONE"
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
 	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
+	env = append(env, "DELTAFI_CONFIG_DIR="+o.configPath)
+	env = append(env, "DELTAFI_SECRETS_DIR="+o.secretsPath)
+	return env
+}
+
+func (o *ComposeOrchestrator) Destroy(args []string) error {
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
 	args = append([]string{"uninstall"}, args...)
 
-	c := *exec.Command(executable, args...)
-	c.Env = env
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-
-	return c.Run()
+	return ShellExec(executable, o.Environment(), args)
 }

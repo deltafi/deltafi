@@ -17,7 +17,11 @@
  */
 package orchestration
 
-import "os/exec"
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+)
 
 type Orchestrator interface {
 	GetServiceIP(string) (string, error)
@@ -25,18 +29,30 @@ type Orchestrator interface {
 	GetPostgresExecCmd([]string) (exec.Cmd, error)
 	Deploy([]string) error
 	Destroy([]string) error
+	Environment() []string
 }
 
-func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string) Orchestrator {
+func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string) Orchestrator {
 
 	switch mode {
 	case Kubernetes:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	case Compose:
-		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath}
+		configPath := filepath.Join(installDirectory, "config")
+		secretsPath := filepath.Join(configPath, "secrets")
+		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, configPath: configPath, secretsPath: secretsPath}
 	case Kind:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	default:
 		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	}
+}
+
+func ShellExec(executable string, env []string, args []string) error {
+	c := *exec.Command(executable, args...)
+	c.Env = env
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	return c.Run()
 }

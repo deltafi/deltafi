@@ -20,10 +20,8 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
-	// "github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/ui/styles"
@@ -38,30 +36,16 @@ var deprecatedCliCmd = &cobra.Command{
 	SilenceErrors:      true,
 	DisableFlagParsing: true,
 	GroupID:            "legacy",
-	Run: func(cmd *cobra.Command, args []string) {
-
-		env := os.Environ()
-		mode := "CLUSTER"
-		if app.GetOrchestrationMode() == orchestration.Compose {
-			mode = "STANDALONE"
-		}
-		env = append(env, "DELTAFI_MODE="+mode)
-		env = append(env, "DELTAFI_DATA_DIR="+app.GetInstance().GetConfig().DataDirectory)
-
+	RunE: func(cmd *cobra.Command, args []string) error {
 		executable := filepath.Join(app.GetDistroPath(), "deltafi-cli", "deltafi")
+
+		env := app.GetOrchestrator().Environment()
 		if app.GetOrchestrationMode() == orchestration.Kind {
 			os.Setenv("DELTAFI_WRAPPER", "true")
-			env = append(env, "DELTAFI_WRAPPER=true")
 			executable = filepath.Join(app.GetDistroPath(), "orchestration", "kind", "cluster")
 		}
 
-		c := *exec.Command(executable, args...)
-		c.Env = env
-		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-
-		c.Run()
+		return ShellExec(executable, env, args)
 	},
 }
 
@@ -73,28 +57,15 @@ var deprecatedClusterCmd = &cobra.Command{
 	SilenceErrors:      true,
 	DisableFlagParsing: true,
 	GroupID:            "legacy",
-	Run: func(cmd *cobra.Command, args []string) {
-
-		env := os.Environ()
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if app.GetOrchestrationMode() != orchestration.Kind {
-			fmt.Println("This command is only available in KinD orchestration mode")
-			return
+			return fmt.Errorf("This command is only available in Kind orchestration mode")
 		}
-
-		mode := "CLUSTER"
-		env = append(env, "DELTAFI_MODE="+mode)
-		env = append(env, "DELTAFI_DATA_DIR="+app.GetInstance().GetConfig().DataDirectory)
 
 		executable := filepath.Join(app.GetDistroPath(), "orchestration", "kind", "cluster")
 
-		c := *exec.Command(executable, args...)
-		c.Env = env
-		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-
-		c.Run()
+		return ShellExec(executable, app.GetOrchestrator().Environment(), args)
 	},
 }
 
@@ -106,28 +77,15 @@ var deprecatedComposeCmd = &cobra.Command{
 	SilenceErrors:      true,
 	DisableFlagParsing: true,
 	GroupID:            "legacy",
-	Run: func(cmd *cobra.Command, args []string) {
-
-		env := os.Environ()
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if app.GetOrchestrationMode() != orchestration.Compose {
-			fmt.Println("This command is only available in Compose orchestration mode")
-			return
+			return fmt.Errorf("This command is only available in Compose orchestration mode")
 		}
-
-		mode := "STANDALONE"
-		env = append(env, "DELTAFI_MODE="+mode)
-		env = append(env, "DELTAFI_DATA_DIR="+app.GetInstance().GetConfig().DataDirectory)
 
 		executable := filepath.Join(app.GetDistroPath(), "orchestration", "compose", "compose")
 
-		c := *exec.Command(executable, args...)
-		c.Env = env
-		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-
-		c.Run()
+		return ShellExec(executable, app.GetOrchestrator().Environment(), args)
 	},
 }
 

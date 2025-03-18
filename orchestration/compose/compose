@@ -5,7 +5,9 @@ set -e
 cli_help_command() {
   echo "
 Command: compose
-Data Directory: ${DATA_DIR}
+Data Directory:    ${DATA_DIR}
+Env Directory:     ${ENV_DIR}
+Secrets Directory: ${SECRETS_DIR}
 
 Subcommands:
   start                       start all of the services
@@ -299,8 +301,8 @@ VERSION=$(deltafi --version)
 # TODO make the data directory configurable
 DATA_DIR="${DELTAFI_DATA_DIR:-${DELTAFI_COMPOSE_PATH}/data}"
 SETTINGS_DIR="${DELTAFI_COMPOSE_PATH}/settings"
-SECRETS_DIR="${SETTINGS_DIR}/secrets"
-ENV_DIR="${SETTINGS_DIR}/env"
+SECRETS_DIR="${DELTAFI_SECRETS_DIR:-${SETTINGS_DIR}/secrets}"
+ENV_DIR="${DELTAFI_CONFIG_DIR:-${SETTINGS_DIR}/env}"
 
 VALUES_YAML="${ENV_DIR}/values.yaml"
 COMMON_SETTINGS="${ENV_DIR}/common.env"
@@ -668,6 +670,9 @@ _entity_resolver_config() {
 }
 
 _write_config() {
+  mkdir -p "${SETTINGS_DIR}"
+  mkdir -p "${ENV_DIR}"
+  mkdir -p "${SECRETS_DIR}"
   _merge_values_yaml "$@"
   _write_env_files
   _write_startup_file

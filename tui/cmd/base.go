@@ -20,6 +20,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -165,4 +166,13 @@ To start a DeltaFi with your current configuration:
 		`, styles.AccentStyle.Render("deltafi init"), styles.AccentStyle.Render("deltafi deploy"))))
 		os.Exit(1)
 	}
+}
+
+func ShellExec(executable string, env []string, args []string) error {
+	c := *exec.Command(executable, args...)
+	c.Env = env
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	return c.Run()
 }

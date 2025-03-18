@@ -57,6 +57,12 @@ func GetInstance() *App {
 	return instance
 }
 
+// Recreate the singleton App instance based on the current configuration
+func ReloadInstance() *App {
+	build()
+	return instance
+}
+
 func GetGraphqlClient() (graphql.Client, error) {
 	return GetInstance().graphqlClient, nil
 }
@@ -94,7 +100,7 @@ func build() {
 
 	instance = &App{
 		config:       &config,
-		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory),
+		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory, config.InstallDirectory),
 		os:           runtime.GOOS,
 		arch:         runtime.GOARCH,
 		distroPath:   distroPath,
