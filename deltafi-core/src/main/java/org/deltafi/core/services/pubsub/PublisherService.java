@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services.pubsub;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.*;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PublisherService {
 
     private static final DefaultRule ERROR_RULE = new DefaultRule(DefaultBehavior.ERROR);
@@ -47,14 +49,6 @@ public class PublisherService {
     private final Clock clock;
     private final AnalyticEventService analyticEventService;
     private final FlowDefinitionService flowDefinitionService;
-
-    public PublisherService(RuleEvaluator ruleEvaluator, List<SubscriberService> subscriberServices, Clock clock, AnalyticEventService analyticEventService, FlowDefinitionService flowDefinitionService) {
-        this.ruleEvaluator = ruleEvaluator;
-        this.subscriberServices = subscriberServices;
-        this.clock = clock;
-        this.analyticEventService = analyticEventService;
-        this.flowDefinitionService = flowDefinitionService;
-    }
 
     /**
      * Create new DeltaFileFlows for each subscriber that accepts the Deltafile and return the set.

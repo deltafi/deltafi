@@ -24,6 +24,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.JoinException;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.metrics.MetricService;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,9 @@ public class StateMachine {
     private final JoinEntryService joinEntryService;
     private final PublisherService publisherService;
     private final MetricService metricService;
+    private final AnalyticEventService analyticEventService;
+
+    private static final String FILTERED_TEST_MODE_CAUSE = "Filtered by test mode";
 
     /**
      * Advance a set of DeltaFiles to the next step using the state machine. Call if advancing multiple deltaFiles
@@ -150,8 +154,9 @@ public class StateMachine {
     private List<WrappedActionInput> syntheticEgress(StateMachineInput input) {
         Action action = input.flow().addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED,
                 OffsetDateTime.now(clock));
-        action.setFilteredCause("Filtered by test mode");
+        action.setFilteredCause(FILTERED_TEST_MODE_CAUSE);
         action.setFilteredContext("Filtered by test mode with a reason of - " + input.flow().getTestModeReason());
+        analyticEventService.recordFilter(input.deltaFile(), input.flow().getName(), input.flow().getType(), action.getName(), FILTERED_TEST_MODE_CAUSE, action.getModified());
         return Collections.emptyList();
     }
 
