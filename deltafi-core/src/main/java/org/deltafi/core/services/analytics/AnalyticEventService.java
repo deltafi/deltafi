@@ -432,7 +432,14 @@ public class AnalyticEventService {
         // Group annotations by did for group id and updated field updates
         Map<UUID, Map<String, String>> didToAnnotations = new HashMap<>();
         for (QueuedAnnotationEvent event : batch) {
-            didToAnnotations.put(event.did(), event.annotations());
+            UUID did = event.did();
+            Map<String, String> annotations = event.annotations();
+
+            didToAnnotations.merge(did, annotations, (existingMap, newMap) -> {
+                Map<String, String> mergedMap = new HashMap<>(existingMap);
+                mergedMap.putAll(newMap);
+                return mergedMap;
+            });
         }
 
         // "notify" analytics that they have been updated
