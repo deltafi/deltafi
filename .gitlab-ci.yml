@@ -250,7 +250,6 @@ trigger:plugins:
     paths:
       - deltafi-core.container-report.json
       - deltafi-core-actions.container-report.json
-      - deltafi-api.container-report.json
       - deltafi-egress-sink.container-report.json
       - deltafi-nodemonitor.container-report.json
   dependencies: []
@@ -261,8 +260,6 @@ trigger:plugins:
     - cp gl-container-scanning-report.json deltafi-core.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-core-actions CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core-actions:${CI_COMMIT_SHORT_SHA} gtcs scan
     - cp gl-container-scanning-report.json deltafi-core-actions.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-api CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-api:${CI_COMMIT_SHORT_SHA} gtcs scan
-    - cp gl-container-scanning-report.json deltafi-api.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-egress-sink CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-egress-sink:${CI_COMMIT_SHORT_SHA} gtcs scan
     - cp gl-container-scanning-report.json deltafi-egress-sink.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-nodemonitor CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-nodemonitor:${CI_COMMIT_SHORT_SHA} gtcs scan
