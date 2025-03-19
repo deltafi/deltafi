@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.13.0] - 2025-03-19
+
+### Added
+- Added ingress metrics for child deltaFiles. 
+- Added filterable analytic ingress type of DATA_SOURCE, CHILD, or SURVEY to analytic dashboards.
+- [deltafi-core-actions/DeltaFiEgress] Add extra HTTP headers when sending to the local DeltaFi, and optionally automatically determine the ingress URL
+- Added a new RuntimeException, `ErrorResultException`, into the Java action-kit, which is mapped to an `ErrorResult` by the `ActionRunner`
+- Added a new RuntimeException, `FilterResultException`, into the Java action-kit, which is mapped to an `FilterResult` by the `ActionRunner`
+
+### Changed
+- External paths can be provided for the compose environment and secrets directories
+
+### Fixed
+- Set content length in egress sink response 
+- [deltafi-core-actions/DeltaFiEgress] Fix the data source HTTP header name
+- Fix bug where no more than 2 options could be chosen in variables dropdowns for DataFlow Analytics, Error Analysis, and Filter Analysis dashboards 
+- Publish filtered analytics when a DeltaFile is filtered because it was in test mode 
+
 ## [2.12.0] - 2025-03-15
 
 ### Added
@@ -3961,7 +3979,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.12.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.13.0...main
+[2.13.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.12.0...2.13.0
 [2.12.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.11.0...2.12.0
 [2.11.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.2...2.11.0
 [2.10.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.1...2.10.2
