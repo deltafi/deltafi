@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 3,
+  "id": 1413,
   "links": [],
   "panels": [
     {
@@ -1490,7 +1490,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1673,7 +1674,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "yellow",
@@ -1888,7 +1890,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2046,7 +2049,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "light-blue"
+                "color": "light-blue",
+                "value": null
               },
               {
                 "color": "blue",
@@ -2260,7 +2264,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2437,7 +2442,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2551,7 +2557,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS \"Data Source\",\n  group_name AS \"Group\",\n  CASE \n    WHEN $annotationKey != 'All' THEN annotation_value \n  END AS \"Annotation Value\",\n  SUM(ingress_bytes) AS \"Ingress Bytes\",\n  SUM(ingress_files) AS \"Ingress Files\",\n  SUM(egress_bytes) AS \"Egress Bytes\",\n  SUM(egress_files) AS \"Egress Files\",\n  SUM(error_files) AS \"Errored\",\n  SUM(filter_files) AS \"Filtered\"\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years'\n)\nGROUP BY \n  datasource_name, \n  group_name,\n  CASE \n    WHEN $annotationKey != 'All' THEN annotation_value \n  END\nORDER BY \"Data Source\", \"Group\", \"Annotation Value\";",
+          "rawSql": "SELECT\n  datasource_name AS \"Data Source\",\n  group_name AS \"Group\",\n  CASE \n    WHEN $annotationKey != 'All' THEN annotation_value \n  END AS \"Annotation Value\",\n  SUM(ingress_bytes) AS \"Ingress Bytes\",\n  SUM(ingress_files) AS \"Ingress Files\",\n  SUM(egress_bytes) AS \"Egress Bytes\",\n  SUM(egress_files) AS \"Egress Files\",\n  SUM(error_files) AS \"Errored\",\n  SUM(filter_files) AS \"Filtered\"\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years'\n)\nGROUP BY \n  datasource_name, \n  group_name,\n  CASE \n    WHEN $annotationKey != 'All' THEN annotation_value \n  END\nORDER BY \"Data Source\", \"Group\", \"Annotation Value\";",
           "refId": "A",
           "sql": {
             "columns": [
