@@ -5124,7 +5124,7 @@ class DeltaFiCoreApplicationTests {
 
     @Test
     void findEventsByTime() {
-        OffsetDateTime first = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
+        OffsetDateTime first = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC)).plusDays(1);
         OffsetDateTime second = first.plusMinutes(5);
 
         Event event1 = Event.builder().severity("info").summary("first").timestamp(first).build();
