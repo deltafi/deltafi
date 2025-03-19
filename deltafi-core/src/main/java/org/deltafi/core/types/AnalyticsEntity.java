@@ -46,6 +46,9 @@ public class AnalyticsEntity {
     private EventTypeEnum eventType;
     private long bytesCount;
     private int fileCount;
-    private boolean survey;
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "analytic_ingress_type_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    private AnalyticIngressTypeEnum analyticIngressType;
     private OffsetDateTime updated = OffsetDateTime.now();
 }

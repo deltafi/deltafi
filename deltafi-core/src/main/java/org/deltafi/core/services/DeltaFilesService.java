@@ -241,12 +241,7 @@ public class DeltaFilesService {
         return deltaFileFlowRepo.countUnacknowledgedErrors();
     }
 
-    public DeltaFile ingressRest(RestDataSource restDataSource, IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
-                                 OffsetDateTime ingressStopTime) {
-        return ingressRest(restDataSource, ingressEventItem, Collections.emptyList(), ingressStartTime, ingressStopTime);
-    }
-
-    private DeltaFile buildIngressDeltaFile(DataSource dataSource, IngressEventItem ingressEventItem, List<UUID> parentDids,
+    private DeltaFile buildIngressDeltaFile(DataSource dataSource, IngressEventItem ingressEventItem,
                                             OffsetDateTime ingressStartTime, OffsetDateTime ingressStopTime,
                                             String ingressActionName, FlowType flowType) {
 
@@ -287,7 +282,6 @@ public class DeltaFilesService {
                 .did(ingressEventItem.getDid())
                 .dataSource(dataSource.getName())
                 .name(ingressEventItem.getDeltaFileName())
-                .parentDids(parentDids)
                 .childDids(new ArrayList<>())
                 .requeueCount(0)
                 .ingressBytes(contentSize)
@@ -304,9 +298,9 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    private DeltaFile ingressRest(RestDataSource restDataSource, IngressEventItem ingressEventItem, List<UUID> parentDids,
+    public DeltaFile ingressRest(RestDataSource restDataSource, IngressEventItem ingressEventItem,
                                   OffsetDateTime ingressStartTime, OffsetDateTime ingressStopTime) {
-        DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
+        DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
         if (restDataSource.isPaused()) {
@@ -321,8 +315,8 @@ public class DeltaFilesService {
 
     public DeltaFile buildTimedDataSourceDeltaFile(DataSource dataSource, ActionEvent parentEvent, IngressEventItem ingressEventItem) {
         ingressEventItem.setFlowName(parentEvent.getFlowName());
-        return buildIngressDeltaFile(dataSource, ingressEventItem, Collections.emptyList(), parentEvent.getStart(),
-                parentEvent.getStop(), parentEvent.getActionName(), FlowType.TIMED_DATA_SOURCE);
+        return buildIngressDeltaFile(dataSource, ingressEventItem, parentEvent.getStart(), parentEvent.getStop(),
+                parentEvent.getActionName(), FlowType.TIMED_DATA_SOURCE);
     }
 
     public void handleActionEvent(ActionEvent event) {
@@ -492,7 +486,7 @@ public class DeltaFilesService {
                 }
             }
             analyticEventService.recordIngress(deltaFile.getDid(), deltaFile.getCreated(), deltaFile.getDataSource(),
-                    FlowType.TIMED_DATA_SOURCE, deltaFile.getIngressBytes(), deltaFile.annotationMap());
+                    FlowType.TIMED_DATA_SOURCE, deltaFile.getIngressBytes(), deltaFile.annotationMap(), AnalyticIngressTypeEnum.DATA_SOURCE);
         }
 
         String actionClass =
@@ -804,6 +798,9 @@ public class DeltaFilesService {
         child.addAnnotations(transformEvent.getAnnotations());
 
         child.setName(transformEvent.getName());
+        child.recalculateBytes();
+        analyticEventService.recordIngress(child.getDid(), child.getCreated(), child.getDataSource(), deltaFile.firstFlow().getType(),
+                child.getReferencedBytes(), Annotation.toMap(child.getAnnotations()), AnalyticIngressTypeEnum.CHILD);
         return new StateMachineInput(child, childFlow);
     }
 
@@ -976,6 +973,9 @@ public class DeltaFilesService {
                                     .build();
 
                             child.updateFlags();
+                            child.recalculateBytes();
+                            analyticEventService.recordIngress(child.getDid(), child.getCreated(), child.getDataSource(), deltaFile.firstFlow().getType(),
+                                    child.getReferencedBytes(), Annotation.toMap(child.getAnnotations()), AnalyticIngressTypeEnum.CHILD);
 
                             if (flow.getState() == DeltaFileFlowState.PAUSED) {
                                 deltaFileCacheService.save(child);
@@ -2041,7 +2041,6 @@ public class DeltaFilesService {
 
     private void completeJoin(ActionEvent event, DeltaFile deltaFile, Action action, ActionConfiguration actionConfiguration) {
         if ((actionConfiguration != null) && (actionConfiguration.getJoin() != null)) {
-            List<WrappedActionInput> actionInputs = new ArrayList<>();
             List<DeltaFile> parentDeltaFiles = deltaFileRepo.findAllById(deltaFile.getParentDids());
             OffsetDateTime now = OffsetDateTime.now(clock);
             for (DeltaFile parentDeltaFile : parentDeltaFiles) {
@@ -2054,7 +2053,9 @@ public class DeltaFilesService {
                 parentDeltaFile.joinedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);
             }
             deltaFileRepo.saveAll(parentDeltaFiles);
-            enqueueActions(actionInputs);
+            deltaFile.recalculateBytes();
+            analyticEventService.recordIngress(deltaFile.getDid(), deltaFile.getCreated(), deltaFile.getDataSource(), deltaFile.firstFlow().getType(),
+                    deltaFile.getReferencedBytes(), Annotation.toMap(deltaFile.getAnnotations()), AnalyticIngressTypeEnum.CHILD);
         }
     }
 

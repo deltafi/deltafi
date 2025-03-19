@@ -41,6 +41,7 @@ import org.deltafi.core.exceptions.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.services.analytics.AnalyticEventService;
+import org.deltafi.core.types.AnalyticIngressTypeEnum;
 import org.deltafi.core.types.IngressResult;
 import org.deltafi.core.types.RestDataSource;
 import org.springframework.stereotype.Service;
@@ -110,7 +111,7 @@ public class IngressService {
 
         ingressResults.forEach(ingressResult -> analyticEventService.recordIngress(ingressResult.did(),
                 created, ingressResult.dataSource(), FlowType.REST_DATA_SOURCE, ingressResult.content().getSize(),
-                Collections.emptyMap()));
+                Collections.emptyMap(), AnalyticIngressTypeEnum.DATA_SOURCE));
 
         return ingressResults;
     }

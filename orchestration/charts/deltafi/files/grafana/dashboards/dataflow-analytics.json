@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 12,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -446,7 +446,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, time) AS time,\n  CASE \n    WHEN $annotationKey = 'All' THEN datasource_name || ' - ' || group_name\n    ELSE datasource_name || ' - ' || group_name || ' - ' || annotation_value\n  END AS series_name,\n  ingress_bytes,\n  ingress_files,\n  egress_bytes,\n  egress_files,\n  error_files,\n  filter_files\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms')\n)",
+          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, time) AS time,\n  CASE \n    WHEN $annotationKey = 'All' THEN datasource_name || ' - ' || group_name\n    ELSE datasource_name || ' - ' || group_name || ' - ' || annotation_value\n  END AS series_name,\n  ingress_bytes,\n  ingress_files,\n  egress_bytes,\n  egress_files,\n  error_files,\n  filter_files\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms')\n)",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2610,6 +2610,42 @@
     "list": [
       {
         "allValue": "'All'",
+        "allowCustomValue": false,
+        "current": {
+          "text": [
+            "$__all"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "includeAll": true,
+        "label": "Ingress Type",
+        "multi": true,
+        "name": "analyticIngressTypes",
+        "options": [
+          {
+            "selected": false,
+            "text": "CHILD",
+            "value": "CHILD"
+          },
+          {
+            "selected": false,
+            "text": "DATA_SOURCE",
+            "value": "DATA_SOURCE"
+          },
+          {
+            "selected": false,
+            "text": "SURVEY",
+            "value": "SURVEY"
+          }
+        ],
+        "query": "CHILD,DATA_SOURCE,SURVEY",
+        "type": "custom"
+      },
+      {
+        "allValue": "'All'",
+        "allowCustomValue": true,
         "current": {
           "text": "All",
           "value": [

@@ -394,7 +394,7 @@ public class DeltaFilesDatafetcher {
 
       // Record ingress
       long ingressBytes = 1024L + random.nextLong(10 * 1024 * 1024);
-      analyticEventService.recordIngress(did, baseTimestamp, dataSource, FlowType.REST_DATA_SOURCE, ingressBytes, annotations);
+      analyticEventService.recordIngress(did, baseTimestamp, dataSource, FlowType.REST_DATA_SOURCE, ingressBytes, annotations, AnalyticIngressTypeEnum.DATA_SOURCE);
 
       // Most files should have 1-3 result paths
       int numBranches = random.nextInt(100) < 80 ? 1 : 2 + random.nextInt(2); // 80% single branch, 20% 2-3 branches

@@ -93,6 +93,7 @@ public class AnalyticEventService {
         entity.setEventType(EventTypeEnum.EGRESS);
         entity.setBytesCount(flow.lastContentSize());
         entity.setFileCount(1);
+        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
     }
@@ -112,7 +113,8 @@ public class AnalyticEventService {
                               String dataSource,
                               FlowType dataSourceType,
                               long ingressBytes,
-                              Map<String, String> annotations) {
+                              Map<String, String> annotations,
+                              AnalyticIngressTypeEnum ingressType) {
         if (isDisabled()) return;
         if (invalidEvent("ingress", did,
                 Map.of(
@@ -135,7 +137,7 @@ public class AnalyticEventService {
         entity.setEventType(EventTypeEnum.INGRESS);
         entity.setBytesCount(ingressBytes);
         entity.setFileCount(1);
-        entity.setSurvey(false);
+        entity.setAnalyticIngressType(ingressType);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
 
@@ -181,7 +183,7 @@ public class AnalyticEventService {
         entity.setEventType(EventTypeEnum.INGRESS);
         entity.setBytesCount(ingressBytes);
         entity.setFileCount(count);
-        entity.setSurvey(true);
+        entity.setAnalyticIngressType(AnalyticIngressTypeEnum.SURVEY);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
 
@@ -223,6 +225,7 @@ public class AnalyticEventService {
         entity.setCauseId(causeId);
         entity.setActionId(actionId);
         entity.setFileCount(1);
+        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
     }
@@ -259,6 +262,7 @@ public class AnalyticEventService {
         entity.setCauseId(causeId);
         entity.setActionId(actionId);
         entity.setFileCount(1);
+        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
     }
@@ -284,6 +288,7 @@ public class AnalyticEventService {
         entity.setEventGroupId(eventGroupId);
         entity.setEventType(EventTypeEnum.CANCEL);
         entity.setFileCount(1);
+        entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
     }

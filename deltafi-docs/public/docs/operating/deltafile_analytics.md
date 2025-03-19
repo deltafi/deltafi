@@ -160,6 +160,7 @@ get_analytics_data(
   p_annotation_values_text text[],   -- Array of annotation value names, include 'All' for all values
   p_datasources_text text[],         -- Array of data source names, include 'All' for all
   p_groups_text text[],              -- Array of group names, include 'All' for all
+  p_analytic_ingress_types text[],   -- Array of ingress types (DATA_SOURCE, CHILD, SURVEY), include 'All' for all
   p_start_time timestamptz,          -- Start time for the query
   p_end_time timestamptz,            -- End time for the query
   p_interval_str text                -- Time bucket interval (e.g., '5 minutes')
@@ -195,7 +196,7 @@ This output format works directly with Grafana's time series and table visualiza
 The `get_errors_filters_data` function provides detailed analysis of errors and filters with additional dimensions:
 
 ```sql
-get_analytics_data(
+get_errors_filters_data(
   p_annotation_key_name text,        -- Annotation key name to filter by, use 'All' for all
   p_annotation_values_text text[],   -- Array of annotation value names, include 'All' for all values
   p_datasources_text text[],         -- Array of data source names, include 'All' for all

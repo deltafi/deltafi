@@ -40,8 +40,8 @@ public class AnalyticsRepoImpl implements AnalyticsRepoCustom {
         if (entities.isEmpty()) return;
 
         jdbcTemplate.batchUpdate(
-                "INSERT INTO analytics (event_time, did, flow_id, data_source_id, event_group_id, action_id, cause_id, event_type, bytes_count, file_count, survey, updated) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?::event_type_enum, ?, ?, ?, ?)",
+                "INSERT INTO analytics (event_time, did, flow_id, data_source_id, event_group_id, action_id, cause_id, event_type, bytes_count, file_count, analytic_ingress_type, updated) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?::event_type_enum, ?, ?, ?::analytic_ingress_type_enum, ?)",
                 new BatchPreparedStatementSetter() {
                     @Override
                     public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
@@ -56,7 +56,7 @@ public class AnalyticsRepoImpl implements AnalyticsRepoCustom {
                         ps.setString(8, entity.getEventType().name());
                         ps.setLong(9, entity.getBytesCount());
                         ps.setInt(10, entity.getFileCount());
-                        ps.setBoolean(11, entity.isSurvey());
+                        ps.setString(11, entity.getAnalyticIngressType().name());
                         ps.setObject(12, entity.getUpdated());
                     }
 
