@@ -108,7 +108,7 @@ class JoltTransformTest {
         TransformInput input = createInput();
         ErrorResultAssert.assertThat(action.transform(runner.actionContext(), params, input))
                 .hasCause("Error transforming content at index 0")
-                .hasContextLike("[\\s\\S]*Unable to unmarshal JSON to a List.[\\s\\S]*");
+                .hasContextContaining("Unable to unmarshal JSON to a List.");
     }
 
     @Test

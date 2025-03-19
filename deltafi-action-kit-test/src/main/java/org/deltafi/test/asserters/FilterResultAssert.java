@@ -134,4 +134,24 @@ public class FilterResultAssert extends AnnotationResultAssert<FilterResultAsser
         Assertions.assertThat(actual.getFilteredContext()).describedAs(description).matches(pattern);
         return this;
     }
+
+    /**
+     * Verify the filter context contains the given text
+     * @param text to search for in context
+     * @return this
+     */
+    public FilterResultAssert hasContextContaining(String text) {
+        return hasContextContaining(text, "Has context contains");
+    }
+
+    /**
+     * Verify the filter context contains the given text
+     * @param text to search for in context
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public FilterResultAssert hasContextContaining(String text, String description) {
+        Assertions.assertThat(actual.getFilteredContext()).describedAs(description).contains(text);
+        return this;
+    }
 }

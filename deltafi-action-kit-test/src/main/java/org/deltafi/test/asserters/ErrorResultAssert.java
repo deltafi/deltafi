@@ -134,4 +134,25 @@ public class ErrorResultAssert extends AnnotationResultAssert<ErrorResultAssert,
         Assertions.assertThat(actual.getErrorContext()).describedAs(description).matches(pattern);
         return this;
     }
+
+
+    /**
+     * Verify the error context contains the given text
+     * @param text to search for in context
+     * @return this
+     */
+    public ErrorResultAssert hasContextContaining(String text) {
+        return hasContextContaining(text, "Has context contains");
+    }
+
+    /**
+     * Verify the error context contains the given text
+     * @param text to search for in context
+     * @param description a description to include with the assertion
+     * @return this
+     */
+    public ErrorResultAssert hasContextContaining(String text, String description) {
+        Assertions.assertThat(actual.getErrorContext()).describedAs(description).contains(text);
+        return this;
+    }
 }
