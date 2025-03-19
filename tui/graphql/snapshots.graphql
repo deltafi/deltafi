@@ -1,0 +1,56 @@
+# Get all system snapshots
+query GetSystemSnapshots {
+  getSystemSnapshots {
+    id
+    created
+    reason
+  }
+}
+
+# Get a specific system snapshot
+query GetSystemSnapshot($snapshotId: UUID!) {
+  getSystemSnapshot(snapshotId: $snapshotId) {
+    id
+    created
+    reason
+    schemaVersion
+    snapshot
+  }
+}
+
+# Create a new system snapshot
+mutation SnapshotSystem($reason: String) {
+  snapshotSystem(reason: $reason) {
+    id
+    created
+    reason
+    schemaVersion
+  }
+}
+
+# Delete a system snapshot
+mutation DeleteSnapshot($snapshotId: UUID!) {
+  deleteSnapshot(snapshotId: $snapshotId) {
+    success
+    info
+    errors
+  }
+}
+
+# Import a system snapshot
+mutation ImportSnapshot($input: SystemSnapshotInput!) {
+  importSnapshot(snapshot: $input) {
+    id
+    created
+    reason
+    schemaVersion
+  }
+}
+
+# Restore system from a snapshot
+mutation ResetFromSnapshotWithId($snapshotId: UUID!, $hardReset: Boolean) {
+  resetFromSnapshotWithId(snapshotId: $snapshotId, hardReset: $hardReset) {
+    success
+    errors
+  }
+} 

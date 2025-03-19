@@ -33,6 +33,7 @@ type Config struct {
 	CoreVersion       string                          `yaml:"coreVersion"`
 	InstallDirectory  string                          `yaml:"installDirectory"`
 	DataDirectory     string                          `yaml:"dataDirectory"`
+	SiteDirectory     string                          `yaml:"siteDirectory"`
 	Development       DevelopmentConfig               `yaml:"development"`
 }
 
@@ -56,6 +57,7 @@ func DefaultConfig() Config {
 		CoreVersion:       Version,
 		InstallDirectory:  TuiPath(),
 		DataDirectory:     filepath.Join(TuiPath(), "data"),
+		SiteDirectory:     filepath.Join(TuiPath(), "site"),
 		Development:       DefaultDevelopmentConfig(),
 	}
 }

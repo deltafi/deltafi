@@ -10,6 +10,7 @@ operations:
 - data_sources.graphql
 - data_sinks.graphql
 - flow_graph.graphql
+- snapshots.graphql
 generated: generated.go
 client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
 context_type: "-"

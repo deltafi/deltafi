@@ -34,6 +34,7 @@ var eventCmd = &cobra.Command{
 	Use:          "event",
 	Short:        "Manage events in DeltaFi",
 	Long:         `Manage events in DeltaFi.`,
+	GroupID:      "deltafi",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cmd.Help()
