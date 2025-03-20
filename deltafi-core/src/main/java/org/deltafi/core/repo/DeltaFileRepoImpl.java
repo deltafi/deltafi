@@ -460,6 +460,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return queryBuilder.toString();
     }
 
+    private String buildAnnotationJoins(DeltaFilesFilter filter) {
+        StringBuilder joins = new StringBuilder();
+        if (filter != null && filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
+            for (int i = 0; i < filter.getAnnotations().size(); i++) {
+                joins.append("JOIN annotations a").append(i)
+                        .append(" ON df.did = a").append(i).append(".delta_file_id ");
+            }
+        }
+        return joins.toString();
+    }
+
     @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
         // TODO: make includeFields work. The dataFetcher parses out these requested graphql fields and includes flow.* and flow.action.*,
@@ -468,20 +479,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         /* String fields = (includeFields == null || includeFields.isEmpty()) ? "*" : includeFields.stream()
                 .map(DeltaFileRepoImpl::toSnakeCase)
                 .collect(Collectors.joining(", ")); */
-        StringBuilder sqlQuery = new StringBuilder("SELECT * FROM delta_files df WHERE TRUE\n");
+        StringBuilder sqlQuery = new StringBuilder("SELECT df.* FROM delta_files df ");
+        sqlQuery.append(buildAnnotationJoins(filter));
+        sqlQuery.append("WHERE TRUE\n");
         Map<String, Object> parameters = new HashMap<>();
         String criteria = buildDeltaFilesCriteria(parameters, filter);
 
         sqlQuery.append(criteria);
 
+        sqlQuery.append("ORDER BY df.");
         if (orderBy != null) {
-            sqlQuery.append("ORDER BY df.")
-                    .append(toSnakeCase(orderBy.getField()))
+            sqlQuery.append(toSnakeCase(orderBy.getField()))
                     .append(" ")
                     .append(orderBy.getDirection() == DeltaFileDirection.ASC ? "ASC" : "DESC")
                     .append(" ");
         } else {
-            sqlQuery.append("ORDER BY df.modified DESC ");
+            sqlQuery.append("modified DESC ");
         }
 
         sqlQuery.append("LIMIT :limit OFFSET :offset");
@@ -506,9 +519,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (deltaFileList.size() < limit) {
             deltaFiles.setTotalCount(intOffset + deltaFileList.size());
         } else {
-            String countQuerySql = "SELECT COUNT (*) FROM (SELECT 1 FROM delta_files df WHERE TRUE\n" + criteria +
-                    "LIMIT " + MANY_RESULTS + ") as sub";
-            Query countQuery = entityManager.createNativeQuery(countQuerySql, Integer.class);
+            StringBuilder countQuerySql = new StringBuilder("SELECT COUNT(*) FROM (SELECT 1 FROM delta_files df ");
+            countQuerySql.append(buildAnnotationJoins(filter));
+            countQuerySql.append("WHERE TRUE\n").append(criteria).append("LIMIT ").append(MANY_RESULTS).append(") as sub");
+            Query countQuery = entityManager.createNativeQuery(countQuerySql.toString(), Integer.class);
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
                 countQuery.setParameter(entry.getKey(), entry.getValue());
             }
@@ -614,9 +628,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
             for (int i = 0; i < filter.getAnnotations().size(); i++) {
                 KeyValue keyValue = filter.getAnnotations().get(i);
-                criteria.append("AND EXISTS (SELECT 1 FROM annotations a WHERE a.delta_file_id = df.did ");
-                criteria.append("AND a.key = :annotationKey").append(i).append(" ");
-                criteria.append("AND a.value = :annotationValue").append(i).append(") ");
+                criteria.append("AND df.did = a").append(i).append(".delta_file_id ");
+                criteria.append("AND a").append(i).append(".key = :annotationKey").append(i).append(" ");
+                criteria.append("AND a").append(i).append(".value = :annotationValue").append(i).append(" ");
                 parameters.put("annotationKey" + i, keyValue.getKey());
                 parameters.put("annotationValue" + i, keyValue.getValue());
             }
