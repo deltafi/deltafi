@@ -20,6 +20,7 @@ package org.deltafi.core.action.fetch;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
@@ -43,7 +44,7 @@ import java.util.Set;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HttpFetchContentTest {
+class HttpFetchContentTest {
     private static final String URL_CONTEXT = "/fetch-test";
     private static final String TEST_FILE = "test.txt";
     private static final String FILE_CONTENT = "This is test content.";
@@ -58,13 +59,13 @@ public class HttpFetchContentTest {
     private HttpFetchContent action;
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         wireMockHttp.resetMappings();
         action = new HttpFetchContent(HttpClient.newHttpClient());
     }
 
     @Test
-    public void fetchesFileSuccessfully() {
+    void fetchesFileSuccessfully() {
         wireMockHttp.stubFor(get(URL_CONTEXT)
                 .willReturn(ok()
                         .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
@@ -80,7 +81,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void fetchesFileWithoutContentDisposition() {
+    void fetchesFileWithoutContentDisposition() {
         wireMockHttp.stubFor(get(URL_CONTEXT)
                 .willReturn(ok()
                         .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
@@ -95,7 +96,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void fetchesFileWithReplaceExistingFalse() {
+    void fetchesFileWithReplaceExistingFalse() {
         wireMockHttp.stubFor(get(URL_CONTEXT)
                 .willReturn(ok()
                         .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
@@ -110,7 +111,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void returnsErrorOnBadResponse() {
+    void returnsErrorOnBadResponse() {
         wireMockHttp.stubFor(get(URL_CONTEXT).willReturn(aResponse().withStatus(404)));
 
         ResultType result = executeFetchTest(true);
@@ -121,7 +122,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void testFetchWithAnnotations() {
+    void testFetchWithAnnotations() {
         wireMockHttp.stubFor(get(URL_CONTEXT)
                 .willReturn(ok()
                         .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
@@ -159,7 +160,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void testHttpMethodSelection() {
+    void testHttpMethodSelection() {
         wireMockHttp.stubFor(post(URL_CONTEXT)
                 .willReturn(ok()
                         .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
@@ -188,7 +189,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void testFetchWithRequestBody() {
+    void testFetchWithRequestBody() {
         wireMockHttp.stubFor(post(URL_CONTEXT)
                 .withRequestBody(equalTo("test request body"))
                 .willReturn(ok()
@@ -219,7 +220,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void testFetchStoresResponseHeadersInMetadata() {
+    void testFetchStoresResponseHeadersInMetadata() {
         wireMockHttp.stubFor(get(URL_CONTEXT)
                 .willReturn(ok()
                         .withHeader("x-custom-header", "HeaderValue")
@@ -245,7 +246,7 @@ public class HttpFetchContentTest {
     }
 
     @Test
-    public void testFetchSendsExtraHeaders() {
+    void testFetchSendsExtraHeaders() {
         wireMockHttp.stubFor(get(URL_CONTEXT)
                 .withHeader("X-Test-Header", equalTo("TestValue"))
                 .willReturn(ok()
@@ -260,12 +261,70 @@ public class HttpFetchContentTest {
                 .withHeader("X-Test-Header", equalTo("TestValue")));
     }
 
+    @Test
+    void testFetchStoresResponseIndividualHeadersInMetadata() {
+        wireMockHttp.stubFor(get(URL_CONTEXT)
+                .willReturn(ok()
+                        .withHeader("x-custom-header", "HeaderValue")
+                        .withHeader("x-a", "value", "value2")
+                        .withHeader("x-b", "value")
+                        .withHeader("x-c", "value")
+                        .withBody(FILE_CONTENT)));
+
+        HttpFetchContentParameters parameters = new HttpFetchContentParameters();
+        parameters.setHeadersToMetadata(List.of("x-a", "x-c", "non-existent"));
+
+        ResultType result = executeFetch(parameters);
+
+        TransformResultAssert.assertThat(result)
+                .addedMetadata("x-a", "value, value2")
+                .addedMetadata("x-c", "value");
+
+        Map<String, String> metadata = ((TransformResult) result).getMetadata();
+        Assertions.assertThat(metadata).doesNotContainKey("x-custom-header").doesNotContainKey("x-b").doesNotContainKey("non-existent");
+    }
+
+    @Test
+    void testFetchStoreFilenameInMetadata() {
+        wireMockHttp.stubFor(get(URL_CONTEXT)
+                .willReturn(ok()
+                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
+                        .withBody(FILE_CONTENT)));
+
+        HttpFetchContentParameters parameters = new HttpFetchContentParameters();
+        parameters.setFilenameMetadataKey("response-filename");
+
+        ResultType result = executeFetch(parameters);
+
+        TransformResultAssert.assertThat(result)
+                .addedMetadata("response-filename", TEST_FILE);
+    }
+
+    @Test
+    void testFetchStoreFilenameInMetadata_missingFilename() {
+        wireMockHttp.stubFor(get(URL_CONTEXT)
+                .willReturn(ok().withBody(FILE_CONTENT)));
+
+        HttpFetchContentParameters parameters = new HttpFetchContentParameters();
+        parameters.setFilenameMetadataKey("response-filename");
+
+        Map<String, String> metadata = ((TransformResult) executeFetch(parameters)).getMetadata();
+        Assertions.assertThat(metadata).doesNotContainKey("response-filename");
+    }
+
     private ResultType executeFetchTestWithExtraHeaders(Map<String, String> requestHeaders) {
         WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
 
         HttpFetchContentParameters parameters = new HttpFetchContentParameters();
         parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
         parameters.setRequestHeaders(requestHeaders);
+
+        return action.transform(runner.actionContext(), parameters, TransformInput.builder().build());
+    }
+
+    private ResultType executeFetch(HttpFetchContentParameters parameters) {
+        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
+        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
 
         return action.transform(runner.actionContext(), parameters, TransformInput.builder().build());
     }

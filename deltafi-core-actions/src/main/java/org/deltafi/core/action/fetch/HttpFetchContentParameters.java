@@ -21,7 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.parameters.annotation.Size;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,7 +44,8 @@ public class HttpFetchContentParameters extends ActionParameters {
     @JsonPropertyDescription("The HTTP method to use when making the request. Default is GET.")
     private String httpMethod = "GET";
 
-    @JsonPropertyDescription("Optional request body for POST and PUT requests. Ignored for GET, DELETE, and HEAD.")
+    @Size(maxLength = 5000)
+    @JsonPropertyDescription("Request body for POST and PUT requests. Ignored for GET, DELETE, and HEAD.")
     private String requestBody;
 
     @JsonPropertyDescription("HTTP headers to set in the request.")
@@ -57,7 +60,7 @@ public class HttpFetchContentParameters extends ActionParameters {
     @JsonPropertyDescription("The annotation name where the HTTP response code should be stored.")
     private String responseCodeAnnotationName;
 
-    @JsonPropertyDescription("If set, response headers will be stored in metadata using this key.")
+    @JsonPropertyDescription("Response headers will be joined together and stored in metadata using this key.")
     private String responseHeadersMetadataKey;
 
     @JsonProperty(defaultValue = "5000")
@@ -74,4 +77,10 @@ public class HttpFetchContentParameters extends ActionParameters {
 
     @JsonPropertyDescription("A list of tags to assign to the fetched content.")
     private Set<String> tags;
+
+    @JsonPropertyDescription("The list of response headers to store as individual metadata entries. Multi-valued headers are joined together (comma seperated). Only non-empty header values are preserved")
+    private List<String> headersToMetadata;
+
+    @JsonPropertyDescription("The metadata key used to store the detected filename, the entry is only added when the filename can be determined from the response headers")
+    private String filenameMetadataKey;
 }

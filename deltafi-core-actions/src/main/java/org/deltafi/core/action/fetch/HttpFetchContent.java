@@ -18,6 +18,7 @@
 package org.deltafi.core.action.fetch;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -40,6 +41,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -139,6 +141,22 @@ public class HttpFetchContent extends TransformAction<HttpFetchContentParameters
 
             if (params.getResponseCodeAnnotationName() != null) {
                 result.addAnnotation(params.getResponseCodeAnnotationName(), String.valueOf(responseCode));
+            }
+
+            if (params.getHeadersToMetadata() != null) {
+                for (String key : params.getHeadersToMetadata()) {
+                    List<String> values =  response.headers().allValues(key);
+                    if (!values.isEmpty()) {
+                        result.addMetadata(key, String.join(", ", values));
+                    }
+                }
+            }
+
+            if (StringUtils.isNotBlank(params.getFilenameMetadataKey())) {
+                String originalFilename = params.getContentName() != null ? parseFilename(response) : filename;
+                if (!DEFAULT_FILENAME.equals(originalFilename)) {
+                    result.addMetadata(params.getFilenameMetadataKey(), originalFilename);
+                }
             }
 
             ActionContent newContent = result.saveContent(response.body(), filename, mediaType);
