@@ -146,7 +146,7 @@ const tempEndDate = ref(null);
 // This JQuery code is used to watch for click events in the calendar table of the datePicker. If a date is clicked on the calendar, the selectedEndDate is taken and
 // the time of that date is set to the end of the day(23:59)
 $("body").on("click", "table.vdpr-datepicker__calendar-table > tbody > tr", function () {
-  calendarDialogRef.value.$data.selectedEndDate = dayjs(tempEndDate.value).endOf("day").toDate();
+  calendarDialogRef.value.selectedEndDate = dayjs(tempEndDate.value).endOf("day").toDate();
 });
 
 const helperButtonText = ref(null);
@@ -169,7 +169,7 @@ $("body").on("click", ".vdpr-datepicker__calendar-input-time-control", function 
 // the selectedEndDate is taken and the time of that date is set to the end of the day(23:59).
 $("body").on("change", ".vdpr-datepicker__switch", function () {
   if (!calendarDialogRef.value.isAllDay) {
-    calendarDialogRef.value.$data.selectedEndDate = dayjs(calendarDialogRef.value.$data.selectedEndDate).endOf("day").toDate();
+    calendarDialogRef.value.selectedEndDate = dayjs(calendarDialogRef.value.selectedEndDate).endOf("day").toDate();
   }
 });
 
