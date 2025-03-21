@@ -55,7 +55,8 @@ public class DeltaFiPropertiesService implements Snapshotter {
                 String value = !PropertyInfo.NULL.equals(propertyInfo.defaultValue()) ? propertyInfo.defaultValue() : null;
 
                 defaultProperties.add(Property.builder().key(field.getName()).defaultValue(value)
-                        .description(propertyInfo.description()).refreshable(propertyInfo.refreshable()).build());
+                        .description(propertyInfo.description()).refreshable(propertyInfo.refreshable())
+                        .dataType(propertyInfo.dataType()).build());
             }
         }
     }
@@ -76,6 +77,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
         String[] defaultValues = new String[defaultProperties.size()];
         String[] descriptions = new String[defaultProperties.size()];
         Boolean[] refreshables = new Boolean[defaultProperties.size()];
+        String[] dataTypes = new String[defaultProperties.size()];
 
         for (int i = 0; i < defaultProperties.size(); i++) {
             Property prop = defaultProperties.get(i);
@@ -83,10 +85,11 @@ public class DeltaFiPropertiesService implements Snapshotter {
             defaultValues[i] = prop.getDefaultValue();
             descriptions[i] = prop.getDescription();
             refreshables[i] = prop.isRefreshable();
+            dataTypes[i] = prop.getDataType().name();
         }
 
         deltaFiPropertiesRepo.batchUpsertAndDeleteProperties(
-                keys, defaultValues, descriptions, refreshables, allowedProperties
+                keys, defaultValues, descriptions, refreshables, dataTypes, allowedProperties
         );
     }
 

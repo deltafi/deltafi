@@ -36,6 +36,7 @@ public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
      * @param defaultValues Array of default values corresponding to the keys.
      * @param descriptions Array of descriptions corresponding to the keys.
      * @param refreshables Array of boolean flags indicating if each property is refreshable.
+     * @param dataTypes Array of data types corresponding to the keys
      * @param allowedKeys Set of keys that are allowed to exist in the database. Properties with keys not in this set or in the input arrays will be deleted.
      *
      * @throws IllegalArgumentException if the lengths of keys, defaultValues, descriptions, and refreshables arrays are not equal.
@@ -47,13 +48,14 @@ public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value =
-            "WITH input_rows(key, default_value, description, refreshable) AS ( " +
-                    "    SELECT * FROM UNNEST(:keys, :defaultValues, :descriptions, :refreshables) " +
+            "WITH input_rows(key, default_value, description, refreshable, data_type) AS ( " +
+                    "    SELECT * FROM UNNEST(:keys, :defaultValues, :descriptions, :refreshables, :dataTypes) " +
                     "), " +
                     "upsert AS ( " +
-                    "    INSERT INTO properties (key, default_value, description, refreshable) " +
+                    "    INSERT INTO properties (key, default_value, description, refreshable, data_type) " +
                     "    SELECT * FROM input_rows " +
                     "    ON CONFLICT (key) DO UPDATE SET " +
+                    "        data_type = EXCLUDED.data_type, " +
                     "        default_value = EXCLUDED.default_value, " +
                     "        description = EXCLUDED.description, " +
                     "        refreshable = EXCLUDED.refreshable " +
@@ -65,13 +67,15 @@ public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
             String[] defaultValues,
             String[] descriptions,
             Boolean[] refreshables,
+            String[] dataTypes,
             Set<String> allowedKeys
     );
 
     /**
      * Update each of the properties in the list where the key is the
      * property name and the value is the new custom value to use.
-     * @param updates list of key value pairs
+     * @param key property key
+     * @param value new value to set for the property
      * @return number of updated rows
      */
     @Modifying

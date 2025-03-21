@@ -19,6 +19,7 @@ package org.deltafi.core.configuration;
 
 import com.networknt.schema.utils.StringUtils;
 import lombok.Data;
+import org.deltafi.common.types.VariableDataType;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -43,49 +44,49 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "[Duration or ISO 8601] Frequency that the auto-resume check is triggered", defaultValue = "PT1M")
     private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "The number of threads used in core processing", defaultValue = "16")
+    @PropertyInfo(description = "The number of threads used in core processing", defaultValue = "16", dataType = VariableDataType.NUMBER)
     private int coreServiceThreads = 16;
 
-    @PropertyInfo(description = "The number of incoming events for core to queue internally for processing", defaultValue = "64")
+    @PropertyInfo(description = "The number of incoming events for core to queue internally for processing", defaultValue = "64", dataType = VariableDataType.NUMBER)
     private int coreInternalQueueSize = 64;
 
-    @PropertyInfo(description = "Maximum allowed number of threads", defaultValue = "8")
+    @PropertyInfo(description = "Maximum allowed number of threads", defaultValue = "8", dataType = VariableDataType.NUMBER)
     private int scheduledServiceThreads = 8;
 
-    @PropertyInfo(description = "Enable reporting of metrics", defaultValue = "true", refreshable = false)
+    @PropertyInfo(description = "Enable reporting of metrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
     private boolean metricsEnabled = true;
 
     @PropertyInfo(description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
     private String analyticsGroupName;
 
-    @PropertyInfo(description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.")
+    @PropertyInfo(description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.LIST)
     private String allowedAnalyticsAnnotations;
 
-    @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13")
+    @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
     private int ageOffDays = 13;
 
     @PropertyInfo(description = "[Duration or ISO 8601] Frequency that the delete action is triggered", defaultValue = "PT5M")
     private Duration deleteFrequency = Duration.ofMinutes(5);
 
-    @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "1000")
+    @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "1000", dataType = VariableDataType.NUMBER)
     private int deletePolicyBatchSize = 1000;
 
-    @PropertyInfo(description = "Maximum DeltaFiles to insert in a batch", defaultValue = "1000")
+    @PropertyInfo(description = "Maximum DeltaFiles to insert in a batch", defaultValue = "1000", dataType = VariableDataType.NUMBER)
     private int insertBatchSize = 1000;
 
     @PropertyInfo(description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
     private Duration cacheSyncDuration = Duration.ofSeconds(30);
 
-    @PropertyInfo(description = "Enables or disables all ingress", defaultValue = "true")
+    @PropertyInfo(description = "Enables or disables all ingress", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean ingressEnabled = true;
 
-    @PropertyInfo(description = "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", defaultValue = "1000")
+    @PropertyInfo(description = "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", defaultValue = "1000", dataType = VariableDataType.NUMBER)
     private long ingressDiskSpaceRequirementInMb = 1000;
 
     @PropertyInfo(description = "Default imagePullSecret used in plugin deployments")
     private String pluginImagePullSecret;
 
-    @PropertyInfo(description = "Rollback failed plugin deployments", defaultValue = "false")
+    @PropertyInfo(description = "Rollback failed plugin deployments", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean pluginAutoRollback = false;
 
     @PropertyInfo(description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
@@ -97,13 +98,13 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated (or 0 to disable).  Disabled by default. To disable this feature set the value to null or 0s")
     private Duration actionExecutionWarning;
 
-    @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10")
+    @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10", dataType = VariableDataType.NUMBER)
     private int checkActionQueueSizeThreshold = 10;
 
-    @PropertyInfo(description = "Threshold for content storage usage check", defaultValue = "90")
+    @PropertyInfo(description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
     private int checkContentStoragePercentThreshold = 90;
 
-    @PropertyInfo(description = "Display times in UTC", defaultValue = "true")
+    @PropertyInfo(description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean uiUseUTC = true;
 
     @PropertyInfo(description = "Background color of the top bar")
@@ -121,16 +122,16 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Color of the text in the security banner")
     private String securityBannerTextColor;
 
-    @PropertyInfo(description = "Toggles the security banner display", defaultValue = "false")
+    @PropertyInfo(description = "Toggles the security banner display", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean securityBannerEnabled = false;
 
-    @PropertyInfo(description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000")
+    @PropertyInfo(description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000", dataType = VariableDataType.NUMBER)
     private int inMemoryQueueSize = 5000;
 
-    @PropertyInfo(description = "The maximum number of flows a DeltaFile may traverse", defaultValue = "32")
+    @PropertyInfo(description = "The maximum number of flows a DeltaFile may traverse", defaultValue = "32", dataType = VariableDataType.NUMBER)
     private int maxFlowDepth = 32;
 
-    @PropertyInfo(description = "The amount of time to wait before timing out while waiting to acquire the join lock", defaultValue = "30000")
+    @PropertyInfo(description = "The amount of time to wait before timing out while waiting to acquire the join lock", defaultValue = "30000", dataType = VariableDataType.NUMBER)
     private long joinAcquireLockTimeoutMs = 30000;
 
     @PropertyInfo(description = "[Duration or ISO 8601] Maximum duration a database lock can be held on a " +
@@ -141,7 +142,7 @@ public class DeltaFiProperties {
             "checked against the join.maxLockDuration", defaultValue = "PT1M")
     private Duration joinLockCheckInterval = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false")
+    @PropertyInfo(description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean autoCleanPostgres = false;
 
     public long getIngressDiskSpaceRequirementInBytes() {

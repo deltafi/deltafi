@@ -1,0 +1,1 @@
+ALTER TABLE properties ADD COLUMN data_type text NOT NULL DEFAULT 'STRING';

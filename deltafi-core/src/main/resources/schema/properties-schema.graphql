@@ -33,6 +33,7 @@ type Property {
     refreshable: Boolean!           # will apps automatically pick up changes to this property
     value: String                   # value as set in git/file-system or db
     propertySource: PropertySource! # where the property was set (external for git/filesystem or db)
+    dataType: DataType!             # data type of the property (STRING, NUMBER ... etc)
 }
 
 input PropertyInput {

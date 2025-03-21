@@ -20,13 +20,12 @@ package org.deltafi.core.types;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.types.VariableDataType;
 
 @Entity
 @Table(name = "properties")
@@ -43,6 +42,8 @@ public class Property {
     private String description;
     private String defaultValue;
     private boolean refreshable;
+    @Enumerated(EnumType.STRING)
+    private VariableDataType dataType;
 
     public boolean hasValue() {
         return null != customValue;

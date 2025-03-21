@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.configuration;
 
+import org.deltafi.common.types.VariableDataType;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,4 +31,5 @@ public @interface PropertyInfo {
     String description();
     String defaultValue() default NULL;
     boolean refreshable() default true;
+    VariableDataType dataType() default VariableDataType.STRING;
 }
