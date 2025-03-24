@@ -100,4 +100,8 @@ const computedLabel = computed(() => {
   border-color: rgb(225, 225, 225);
   border-image: initial;
 }
+
+pre {
+  text-wrap: auto;
+}
 </style>

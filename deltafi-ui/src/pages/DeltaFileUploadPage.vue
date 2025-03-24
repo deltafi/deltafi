@@ -77,7 +77,7 @@
                 </div>
                 <div>{{ formatSize(file.size) }}</div>
                 <div>
-                  <InputText v-model.trim="file['customContentType']" type=" text" :placeholder="file['type']" />
+                  <InputText v-model.trim="file['customContentType']" type=" text" :placeholder="file['type'] || 'application/octet-stream'" />
                 </div>
                 <div>
                   <Button icon="pi pi-times" @click="onRemoveFile(removeFileCallback, index)" />
