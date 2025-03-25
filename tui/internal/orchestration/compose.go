@@ -33,6 +33,7 @@ type ComposeOrchestrator struct {
 	orchestrationPath string
 	secretsPath       string
 	configPath        string
+	sitePath          string
 }
 
 func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
@@ -61,11 +62,23 @@ func (o *ComposeOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error
 	return *exec.Command("docker", cmdArgs...), nil
 }
 
+func (o *ComposeOrchestrator) SiteValuesFile() (string, error) {
+	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
+	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {
+		return "", fmt.Errorf("site values file does not exist: %s", siteValuesFile)
+	}
+	return siteValuesFile, nil
+}
+
 func (o *ComposeOrchestrator) Deploy(args []string) error {
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
 	args = append([]string{"install"}, args...)
+
+	if valuesFile, err := o.SiteValuesFile(); err == nil {
+		args = append(args, "-f", valuesFile)
+	}
 
 	return ShellExec(executable, o.Environment(), args)
 }

@@ -32,7 +32,7 @@ type Orchestrator interface {
 	Environment() []string
 }
 
-func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string) Orchestrator {
+func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string) Orchestrator {
 
 	switch mode {
 	case Kubernetes:
@@ -41,7 +41,7 @@ func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string,
 		reposPath := filepath.Join(installDirectory, "repos")
 		configPath := filepath.Join(installDirectory, "config")
 		secretsPath := filepath.Join(configPath, "secrets")
-		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, reposPath: reposPath, configPath: configPath, secretsPath: secretsPath}
+		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, reposPath: reposPath, configPath: configPath, secretsPath: secretsPath, sitePath: sitePath}
 	case Kind:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	default:
