@@ -6,6 +6,7 @@ cli_help_command() {
   echo "
 Command: compose
 Data Directory:    ${DATA_DIR}
+Repos Directory:   ${REPOS_DIR}
 Env Directory:     ${ENV_DIR}
 Secrets Directory: ${SECRETS_DIR}
 
@@ -300,9 +301,11 @@ VERSION=$(deltafi --version)
 
 # TODO make the data directory configurable
 DATA_DIR="${DELTAFI_DATA_DIR:-${DELTAFI_COMPOSE_PATH}/data}"
+REPOS_DIR="${DELTAFI_REPOS_DIR:-${DELTAFI_PATH}/..}"
 SETTINGS_DIR="${DELTAFI_COMPOSE_PATH}/settings"
 SECRETS_DIR="${DELTAFI_SECRETS_DIR:-${SETTINGS_DIR}/secrets}"
 ENV_DIR="${DELTAFI_CONFIG_DIR:-${SETTINGS_DIR}/env}"
+CONFIG_DIR="${DELTAFI_CONFIG_DIR:-${SETTINGS_DIR}/env}"
 
 VALUES_YAML="${ENV_DIR}/values.yaml"
 COMMON_SETTINGS="${ENV_DIR}/common.env"
@@ -431,6 +434,9 @@ _write_default_values() {
 
   cat <<EOF > "${VALUES_YAML}"
 deltafi:
+  devContainer:
+    image: deltafi/deltafi-java-dev:jdk21-gradle8.5-0
+    enabled: false
   core_actions:
     image: ${repo}/deltafi-core-actions:${tag}
   core:
@@ -521,6 +527,7 @@ _append_compose_profiles() {
   egress_sink_enabled=$(_from_values ".deltafi.egress_sink.enabled")
   file_ingress_enabled=$(_from_values ".deltafi.file_ingress.enabled")
   entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
+  dev_container_enabled=$(_from_values ".deltafi.devContainer.enabled")
 
   if [[ "${file_ingress_enabled}" = "true" ]]; then
     profiles+=("file-ingress")
@@ -531,6 +538,10 @@ _append_compose_profiles() {
 
   if [[ "${entity_resolver_enabled}" = "true" ]]; then
     profiles+=("entity-resolver")
+  fi
+
+  if [[ "${dev_container_enabled}" = "true" ]]; then
+    profiles+=("dev")
   fi
 
   profile_str=$(local IFS=, ; echo "${profiles[*]}")
@@ -545,10 +556,13 @@ _write_startup_file() {
   _append_startup "SETTINGS_DIR" "${SETTINGS_DIR}"
   _append_startup "SECRETS_DIR" "${SECRETS_DIR}"
   _append_startup "ENV_DIR" "${ENV_DIR}"
+  _append_startup "CONFIG_DIR" "${CONFIG_DIR}"
   _append_startup "DATA_DIR" "${DATA_DIR}"
+  _append_startup "REPOS_DIR" "${REPOS_DIR}"
   _append_startup "COMPOSE_PROJECT_NAME" "deltafi"
   _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
   _append_startup_from_values "DELTAFI_ENTITY_RESOLVER" ".deltafi.auth.entityResolver.image"
+  _append_startup_from_values "DELTAFI_DEV_CONTAINER" ".deltafi.devContainer.image"
   _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
   _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
   _append_startup_from_values "DELTAFI_FILE_INGRESS" ".deltafi.file_ingress.image"
@@ -609,7 +623,9 @@ _write_env_files() {
   _append_common "HOSTNAME" "${hostname_value}"
   _append_common "DELTAFI_UI_DOMAIN" "${domain}"
   _append_common "DOMAIN" "${domain}"
+  _append_common "CONFIG_DIR" "${CONFIG_DIR}"
   _append_common "DATA_DIR" "${DATA_DIR}"
+  _append_common "REPOS_DIR" "${REPOS_DIR}"
 
   entity_resolver_port=$(_from_values ".deltafi.auth.entityResolver.port")
   entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")

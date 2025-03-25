@@ -29,6 +29,7 @@ type ComposeOrchestrator struct {
 	Orchestrator
 	distroPath        string
 	dataPath          string
+	reposPath         string
 	orchestrationPath string
 	secretsPath       string
 	configPath        string
@@ -74,6 +75,7 @@ func (o *ComposeOrchestrator) Environment() []string {
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
 	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
+	env = append(env, "DELTAFI_REPOS_DIR="+o.reposPath)
 	env = append(env, "DELTAFI_CONFIG_DIR="+o.configPath)
 	env = append(env, "DELTAFI_SECRETS_DIR="+o.secretsPath)
 	return env

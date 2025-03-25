@@ -40,7 +40,7 @@ services:
       UNIQUE_ID: deltafi-core-scheduler
       SPRING_PROFILES_ACTIVE: monitor
     env_file:
-      - ${ENV_DIR}/common.env
+      - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
@@ -83,7 +83,7 @@ services:
     environment:
       APP_NAME: deltafi-core-actions
     env_file:
-      - ${ENV_DIR}/common.env
+      - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
       - ${SECRETS_DIR}/ssl.env
@@ -108,7 +108,7 @@ services:
       deltafi-graphite:
         condition: service_started
     env_file:
-      - ${ENV_DIR}/common.env
+      - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
     labels:
       deltafi-group: deltafi-core
@@ -132,7 +132,7 @@ services:
       DELTAFI_MAX_FILE_SIZE: 2147483648
       DELTAFI_URL: http://deltafi-core-scheduler:8080
     env_file:
-      - ${ENV_DIR}/common.env
+      - ${CONFIG_DIR}/common.env
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
@@ -152,7 +152,7 @@ services:
       deltafi-core-scheduler:
         condition: service_started
     env_file:
-      - ${ENV_DIR}/common.env
+      - ${CONFIG_DIR}/common.env
     expose:
       - "80"
     labels:
@@ -365,7 +365,7 @@ services:
     environment:
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/
     env_file:
-      - ${ENV_DIR}/nginx.env
+      - ${CONFIG_DIR}/nginx.env
     labels:
       deltafi-group: deltafi-dependency
     networks:
@@ -386,3 +386,39 @@ services:
       interval: 20s
       retries: 30
       timeout: 10s
+
+  java-dev:
+    image: ${DELTAFI_DEV_CONTAINER}
+    container_name: deltafi-dev-container
+    environment:
+      APP_NAME: deltafi-dev-container
+      GRADLE_USER_HOME: /home/gradle/.gradle
+      DOCKER_HOST: unix:///var/run/docker.sock
+    env_file:
+      - ${CONFIG_DIR}/common.env
+      - ${SECRETS_DIR}/valkey.env
+      - ${SECRETS_DIR}/minio.env
+      - ${SECRETS_DIR}/ssl.env
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    restart: unless-stopped
+    volumes:
+      - ${DATA_DIR}/certs:/certs
+      - ${REPOS_DIR}:/app
+      - ${CONFIG_DIR}/.vscode:/home/gradle/.vscode
+      - ${CONFIG_DIR}/.gradle:/home/gradle/.gradle
+      - ${CONFIG_DIR}/.m2:/home/gradle/.m2
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8888:8080"  # VS Code Server
+    working_dir: /app
+    command: ["/usr/bin/code-server", "--auth", "none", "--bind-addr", "0.0.0.0:8080", "."]
+    entrypoint: /entrypoint.sh
+    privileged: true
+    tty: true
+    stdin_open: true
+    user: "gradle:gradle"
+    profiles: ["dev"]

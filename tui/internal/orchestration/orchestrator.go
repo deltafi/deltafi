@@ -38,9 +38,10 @@ func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string,
 	case Kubernetes:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	case Compose:
+		reposPath := filepath.Join(installDirectory, "repos")
 		configPath := filepath.Join(installDirectory, "config")
 		secretsPath := filepath.Join(configPath, "secrets")
-		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, configPath: configPath, secretsPath: secretsPath}
+		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, reposPath: reposPath, configPath: configPath, secretsPath: secretsPath}
 	case Kind:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	default:
