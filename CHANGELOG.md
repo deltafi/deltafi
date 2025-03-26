@@ -5,6 +5,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.14.0] - 2025-03-26
+
+### Added
+- Add a field named `dataType` to the properties to specify the property data type
+- [deltafi-action-kit-test] Added `hasContextContaining()` methods to ErrorResultAssert and FilterResultAssert 
+- HttpFetchContent - added a parameter named `headersToMetadata` that enables storing specified response headers as metadata entries
+- HttpFetchContent - added a parameter named `filenameMetadataKey` that enables storing the detected filename as metadata with a specified key
+
+### Changed
+- Changed core deployment strategy type to 'Recreate'
+- Updated smoke-test-data-sink to use the newer HttpEgress action type
+
+### Fixed
+- Now add file Content-Type if null on file upload.
+- Now wrap long description text in flow builder 
+- Fixed issue not putting the time to end of day when allDay isnt selected.
+- Delete unused rows from event_annotations table 
+- Fix rendering of summary table on Dataflow Analytics 
+- Fix bug where event group annotations weren't properly preserved when processing multiple annotation events for the same DeltaFile
+
+### Tech-Debt/Refactor
+- Improve performance of DeltaFiles queries containing annotation criteria 
+
+### Upgrade and Migration
+- Updated the base images used in CI
+- Compose: Upgrade to deltafi/timescaledb:2.19.0-pg16
+- Kubernetes: Upgrade to deltafi/deltafi-spilo:16-3.3.6-1 (Including timescaledb 2.19.0)
+
 ## [2.13.0] - 2025-03-19
 
 ### Added
@@ -3979,7 +4007,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.13.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.14.0...main
+[2.14.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.13.0...2.14.0
 [2.13.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.12.0...2.13.0
 [2.12.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.11.0...2.12.0
 [2.11.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.10.2...2.11.0
