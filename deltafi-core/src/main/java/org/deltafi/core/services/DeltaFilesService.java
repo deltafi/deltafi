@@ -529,6 +529,8 @@ public class DeltaFilesService {
                 analyticEventService.queueAnnotations(deltaFile.getDid(), transformEvent.getAnnotations());
             }
         } else {
+            // remove the parent from the cache to ensure it is not marked completed until the children are persisted
+            deltaFileCacheService.remove(deltaFile.getDid());
             action.changeState(ActionState.SPLIT, event.getStart(), event.getStop(), now);
             List<StateMachineInput> inputs = new ArrayList<>();
             inputs.add(new StateMachineInput(deltaFile, flow));

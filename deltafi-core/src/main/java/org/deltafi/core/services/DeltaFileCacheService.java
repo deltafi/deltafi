@@ -51,9 +51,13 @@ public abstract class DeltaFileCacheService {
 
     public void saveAll(Collection<DeltaFile> deltaFiles) {
         List<DeltaFile> newDeltaFiles = new ArrayList<>();
+        List<DeltaFile> parentDeltaFiles = new ArrayList<>();
         for (DeltaFile deltaFile : deltaFiles) {
             if (deltaFile.getVersion() == 0 && deltaFile.getCacheTime() == null) {
                 newDeltaFiles.add(deltaFile);
+            } else if (Boolean.TRUE.equals(deltaFile.getWaitingForChildren())) {
+                // defer saving parents until after children are saved to avoid prematurely flipping the waitingForChildrenFlag
+                parentDeltaFiles.add(deltaFile);
             } else {
                 save(deltaFile);
             }
@@ -62,6 +66,11 @@ public abstract class DeltaFileCacheService {
             deltaFileRepo.insertBatch(newDeltaFiles, deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
         }
         newDeltaFiles.forEach(this::put);
+
+        // save any parents now that the children will show up in the queries used for the completeParents method
+        for (DeltaFile deltaFile : parentDeltaFiles) {
+            save(deltaFile);
+        }
     }
 
     protected DeltaFile getFromRepo(UUID did) {
