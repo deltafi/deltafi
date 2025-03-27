@@ -20,6 +20,7 @@ package org.deltafi.actionkit.action.content;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.ActionKitException;
+import org.deltafi.actionkit.action.error.ErrorResultException;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.io.Writer;
 import org.deltafi.common.io.WriterPipedInputStream;
@@ -70,7 +71,8 @@ public class ActionContent {
             return new ActionContent(context.getContentStorageService().save(context.getDid(), bytes, name, mediaType),
                     context.getContentStorageService());
         } catch (ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
+            throw new ErrorResultException("Failed to store content",
+                    "An error occurred when trying to save content: " + name, e);
         }
     }
 
@@ -89,7 +91,8 @@ public class ActionContent {
             return new ActionContent(context.getContentStorageService().save(context.getDid(), stream, name, mediaType),
                     context.getContentStorageService());
         } catch (ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
+            throw new ErrorResultException("Failed to store content",
+                    "An error occurred when trying to save content: " + name, e);
         }
     }
 
@@ -109,7 +112,8 @@ public class ActionContent {
         try (WriterPipedInputStream writerPipedInputStream = WriterPipedInputStream.create(writer, EXECUTOR_SERVICE)) {
             return saveContent(context, writerPipedInputStream, name, mediaType);
         } catch (IOException e) {
-            throw new ActionKitException("Unable to write content " + name, e);
+            throw new ErrorResultException("Unable to write content",
+                    "An error occurred when trying to save content: " + name, e);
         }
     }
 

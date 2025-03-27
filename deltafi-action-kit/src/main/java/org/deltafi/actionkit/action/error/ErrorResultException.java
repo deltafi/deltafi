@@ -86,7 +86,7 @@ public class ErrorResultException extends RuntimeException {
     }
 
     public ErrorResult toErrorResult(ActionContext context) {
-        ErrorResult errorResult = new ErrorResult(context, errorCause, errorContext);
+        ErrorResult errorResult = new ErrorResult(context, errorCause, errorContext, cause);
         if (annotations != null) {
             errorResult.addAnnotations(annotations);
         }
