@@ -23,7 +23,6 @@ import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.tika.Tika;
 import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.common.types.LineageMap;
 import org.deltafi.common.types.SaveManyContent;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +38,7 @@ import static org.deltafi.core.action.compress.BatchSizes.*;
 public class SevenZUtil {
     private static final Tika TIKA = new Tika();
 
-    public static void extractSevenZ(TransformResult result, LineageMap lineage, String parentName, InputStream contentInputStream) throws ArchiveException {
+    public static void extractSevenZ(TransformResult result, Decompress.Statistics stats, String parentName, InputStream contentInputStream) throws ArchiveException {
         String parentDir = "";
         int lastSlash = parentName.lastIndexOf('/');
         if (lastSlash > 0) {
@@ -47,15 +46,15 @@ public class SevenZUtil {
         }
 
         try {
-            unarchiveSevnZ(result, lineage, parentDir, parentName, SevenZFile.builder()
+            unarchiveSevnZ(result, stats, parentDir, parentName, SevenZFile.builder()
                     .setByteArray(contentInputStream.readAllBytes())
                     .get());
         } catch (Exception e) {
-            throw new ArchiveException("Unable to extract 7z archive");
+            throw new ArchiveException("Unable to extract 7z archive: " + e.getMessage());
         }
     }
 
-    private static void unarchiveSevnZ(TransformResult result, LineageMap lineage,
+    private static void unarchiveSevnZ(TransformResult result, Decompress.Statistics stats,
                                        String parentDir, String parentName, SevenZFile sevenZFile) throws IOException {
         SevenZArchiveEntry entry;
         List<SaveManyContent> saveManyBatch = new ArrayList<>();
@@ -66,7 +65,7 @@ public class SevenZUtil {
                 continue;
             }
 
-            String newContentName = lineage.add(entry.getName(), parentDir, parentName);
+            String newContentName = stats.lineage.add(entry.getName(), parentDir, parentName);
             String mediaType = TIKA.detect(entry.getName());
 
             InputStream inputStream = sevenZFile.getInputStream(entry);
@@ -74,6 +73,7 @@ public class SevenZUtil {
             if (entry.getSize() >= 0 && entry.getSize() < BATCH_MAX_FILE_SIZE) {
                 byte[] fileContent = inputStream.readAllBytes();
                 long fileSize = fileContent.length;
+                stats.updateTotalBytesOrThrow(entry.getName(), fileSize);
 
                 // Check if adding this file will exceed the batch constraints
                 if (!saveManyBatch.isEmpty() &&
@@ -93,8 +93,8 @@ public class SevenZUtil {
                     saveManyBatch.clear();
                     currentBatchSize = 0;
                 }
-                // Safely avoid OutOfMemoryError from readAllBytes() for large files
-                result.saveContent(inputStream, newContentName, mediaType);
+                // Stream-based save to avoid OutOfMemoryError from readAllBytes() for large files
+                Decompress.boundedSaveOrThrow(result, stats, inputStream, entry.getName(), newContentName, mediaType);
             }
         }
 

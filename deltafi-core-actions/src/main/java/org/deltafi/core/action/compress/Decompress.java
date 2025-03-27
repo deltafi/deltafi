@@ -18,6 +18,8 @@
 package org.deltafi.core.action.compress;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.*;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
@@ -27,12 +29,15 @@ import org.apache.commons.compress.compressors.*;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.*;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.LineageMap;
+import org.deltafi.common.types.SaveManyContent;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +51,10 @@ import static org.deltafi.core.action.compress.BatchSizes.*;
 @Slf4j
 public class Decompress extends TransformAction<DecompressParameters> {
     static final int MAX_LEVELS_SAFEGUARD = 100;
-    private static final String COMPRESS_FORMAT = "compressFormat";
+    static final long DEFAULT_MAX_EXTRACTED_BYTES = 8_589_934_592L; // 8GB
+    static final String COMPRESS_FORMAT = "compressFormat";
+    static final String DISABLE_MAX_BYTES_CHECK = "disableMaxExtractedBytesCheck";
+    private static final Tika TIKA = new Tika();
 
     public Decompress() {
         super("Decompresses content from .ar, .gz, .7z, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip.");
@@ -96,6 +104,28 @@ public class Decompress extends TransformAction<DecompressParameters> {
         return null;
     }
 
+    static void boundedSaveOrThrow(TransformResult result, Statistics stats,
+                                   InputStream compressorInputStream, String entryName,
+                                   String contentName, String mediaType) throws IOException {
+        if (stats.checkTotalRequired()) {
+            BoundedInputStream bis = BoundedInputStream.builder()
+                    .setInputStream(compressorInputStream)
+                    .setMaxCount(stats.bytesRemaining() + 1)
+                    .setPropagateClose(false)
+                    .get();
+            long size = result.saveContent(bis, contentName, mediaType).getSize();
+            if (size > stats.bytesRemaining()) {
+                throw new IOException("Size of '" + entryName + "' " +
+                        "would exceed the maximum remaining bytes: " +
+                        stats.bytesRemaining());
+            } else {
+                stats.updateTotalBytesOrThrow(entryName, size);
+            }
+        } else {
+            result.saveContent(compressorInputStream, contentName, mediaType);
+        }
+    }
+
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull DecompressParameters params,
                                          @NotNull TransformInput input) {
@@ -103,17 +133,17 @@ public class Decompress extends TransformAction<DecompressParameters> {
             return new ErrorResult(context, "No content found");
         }
 
-        LineageMap lineage = new LineageMap();
+        Statistics stats = new Statistics(new LineageMap(), 0L, getMaxExtractedBytes(params.getMaxExtractedBytes(), input));
         TransformResultType result = (params.getMaxRecursionLevels() == 0)
-                ? basicDecompress(context, params, input, lineage)
-                : recursiveDecompress(context, params, input, lineage);
+                ? basicDecompress(context, params, input, stats)
+                : recursiveDecompress(context, params, input, stats);
 
         if (result instanceof TransformResult) {
             // Generate the lineage
-            if (!lineage.isEmpty() && StringUtils.isNoneEmpty(params.getLineageFilename())) {
+            if (!stats.lineage.isEmpty() && StringUtils.isNotEmpty(params.getLineageFilename())) {
                 String jsonLineage;
                 try {
-                    jsonLineage = lineage.writeMapAsString();
+                    jsonLineage = stats.lineage.writeMapAsString();
                 } catch (JsonProcessingException e) {
                     return new ErrorResult(context, "Cannot write lineage JSON", e);
                 }
@@ -123,8 +153,18 @@ public class Decompress extends TransformAction<DecompressParameters> {
         return result;
     }
 
+    private Long getMaxExtractedBytes(Long maxExtractedBytes, TransformInput input) {
+        if (input.getMetadata().containsKey(DISABLE_MAX_BYTES_CHECK)) {
+            return null;
+        } else if (maxExtractedBytes > 0) {
+            return maxExtractedBytes;
+        } else {
+            return DEFAULT_MAX_EXTRACTED_BYTES;
+        }
+    }
+
     private TransformResultType basicDecompress(@NotNull ActionContext context, @NotNull DecompressParameters params,
-                                                @NotNull TransformInput input, LineageMap lineage) {
+                                                @NotNull TransformInput input, Statistics stats) {
         TransformResult result = new TransformResult(context);
         if (params.isRetainExistingContent()) {
             result.addContent(input.getContent());
@@ -135,15 +175,15 @@ public class Decompress extends TransformAction<DecompressParameters> {
             InputStream contentInputStream = content.loadInputStream();
             try {
                 if (SevenZUtil.isSevenZ(content.getName(), content.getMediaType(), params.getFormat())) {
-                    SevenZUtil.extractSevenZ(result, lineage, content.getName(), contentInputStream);
+                    SevenZUtil.extractSevenZ(result, stats, content.getName(), contentInputStream);
                     compressFormatName = Format.SEVEN_Z.getValue();
                 } else if (params.getFormat() == null) {
                     DetectedFormatData detectedFormatData = detectFormat(contentInputStream);
-                    extract(result, lineage, content, detectedFormatData.format(), detectedFormatData.compressorInputStream(),
+                    extract(result, stats, content, detectedFormatData.format(), detectedFormatData.compressorInputStream(),
                             detectedFormatData.archiveInputStream());
                     compressFormatName = detectedFormatData.format().getValue();
                 } else {
-                    extract(result, lineage, content, params.getFormat(),
+                    extract(result, stats, content, params.getFormat(),
                             createCompressorInputStream(params.getFormat(), contentInputStream),
                             createArchiveInputStream(params.getFormat(), contentInputStream));
                     compressFormatName = params.getFormat().getValue();
@@ -166,7 +206,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     }
 
     private TransformResultType recursiveDecompress(@NotNull ActionContext context, @NotNull DecompressParameters params,
-                                                    @NotNull TransformInput input, LineageMap lineage) {
+                                                    @NotNull TransformInput input, Statistics stats) {
         int recursionLevel = 0;
         boolean recursionNeeded = true;
 
@@ -200,9 +240,9 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 InputStream contentInputStream = content.loadInputStream();
                 try {
                     if (format == Format.SEVEN_Z) {
-                        SevenZUtil.extractSevenZ(result, lineage, content.getName(), contentInputStream);
+                        SevenZUtil.extractSevenZ(result, stats, content.getName(), contentInputStream);
                     } else {
-                        extract(result, lineage, content, format,
+                        extract(result, stats, content, format,
                                 createCompressorInputStream(format, contentInputStream),
                                 createArchiveInputStream(format, contentInputStream));
                     }
@@ -232,7 +272,6 @@ public class Decompress extends TransformAction<DecompressParameters> {
 
         return finalResult;
     }
-
 
     private DetectedFormatData detectFormat(InputStream contentInputStream) throws ArchiveException {
         // Wrap in a BufferedInputStream (supporting mark/reset) so the type can be detected.
@@ -340,7 +379,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         };
     }
 
-    private void extract(TransformResult result, LineageMap lineage, ActionContent content, Format format,
+    private void extract(TransformResult result, Statistics stats, ActionContent content, Format format,
                          InputStream compressorInputStream, ArchiveInputStream<?> archiveInputStream) throws IOException {
         String parentName = content.getName();
         String parentDir = "";
@@ -351,16 +390,14 @@ public class Decompress extends TransformAction<DecompressParameters> {
 
         if (archiveInputStream != null) {
             try (archiveInputStream) {
-                unarchive(result, lineage, parentDir, parentName, format == Format.TAR ? content : null, archiveInputStream);
+                unarchive(result, stats, parentDir, parentName, format == Format.TAR ? content : null, archiveInputStream);
             }
         } else {
-            decompress(result, lineage, content, compressorInputStream);
+            decompress(result, stats, content, compressorInputStream);
         }
     }
 
-    private static final Tika TIKA = new Tika();
-
-    private void unarchive(TransformResult result, LineageMap lineage, String parentDir, String parentName,
+    private void unarchive(TransformResult result, Statistics stats, String parentDir, String parentName,
                            ActionContent content, ArchiveInputStream<?> archiveInputStream) throws IOException {
         ArrayList<SaveManyContent> saveManyBatch = new ArrayList<>();
         long currentBatchSize = 0;
@@ -371,7 +408,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 continue;
             }
 
-            String newContentName = lineage.add(entry.getName(), parentDir, parentName);
+            String newContentName = stats.lineage.add(entry.getName(), parentDir, parentName);
             String mediaType = TIKA.detect(entry.getName());
 
             if (content != null) { // in place
@@ -382,6 +419,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 if (entry.getSize() >= 0 && entry.getSize() < BATCH_MAX_FILE_SIZE) {
                     SaveManyContent file = new SaveManyContent(newContentName, mediaType, archiveInputStream.readAllBytes());
                     long fileSize = file.content().length;
+                    stats.updateTotalBytesOrThrow(entry.getName(), fileSize);
 
                     // Check if adding this file will exceed the batch constraints
                     if (!saveManyBatch.isEmpty() &&
@@ -401,8 +439,8 @@ public class Decompress extends TransformAction<DecompressParameters> {
                         saveManyBatch.clear();
                         currentBatchSize = 0;
                     }
-                    // Safely avoid OutOfMemoryError from readAllBytes() for large files
-                    result.saveContent(archiveInputStream, newContentName, mediaType);
+                    // Stream-based save to avoid OutOfMemoryError from readAllBytes() for large files
+                    boundedSaveOrThrow(result, stats, archiveInputStream, entry.getName(), newContentName, mediaType);
                 }
             }
         }
@@ -413,12 +451,37 @@ public class Decompress extends TransformAction<DecompressParameters> {
         }
     }
 
-    private void decompress(TransformResult result, LineageMap lineage, ActionContent content, InputStream compressorInputStream)
+    private void decompress(TransformResult result, Statistics stats, ActionContent content, InputStream compressorInputStream)
             throws IOException {
         try (compressorInputStream) {
             String withoutSuffix = stripSuffix(content.getName());
-            String newContentName = lineage.add(withoutSuffix, "", content.getName());
-            result.saveContent(compressorInputStream, newContentName, TIKA.detect(withoutSuffix));
+            String newContentName = stats.lineage.add(withoutSuffix, "", content.getName());
+            boundedSaveOrThrow(result, stats, compressorInputStream, withoutSuffix, newContentName, TIKA.detect(withoutSuffix));
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    static
+    class Statistics {
+        LineageMap lineage;
+        Long totalBytes;
+        Long maxBytes;
+
+        public boolean checkTotalRequired() {
+            return maxBytes != null;
+        }
+
+        public void updateTotalBytesOrThrow(String name, Long size) throws IOException {
+            if (checkTotalRequired() && totalBytes + size > maxBytes) {
+                throw new IOException("Size of '" + name + "', " + size
+                        + ", would exceed extraction limit");
+            }
+            totalBytes += size;
+        }
+
+        public long bytesRemaining() {
+            return maxBytes - totalBytes;
         }
     }
 

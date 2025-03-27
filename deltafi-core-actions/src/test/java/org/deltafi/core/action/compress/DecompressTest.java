@@ -24,9 +24,11 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.types.LineageData;
 import org.deltafi.common.types.LineageMap;
 import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.asserters.ErrorResultAssert;
 import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.deltafi.core.action.compress.Decompress.DISABLE_MAX_BYTES_CHECK;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DecompressTest {
@@ -87,12 +90,119 @@ public class DecompressTest {
     }
 
     @Test
-    public void errorRecursionToHigh() {
+    public void errorRecursionTooHigh() {
         DecompressParameters params = new DecompressParameters();
         params.setMaxRecursionLevels(101);
 
         ResultType result = runRecursiveTest(params, input("multi-layers.tgz"));
         assertInstanceOf(ErrorResult.class, result);
+    }
+
+    @Test
+    public void errorMaxSizeExceededGz() {
+        runMaxExtractedSizeTest(Format.GZIP, 4L, false,
+                "Size of 'fileA' would exceed the maximum remaining bytes: 4");
+    }
+
+    @Test
+    public void errorMaxSizeExceeded7Z() {
+        runMaxExtractedSizeTest(Format.SEVEN_Z, 10L, false,
+                "Unable to extract 7z archive: Size of 'thing2.txt', 7, would exceed extraction limit");
+    }
+
+    @Test
+    public void errorMaxSizeExceededZip() {
+        runMaxExtractedSizeTest(Format.ZIP, 10L, false,
+                "Size of 'thing2.txt', 7, would exceed extraction limit");
+    }
+
+    @Test
+    public void testMaxExtractedSizeWithOverride() {
+        runMaxExtractedSizeTest(Format.ZIP, 10L, true, null);
+    }
+
+    @Test
+    public void maxExtractedSizeNotExceeded() {
+        runMaxExtractedSizeTest(Format.ZIP, 1000L, false, null);
+    }
+
+    @Test
+    public void maxExtractedSizeNegativeCheck() {
+        runMaxExtractedSizeTest(Format.ZIP, -1L, false, null);
+    }
+
+    private void runMaxExtractedSizeTest(Format archiveType, long maxSize, boolean override, String errorContext) {
+        runMaxExtractedSizeTest(false, archiveType, maxSize, override, errorContext);
+    }
+
+    @Test
+    public void bigFileExceededZip() {
+        // Tests path of size > BATCH_MAX_FILE_SIZE
+        runMaxExtractedSizeTest(true, Format.ZIP, 60_000_000L, false,
+                "Size of 'big-64M.txt' would exceed the maximum remaining bytes: 60000000");
+    }
+
+    @Test
+    public void bigFileOkZip() {
+        // Tests path of size > BATCH_MAX_FILE_SIZE
+        runMaxExtractedSizeTest(true, Format.ZIP, 100_000_000L, false, null);
+    }
+
+    @Test
+    public void bigFileExceededGzip() {
+        // Tests path of size > BATCH_MAX_FILE_SIZE
+        runMaxExtractedSizeTest(true, Format.GZIP, 60_000_000L, false,
+                "Size of 'big-64M' would exceed the maximum remaining bytes: 60000000");
+    }
+
+    @Test
+    public void bigFileOkGzip() {
+        // Tests path of size > BATCH_MAX_FILE_SIZE
+        runMaxExtractedSizeTest(true, Format.GZIP, 100_000_000L, false, null);
+    }
+
+    @Test
+    public void bigFileExceeded7Z() {
+        // Tests path of size > BATCH_MAX_FILE_SIZE
+        runMaxExtractedSizeTest(true, Format.SEVEN_Z, 60_000_000L, false,
+                "Unable to extract 7z archive: Size of 'big-64M.txt' would exceed the maximum remaining bytes: 60000000");
+    }
+
+    @Test
+    public void bigFileOk7Z() {
+        // Tests path of size > BATCH_MAX_FILE_SIZE
+        runMaxExtractedSizeTest(true, Format.SEVEN_Z, 100_000_000L, false, null);
+    }
+
+    private void runMaxExtractedSizeTest(boolean bigFile, Format archiveType, long maxSize, boolean override, String errorContext) {
+        String inputName;
+        if (bigFile) {
+            inputName = "big-64M.";
+        } else {
+            if (archiveType.equals(Format.ZIP) || archiveType.equals(Format.SEVEN_Z)) {
+                inputName = "compressed.";
+            } else {
+                inputName = "fileA.";
+            }
+        }
+        inputName += archiveType.getValue();
+
+        TransformInput input = input(inputName);
+        if (override) {
+            input.getMetadata().put(DISABLE_MAX_BYTES_CHECK, "true");
+        }
+
+        DecompressParameters params = new DecompressParameters();
+        params.setMaxExtractedBytes(maxSize);
+
+        ResultType result = runRecursiveTest(params, input);
+        if (errorContext == null) {
+            assertInstanceOf(TransformResult.class, result);
+        } else {
+            ErrorResultAssert.assertThat(result)
+                    .hasCause("Unable to decompress content")
+                    .hasContextContaining(errorContext);
+        }
     }
 
     @Test

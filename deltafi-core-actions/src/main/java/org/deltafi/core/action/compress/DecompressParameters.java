@@ -19,8 +19,9 @@ package org.deltafi.core.action.compress;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import lombok.*;
+
 
 @Data
 @ToString(callSuper = true)
@@ -40,4 +41,8 @@ public class DecompressParameters extends ActionParameters {
     @JsonProperty(defaultValue = "0")
     @JsonPropertyDescription("Enables recursive decompression/un-archiving of embedded content by checking filename extensions")
     private int maxRecursionLevels = 0;
+
+    @JsonProperty(defaultValue = "8589934592")
+    @JsonPropertyDescription("Limit the combined total of bytes that can be extracted across all files to protect against filling content storage. Metadata override key is 'disableMaxExtractedBytesCheck'. Defaults to 8GB if not positive")
+    private long maxExtractedBytes = 8_589_934_592L;
 }
