@@ -27,6 +27,7 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 @Data
@@ -64,14 +65,26 @@ public class ContentMatchingParameters extends ActionParameters {
         return mediaTypes;
     }
 
+    @JsonPropertyDescription("List of content tags to include or exclude, matching any")
+    private List<String> contentTags;
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("Exclude specified content tags")
+    private boolean excludeContentTags = false;
+
     private static final BiFunction<List<?>, Object, Boolean> CONTAINS_PATTERN_FUNCTION = (list, item) ->
             list.stream().anyMatch(pattern -> ((String) item).matches(((String) pattern).replace("*", ".*")));
+
+    @SuppressWarnings("unchecked")
+    private static final BiFunction<List<?>, Object, Boolean> MATCHES_ANY_TAG_FUNCTION = (list, item) ->
+            list.stream().anyMatch(tag -> ((Set<String>) item).contains(((String) tag)));
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean contentSelected(int index, ActionContent content) {
         return contentSelected(contentIndexes, index, excludeContentIndexes, List::contains) &&
                 contentSelected(filePatterns, content.getName(), excludeFilePatterns, CONTAINS_PATTERN_FUNCTION) &&
-                contentSelected(mediaTypes, content.getMediaType(), excludeMediaTypes, CONTAINS_PATTERN_FUNCTION);
+                contentSelected(mediaTypes, content.getMediaType(), excludeMediaTypes, CONTAINS_PATTERN_FUNCTION) &&
+                contentSelected(contentTags, content.getTags(), excludeContentTags, MATCHES_ANY_TAG_FUNCTION);
     }
 
     private boolean contentSelected(List<?> list, Object item, boolean excludeFlag,

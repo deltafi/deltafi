@@ -97,6 +97,41 @@ public class ContentSelectionParametersTest {
     }
 
     @Test
+    public void contentSelectedByTags() {
+        resetTags();
+
+        CONTENT.get(0).addTag("A");
+        CONTENT.get(0).addTag("C");
+        CONTENT.get(1).addTag("C");
+        CONTENT.get(2).addTag("B");
+        CONTENT.get(2).addTag("C");
+
+        ContentSelectionParameters params = new ContentSelectionParameters();
+        params.setContentTags(List.of("A", "B"));
+
+        assertTrue(params.contentSelected(0, CONTENT.get(0)));
+        assertFalse(params.contentSelected(1, CONTENT.get(1)));
+        assertTrue(params.contentSelected(2, CONTENT.get(2)));
+    }
+
+    @Test
+    public void contentSelectedByTagsExcludes() {
+        resetTags();
+
+        CONTENT.get(0).addTag("A");
+        CONTENT.get(0).addTag("B");
+        CONTENT.get(2).addTag("C");
+
+        ContentSelectionParameters params = new ContentSelectionParameters();
+        params.setContentTags(List.of("B"));
+        params.setExcludeContentTags(true);
+
+        assertFalse(params.contentSelected(0, CONTENT.get(0)));
+        assertTrue(params.contentSelected(1, CONTENT.get(1)));
+        assertTrue(params.contentSelected(2, CONTENT.get(2)));
+    }
+
+    @Test
     public void testCombinations1() {
         ContentSelectionParameters params = new ContentSelectionParameters();
         // Has an index of 1, 2, or 99 (CONTENT[1] and CONTENT[2]):
@@ -127,5 +162,11 @@ public class ContentSelectionParametersTest {
         assertFalse(params.contentSelected(0, CONTENT.get(0)));
         assertTrue(params.contentSelected(1, CONTENT.get(1)));
         assertFalse(params.contentSelected(2, CONTENT.get(2)));
+    }
+
+    private void resetTags() {
+        CONTENT.get(0).clearTags();
+        CONTENT.get(1).clearTags();
+        CONTENT.get(2).clearTags();
     }
 }
