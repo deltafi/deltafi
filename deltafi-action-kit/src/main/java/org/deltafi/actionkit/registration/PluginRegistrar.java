@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.victools.jsonschema.generator.SchemaGenerator;
 import feign.Retryer;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
@@ -28,7 +29,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.parameters.ActionParametersSchemaGenerator;
 import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.transform.Join;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
@@ -54,6 +54,7 @@ public class PluginRegistrar {
     private final BuildProperties buildProperties;
     private final ApplicationContext applicationContext;
     private final Environment environment;
+    private final SchemaGenerator schemaGenerator;
 
     @PostConstruct
     public void register() {
@@ -107,7 +108,7 @@ public class PluginRegistrar {
 
     private ActionDescriptor buildActionDescriptor(Action<?, ?, ?> action) {
         Map<String, Object> schema = OBJECT_MAPPER.convertValue(
-                ActionParametersSchemaGenerator.generateSchema(action.getParamClass()),
+                schemaGenerator.generateSchema(action.getParamClass()),
                 new TypeReference<>() {});
 
         return ActionDescriptor.builder()

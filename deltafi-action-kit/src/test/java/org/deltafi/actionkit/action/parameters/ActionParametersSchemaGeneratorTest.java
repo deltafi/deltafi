@@ -20,20 +20,25 @@ package org.deltafi.actionkit.action.parameters;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.victools.jsonschema.generator.SchemaGenerator;
 import lombok.Getter;
+import org.deltafi.actionkit.ActionKitAutoConfiguration;
 import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ActionParametersSchemaGeneratorTest {
     @Test
     void testGetSchema() throws IOException {
-        JsonNode schemaJson = ActionParametersSchemaGenerator.generateSchema(TestActionParameters.class);
+        ActionKitAutoConfiguration configuration = new ActionKitAutoConfiguration(null);
+        SchemaGenerator generator  = configuration.parametersSchemaGenerator(Optional.empty());
+        JsonNode schemaJson = generator.generateSchema(TestActionParameters.class);
         String expectedSchema = new String(Objects.requireNonNull(getClass().getResourceAsStream("/expectedParamSchema.json")).readAllBytes());
         assertEquals(expectedSchema, schemaJson.toPrettyString());
     }

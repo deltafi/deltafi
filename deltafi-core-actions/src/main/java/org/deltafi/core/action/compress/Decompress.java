@@ -133,7 +133,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
             return new ErrorResult(context, "No content found");
         }
 
-        Statistics stats = new Statistics(new LineageMap(), 0L, getMaxExtractedBytes(params.getMaxExtractedBytes(), input));
+        Statistics stats = new Statistics(new LineageMap(), 0L, getMaxExtractedBytes(params.getMaxExtractedBytes().toBytes(), input));
         TransformResultType result = (params.getMaxRecursionLevels() == 0)
                 ? basicDecompress(context, params, input, stats)
                 : recursiveDecompress(context, params, input, stats);
@@ -475,7 +475,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         public void updateTotalBytesOrThrow(String name, Long size) throws IOException {
             if (checkTotalRequired() && totalBytes + size > maxBytes) {
                 throw new IOException("Size of '" + name + "', " + size
-                        + ", would exceed extraction limit");
+                        + ", would make the total size " + totalBytes + size + " exceeding the extraction limit of " + maxBytes);
             }
             totalBytes += size;
         }

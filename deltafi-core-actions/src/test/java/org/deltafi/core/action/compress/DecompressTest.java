@@ -32,6 +32,7 @@ import org.deltafi.test.asserters.ErrorResultAssert;
 import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
+import org.springframework.util.unit.DataSize;
 
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
@@ -107,13 +108,13 @@ public class DecompressTest {
     @Test
     public void errorMaxSizeExceeded7Z() {
         runMaxExtractedSizeTest(Format.SEVEN_Z, 10L, false,
-                "Unable to extract 7z archive: Size of 'thing2.txt', 7, would exceed extraction limit");
+                "Unable to extract 7z archive: Size of 'thing2.txt', 7, would make the total size 77 exceeding the extraction limit of 10");
     }
 
     @Test
     public void errorMaxSizeExceededZip() {
         runMaxExtractedSizeTest(Format.ZIP, 10L, false,
-                "Size of 'thing2.txt', 7, would exceed extraction limit");
+                "Size of 'thing2.txt', 7, would make the total size 77 exceeding the extraction limit of 10");
     }
 
     @Test
@@ -193,7 +194,7 @@ public class DecompressTest {
         }
 
         DecompressParameters params = new DecompressParameters();
-        params.setMaxExtractedBytes(maxSize);
+        params.setMaxExtractedBytes(DataSize.ofBytes(maxSize));
 
         ResultType result = runRecursiveTest(params, input);
         if (errorContext == null) {

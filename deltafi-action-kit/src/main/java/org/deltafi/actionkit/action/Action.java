@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.parameters.DataSizeModule;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,8 +45,9 @@ import java.util.Map;
 @Getter
 public abstract class Action<I, P extends ActionParameters, R extends ResultType> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-                    .registerModule(new JavaTimeModule())
-                    .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+            .registerModule(new JavaTimeModule())
+            .registerModule(new DataSizeModule())
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     private final ActionType actionType;
     private final String description;
