@@ -152,7 +152,7 @@ _k8s_install() {
     popd > /dev/null || exit $?
   fi
 
-  ORIG_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
+  ORIG_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-scheduler-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
 
   if [[ -n "${ORIG_CORE_POD}" ]]; then
     _pre_upgrade_tasks
@@ -172,7 +172,7 @@ _k8s_install() {
 }
 
 _compose_install() {
-  core_finder="docker ps --filter name=deltafi-core$ -q"
+  core_finder="docker ps --filter name=deltafi-core-scheduler$ -q"
   ORIG_CORE_CONTAINER=$(${core_finder})
 
   if [[ -n "${ORIG_CORE_CONTAINER}" ]]; then
@@ -188,10 +188,11 @@ _compose_install() {
 
 _pre_upgrade_tasks() {
   cli_log "Creating a snapshot"
-  version=$( cat "${DELTAFI_DIR}/VERSION")
-  message="Starting upgrade from DeltaFi $(deltafi --version) to version ${version}"
+  newversion=$( cat "${DELTAFI_DIR}/VERSION")
+  oldversion=$( deltafi cli query '{version}' | grep version | cut -f4 -d'"')
+  message="Starting upgrade from DeltaFi ${oldversion} to ${newversion}"
   deltafi cli event create -q -s "cli" --success --notification "$message"
-  snapshot_file="pre-upgrade-to-${version}-$(date +%s).json"
+  snapshot_file="pre-upgrade-to-${newversion}-$(date +%s).json"
   deltafi cli system-snapshot create "$message" > "${snapshot_file}"
   cli_log "Snapshot complete"
 }
