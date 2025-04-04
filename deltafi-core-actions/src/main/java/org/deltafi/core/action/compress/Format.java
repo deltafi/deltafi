@@ -27,13 +27,15 @@ public enum Format {
     @JsonProperty("ar") AR("ar", "application/x-archive"),
     @JsonProperty("7z") SEVEN_Z("7z", "application/x-7z-compressed"),
     @JsonProperty("tar") TAR("tar", "application/x-tar"),
+    // TIKA::detect(name) for *.tgz and *.tar.gz are the same:
     @JsonProperty("tar.gz") TAR_GZIP("tar.gz", "application/gzip"),
     @JsonProperty("tar.xz") TAR_XZ("tar.xz", "application/x-xz"),
-    @JsonProperty("tar.Z") TAR_Z("tar.Z", "application/x-gtar"),
+    @JsonProperty("tar.Z") TAR_Z("tar.Z", "application/x-compress"),
     @JsonProperty("zip") ZIP("zip", "application/zip"),
 
     @JsonProperty("gz") GZIP("gz", "application/gzip"),
     @JsonProperty("xz") XZ("xz", "application/x-xz"),
+    // TIKA::detect(name) for *.z and *.Z are the same:
     @JsonProperty("z") Z("z", "application/x-compress");
 
     private final String value;
