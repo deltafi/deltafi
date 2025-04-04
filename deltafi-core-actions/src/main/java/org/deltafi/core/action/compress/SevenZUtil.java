@@ -103,14 +103,4 @@ public class SevenZUtil {
             result.saveContent(saveManyBatch);
         }
     }
-
-    public static boolean isSevenZ(String name, String mediaType, Format format) {
-        return (format != null && format.equals(Format.SEVEN_Z)) ||
-                Format.SEVEN_Z.getMediaType().equals(mediaType) ||
-                (name != null && (
-                        name.endsWith("." + Format.SEVEN_Z.getValue()) ||
-                                name.endsWith(".7zip")));
-
-    }
-
 }

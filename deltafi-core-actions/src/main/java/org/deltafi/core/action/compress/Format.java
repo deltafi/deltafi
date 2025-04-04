@@ -20,6 +20,9 @@ package org.deltafi.core.action.compress;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.io.FilenameUtils;
+
+import java.util.*;
 
 @AllArgsConstructor
 @Getter
@@ -38,6 +41,21 @@ public enum Format {
     // TIKA::detect(name) for *.z and *.Z are the same:
     @JsonProperty("z") Z("z", "application/x-compress");
 
+    private static final Map<String, Format> EXTENSION_MAP = new HashMap<>();
+
+    static {
+        for (Format format : values()) {
+            EXTENSION_MAP.put(format.value.toLowerCase(), format);
+        }
+        EXTENSION_MAP.put("tgz", TAR_GZIP);
+        EXTENSION_MAP.put("7zip", SEVEN_Z);
+    }
+
     private final String value;
     private final String mediaType;
+
+    public static Format fromExtension(String filename) {
+        String extension = FilenameUtils.getExtension(filename);
+        return extension != null ? EXTENSION_MAP.get(extension.toLowerCase(Locale.ROOT)) : null;
+    }
 }

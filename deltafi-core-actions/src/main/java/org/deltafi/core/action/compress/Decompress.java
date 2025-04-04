@@ -66,42 +66,13 @@ public class Decompress extends TransformAction<DecompressParameters> {
     }
 
     private static boolean recursiveCandidate(String filename) {
-        String filenameLC = filename.toLowerCase(Locale.ROOT);
-        return filename.endsWith(".ar") ||
-                filenameLC.endsWith(".gz") ||
-                filenameLC.endsWith(".7z") ||
-                filenameLC.endsWith(".7zip") ||
-                filenameLC.endsWith(".tar") ||
-                filenameLC.endsWith(".tgz") ||
-                filenameLC.endsWith(".xz") ||
-                filenameLC.endsWith(".z") ||
-                filenameLC.endsWith(".zip");
+        return Format.fromExtension(filename) != null;
     }
 
-    private static Format formatFromName(String filename) {
-        String filenameLC = filename.toLowerCase(Locale.ROOT);
-        if (filename.endsWith(".ar")) {
-            return Format.AR;
-        } else if (filenameLC.endsWith(".tar")) {
-            return Format.TAR;
-        } else if (filenameLC.endsWith(".tar.gz") || filenameLC.endsWith(".tgz")) {
-            return Format.TAR_GZIP;
-        } else if (filenameLC.endsWith("tar.xz")) {
-            return Format.TAR_XZ;
-        } else if (filenameLC.endsWith(".tar.z")) {
-            return Format.TAR_Z;
-        } else if (filenameLC.endsWith(".zip")) {
-            return Format.ZIP;
-        } else if (filenameLC.endsWith(".gz")) {
-            return Format.GZIP;
-        } else if (filenameLC.endsWith(".7z") || filenameLC.endsWith(".7zip")) {
-            return Format.SEVEN_Z;
-        } else if (filenameLC.endsWith(".xz")) {
-            return Format.XZ;
-        } else if (filenameLC.endsWith(".z")) {
-            return Format.Z;
-        }
-        return null;
+    public static boolean isSevenZ(String name, String mediaType, Format format) {
+        return (format != null && format.equals(Format.SEVEN_Z)) ||
+                Format.SEVEN_Z.getMediaType().equals(mediaType) ||
+                Format.SEVEN_Z.equals(Format.fromExtension(name));
     }
 
     static void boundedSaveOrThrow(TransformResult result, Statistics stats,
@@ -174,7 +145,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         for (ActionContent content : input.getContent()) {
             InputStream contentInputStream = content.loadInputStream();
             try {
-                if (SevenZUtil.isSevenZ(content.getName(), content.getMediaType(), params.getFormat())) {
+                if (isSevenZ(content.getName(), content.getMediaType(), params.getFormat())) {
                     SevenZUtil.extractSevenZ(result, stats, content.getName(), contentInputStream);
                     compressFormatName = Format.SEVEN_Z.getValue();
                 } else if (params.getFormat() == null) {
@@ -230,7 +201,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
             TransformResult result = new TransformResult(context);
 
             for (ActionContent content : processingList) {
-                Format format = formatFromName(content.getName());
+                Format format = Format.fromExtension(content.getName());
                 if (format == null) {
                     // This content does not require further processing
                     finalResult.addContent(content);
