@@ -26,7 +26,7 @@ import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.util.MarkdownBuilder;
+import org.deltafi.common.util.MarkdownBuilder;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public abstract class BaseDeployerService implements DeployerService {
     private void publishEvent(InstallDetails installDetails, DeployResult retval) {
         MarkdownBuilder markdownBuilder = new MarkdownBuilder(installDetails.appName() + "\n\n");
         if (retval.hasEvents()) {
-            markdownBuilder.addTable("#### Events:", K8sEventUtil.EVENT_COLUMNS, retval.getEvents());
+            markdownBuilder.append("#### Events:\n").addSimpleTable(K8sEventUtil.EVENT_COLUMNS, retval.getEvents());
         }
 
         if (retval.getLogs() != null) {

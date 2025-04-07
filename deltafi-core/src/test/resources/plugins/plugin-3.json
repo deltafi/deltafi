@@ -9,10 +9,17 @@
   "actionKitVersion": "1.1.0",
   "actions" : [ {
     "name" : "org.deltafi.test.actions3.TestAction1",
-    "type" : "TRANSFORM"
+    "type" : "TRANSFORM",
+    "schema" : {},
+    "actionOptions": {
+      "description" : "TestAction1"
+    }
   }, {
     "name" : "org.deltafi.test.actions3.TestAction2",
-    "description": "TestAction2",
-    "type" : "TRANSFORM"
+    "type" : "TRANSFORM",
+    "schema" : {},
+    "actionOptions": {
+      "description" : "TestAction2"
+    }
   } ]
 }

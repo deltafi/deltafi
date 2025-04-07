@@ -29,7 +29,7 @@ from datetime import datetime, timezone, timedelta
 from importlib import metadata
 from os.path import isdir, isfile, join
 from pathlib import Path
-from typing import List
+from typing import List, NamedTuple
 
 import requests
 import yaml
@@ -250,25 +250,13 @@ class Plugin(object):
     def action_name(self, action):
         return f"{self.coordinates.group_id}.{action.__class__.__name__}"
 
-    def _load_action_docs(self, action):
-        docs_path = str(Path(os.path.dirname(os.path.abspath(sys.argv[0]))) / 'docs')
-        if not isdir(docs_path):
-            return None
-
-        action_docs_file = join(docs_path, action.__class__.__name__ + '.md')
-        if not isfile(action_docs_file):
-            return None
-
-        return open(action_docs_file).read()
-
     def _action_json(self, action):
         return {
             'name': self.action_name(action),
-            'description': action.description,
             'type': action.action_type.name,
             'supportsJoin': isinstance(action, Join),
             'schema': action.param_class().model_json_schema(),
-            'docsMarkdown': self._load_action_docs(action)
+            'actionOptions': action.action_options.json()
         }
 
     @staticmethod
@@ -337,10 +325,10 @@ class Plugin(object):
         self.logger.info("Plugin starting")
 
         for action in self.singleton_actions:
-            num_threads = 1;
+            num_threads = 1
             if self.action_name(action) in self.thread_config:
                 maybe_num_threads = self.thread_config[self.action_name(action)]
-                if type(maybe_num_threads) == int and maybe_num_threads > 0:
+                if maybe_num_threads is int and maybe_num_threads > 0:
                     num_threads = maybe_num_threads
                 else:
                     self.logger.error(f"Ignoring non-int or invalid thread value {maybe_num_threads}")

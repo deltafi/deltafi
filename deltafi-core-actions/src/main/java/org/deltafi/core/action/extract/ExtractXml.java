@@ -19,11 +19,9 @@ package org.deltafi.core.action.extract;
 
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
@@ -54,7 +52,30 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
     );
 
     public ExtractXml() {
-        super("Extract values from XML content and write them to metadata or annotations.");
+        super(ActionOptions.builder()
+                .description("Extracts values from XML content and writes them to metadata or annotations.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(ExtractJsonParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .metadataSummary("""
+                                If extractTarget is METADATA, XPath expressions from xpathToKeysMap keys are used
+                                to extract values from the input content and write them to metadata keys which are the
+                                corresponding xpathToKeysMap values.
+                                
+                                Values extracted from multiple contents are handled according to handleMultipleKeys.""")
+                        .annotationsSummary("""
+                                If extractTarget is ANNOTATIONS, XPath expressions from xpathToKeysMap keys are
+                                used to extract values from the input content and write them to annotation keys which
+                                are the corresponding xpathToKeysMap values.
+                                
+                                Values extracted from multiple contents are handled according to handleMultipleKeys.""")
+                        .build())
+                .errors("On failure to parse any content from XML",
+                        "On failure to evaluate any XPath expression in xpathToKeysMap keys",
+                        "On errorOnKeyNotFound set to true and no values can be extracted from input content for any xpathToKeysMap key")
+                .build());
     }
 
     @Override

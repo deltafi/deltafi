@@ -21,11 +21,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +36,21 @@ import java.util.stream.Collectors;
 public class MetadataToContent extends TransformAction<MetadataToContentParameters> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     public MetadataToContent() {
-        super("Converts metadata to JSON content.");
+        super(ActionOptions.builder()
+                .description("Converts metadata to JSON content.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                If metadataPatterns is set, input metadata matching metadataPatterns is converted to
+                                JSON content. Otherwise, all input metadata is converted to JSON content.
+                                
+                                The JSON content will be named filename with a media type of application/json.
+                                
+                                If retainExistingContent is true, input content is included before adding the new JSON
+                                content. If retainExistingContent is false, the new JSON content is set as the only
+                                content.""")
+                        .build())
+                .errors("On failure to convert metadata to JSON")
+                .build());
     }
 
     @Override

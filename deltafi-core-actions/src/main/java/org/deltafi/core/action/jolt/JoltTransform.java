@@ -21,13 +21,13 @@ import com.bazaarvoice.jolt.Chainr;
 import com.bazaarvoice.jolt.JsonUtils;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.deltafi.core.action.ContentSelectingTransformAction;
+import org.deltafi.core.action.convert.ConvertParameters;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class JoltTransform extends ContentSelectingTransformAction<JoltParameters> {
@@ -44,7 +44,21 @@ public class JoltTransform extends ContentSelectingTransformAction<JoltParameter
     );
 
     public JoltTransform() {
-        super("Transforms JSON content using Jolt.");
+        super(ActionOptions.builder()
+                .description("Transforms JSON content using Jolt.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(ConvertParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                Transforms each content using a Jolt transformation with the provided Jolt
+                                specification. The transformed content will have the same name as the input content and
+                                the media type will be application/json.
+                                
+                                """ + ConvertParameters.CONTENT_RETENTION_DESCRIPTION)
+                        .build())
+                .errors("On invalid Jolt specification provided", "On failure to transform any content")
+                .build());
     }
 
     @Override

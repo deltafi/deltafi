@@ -20,15 +20,14 @@ package org.deltafi.core.action.compress;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -37,7 +36,23 @@ public class Compress extends TransformAction<CompressParameters> {
 
     public Compress(Clock clock) {
         // Note .tar.Z and .Z (traditional Unix compress) are not supported by org.apache.commons.compress
-        super("Compresses content using ar, gz, tar, tar.gz, tar.xz, xz, or zip.");
+        super(ActionOptions.builder()
+                .description("Compresses content using ar, gz, tar, tar.gz, tar.xz, xz, or zip.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                If the format is ar, tar, tar.gz, tar.xz, or zip, all content is
+                                compressed to a single content. The name of the content will be set from
+                                the name parameter and include the appropriate suffix.
+                                
+                                If the format is gz or xz, all content is compressed individually. Each
+                                content will keep its name but will include the appropriate suffix.""")
+                        .metadataDescriptions(List.of(ActionOptions.KeyedDescription.builder()
+                                .key("compressFormat")
+                                .description("The format used to compress")
+                                .build()))
+                        .build())
+                .errors("On no input content")
+                .build());
 
         this.clock = clock;
     }

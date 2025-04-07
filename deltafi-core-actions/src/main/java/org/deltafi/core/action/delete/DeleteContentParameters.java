@@ -20,13 +20,13 @@ package org.deltafi.core.action.delete;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
-import org.deltafi.core.action.ContentSelectionParameters;
+import org.deltafi.core.action.ContentMatchingParameters;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class DeleteContentParameters extends ContentSelectionParameters {
+public class DeleteContentParameters extends ContentMatchingParameters {
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Delete all content")
     private boolean deleteAllContent = false;

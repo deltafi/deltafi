@@ -20,13 +20,21 @@ package org.deltafi.core.action.merge;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
 public class Merge extends TransformAction<MergeParameters> implements Join {
     public Merge() {
-        super("Merges multiple content into a single content.");
+        super(ActionOptions.builder()
+                .description("Merges multiple content into a single content.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                All input content is concatenated into a single content with a name provided by
+                                mergedFilename and a media type provided by mediaType.""")
+                        .build())
+                .build());
     }
 
     @Override

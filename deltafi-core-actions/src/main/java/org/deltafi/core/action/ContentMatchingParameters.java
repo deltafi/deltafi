@@ -35,6 +35,11 @@ import java.util.function.BiFunction;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class ContentMatchingParameters extends ActionParameters {
+    public static final String CONTENT_SELECTION_DESCRIPTION = """
+            Input content to act on may be selected (or inversely selected using the exclude parameters) with
+            contentIndexes, mediaTypes, and/or filePatterns. If any of these are set and the content is not matched, the
+            content is passed through unchanged.""";
+
     @JsonPropertyDescription("List of content indexes to include or exclude")
     private List<Integer> contentIndexes;
 

@@ -6,7 +6,13 @@ plugins {
 
 description = 'DeltaFi Core'
 
+configurations {
+    docs
+}
+
 dependencies {
+    docs project(path: ':deltafi-core-actions', configuration: 'docs')
+
     implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.39' // For CVEs
 
     implementation project(':deltafi-common')
@@ -60,6 +66,19 @@ generateJava {
             "ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",
             "ActionDescriptor": "org.deltafi.common.types.ActionDescriptor",
             "ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
+            "ActionOptions": "org.deltafi.common.types.ActionOptions",
+            "ContentSpec": "org.deltafi.common.types.ActionOptions.ContentSpec",
+            "DescriptionWithConditions": "org.deltafi.common.types.ActionOptions.DescriptionWithConditions",
+            "InputSpec": "org.deltafi.common.types.ActionOptions.InputSpec",
+            "KeyedDescription": "org.deltafi.common.types.ActionOptions.KeyedDescription",
+            "OutputSpec": "org.deltafi.common.types.ActionOptions.OutputSpec",
+            "ActionOptionsInput": "org.deltafi.common.types.ActionOptions",
+            "ContentSpecInput": "org.deltafi.common.types.ActionOptions.ContentSpec",
+            "DescriptionWithConditionsInput": "org.deltafi.common.types.ActionOptions.DescriptionWithConditions",
+            "InputSpecInput": "org.deltafi.common.types.ActionOptions.InputSpec",
+            "KeyedDescriptionInput": "org.deltafi.common.types.ActionOptions.KeyedDescription",
+            "OutputSpecInput": "org.deltafi.common.types.ActionOptions.OutputSpec",
+            "ResultCardinality": "org.deltafi.common.types.ActionOptions.ResultCardinality",
             "ActionState": "org.deltafi.common.types.ActionState",
             "ActionType": "org.deltafi.common.types.ActionType",
             "JoinConfiguration": "org.deltafi.common.types.JoinConfiguration",
@@ -185,42 +204,31 @@ jar {
     enabled = false
 }
 
-task copyDocs(type: Copy) {
-    from '../deltafi-docs'
-    into 'build/docker/docs'
-    include 'public/'
-    include 'src/'
-    include 'package*.json'
-    include 'vue.config.js'
-}
-
-task copyCoreActionsDocs(type: Copy) {
-    from '../deltafi-core-actions/src/main/resources/docs'
-    into 'build/docker/docs/public/docs/core-actions'
-}
-
-task copyChangelog(type: Copy) {
-    from '../CHANGELOG.md'
-    into 'build/docker/docs/public/docs'
-}
-
-task copyUi(type: Copy) {
-    from '../deltafi-ui'
-    into 'build/docker/ui'
-    include 'public/'
-    include 'src/'
-    include 'package*.json'
-    include 'vite.config.ts'
-    include 'index.html'
-    include 'tsconfig.json'
-}
-
-task copyGraphiql(type: Copy) {
-	from '../deltafi-graphiql'
-	into 'build/docker/graphiql'
-}
-
 dockerPrepare {
-    finalizedBy copyDocs, copyCoreActionsDocs, copyChangelog, copyUi, copyGraphiql
+    from('../deltafi-ui') {
+        into 'ui'
+        include 'public/'
+        include 'src/'
+        include 'package*.json'
+        include 'vite.config.ts'
+        include 'index.html'
+        include 'tsconfig.json'
+    }
+    from('../deltafi-docs') {
+        into 'docs'
+        include 'public/'
+        include 'src/'
+        include 'package*.json'
+        include 'vue.config.js'
+    }
+    from(configurations.docs) {
+        into 'docs/public/docs/core-actions'
+    }
+    from('../CHANGELOG.md') {
+        into 'docs/public/docs'
+    }
+    from('../deltafi-graphiql') {
+        into 'graphiql'
+    }
     from bootJar, 'probe.sh'
 }

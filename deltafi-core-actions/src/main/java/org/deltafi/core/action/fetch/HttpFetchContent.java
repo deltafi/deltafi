@@ -19,26 +19,19 @@ package org.deltafi.core.action.fetch;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
@@ -46,8 +39,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Component
+@Slf4j
 public class HttpFetchContent extends TransformAction<HttpFetchContentParameters> {
     public static final String DEFAULT_FILENAME = "fetched-file";
     private static final Pattern ATTACHMENT_PATTERN = Pattern.compile("attachment;\\s?filename=\"(.+)\"", Pattern.CASE_INSENSITIVE);
@@ -55,7 +48,26 @@ public class HttpFetchContent extends TransformAction<HttpFetchContentParameters
     private final HttpClient httpClient;
 
     public HttpFetchContent(HttpClient httpClient) {
-        super("Fetch binary content from a given URL and store it as DeltaFile content.");
+        super(ActionOptions.builder()
+                .description("Fetches binary content from a given URL and stores it as content.")
+                .outputSpec((ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                If replaceExistingContent is false, existing content will be included before adding the
+                                fetched content.
+                                
+                                If tags are provided, they will be assigned to the fetched content.""")
+                        .metadataSummary("""
+                                If responseHeadersMetadataKey is set, all response headers will be set in the named
+                                metadata key.""")
+                        .annotationsSummary("""
+                                If responseCodeAnnotationName is set, the response code will be set in the named
+                                annotation.""")
+                        .build()))
+                .errors(List.of(new ActionOptions.DescriptionWithConditions("On an IO error communicating with the given URL"),
+                        new ActionOptions.DescriptionWithConditions("On a response code not equal to 200", List.of("""
+                                If responseCodeAnnotationName is set, the response code will be set in the named
+                                annotation."""))))
+                .build());
         this.httpClient = httpClient;
     }
 

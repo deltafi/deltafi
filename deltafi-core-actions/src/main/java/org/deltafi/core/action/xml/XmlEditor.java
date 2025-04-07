@@ -20,21 +20,16 @@ package org.deltafi.core.action.xml;
 import org.apache.tika.utils.StringUtils;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.*;
 import java.io.StringReader;
 import java.util.*;
 import java.util.stream.Stream;
@@ -195,7 +190,55 @@ public class XmlEditor extends TransformAction<XmlEditorParameters> {
      * Instantiates a new XmlEditor.
      */
     public XmlEditor() {
-        super("Transforms XML content.");
+        super(ActionOptions.builder()
+                .description("Transforms XML content.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(XmlEditorParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                Transforms each content using the provided list of XML editing commands. The content
+                                will be passed through unchanged if commands don't match any of its tags.""")
+                        .build())
+                .details("""
+                        ### Commands
+                        XML editing commands consist of a command followed by a space-separated list of arguments.
+                        
+                        | Command           | Arguments                                                                       | Description                                       |
+                        |-------------------|---------------------------------------------------------------------------------|---------------------------------------------------|
+                        | removeTag         | `<xpath>`                                                                       | Removes a tag                                     |
+                        | renameTag         | `<xpath> <new tag name>`                                                        | Renames a tag                                     |
+                        | replaceTag        | `<xpath> <new content>`                                                         | Replaces a tag                                    |
+                        | replaceTagContent | `<xpath> <new content>`                                                         | Replaces the contents of a tag                    |
+                        | appendChild       | `<xpath> <new content>`                                                         | Adds content to the end of a tag's children       |
+                        | prependChild      | `<xpath> <new content>`                                                         | Adds content to the beginning of a tag's children |
+                        | filterOnTag       | `[[not] <xpath>] [[and\\|nand\\|or\\|nor\\|xor\\|xnor] <xpath>...] "<message>"` | Filters on existence of tags                      |
+                        | errorOnTag        | `[[not] <xpath>] [[and\\|nand\\|or\\|nor\\|xor\\|xnor] <xpath>...] "<message>"` | Errors on existence of tags                       |
+                        
+                        `and`-&nbsp;filter or error if all are found&nbsp;&nbsp;`nand`-&nbsp;filter or error if any are not found<br/>
+                        `or`-&nbsp;filter or error if any are found&nbsp;`nor`-&nbsp;filter or error if all are not found<br/>
+                        `xor`-&nbsp;filter or error if an odd number are found&nbsp;`xnor`-&nbsp;filter or error if none or an even number are found
+                        
+                        ##### Examples
+                        > Input Content: `<log><note>some info</note></log>`
+                        
+                        | Example                                                                                  | Result                                                           |
+                        |------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+                        | `removeTag note`                                                                         | `<log></log>`                                                    |
+                        | `renameTag note message`                                                                 | `<log><message>some info</message></log>`                        |
+                        | `replaceTag note <message>data</message>`                                                | `<log><message>data</message></log>`                             |
+                        | `replaceTagContent note <message>data</message>`                                         | `<log><note><message>data</message></note></log>`                |
+                        | `appendChild log <note>more data</note>`                                                 | `<log><note>some info</note><note>more data</note></log>`        |
+                        | `prependChild log <note>more data</note>`                                                | `<log><note>more data</note><note>some information</note></log>` |
+                        | `filterOnTag /log/note "Contained a bad tag!"`                                           | filters if content contains a /log/note                          |
+                        | `errorOnTag not /log/checksum "Required tag doesn't exist!"`                             | errors if content doesn't contain a /log/checksum                |
+                        | `filterOnTag or /log/note /log/alpha /log/bravo "Contained one or more forbidden tags!"` | filters if content contains any of the supplied tags             |
+                        | `errorOnTag nor /log/note /log/alpha /log/bravo "Didn't contain all required tags!"`     | errors if content doesn't contain all of the supplied tags       |
+                        """)
+                .errors("On malformed command provided in xmlEditingCommands",
+                        "On XSLT transform failure",
+                        "On successful xpath matching when using the errorOnTag command")
+                .build());
     }
 
     /**

@@ -17,11 +17,9 @@
  */
 package org.deltafi.core.action.metadata;
 
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +27,23 @@ import org.springframework.stereotype.Component;
 public class ModifyMetadata extends TransformAction<ModifyMetadataParameters> {
 
     public ModifyMetadata() {
-        super("Adds, modifies, copies, or removes metadata.");
+        super(ActionOptions.builder()
+                .description("Adds, modifies, copies, or removes metadata.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .metadataSummary("""
+                                Metadata is added or replaced with metadata in addOrModifyMetadata.
+                                
+                                Metadata may also be added or replaced by including copyMetadata to copy input metadata
+                                to new names. Input metadata for each key in copyMetadata will be copied to one or more
+                                metadata keys. If the corresponding value in copyMetadata is a comma-separated list,
+                                multiple keys will be set to the copied value. If input metadata for a key does not
+                                exist, it is ignored.
+                                
+                                Input metadata with keys in deleteMetadataKeys are deleted. This will delete any that
+                                may have been added by addOrModifyMetadata or copyMetadata.""")
+                        .build())
+                .build());
     }
 
     @Override

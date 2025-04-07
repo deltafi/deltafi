@@ -19,7 +19,7 @@ package org.deltafi.core.action.xml;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;
-import org.deltafi.core.action.ContentSelectionParameters;
+import org.deltafi.core.action.ContentMatchingParameters;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ import java.util.List;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class XmlEditorParameters extends ContentSelectionParameters {
+public class XmlEditorParameters extends ContentMatchingParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("List of XML editing commands to be applied in order")
     private List<String> xmlEditingCommands;

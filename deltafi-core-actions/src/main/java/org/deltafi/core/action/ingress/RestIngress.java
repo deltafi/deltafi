@@ -21,28 +21,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.actionkit.action.ingress.IngressResult;
-import org.deltafi.actionkit.action.ingress.IngressResultItem;
-import org.deltafi.actionkit.action.ingress.IngressResultType;
-import org.deltafi.actionkit.action.ingress.TimedIngressAction;
+import org.deltafi.actionkit.action.ingress.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.IngressStatus;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.http.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,7 +56,9 @@ public class RestIngress extends TimedIngressAction<RestIngress.Parameters> {
     private final HttpClient httpClient;
 
     public RestIngress(HttpClient httpClient) {
-        super("Poll a REST server for a file to ingress");
+        super(ActionOptions.builder()
+                .description("Polls a REST server for files to ingress.")
+                .build());
         this.httpClient = httpClient;
     }
 

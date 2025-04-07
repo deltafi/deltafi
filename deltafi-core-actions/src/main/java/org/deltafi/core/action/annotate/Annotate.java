@@ -19,23 +19,30 @@ package org.deltafi.core.action.annotate;
 
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class Annotate extends TransformAction<AnnotateParameters> {
     public Annotate() {
-        super("Adds annotations to a DeltaFile.");
+        super(ActionOptions.builder()
+                .description("Adds annotations to a DeltaFile.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .annotationsSummary("""
+                                Annotations set in the annotations parameter will be added.
+                                
+                                If the metadataPatterns parameter is set, metadata matching the key patterns will be
+                                added if not already set by the annotations parameter.""")
+                        .build())
+                .errors("On an annotation parameter that contains a zero-length key or value")
+                .build());
     }
 
     @Override

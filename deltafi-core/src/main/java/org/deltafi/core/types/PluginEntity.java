@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,6 +31,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "plugins")
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 @Data
 @NoArgsConstructor
 public class PluginEntity {

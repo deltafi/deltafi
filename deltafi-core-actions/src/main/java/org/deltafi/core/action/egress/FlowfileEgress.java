@@ -40,7 +40,7 @@ public class FlowfileEgress extends HttpEgressBase<HttpEgressParameters> {
     private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public FlowfileEgress(HttpService httpService) {
-        super(String.format("Egresses content and attributes in a NiFi V1 FlowFile (%s)", APPLICATION_FLOWFILE),
+        super(String.format("Egresses content and metadata in a NiFi V1 FlowFile (%s).", APPLICATION_FLOWFILE),
                 httpService);
     }
 

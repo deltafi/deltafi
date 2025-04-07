@@ -19,11 +19,9 @@ package org.deltafi.core.action.filter;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.filter.FilterResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -33,7 +31,34 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class Filter extends TransformAction<FilterParameters> {
     public Filter() {
-        super ("Filters by default or when optional criteria is met in content or metadata.");
+        super(ActionOptions.builder()
+                .description("Filters by default or when optional criteria is met in content or metadata.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .metadataSummary("""
+                                If filterExpressions is configured, input metadata may be used to check filter
+                                conditions.""")
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("Input content is passed through unchanged when not filtered.")
+                        .build())
+                .filters("On filterExpressions not set", "On filterExpressions set and ANY, ALL, or NONE matching")
+                .details("""
+                        ### Example SpEL expressions:
+                        Filter if no content is JSON
+                        ```
+                        !content.stream().anyMatch(c -> c.getMediaType.equals('application/json'))
+                        ```
+                        
+                        Filter if metadata key 'x' is set to 'y'
+                        ```
+                        metadata['x'] == 'y'
+                        ```
+                        
+                        Filter if metadata key 'x' is not 'y' or is not present
+                        ```
+                        metadata['x'] != 'y' || !metadata.containsKey('x')
+                        ```""")
+                .build());
     }
 
     @Override

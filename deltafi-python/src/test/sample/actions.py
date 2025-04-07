@@ -19,7 +19,7 @@
 from abc import abstractmethod
 from typing import Dict, List
 
-from deltafi.action import TransformAction
+from deltafi.action import ActionOptions, DescriptionWithConditions, InputSpec, OutputSpec, TransformAction
 from deltafi.domain import Context, Content
 from deltafi.input import TransformInput
 from deltafi.result import TransformResult
@@ -40,7 +40,15 @@ class SampleTransformParameters(BaseModel):
 
 class SampleTransformAction(TransformAction):
     def __init__(self):
-        super().__init__('Transform action description')
+        super().__init__('', ActionOptions(description='Transform action description',
+                                           input_spec=InputSpec(content_summary='The input content summary', metadata_summary='The input metadata summary'),
+                                           output_spec=OutputSpec(content_summary='The output content summary', metadata_summary='The output metadata summary', annotations_summary='The output annotations summary'),
+                                           filters=[DescriptionWithConditions('Filter 1', ['Condition A', 'Condition B']),
+                                                   'Filter 2'],
+                                           errors=[DescriptionWithConditions('Error 1', ['Condition A', 'Condition B']),
+                                                   'Error 2'],
+                                           notes=['Note 1', 'Note2'],
+                                           details='The details'))
 
     def param_class(self):
         return SampleTransformParameters

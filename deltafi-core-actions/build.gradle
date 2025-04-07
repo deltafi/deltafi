@@ -50,3 +50,22 @@ springBoot {
 dockerPrepare {
     from bootJar
 }
+
+configurations {
+    docs
+}
+
+def docsDirectory = layout.buildDirectory.dir('docs')
+
+task generateDocs(type: JavaExec) {
+    dependsOn compileJava
+    classpath = sourceSets.main.compileClasspath + sourceSets.main.runtimeClasspath
+    mainClass = 'org.deltafi.actionkit.documentation.ActionsDocumentationGenerator'
+    args = [docsDirectory.get().asFile, 'org.deltafi.core']
+}
+
+artifacts {
+    docs(docsDirectory.get().asFile) {
+        builtBy generateDocs
+    }
+}

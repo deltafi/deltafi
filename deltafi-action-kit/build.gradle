@@ -10,7 +10,7 @@ dependencies {
 
     api 'org.springframework.boot:spring-boot-starter'
 
-    implementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
+    api "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     implementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"

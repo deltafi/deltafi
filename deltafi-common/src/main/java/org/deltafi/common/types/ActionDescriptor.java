@@ -17,22 +17,23 @@
  */
 package org.deltafi.common.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
 
 import java.util.Map;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ActionDescriptor {
   private String name;
+  @Deprecated
   private String description;
   private ActionType type;
   private boolean supportsJoin;
   private Map<String, Object> schema;
+  private ActionOptions actionOptions;
   private String docsMarkdown;
 }

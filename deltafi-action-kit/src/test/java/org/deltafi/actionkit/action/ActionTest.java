@@ -67,7 +67,7 @@ public class ActionTest {
     public void initializes() {
         assertEquals("org.deltafi.actionkit.action.ActionTest.C", action.getClassCanonicalName());
         assertEquals(ActionType.TRANSFORM, action.getActionType());
-        assertEquals("Actual nothing action at all", action.getDescription());
+        assertEquals("Actual nothing action at all", action.getActionOptions().getDescription());
         assertEquals(TestActionParameters.class, action.getParamClass());
     }
 }

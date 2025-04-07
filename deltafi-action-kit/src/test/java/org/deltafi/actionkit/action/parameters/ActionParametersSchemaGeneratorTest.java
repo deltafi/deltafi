@@ -20,16 +20,16 @@ package org.deltafi.actionkit.action.parameters;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.AllArgsConstructor;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import lombok.Getter;
 import org.deltafi.actionkit.ActionKitAutoConfiguration;
 import org.deltafi.actionkit.action.parameters.annotation.Size;
+import org.deltafi.common.resource.Resource;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -40,7 +40,7 @@ class ActionParametersSchemaGeneratorTest {
         SchemaGenerator generator  = configuration.parametersSchemaGenerator(Optional.empty());
         JsonNode schemaJson = generator.generateSchema(TestActionParameters.class);
         String expectedSchema = new String(Objects.requireNonNull(getClass().getResourceAsStream("/expectedParamSchema.json")).readAllBytes());
-        assertEquals(expectedSchema, schemaJson.toPrettyString());
+        assertEquals(Resource.read("/expectedParamSchema.json"), schemaJson.toPrettyString());
     }
 
     @SuppressWarnings("unused")
@@ -53,17 +53,47 @@ class ActionParametersSchemaGeneratorTest {
         String secondField;
     }
 
+    private enum TestEnum {
+        A, B, C
+    }
+
+    @AllArgsConstructor
+    @Getter
+    private enum Format {
+        @JsonProperty("tar") TAR("tar", "application/x-tar"),
+        @JsonProperty("zip") ZIP("zip", "application/zip");
+
+        private final String value;
+        private final String mediaType;
+    }
+
     @Getter
     private static class TestActionParameters extends ActionParameters {
+        @JsonProperty(defaultValue = "true")
+        boolean booleanParameter = true;
+
+        TestEnum enumParameter = TestEnum.B;
+
+        @JsonProperty(required = true)
+        @JsonPropertyDescription("Format to compress to")
+        Format formatParameter;
+
         @JsonProperty(defaultValue = "defaultString")
         @JsonPropertyDescription("my great property")
         @Size(maxLength = 5000)
         String parameter = "defaultString";
 
-        @JsonProperty(defaultValue = "[\"abc\",\"123\"]")
+        @JsonProperty(required = true, defaultValue = "[\"abc\",\"123\"]")
         @JsonPropertyDescription("my great list")
         List<String> listParameter = List.of("abc", "123");
 
+        @JsonPropertyDescription("A list of tags to assign to the fetched content.")
+        Set<String> tags;
+
+        @JsonPropertyDescription("Key value pairs to be added")
+        Map<String, Integer> mapParameter;
+
+        @JsonProperty(required = true)
         @JsonPropertyDescription("complex type should not allow additional properties")
         ActionParametersSchemaGeneratorTest.ComplexParam complexParam;
     }

@@ -17,11 +17,9 @@
  */
 package org.deltafi.core.action.delay;
 
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +29,13 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class Delay extends TransformAction<DelayParameters> {
     public Delay() {
-        super("Introduces a set or random delay to a flow.");
+        super(ActionOptions.builder()
+                .description("Introduces a set or random delay to a flow.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .metadataSummary("Metadata is passed through unchanged")
+                        .build())
+                .build());
     }
 
     @Override

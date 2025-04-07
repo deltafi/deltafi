@@ -24,15 +24,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.deltafi.actionkit.action.ingress.IngressResult;
-import org.deltafi.actionkit.action.ingress.IngressResultItem;
-import org.deltafi.actionkit.action.ingress.IngressResultType;
-import org.deltafi.actionkit.action.ingress.TimedIngressAction;
+import org.deltafi.actionkit.action.ingress.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.ssl.SslContextProvider;
 import org.deltafi.common.ssl.SslContextProvider.SslException;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.IngressStatus;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -76,7 +72,9 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
     private final SslContextProvider sslContextProvider;
 
     public SftpIngress(JSch jSch, SslContextProvider sslContextProvider) {
-        super("Poll an SFTP server for files to ingress");
+        super(ActionOptions.builder()
+                .description("Polls an SFTP server for files to ingress.")
+                .build());
         this.jSch = jSch;
         this.sslContextProvider = sslContextProvider;
     }

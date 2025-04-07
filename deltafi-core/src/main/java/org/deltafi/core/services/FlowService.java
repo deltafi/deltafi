@@ -21,6 +21,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.*;
+import org.deltafi.common.util.MarkdownBuilder;
 import org.deltafi.core.converters.FlowPlanConverter;
 import org.deltafi.core.exceptions.MissingActionConfigException;
 import org.deltafi.core.exceptions.MissingFlowException;
@@ -31,7 +32,6 @@ import org.deltafi.core.types.Event.Severity;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.Snapshot;
-import org.deltafi.core.util.MarkdownBuilder;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 

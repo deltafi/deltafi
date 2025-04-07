@@ -23,7 +23,7 @@
         No actions included
       </template>
       <Column field="name" header="Name" sortable />
-      <Column field="description" header="Description" />
+      <Column field="actionOptions.description" header="Description" />
     </DataTable>
   </CollapsiblePanel>
 </template>

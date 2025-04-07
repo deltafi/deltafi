@@ -74,19 +74,105 @@ input PluginCoordinatesInput {
 
 type ActionDescriptor {
     name: String!
-    description: String
     type: String!
     supportsJoin: Boolean!
     schema: JSON
+    actionOptions: ActionOptions!
     docsMarkdown: String
 }
 
 input ActionDescriptorInput {
     name: String!
-    description: String
     type: String!
     supportsJoin: Boolean!
     schema: JSON
+    actionOptions: ActionOptionsInput!
+}
+
+type ActionOptions {
+    description: String
+    inputSpec: InputSpec
+    outputSpec: OutputSpec
+    filters: [DescriptionWithConditions!]
+    errors: [DescriptionWithConditions!]
+    notes: [String!]
+    details: String
+}
+
+input ActionOptionsInput {
+    description: String
+    inputSpec: InputSpecInput
+    outputSpec: OutputSpecInput
+    filters: [DescriptionWithConditionsInput!]
+    errors: [DescriptionWithConditionsInput!]
+    notes: [String!]
+    details: String
+}
+
+type InputSpec {
+    contentSummary: String
+    contentSpecs: [ContentSpec!]
+    metadataSummary: String
+    metadataDescriptions: [KeyedDescription!]
+}
+
+input InputSpecInput {
+    contentSummary: String
+    contentSpecs: [ContentSpecInput!]
+    metadataSummary: String
+    metadataDescriptions: [KeyedDescriptionInput!]
+}
+
+type ContentSpec {
+    name: String!
+    mediaType: String
+    description: String!
+}
+
+input ContentSpecInput {
+    name: String!
+    mediaType: String
+    description: String!
+}
+
+type KeyedDescription {
+    key: String!
+    description: String!
+}
+
+input KeyedDescriptionInput {
+    key: String!
+    description: String!
+}
+
+type OutputSpec {
+    contentSummary: String
+    contentSpecs: [ContentSpec!]
+    metadataSummary: String
+    metadataDescriptions: [KeyedDescription!]
+    passthrough: Boolean
+    annotationsSummary: String
+    annotationDescriptions: [KeyedDescription!]
+}
+
+input OutputSpecInput {
+    contentSummary: String
+    contentSpecs: [ContentSpecInput!]
+    metadataSummary: String
+    metadataDescriptions: [KeyedDescriptionInput!]
+    passthrough: Boolean
+    annotationsSummary: String
+    annotationDescriptions: [KeyedDescriptionInput!]
+}
+
+type DescriptionWithConditions {
+    description: String!
+    conditions: [String!]
+}
+
+input DescriptionWithConditionsInput {
+    description: String!
+    conditions: [String!]
 }
 
 extend type Mutation {

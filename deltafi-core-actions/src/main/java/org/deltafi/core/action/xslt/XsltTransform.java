@@ -19,22 +19,19 @@ package org.deltafi.core.action.xslt;
 
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.deltafi.core.action.ContentSelectingTransformAction;
+import org.deltafi.core.action.convert.ConvertParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class XsltTransform extends ContentSelectingTransformAction<XsltParameters> {
@@ -50,7 +47,21 @@ public class XsltTransform extends ContentSelectingTransformAction<XsltParameter
     );
 
     public XsltTransform() {
-        super("Transforms XML using XSLT.");
+        super(ActionOptions.builder()
+                .description("Transforms XML using XSLT.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(ConvertParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                Transforms each content using the provided XSLT transformation specification. The
+                                transformed content will have the same name as the input content and the media type will
+                                be application/xml.
+                                
+                                """ + ConvertParameters.CONTENT_RETENTION_DESCRIPTION)
+                        .build())
+                .errors("On invalid XSLT specification provided", "On failure to transform any content")
+                .build());
     }
 
 

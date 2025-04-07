@@ -23,6 +23,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.deltafi.common.action.documentation.DocumentationGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.core.generated.types.Flows;
@@ -129,7 +130,7 @@ public class PluginService implements Snapshotter {
          Map<String, String> nextActionsToPlugin = new HashMap<>();
 
         pluginRepo.findAll().stream()
-                .filter(pluginEntity ->  pluginEntity.getActions() != null)
+                .filter(pluginEntity -> pluginEntity.getActions() != null)
                 .forEach(entity -> updateMaps(entity, nextActionDescriptorMap, nextActionsToPlugin));
 
         actionDescriptorMap = nextActionDescriptorMap;
@@ -286,6 +287,13 @@ public class PluginService implements Snapshotter {
         if (existingPlugin.isEmpty()) {
             pluginRepo.deleteById(new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId()));
         }
+
+        if (plugin.getActions() != null) {
+            for (ActionDescriptor actionDescriptor : plugin.getActions()) {
+                actionDescriptor.setDocsMarkdown(DocumentationGenerator.generateActionDocs(actionDescriptor));
+            }
+        }
+
         pluginRepo.save(plugin);
 
         updateActionMapsNoLockCheck();

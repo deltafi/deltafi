@@ -18,18 +18,24 @@
 package org.deltafi.core.action.delete;
 
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
-import org.springframework.stereotype.Component;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
 
 @Component
 public class DeleteContent extends TransformAction<DeleteContentParameters> {
     public DeleteContent() {
-        super("Deletes content");
+        super(ActionOptions.builder()
+                .description("Deletes content.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(DeleteContentParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("All input content is deleted if the deleteAllContent parameter is true.")
+                        .build())
+                .build());
     }
 
     @Override

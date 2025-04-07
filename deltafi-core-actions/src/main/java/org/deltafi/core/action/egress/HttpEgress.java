@@ -44,7 +44,7 @@ public class HttpEgress extends HttpEgressBase<HttpEgress.Parameters> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public HttpEgress(HttpService httpService) {
-        super("Egress to an HTTP endpoint with configurable method", httpService);
+        super("Egresses to an HTTP endpoint.", httpService);
     }
 
     @Override

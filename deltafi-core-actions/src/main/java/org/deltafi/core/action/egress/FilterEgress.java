@@ -17,12 +17,11 @@
  */
 package org.deltafi.core.action.egress;
 
-import org.deltafi.actionkit.action.egress.EgressAction;
-import org.deltafi.actionkit.action.egress.EgressInput;
-import org.deltafi.actionkit.action.egress.EgressResultType;
+import org.deltafi.actionkit.action.egress.*;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,9 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings("unused")
 public class FilterEgress extends EgressAction<ActionParameters> {
     public FilterEgress() {
-        super("Filters on egress");
+        super(ActionOptions.builder()
+                .description("Filters on egress.")
+                .build());
     }
 
     @Override

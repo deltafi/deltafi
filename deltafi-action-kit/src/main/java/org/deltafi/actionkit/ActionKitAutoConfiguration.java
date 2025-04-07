@@ -33,8 +33,8 @@ import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.service.HeartbeatService;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
-import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.actionkit.service.ActionEventQueue;
+import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -47,10 +47,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @AllArgsConstructor
 @AutoConfiguration
@@ -62,8 +59,8 @@ public class ActionKitAutoConfiguration {
     private ActionsProperties actionsProperties;
 
     @Bean
-    public ActionEventQueue actionEventQueue(EventQueueProperties eventQueueProperties,
-                                             List<Action<?, ?, ?>> actions) throws URISyntaxException {
+    public ActionEventQueue actionEventQueue(EventQueueProperties eventQueueProperties, List<Action<?, ?, ?>> actions)
+            throws URISyntaxException {
         // Calculate the total number of threads for all actions
         int totalThreads = actions.stream()
                 .mapToInt(action -> actionsProperties.getActionThreads().getOrDefault(action.getClassCanonicalName(), 1))
@@ -76,7 +73,8 @@ public class ActionKitAutoConfiguration {
     }
 
     @Bean
-    public PluginRegistrar pluginRegistrar(ActionRunner actionRunner, BuildProperties buildProperties, ApplicationContext applicationContext, Environment environment, SchemaGenerator schemaGenerator) {
+    public PluginRegistrar pluginRegistrar(ActionRunner actionRunner, BuildProperties buildProperties,
+            ApplicationContext applicationContext, Environment environment, SchemaGenerator schemaGenerator) {
         return new PluginRegistrar(actionRunner, buildProperties, applicationContext, environment, schemaGenerator);
     }
 
@@ -114,6 +112,10 @@ public class ActionKitAutoConfiguration {
                 .withStringMaxLengthResolver(fieldScope -> {
                     Size size = fieldScope.getAnnotationConsideringFieldAndGetter(Size.class);
                     return size == null ? null : size.maxLength();
+                })
+                .withRequiredCheck(fieldScope -> {
+                    JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);
+                    return jsonProperty != null && jsonProperty.required();
                 })
                 .withDefaultResolver(fieldScope -> {
                     JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);

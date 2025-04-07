@@ -17,11 +17,9 @@
  */
 package org.deltafi.core.action.ingress;
 
-import org.deltafi.actionkit.action.ingress.IngressResult;
-import org.deltafi.actionkit.action.ingress.IngressResultItem;
-import org.deltafi.actionkit.action.ingress.IngressResultType;
-import org.deltafi.actionkit.action.ingress.TimedIngressAction;
+import org.deltafi.actionkit.action.ingress.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +30,9 @@ public class SmokeTestIngress extends TimedIngressAction<SmokeTestParameters> {
     final Random random = new Random();
 
     public SmokeTestIngress() {
-        super("Create smoke test DeltaFiles");
+        super(ActionOptions.builder()
+                .description("Creates smoke test DeltaFiles.")
+                .build());
     }
 
     @Override

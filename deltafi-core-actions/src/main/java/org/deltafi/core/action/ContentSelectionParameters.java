@@ -28,6 +28,9 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class ContentSelectionParameters extends ContentMatchingParameters {
+    public static final String CONTENT_RETENTION_DESCRIPTION =
+            "If retainExistingContent is true, each content will be retained, followed by its transformed content.";
+
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Retain the existing content")
     private boolean retainExistingContent = false;

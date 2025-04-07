@@ -17,17 +17,12 @@
  */
 package org.deltafi.core.action.extract;
 
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.ReadContext;
+import com.jayway.jsonpath.*;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -40,7 +35,30 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
             .build();
 
     public ExtractJson() {
-        super("Extract values from JSON content and write them to metadata or annotations.");
+        super(ActionOptions.builder()
+                .description("Extracts values from JSON content and writes them to metadata or annotations.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(ExtractJsonParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .passthrough(true)
+                        .metadataSummary("""
+                                If extractTarget is METADATA, JSONPath expressions from jsonPathToKeysMap keys are used
+                                to extract values from the input content and write them to metadata keys which are the
+                                corresponding jsonPathToKeysMap values.
+                                
+                                Values extracted from multiple contents are handled according to handleMultipleKeys.""")
+                        .annotationsSummary("""
+                                If extractTarget is ANNOTATIONS, JSONPath expressions from jsonPathToKeysMap keys are
+                                used to extract values from the input content and write them to annotation keys which
+                                are the corresponding jsonPathToKeysMap values.
+                                
+                                Values extracted from multiple contents are handled according to handleMultipleKeys.""")
+                        .build())
+                .errors("""
+                        On errorOnKeyNotFound set to true and no values can be extracted from input content for any
+                        jsonPathToKeysMap key""")
+                .build());
     }
 
     @Override

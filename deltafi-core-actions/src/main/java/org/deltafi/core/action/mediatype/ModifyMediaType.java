@@ -22,6 +22,7 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +33,27 @@ import java.util.Map;
 @Component
 public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> {
     public ModifyMediaType() {
-        super("Modifies content media types.");
+        super(ActionOptions.builder()
+                .description("Modifies content media types.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                Input content data is passed through unchanged.
+                                
+                                If mediaTypeMap is provided, each input content's media type is checked against the keys
+                                in this map. Keys may include wildcards (*) to match any sequence of characters. If a
+                                match is found, the input content's media type is replaced with the corresponding value.
+                                
+                                If indexMediaTypeMap is provided, each input content's (zero-based) index is checked
+                                against the keys in this map. If a match is found, the input content's media type is
+                                replaced with the corresponding value. This map takes precedence over mediaTypeMap.
+                                
+                                If autodetect is set to true and a media type is not found in mediaTypeMap or
+                                indexMediaTypeMap, each input content's media type will be autodetected from its data.
+                                If the media type cannot be autodetected, the media type will pass through
+                                unchanged.""")
+                        .build())
+                .errors("On errorOnMissingIndex set to true and content for any index in indexMediaTypeMap is missing")
+                .build());
     }
 
     private static final Tika TIKA = new Tika();

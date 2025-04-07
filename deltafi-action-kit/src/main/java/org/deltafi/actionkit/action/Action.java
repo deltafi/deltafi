@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -41,7 +40,6 @@ import java.util.Map;
  * @param <P> The parameter class that will be used to configure the action instance.
  * @param <R> The result type
  */
-@RequiredArgsConstructor
 @Getter
 public abstract class Action<I, P extends ActionParameters, R extends ResultType> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -50,9 +48,11 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     private final ActionType actionType;
-    private final String description;
+
+    private final ActionOptions actionOptions;
 
     private final Class<P> paramClass = getGenericParameterType();
+
     // name of the pod or container running this action
     @Setter
     public String appName;
@@ -61,6 +61,23 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
 
     @Setter
     private int threadNum = 0;
+
+    public Action(ActionType actionType, String description) {
+        this(actionType, ActionOptions.builder().description(description).build());
+    }
+
+    public Action(ActionType actionType, ActionOptions actionOptions) {
+        this.actionType = actionType;
+        this.actionOptions = actionOptions;
+    }
+
+    /**
+     * @deprecated Use Action#getActionOptions().getDescription()
+     */
+    @Deprecated
+    public String getDescription() {
+        return actionOptions.getDescription();
+    }
 
     /**
      * Deep introspection to get the ActionParameters type class.  This keeps subclasses

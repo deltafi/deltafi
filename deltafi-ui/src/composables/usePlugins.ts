@@ -38,7 +38,9 @@ export default function usePlugins() {
         },
         actions: {
           name: true,
-          description: true,
+          actionOptions: {
+            description: true,
+          }
         },
         variables: {
           name: true,

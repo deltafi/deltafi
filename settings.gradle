@@ -30,3 +30,4 @@ include 'deltafi-nodemonitor'
 include 'deltafi-python'
 include 'tui'
 include 'gradle-plugin'
+

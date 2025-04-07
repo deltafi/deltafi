@@ -133,7 +133,6 @@ def get_expected_json():
         "actions": [
             {
                 "name": "plugin-group.SampleTransformAction",
-                "description": "Transform action description",
                 "type": "TRANSFORM",
                 "supportsJoin": False,
                 "schema": {
@@ -195,7 +194,33 @@ def get_expected_json():
                         "a_bool"
                     ]
                 },
-                "docsMarkdown": None
+                "actionOptions": {
+                    "description": "Transform action description",
+                    "details": "The details",
+                    "errors": [{
+                        "conditions": ["Condition A", "Condition B"],
+                        "description": "Error 1",
+                    }, {
+                        "description": "Error 2",
+                    }],
+                    "filters": [{
+                        "conditions": ["Condition A", "Condition B"],
+                        "description": "Filter 1",
+                    }, {
+                        "description": "Filter 2",
+                    }],
+                    "inputSpec": {
+                        "contentSummary": "The input content summary",
+                        "metadataSummary": "The input metadata summary",
+                    },
+                    "notes": ["Note 1", "Note2"],
+                    "outputSpec": {
+                        "annotationsSummary": "The output annotations summary",
+                        "contentSummary": "The output content summary",
+                        "metadataSummary": "The output metadata summary",
+                        "passthrough": False,
+                    },
+                },
             }
         ],
         "variables": [

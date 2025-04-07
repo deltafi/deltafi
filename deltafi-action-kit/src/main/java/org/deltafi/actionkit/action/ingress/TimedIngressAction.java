@@ -17,13 +17,10 @@
  */
 package org.deltafi.actionkit.action.ingress;
 
-import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.ContentInput;
-import org.deltafi.actionkit.action.transform.TransformResults;
+import org.deltafi.actionkit.action.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFileMessage;
+import org.deltafi.actionkit.action.transform.TransformResults;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -31,8 +28,12 @@ import org.jetbrains.annotations.NotNull;
  * @param <P> Parameter class for configuring the Timed Ingress action
  */
 public abstract class TimedIngressAction<P extends ActionParameters> extends Action<ContentInput, P, IngressResultType> {
-    public TimedIngressAction(@NotNull String description) {
-        super(ActionType.TIMED_INGRESS, description);
+    protected TimedIngressAction(@NotNull String description) {
+        this(ActionOptions.builder().description(description).build());
+    }
+
+    protected TimedIngressAction(ActionOptions actionOptions) {
+        super(ActionType.TIMED_INGRESS, actionOptions);
     }
 
     @Override

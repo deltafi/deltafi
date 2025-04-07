@@ -19,16 +19,14 @@ package org.deltafi.core.action;
 
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class ContentSelectingTransformAction<P extends ContentSelectionParameters> extends TransformAction<P> {
-    public ContentSelectingTransformAction(String description) {
-        super(description);
+    public ContentSelectingTransformAction(ActionOptions actionOptions) {
+        super(actionOptions);
     }
 
     protected abstract ActionContent transform(ActionContext context, P params, ActionContent content) throws Exception;

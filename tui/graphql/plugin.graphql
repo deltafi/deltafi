@@ -77,11 +77,13 @@ query GetPluginDetails {
     actionKitVersion
     actions {
       name
-      description
       type
-      schema
-      docsMarkdown
       supportsJoin
+      schema
+      actionOptions {
+        description
+      }
+      docsMarkdown
     }
     dependencies {
       groupId

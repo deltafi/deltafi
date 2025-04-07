@@ -38,10 +38,184 @@ class Join(ABC):
         return TransformInput(content=all_content, metadata=all_metadata)
 
 
-class Action(ABC):
-    def __init__(self, action_type: ActionType, description: str, valid_result_types: tuple):
-        self.action_type = action_type
+class ContentSpec:
+    name: str
+    media_type: str
+    description: str
+
+    def __init__(self, name: str = None, media_type: str = None, description: str = None):
+        self.name = name
+        self.media_type = media_type
         self.description = description
+
+    def json(self):
+        json_dictionary = {}
+        if self.name is not None:
+            json_dictionary['name'] = self.name
+        if self.media_type is not None:
+            json_dictionary['mediaType'] = self.media_type
+        if self.description is not None:
+            json_dictionary['description'] = self.description
+        return json_dictionary
+
+
+class KeyedDescription:
+    key: str
+    description: str
+
+    def __init__(self, key: str, description: str):
+        self.key = key
+        self.description = description
+
+    def json(self):
+        json_dictionary = {}
+        if self.key is not None:
+            json_dictionary['key'] = self.key
+            json_dictionary['description'] = self.description
+        return json_dictionary
+
+
+class InputSpec:
+    content_summary: str
+    content_specs: List[ContentSpec]
+    metadata_summary: str
+    metadata_descriptions: List[KeyedDescription]
+
+    def __init__(self, content_summary: str = None, content_specs: List[ContentSpec] = None,
+                 metadata_summary: str = None, metadata_descriptions: List[KeyedDescription] = None):
+        self.content_summary = content_summary
+        self.content_specs = content_specs
+        self.metadata_summary = metadata_summary
+        self.metadata_descriptions = metadata_descriptions
+
+    def json(self):
+        json_dictionary = {}
+        if self.content_summary is not None:
+            json_dictionary['contentSummary'] = self.content_summary
+        if self.content_specs is not None:
+            json_dictionary['contentSpecs'] = [cs.json() for cs in self.content_specs]
+        if self.metadata_summary is not None:
+            json_dictionary['metadataSummary'] = self.metadata_summary
+        if self.metadata_descriptions is not None:
+            json_dictionary['metadataDescriptions'] = [md.json() for md in self.metadata_descriptions]
+        return json_dictionary
+
+
+class OutputSpec:
+    content_summary: str
+    content_specs: List[ContentSpec]
+    metadata_summary: str
+    metadata_descriptions: List[KeyedDescription]
+    passthrough: bool
+    annotations_summary: str
+    annotation_descriptions: List[KeyedDescription]
+
+    def __init__(self, content_summary: str = None, content_specs: List[ContentSpec] = None,
+                 metadata_summary: str = None, metadata_descriptions: List[KeyedDescription] = None,
+                 passthrough: bool = False, annotations_summary: str = None,
+                 annotation_descriptions: List[KeyedDescription] = None):
+        self.content_summary = content_summary
+        self.content_specs = content_specs
+        self.metadata_summary = metadata_summary
+        self.metadata_descriptions = metadata_descriptions
+        self.passthrough = passthrough
+        self.annotations_summary = annotations_summary
+        self.annotation_descriptions = annotation_descriptions
+
+    def json(self):
+        json_dictionary = {}
+        if self.content_summary is not None:
+            json_dictionary['contentSummary'] = self.content_summary
+        if self.content_specs is not None:
+            json_dictionary['contentSpecs'] = [cs.json() for cs in self.content_specs]
+        if self.metadata_summary is not None:
+            json_dictionary['metadataSummary'] = self.metadata_summary
+        if self.metadata_descriptions is not None:
+            json_dictionary['metadataDescriptions'] = [md.json() for md in self.metadata_descriptions]
+        if self.passthrough is not None:
+            json_dictionary['passthrough'] = self.passthrough
+        if self.annotations_summary is not None:
+            json_dictionary['annotationsSummary'] = self.annotations_summary
+        if self.annotation_descriptions is not None:
+            json_dictionary['annotationDescriptions'] = [ad.json() for ad in self.annotation_descriptions]
+        return json_dictionary
+
+
+class DescriptionWithConditions:
+    description: str
+    conditions: List[str]
+
+    def __init__(self, description: str = None, conditions: List[str] = None):
+        self.description = description
+        self.conditions = conditions
+
+    def json(self):
+        json_dictionary = {}
+        if self.description is not None:
+            json_dictionary['description'] = self.description
+        if self.conditions is not None:
+            json_dictionary['conditions'] = [c for c in self.conditions]
+        return json_dictionary
+
+
+class ActionOptions:
+    description: str
+    input_spec: InputSpec
+    output_spec: OutputSpec
+    filters: List[DescriptionWithConditions] = None
+    errors: List[DescriptionWithConditions] = None
+    notes: List[str]
+    details: str
+
+    def __init__(self, description: str = None, input_spec: InputSpec = None, output_spec: OutputSpec = None,
+                 filters: List = None, errors: List = None, notes: List[str] = None, details: str = None):
+        self.description = description
+        self.input_spec = input_spec
+        self.output_spec = output_spec
+        if filters is not None:
+            self.filters = []
+            for f in filters:
+                if isinstance(f, DescriptionWithConditions):
+                    self.filters.append(f)
+                else:
+                    self.filters.append(DescriptionWithConditions(description=f))
+        if errors is not None:
+            self.errors = []
+            for e in errors:
+                if isinstance(e, DescriptionWithConditions):
+                    self.errors.append(e)
+                else:
+                    self.errors.append(DescriptionWithConditions(description=e))
+        self.notes = notes
+        self.details = details
+
+    def json(self):
+        json_dictionary = {}
+        if self.description is not None:
+            json_dictionary['description'] = self.description
+        if self.input_spec is not None:
+            json_dictionary['inputSpec'] = self.input_spec.json()
+        if self.output_spec is not None:
+            json_dictionary['outputSpec'] = self.output_spec.json()
+        if self.filters is not None:
+            json_dictionary['filters'] = [f.json() for f in self.filters]
+        if self.errors is not None:
+            json_dictionary['errors'] = [e.json() for e in self.errors]
+        if self.notes is not None:
+            json_dictionary['notes'] = [n for n in self.notes]
+        if self.details is not None:
+            json_dictionary['details'] = self.details
+        return json_dictionary
+
+
+class Action(ABC):
+    def __init__(self, action_type: ActionType, description: str, valid_result_types: tuple,
+                 action_options: ActionOptions = None):
+        self.action_type = action_type
+        if action_options is None:
+            self.action_options = ActionOptions(description=description)
+        else:
+            self.action_options = action_options
         self.valid_result_types = valid_result_types
 
     @abstractmethod
@@ -92,8 +266,8 @@ class Action(ABC):
 
 
 class EgressAction(Action, ABC):
-    def __init__(self, description: str):
-        super().__init__(ActionType.EGRESS, description, (EgressResult, ErrorResult, FilterResult))
+    def __init__(self, description: str, action_options: ActionOptions = None):
+        super().__init__(ActionType.EGRESS, description, (EgressResult, ErrorResult, FilterResult), action_options)
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return EgressInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
@@ -107,8 +281,8 @@ class EgressAction(Action, ABC):
 
 
 class TimedIngressAction(Action, ABC):
-    def __init__(self, description: str):
-        super().__init__(ActionType.TIMED_INGRESS, description, (IngressResult, ErrorResult))
+    def __init__(self, description: str, action_options: ActionOptions = None):
+        super().__init__(ActionType.TIMED_INGRESS, description, (IngressResult, ErrorResult), action_options)
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return None
@@ -122,9 +296,9 @@ class TimedIngressAction(Action, ABC):
 
 
 class TransformAction(Action, ABC):
-    def __init__(self, description: str):
+    def __init__(self, description: str, action_options: ActionOptions = None):
         super().__init__(ActionType.TRANSFORM, description,
-                         (TransformResult, TransformResults, ErrorResult, FilterResult))
+                         (TransformResult, TransformResults, ErrorResult, FilterResult), action_options)
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)

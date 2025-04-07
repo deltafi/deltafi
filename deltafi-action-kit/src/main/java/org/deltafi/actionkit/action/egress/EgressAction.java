@@ -20,9 +20,7 @@ package org.deltafi.actionkit.action.egress;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFileMessage;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -30,8 +28,12 @@ import org.jetbrains.annotations.NotNull;
  * @param <P> Parameter class for configuring the egress action
  */
 public abstract class EgressAction<P extends ActionParameters> extends Action<EgressInput, P, EgressResultType> {
-    public EgressAction(@NotNull String description) {
-        super(ActionType.EGRESS, description);
+    protected EgressAction(@NotNull String description) {
+        this(ActionOptions.builder().description(description).build());
+    }
+
+    protected EgressAction(ActionOptions actionOptions) {
+        super(ActionType.EGRESS, actionOptions);
     }
 
     @Override

@@ -21,13 +21,28 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
 public class Split extends TransformAction<ActionParameters> {
     public Split() {
-        super("Splits content into multiple DeltaFiles.");
+        super(ActionOptions.builder()
+                .description("Splits content into multiple DeltaFiles.")
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("Each DeltaFile will contain a single content from the original DeltaFile.")
+                        .metadataSummary("""
+                                Each DeltaFile will contain a copy of the metadata from the original DeltaFile.""")
+                        .build())
+                .notes("""
+                        The entry for this action in the original DeltaFile will be placed in the terminal SPLIT
+                        state.""", """
+                        New DeltaFiles created for each content in the original file will advance in the current
+                        flow.""", """
+                        This action is typically used after a Decompress action to process each content individually
+                        after it has been extracted from an ingested compressed file.""")
+                .build());
     }
 
     @Override

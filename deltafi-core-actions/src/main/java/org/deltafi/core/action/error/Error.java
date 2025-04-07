@@ -18,18 +18,29 @@
 package org.deltafi.core.action.error;
 
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
 public class Error extends TransformAction<ErrorParameters> {
     public Error() {
-        super("Errors by default or when optional criteria is met in metadata.");
+        super(ActionOptions.builder()
+                .description("Errors by default or when optional criteria is met in metadata.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .metadataSummary("""
+                                If metadataTrigger is set, the input metadata will be checked to determine if an error
+                                should occur and what the error message will be.""")
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                Input content is passed through unchanged if metadataTrigger is set and no matching
+                                input metadata is present.""")
+                        .build())
+                .errors("On metadataTrigger unset or when input metadata matching metadataTrigger is present")
+                .build());
     }
 
     @Override

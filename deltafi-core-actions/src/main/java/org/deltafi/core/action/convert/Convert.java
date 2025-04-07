@@ -17,10 +17,7 @@
  */
 package org.deltafi.core.action.convert;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MappingIterator;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
@@ -28,6 +25,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.deltafi.core.action.ContentSelectingTransformAction;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +40,22 @@ public class Convert extends ContentSelectingTransformAction<ConvertParameters> 
     private static final XmlMapper XML_MAPPER = new XmlMapper();
 
     public Convert() {
-        super("Converts content between CSV, JSON, or XML.");
+        super(ActionOptions.builder()
+                .description("Converts content between CSV, JSON, or XML.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(ConvertParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                Converts each content from the inputFormat to the outputFormat. The name of the new
+                                content will be the input content name plus the file suffix associated with the
+                                outputFormat.
+                                
+                                """ + ConvertParameters.CONTENT_RETENTION_DESCRIPTION)
+                        .build())
+                .errors("On failure to convert content")
+                .notes("Provides a best effort conversion as there isn't a reliable canonical way to convert between formats.")
+                .build());
     }
 
     @Override

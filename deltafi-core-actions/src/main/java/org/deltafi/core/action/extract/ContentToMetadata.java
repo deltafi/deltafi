@@ -18,11 +18,9 @@
 package org.deltafi.core.action.extract;
 
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +30,23 @@ import java.util.List;
 @Component
 public class ContentToMetadata extends TransformAction<ContentToMetadataParameters> {
     public ContentToMetadata() {
-        super("Move selected content to metadata or annotation");
+        super(ActionOptions.builder()
+                .description("Moves selected content to metadata or annotations.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(ContentToMetadataParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                If content is not selected or retainExistingContent is true, it will pass through
+                                unchanged. Otherwise, content will be removed.""")
+                        .metadataSummary("""
+                                If extractTarget is METADATA, content will be set in metadata with the `key`
+                                parameter.""")
+                        .annotationsSummary("""
+                                If extractTarget is ANNOTATIONS, content will be set in annotations with the `key`
+                                parameter.""")
+                        .build())
+                .build());
     }
 
     @Override

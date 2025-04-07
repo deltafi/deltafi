@@ -149,3 +149,25 @@ docker {
     dockerfile file("${buildDir}/Dockerfile")
 }
 
+abstract class DocsExtension {
+    abstract DirectoryProperty getDocsDirectory()
+    abstract Property<String> getBasePackage()
+}
+
+def docsExtension = extensions.create('docsConfig', DocsExtension)
+docsExtension.docsDirectory.convention(layout.buildDirectory.dir('docs'))
+docsExtension.basePackage.convention(project.provider { project.group.toString() })
+
+tasks.register('generateDocs', JavaExec) {
+    dependsOn compileJava
+    mustRunAfter copyPluginDockerfile
+    classpath = sourceSets.main.compileClasspath + sourceSets.main.runtimeClasspath
+    mainClass = 'org.deltafi.actionkit.documentation.ActionsDocumentationGenerator'
+
+    doFirst {
+        args = [docsExtension.docsDirectory.get().asFile, docsExtension.basePackage.get()]
+    }
+
+    group = 'deltafi'
+    description = 'Generates action documentation for all actions within the group'
+}

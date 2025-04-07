@@ -20,15 +20,13 @@ package org.deltafi.core.action.egress;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.egress.EgressAction;
-import org.deltafi.actionkit.action.egress.EgressInput;
-import org.deltafi.actionkit.action.egress.EgressResult;
-import org.deltafi.actionkit.action.egress.EgressResultType;
+import org.deltafi.actionkit.action.egress.*;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.http.HttpSendException;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.core.Response;
@@ -44,7 +42,9 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     protected final HttpService httpService;
 
     public HttpEgressBase(String description, HttpService httpService) {
-        super(description);
+        super(ActionOptions.builder()
+                .description(description)
+                .build());
         this.httpService = httpService;
     }
 

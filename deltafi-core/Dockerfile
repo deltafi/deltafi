@@ -3,24 +3,23 @@ WORKDIR /ui
 # Cache package installation
 COPY ui/package.json ui/package-lock.json ./
 RUN npm install
-# Build app
 COPY ui ./
 RUN npm run build
 
 FROM node:20-alpine3.19 AS deltafi-docs-build-stage
 WORKDIR /docs
 # Cache package installation
-COPY docs/package.json /docs/package.json
+COPY docs/package.json ./
 RUN npm install
-COPY docs .
+COPY docs ./
 RUN npm run build
 
 FROM node:20-alpine3.19 AS deltafi-graphiql-build-stage
 WORKDIR /graphiql
 # Cache package installation
-COPY graphiql/package.json /graphiql/package.json
+COPY graphiql/package.json ./
 RUN yarn install
-COPY graphiql .
+COPY graphiql ./
 RUN yarn build
 
 FROM deltafi/deltafi-java-jre:21.0.6-alpine-0

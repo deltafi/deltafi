@@ -18,11 +18,9 @@
 package org.deltafi.core.action.tag;
 
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +30,17 @@ import java.util.HashSet;
 public class TagContent extends TransformAction<TagContentParameters> {
 
     public TagContent() {
-        super("Adds tags to content based on optional filters such as indices, filename pattern, and media type.");
+        super(ActionOptions.builder()
+                .description("Adds tags to content.")
+                .inputSpec(ActionOptions.InputSpec.builder()
+                        .contentSummary(TagContentParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .build())
+                .outputSpec(ActionOptions.OutputSpec.builder()
+                        .contentSummary("""
+                                Selected content will have tags in tagsToAdd added.""")
+                        .build())
+                .errors("On tagsToAdd not set")
+                .build());
     }
 
     @Override

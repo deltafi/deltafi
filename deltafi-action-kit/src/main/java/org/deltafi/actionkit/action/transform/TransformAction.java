@@ -20,10 +20,7 @@ package org.deltafi.actionkit.action.transform;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionInput;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFileMessage;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -33,7 +30,11 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class TransformAction<P extends ActionParameters> extends Action<TransformInput, P, TransformResultType> {
     protected TransformAction(@NotNull String description) {
-        super(ActionType.TRANSFORM, description);
+        this(ActionOptions.builder().description(description).build());
+    }
+
+    protected  TransformAction(ActionOptions actionOptions) {
+        super(ActionType.TRANSFORM, actionOptions);
     }
 
     @Override

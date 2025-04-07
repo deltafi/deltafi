@@ -1,10 +1,23 @@
 {
   "type" : "object",
   "properties" : {
+    "booleanParameter" : {
+      "type" : "boolean",
+      "default" : true
+    },
     "complexParam" : {
       "type" : "object",
       "additionalProperties" : false,
       "description" : "complex type should not allow additional properties"
+    },
+    "enumParameter" : {
+      "type" : "string",
+      "enum" : [ "A", "B", "C" ]
+    },
+    "formatParameter" : {
+      "type" : "string",
+      "enum" : [ "tar", "zip" ],
+      "description" : "Format to compress to"
     },
     "listParameter" : {
       "description" : "my great list",
@@ -15,13 +28,28 @@
         "default" : [ "abc", "123" ]
       }
     },
+    "mapParameter" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "type" : "integer"
+      },
+      "description" : "Key value pairs to be added"
+    },
     "parameter" : {
       "type" : "string",
       "description" : "my great property",
       "default" : "defaultString",
       "minLength" : 0,
       "maxLength" : 5000
+    },
+    "tags" : {
+      "description" : "A list of tags to assign to the fetched content.",
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
     }
   },
+  "required" : [ "complexParam", "formatParameter", "listParameter" ],
   "additionalProperties" : false
 }

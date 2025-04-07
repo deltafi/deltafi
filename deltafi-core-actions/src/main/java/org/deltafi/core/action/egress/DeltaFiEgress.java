@@ -43,7 +43,7 @@ public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
     private final String localIngressUrl;
 
     public DeltaFiEgress(HttpService httpService, @Value("${CORE_URL:Unknown}") String coreUrl) {
-        super("Egresses to local or remote DeltaFi", httpService);
+        super("Egresses to local or remote DeltaFi.", httpService);
         this.localIngressUrl = coreUrl + INGRESS_URL_PATH;
     }
 

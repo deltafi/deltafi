@@ -20,7 +20,6 @@ package org.deltafi.core.action.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.core.action.ContentMatchingParameters;
 
 import java.util.List;
