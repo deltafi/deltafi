@@ -1436,6 +1436,7 @@ public class DeltaFilesService {
                         if ((action.getState() == COLD_QUEUED) && actionNames.contains(action.getName())) {
                             WrappedActionInput actionInput = requeueActionInput(deltaFile, flow, action);
                             if (actionInput != null) {
+                                actionInput.setColdQueued(false);
                                 action.setState(QUEUED);
                                 action.setModified(modified);
                                 action.setQueued(modified);

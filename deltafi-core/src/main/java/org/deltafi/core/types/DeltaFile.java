@@ -152,7 +152,7 @@ public class DeltaFile {
     this.referencedBytes = other.referencedBytes;
     this.totalBytes = other.totalBytes;
     this.stage = other.stage;
-    this.flows = other.flows == null ? null : other.flows.stream().map(DeltaFileFlow::new).collect(Collectors.toSet());
+    this.flows = other.flows == null ? null : other.flows.stream().map(DeltaFileFlow::new).collect(Collectors.toCollection(HashSet::new));
     this.annotations = other.annotations == null ? null : new LinkedHashSet<>(other.annotations);
     this.created = other.created;
     this.modified = other.modified;
@@ -441,6 +441,10 @@ public class DeltaFile {
     return inactiveStage() || flows.stream().noneMatch(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT);
   }
 
+  public boolean isColdQueued() {
+    return flows.stream().anyMatch(DeltaFileFlow::isColdQueued);
+  }
+
   public void acknowledgeErrors(OffsetDateTime now, String reason) {
     boolean found = flows.stream()
             .map(f -> f.acknowledgeError(now, reason))
@@ -498,7 +502,7 @@ public class DeltaFile {
                     .metadata(previousFlow.getMetadata())
                     .content(previousFlow.lastContent())
                     .topics(subscribedTopics)
-                    .ancestorIds(Stream.concat(Stream.of(previousFlow.getNumber()), previousFlow.getInput().getAncestorIds().stream()).collect(Collectors.toList()))
+                    .ancestorIds(Stream.concat(Stream.of(previousFlow.getNumber()), previousFlow.getInput().getAncestorIds().stream()).toList())
                     .build())
             .depth(previousFlow.getDepth() + 1)
             .testMode(previousFlow.isTestMode())

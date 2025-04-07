@@ -103,24 +103,29 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     @Override
     public void removeOlderThan(Duration duration) {
         OffsetDateTime threshold = OffsetDateTime.now(clock).minus(duration);
-        List<DeltaFile> filesToRemove = deltaFileCache.values().stream()
-                .filter(d -> {
-                    if (d.getCacheTime() == null) {
-                        d.setCacheTime(OffsetDateTime.now(clock));
-                    }
-                    return d.getCacheTime().isBefore(threshold);
-                })
-                .toList();
+        for (Map.Entry<UUID, DeltaFile> entry : deltaFileCache.entrySet()) {
+            DeltaFile d = entry.getValue();
+            if (d.getCacheTime() == null) {
+                d.setCacheTime(OffsetDateTime.now(clock));
+            }
 
-        for (DeltaFile d : filesToRemove) {
-            didMutexService.executeWithLock(d.getDid(), () -> {
-                try {
-                    updateRepo(d);
-                } catch (Exception ignored) {
-                } finally {
-                    remove(d.getDid());
-                }
-            });
+            if (d.getCacheTime().isBefore(threshold)) {
+                didMutexService.executeWithLock(d.getDid(), () -> {
+                    // Get the latest version within the lock to prevent acting on a stale record
+                    DeltaFile current = deltaFileCache.get(entry.getKey());
+                    if (current != null &&
+                            current.getCacheTime() != null &&
+                            current.getCacheTime().isBefore(threshold)) {
+                        try {
+                            updateRepo(current);
+                        } catch (Exception ignored) {
+                            // ignore exceptions
+                        } finally {
+                            remove(current.getDid());
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -132,7 +137,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
 
     @Override
     public void save(DeltaFile deltaFile) {
-        if (deltaFile.noActiveFlows()) {
+        if (skipCache(deltaFile)) {
             try {
                 updateRepo(deltaFile);
             } finally {

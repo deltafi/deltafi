@@ -65,12 +65,17 @@ public abstract class DeltaFileCacheService {
         if (!newDeltaFiles.isEmpty()) {
             deltaFileRepo.insertBatch(newDeltaFiles, deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
         }
-        newDeltaFiles.forEach(this::put);
+
+        newDeltaFiles.stream().filter(d -> !skipCache(d)).forEach(this::put);
 
         // save any parents now that the children will show up in the queries used for the completeParents method
         for (DeltaFile deltaFile : parentDeltaFiles) {
             save(deltaFile);
         }
+    }
+
+    public boolean skipCache(DeltaFile deltaFile) {
+        return deltaFile.noActiveFlows() || deltaFile.isColdQueued();
     }
 
     protected DeltaFile getFromRepo(UUID did) {

@@ -162,7 +162,7 @@ public class StateMachine {
 
     private List<WrappedActionInput> addNextAction(StateMachineInput input, ActionConfiguration nextAction, Map<String, Long> pendingQueued) {
         Action lastAction = input.flow().lastAction();
-        ActionState actionState = queueState(nextAction.getName(), pendingQueued);
+        ActionState actionState = queueState(nextAction.getType(), pendingQueued);
         Action newAction = input.flow().addAction(nextAction.getName(), nextAction.getActionType(),
                 actionState, OffsetDateTime.now(clock));
         if (lastAction != null && lastAction.getState() == ActionState.RETRIED &&

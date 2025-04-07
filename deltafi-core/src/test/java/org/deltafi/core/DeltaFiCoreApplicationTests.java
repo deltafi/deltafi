@@ -783,9 +783,11 @@ class DeltaFiCoreApplicationTests {
 		UUID did = UUID.randomUUID();
 		DeltaFile postTransformUtf8 = fullFlowExemplarService.postTransformUtf8DeltaFile(did);
 		deltaFileRepo.save(postTransformUtf8);
-		queueManagementService.getColdQueues().put(SAMPLE_EGRESS_ACTION, 999999L);
+		// the action config has type set to 'type' which would be the action queue name
+		queueManagementService.getColdQueues().put("type", 999999L);
 
 		deltaFilesService.handleActionEvent(actionEvent("transform", did));
+		queueManagementService.getColdQueues().remove("type"); // reset for other tests
 
 		DeltaFile postTransformColdQueued = fullFlowExemplarService.postTransformDeltaFile(did);
 		postTransformColdQueued.lastFlow().lastAction().setState(ActionState.COLD_QUEUED);

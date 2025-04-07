@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -102,7 +103,7 @@ public class DeltaFileFlow {
         this.created = other.created;
         this.modified = other.modified;
         this.input = other.input;
-        this.actions = other.actions == null ? null : other.actions.stream().map(Action::new).toList();
+        this.actions = other.actions == null ? null : other.actions.stream().map(Action::new).collect(Collectors.toCollection(ArrayList::new));
         this.publishTopics = new ArrayList<>(other.publishTopics);
         this.depth = other.depth;
         this.pendingAnnotations = new ArrayList<>(other.pendingAnnotations);
