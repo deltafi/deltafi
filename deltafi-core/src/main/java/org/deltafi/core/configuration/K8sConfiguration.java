@@ -58,8 +58,8 @@ public class K8sConfiguration {
     }
 
     @Bean
-    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient kubernetesClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        return new K8sDeployerService(deltaFiPropertiesService, kubernetesClient, podService, pluginService, systemSnapshotService, eventService);
+    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient kubernetesClient, PodService podService, PluginService pluginService, EventService eventService) {
+        return new K8sDeployerService(deltaFiPropertiesService, kubernetesClient, podService, pluginService, eventService);
     }
 
 }

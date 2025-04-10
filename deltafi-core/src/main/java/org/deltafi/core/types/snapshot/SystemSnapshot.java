@@ -34,7 +34,7 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 public class SystemSnapshot {
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
 
     @Id
     private UUID id = Generators.timeBasedEpochGenerator().generate();

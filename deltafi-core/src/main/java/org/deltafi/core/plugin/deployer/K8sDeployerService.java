@@ -57,8 +57,8 @@ public class K8sDeployerService extends BaseDeployerService {
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient k8sClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        super(pluginService, systemSnapshotService, eventService, deltaFiPropertiesService);
+    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, KubernetesClient k8sClient, PodService podService, PluginService pluginService, EventService eventService) {
+        super(pluginService, eventService, deltaFiPropertiesService);
         this.k8sClient = k8sClient;
         this.podService = podService;
     }

@@ -53,8 +53,8 @@ public class DockerConfiguration {
     }
 
     @Bean
-    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginService pluginService, SystemSnapshotService systemSnapshotService,
-                                                 EventService eventService, EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
-        return new DockerDeployerService(dockerClient, pluginService, systemSnapshotService, eventService, environmentVariableHelper, deltaFiPropertiesService);
+    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginService pluginService, EventService eventService,
+                                                 EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
+        return new DockerDeployerService(dockerClient, pluginService, eventService, environmentVariableHelper, deltaFiPropertiesService);
     }
 }

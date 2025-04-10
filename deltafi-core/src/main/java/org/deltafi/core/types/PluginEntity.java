@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -123,5 +124,9 @@ public class PluginEntity {
             flowPlan.setSourcePlugin(this.getPluginCoordinates());
             this.flowPlans.add(flowPlan);
         }
+    }
+
+    public String imageAndTag() {
+        return StringUtils.isNotEmpty(imageTag) ? imageName + ":" + imageTag : imageName;
     }
 }

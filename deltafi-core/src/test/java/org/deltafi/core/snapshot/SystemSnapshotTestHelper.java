@@ -26,6 +26,7 @@ import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.snapshot.PluginSnapshot;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.intellij.lang.annotations.Language;
@@ -147,11 +148,11 @@ public class SystemSnapshotTestHelper {
     }
 
     private static void setInstalledPlugins(Snapshot snapshot) {
-        snapshot.setInstalledPlugins(List.of(
-            PluginCoordinates.builder().groupId("org.deltafi.python-poc").artifactId("deltafi-python-poc").version("main-9cc5379d").build(),
-            PluginCoordinates.builder().groupId("org.deltafi.stix").artifactId("deltafi-stix").version("main-fd1945b9").build(),
-            PluginCoordinates.builder().groupId("org.deltafi.passthrough").artifactId("deltafi-passthrough").version("0.102.1-SNAPSHOT").build(),
-            PluginCoordinates.builder().groupId("org.deltafi").artifactId("deltafi-core-actions").version("0.102.1-SNAPSHOT").build()
+        snapshot.setPlugins(List.of(
+                new PluginSnapshot("deltafi/deltafi-python-poc:1.0.0", null, PluginCoordinates.builder().groupId("org.deltafi.python-poc").artifactId("deltafi-python-poc").version("main-9cc5379d").build()),
+                new PluginSnapshot("plugin-repo/name:1.0.0", "docker-secret", PluginCoordinates.builder().groupId("org.deltafi.stix").artifactId("deltafi-stix").version("main-fd1945b9").build()),
+                new PluginSnapshot(null, null, PluginCoordinates.builder().groupId("org.deltafi.passthrough").artifactId("deltafi-passthrough").version("0.102.1-SNAPSHOT").build()),
+                new PluginSnapshot(null, null, PluginCoordinates.builder().groupId("org.deltafi").artifactId("deltafi-core-actions").version("0.102.1-SNAPSHOT").build())
         ));
     }
 
@@ -162,7 +163,7 @@ public class SystemSnapshotTestHelper {
                         id: "11111111-1111-1111-1111-111111111111"
                         reason: "TEST"
                         created: "2023-02-28T21:27:03.407Z"
-                        schemaVersion: 1,
+                        schemaVersion: 2,
                         snapshot: {
                             deletePolicies: {
                                 timedPolicies: [
@@ -241,26 +242,40 @@ public class SystemSnapshotTestHelper {
                                     linkType: EXTERNAL
                                 }
                             ]
-                            installedPlugins: [
+                            plugins: [
                                 {
-                                    groupId: "org.deltafi.python-poc"
-                                    artifactId: "deltafi-python-poc"
-                                    version: "main-9cc5379d"
+                                    imageName: "deltafi/deltafi-python-poc:1.0.0"
+                                    imagePullSecret: null,
+                                    pluginCoordinates: {
+                                        groupId: "org.deltafi.python-poc"
+                                        artifactId: "deltafi-python-poc"
+                                        version: "main-9cc5379d"
+                                    }
                                 }
                                 {
-                                    groupId: "org.deltafi.stix"
-                                    artifactId: "deltafi-stix"
-                                    version: "main-fd1945b9"
+                                    imageName: "plugin-repo/name:1.0.0"
+                                    imagePullSecret: "docker-secret"
+                                    pluginCoordinates: {
+                                        groupId: "org.deltafi.stix"
+                                        artifactId: "deltafi-stix"
+                                        version: "main-fd1945b9"
+                                    }
                                 }
                                 {
-                                    groupId: "org.deltafi.passthrough"
-                                    artifactId: "deltafi-passthrough"
-                                    version: "0.102.1-SNAPSHOT"
+                                    imageName: null
+                                    imagePullSecret: null
+                                    pluginCoordinates: {
+                                        groupId: "org.deltafi.passthrough"
+                                        artifactId: "deltafi-passthrough"
+                                        version: "0.102.1-SNAPSHOT"
+                                    }
                                 }
                                 {
-                                    groupId: "org.deltafi"
-                                    artifactId: "deltafi-core-actions"
-                                    version: "0.102.1-SNAPSHOT"
+                                    pluginCoordinates: {
+                                        groupId: "org.deltafi"
+                                        artifactId: "deltafi-core-actions"
+                                        version: "0.102.1-SNAPSHOT"
+                                    }
                                 }
                             ]
                             pluginVariables: [

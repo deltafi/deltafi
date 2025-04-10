@@ -129,6 +129,28 @@ class SystemSnapshotServiceTest {
 
     @Test
     void testMapSnapshotDataV1() {
+        Snapshot expectedSnapshot = buildSnapshot();
+        expectedSnapshot.setPlugins(null);
+        Snapshot actualSnapshot = systemSnapshotService.mapSnapshotData(readSnapshotsFile("snapshot_v1.json"));
+        assertThat(actualSnapshot).isEqualTo(expectedSnapshot);
+    }
+
+    @Test
+    void testMapSnapshotDataV2() {
+        Snapshot expectedSnapshot = buildSnapshot();
+        Snapshot actualSnapshot = systemSnapshotService.mapSnapshotData(readSnapshotsFile("snapshot_v2.json"));
+        assertThat(actualSnapshot).isEqualTo(expectedSnapshot);
+    }
+
+    @Test
+    void testMapSnapshotDataV3() {
+        SystemSnapshot input = readSnapshotsFile("snapshot_v3.json");
+        assertThatThrownBy(() -> systemSnapshotService.mapSnapshotData(input))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid system snapshot schema version '3' in snapshot with id '00000000-0000-0000-0000-000000000000' with reason: 'snapshot v3'");
+    }
+
+    private Snapshot buildSnapshot() {
         Snapshot expectedSnapshot = new Snapshot();
         setPluginVariables(expectedSnapshot);
         setDeletePolicies(expectedSnapshot);
@@ -142,17 +164,7 @@ class SystemSnapshotServiceTest {
         setResumePolicies(expectedSnapshot);
         setSystemFlowPlans(expectedSnapshot);
         setUsersAndRoles(expectedSnapshot);
-
-        Snapshot actualSnapshot = systemSnapshotService.mapSnapshotData(readSnapshotsFile("snapshot_v1.json"));
-        assertThat(actualSnapshot).isEqualTo(expectedSnapshot);
-    }
-
-    @Test
-    void testMapSnapshotDataV2() {
-        SystemSnapshot input = readSnapshotsFile("snapshot_v2.json");
-        assertThatThrownBy(() -> systemSnapshotService.mapSnapshotData(input))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Invalid system snapshot schema version '2' in snapshot with id '00000000-0000-0000-0000-000000000000' with reason: 'snapshot v2'");
+        return expectedSnapshot;
     }
 
     private void setUsersAndRoles(Snapshot snapshot) {
@@ -304,8 +316,8 @@ class SystemSnapshotServiceTest {
     }
 
     private static void setInstalledPlugins(Snapshot snapshot) {
-        snapshot.setInstalledPlugins(List.of(
-                PluginCoordinates.builder().groupId("org.deltafi.python-poc").artifactId("deltafi-python-poc").version("main-9cc5379d").build()
+        snapshot.setPlugins(List.of(
+                new PluginSnapshot("deltafi/deltafi-python-poc:1.0.0", "docker-secret", PluginCoordinates.builder().groupId("org.deltafi.python-poc").artifactId("deltafi-python-poc").version("main-9cc5379d").build())
         ));
     }
 

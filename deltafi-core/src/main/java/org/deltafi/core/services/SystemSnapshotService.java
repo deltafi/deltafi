@@ -159,7 +159,7 @@ public class SystemSnapshotService {
         }
 
         int version = snapshot.getSchemaVersion();
-        if (SystemSnapshot.CURRENT_VERSION == version) {
+        if (SystemSnapshot.CURRENT_VERSION == version || 1 == version) {
             return OBJECT_MAPPER.convertValue(snapshot.getSnapshot(), Snapshot.class);
         }
 
@@ -167,17 +167,8 @@ public class SystemSnapshotService {
     }
 
     private Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
-        Result baseResult = new Result();
-        return snapshotters.stream()
-                .map(snapshotter -> snapshotter.resetFromSnapshot(snapshot, hardReset))
-                .reduce(baseResult, SystemSnapshotService::combine);
-    }
-
-    public static Result combine(Result a, Result b) {
-        return Result.builder()
-                .success(a.isSuccess() && b.isSuccess())
-                .info(combineLists(a.getInfo(), b.getInfo()))
-                .errors(combineLists(a.getErrors(), b.getErrors())).build();
+        return Result.combine(snapshotters.stream()
+                .map(snapshotter -> snapshotter.resetFromSnapshot(snapshot, hardReset)));
     }
 
     private void modifySnapshotData(SystemSnapshot systemSnapshot, Consumer<Snapshot> snapshotConsumer) {
@@ -186,24 +177,5 @@ public class SystemSnapshotService {
         systemSnapshot.setSnapshot(OBJECT_MAPPER.convertValue(snapshot, new TypeReference<>() {}));
     }
 
-    private static List<String> combineLists(List<String> a, List<String> b) {
-        List<String> combinedList = new ArrayList<>();
-        if (blankList(a) && blankList(b)) {
-            return combinedList;
-        }
 
-        if (null != a) {
-            combinedList.addAll(a);
-        }
-
-        if (null != b) {
-            combinedList.addAll(b);
-        }
-
-        return combinedList;
-    }
-
-    private static boolean blankList(List<String> value) {
-        return null == value || value.isEmpty();
-    }
 }

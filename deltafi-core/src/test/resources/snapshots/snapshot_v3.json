@@ -1,8 +1,8 @@
 {
   "id": "00000000-0000-0000-0000-000000000000",
-  "reason": "snapshot v2",
+  "reason": "snapshot v3",
   "created": "",
-  "schemaVersion": "2",
+  "schemaVersion": "3",
   "snapshot": {
     "pluginVariables": [
       {
@@ -111,7 +111,7 @@
     "plugins": [
       {
         "imageName": "deltafi/deltafi-python-poc:1.0.0",
-        "imagePullSecret": "docker-secret",
+        "imagePullSecret": null,
         "pluginCoordinates": {
           "groupId": "org.deltafi.python-poc",
           "artifactId": "deltafi-python-poc",

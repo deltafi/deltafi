@@ -4299,6 +4299,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void restoreSnapshot() {
+		Mockito.when(deployerService.resetFromSnapshot(Mockito.any(), Mockito.anyBoolean())).thenReturn(Result.successResult());
 		pluginService.doUpdateSystemPlugin();
 		systemSnapshotRepo.save(SystemSnapshotTestHelper.expectedSnapshot());
 		Result result = SystemSnapshotTestHelper.restoreSnapshot(dgsQueryExecutor);

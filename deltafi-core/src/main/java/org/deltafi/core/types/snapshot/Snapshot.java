@@ -39,7 +39,7 @@ public class Snapshot {
     private List<TimedDataSourceSnapshot> timedDataSources = new ArrayList<>();
     private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
     private List<DataSinkSnapshot> dataSinks = new ArrayList<>();
-    private List<PluginCoordinates> installedPlugins;
+    private List<PluginSnapshot> plugins;
     private List<ResumePolicy> resumePolicies = new ArrayList<>();
     private SystemFlowPlans systemFlowPlans = new SystemFlowPlans();
     private List<UserSnapshot> users = new ArrayList<>();

@@ -28,7 +28,9 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.DeltaFiUserService;
 import org.deltafi.core.services.PluginService;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.Result;
 
@@ -39,6 +41,7 @@ import java.util.Collection;
 public class PluginDataFetcher {
     private final PluginService pluginService;
     private final DeployerService deployerService;
+    private final SystemSnapshotService systemSnapshotService;
     private final CoreAuditLogger auditLogger;
 
     @DgsQuery
@@ -51,6 +54,7 @@ public class PluginDataFetcher {
     @NeedsPermission.PluginInstall
     public Result installPlugin(@InputArgument String image, @InputArgument String imagePullSecret) {
         auditLogger.audit("installed plugin {}", image);
+        systemSnapshotService.createSnapshot(preUpgradeMessage(image));
         return deployerService.installOrUpgradePlugin(image, imagePullSecret);
     }
 
@@ -72,6 +76,15 @@ public class PluginDataFetcher {
     @NeedsPermission.PluginsView
     public Collection<ActionDescriptor> actionDescriptors() {
         return pluginService.getActionDescriptors();
+    }
+
+    private String preUpgradeMessage(String imageName) {
+        String username = DeltaFiUserService.currentUsername();
+        String reason = "Deploying plugin from image: " + imageName;
+        if (username != null) {
+            reason += " triggered by " + username;
+        }
+        return reason;
     }
 
 }

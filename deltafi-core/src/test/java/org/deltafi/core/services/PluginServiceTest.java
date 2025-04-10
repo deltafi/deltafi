@@ -25,6 +25,7 @@ import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.PluginEntity;
+import org.deltafi.core.types.snapshot.PluginSnapshot;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.UtilService;
@@ -52,6 +53,8 @@ class PluginServiceTest {
 
     private static final PluginCoordinates PLUGIN_COORDINATES_1 = new PluginCoordinates("org.mock", "plugin-1", "1.0.0");
     private static final PluginCoordinates PLUGIN_COORDINATES_2 = new PluginCoordinates("org.mock", "plugin-2", "1.0.0");
+    private static final PluginSnapshot PLUGIN_1 = new PluginSnapshot(null, null, PLUGIN_COORDINATES_1);
+    private static final PluginSnapshot PLUGIN_2= new PluginSnapshot(null, null, PLUGIN_COORDINATES_2);
 
     @Mock
     PluginRepository pluginRepository;
@@ -101,7 +104,7 @@ class PluginServiceTest {
     IntegrationService integrationService;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         List<PluginCleaner> cleaners = List.of(dataSinkService, transformFlowService, restDataSourceService,
                 timedDataSourceService, pluginVariableService, coreEventQueuePluginCleaner);
         List<PluginUninstallCheck> checkers = List.of(dataSinkService, transformFlowService, restDataSourceService);
@@ -338,32 +341,7 @@ class PluginServiceTest {
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
         pluginService.updateSnapshot(snapshot);
 
-        assertThat(snapshot.getInstalledPlugins()).hasSize(2).contains(PLUGIN_COORDINATES_1, PLUGIN_COORDINATES_2);
-    }
-
-    @Test
-    void testResetFromSnapshot() {
-        Snapshot snapshot = new Snapshot();
-
-        PluginEntity installedOnly = makePlugin();
-        installedOnly.setPluginCoordinates(new PluginCoordinates("org.installed", "installed-plugin", "1.0.0"));
-        PluginEntity newVersion = makePlugin();
-        newVersion.setPluginCoordinates(new PluginCoordinates("org.mock", "plugin-2", "1.1.0"));
-
-        PluginEntity inBoth = makePlugin();
-        PluginCoordinates inSnapshotOnly = new PluginCoordinates("org.unique", "custom-plugin", "1.0.0");
-
-        Mockito.when(pluginRepository.findAll()).thenReturn(List.of(installedOnly, newVersion, inBoth));
-        Mockito.when(pluginRepository.findById(SYSTEM_PLUGIN_ID)).thenReturn(Optional.of(new PluginEntity()));
-
-        snapshot.setInstalledPlugins(List.of(inBoth.getPluginCoordinates(), PLUGIN_COORDINATES_2, inSnapshotOnly));
-
-        Result result = pluginService.resetFromSnapshot(snapshot, true);
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getInfo()).hasSize(3)
-                .contains("Installed plugin org.mock:plugin-2:1.1.0 was a different version at the time of the snapshot: org.mock:plugin-2:1.0.0")
-                .contains("Plugin org.unique:custom-plugin:1.0.0 was installed at the time of the snapshot but is no longer installed")
-                .contains("Installed plugin org.installed:installed-plugin:1.0.0 was not installed at the time of the snapshot");
+        assertThat(snapshot.getPlugins()).hasSize(2).contains(PLUGIN_1, PLUGIN_2);
     }
 
     @Test

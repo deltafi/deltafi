@@ -53,9 +53,9 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     private final String dataDir;
 
     public DockerDeployerService(DockerClient dockerClient,PluginService pluginService,
-                                 SystemSnapshotService systemSnapshotService, EventService eventService,
-                                 EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(pluginService, systemSnapshotService, eventService, deltaFiPropertiesService);
+                                 EventService eventService, EnvironmentVariableHelper environmentVariableHelper,
+                                 DeltaFiPropertiesService deltaFiPropertiesService) {
+        super(pluginService, eventService, deltaFiPropertiesService);
         this.dockerClient = dockerClient;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
         this.dataDir = environmentVariableHelper.getDataDir();

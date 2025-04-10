@@ -31,6 +31,7 @@ import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.snapshot.PluginSnapshot;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.validation.FlowPlanValidator;
@@ -79,7 +80,7 @@ public class PluginService implements Snapshotter {
 
     @PostConstruct
     public void updateSystemPlugin() {
-        if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
+        if (Boolean.TRUE.equals(environment.getProperty("schedule.maintenance", Boolean.class, true))) {
             doUpdateSystemPlugin();
         }
     }
@@ -439,44 +440,14 @@ public class PluginService implements Snapshotter {
 
     @Override
     public void updateSnapshot(Snapshot snapshot) {
-        snapshot.setInstalledPlugins(getInstalledPluginCoordinates());
+        snapshot.setPlugins(getInstalledPlugins());
         snapshot.setSystemFlowPlans(getSystemFlowPlans());
     }
 
     @Override
     public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
-        Result result = new Result();
-        List<PluginCoordinates> installedPlugins = getInstalledPluginCoordinates();
-        List<PluginCoordinates> snapshotPlugins = snapshot.getInstalledPlugins();
-
-        Set<PluginCoordinates> missing = new HashSet<>(installedPlugins);
-
-        for (PluginCoordinates installedPlugin : installedPlugins) {
-            for (PluginCoordinates snapshotPlugin : snapshotPlugins) {
-                if (snapshotPlugin.equals(installedPlugin)) {
-                    missing.remove(installedPlugin);
-                } else if (snapshotPlugin.equalsIgnoreVersion(installedPlugin)) {
-                    missing.remove(installedPlugin);
-                    result.getInfo().add("Installed plugin " + installedPlugin + " was a different version at the time of the snapshot: " + snapshotPlugin);
-                }
-            }
-        }
-
-        result.getInfo().addAll(missing.stream().map(installed -> "Installed plugin " + installed + " was not installed at the time of the snapshot").toList());
-
-        missing = new HashSet<>(snapshotPlugins);
-        for (PluginCoordinates snapshotPlugin: snapshotPlugins) {
-            for (PluginCoordinates installedPlugin: installedPlugins) {
-                if (snapshotPlugin.equals(installedPlugin) || snapshotPlugin.equalsIgnoreVersion(installedPlugin)) {
-                    missing.remove(snapshotPlugin);
-                }
-            }
-        }
-
-        result.getInfo().addAll(missing.stream().map(snapshotPlugin -> "Plugin " + snapshotPlugin + " was installed at the time of the snapshot but is no longer installed").toList());
-
         restoreSystemPlugin(snapshot.getSystemFlowPlans(), hardReset);
-        return result;
+        return Result.successResult();
     }
 
     public void importSystemFlows(SystemFlowPlans flowPlans) {
@@ -508,11 +479,11 @@ public class PluginService implements Snapshotter {
 
     @Override
     public int getOrder() {
-        return SnapshotRestoreOrder.PLUGIN_REGISTRY_ORDER;
+        return SnapshotRestoreOrder.SYSTEM_PLUGIN_ORDER;
     }
 
-    private List<PluginCoordinates> getInstalledPluginCoordinates() {
-        return getPlugins().stream().map(PluginEntity::getPluginCoordinates).toList();
+    private List<PluginSnapshot> getInstalledPlugins() {
+        return getPlugins().stream().map(PluginSnapshot::new).toList();
     }
 
     public List<String> canBeUninstalled(PluginEntity plugin) {

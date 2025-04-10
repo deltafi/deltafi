@@ -25,6 +25,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Data
 @SuperBuilder
@@ -40,5 +41,38 @@ public class Result {
 
     public static Result successResult() {
         return new Result();
+    }
+
+    public static Result combine(Stream<Result> results) {
+        Result result = new Result();
+        return results.reduce(result, Result::combine);
+    }
+
+    public static Result combine(Result a, Result b) {
+        return Result.builder()
+                .success(a.isSuccess() && b.isSuccess())
+                .info(combineLists(a.getInfo(), b.getInfo()))
+                .errors(combineLists(a.getErrors(), b.getErrors())).build();
+    }
+
+    private static List<String> combineLists(List<String> a, List<String> b) {
+        List<String> combinedList = new ArrayList<>();
+        if (blankList(a) && blankList(b)) {
+            return combinedList;
+        }
+
+        if (null != a) {
+            combinedList.addAll(a);
+        }
+
+        if (null != b) {
+            combinedList.addAll(b);
+        }
+
+        return combinedList;
+    }
+
+    private static boolean blankList(List<String> value) {
+        return null == value || value.isEmpty();
     }
 }

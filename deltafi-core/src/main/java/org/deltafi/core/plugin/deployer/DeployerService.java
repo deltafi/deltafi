@@ -18,11 +18,13 @@
 package org.deltafi.core.plugin.deployer;
 
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.services.Snapshotter;
 import org.deltafi.core.types.Result;
 
+import java.util.List;
 import java.util.Set;
 
-public interface DeployerService {
+public interface DeployerService extends Snapshotter {
 
     /**
      * Install the plugin using the given image and imagePullSecret
@@ -67,4 +69,11 @@ public interface DeployerService {
      * @param podOrContainer name of the resource to restart
      */
     void restartApp(String podOrContainer);
+
+    /**
+     * Install the list of plugins using the install details
+     * @param installDetails list of plugin install details to deploy
+     * @return merged results from each install
+     */
+    List<Result> installOrUpgradePlugins(List<InstallDetails> installDetails);
 }

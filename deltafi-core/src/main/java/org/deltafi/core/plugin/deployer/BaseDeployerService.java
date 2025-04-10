@@ -17,30 +17,42 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.services.*;
+import org.deltafi.common.util.MarkdownBuilder;
+import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.EventService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.Result;
-import org.deltafi.common.util.MarkdownBuilder;
+import org.deltafi.core.types.snapshot.PluginSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+@Slf4j
 public abstract class BaseDeployerService implements DeployerService {
     protected static final String IMAGE = "IMAGE";
     protected static final String IMAGE_PULL_SECRET = "IMAGE_PULL_SECRET";
 
     private final PluginService pluginService;
-    private final SystemSnapshotService systemSnapshotService;
+
     private final EventService eventService;
     protected final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+
+    protected BaseDeployerService(PluginService pluginService, EventService eventService, DeltaFiPropertiesService deltaFiPropertiesService) {
+        this.deltaFiPropertiesService = deltaFiPropertiesService;
+        this.pluginService = pluginService;
+        this.eventService = eventService;
+    }
 
     @Override
     public Result installOrUpgradePlugin(String image, String imagePullSecret) {
@@ -49,7 +61,6 @@ public abstract class BaseDeployerService implements DeployerService {
         }
 
         InstallDetails installDetails = InstallDetails.from(image, imagePullSecret);
-        systemSnapshotService.createSnapshot(preUpgradeMessage(image));
 
         List<String> info = new ArrayList<>();
         info.add("Installing from image: " + image);
@@ -86,12 +97,7 @@ public abstract class BaseDeployerService implements DeployerService {
             return Result.builder().success(false).errors(uninstallPreCheckErrors).build();
         }
 
-        pluginService.uninstallPlugin(pluginCoordinates);
-        String appName = pluginCoordinates.getArtifactId();
-        if (StringUtils.isNotBlank(plugin.getImageName())) {
-            appName = InstallDetails.from(plugin.getImageName()).appName();
-        }
-        Result retval = removePluginResources(appName);
+        Result retval = uninstallPlugin(plugin);
 
         MarkdownBuilder markdownBuilder = new MarkdownBuilder(pluginCoordinates + "\n\n")
                 .addList("Additional information:", retval.getInfo())
@@ -110,6 +116,99 @@ public abstract class BaseDeployerService implements DeployerService {
         return retval;
     }
 
+    @Override
+    public List<Result> installOrUpgradePlugins(List<InstallDetails> installDetailsList) {
+        try {
+            return invokeDeployments(installDetailsList.stream().map(this::toCallableDeploy).toList());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted while deploying plugins", e);
+            return List.of(DeployResult.builder().success(false).errors(List.of("Interrupted while deploying plugins")).build());
+        }
+    }
+
+    /**
+     * Update the SystemSnapshot with current system state
+     *
+     * @param snapshot snapshot that is used to capture the current system state
+     */
+    @Override
+    public void updateSnapshot(Snapshot snapshot) {
+        // nothing to do here
+    }
+
+    /**
+     * Reset the system to the state in the Snapshot
+     *
+     * @param snapshot  snapshot that holds the system state at the time of the snapshot
+     * @param hardReset when true reset all other custom settings before applying the system snapshot values
+     * @return the Result of the reset that will hold any errors or information about the reset
+     */
+    @Override
+    public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
+        if (snapshot.getPlugins() == null) {
+            return Result.builder().success(true).info(List.of("Skipping plugins section due to an older snapshot version")).build();
+        }
+
+        if (hardReset) {
+            pluginService.getPlugins()
+                    .stream().filter(this::isNotSystemOrCore)
+                    .forEach(this::uninstallPlugin);
+        }
+
+        List<InstallDetails> installDetailsList = snapshot.getPlugins().stream()
+                .filter(p -> StringUtils.isNotBlank(p.imageName()) && !p.imageName().contains("deltafi-core-actions"))
+                .map(PluginSnapshot::toInstallDetails).toList();
+
+        return Result.combine(installOrUpgradePlugins(installDetailsList).stream());
+    }
+
+    private boolean isNotSystemOrCore(PluginEntity plugin) {
+        return !(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID.equals(plugin.getPluginCoordinates().getArtifactId()) ||
+                "deltafi-core-actions".equals(plugin.getPluginCoordinates().getArtifactId()));
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.PLUGIN_INSTALL_ORDER;
+    }
+
+    private Callable<Result> toCallableDeploy(InstallDetails installDetails) {
+        return () -> installOrUpgradePlugin(installDetails.image(), installDetails.imagePullSecret());
+    }
+
+    private List<Result> invokeDeployments(List<Callable<Result>> deployTasks) throws InterruptedException {
+        long timeout = deltaFiPropertiesService.getDeltaFiProperties().getPluginDeployTimeout().toMillis();
+        List<Future<Result>> futures = executorService.invokeAll(deployTasks, timeout, TimeUnit.MILLISECONDS);
+
+        List<Result> results = new ArrayList<>();
+        // Process the results
+        for (Future<Result> future : futures) {
+            try {
+                // isDone() will be true either if completed normally or timed out
+                if (future.isDone() && !future.isCancelled()) {
+                    results.add(future.get());
+                }
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                results.add(DeployResult.builder().success(false).errors(List.of("Deployment failed: " + e.getMessage())).build());
+            }
+        }
+        return results;
+    }
+
+    private Result uninstallPlugin(PluginEntity plugin) {
+        PluginCoordinates pluginCoordinates = plugin.getPluginCoordinates();
+        pluginService.uninstallPlugin(pluginCoordinates);
+        String appName = pluginCoordinates.getArtifactId();
+        if (StringUtils.isNotBlank(plugin.getImageName())) {
+            appName = InstallDetails.from(plugin.getImageName()).appName();
+        }
+        return removePluginResources(appName);
+    }
+
     private Event event(String summary, boolean success, MarkdownBuilder markdownBuilder) {
         return Event.builder()
                 .summary(summary)
@@ -124,17 +223,4 @@ public abstract class BaseDeployerService implements DeployerService {
     abstract DeployResult deploy(InstallDetails installDetails);
 
     abstract Result removePluginResources(String appName);
-
-    private String preUpgradeMessage(String imageName) {
-        String username = getUsername();
-        String reason = "Deploying plugin from image: " + imageName;
-        if (username != null) {
-            reason += " triggered by " + username;
-        }
-        return reason;
-    }
-
-    private String getUsername() {
-        return DeltaFiUserService.currentUsername();
-    }
 }
