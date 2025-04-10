@@ -1207,7 +1207,7 @@ _plugin_add() {
 
 _plugin_add_local() {
   _attention "Adding plugin $1"
-  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2:$1:latest\", \"image_repository_base\": \"localhost:5000\"}]" "$CONFIG"
+  yq -i ".plugins += [{\"name\": \"$1\", \"image\": \"localhost:5000/$1:latest\"}]" "$CONFIG"
 }
 
 _plugin_build() {
