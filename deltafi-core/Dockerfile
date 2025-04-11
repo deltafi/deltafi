@@ -17,9 +17,9 @@ RUN npm run build
 FROM node:20-alpine3.19 AS deltafi-graphiql-build-stage
 WORKDIR /graphiql
 # Cache package installation
-COPY graphiql/package.json ./
+COPY graphiql/package.json /graphiql/package.json
 RUN yarn install
-COPY graphiql ./
+COPY graphiql .
 RUN yarn build
 
 FROM deltafi/deltafi-java-jre:21.0.6-alpine-0
