@@ -37,7 +37,7 @@ public class DeltaFileUtil {
         OffsetDateTime now = OffsetDateTime.now();
 
         DeltaFileFlow aggregateFlow = aggregateDeltaFileFlow(currentFlow, now, joinEntry.getMaxFlowDepth());
-        Action aggregateAction = aggregateFlow.addAction(joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getActionType(), actionState, now);
+        Action aggregateAction = aggregateFlow.addAction(joinEntry.getJoinDefinition().getAction(), joinAction.getType(), joinEntry.getJoinDefinition().getActionType(), actionState, now);
 
         DeltaFile aggregate = DeltaFile.builder()
                 .version(0)

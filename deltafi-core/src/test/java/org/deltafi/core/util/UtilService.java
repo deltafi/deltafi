@@ -97,13 +97,13 @@ public class UtilService {
         DeltaFile deltaFile = buildDeltaFile(did, "ingressFlow", DeltaFileStage.COMPLETE, created, modified, content);
         deltaFile.firstFlow().getActions().getFirst().setState(ActionState.COMPLETE);
         DeltaFileFlow firstFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(dataSource, FlowType.TRANSFORM), deltaFile.firstFlow(), created);
-        Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
+        Action errorAction = firstFlow.queueNewAction("ErrorAction", null, ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
         firstFlow.updateState();
 
         if (extraError != null) {
             DeltaFileFlow secondFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow("extraFlow", FlowType.TRANSFORM), deltaFile.firstFlow(), created);
-            Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
+            Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", null, ActionType.TRANSFORM, false, created);
             anotherErrorAction.error(modified, modified, modified, extraError, context);
             secondFlow.updateState();
         }

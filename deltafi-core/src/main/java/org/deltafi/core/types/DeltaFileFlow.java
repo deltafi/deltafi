@@ -230,11 +230,11 @@ public class DeltaFileFlow {
                 .reduce((first, second) -> second);
     }
 
-    public Action queueAction(String actionName, ActionType type, boolean coldQueue, OffsetDateTime now) {
+    public Action queueAction(String actionName, String actionClass, ActionType type, boolean coldQueue, OffsetDateTime now) {
         modified = now;
         return latestMatchingAction(action -> nameMatchesAndNotRetried(action, actionName))
                 .map(action -> queueOldAction(action, coldQueue, now))
-                .orElseGet(() -> queueNewAction(actionName, type, coldQueue, now));
+                .orElseGet(() -> queueNewAction(actionName, actionClass, type, coldQueue, now));
     }
 
     private boolean nameMatchesAndNotRetried(Action action, String actionName) {
@@ -246,13 +246,14 @@ public class DeltaFileFlow {
         return action;
     }
 
-    public Action queueNewAction(String name, ActionType type, boolean coldQueue, OffsetDateTime now) {
-        return addAction(name, type, coldQueue ? ActionState.COLD_QUEUED : ActionState.QUEUED, now);
+    public Action queueNewAction(String name, String actionClass, ActionType type, boolean coldQueue, OffsetDateTime now) {
+        return addAction(name, actionClass, type, coldQueue ? ActionState.COLD_QUEUED : ActionState.QUEUED, now);
     }
 
-    public Action addAction(String name, ActionType type, ActionState state, OffsetDateTime now) {
+    public Action addAction(String name, String actionClass, ActionType type, ActionState state, OffsetDateTime now) {
         Action action = Action.builder()
                 .name(name)
+                .actionClass(actionClass)
                 .type(type)
                 .state(state)
                 .created(now)

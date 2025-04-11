@@ -45,6 +45,9 @@ public class Action {
   @JsonProperty("n")
   @JsonAlias("name")
   private String name;
+  @JsonProperty("ac")
+  @JsonAlias("actionClass")
+  private String actionClass;
   @Builder.Default
   @JsonProperty("t")
   @JsonAlias("type")
@@ -106,6 +109,7 @@ public class Action {
 
   public Action(Action other) {
     this.name = other.name;
+    this.actionClass = other.actionClass;
     this.type = other.type;
     this.state = other.state;
     this.created = other.created;
@@ -235,6 +239,7 @@ public class Action {
     childAction.setStart(start);
     childAction.setStop(stop);
     childAction.setName(name);
+    childAction.setActionClass(actionClass);
     childAction.setType(type);
     childAction.setState(ActionState.INHERITED);
     childAction.setCreated(created);

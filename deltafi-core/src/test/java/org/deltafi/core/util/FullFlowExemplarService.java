@@ -81,7 +81,7 @@ public class FullFlowExemplarService {
                 .build();
         deltaFile.getFlows().add(ingressFlow);
 
-        Action ingress = ingressFlow.addAction("SampleTimedIngressAction", ActionType.INGRESS,
+        Action ingress = ingressFlow.addAction("SampleTimedIngressAction", null, ActionType.INGRESS,
                 ActionState.COMPLETE, OffsetDateTime.now());
         ingress.setContent(List.of(content));
         ingress.setMetadata(metadata);
@@ -89,7 +89,7 @@ public class FullFlowExemplarService {
         DeltaFileFlow transformFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM),
                 ingressFlow, Set.of(TRANSFORM_TOPIC), OffsetDateTime.now());
 
-        transformFlow.addAction("Utf8TransformAction", ActionType.TRANSFORM, ActionState.QUEUED, OffsetDateTime.now());
+        transformFlow.addAction("Utf8TransformAction", null, ActionType.TRANSFORM, ActionState.QUEUED, OffsetDateTime.now());
 
         return deltaFile;
     }
@@ -103,7 +103,7 @@ public class FullFlowExemplarService {
         flow.setState(DeltaFileFlowState.ERROR);
         flow.firstAction().setName("SampleTimedIngressErrorAction");
 
-        Action action = flow.addAction("NO_SUBSCRIBERS", ActionType.PUBLISH, ActionState.ERROR, OffsetDateTime.now());
+        Action action = flow.addAction("NO_SUBSCRIBERS", null, ActionType.PUBLISH, ActionState.ERROR, OffsetDateTime.now());
         action.setErrorCause(NO_SUBSCRIBER_CAUSE);
         action.setErrorContext("No subscribers found for timed data source 'sampleTimedDataSourceError' on topic 'missingPublishTopic'");
         action.setContent(flow.firstAction().getContent());
@@ -147,7 +147,7 @@ public class FullFlowExemplarService {
         flow.setPendingActions(TRANSFORM_ACTIONS.stream().map(ActionConfiguration::getName).toList());
         flow.getInput().setMetadata(SOURCE_METADATA);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
-        flow.queueAction("Utf8TransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        flow.queueAction("Utf8TransformAction", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         deltaFile.setName("input.txt");
         deltaFile.setDataSource(REST_DATA_SOURCE_NAME);
         return deltaFile;
@@ -161,7 +161,7 @@ public class FullFlowExemplarService {
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
         Action action = flow.getAction("Utf8TransformAction");
         action.complete(START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), OffsetDateTime.now());
-        flow.queueAction("SampleTransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         return deltaFile;
     }
 
@@ -172,7 +172,7 @@ public class FullFlowExemplarService {
         flow.setPublishTopics(List.of(EGRESS_TOPIC));
         Action action = flow.getAction("SampleTransformAction");
         action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), OffsetDateTime.now());
-        Action noSubAction = flow.queueNewAction(NO_SUBSCRIBERS, ActionType.PUBLISH, false, OffsetDateTime.now());
+        Action noSubAction = flow.queueNewAction(NO_SUBSCRIBERS, null, ActionType.PUBLISH, false, OffsetDateTime.now());
         noSubAction.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), NO_SUBSCRIBER_CAUSE, "");
         deltaFile.setStage(DeltaFileStage.ERROR);
         return deltaFile;
@@ -189,7 +189,7 @@ public class FullFlowExemplarService {
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.getInput().setMetadata(flow.getMetadata());
         dataSink.getInput().setContent(flow.lastContent());
-        dataSink.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
+        dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, OffsetDateTime.now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         return deltaFile;
     }
@@ -217,7 +217,7 @@ public class FullFlowExemplarService {
         deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, "SampleTransformAction", Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue"), List.of("removeMe"))), OffsetDateTime.now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
-        Action action = flow.queueAction("SampleTransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        Action action = flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         action.setAttempt(2);
         return deltaFile;
     }
@@ -231,7 +231,7 @@ public class FullFlowExemplarService {
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.getInput().setMetadata(flow.getMetadata());
         dataSink.getInput().setContent(flow.lastContent());
-        dataSink.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
+        dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, OffsetDateTime.now());
         return deltaFile;
     }
 
@@ -274,7 +274,7 @@ public class FullFlowExemplarService {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_2);
         flow.getActions().getFirst().setState(ActionState.RETRIED);
         flow.firstAction().setMetadata(Map.of("a", "b"));
-        Action action = flow.addAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, QUEUED, OffsetDateTime.now());
+        Action action = flow.addAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, QUEUED, OffsetDateTime.now());
         action.setAttempt(2);
         flow.setState(DeltaFileFlowState.IN_FLIGHT);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
@@ -290,7 +290,7 @@ public class FullFlowExemplarService {
 
         DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now);
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
-        Action action = dataSink.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
+        Action action = dataSink.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, null, ActionType.EGRESS, ActionState.FILTERED, now);
         action.setFilteredCause("Filtered by test mode");
         action.setFilteredContext("Filtered by test mode with a reason of - " + TRANSFORM_FLOW_NAME);
         dataSink.setState(DeltaFileFlowState.FILTERED);

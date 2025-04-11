@@ -152,7 +152,7 @@ public class StateMachine {
     }
 
     private List<WrappedActionInput> syntheticEgress(StateMachineInput input) {
-        Action action = input.flow().addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED,
+        Action action = input.flow().addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, null, ActionType.EGRESS, ActionState.FILTERED,
                 OffsetDateTime.now(clock));
         action.setFilteredCause(FILTERED_TEST_MODE_CAUSE);
         action.setFilteredContext("Filtered by test mode with a reason of - " + input.flow().getTestModeReason());
@@ -163,7 +163,7 @@ public class StateMachine {
     private List<WrappedActionInput> addNextAction(StateMachineInput input, ActionConfiguration nextAction, Map<String, Long> pendingQueued) {
         Action lastAction = input.flow().lastAction();
         ActionState actionState = queueState(nextAction.getType(), pendingQueued);
-        Action newAction = input.flow().addAction(nextAction.getName(), nextAction.getActionType(),
+        Action newAction = input.flow().addAction(nextAction.getName(), nextAction.getType(), nextAction.getActionType(),
                 actionState, OffsetDateTime.now(clock));
         if (lastAction != null && lastAction.getState() == ActionState.RETRIED &&
                 lastAction.getName().equals(newAction.getName())) {
@@ -260,7 +260,7 @@ public class StateMachine {
 
     private void addErroredPublishAction(DeltaFileFlow flow, String actionName, String cause, String context) {
         List<Content> lastActionContent = flow.lastActionContent();
-        Action action = flow.queueNewAction(actionName, ActionType.PUBLISH, false, OffsetDateTime.now(clock));
+        Action action = flow.queueNewAction(actionName, null, ActionType.PUBLISH, false, OffsetDateTime.now(clock));
         action.setState(ActionState.ERROR);
         action.setErrorCause(cause);
         action.setErrorContext(context);

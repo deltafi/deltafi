@@ -434,7 +434,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = DeltaFileFlow.builder().flowDefinition(flowDefinitionService.getOrCreateFlow("dataSource", FlowType.DATA_SINK)).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
-        Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
+        Action action = flow.queueAction("egress", null, ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
@@ -457,7 +457,7 @@ class DeltaFilesServiceTest {
 
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = deltaFile.firstFlow();
-        Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
+        Action action = flow.queueAction("egress", null, ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).isEmpty();
@@ -517,28 +517,28 @@ class DeltaFilesServiceTest {
         DeltaFileFlow deltaFileFlow1 = deltaFile1.firstFlow();
         deltaFileFlow1.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", deltaFileFlow1.getType()));
         deltaFileFlow1.firstAction().setMetadata(Map.of("a", "1", "b", "2"));
-        Action error1 = deltaFileFlow1.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        Action error1 = deltaFileFlow1.queueAction("TransformAction1", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         error1.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow2 = deltaFile2.firstFlow();
         deltaFileFlow2.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", deltaFileFlow2.getType()));
         deltaFileFlow2.firstAction().setMetadata(Map.of("a", "somethingElse", "c", "3"));
-        Action error2 = deltaFileFlow2.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        Action error2 = deltaFileFlow2.queueAction("TransformAction1", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         error2.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow3 = deltaFile3.firstFlow();
         deltaFileFlow3.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow2", deltaFileFlow3.getType()));
         deltaFileFlow3.firstAction().setMetadata(Map.of("d", "4"));
-        Action error3 = deltaFileFlow3.queueAction("TransformAction2", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        Action error3 = deltaFileFlow3.queueAction("TransformAction2", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         error3.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile4 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow4 = deltaFile4.firstFlow();
         deltaFileFlow4.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow3", deltaFileFlow4.getType()));
         deltaFileFlow4.firstAction().setMetadata(Map.of("e", "5"));
-        deltaFileFlow4.queueAction("TransformAction3", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        deltaFileFlow4.queueAction("TransformAction3", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
 
         List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.firstFlow(), deltaFile2.firstFlow(), deltaFile3.firstFlow(), deltaFile4.firstFlow());
         when(deltaFileFlowRepo.findAllByDeltaFileIds(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()))).thenReturn(deltaFileFlows);
@@ -575,7 +575,7 @@ class DeltaFilesServiceTest {
 
         DeltaFileFlow flow = aggregate.firstFlow();
         flow.setState(DeltaFileFlowState.IN_FLIGHT);
-        flow.queueAction("join-transform", ActionType.TRANSFORM, false, OffsetDateTime.now().minusYears(1));
+        flow.queueAction("join-transform", null, ActionType.TRANSFORM, false, OffsetDateTime.now().minusYears(1));
 
         when(coreEventQueue.getLongRunningTasks()).thenReturn(Collections.emptyList());
         when(queueManagementService.coldQueueActions()).thenReturn(Collections.emptySet());
@@ -613,12 +613,12 @@ class DeltaFilesServiceTest {
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
-        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction1", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction2", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
         starter.setReplayStart(true);
-        flow.addAction("childAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
-        flow.addAction("childActionOldName", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
+        flow.addAction("childAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("childActionOldName", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
 
         TransformFlow flowConfig = new TransformFlow();
         flowConfig.setName("dataSource");
@@ -658,9 +658,9 @@ class DeltaFilesServiceTest {
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
-        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        flow.addAction("removedParentAction", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction1", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("removedParentAction", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
         starter.setReplayStart(true);
 
         TransformFlow flowConfig = new TransformFlow();
@@ -686,11 +686,11 @@ class DeltaFilesServiceTest {
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
-        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction1", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction2", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
         starter.setReplayStart(true);
-        flow.addAction("childAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("childAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
         starter.setReplayStart(true);
 
         TransformFlow flowConfig = new TransformFlow();
@@ -716,9 +716,9 @@ class DeltaFilesServiceTest {
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
-        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        flow.addAction("parentActionOldName", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction1", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentActionOldName", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
         starter.setReplayStart(true);
 
         TransformFlow flowConfig = new TransformFlow();
@@ -744,12 +744,12 @@ class DeltaFilesServiceTest {
 
         DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
-        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
-        Action starter = flow.addAction("splitActionOld", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction1", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction2", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitActionOld", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
         starter.setReplayStart(true);
-        flow.addAction("childAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
-        flow.addAction("childActionOldName", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
+        flow.addAction("childAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("childActionOldName", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
 
         TransformFlow flowConfig = new TransformFlow();
         flowConfig.setName("dataSource");

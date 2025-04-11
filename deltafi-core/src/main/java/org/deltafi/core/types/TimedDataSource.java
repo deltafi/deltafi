@@ -143,6 +143,7 @@ public class TimedDataSource extends DataSource {
                 .build();
         Action action = Action.builder()
                 .name(timedIngressAction.getName())
+                .actionClass(timedIngressAction.getType())
                 .created(now)
                 .state(ActionState.QUEUED)
                 .build();

@@ -260,6 +260,10 @@ public class DeltaFilesService {
                 .stop(ingressStopTime)
                 .build();
 
+        if (dataSource instanceof TimedDataSource timedDataSource) {
+            ingressAction.setActionClass(timedDataSource.getTimedIngressAction().getType());
+        }
+
         DeltaFileFlow ingressFlow = DeltaFileFlow.builder()
                 .flowDefinition(flowDefinitionService.getOrCreateFlow(ingressEventItem.getFlowName(), flowType))
                 .number(0)
@@ -937,14 +941,14 @@ public class DeltaFilesService {
                             Action replayAction;
                             if (deltaFile.getJoinId() != null) {
                                 setNextActionsInAggregateFlow(flow, firstFlow);
-                                replayAction = flow.addAction(REPLAY_ACTION_NAME, ActionType.TRANSFORM, ActionState.COMPLETE, now);
+                                replayAction = flow.addAction(REPLAY_ACTION_NAME, null, ActionType.TRANSFORM, ActionState.COMPLETE, now);
                                 parentDids.addAll(deltaFile.getParentDids());
                             } else {
                                 Action startFromAction = findFirstActionUpdateFlow(flow, firstFlow, now);
                                 flow.getActions().add(startFromAction);
 
                                 List<Content> content = startFromAction.getContent();
-                                replayAction = flow.addAction(REPLAY_ACTION_NAME, startFromAction.getType(), ActionState.COMPLETE, now);
+                                replayAction = flow.addAction(REPLAY_ACTION_NAME, startFromAction.getActionClass(), startFromAction.getType(), ActionState.COMPLETE, now);
                                 replayAction.setContent(content);
                             }
 
@@ -1262,7 +1266,7 @@ public class DeltaFilesService {
 
     void handleMissingFlow(DeltaFile deltaFile, DeltaFileFlow flow, MissingFlowException missingFlowException) {
         OffsetDateTime now = OffsetDateTime.now(clock);
-        Action action = flow.queueNewAction(MISSING_FLOW_ACTION, ActionType.UNKNOWN, false, now);
+        Action action = flow.queueNewAction(MISSING_FLOW_ACTION, null, ActionType.UNKNOWN, false, now);
         processErrorEvent(deltaFile, flow, action, buildMissingFlowErrorEvent(deltaFile, now, missingFlowException));
         deltaFileCacheService.save(deltaFile);
     }
@@ -1754,7 +1758,7 @@ public class DeltaFilesService {
                         if (isReplay) {
                             DeltaFileFlow tmpFlow = new DeltaFileFlow();
                             tmpFlow.setActions(new ArrayList<>(deltaFileFlow.getActions()));
-                            Action tmpAction = tmpFlow.addAction("tmp", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(clock));
+                            Action tmpAction = tmpFlow.addAction("tmp", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(clock));
                             tmpAction.setDeleteMetadataKeys(deleteMetadataKeys);
                             tmpAction.setMetadata(addMetadata);
                             deltaFileMessages.add(new DeltaFileMessage(tmpFlow.getMetadata(), deltaFileFlow.getImmutableContent()));

@@ -254,6 +254,6 @@ public class PublisherService {
     }
 
     private Action queueSyntheticAction(DeltaFileFlow flow) {
-        return flow.queueNewAction(NO_SUBSCRIBERS, ActionType.PUBLISH, false, OffsetDateTime.now(clock));
+        return flow.queueNewAction(NO_SUBSCRIBERS, null, ActionType.PUBLISH, false, OffsetDateTime.now(clock));
     }
 }
