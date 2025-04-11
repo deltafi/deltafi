@@ -42,10 +42,12 @@ public enum Format {
     @JsonProperty("z") Z("z", "application/x-compress");
 
     private static final Map<String, Format> EXTENSION_MAP = new HashMap<>();
+    private static final Set<String> MEDIA_TYPES = new HashSet<>();
 
     static {
         for (Format format : values()) {
             EXTENSION_MAP.put(format.value.toLowerCase(), format);
+            MEDIA_TYPES.add(format.mediaType);
         }
         EXTENSION_MAP.put("tgz", TAR_GZIP);
         EXTENSION_MAP.put("7zip", SEVEN_Z);
@@ -57,5 +59,9 @@ public enum Format {
     public static Format fromExtension(String filename) {
         String extension = FilenameUtils.getExtension(filename);
         return extension != null ? EXTENSION_MAP.get(extension.toLowerCase(Locale.ROOT)) : null;
+    }
+
+    public static boolean isMediaTypeSupported(String mediaType) {
+        return MEDIA_TYPES.contains(mediaType);
     }
 }

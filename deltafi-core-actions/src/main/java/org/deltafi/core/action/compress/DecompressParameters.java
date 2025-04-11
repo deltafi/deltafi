@@ -19,10 +19,9 @@ package org.deltafi.core.action.compress;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import lombok.*;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.springframework.util.unit.DataSize;
-
 
 @Data
 @ToString(callSuper = true)
@@ -35,6 +34,10 @@ public class DecompressParameters extends ActionParameters {
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Retain the existing content")
     private boolean retainExistingContent = false;
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("When auto detecting a single content, if a supported archive/compression format is not detected, then pass the content through instead of generating an error, and set 'decompressPassthrough' metadata key to 'true'")
+    private boolean passThroughUnsupported = false;
 
     @JsonPropertyDescription("If set, will save a JSON lineage of each file and its parent")
     private String lineageFilename;

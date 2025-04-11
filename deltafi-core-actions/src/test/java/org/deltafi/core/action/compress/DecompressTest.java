@@ -46,8 +46,10 @@ public class DecompressTest {
     private static final String LINEAGE_CONTENT_TYPE = "application/json";
     private static final String LINEAGE_FILENAME = "Lineage.json";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final String FILE1 = "thing1.txt";
-    private static final String FILE2 = "thing2.txt";
+    private static final String THING_1_TXT = "thing1.txt";
+    private static final String THING_2_TXT = "thing2.txt";
+    private static final String FILE_A_ASCII_NO_EXT = "fileA";
+    private static final String NOT_A_ZIPFILE_ZIP = "notAZipfile.zip";
 
     static {
         OBJECT_MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
@@ -272,29 +274,99 @@ public class DecompressTest {
     }
 
     @Test
-    public void unarchivesZipDetected() {
+    public void unarchiveZipAutoDetect() {
         runTest(Format.ZIP, true);
     }
 
     @Test
-    public void retainAndUnarchivesZipDetected() {
+    public void unarchiveZipAutoDetectRetain() {
         runTest(Format.ZIP, true, true);
     }
 
-    private void runTest(Format archiveType, boolean detected) {
-        runTest(archiveType, detected, false);
+    @Test
+    public void unarchiveZipAutoDetecdtRetainPassThru() {
+        runWithOptions(Format.ZIP, true, true, true, true, null);
     }
 
-    private void runTest(Format archiveType, boolean detected, boolean retainExistingContent) {
-        String inputName = "compressed." + archiveType.getValue();
+    @Test
+    public void unarchiveZipAbnormalName() {
+        runWithOptions(Format.ZIP, true, true, true, true, "compressedZipAltName");
+    }
+
+    @Test
+    public void badZipFileWillPassthrough() {
+        runWithOptions(Format.ZIP, true, false, true, false, NOT_A_ZIPFILE_ZIP);
+    }
+
+    @Test
+    public void badZipFileWillError() {
+        runWithOptions(Format.ZIP, true, false, false, false, NOT_A_ZIPFILE_ZIP);
+    }
+
+    @Test
+    public void fileTypeUnsupportedErrorTxtExt() {
+        runWithOptions(null, true, false, false, false, THING_1_TXT);
+    }
+
+    @Test
+    public void fileTypeUnsupportedPassthroughTxtExt() {
+        runWithOptions(null, true, false, true, false, THING_1_TXT);
+    }
+
+    @Test
+    public void fileTypeUnsupportedErrorNoExt() {
+        runWithOptions(null, true, false, false, false, FILE_A_ASCII_NO_EXT);
+    }
+
+    @Test
+    public void fileTypeUnsupportedPassthroughNoExt() {
+        runWithOptions(null, true, false, true, false, FILE_A_ASCII_NO_EXT);
+    }
+
+    private void runTest(Format archiveType, boolean autoDetect) {
+        runTest(archiveType, autoDetect, false);
+    }
+
+    private void runTest(Format archiveType, boolean autoDetect, boolean retainExistingContent) {
+        runWithOptions(archiveType, autoDetect, retainExistingContent, false, true, null);
+    }
+
+    private void runWithOptions(Format archiveType,
+                                boolean autoDetect,
+                                boolean retainExistingContent,
+                                boolean passThroughEnabled,
+                                boolean expectedToDecompress,
+                                String alternateFile) {
+        String inputName;
+        if (alternateFile == null) {
+            inputName = "compressed." + archiveType.getValue();
+        } else {
+            inputName = alternateFile;
+        }
 
         DecompressParameters decompressParameters = new DecompressParameters();
-        decompressParameters.setFormat(detected ? null : archiveType);
+        decompressParameters.setFormat(autoDetect ? null : archiveType);
         decompressParameters.setRetainExistingContent(retainExistingContent);
+        decompressParameters.setPassThroughUnsupported(passThroughEnabled);
 
         ResultType result = action.transform(runner.actionContext(), decompressParameters, input(inputName));
-
-        verifyTransform(result, archiveType, retainExistingContent, inputName);
+        if (!expectedToDecompress) {
+            // not a supported format
+            if (passThroughEnabled && !NOT_A_ZIPFILE_ZIP.equals(inputName)) {
+                TransformResultAssert.assertThat(result)
+                        .hasContentCount(1)
+                        .hasContentMatchingAt(0, inputName, null, runner.readResourceAsBytes(inputName))
+                        .addedMetadata("decompressPassthrough", "true");
+            } else {
+                // should be an error
+                ErrorResultAssert.assertThat(result)
+                        .hasCause("Unable to decompress content")
+                        .hasContextContaining("Archiver found for the stream signature");
+            }
+        } else {
+            // normal decompress/unarchive success
+            verifyTransform(result, archiveType, retainExistingContent, inputName);
+        }
     }
 
     private TransformInput input(String... files) {
@@ -310,8 +382,8 @@ public class DecompressTest {
         }
 
         transformResultAssert
-                .hasContentMatchingAt(index++, FILE1, MediaType.TEXT_PLAIN, runner.readResourceAsBytes(FILE1))
-                .hasContentMatchingAt(index, FILE2, MediaType.TEXT_PLAIN, runner.readResourceAsBytes(FILE2));
+                .hasContentMatchingAt(index++, THING_1_TXT, MediaType.TEXT_PLAIN, runner.readResourceAsBytes(THING_1_TXT))
+                .hasContentMatchingAt(index, THING_2_TXT, MediaType.TEXT_PLAIN, runner.readResourceAsBytes(THING_2_TXT));
 
         transformResultAssert.addedMetadata("compressFormat", archiveType.getValue());
     }

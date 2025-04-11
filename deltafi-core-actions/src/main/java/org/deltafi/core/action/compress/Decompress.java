@@ -51,6 +51,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     static final int MAX_LEVELS_SAFEGUARD = 100;
     static final long DEFAULT_MAX_EXTRACTED_BYTES = 8_589_934_592L; // 8GB
     static final String COMPRESS_FORMAT = "compressFormat";
+    static final String DECOMPRESS_PASSTHROUGH = "decompressPassthrough";
     static final String DISABLE_MAX_BYTES_CHECK = "disableMaxExtractedBytesCheck";
     private static final Tika TIKA = new Tika();
 
@@ -135,11 +136,42 @@ public class Decompress extends TransformAction<DecompressParameters> {
         }
     }
 
+    private boolean shouldPassThrough(ActionContext context, DecompressParameters params,
+                                      TransformInput input) {
+        // if auto-detect, and allow pass-thru of "plain" (unsupported) file type, and has only 1 content
+        if ((params.getFormat() == null) && (params.isPassThroughUnsupported()) && (input.getContent().size() == 1)) {
+            ActionContent content = input.content().getFirst();
+            String name = content.getName() != null ? content.getName() : context.getDeltaFileName();
+            // See if file name indicates supported compression/archive type
+            Format format = Format.fromExtension(name);
+            if (format != null) {
+                // supported file type; do not pass through
+                return false;
+            }
+
+            // Use TIKA to identify file type (by name or content)
+            String mediaType;
+            try {
+                mediaType = TIKA.detect(content.loadInputStream(), name);
+            } catch (IOException e) {
+                mediaType = null;
+            }
+            return mediaType == null || !Format.isMediaTypeSupported(mediaType);
+        }
+        return false;
+    }
+
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull DecompressParameters params,
                                          @NotNull TransformInput input) {
         if (input.getContent().isEmpty()) {
             return new ErrorResult(context, "No content found");
+        }
+
+        if (shouldPassThrough(context, params, input)) {
+            TransformResult passThroughResult = new TransformResult(context, input.getContent());
+            passThroughResult.addMetadata(DECOMPRESS_PASSTHROUGH, "true");
+            return passThroughResult;
         }
 
         Statistics stats = new Statistics(new LineageMap(), 0L, getMaxExtractedBytes(params.getMaxExtractedBytes().toBytes(), input));
