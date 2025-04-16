@@ -87,5 +87,17 @@ public interface DeltaFileFlowRepoCustom {
      */
     SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField);
 
-    List<ColdQueuedActionSummary> coldQueuedActionsSummary();
+    /**
+     * Get the distinct list of cold queued action classes (queue names)
+     * @return distinct list of action classes that have a cold queued DeltaFile
+     */
+    List<String> distinctColdQueuedActions();
+
+    /**
+     * Check if any DeltaFileFlows exist where the cold queued flag is true
+     * and the last action has a action class matching the given action class
+     * @param actionClass action class (queue name) to search for
+     * @return true if any DeltaFileFlow exist that is cold queued for the given action class
+     */
+    boolean isColdQueued(String actionClass);
 }

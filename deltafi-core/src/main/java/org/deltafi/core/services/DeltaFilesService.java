@@ -1425,9 +1425,9 @@ public class DeltaFilesService {
         }
     }
 
-    public void requeueColdQueueActions(List<String> actionNames, int maxFiles) {
+    public void requeueColdQueueActions(String actionClass, int maxFiles) {
         OffsetDateTime modified = OffsetDateTime.now(clock);
-        List<DeltaFile> filesToRequeue = deltaFileRepo.findColdQueuedForRequeue(actionNames, maxFiles);
+        List<DeltaFile> filesToRequeue = deltaFileRepo.findColdQueuedForRequeue(actionClass, maxFiles);
 
         List<WrappedActionInput> actionInputs = new ArrayList<>();
         filesToRequeue.forEach(deltaFile -> {
@@ -1437,7 +1437,7 @@ public class DeltaFilesService {
                     .filter(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT)
                     .forEach(flow -> {
                         Action action = flow.lastAction();
-                        if ((action.getState() == COLD_QUEUED) && actionNames.contains(action.getName())) {
+                        if ((action.getState() == COLD_QUEUED) && actionClass.equals(action.getActionClass())) {
                             WrappedActionInput actionInput = requeueActionInput(deltaFile, flow, action);
                             if (actionInput != null) {
                                 actionInput.setColdQueued(false);

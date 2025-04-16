@@ -784,7 +784,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile postTransformUtf8 = fullFlowExemplarService.postTransformUtf8DeltaFile(did);
 		deltaFileRepo.save(postTransformUtf8);
 		// the action config has type set to 'type' which would be the action queue name
-		queueManagementService.getColdQueues().put("type", 999999L);
+		queueManagementService.getColdQueues().add("type");
 
 		deltaFilesService.handleActionEvent(actionEvent("transform", did));
 		queueManagementService.getColdQueues().remove("type"); // reset for other tests
@@ -803,6 +803,7 @@ class DeltaFiCoreApplicationTests {
 	void testColdRequeue() {
 		UUID did = UUID.randomUUID();
 		DeltaFile postTransform = fullFlowExemplarService.postTransformDeltaFile(did);
+		postTransform.lastFlow().lastAction().setActionClass("org.plugin.SlowAction");
 		DeltaFileFlow dataSink = postTransform.lastFlow();
 		dataSink.lastAction().setState(ActionState.COLD_QUEUED);
 		dataSink.updateState();
@@ -5511,5 +5512,33 @@ class DeltaFiCoreApplicationTests {
 		assertThat(unchanged.getWaitingForChildren()).isTrue();
 		assertThat(unchanged.isContentDeletable()).isFalse();
 		assertThat(unchanged.isTerminal()).isFalse();
+	}
+
+	@Test
+	void testAnyColdQueued() {
+		String actionClass = "org.plugin.SlowAction";
+		DeltaFile coldQueued = fullFlowExemplarService.postIngressDeltaFile(UUID.randomUUID());
+		coldQueued.lastFlow().lastAction().setActionClass(actionClass);
+		coldQueued.lastFlow().lastAction().setState(ActionState.COLD_QUEUED);
+		coldQueued.lastFlow().setColdQueued(true);
+
+		DeltaFile paused = fullFlowExemplarService.postIngressDeltaFile(UUID.randomUUID());
+		paused.lastFlow().lastAction().setActionClass(actionClass);
+		paused.lastFlow().setId(UUID.randomUUID());
+		paused.lastFlow().lastAction().setState(COMPLETE);
+		paused.lastFlow().setState(DeltaFileFlowState.PAUSED);
+
+		deltaFileRepo.insertOne(paused);
+
+		// inflight exists but it is not cold queued
+		assertThat(deltaFileFlowRepo.isColdQueued(actionClass)).isFalse();
+
+		// add new DeltaFile that is cold queued
+		deltaFileRepo.insertOne(coldQueued);
+		assertThat(deltaFileFlowRepo.isColdQueued(actionClass)).isTrue();
+
+		// action name not found
+		assertThat(deltaFileFlowRepo.isColdQueued(actionClass+"1")).isFalse();
+
 	}
 }

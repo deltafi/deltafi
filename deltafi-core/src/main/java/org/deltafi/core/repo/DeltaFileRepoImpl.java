@@ -118,8 +118,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     @Transactional
-    public List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles) {
-        if (actionNames == null || actionNames.isEmpty()) {
+    public List<DeltaFile> findColdQueuedForRequeue(String actionClass, int maxFiles) {
+        if (actionClass == null) {
             return Collections.emptyList();
         }
 
@@ -132,13 +132,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 SELECT 1
                 FROM jsonb_array_elements(dff.actions) AS action
                 WHERE action->>'s' = 'COLD_QUEUED'
-                AND action->>'n' IN (:actionNames)
+                AND action->>'ac' = :actionClass
             )
             LIMIT :limit
         """;
 
         Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
-                .setParameter("actionNames", actionNames)
+                .setParameter("actionClass", actionClass)
                 .setParameter("limit", maxFiles);
 
         @SuppressWarnings("unchecked")

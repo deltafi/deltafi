@@ -45,11 +45,11 @@ public interface DeltaFileRepoCustom {
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names
      *
-     * @param actionNames requeue actions with these names
+     * @param actionClass requeue actions with this actionClass
      * @param maxFiles limit the query to this many files
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> findColdQueuedForRequeue(List<String> actionNames, int maxFiles);
+    List<DeltaFile> findColdQueuedForRequeue(String actionClass, int maxFiles);
 
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names

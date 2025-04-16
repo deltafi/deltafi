@@ -243,30 +243,34 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     }
 
     @Override
-    public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
+    public List<String> distinctColdQueuedActions() {
         String queryStr = """
             SELECT
-                (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' as actionName,
-                fd.type,
-                COUNT(*) as count
+                DISTINCT (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'ac' as actionName
             FROM delta_file_flows dff
-            JOIN flow_definitions fd
-            ON dff.flow_definition_id = fd.id
             WHERE dff.state = 'IN_FLIGHT'
             AND dff.cold_queued = TRUE
-            GROUP BY (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n', fd.type
         """;
 
-        Query query = entityManager.createNativeQuery(queryStr);
+        @SuppressWarnings("unchecked")
+        List<String> results = entityManager.createNativeQuery(queryStr).getResultList();
+        return results.stream().filter(Objects::nonNull).toList();
+    }
+
+    @Override
+    public boolean isColdQueued(String actionClass) {
+        String queryStr = """
+            SELECT 1 FROM delta_file_flows dff
+            WHERE dff.state = 'IN_FLIGHT'
+            AND dff.cold_queued = TRUE
+            AND dff.actions->(jsonb_array_length(dff.actions) - 1)->>'ac' = :actionClass
+            LIMIT 1
+        """;
+
+        Query query = entityManager.createNativeQuery(queryStr).setParameter("actionClass", actionClass);
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
 
-        return results.stream()
-                .map(result -> new ColdQueuedActionSummary(
-                        (String) result[0],
-                        FlowType.valueOf((String) result[1]),
-                        ((Number) result[2]).longValue()
-                ))
-                .collect(Collectors.toList());
+        return !results.isEmpty();
     }
 }

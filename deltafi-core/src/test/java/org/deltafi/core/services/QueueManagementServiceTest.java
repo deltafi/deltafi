@@ -21,7 +21,6 @@ import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.repo.DeltaFileFlowRepo;
-import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,9 +28,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
-import static org.deltafi.common.types.FlowType.TRANSFORM;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -40,7 +39,6 @@ class QueueManagementServiceTest {
 
     private static final String QUEUE_NAME = "queueName";
     private static final String ACTION_NAME = "actionName";
-    private static final ColdQueuedActionSummary COLD_QUEUED_ACTION_SUMMARY = new ColdQueuedActionSummary(ACTION_NAME, TRANSFORM, 1);
     private static final ActionConfiguration ACTION_CONFIGURATION = new ActionConfiguration(ACTION_NAME, ActionType.TRANSFORM, QUEUE_NAME);
 
     @Mock
@@ -81,7 +79,7 @@ class QueueManagementServiceTest {
 
     @Test
     void testIdentifyColdQueuesUpdate() {
-        queueManagementService.getColdQueues().put(QUEUE_NAME, 500L);
+        queueManagementService.getColdQueues().add(QUEUE_NAME);
         when(coreEventQueue.keys()).thenReturn(Set.of(QUEUE_NAME));
         when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
@@ -90,12 +88,12 @@ class QueueManagementServiceTest {
 
         queueManagementService.refreshQueues();
         assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 0L));
-        assertEquals(400L, queueManagementService.getColdQueues().get(QUEUE_NAME));
+        assertEquals(400L, queueManagementService.getAllQueues().get(QUEUE_NAME));
     }
 
     @Test
     void testIdentifyColdQueuesRemove() {
-        queueManagementService.getColdQueues().put(QUEUE_NAME, 500L);
+        queueManagementService.getColdQueues().add(QUEUE_NAME);
         when(coreEventQueue.keys()).thenReturn(Set.of(QUEUE_NAME));
         when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
@@ -108,7 +106,7 @@ class QueueManagementServiceTest {
 
     @Test
     void testColdQueueExists() {
-        queueManagementService.getColdQueues().put(QUEUE_NAME, 10L);
+        queueManagementService.getColdQueues().add(QUEUE_NAME);
         assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 0L));
     }
 
@@ -132,25 +130,24 @@ class QueueManagementServiceTest {
     void testColdToWarmWithoutCheckedQueues() {
         queueManagementService.getCheckedQueues().set(false);
         queueManagementService.coldToWarm();
-        verify(deltaFileFlowRepo, times(0)).coldQueuedActionsSummary();
+        verify(deltaFileFlowRepo, times(0)).distinctColdQueuedActions();
     }
 
     @Test
     void testColdToWarmWithCheckedQueues() {
         queueManagementService.getCheckedQueues().set(true);
-        queueManagementService.getColdQueues().put(QUEUE_NAME, 8L);
+        queueManagementService.getAllQueues().put(QUEUE_NAME, 8L);
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
-        when(deltaFileFlowRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
-        when(unifiedFlowService.runningAction(ACTION_NAME, ActionType.TRANSFORM)).thenReturn(ACTION_CONFIGURATION);
+        when(deltaFileFlowRepo.distinctColdQueuedActions()).thenReturn(List.of(QUEUE_NAME));
         when(env.getProperty("schedule.maintenance")).thenReturn("true");
         queueManagementService.scheduleColdToWarm();
-        verify(deltaFilesService).requeueColdQueueActions(List.of(ACTION_NAME), 2);
+        verify(deltaFilesService).requeueColdQueueActions(QUEUE_NAME, 2);
     }
 
     @Test
     void testColdQueueActions() {
-        queueManagementService.getColdQueues().put(QUEUE_NAME, 8L);
+        queueManagementService.getColdQueues().add(QUEUE_NAME);
         when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         assertEquals(Set.of(ACTION_NAME), queueManagementService.coldQueueActions());
     }
