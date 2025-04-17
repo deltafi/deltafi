@@ -32,10 +32,10 @@ import java.util.Set;
 public class DataSinkPlanConverter extends FlowPlanConverter<DataSinkPlan, DataSink> {
 
     @Override
-    public DataSink createFlow(DataSinkPlan DataSinkPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    public DataSink createFlow(DataSinkPlan dataSinkPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         DataSink dataSink = new DataSink();
-        dataSink.setEgressAction(buildEgressAction(DataSinkPlan.getEgressAction(), flowPlanPropertyHelper));
-        dataSink.setSubscribe(DataSinkPlan.getSubscribe());
+        dataSink.setEgressAction(buildEgressAction(dataSinkPlan.getEgressAction(), flowPlanPropertyHelper));
+        dataSink.setSubscribe(dataSinkPlan.getSubscribe());
         return dataSink;
     }
 

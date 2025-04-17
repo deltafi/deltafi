@@ -17,8 +17,14 @@
  */
 package org.deltafi.core.util;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.victools.jsonschema.generator.*;
+import com.github.victools.jsonschema.module.jackson.JacksonModule;
+import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import lombok.RequiredArgsConstructor;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
@@ -47,6 +53,7 @@ public class UtilService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private static final String FLOW = "myFlow";
     private static final Clock clock = Clock.tickMillis(ZoneOffset.UTC);
+    private static final SchemaGenerator SCHEMA_GENERATOR = schemaGenerator();
 
     public DeltaFile buildDeltaFile(UUID did) {
         return buildDeltaFile(did, List.of());
@@ -347,5 +354,48 @@ public class UtilService {
 
     public static Action autoResumeOther(OffsetDateTime time) {
         return Action.builder().name("other").modified(time).state(ActionState.COMPLETE).build();
+    }
+
+    public static Map<String, Object> generateSchema(Class<?> clazz) {
+        return OBJECT_MAPPER.convertValue(SCHEMA_GENERATOR.generateSchema(clazz), new TypeReference<>() {});
+    }
+
+    private static SchemaGenerator schemaGenerator() {
+        SchemaGeneratorConfigBuilder configBuilder =
+                new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
+                        .without(Option.SCHEMA_VERSION_INDICATOR)
+                        .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
+                        .with(Option.INLINE_ALL_SCHEMAS)
+                        .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
+                                JacksonOption.IGNORE_TYPE_INFO_TRANSFORM,
+                                JacksonOption.FLATTENED_ENUMS_FROM_JSONPROPERTY));
+
+        configBuilder.forFields()
+                .withRequiredCheck(fieldScope -> {
+                    JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);
+                    return jsonProperty != null && jsonProperty.required();
+                })
+                .withDefaultResolver(fieldScope -> {
+                    JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);
+                    if ((jsonProperty == null) || jsonProperty.defaultValue().isEmpty()) {
+                        return null;
+                    }
+                    try {
+                        Class<?> type = fieldScope.getDeclaredType().getErasedType();
+                        // limit the default types that are mapped, sub-objects should have independent defaults defined as needed
+                        if (type.isPrimitive() || Map.class.isAssignableFrom(type) || Collection.class.isAssignableFrom(type)) {
+                            return OBJECT_MAPPER.readValue(jsonProperty.defaultValue(), new TypeReference<>() {});
+                        } else {
+                            return jsonProperty.defaultValue();
+                        }
+                    } catch (JsonProcessingException e) {
+                        return jsonProperty.defaultValue();
+                    }
+                });
+
+        configBuilder.forTypesInGeneral()
+                .withAdditionalPropertiesResolver(scope ->
+                        scope.getType().isInstanceOf(Map.class) ? scope.getTypeParameterFor(Map.class, 1) : null);
+        return new SchemaGenerator(configBuilder.build());
     }
 }

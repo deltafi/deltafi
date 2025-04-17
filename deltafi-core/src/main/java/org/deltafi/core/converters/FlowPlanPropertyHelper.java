@@ -21,6 +21,7 @@ import lombok.Getter;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
+import org.deltafi.common.util.ParameterUtil;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 
@@ -31,6 +32,8 @@ import static java.util.Objects.nonNull;
 
 public class FlowPlanPropertyHelper {
 
+    public static final String DEFAULT = "default";
+    public static final String PROPERTIES = "properties";
     private final VariablePlaceholderHelper variablePlaceholderHelper;
     @Getter
     private final Set<FlowConfigError> errors;
@@ -59,6 +62,10 @@ public class FlowPlanPropertyHelper {
     public <C extends ActionConfiguration> void replaceCommonActionPlaceholders(C actionConfiguration, ActionConfiguration actionTemplate) {
         actionConfiguration.setInternalParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
         actionConfiguration.setParameters(maskedDelegate().orElse(this).replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
+
+        // fill in any unset parameters after resolving variables because the resolver prunes out keys with null values
+        setDefaultValues(ParameterUtil.toMap(actionTemplate.getParameterSchema()), actionConfiguration.getParameters());
+        setDefaultValues(ParameterUtil.toMap(actionTemplate.getParameterSchema()), actionConfiguration.getInternalParameters());
 
         actionConfiguration.setJoin(actionTemplate.getJoin());
     }
@@ -160,4 +167,75 @@ public class FlowPlanPropertyHelper {
         return Optional.ofNullable(maskedDelegate);
     }
 
+    /**
+     * Sets default values from a schema represented as nested Maps into a parameters map.
+     *
+     * @param schema The schema represented as a Map
+     * @param parameters The parameters map to populate with defaults
+     */
+    @SuppressWarnings("unchecked")
+    public void setDefaultValues(Map<String, Object> schema, Map<String, Object> parameters) {
+        if (schema == null || parameters == null) {
+            return;
+        }
+
+        // Check if this is an object with properties
+        if (isObjectType(schema) && schema.containsKey(PROPERTIES)) {
+            Map<String, Object> properties = (Map<String, Object>) schema.get(PROPERTIES);
+            for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                String propertyName = entry.getKey();
+                Map<String, Object> propertySchema = (Map<String, Object>) entry.getValue();
+                if (!parameters.containsKey(propertyName)) {
+                    // If parameter doesn't exist, add the default value
+                    addDefaultValues(parameters, propertySchema, propertyName);
+                } else if (parameters.containsKey(propertyName) && isObjectType(propertySchema)) {
+                    // fill in any missing fields on an existing object
+                    processNestedObject(parameters.get(propertyName), propertySchema);
+                } else if (parameters.containsKey(propertyName) && isArrayType(propertySchema)) {
+                    // fill in any missing fields in the array of objects
+                    processArrayOfObjects(parameters.get(propertyName), propertySchema);
+                }
+            }
+        }
+    }
+
+    private void addDefaultValues(Map<String, Object> parameters, Map<String, Object> propertySchema, String propertyName) {
+        if (propertySchema.containsKey(DEFAULT)) {
+            parameters.put(propertyName, propertySchema.get(DEFAULT));
+        } else if (isObjectType(propertySchema)) {
+            // Create nested map for object type and process it
+            Map<String, Object> nestedMap = new HashMap<>();
+            parameters.put(propertyName, nestedMap);
+            setDefaultValues(propertySchema, nestedMap);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processNestedObject(Object existingValue, Map<String, Object> propertySchema) {
+        if (existingValue instanceof Map) {
+            Map<String, Object> nestedMap = (Map<String, Object>) existingValue;
+            setDefaultValues(propertySchema, nestedMap);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processArrayOfObjects(Object existingValue, Map<String, Object> propertySchema) {
+        if (existingValue instanceof List && propertySchema.containsKey("items")) {
+            Map<String, Object> itemSchema = (Map<String, Object>) propertySchema.get("items");
+            if (isObjectType(itemSchema)) {
+                List<Object> list = (List<Object>) existingValue;
+                for (Object item : list) {
+                    processNestedObject(item, itemSchema);
+                }
+            }
+        }
+    }
+
+    private boolean isObjectType(Map<String, Object> schema) {
+        return "object".equals(schema.get("type"));
+    }
+
+    private boolean isArrayType(Map<String, Object> schema) {
+        return "array".equals(schema.get("type"));
+    }
 }

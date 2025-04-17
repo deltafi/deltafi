@@ -45,6 +45,8 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.27.0'
     testImplementation 'org.awaitility:awaitility:4.2.2'
+    testImplementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
+    testImplementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
     testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
     testImplementation "org.testcontainers:postgresql:${testContainersVersion}"

@@ -28,6 +28,7 @@ import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -121,6 +122,9 @@ public class ParameterUtil {
      * @return the map representation of the JsonNode
      */
     public static Map<String, Object> toMap(JsonNode jsonNode) {
+        if (jsonNode == null) {
+            return Collections.emptyMap();
+        }
         return OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<>() {});
     }
 }

@@ -17,9 +17,11 @@
  */
 package org.deltafi.core.converters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import org.deltafi.common.types.*;
-import org.deltafi.core.util.UtilService;
 import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.util.UtilService;
 import org.deltafi.core.validation.ActionConfigurationValidator;
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings("unchecked")
 class FlowPlanPropertyHelperTest {
+
+    FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of());
 
     @Test
     void resolve_populatedList() {
@@ -298,6 +302,133 @@ class FlowPlanPropertyHelperTest {
         assertThat(result).isInstanceOf(String.class).isEqualTo("${someOtherPlaceholder}");
     }
 
+    @Test
+    void testSimpleDefaultValues() {
+        // Generate schema from SimpleConfig class
+        Map<String, Object> schema = UtilService.generateSchema(SimpleConfig.class);
+
+        // Empty parameters map
+        Map<String, Object> parameters = new HashMap<>();
+
+        // Apply defaults
+        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+
+        assertThat(parameters).containsEntry("maxDelayMS", 0).containsEntry("minDelayMS", 0);
+    }
+
+    @Test
+    void testExistingValuesAreNotOverwritten() {
+        // Generate schema from UserProfile class
+        Map<String, Object> schema = UtilService.generateSchema(UserProfile.class);
+
+        // Parameters map with existing value
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("name", "John Doe");
+
+        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        assertThat(parameters).containsEntry("name", "John Doe").containsEntry("age", 30);
+    }
+
+    @Test
+    void testNestedObjectDefaultValues() {
+        Map<String, Object> schema = UtilService.generateSchema(PersonWithAddress.class);
+        Map<String, Object> parameters = new HashMap<>();
+
+        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> address = (Map<String, Object>) parameters.get("address");
+        assertThat(address).isNotNull().containsEntry("city", "New York").containsEntry("zip", "10001");
+    }
+
+    @Test
+    void testPartiallyPopulatedNestedObject() {
+        Map<String, Object> schema = UtilService.generateSchema(PersonWithContact.class);
+
+        Map<String, Object> parameters = new HashMap<>();
+        Map<String, Object> existingContact = new HashMap<>();
+        existingContact.put("email", "john@example.com");
+        parameters.put("contact", existingContact);
+
+        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> contact = (Map<String, Object>) parameters.get("contact");
+        // kept the custom email parameter but filled in missing phone number
+        assertThat(contact).isNotNull().containsEntry("email", "john@example.com").containsEntry("phone", "555-1234");
+    }
+
+    @Test
+    void testArrayOfObjects() {
+        Map<String, Object> schema = UtilService.generateSchema(ItemContainer.class);
+
+        Map<String, Object> parameters = new HashMap<>();
+        List<Map<String, Object>> existingItems = new ArrayList<>();
+
+        Map<String, Object> item1 = new HashMap<>();
+        item1.put("name", "First Item");
+        existingItems.add(item1);
+
+        Map<String, Object> item2 = new HashMap<>();
+        item2.put("value", 42);
+        existingItems.add(item2);
+
+        parameters.put("items", existingItems);
+
+        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+
+        // Verify array items got defaults for missing properties
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) parameters.get("items");
+
+        assertThat(items).hasSize(2);
+        Map<String, Object> firstItem = items.getFirst();
+        Map<String, Object> secondItem = items.getLast();
+
+        // first item gets name from the parameters but fills in the default value of 2
+        assertThat(firstItem).isNotNull().containsEntry("name", "First Item").containsEntry("value", 2);
+        // second item gets the default name but keeps the value from the parameter map
+        assertThat(secondItem).isNotNull().containsEntry("name", "Untitled").containsEntry("value", 42);
+    }
+
+    @Test
+    void testMixedComplexTypes() {
+        Map<String, Object> schema = UtilService.generateSchema(UserWithProfile.class);
+
+        Map<String, Object> parameters = new HashMap<>();
+        Map<String, Object> user = new HashMap<>();
+        user.put("name", "John");
+        parameters.put("user", user);
+
+        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> resultUser = (Map<String, Object>) parameters.get("user");
+        assertThat(resultUser).isNotNull().containsEntry("name", "John");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> profile = (Map<String, Object>) resultUser.get("profile");
+        // default profile of light should be added
+        assertThat(profile).isNotNull().containsEntry("theme", "light");
+    }
+
+    @Test
+    void testArrayDefaultValues() {
+        // Generate schema from TagContainer class
+        Map<String, Object> schema = UtilService.generateSchema(TagContainer.class);
+
+        // Empty parameters map
+        Map<String, Object> parameters = new HashMap<>();
+
+        // Apply defaults
+        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+
+        // Verify array default was applied
+        @SuppressWarnings("unchecked")
+        List<String> tags = (List<String>) parameters.get("tags");
+        assertThat(tags).hasSize(2).contains("tag1", "tag2");
+    }
+
     Object executeResolvePrimitive(Object object, List<Variable> variables) {
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
 
@@ -316,4 +447,112 @@ class FlowPlanPropertyHelperTest {
                 Variable.builder().name("boolVal").value(" True ").dataType(VariableDataType.BOOLEAN).build());
     }
 
+    // Sample classes with Jackson annotations for schema generation
+    @SuppressWarnings("unused")
+    static class SimpleConfig {
+        @JsonProperty(defaultValue = "0")
+        @JsonPropertyDescription("Maximum time to delay processing in ms. Set equal to minDelayMS for a fixed delay.")
+        private int maxDelayMS;
+
+        @JsonProperty(defaultValue = "0")
+        @JsonPropertyDescription("Minimum time to delay processing in ms. Set equal to maxDelayMS for a fixed delay.")
+        private int minDelayMS;
+    }
+
+    @SuppressWarnings("unused")
+    static class UserProfile {
+        @JsonProperty(defaultValue = "default-name")
+        @JsonPropertyDescription("User's full name")
+        private String name;
+
+        @JsonProperty(defaultValue = "30")
+        @JsonPropertyDescription("User's age")
+        private int age;
+    }
+
+    @SuppressWarnings("unused")
+    static class Address {
+        @JsonProperty(defaultValue = "New York")
+        @JsonPropertyDescription("City name")
+        private String city;
+
+        @JsonProperty(defaultValue = "10001")
+        @JsonPropertyDescription("ZIP code")
+        private String zip;
+    }
+
+    @SuppressWarnings("unused")
+    static class PersonWithAddress {
+        @JsonProperty
+        @JsonPropertyDescription("Person's address information")
+        private Address address;
+    }
+
+    @SuppressWarnings("unused")
+    static class Contact {
+        @JsonProperty(defaultValue = "default@example.com")
+        @JsonPropertyDescription("Email address")
+        private String email;
+
+        @JsonProperty(defaultValue = "555-1234")
+        @JsonPropertyDescription("Phone number")
+        private String phone;
+    }
+
+    @SuppressWarnings("unused")
+    static class PersonWithContact {
+        @JsonProperty
+        @JsonPropertyDescription("Contact information")
+        private Contact contact;
+    }
+
+    @SuppressWarnings("unused")
+    static class Item {
+        @JsonProperty(defaultValue = "Untitled")
+        @JsonPropertyDescription("Item name")
+        private String name;
+
+        @JsonProperty(defaultValue = "2")
+        @JsonPropertyDescription("Item value")
+        private int value;
+    }
+
+    @SuppressWarnings("unused")
+    static class ItemContainer {
+        @JsonProperty
+        @JsonPropertyDescription("List of items")
+        private List<Item> items;
+    }
+
+    @SuppressWarnings("unused")
+    static class Profile {
+        @JsonProperty(defaultValue = "light")
+        @JsonPropertyDescription("User interface theme")
+        private String theme;
+    }
+
+    @SuppressWarnings("unused")
+    static class User {
+        @JsonProperty(defaultValue = "Anonymous")
+        @JsonPropertyDescription("User's name")
+        private String name;
+
+        @JsonProperty
+        @JsonPropertyDescription("User's profile settings")
+        private Profile profile;
+    }
+
+    @SuppressWarnings("unused")
+    static class UserWithProfile {
+        @JsonProperty
+        @JsonPropertyDescription("User information")
+        private User user;
+    }
+
+    @SuppressWarnings("unused")
+    static class TagContainer {
+        @JsonProperty(defaultValue = "[\"tag1\", \"tag2\"]")
+        @JsonPropertyDescription("List of tags")
+        private List<String> tags;
+    }
 }

@@ -26,6 +26,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.deltafi.common.action.documentation.DocumentationGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.util.ParameterUtil;
 import org.deltafi.core.generated.types.Flows;
 import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
@@ -167,6 +168,7 @@ public class PluginService implements Snapshotter {
         PluginCoordinates systemPluginCoordinates = getSystemPluginCoordinates();
         flowService.validateSystemPlanName(flowPlan.getName(), systemPluginCoordinates);
         flowPlan.setSourcePlugin(systemPluginCoordinates);
+        addActionSchemas(flowPlan, Map.of());
         flowPlanValidator.validate(flowPlan);
         addFlowPlanToSystemPlugin(flowPlan);
         return flowService.buildAndSaveFlow(flowPlan);
@@ -289,12 +291,16 @@ public class PluginService implements Snapshotter {
             pluginRepo.deleteById(new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId()));
         }
 
+        Map<String, ActionDescriptor> newActionDescriptors = new HashMap<>();
         if (plugin.getActions() != null) {
             for (ActionDescriptor actionDescriptor : plugin.getActions()) {
                 actionDescriptor.setDocsMarkdown(DocumentationGenerator.generateActionDocs(actionDescriptor));
+                newActionDescriptors.put(actionDescriptor.getName(), actionDescriptor);
             }
         }
 
+        // persist the action schemas in the plans
+        groupedFlowPlans.allPlans().forEach(plan -> addActionSchemas(plan, newActionDescriptors));
         pluginRepo.save(plugin);
 
         updateActionMapsNoLockCheck();
@@ -320,7 +326,7 @@ public class PluginService implements Snapshotter {
         errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans, existingFlowPlans));
         errors.addAll(restDataSourcePlanService.validateFlowPlans(groupedFlowPlans.restDataSourcePlans, existingFlowPlans));
         errors.addAll(timedDataSourcePlanService.validateFlowPlans(groupedFlowPlans.timedDataSourcePlans, existingFlowPlans));
-        errors.addAll(dataSinkPlanService.validateFlowPlans(groupedFlowPlans.DataSinkPlans, existingFlowPlans));
+        errors.addAll(dataSinkPlanService.validateFlowPlans(groupedFlowPlans.dataSinkPlans, existingFlowPlans));
         errors.addAll(pluginVariableService.validateVariables(variables));
 
         List<String> duplicateNames = findDuplicateDataSourceNames(groupedFlowPlans, plugin.getPluginCoordinates());
@@ -335,7 +341,7 @@ public class PluginService implements Snapshotter {
         transformFlowService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.transformFlowPlans());
         restDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.restDataSourcePlans());
         timedDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.timedDataSourcePlans());
-        dataSinkService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.DataSinkPlans());
+        dataSinkService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.dataSinkPlans());
     }
 
     /**
@@ -537,7 +543,22 @@ public class PluginService implements Snapshotter {
         return actionsToPlugin.get(clazz);
     }
 
-    private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<DataSinkPlan> DataSinkPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans){}
+    private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<DataSinkPlan> dataSinkPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans) {
+        public List<FlowPlan> allPlans() {
+            List<FlowPlan> flowPlans = new ArrayList<>();
+            addIfNotNull(flowPlans, transformFlowPlans);
+            addIfNotNull(flowPlans, dataSinkPlans);
+            addIfNotNull(flowPlans, restDataSourcePlans);
+            addIfNotNull(flowPlans, timedDataSourcePlans);
+            return flowPlans;
+        }
+
+        void addIfNotNull(List<FlowPlan> flowPlans, List<? extends FlowPlan> flowPlansToAdd) {
+            if (flowPlansToAdd != null) {
+                flowPlans.addAll(flowPlansToAdd);
+            }
+        }
+    }
 
     private List<String> findDuplicateDataSourceNames(GroupedFlowPlans groupedFlowPlans, PluginCoordinates incomingPluginCoordinates) {
         Set<String> incomingNames = new HashSet<>();
@@ -594,5 +615,21 @@ public class PluginService implements Snapshotter {
                 .collect(Collectors.groupingBy(FlowPlan::getSourcePlugin));
 
         flowPlans.forEach((pluginCoordinates, plans) -> flowService.rebuildFlows(plans, pluginCoordinates));
+    }
+
+    private void addActionSchemas(FlowPlan flowPlan, Map<String, ActionDescriptor> actionDescriptorMap) {
+        flowPlan.allActionConfigurations().forEach(config -> addActionSchema(config, actionDescriptorMap));
+    }
+
+    private void addActionSchema(ActionConfiguration actionConfiguration, Map<String, ActionDescriptor> actionDescriptorMap) {
+        String actionType = actionConfiguration.getType();
+
+        // use the new actionDescriptor if it exists otherwise try to look it up
+        ActionDescriptor actionDescriptor = actionDescriptorMap.containsKey(actionType) ?
+                actionDescriptorMap.get(actionType) : getByActionClass(actionType).orElse(null);
+
+        if (actionDescriptor != null) {
+            actionConfiguration.setParameterSchema(ParameterUtil.toJsonNode(actionDescriptor.getSchema()));
+        }
     }
 }
