@@ -30,10 +30,8 @@ public interface AnnotationValueRepo extends JpaRepository<AnnotationValue, Inte
 
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM annotation_values WHERE id NOT IN (" +
-            "SELECT DISTINCT annotation_value_id FROM analytics_5m_anno " +
-            "UNION " +
-            "SELECT DISTINCT annotation_value_id FROM event_annotations " +
+    @Query(value = "DELETE FROM annotation_values av WHERE NOT EXISTS (" +
+            "SELECT 1 FROM analytics_5m_anno a5 WHERE av.id = a5.annotation_value_id" +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedAnnotationValues();
 }

@@ -30,10 +30,8 @@ public interface ActionNameRepo extends JpaRepository<ActionName, Integer> {
 
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM action_names WHERE id NOT IN (" +
-            "SELECT DISTINCT action_id FROM errors_filters_5m_noanno WHERE action_id IS NOT NULL " +
-            "UNION " +
-            "SELECT DISTINCT action_id FROM analytics WHERE action_id IS NOT NULL " +
+    @Query(value = "DELETE FROM action_names a WHERE NOT EXISTS (" +
+            "SELECT 1 FROM errors_filters_5m_noanno e WHERE e.action_id = a.id" +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedActionNames();
 }

@@ -30,10 +30,8 @@ public interface ErrorCauseRepo extends JpaRepository<ErrorCause, Integer> {
 
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM error_causes WHERE id NOT IN (" +
-            "SELECT DISTINCT cause_id FROM errors_filters_5m_noanno WHERE cause_id IS NOT NULL " +
-            "UNION " +
-            "SELECT DISTINCT cause_id FROM analytics WHERE cause_id IS NOT NULL " +
+    @Query(value = "DELETE FROM error_causes ec WHERE NOT EXISTS (" +
+                "SELECT 1 FROM errors_filters_5m_noanno ef WHERE ec.id = ef.cause_id " +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedErrorCauses();
 }

@@ -30,10 +30,8 @@ public interface EventGroupRepo extends JpaRepository<EventGroup, Integer> {
 
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM event_groups WHERE id NOT IN (" +
-            "SELECT DISTINCT event_group_id FROM errors_filters_5m_noanno " +
-            "UNION " +
-            "SELECT DISTINCT event_group_id FROM analytics " +
+    @Query(value = "DELETE FROM event_groups e WHERE NOT EXISTS (" +
+            "SELECT 1 FROM analytics_5m_noanno a WHERE a.event_group_id = e.id " +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedEventGroups();
 }
