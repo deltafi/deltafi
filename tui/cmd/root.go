@@ -76,6 +76,7 @@ func init() {
 	rootCmd.AddGroup(&cobra.Group{ID: "legacy", Title: "Legacy CLI Commands"})
 	rootCmd.AddGroup(&cobra.Group{ID: "deltafi", Title: "DeltaFi System Management"})
 	rootCmd.AddGroup(&cobra.Group{ID: "flow", Title: "DeltaFi Flow Management"})
+	rootCmd.AddGroup(&cobra.Group{ID: "data", Title: "Data and Metrics"})
 
 	rootCmd.PersistentFlags().BoolVar(&splash, "splash", false, "Show splash screen")
 	rootCmd.PersistentFlags().BoolVar(&printVersion, "version", false, "Print version and exit")

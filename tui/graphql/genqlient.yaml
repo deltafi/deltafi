@@ -11,6 +11,7 @@ operations:
 - data_sinks.graphql
 - flow_graph.graphql
 - snapshots.graphql
+- deltafile.graphql
 generated: generated.go
 client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
 context_type: "-"
@@ -24,3 +25,5 @@ bindings:
     type: github.com/google/uuid.UUID
   Long:
     type: int64
+  Metadata:
+    type: map[string]any

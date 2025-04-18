@@ -34,6 +34,7 @@ type SimpleTable struct {
 	HeaderStyle lipgloss.Style
 	Border      lipgloss.Border
 	BorderStyle lipgloss.Style
+	width       int
 	StyleFunc   func(row, col int) lipgloss.Style
 }
 
@@ -52,6 +53,11 @@ func NewSimpleTable(t *api.Table) *SimpleTable {
 	}
 }
 
+func (t *SimpleTable) Width(width int) *SimpleTable {
+	t.width = width
+	return t
+}
+
 func (t *SimpleTable) Render() string {
 
 	tab := table.New().
@@ -59,6 +65,8 @@ func (t *SimpleTable) Render() string {
 		Rows(t.Table.Rows...).
 		Border(t.Border).
 		BorderStyle(t.BorderStyle).
+		Width(t.width).
+		Wrap(true).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if row == table.HeaderRow {
 				return t.HeaderStyle
@@ -76,6 +84,7 @@ func (t *SimpleTable) RenderPlain() string {
 		Rows(t.Table.Rows...).
 		Border(lipgloss.HiddenBorder()).
 		BorderStyle(t.BorderStyle).
+		Wrap(false).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			return t.BaseStyle
 		})
