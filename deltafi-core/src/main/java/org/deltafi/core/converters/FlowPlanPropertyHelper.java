@@ -200,7 +200,7 @@ public class FlowPlanPropertyHelper {
     }
 
     private void addDefaultValues(Map<String, Object> parameters, Map<String, Object> propertySchema, String propertyName) {
-        if (propertySchema.containsKey(DEFAULT)) {
+        if (propertySchema.get(DEFAULT) != null) {
             parameters.put(propertyName, propertySchema.get(DEFAULT));
         } else if (isObjectType(propertySchema)) {
             // Create nested map for object type and process it

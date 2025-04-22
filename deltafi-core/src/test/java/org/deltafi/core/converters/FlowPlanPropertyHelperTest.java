@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SuppressWarnings("unchecked")
 class FlowPlanPropertyHelperTest {
 
-    FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of());
+    FlowPlanPropertyHelper propertyHelper = new FlowPlanPropertyHelper(List.of());
 
     @Test
     void resolve_populatedList() {
@@ -311,7 +311,7 @@ class FlowPlanPropertyHelperTest {
         Map<String, Object> parameters = new HashMap<>();
 
         // Apply defaults
-        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        propertyHelper.setDefaultValues(schema, parameters);
 
         assertThat(parameters).containsEntry("maxDelayMS", 0).containsEntry("minDelayMS", 0);
     }
@@ -325,7 +325,7 @@ class FlowPlanPropertyHelperTest {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("name", "John Doe");
 
-        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        propertyHelper.setDefaultValues(schema, parameters);
         assertThat(parameters).containsEntry("name", "John Doe").containsEntry("age", 30);
     }
 
@@ -334,7 +334,7 @@ class FlowPlanPropertyHelperTest {
         Map<String, Object> schema = UtilService.generateSchema(PersonWithAddress.class);
         Map<String, Object> parameters = new HashMap<>();
 
-        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        propertyHelper.setDefaultValues(schema, parameters);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> address = (Map<String, Object>) parameters.get("address");
@@ -350,7 +350,7 @@ class FlowPlanPropertyHelperTest {
         existingContact.put("email", "john@example.com");
         parameters.put("contact", existingContact);
 
-        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        propertyHelper.setDefaultValues(schema, parameters);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> contact = (Map<String, Object>) parameters.get("contact");
@@ -375,7 +375,7 @@ class FlowPlanPropertyHelperTest {
 
         parameters.put("items", existingItems);
 
-        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        propertyHelper.setDefaultValues(schema, parameters);
 
         // Verify array items got defaults for missing properties
         @SuppressWarnings("unchecked")
@@ -400,7 +400,7 @@ class FlowPlanPropertyHelperTest {
         user.put("name", "John");
         parameters.put("user", user);
 
-        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        propertyHelper.setDefaultValues(schema, parameters);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> resultUser = (Map<String, Object>) parameters.get("user");
@@ -421,12 +421,26 @@ class FlowPlanPropertyHelperTest {
         Map<String, Object> parameters = new HashMap<>();
 
         // Apply defaults
-        flowPlanPropertyHelper.setDefaultValues(schema, parameters);
+        propertyHelper.setDefaultValues(schema, parameters);
 
         // Verify array default was applied
         @SuppressWarnings("unchecked")
         List<String> tags = (List<String>) parameters.get("tags");
         assertThat(tags).hasSize(2).contains("tag1", "tag2");
+    }
+
+    @Test
+    void testIgnoreNullDefaultValues() {
+        Map<String, Object> schema = UtilService.generateSchema(User.class);
+
+        // set the name default value to null to mimic the schema sent back by the python action kit
+        ((Map<String,Object>)((Map<String,Object>)schema.get("properties")).get("name")).put("default", null);
+        Map<String, Object> parameters = new HashMap<>();
+
+        propertyHelper.setDefaultValues(schema, parameters);
+
+        // verify name was not added to the parameters b/c it does not have a default value set
+        assertThat(parameters).hasSize(1).containsKey("profile");
     }
 
     Object executeResolvePrimitive(Object object, List<Variable> variables) {
