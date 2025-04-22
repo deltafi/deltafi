@@ -1,7 +1,7 @@
 # DeltaFile Analytics Capability
 
 DeltaFile analytics provide the ability to extract insights on behavior, performance, and volumetrics
-of processed DeltaFiles by flow and any applied annotations.
+of processed DeltaFiles by dataSource and any applied annotations.
 
 ## DeltaFile Analytics
 
@@ -32,9 +32,9 @@ DeltaFi data, and you can customize or extend them as needed.
 
 `/api/v2/survey` is the REST API for injecting "survey" data into the DeltaFi analytics database.
 The API is used to add an array of DeltaFile analytic entries directly into the analytics
-database without needing to process the data through DeltaFi flows. This allows for hypothetical,
+database without needing to process the data through DeltaFi dataSources. This allows for hypothetical,
 observed, or orthogonally processed data to be represented alongside the analytic data for
-processed DeltaFiles that are automatically added to the database as part of the usual DeltaFi flow processing.
+processed DeltaFiles that are automatically added to the database as part of the usual DeltaFi processing.
 The "survey" data can be viewed in Grafana dashboards and distinguished from other analytic data
 by the pattern of the `did` field (`/^survey-.*/`).
 
@@ -50,46 +50,59 @@ by the pattern of the `did` field (`/^survey-.*/`).
     The following fields are supported in the analytic entries:
     <ul>
       <li><code>timestamp</code>: Creation timestamp for the entry. Defaults to the current time.</li>
-      <li><code>update_timestamp</code>: Last update timestamp for the entry. Defaults to the current time.</li>
-      <li><code>flow</code>: The name of the flow being surveyed (required)</li>
-      <li><code>files</code>: The number of files being surveyed (required)</li>
-      <li><code>ingress_bytes</code>: Ingress bytes for the survey entry</li>
-      <li><code>errored</code>: Number of errored files for the survey entry</li>
-      <li><code>filtered</code>: Number of filtered files for the survey entry</li>
+      <li><code>dataSource</code>: The name of the dataSource being surveyed (required)</li>
+      <li><code>files</code>: The number of files being surveyed. Must be greater than 0. (required)</li>
+      <li><code>ingressBytes</code>: Ingress bytes for the survey entry. Must be greater than or equal to 0. (ingress_bytes is also supported for backward compatibility)</li>
     </ul>
     Any additional fields will be stored as annotations on the survey entry, provided that the annotation
     key is allow-listed (see Analytics Configuration below).
   </dd>
-  <dt>Response</dt>
-  <dd>
-    The response body will be a JSON array containing the recorded survey data, or an error message if the
-    survey data is malformed.
-  </dd>
 </dl>
+
+### Response
+
+On success, the API returns HTTP 200 with no body.
+
+If there are validation errors, it returns HTTP 400 with a JSON body containing a message for each invalid event:
+
+```json
+  {
+  "error": [
+    {
+      "message": "Error message describing the issue",
+      "event": { "...": "..." }
+    }
+  ],
+  "timestamp": "2023-08-21T10:00:00Z"
+}
+```
+
+If analytics are disabled, it returns HTTP 501 with:
+
+```json
+  {
+    "error": "Survey analytics are disabled",
+    "timestamp": "2023-08-21T10:00:00Z"
+  }
+```
 
 ### Example Survey Post
 
 ```json
     [
       {
-        "flow": "SampleFlow",
+        "dataSource": "Sample",
         "files": 1,
         "timestamp": "2023-08-21T10:00:00Z",
-        "update_timestamp": "2023-08-21T10:00:00Z",
-        "ingress_bytes": 100,
-        "errored": 0,
-        "filtered": 1,
+        "ingressBytes": 100,
         "annotation1": "value1",
         "annotation2": "value2"
       },
       {
-        "flow": "SampleFlow",
+        "dataSource": "Sample",
         "files": 1,
         "timestamp": "2023-08-21T10:01:00Z",
-        "update_timestamp": "2023-08-21T10:01:00Z",
-        "ingress_bytes": 200,
-        "errored": 1,
-        "filtered": 0,
+        "ingressBytes": 200,
         "annotation1": "value1",
         "annotation2": "value3"
       }
@@ -102,9 +115,9 @@ You can post the survey to `/api/v2/survey` with a command like:
 # Example Usage
 curl -X POST -H "Content-Type: application/json" -d '[
   {
-    "flow": "SampleFlow",
+    "dataSource": "Sample",
     "files": 1,
-    "ingress_bytes": 100,
+    "ingressBytes": 100,
     "annotation1": "value1"
   }
 ]' http://your-api-endpoint/api/v2/survey

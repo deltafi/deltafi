@@ -63,7 +63,7 @@ class SurveyRestTest {
                 {
                    "dataSource": "my-source",
                    "files": 1,
-                   "ingress_bytes": 10,
+                   "ingressBytes": 10,
                    "update_timestamp": "ignore this",
                    "annotations": {"a":  "b"},
                    "annotationA": "value-a",
