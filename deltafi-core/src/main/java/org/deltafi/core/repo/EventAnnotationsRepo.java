@@ -20,5 +20,15 @@ package org.deltafi.core.repo;
 import org.deltafi.core.types.EventAnnotationEntity;
 import org.deltafi.core.types.EventAnnotationId;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
-public interface EventAnnotationsRepo extends JpaRepository<EventAnnotationEntity, EventAnnotationId>, EventAnnotationsRepoCustom {}
+public interface EventAnnotationsRepo extends JpaRepository<EventAnnotationEntity, EventAnnotationId>, EventAnnotationsRepoCustom {
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM event_annotations ea WHERE NOT EXISTS (" +
+            "SELECT 1 FROM analytics a WHERE a.did = ea.did" +
+            ")", nativeQuery = true)
+    void deleteUnusedEventAnnotations();
+}

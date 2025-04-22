@@ -37,6 +37,7 @@ public class LookupCleanupScheduler {
     private final AnnotationValueRepo annotationValueRepo;
     private final ErrorCauseRepo errorCauseRepo;
     private final EventGroupRepo eventGroupRepo;
+    private final EventAnnotationsRepo eventAnnotationsRepo;
 
     @Scheduled(fixedDelay = 60_000)
     public void cleanup() {
@@ -45,5 +46,6 @@ public class LookupCleanupScheduler {
         annotationValueRepo.deleteUnusedAnnotationValues();
         errorCauseRepo.deleteUnusedErrorCauses();
         eventGroupRepo.deleteUnusedEventGroups();
+        eventAnnotationsRepo.deleteUnusedEventAnnotations();
     }
 }
