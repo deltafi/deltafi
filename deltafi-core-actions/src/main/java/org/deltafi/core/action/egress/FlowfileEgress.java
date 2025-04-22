@@ -27,8 +27,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublisher;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -42,12 +40,6 @@ public class FlowfileEgress extends HttpEgressBase<HttpEgressParameters> {
     public FlowfileEgress(HttpService httpService) {
         super(String.format("Egresses content and metadata in a NiFi V1 FlowFile (%s).", APPLICATION_FLOWFILE),
                 httpService);
-    }
-
-    @Override
-    protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
-        InputStream inputStream = this.openInputStream(context, input);
-        return HttpRequest.BodyPublishers.ofInputStream(() -> inputStream);
     }
 
     @Override

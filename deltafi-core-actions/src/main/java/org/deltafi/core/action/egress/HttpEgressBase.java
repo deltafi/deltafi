@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpResponse;
@@ -105,10 +106,18 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
-        ActionContent bodyContent = input.getContent();
-        // The stream is automatically closed by HttpClient when the end of stream is reached
-        InputStream inputStream = this.openInputStream(context, input);
-        return HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.ofInputStream(() -> inputStream), bodyContent.getSize());
+        // Open the stream to catch stream errors
+        this.openInputStream(context, input);
+
+        // Create a fresh supplier that will open a new stream each time
+        return HttpRequest.BodyPublishers.ofInputStream(() -> {
+            try {
+                return this.openInputStream(context, input);
+            } catch (IOException e) {
+                log.error("Failed to open input stream", e);
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
     protected InputStream openInputStream(@NotNull ActionContext context, @NotNull EgressInput input)
