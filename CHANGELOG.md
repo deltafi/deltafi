@@ -12,7 +12,7 @@ All [Unreleased] changes can be viewed in GitLab.
 -  [deltafi-core-actions] Decompress action has new optional parameter `maxExtractedBytes` and metadata override key `disableMaxExtractedBytesCheck` to limit the total bytes extracted from an archive before generating an error (GitLab-434)
 - Added the plugin image and pull secret to the snapshot
 - Added content selection by tags to content-selecting actions.
-- Added an interface, `SchemaGeneratorConfigCustomizer`, that plugins can implement to customize the action parameter schema generator as needed 
+- Added an interface, `SchemaGeneratorConfigCustomizer`, that plugins can implement to customize the action parameter schema generator as needed
 - Added an ActionOptions argument to Action constructors that is used to generate detailed documentation
 - Add an `actionClass` field to the actions stored in DeltaFileFlows
 
@@ -31,14 +31,14 @@ All [Unreleased] changes can be viewed in GitLab.
 - Fixed an issue where the StateMachine was using the action name instead of queue name (action type) to check if the next action should be cold queued
 - Fixed an issue where too many DeltaFiles could be moved from cold to warm, exceeding the max queue threshold
 - Fixed Merge action docs not displaying in public documentation
-- CLI: Pre-upgrade snapshot now correctly checking for the deltafi-core-scheduler pod 
+- CLI: Pre-upgrade snapshot now correctly checking for the deltafi-core-scheduler pod
 - [deltafi-core-actions] Update the mediaType for the `Format.TAR_Z` to `application/x-compress` to match TIKA
-- Save child DeltaFiles before saving the completed parent DeltaFile to avoid an edge case where the completeParents process could update the parent before the children were persisted. 
-- Ensure analytic annotation value lookup table entries are unique to prevent race condition where multiple entries would cause lookups to fail and analytics to be disrupted 
+- Save child DeltaFiles before saving the completed parent DeltaFile to avoid an edge case where the completeParents process could update the parent before the children were persisted
+- Ensure analytic annotation value lookup table entries are unique to prevent race condition where multiple entries would cause lookups to fail and analytics to be disrupted
 
 ### Tech-Debt/Refactor
-- Various database optimizations for analytics 
-- [deltafi-core-actions] Clean up `Decompress` code to utilize `Format` enum values 
+- Various database optimizations for analytics
+- [deltafi-core-actions] Clean up `Decompress` code to utilize `Format` enum values
 
 ### Upgrade and Migration
 - Action descriptions may be replaced with ActionOptions to provide details in generated documentation.
@@ -47,7 +47,7 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ### Added
 - Add a field named `dataType` to the properties to specify the property data type
-- [deltafi-action-kit-test] Added `hasContextContaining()` methods to ErrorResultAssert and FilterResultAssert 
+- [deltafi-action-kit-test] Added `hasContextContaining()` methods to ErrorResultAssert and FilterResultAssert
 - HttpFetchContent - added a parameter named `headersToMetadata` that enables storing specified response headers as metadata entries
 - HttpFetchContent - added a parameter named `filenameMetadataKey` that enables storing the detected filename as metadata with a specified key
 
@@ -57,14 +57,14 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ### Fixed
 - Now add file Content-Type if null on file upload.
-- Now wrap long description text in flow builder 
+- Now wrap long description text in flow builder
 - Fixed issue not putting the time to end of day when allDay isnt selected.
-- Delete unused rows from event_annotations table 
-- Fix rendering of summary table on Dataflow Analytics 
+- Delete unused rows from event_annotations table
+- Fix rendering of summary table on Dataflow Analytics
 - Fix bug where event group annotations weren't properly preserved when processing multiple annotation events for the same DeltaFile
 
 ### Tech-Debt/Refactor
-- Improve performance of DeltaFiles queries containing annotation criteria 
+- Improve performance of DeltaFiles queries containing annotation criteria
 
 ### Upgrade and Migration
 - Updated the base images used in CI
@@ -74,7 +74,7 @@ All [Unreleased] changes can be viewed in GitLab.
 ## [2.13.0] - 2025-03-19
 
 ### Added
-- Added ingress metrics for child deltaFiles. 
+- Added ingress metrics for child deltaFiles
 - Added filterable analytic ingress type of DATA_SOURCE, CHILD, or SURVEY to analytic dashboards.
 - [deltafi-core-actions/DeltaFiEgress] Add extra HTTP headers when sending to the local DeltaFi, and optionally automatically determine the ingress URL
 - Added a new RuntimeException, `ErrorResultException`, into the Java action-kit, which is mapped to an `ErrorResult` by the `ActionRunner`
@@ -84,10 +84,10 @@ All [Unreleased] changes can be viewed in GitLab.
 - External paths can be provided for the compose environment and secrets directories
 
 ### Fixed
-- Set content length in egress sink response 
+- Set content length in egress sink response
 - [deltafi-core-actions/DeltaFiEgress] Fix the data source HTTP header name
-- Fix bug where no more than 2 options could be chosen in variables dropdowns for DataFlow Analytics, Error Analysis, and Filter Analysis dashboards 
-- Publish filtered analytics when a DeltaFile is filtered because it was in test mode 
+- Fix bug where no more than 2 options could be chosen in variables dropdowns for DataFlow Analytics, Error Analysis, and Filter Analysis dashboards
+- Publish filtered analytics when a DeltaFile is filtered because it was in test mode
 
 ## [2.12.0] - 2025-03-15
 
@@ -95,7 +95,7 @@ All [Unreleased] changes can be viewed in GitLab.
 - Add Filter Analysis grafana dashboard
 
 ### Tech-Debt/Refactor
-- Overhaul analytics to improve performance 
+- Overhaul analytics to improve performance
 - Replace Data Source by Annotation and Pivot by Annotation dashboards with Dataflow Analytics grafana dashboard
 
 ### Upgrade and Migration
@@ -109,17 +109,17 @@ All [Unreleased] changes can be viewed in GitLab.
 - Added an `insertBatchSize` property to configure the number of DeltaFiles to insert at once
 - Added a method to ContentInput to get content by name
 - Added an option to ModifyMediaType to detect by name only
-- Added partition and node-specific disk metrics for minio and postgres 
+- Added partition and node-specific disk metrics for minio and postgres
 - Compose: TimescaleDB with pg_squeeze extension
 - Testing: Using custom timescaledb with pg_squeeze extension
 
 ### Changed
 - System Properties are now edited in a Dialog and can better handle larger values
-- DeltaFileCacheService now uses bulkInsert for new DeltaFiles from the saveAll method 
-- Automatically reclaim space in delta_files, delta_file_flows, and annotations tables when dead records reach >20% of total table size using pg_squeeze. 
+- DeltaFileCacheService now uses bulkInsert for new DeltaFiles from the saveAll method
+- Automatically reclaim space in delta_files, delta_file_flows, and annotations tables when dead records reach >20% of total table size using pg_squeeze
 
 ### Fixed
-- Fixed issues with permissions causing cloned or created timed-data-sources not to appear in Data Sources Page. 
+- Fixed issues with permissions causing cloned or created timed-data-sources not to appear in Data Sources Page
 - Remove DeltaFile from the cache when an unhandled exception occurs to prevent inconsistent state from being saved
 - Fix a race condition where missing or inactive data sinks were not properly handled
 - Fix an issue that would prevent a DeltaFile from completing other transforms when one forked transform has errored
@@ -128,8 +128,8 @@ All [Unreleased] changes can be viewed in GitLab.
 - Have existing disk metrics check /data/deltafi instead of /data, since these can be on different partitions
 
 ### Tech-Debt/Refactor
-- Increase speed of deleting DeltaFiles when there is no content present 
-- Remove unused action number 
+- Increase speed of deleting DeltaFiles when there is no content present
+- Remove unused action number
 - Add compression to actions column in delta_file_flows
 
 ### Upgrade and Migration
@@ -152,33 +152,33 @@ All [Unreleased] changes can be viewed in GitLab.
 ## [2.10.1] - 2025-03-03
 
 ### Added
-- Added asterisks to labels that require values in JsonRenderers 
+- Added asterisks to labels that require values in JsonRenderers
 
 ### Changed
 - MINIO_API_DELETE_CLEANUP_INTERVAL changed to 30s
-- The HttpEgress action now includes the `Content-Length` header  
+- The HttpEgress action now includes the `Content-Length` header
 - Clear all PV data on KinD cluster reinstall
 
 ### Fixed
-- Fixed issues with Acknowledging, Annotating, Replaying, and Resuming Dids. 
-- Updated UI to use correct permissions when editing and deleting flows 
+- Fixed issues with Acknowledging, Annotating, Replaying, and Resuming Dids
+- Updated UI to use correct permissions when editing and deleting flows
 - Corrected cluster command to default to CLUSTER mode
 - [cli] load-system-plans was inadvertently expanding the `*` in the cronSchedule value of timed data sources
-- Fix postgres issues with KinD cluster reinstalls 
+- Fix postgres issues with KinD cluster reinstalls
 - [cli] When loading a single system plan using `load-system-plans`, drop the "sourcePlugin" element if present. Allows using with output from `export-data-sink-plan` and other similar export commands
 - Allow multiple minio CLI clients to connect in Kubernetes
 - Handle null appNames when sorting LongActionDetails for the long running actions monitor check
 - Postgres logs to stderr for viewing in docker logs
-- Relax requeue query criteria to pick up DeltaFiles that are not in the expected state 
+- Relax requeue query criteria to pick up DeltaFiles that are not in the expected state
 - Fixed bug causing an error when using the Refresh button on the Search page
-- [cli] export-system-plans was missing `join` data for transform actions 
+- [cli] export-system-plans was missing `join` data for transform actions
 - [cli] Fixed load-system-plans capitalization error
 - Permissions "FlowPlanDelete" and "FlowPlanCreate" were missing from the "Flows" role category
 
 ### Tech-Debt/Refactor
 - Consolidated FlowPlanDatafetcher save*Plan methods. Moved logic to PluginService.
-- cluster command checks if images need to be synced to KinD before syncing 
-- Postgres query and index optimizations 
+- cluster command checks if images need to be synced to KinD before syncing
+- Postgres query and index optimizations
 
 ### Upgrade and Migration
 - Refresh clustermonitor base image and kubectl (1.32.2)
@@ -198,7 +198,7 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ### Added
 - New system property `actionExecutionWarning` changes the Long Running Tasks check from normal to warning for times meeting this threshold (GitLab-420)
-- [python-action-kit] Plugin class now supports a `thread_config` map which can be used to scale action threads 
+- [python-action-kit] Plugin class now supports a `thread_config` map which can be used to scale action threads
 
 ### Changed
 - [core-actions] Renamed `ExtractContent` action to `ContentToMetadata`
@@ -214,11 +214,11 @@ All [Unreleased] changes can be viewed in GitLab.
 - [core-actions] New `ExtractContent` action writes first content to metadata
 
 ### Changed
-- Combined error cause and context on the same tab on Error Viewer Dialog 
+- Combined error cause and context on the same tab on Error Viewer Dialog
 - CLI: Small tweak to allow default compose behavior if cli config file is missing
 
 ### Fixed
-- Fixed row expansion in Datatables using nested row expansion. 
+- Fixed row expansion in Datatables using nested row expansion
 
 ### Tech-Debt/Refactor
 - Added some forward compat superficial changes to CLI to support TUI
@@ -230,10 +230,10 @@ All [Unreleased] changes can be viewed in GitLab.
 - Only register a new or upgraded plugin once; it does not need to be repeated for every pod or when pods restart
 
 ### Fixed
-- No longer populates Data Source on Create Auto Resume Rule dialog for summary pages 
-- Fixed Search Page Calendar CSS after upgrade to Vite 
-- Fixed a bug where events generated from the GrafanaAlertCheck and IngressStatusCheck were missing timestamps preventing them from being found for display 
-- Fix unsafe threading model when actionThreads is set to >1 in the application.yaml 
+- No longer populates Data Source on Create Auto Resume Rule dialog for summary pages
+- Fixed Search Page Calendar CSS after upgrade to Vite
+- Fixed a bug where events generated from the GrafanaAlertCheck and IngressStatusCheck were missing timestamps preventing them from being found for display
+- Fix unsafe threading model when actionThreads is set to >1 in the application.yaml
 - Replay checks whether first flow is in still test mode, instead of blindly assigning the old state, except in cases where a child was replayed, in which case the test mode will be carried forward
 - [core-actions] Updated the Decompress action to use the `long` data type for all archive file size checks
 
@@ -243,7 +243,7 @@ All [Unreleased] changes can be viewed in GitLab.
 ## [2.7.0] - 2025-02-10
 
 ### Added
-- Added support for Content-Type override on Upload page 
+- Added support for Content-Type override on Upload page
 - [deltafi-core] Create an event when a plugin is restarted due to an action execution timeout (GitLab-415)
 
 ### Changed
@@ -255,7 +255,7 @@ All [Unreleased] changes can be viewed in GitLab.
 - Validate analytic events for required fields to prevent database insert exceptions
 - Processing Report now showing file counts instead of byte counts in the "Processed Files by Data Source" table
 - Fixed the long-running actions check bug where the same execution time was used for all the dids under an action.
-- Fix null pointer exception on requeue of malformed DeltaFiles 
+- Fix null pointer exception on requeue of malformed DeltaFiles
 
 ### Tech-Debt/Refactor
 - Increase timescaleDB chunk size from 1 day to 1 week to ensure typical queries use a single chunk for better performance
@@ -275,17 +275,17 @@ All [Unreleased] changes can be viewed in GitLab.
 - Setting plugin variable values is now `Transactional` so new values will be consistent across flows
 
 ### Tech-Debt/Refactor
-- Add database indexes to improve counting performance when maxErrors is set 
+- Add database indexes to improve counting performance when maxErrors is set
 
 ## [2.6.0] - 2025-02-03
 
 ### Added
 - Added test mode indicator to each flow on DeltaFile viewer
-- Add HttpFetchContent transform action 
-- When clicking a new action in the transform builder it now automatically scrolls to the top of the doc. 
+- Add HttpFetchContent transform action
+- When clicking a new action in the transform builder it now automatically scrolls to the top of the doc
 - Create a new event whenever a flow is changed to an invalid state
 - Added the option to use templates in action parameters that pull information from the ActionInput that is sent to the action.  The templates support the Spring Expression Language (SpEL), i.e. you can use things like `{{ deltaFileName.toUpperCase() }}`. The following top level fields are available to use in the templates:
-    - `{{ deltaFileName }}` - the deltaFileName of the DeltaFile 
+    - `{{ deltaFileName }}` - the deltaFileName of the DeltaFile
     - `{{ did }}` - the did of the DeltaFile
     - `{{ metadata }}` - the metadata from the first DeltaFileMessage
     - `{{ content }}` - the content list from the first DeltaFileMessage
@@ -302,13 +302,13 @@ All [Unreleased] changes can be viewed in GitLab.
 ### Fixed
 - Fixed issue with bulk acknowledge on By Message tab of Errors page keeping selected rows even when they've been filtered out.
 - Fixed bug preventing test mode message from displaying properly at the top of the DeltaFile viewer
-- Search Page Calendar now shows the time saved in the url when navigating back to the page 
+- Search Page Calendar now shows the time saved in the url when navigating back to the page
 - Fixed bug allowing unauthorized access to metrics
 - Fixed issue where embedded grafana charts did not respect UTC settings in the UI
 - Restored TransformResultsAssert#hasChildResultAt(int Predicate<TransformResult>) to fix backwards compatibility
 - When replaying a DeltaFile that was created from a ChildTransformResult (e.g., a Split action), the test mode from the parent being replayed is preserved
 - Fixed an issue where paused flows would become stopped on upgrades
-- Fix bug where contentDeletable flag was not being set on a parent DeltaFile when all children reached a terminal state 
+- Fix bug where contentDeletable flag was not being set on a parent DeltaFile when all children reached a terminal state
 - Prevent concurrent updates to the action descriptors map which would often leave flows in an `INVALID` state due to missing actions
 - Fixed issue preventing the core from properly routing `/events` and `/unauthorized` to the UI
 
@@ -371,7 +371,7 @@ publishing {
 - Fix the ownership of the `egress-sink` data directory when using compose. Also included `graphite` in compose mkdir list
 - Test mode reason now shows data source name instead of null when only the data source is in test mode
 - Only show `TRANSFORM` action types on the Transform Builder
-- Ensure replayed DeltaFiles are paused or placed in test mode appropriately. 
+- Ensure replayed DeltaFiles are paused or placed in test mode appropriately
 
 ### Deprecated
 - org.deltafi.core.action.egress.RestPostEgress is being deprecated; use org.deltafi.core.action.egress.HttpEgress instead
@@ -397,16 +397,16 @@ publishing {
 
 ### Fixed
 - Fixed bug in default format selection in Content Viewer
-- Don't delete a parent deltaFile's content if its descendants may still be using it 
+- Don't delete a parent deltaFile's content if its descendants may still be using it
 - Fixed bug on Filtered page when filtered action is not the first action.
 
 ## [2.3.1] - 2025-01-08
 
 ### Changed
-- Updated copyright dates for UI source files.
+- Updated copyright dates for UI source files
 
 ### Fixed
-- Fixed old flow wording on test mode confirmations and toast messages.
+- Fixed old flow wording on test mode confirmations and toast messages
 
 ### Upgrade and Migration
 - Updated KinD support to Kubernetes 1.31.4 and KinD version 0.26.0
@@ -460,19 +460,19 @@ publishing {
 - Update the validation on Auto Resume Policies to allow a delay of 0 seconds
 
 ### Tech-Debt/Refactor
-- Improve performance of Data Source by Annotation and Error Analysis dashboards 
+- Improve performance of Data Source by Annotation and Error Analysis dashboards
 
 ## [2.2.0] - 2024-12-16
 
 ### Added
 - Added loading indicators on Errors and Filtered pages.
-- Added "eslint-plugin-vuejs-accessibility" to start tracking accessibility issues 
+- Added "eslint-plugin-vuejs-accessibility" to start tracking accessibility issues
 - LineageMap (generated by recursive decompress) now allows for map search by fullName attribute
 - Setup SSL in nginx when the certs directory is populated
 - Added `cert` auth mode support in compose
 - Added authentication caching to nginx when running in compose
 - Added an optional description parameter to test assertions
-- Allow timed ingress actions to produce annotations 
+- Allow timed ingress actions to produce annotations
 
 ### Changed
 - Changed the unique constraint on resume_policies to be the combination of dataSource, errorSubstring, and action with consideration of absent (null) values
@@ -485,9 +485,9 @@ publishing {
 ### Fixed
 - Fixed resume policy constraint to require at least one of dataSource, errorSubstring, or action
 - Removed duplicate `type` in RestDataSource flow plan JSON file generated by `deltafi plugin-init`
-- Fixed bug where long filenames don't wrap properly and bleed into other columns on Errors Page 
-- Fixed a bug where bulk resuming could lead to a `StaleObjectStateException` 
-- Action picker grabber bar now takes up the entire cell 
+- Fixed bug where long filenames don't wrap properly and bleed into other columns on Errors Page
+- Fixed a bug where bulk resuming could lead to a `StaleObjectStateException`
+- Action picker grabber bar now takes up the entire cell
 - Fixed on-load race condition on Filtered page.
 - Updated the _plugin_install method in the compose script to pass the full image to the `deltafi plugin-install` command
 - Fixed the audit message for toggling delete policies
@@ -499,7 +499,7 @@ publishing {
 
 ### Tech-Debt/Refactor
 - [deltafi-python/test-kit] Add tests for the test-kit (#341)
-- Simplify the Transform Builder Page code removing old and complicated code used in version 1.0 
+- Simplify the Transform Builder Page code removing old and complicated code used in version 1.0
 
 ### Upgrade and Migration
 - When reverting to an old snapshot, resume policies will not be restored due to constraint changes
@@ -513,7 +513,7 @@ publishing {
 
 ### Tech-Debt/Refactor
 - Optimize dataSource by annotation dashboard queries
-- Optimize error analysis dashboard queries 
+- Optimize error analysis dashboard queries
 
 ## [2.1.0] - 2024-12-02
 
@@ -523,7 +523,7 @@ publishing {
 - Added support for YAML file format in python action kit for flows, variables, and integration test files
 
 ### Changed
-- Redesign of the Action Picker on the Transform Builder 
+- Redesign of the Action Picker on the Transform Builder
 
 ### Fixed
 - Fixed the connection to the SSE endpoint when running in compose (#378)
@@ -533,10 +533,10 @@ publishing {
 - Fixed a bug where aged off joined DeltaFile parents caused the child to get stuck in flight. The child is now moved to an errored state in this scenario.
 - Fix bug where JPA was trying to set the deltaFileId for deltaFileFlows and annotations when already set
 - Retain timed data source cron schedule when plugin reregisters if the data source is already running. Only replace it if the data source is stopped or belongs to the system plugin. 
-- Fix typo in `deltafi uninstall` output 
+- Fix typo in `deltafi uninstall` output
 
 ### Tech-Debt/Refactor
-- Consolidate start/stop flow endpoints into single setFlowState command 
+- Consolidate start/stop flow endpoints into single setFlowState command
 - Change core-worker from a statefulSet to a deployment in k8s
 
 ### Upgrade and Migration
