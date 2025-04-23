@@ -211,6 +211,6 @@ class HttpEgressBaseTest {
         EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
-        assertEquals("Unable to open input stream", ((ErrorResult) egressResultType).getErrorCause());
+        assertEquals("Service post failure", ((ErrorResult) egressResultType).getErrorCause());
     }
 }

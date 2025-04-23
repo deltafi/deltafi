@@ -19,7 +19,6 @@ package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.egress.*;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -106,10 +105,6 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
-        // Open the stream to catch stream errors
-        this.openInputStream(context, input);
-
-        // Create a fresh supplier that will open a new stream each time
         return HttpRequest.BodyPublishers.ofInputStream(() -> {
             try {
                 return this.openInputStream(context, input);
