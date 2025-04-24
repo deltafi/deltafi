@@ -74,9 +74,7 @@
                   </Dropdown>
                   <InputNumber v-if="_.isEqual(formInfo.componentType, 'InputNumber')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :input-style="{ width: '6rem' }" :placeholder="formInfo.placeholder" :class="formInfo.class" />
                   <div v-if="_.isEqual(formInfo.componentType, 'Annotations')" :id="`${formInfo.field}` + 'Id'" class="annotations-chips">
-                    <Chip v-for="item in model.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)">
-                      {{ item.key }}: {{ item.value }}
-                    </Chip>
+                    <Chip v-for="item in model.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
                     <Chip class="add-annotations-btn" @click="showAnnotationsOverlay">
                       &nbsp;
                       <i class="pi pi-plus" />
@@ -104,12 +102,8 @@
         <Paginator v-if="results.length > 0" :rows="model.perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
       <DataTable v-model:selection="selectedDids" :value="results" data-key="did" selection-mode="multiple" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner" :rows="model.perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-        <template #empty>
-          No DeltaFiles match the provided search criteria.
-        </template>
-        <template #loading>
-          Loading results. Please wait.
-        </template>
+        <template #empty> No DeltaFiles match the provided search criteria. </template>
+        <template #loading> Loading results. Please wait. </template>
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
             <DidLink :did="data.did" />
@@ -156,55 +150,57 @@
     </div>
   </Dialog>
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
+  <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
 </template>
 
 <script setup>
-import CustomCalendar from "@/components/CustomCalendar.vue";
+import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import CustomCalendar from "@/components/CustomCalendar.vue";
 import DidLink from "@/components/DidLink.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 import Timestamp from "@/components/Timestamp.vue";
+import useAnnotate from "@/composables/useAnnotate";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useFlows from "@/composables/useFlows";
+import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
+import useTopics from "@/composables/useTopics";
 import { computed, inject, nextTick, onBeforeMount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core";
+
 import _ from "lodash";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import Dialog from "primevue/dialog";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 
 import Button from "primevue/button";
 import Chip from "primevue/chip";
 import Column from "primevue/column";
+import ConfirmDialog from "primevue/confirmdialog";
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
+import Dialog from "primevue/dialog";
 import Dropdown from "primevue/dropdown";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
-import MultiSelect from "primevue/multiselect";
 import Menu from "primevue/menu";
+import MultiSelect from "primevue/multiselect";
+import OverlayPanel from "primevue/overlaypanel";
 import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
-import OverlayPanel from "primevue/overlaypanel";
 import ScrollTop from "primevue/scrolltop";
 import { useConfirm } from "primevue/useconfirm";
-import ConfirmDialog from "primevue/confirmdialog";
-import useNotifications from "@/composables/useNotifications";
-import useAnnotate from "@/composables/useAnnotate";
-import useTopics from "@/composables/useTopics";
 
 const { getAnnotationKeys } = useAnnotate();
 const { pluralize } = useUtilFunctions();
 const notify = useNotifications();
 const { cancelDeltaFile } = useDeltaFiles();
-const batchCompleteValue = ref(0);
 const displayCancelBatchingDialog = ref(false);
 const batchSize = 500;
 const maxToastDidDisplay = 10;
@@ -233,6 +229,18 @@ const collapsedSearchOption = ref(true);
 const tableData = ref([]);
 const formattedDataSourceNames = ref([]);
 const annotationKeys = ref([]);
+const batchCompleteValue = ref(0);
+const ackErrorsDialog = ref({
+  dids: [],
+  visible: false,
+});
+const selectedErrorDids = computed(() => {
+  return _
+    .chain(selectedDids.value)
+    .filter((selected) => selected.stage === "ERROR")
+    .map('did')
+    .value();
+});
 
 // Advanced Options Dropdown Variables
 const annotationsKeysOptions = ref([]);
@@ -719,6 +727,7 @@ const menuItems = ref([
     command: () => {
       selectedDids.value = [];
     },
+    disabled: computed(() => selectedDids.value.length == 0),
   },
   {
     label: "Select All Visible",
@@ -741,12 +750,22 @@ const menuItems = ref([
     disabled: computed(() => selectedDids.value.length == 0),
   },
   {
-    label: "Annotate",
+    label: "Annotate Selected",
     icon: "fa-solid fa-tags fa-fw",
     visible: computed(() => hasPermission("DeltaFileAnnotate")),
     command: () => {
       annotateDialog.value.showDialog();
     },
+    disabled: computed(() => selectedDids.value.length == 0),
+  },
+  {
+    label: "Acknowledge Selected",
+    icon: "fas fa-check-circle fa-fw",
+    command: () => {
+      acknowledgeClickConfirm();
+    },
+    visible: computed(() => hasPermission("DeltaFileAcknowledge")),
+    disabled: computed(() => selectedErrorDids.value.length == 0 ),
   },
   {
     label: "Cancel Selected",
@@ -824,6 +843,20 @@ const getBatchDids = (allDids) => {
     res.push(chunk);
   }
   return res;
+};
+
+const acknowledgeClickConfirm = () => {
+  ackErrorsDialog.value.dids = selectedErrorDids.value;
+  ackErrorsDialog.value.visible = true;
+};
+
+const onAcknowledged = (dids, reason) => {
+  selectedDids.value = [];
+  ackErrorsDialog.value.dids = [];
+  ackErrorsDialog.value.visible = false;
+  const pluralized = pluralize(dids.length, "Error");
+  notify.success(`Successfully acknowledged ${pluralized}`, reason);
+  fetchDeltaFilesData();
 };
 </script>
 
