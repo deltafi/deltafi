@@ -79,6 +79,10 @@ func formatState(state string) string {
 		return styles.ErrorStyle.Render(state)
 	case "FILTERED":
 		return styles.WarningStyle.Render(state)
+	case "JOINED":
+		return styles.SuccessStyle.Render(state)
+	case "INHERITED":
+		return styles.InfoStyle.Render(state)
 	default:
 		return state
 	}
@@ -148,6 +152,14 @@ func displayFlowTree(flows []graphql.DeltaFileDeltaFileFlowsDeltaFileFlow) {
 			flowTree.Child(actionTree)
 		}
 		flowDepthMap[flow.Depth+1] = flowTree
+
+		// iterate over flowDepthMap to fill in any missing links
+		for i := 1; i <= flow.Depth; i++ {
+			if flowDepthMap[i] == nil {
+				flowDepthMap[i] = tree.Root(styles.CommentStyle.Render("From parent..."))
+				flowDepthMap[i-1].Child(flowDepthMap[i])
+			}
+		}
 		flowDepthMap[flow.Depth].Child(flowTree)
 	}
 
