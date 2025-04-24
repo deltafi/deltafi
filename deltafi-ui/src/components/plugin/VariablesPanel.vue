@@ -30,8 +30,8 @@
       </Column>
       <Column field="value" header="Value" class="value-column" :style="{ width: '50%' }">
         <template #body="{ data }">
-          <PluginVariableEditDialog :plugin-coordinates-prop="pluginCoordinates" :variable-prop="data" @saved="$emit('updated')">
-            <div class="value-clickable">
+          <template v-if="(!$hasPermission('PluginVariableUpdate'))">
+            <div>
               <span v-if="data.value !== null && data.value !== data.defaultValue" class="override-icon">
                 <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
               </span>
@@ -48,7 +48,28 @@
               </span>
               <span v-else>{{ data.value }}</span>
             </div>
-          </PluginVariableEditDialog>
+          </template>
+          <template v-else>
+            <PropertyEditDialog :plugin-coordinates-prop="pluginCoordinates" :property="data" @saved="$emit('updated')">
+              <div class="value-clickable">
+                <span v-if="data.value !== null && data.value !== data.defaultValue" class="override-icon">
+                  <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
+                </span>
+                <span v-if="data.value == null">
+                  <span v-if="data.defaultValue == null"><em>null</em></span>
+                  <span v-else-if="['MAP', 'LIST'].includes(data.dataType)">
+                    <div v-for="item in viewList(data.defaultValue)" :key="item" class="list-item">{{ item }}</div>
+                  </span>
+                  <span v-else>{{ data.defaultValue }}</span>
+                </span>
+                <span v-else-if="data.value === ''"><em>empty string</em></span>
+                <span v-else-if="['MAP', 'LIST'].includes(data.dataType)">
+                  <div v-for="item in viewList(data.value)" :key="item" class="list-item">{{ item }}</div>
+                </span>
+                <span v-else>{{ data.value }}</span>
+              </div>
+            </PropertyEditDialog>
+          </template>
         </template>
       </Column>
     </DataTable>
@@ -59,7 +80,7 @@
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import PluginVariableEditDialog from "@/components/plugin/VariableEditDialog.vue";
+import PropertyEditDialog from "@/components/properties/PropertyEditDialog.vue";
 import { toRefs } from "vue";
 
 defineEmits(["updated"]);

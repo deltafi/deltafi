@@ -16,8 +16,8 @@
    limitations under the License.
 */
 
-import { ref } from 'vue'
-import useGraphQL from './useGraphQL'
+import { ref } from "vue";
+import useGraphQL from "./useGraphQL";
 
 export default function usePropertySets() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
@@ -35,10 +35,10 @@ export default function usePropertySets() {
         refreshable: true,
         description: true,
         propertySource: true,
-        dataType: true
-      }
-    }
-  }
+        dataType: true,
+      },
+    },
+  };
 
   const fetch = async () => {
     try {
@@ -47,7 +47,7 @@ export default function usePropertySets() {
     } catch {
       // Continue regardless of error
     }
-  }
+  };
 
   const update = async (updates: Array<Object>) => {
     const query = {
@@ -60,10 +60,11 @@ export default function usePropertySets() {
     try {
       await queryGraphQL(query, "updateProperties", "mutation");
       data.value = response.value.data;
+      return data.value;
     } catch {
       // Continue regardless of error
     }
-  }
+  };
 
   const reset = async (propertyName: String) => {
     const query = {
@@ -79,8 +80,7 @@ export default function usePropertySets() {
     } catch {
       // Continue regardless of error
     }
-  }
-
+  };
 
   return { data, loading, loaded, fetch, update, reset, errors };
 }

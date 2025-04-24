@@ -30,8 +30,17 @@
           </div>
         </div>
       </template>
-      <TextArea ref="textAreaEl" v-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
-      <InputText ref="inputTextEl" v-else v-model="localProperty.value" style="width: 100%" />
+      <ListEdit v-if="localProperty.dataType === 'LIST'" v-model="localProperty.value" />
+      <MapEdit v-if="localProperty.dataType === 'MAP'" v-model="localProperty.value" />
+      <span v-if="localProperty.dataType === 'STRING'">
+        <TextArea ref="textAreaEl" v-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
+        <InputText ref="inputTextEl" v-else v-model="localProperty.value" style="width: 100%" />
+      </span>
+      <InputNumber v-if="localProperty.dataType === 'NUMBER'" v-model="localProperty.value" style="width: 100%" />
+      <span v-if="localProperty.dataType === 'BOOLEAN'">
+        <Checkbox v-model="localProperty.value" :binary="true" />
+        {{ localProperty.value }}
+      </span>
       <template #footer>
         <div class="d-flex">
           <span class="mr-auto">
@@ -46,27 +55,38 @@
 </template>
 
 <script setup>
-import { computed, inject, toRefs, ref, watch, nextTick, onMounted } from "vue";
+import ListEdit from "@/components/plugin/ListEdit.vue";
+import MapEdit from "@/components/plugin/MapEdit.vue";
+import useNotifications from "@/composables/useNotifications";
+import usePlugins from "@/composables/usePlugins";
+import usePropertySets from "@/composables/usePropertySets";
+import { computed, inject, toRefs, ref, watch, nextTick } from "vue";
+
+import _ from "lodash";
 
 import Button from "primevue/button";
+import Checkbox from "primevue/checkbox";
 import Dialog from "primevue/dialog";
+import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import TextArea from "primevue/textarea";
-import usePropertySets from "@/composables/usePropertySets";
+
+const { setPluginVariableValues } = usePlugins();
 const { update, reset } = usePropertySets();
 
-import useNotifications from "@/composables/useNotifications";
-
-const hasPermission = inject("hasPermission");
-
 const props = defineProps({
+  pluginCoordinatesProp: {
+    type: Object,
+    required: false,
+    default: null,
+  },
   property: {
     type: Object,
     required: true,
   },
 });
 
-const { property } = toRefs(props);
+const { pluginCoordinatesProp: pluginCoordinates, property } = toRefs(props);
 const notify = useNotifications();
 const emit = defineEmits(["saved"]);
 const localProperty = ref({});
@@ -77,15 +97,17 @@ const textAreaEl = ref(null);
 const inputTextEl = ref(null);
 
 const textArea = computed(() => localProperty.value.value && localProperty.value.value.length > textAreaThreshold);
-const saveBtnLabel = computed(() => saving.value ? "Saving" : "Save");
-const saveBtnIcon = computed(() => saving.value ? "pi pi-spin pi-spinner" : "pi pi-check");
-const stringValue = computed(() => localProperty.value.value === null ? null : localProperty.value.value.toString());
+const saveBtnLabel = computed(() => (saving.value ? "Saving" : "Save"));
+const saveBtnIcon = computed(() => (saving.value ? "pi pi-spin pi-spinner" : "pi pi-check"));
 const overridden = computed(() => property.value.value !== null && property.value.value !== property.value.defaultValue);
 const revertTooltip = computed(() => `Revert to default value: ${property.value.defaultValue}`);
 
-watch(() => localProperty.value.value, () => {
-  setFocus();
-});
+watch(
+  () => localProperty.value.value,
+  () => {
+    setFocus();
+  }
+);
 
 const setFocus = async () => {
   await nextTick();
@@ -101,11 +123,7 @@ const setFocus = async () => {
 };
 
 const show = () => {
-  if (hasPermission("SystemPropertiesUpdate")) {
-    dialogVisible.value = true;
-  } else {
-    notify.warn("Access Denied", "You are not authorized to perform this action");
-  }
+  dialogVisible.value = true;
 };
 
 const hide = () => {
@@ -117,18 +135,44 @@ const onSaveClick = () => {
   if (!saving.value) save();
 };
 
+const updateValue = computed(() => {
+  return localProperty.value.value === null ? null : localProperty.value.value.toString();
+});
+
 const save = async (setNull = false) => {
   saving.value = true;
-  await update([
-    {
-      key: localProperty.value.key,
-      value: setNull ? null : stringValue.value
-    },
-  ])
-  emit("saved", localProperty.value);
-  notify.success("System Property updated successfully", localProperty.value.key);
-  saving.value = false;
-  hide();
+  let response = null;
+  let updateSuccessful = false;
+
+  if (pluginCoordinates.value) {
+    response = await setPluginVariableValues({
+      pluginCoordinates: pluginCoordinates.value,
+      variables: {
+        key: localProperty.value.name,
+        value: setNull ? null : updateValue.value,
+      },
+    });
+    updateSuccessful = response.setPluginVariableValues;
+  } else {
+    response = await update([
+      {
+        key: localProperty.value.key,
+        value: setNull ? null : updateValue.value,
+      },
+    ]);
+    updateSuccessful = response.updateProperties;
+  }
+
+  if (!updateSuccessful) {
+    localProperty.value.value = localProperty.value.defaultValue;
+    notify.error(`${pluginCoordinates.value ? "Plugin variable" : "System Property"} updated failed. Reverting to default value.`, `${pluginCoordinates.value ? localProperty.value.name : localProperty.value.key}`);
+    saving.value = false;
+  } else {
+    emit("saved", localProperty.value);
+    notify.success(`${pluginCoordinates.value ? "Plugin variable" : "System Property"} updated successfully.`, `${pluginCoordinates.value ? localProperty.value.name : localProperty.value.key}`);
+    saving.value = false;
+    hide();
+  }
 };
 
 const cancel = () => {
@@ -137,16 +181,31 @@ const cancel = () => {
 
 const revert = async () => {
   saving.value = true;
-  await reset(localProperty.value.key);
-  localProperty.value.value = localProperty.value.defaultValue;
-  emit("saved", localProperty.value);
-  notify.success("System Property updated successfully", localProperty.value.key);
-  saving.value = false;
-  hide();
+  if (pluginCoordinates.value) {
+    save(true);
+  } else {
+    await reset(localProperty.value.key);
+    localProperty.value.value = localProperty.value.defaultValue;
+    emit("saved", localProperty.value);
+    notify.success("System Property updated successfully.", localProperty.value.key);
+    saving.value = false;
+    hide();
+  }
 };
 
 const onShow = () => {
   localProperty.value = JSON.parse(JSON.stringify(property.value));
+
+  if (localProperty.value.value === null && localProperty.value.defaultValue !== null) localProperty.value.value = localProperty.value.defaultValue;
+
+  if (localProperty.value.dataType === "BOOLEAN" && localProperty.value.value !== null) {
+    if (_.isString(localProperty.value.value)) {
+      localProperty.value.value = String(localProperty.value.value).toLowerCase() === "true";
+    }
+    localProperty.value.value = Boolean(localProperty.value.value);
+  }
+
+  if (localProperty.value.dataType === "NUMBER" && localProperty.value.value !== null) localProperty.value.value = Number(localProperty.value.value);
   setFocus();
 };
 </script>

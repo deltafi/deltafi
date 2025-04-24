@@ -26,9 +26,7 @@
         </span>
       </template>
       <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines property-set-table" :row-hover="true" data-key="key">
-        <template #empty>
-          No properties in this property set.
-        </template>
+        <template #empty> No properties in this property set. </template>
         <Column header="Key" field="key" :sortable="true" :style="{ width: '50%' }">
           <template #body="property">
             <span :class="{ 'text-muted': !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.key }}</span>
@@ -37,8 +35,8 @@
         </Column>
         <Column header="Value" field="value" :sortable="true" class="value-column" :style="{ width: '50%' }">
           <template #body="{ data }">
-            <PropertyEditDialog :property="data" @saved="onSaved($event)">
-              <div :class="{ 'value-clickable': $hasPermission('SystemPropertiesUpdate') }">
+            <template v-if="!$hasPermission('SystemPropertiesUpdate')">
+              <div>
                 <span v-if="data.value !== data.defaultValue" class="override-icon">
                   <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
                 </span>
@@ -46,7 +44,19 @@
                 <span v-else-if="data.value === ''"><em>empty string</em></span>
                 <span v-else>{{ data.value }}</span>
               </div>
-            </PropertyEditDialog>
+            </template>
+            <template v-else>
+              <PropertyEditDialog :property="data" @saved="onSaved($event)">
+                <div class="value-clickable">
+                  <span v-if="data.value !== data.defaultValue" class="override-icon">
+                    <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
+                  </span>
+                  <span v-if="data.value == null"><em>null</em></span>
+                  <span v-else-if="data.value === ''"><em>empty string</em></span>
+                  <span v-else>{{ data.value }}</span>
+                </div>
+              </PropertyEditDialog>
+            </template>
           </template>
         </Column>
       </DataTable>
@@ -84,10 +94,9 @@ const tooltipText = (property) => {
 };
 
 const onSaved = (property) => {
-  _.find(propertySet.properties, { 'key': property.key }).value = property.value;
+  _.find(propertySet.properties, { key: property.key }).value = property.value;
   emit("updated");
 };
-
 </script>
 
 <style>
