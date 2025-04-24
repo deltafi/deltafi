@@ -54,6 +54,17 @@ USER_ID=$(id -u)
 export GROUP_ID
 GROUP_ID=$(id -g)
 
+# Assumes that group with access to Docker is named "docker" and uses that to set the 'DOCKER_GID' environment variable,
+# else sets it to 0
+docker_gid_temp=$(getent group docker | cut -d: -f3)
+if [ -z "$docker_gid_temp" ]; then
+  docker_gid_temp=0
+fi
+
+export DOCKER_GID
+DOCKER_GID="$docker_gid_temp"
+
+
 # _readlink()
 #
 # Usage:

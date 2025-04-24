@@ -110,6 +110,8 @@ services:
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
+    group_add:
+      - ${DOCKER_GID}
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
