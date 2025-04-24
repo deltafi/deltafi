@@ -1,6 +1,6 @@
 module github.com/deltafi/tui
 
-go 1.23.5
+go 1.24.2
 
 require (
 	github.com/Khan/genqlient v0.7.0

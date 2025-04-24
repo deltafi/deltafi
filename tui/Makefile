@@ -32,7 +32,7 @@ USE_DOCKER ?= $(if $(HAS_GO),false,true)
 
 # Environment checks
 HAS_DOCKER := $(shell command -v docker 2> /dev/null)
-MIN_GO_VERSION := 1.23
+MIN_GO_VERSION := 1.24
 GO_VERSION_CHECK := $(shell go version 2>/dev/null | grep -q "go$(MIN_GO_VERSION)" && echo 1 || echo 0)
 
 GOPATH ?= $(CURDIR)/.go
@@ -41,7 +41,7 @@ export GOPATH
 GOBINPATH = $(GOPATH)/bin
 
 # Docker settings
-DOCKER_IMAGE := golang:1.23.5
+DOCKER_IMAGE := golang:1.24.2
 DOCKER_WORKDIR := /go/src/deltafi
 DOCKER_GOPATH := $(DOCKER_WORKDIR)/.go
 DOCKER_CMD := docker run --rm \

@@ -15,7 +15,7 @@ services:
     command: ["--max-concurrent-downloads", "10"]
 
 .gradle:
-  image: deltafi/deltafi-build:jdk21-python3-0
+  image: deltafi/deltafi-build:jdk21-python3-1
   variables:
     GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
