@@ -36,7 +36,9 @@ QUERY="{
            actions {
              name
              type
-             description
+             actionOptions {
+               description
+             }
            }
            variables {
              name
