@@ -67,7 +67,8 @@ import EventSeverityBadge from "./events/EventSeverityBadge.vue";
 
 const markdownIt = new MarkdownIt();
 const timeSinceLastStatusThreshold = 30;
-const status = ref({});
+const clockSkewThreshold = 60_000; // 60 seconds
+const status = ref({ checks: [] });
 const now = ref(new Date().getTime());
 const showStatusDialog = ref(false);
 const { serverSentEvents, connectionStatus } = useServerSentEvents();
@@ -98,6 +99,28 @@ const statusBuilder = (code, state, checkCode, checkDescription, checkMessage, t
   };
 };
 
+const clockSkewCheck = computed(() => {
+  if (status.value.timestamp === undefined) return;
+
+  const clientTime = new Date();
+  const serverTime = new Date(status.value.timestamp);
+  const skew = Math.abs(clientTime - serverTime)
+  if (skew <= clockSkewThreshold) return;
+
+  const messageLines = [
+    "The time on this client device does not match the server time. This could affect session security and search capabilities. Please check your system clock and ensure it is set to update automatically.\n",
+    `    Current server time: ${serverTime.toISOString()}`,
+    `    Current client time: ${clientTime.toISOString()}`,
+    `    Time difference: ${skew}ms`
+  ]
+  return {
+    description: "Clock Skew",
+    code: 1,
+    message: messageLines.join("\n"),
+    timestamp: clientTime
+  }
+})
+
 const computedStatus = computed(() => {
   if (connectionStatus.value === "CONNECTING" || apiLoading.value) {
     return statusBuilder(3, "Connecting", 3, "API Connection", "Establishing connection to API...");
@@ -106,6 +129,13 @@ const computedStatus = computed(() => {
   } else if (timeSinceLastStatus.value > timeSinceLastStatusThreshold) {
     const message = `The \`deltafi-monitor\` last reported system status ${timeSinceLastStatusInWords.value}.`;
     return statusBuilder(1, "Unknown", 1, "Monitor", message, status.value.timestamp);
+  } else if (clockSkewCheck.value) {
+    return {
+      ...status.value,
+      code: status.value.code == 0 ? 1 : status.value.code,
+      state: status.value.state == "Healthy" ? "Degraded" : status.value.state,
+      checks: [clockSkewCheck.value, ...status.value.checks],
+    }
   } else {
     return status.value;
   }
