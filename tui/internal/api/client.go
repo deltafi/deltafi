@@ -91,21 +91,38 @@ func (c *Client) Get(path string, result interface{}, opts *RequestOpts) error {
 	return nil
 }
 
-// Post sends a JSON-encoded object and returns a typed response
+// Post sends a request and returns a typed response
 func (c *Client) Post(path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
-	jsonData, err := json.Marshal(requestBody)
-	if err != nil {
-		return fmt.Errorf("failed to encode request body: %w", err)
-	}
+	var req *http.Request
+	var err error
 
-	req, err := http.NewRequest("POST", c.baseURL+path, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+	// Check if the request body is a bytes.Buffer (multipart form data)
+	if buf, ok := requestBody.(*bytes.Buffer); ok {
+		req, err = http.NewRequest("POST", c.baseURL+path, buf)
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+		// Don't set Content-Type header for multipart form data
+		// The Content-Type will be set by the multipart writer
+	} else {
+		// Handle JSON request body
+		jsonData, err := json.Marshal(requestBody)
+		if err != nil {
+			return fmt.Errorf("failed to encode request body: %w", err)
+		}
+		req, err = http.NewRequest("POST", c.baseURL+path, bytes.NewBuffer(jsonData))
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	if opts != nil {
 		for key, value := range opts.Headers {
+			// Skip Content-Type header if it's already set by multipart writer
+			if key == "Content-Type" && req.Header.Get("Content-Type") != "" {
+				continue
+			}
 			req.Header.Set(key, value)
 		}
 	}
@@ -123,10 +140,23 @@ func (c *Client) Post(path string, requestBody interface{}, result interface{}, 
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("unexpected status code: %d - %s: %s", resp.StatusCode, c.baseURL+path, body)
+		return fmt.Errorf("%d - %s", resp.StatusCode, body)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("unreadable response body: %w", err)
+	}
+
+	// If we're expecting a string, just set it directly
+	if strResult, ok := result.(*string); ok {
+		*strResult = string(body)
+		return nil
+	}
+
+	// Otherwise try to decode as JSON
+	if err := json.Unmarshal(body, result); err != nil {
 		return fmt.Errorf("failed to decode response: %w", err)
 	}
 
