@@ -24,19 +24,25 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public class RestDataSourcePlan extends DataSourcePlan {
-
     @JsonCreator
     @SuppressWarnings("unused")
     public RestDataSourcePlan(@JsonProperty(value = "name", required = true) String name,
                               @JsonProperty(value = "type") FlowType type,
                               @JsonProperty(value = "description", required = true) String description,
+                              @JsonProperty(value = "metadata") Map<String, String> metadata,
+                              @JsonProperty(value = "annotationConfig") AnnotationConfig annotationConfig,
                               @JsonProperty(value = "topic", required = true) String topic) {
-        super(name, FlowType.REST_DATA_SOURCE, description, topic);
+        super(name, FlowType.REST_DATA_SOURCE, description, metadata, annotationConfig, topic);
+    }
+
+    public RestDataSourcePlan(String name, FlowType type, String description, String topic) {
+	    this(name, FlowType.REST_DATA_SOURCE, description, null, null, topic);
     }
 
     @Override

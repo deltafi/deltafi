@@ -19,10 +19,16 @@ package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.deltafi.common.types.AnnotationConfig;
 import org.deltafi.common.types.FlowType;
+import org.hibernate.annotations.Type;
+
+import java.util.Map;
 
 @Entity
 @Data
@@ -36,7 +42,16 @@ public abstract class DataSource extends Flow {
     private String topic;
     private int maxErrors = -1;
 
-    protected DataSource() {}
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, String> metadata;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private AnnotationConfig annotationConfig;
+
+    protected DataSource() {
+    }
 
     protected DataSource(FlowType type) {
         super(null, type, null, null);

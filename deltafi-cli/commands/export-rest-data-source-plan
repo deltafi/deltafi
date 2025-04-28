@@ -28,6 +28,12 @@ QUERY="query {
               version
             }
             topic
+            metadata
+            annotationConfig {
+              annotations
+              metadataPatterns
+              discardPrefix
+            }
           }
         }
         "

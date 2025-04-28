@@ -22,7 +22,9 @@ import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.types.*;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.util.Constants.*;
@@ -48,6 +50,14 @@ public class FlowBuilders {
         ActionConfiguration tic = new ActionConfiguration("SampleTimedIngressAction", ActionType.TIMED_INGRESS, "type");
 
         return buildTimedDataSource(TIMED_DATA_SOURCE_NAME, tic, "*/5 * * * * *", flowState);
+    }
+
+    public static TimedDataSource buildTimedDataSourceWithAnnotationConfig(FlowState flowState) {
+        ActionConfiguration tic = new ActionConfiguration("SampleTimedIngressAction", ActionType.TIMED_INGRESS, "type");
+        TimedDataSource dataSource = buildTimedDataSource(TIMED_DATA_SOURCE_WITH_ANNOTATION_CONFIG_NAME, tic, "*/5 * * * * *", flowState);
+        dataSource.setAnnotationConfig(new AnnotationConfig(
+                Map.of("timedAnnotKey", "annotValue", "a", "ignored"), Collections.emptyList(), null));
+        return dataSource;
     }
 
     public static TimedDataSource buildTimedDataSource(String name, ActionConfiguration ac, String cronSchedule, FlowState flowState) {

@@ -48,7 +48,7 @@ public abstract class FlowPlanValidator<T extends FlowPlan> {
 
     /**
      * Check the plan for any configuration errors
-     * @param flowPlan plan to valdiate
+     * @param flowPlan plan to validate
      */
     public void validate(T flowPlan) {
         List<FlowConfigError> errors = validateConfigurationNames(flowPlan);

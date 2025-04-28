@@ -83,6 +83,8 @@ generateJava {
             "ResultCardinality": "org.deltafi.common.types.ActionOptions.ResultCardinality",
             "ActionState": "org.deltafi.common.types.ActionState",
             "ActionType": "org.deltafi.common.types.ActionType",
+            "AnnotationConfig": "org.deltafi.common.types.AnnotationConfig",
+            "AnnotationConfigInput": "org.deltafi.common.types.AnnotationConfig",
             "JoinConfiguration": "org.deltafi.common.types.JoinConfiguration",
             "Content": "org.deltafi.common.types.Content",
             "DataSource": "org.deltafi.core.types.DataSource",

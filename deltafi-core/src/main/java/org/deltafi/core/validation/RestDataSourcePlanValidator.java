@@ -28,23 +28,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class RestDataSourcePlanValidator extends FlowPlanValidator<RestDataSourcePlan> {
+public class RestDataSourcePlanValidator extends DataSourcePlanValidator<RestDataSourcePlan> {
 
     public RestDataSourcePlanValidator(RuleValidator ruleValidator) {
         super(ruleValidator);
     }
 
-    /**
-     * Flow plan type specific validation checks
-     * @return list of errors
-     */
     @Override
-    public List<FlowConfigError> flowPlanSpecificValidation(RestDataSourcePlan flowPlan) {
+    public List<FlowConfigError> dataSourceTypeSpecificValidation(RestDataSourcePlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
         if (StringUtils.isBlank(flowPlan.getTopic())) {
-            FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
                     .configName(flowPlan.getName())
-                    .message("Cannot add rest data source plan, topic is missing").build();
+                    .message("Cannot add rest data source plan, topic is missing").build());
         }
         return errors;
     }

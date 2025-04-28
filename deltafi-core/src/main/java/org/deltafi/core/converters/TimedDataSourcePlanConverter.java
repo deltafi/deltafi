@@ -31,6 +31,8 @@ public class TimedDataSourcePlanConverter extends FlowPlanConverter<TimedDataSou
     public TimedDataSource createFlow(TimedDataSourcePlan dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         TimedDataSource timedDataSource = new TimedDataSource();
         timedDataSource.setTopic(dataSourcePlan.getTopic());
+	timedDataSource.setMetadata(dataSourcePlan.getMetadata());
+        timedDataSource.setAnnotationConfig(dataSourcePlan.getAnnotationConfig());
         populateTimedDataSource(dataSourcePlan, timedDataSource, flowPlanPropertyHelper);
         return timedDataSource;
     }

@@ -44,8 +44,10 @@ public class TimedDataSourceRepoImpl implements TimedDataSourceRepoCustom {
             INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
                                topic, timed_ingress_action, cron_schedule, last_run, next_run,
                                memo, current_did, execute_immediate, ingress_status,
-                               ingress_status_message, discriminator, id, max_errors)
-            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               ingress_status_message, discriminator, id, max_errors,
+                               metadata, annotation_config)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?::jsonb, ?::jsonb)
         """;
 
         jdbcTemplate.batchUpdate(sql, timedDataSources, 1000, (ps, timedDataSource) -> {
@@ -68,6 +70,8 @@ public class TimedDataSourceRepoImpl implements TimedDataSourceRepoCustom {
             ps.setString(17, "TIMED_DATA_SOURCE");
             ps.setObject(18, timedDataSource.getId());
             ps.setInt(19, timedDataSource.getMaxErrors());
+            ps.setString(20, toJson(timedDataSource.getMetadata()));
+            ps.setString(21, toJson(timedDataSource.getAnnotationConfig()));
         });
     }
 

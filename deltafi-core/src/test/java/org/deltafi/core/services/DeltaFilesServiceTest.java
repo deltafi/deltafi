@@ -36,8 +36,8 @@ import org.deltafi.core.repo.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.FlowBuilders;
-import org.deltafi.core.util.ParameterResolver;
 import org.deltafi.core.util.MockFlowDefinitionService;
+import org.deltafi.core.util.ParameterResolver;
 import org.deltafi.core.util.UtilService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -78,20 +78,19 @@ class DeltaFilesServiceTest {
     private final DeltaFilesService deltaFilesService;
     private final MetricService metricService;
     private final UtilService utilService;
-
+    private final FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
-
     @Captor
     ArgumentCaptor<List<WrappedActionInput>> actionInputListCaptor;
-
     @Captor
     ArgumentCaptor<List<StateMachineInput>> stateMachineInputCaptor;
-
     @Captor
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
-
-    private final FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
+    @Captor
+    private ArgumentCaptor<List<UUID>> uuidListCaptor;
+    @Captor
+    private ArgumentCaptor<List<String>> stringListCaptor;
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock DataSinkService dataSinkService, @Mock StateMachine stateMachine,
@@ -135,7 +134,7 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void setsAndGets() {
+    void basicIngressRest() {
         RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
         when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
 
@@ -151,6 +150,50 @@ class DeltaFilesServiceTest {
         assertEquals(dataSource.getName(), ingressFlow.getName());
         assertEquals(did, deltaFile.getDid());
         assertTrue(ingressFlow.lastCompleteAction().isPresent());
+    }
+
+    @Test
+    void ingressRestWithMetaAndAnnotations() {
+        RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
+        dataSource.setMetadata(Map.of(
+                "metaKeyX", "planX",
+                "metaKeyY", "planY",
+                "metaZ", "planZ"));
+        dataSource.setAnnotationConfig(new AnnotationConfig(
+                Map.of("annotation1", "plan", "annotation2", "plan"),
+                List.of("metaKey.*"), "meta"));
+
+        when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
+
+        UUID did = UUID.randomUUID();
+        List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
+                Map.of("metaA", "eventA", "metaKeyX", "eventX"),
+                content,
+                Map.of("annotation1", "event1", "annotation3", "event3"));
+
+        DeltaFile deltaFile = deltaFilesService.ingressRest(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+
+        assertNotNull(deltaFile);
+        DeltaFileFlow ingressFlow = deltaFile.firstFlow();
+        assertEquals(dataSource.getName(), ingressFlow.getName());
+        assertEquals(did, deltaFile.getDid());
+        assertTrue(ingressFlow.lastCompleteAction().isPresent());
+
+        Map<String, String> actualAnnotations = Annotation.toMap(deltaFile.getAnnotations());
+        assertEquals("event1", actualAnnotations.get("annotation1"));
+        assertEquals("plan", actualAnnotations.get("annotation2"));
+        assertEquals("event3", actualAnnotations.get("annotation3"));
+        assertEquals("eventX", actualAnnotations.get("KeyX"));
+        assertEquals("planY", actualAnnotations.get("KeyY"));
+        assertEquals(5, actualAnnotations.size());
+
+        Map<String, String> actualMetadata = deltaFile.firstFlow().getMetadata();
+        assertEquals("eventA", actualMetadata.get("metaA"));
+        assertEquals("eventX", actualMetadata.get("metaKeyX"));
+        assertEquals("planY", actualMetadata.get("metaKeyY"));
+        assertEquals("planZ", actualMetadata.get("metaZ"));
+        assertEquals(4, actualMetadata.size());
     }
 
     @Test
@@ -282,12 +325,6 @@ class DeltaFilesServiceTest {
         assertTrue(foundKey3);
         assertTrue(foundKey4);
     }
-
-    @Captor
-    private ArgumentCaptor<List<UUID>> uuidListCaptor;
-
-    @Captor
-    private ArgumentCaptor<List<String>> stringListCaptor;
 
     @Test
     void testDelete() {

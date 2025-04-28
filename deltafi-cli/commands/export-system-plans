@@ -45,12 +45,24 @@ fragment ActionFields on ActionConfiguration {
       type
       description
       topic
+      metadata
+      annotationConfig {
+        annotations
+        metadataPatterns
+        discardPrefix
+      }
     }
     timedDataSources {
       name
       type
       description
       topic
+      metadata
+      annotationConfig {
+        annotations
+        metadataPatterns
+        discardPrefix
+      }
       timedIngressAction {
         ...ActionFields
       }

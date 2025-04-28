@@ -15,19 +15,31 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.converters;
+package org.deltafi.common.types;
 
-import org.deltafi.common.types.RestDataSourcePlan;
-import org.deltafi.core.types.*;
+import lombok.*;
 
-public class RestDataSourcePlanConverter extends FlowPlanConverter<RestDataSourcePlan, RestDataSource> {
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-    @Override
-    public RestDataSource createFlow(RestDataSourcePlan dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        RestDataSource restDataSource = new RestDataSource();
-        restDataSource.setTopic(dataSourcePlan.getTopic());
-	restDataSource.setMetadata(dataSourcePlan.getMetadata());
-        restDataSource.setAnnotationConfig(dataSourcePlan.getAnnotationConfig());
-        return restDataSource;
+@Getter
+@Setter
+@EqualsAndHashCode
+@ToString(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class AnnotationConfig {
+    private Map<String, String> annotations;
+    private List<String> metadataPatterns;
+    private String discardPrefix;
+
+    public static AnnotationConfig emptyConfig() {
+        return new AnnotationConfig(Collections.emptyMap(), Collections.emptyList(), null);
+    }
+
+    public boolean nothingConfigured() {
+        return (annotations == null || annotations.isEmpty()) &&
+                (metadataPatterns == null || metadataPatterns.isEmpty());
     }
 }

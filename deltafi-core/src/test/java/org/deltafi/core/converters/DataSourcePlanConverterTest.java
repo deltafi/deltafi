@@ -24,10 +24,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.types.TimedDataSource;
 import org.junit.jupiter.api.Test;
 
@@ -38,14 +40,45 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
-class RestDataSourcePlanConverterTest {
+class DataSourcePlanConverterTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .registerModule(new JavaTimeModule());
+    final RestDataSourcePlanConverter restDataSourcePlanConverter = new RestDataSourcePlanConverter();
     final TimedDataSourcePlanConverter timedDataSourcePlanConverter = new TimedDataSourcePlanConverter();
 
     @Test
-    void testConverter() throws IOException {
+    void testConverterRest() throws IOException {
+        RestDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-rest.json"), RestDataSourcePlan.class);
+        RestDataSource restDataSource = restDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
+        assertThat(restDataSource.getName()).isEqualTo("data-source-rest");
+        assertThat(restDataSource.getMetadata()).isEmpty();
+        assertThat(restDataSource.getAnnotationConfig().nothingConfigured()).isTrue();
+    }
+
+    @Test
+    void testConverterRestWithAnnotations() throws IOException {
+        RestDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-rest-with-annot.json"), RestDataSourcePlan.class);
+        RestDataSource restDataSource = restDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
+        assertThat(restDataSource.getName()).isEqualTo("annotate-rest");
+        Map<String, String> annotations = restDataSource.getAnnotationConfig().getAnnotations();
+        assertThat(annotations).containsEntry("annot1", "Val1");
+        assertThat(restDataSource.getMetadata()).isEmpty();
+    }
+
+    @Test
+    void testConverterRestWithMetadata() throws IOException {
+        RestDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-rest-with-meta.json"), RestDataSourcePlan.class);
+        RestDataSource restDataSource = restDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
+        assertThat(restDataSource.getName()).isEqualTo("metadata-rest");
+        Map<String, String> metadata = restDataSource.getMetadata();
+        assertThat(metadata).containsEntry("keyX", "valueX");
+        assertThat(metadata).containsEntry("keyY", "valueY");
+        assertThat(restDataSource.getAnnotationConfig().nothingConfigured()).isTrue();
+    }
+
+    @Test
+    void testTimedConverter() throws IOException {
         TimedDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-test.json"), TimedDataSourcePlan.class);
         TimedDataSource timedDataSource = timedDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
 
@@ -54,6 +87,27 @@ class RestDataSourcePlanConverterTest {
         assertThat(timedDataSource.getCronSchedule()).isEqualTo("*/5 * * * * *");
         assertThat(timedDataSource.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
         assertThat(timedDataSource.getFlowStatus().getTestMode()).isFalse();
+        assertThat(timedDataSource.getAnnotationConfig().nothingConfigured()).isTrue();
+        assertThat(timedDataSource.getMetadata()).isEmpty();
+    }
+
+    @Test
+    void testTimedConverterMetaAndAnnot() throws IOException {
+        TimedDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-test-with-extra.json"), TimedDataSourcePlan.class);
+        TimedDataSource timedDataSource = timedDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
+
+        assertThat(timedDataSource.getName()).isEqualTo("smoke-test-ingress");
+        assertThat(timedDataSource.getTimedIngressAction()).isEqualTo(expectedTimedIngressAction());
+        assertThat(timedDataSource.getCronSchedule()).isEqualTo("*/5 * * * * *");
+        assertThat(timedDataSource.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
+        assertThat(timedDataSource.getFlowStatus().getTestMode()).isFalse();
+
+        Map<String, String> metadata = timedDataSource.getMetadata();
+        assertThat(metadata).containsEntry("keyX", "valueX");
+        assertThat(metadata).containsEntry("keyY", "valueY");
+
+        Map<String, String> annotations = timedDataSource.getAnnotationConfig().getAnnotations();
+        assertThat(annotations).containsEntry("annot1", "Val1");
     }
 
     @Test

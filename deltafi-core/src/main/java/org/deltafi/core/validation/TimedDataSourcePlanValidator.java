@@ -28,18 +28,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class TimedDataSourcePlanValidator extends FlowPlanValidator<TimedDataSourcePlan> {
+public class TimedDataSourcePlanValidator extends DataSourcePlanValidator<TimedDataSourcePlan> {
 
     public TimedDataSourcePlanValidator(RuleValidator ruleValidator) {
         super(ruleValidator);
     }
 
-    /**
-     * Flow plan type specific validation checks
-     * @return list of errors
-     */
     @Override
-    public List<FlowConfigError> flowPlanSpecificValidation(TimedDataSourcePlan flowPlan) {
+    public List<FlowConfigError> dataSourceTypeSpecificValidation(TimedDataSourcePlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
         if (flowPlan.getTimedIngressAction() == null) {
             errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)

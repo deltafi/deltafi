@@ -1,0 +1,10 @@
+{
+  "name": "metadata-rest",
+  "type": "REST_DATA_SOURCE",
+  "description": "REST ingress that metadata",
+  "topic": "passthrough",
+  "metadata": {
+    "keyX": "valueX",
+    "keyY": "valueY"
+  }
+}

@@ -25,6 +25,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -36,14 +37,20 @@ public class TimedDataSourcePlan extends DataSourcePlan {
     @JsonCreator
     @SuppressWarnings("unused")
     public TimedDataSourcePlan(@JsonProperty(value = "name", required = true) String name,
-            @JsonProperty(value = "type") FlowType type,
-            @JsonProperty(value = "description", required = true) String description,
-            @JsonProperty(value = "topic", required = true) String topic,
-            @JsonProperty(value = "timedIngressAction", required = true) ActionConfiguration timedIngressAction,
-            @JsonProperty(value = "cronSchedule", required = true) String cronSchedule) {
-        super(name, FlowType.TIMED_DATA_SOURCE, description, topic);
+                               @JsonProperty(value = "type") FlowType type,
+                               @JsonProperty(value = "description", required = true) String description,
+                               @JsonProperty(value = "metadata") Map<String, String> metadata,
+                               @JsonProperty(value = "annotationConfig") AnnotationConfig annotationConfig,
+                               @JsonProperty(value = "topic", required = true) String topic,
+                               @JsonProperty(value = "timedIngressAction", required = true) ActionConfiguration timedIngressAction,
+                               @JsonProperty(value = "cronSchedule", required = true) String cronSchedule) {
+        super(name, FlowType.TIMED_DATA_SOURCE, description, metadata, annotationConfig, topic);
         this.timedIngressAction = timedIngressAction;
         this.cronSchedule = cronSchedule;
+    }
+
+    public TimedDataSourcePlan(String name, FlowType type, String description, String topic, ActionConfiguration timedIngressAction, String cronSchedule) {
+        this(name, FlowType.TIMED_DATA_SOURCE, description, null, null, topic, timedIngressAction, cronSchedule);
     }
 
     @Override

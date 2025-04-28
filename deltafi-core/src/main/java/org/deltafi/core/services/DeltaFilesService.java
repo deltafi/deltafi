@@ -247,6 +247,13 @@ public class DeltaFilesService {
 
         OffsetDateTime now = OffsetDateTime.now(clock);
 
+        Map<String, String> combinedDataSourceMetadata = dataSource.getMetadata() != null ?
+                new HashMap<>(dataSource.getMetadata()) : new HashMap<>();
+
+        if (ingressEventItem.getMetadata() != null) {
+            combinedDataSourceMetadata.putAll(ingressEventItem.getMetadata());
+        }
+
         Action ingressAction = Action.builder()
                 .name(ingressActionName)
                 .replayStart(true)
@@ -255,7 +262,7 @@ public class DeltaFilesService {
                 .created(ingressStartTime)
                 .modified(now)
                 .content(ingressEventItem.getContent())
-                .metadata(ingressEventItem.getMetadata())
+                .metadata(combinedDataSourceMetadata)
                 .start(ingressStartTime)
                 .stop(ingressStopTime)
                 .build();
@@ -298,7 +305,7 @@ public class DeltaFilesService {
                 .filtered(false)
                 .build();
         deltaFile.addAnnotations(ingressEventItem.getAnnotations());
-
+        deltaFile.addAnnotationsIfAbsent(dataSource.getAnnotationConfig());
         return deltaFile;
     }
 

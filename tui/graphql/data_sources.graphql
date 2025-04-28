@@ -35,6 +35,12 @@ query GetRestDataSource($name: String!) {
       testMode
     }
     topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
   }
 }
 
@@ -55,6 +61,12 @@ query GetTimedDataSource($name: String!) {
       testMode
     }
     topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
     cronSchedule
     lastRun
     nextRun
@@ -97,6 +109,12 @@ mutation SaveRestDataSource($dataSourcePlan: RestDataSourcePlanInput!) {
       testMode
     }
     topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
   }
 }
 
@@ -117,6 +135,12 @@ mutation SaveTimedDataSource($dataSourcePlan: TimedDataSourcePlanInput!) {
       testMode
     }
     topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
     cronSchedule
     timedIngressAction {
       name

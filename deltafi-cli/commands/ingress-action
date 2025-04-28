@@ -99,6 +99,12 @@ case "$SUBCOMMAND" in
                    condition
                  }
                }
+               metadata
+               annotationConfig {
+                 annotations
+                 metadataPatterns
+                 discardPrefix
+               }
                cronSchedule
                lastRun
                nextRun

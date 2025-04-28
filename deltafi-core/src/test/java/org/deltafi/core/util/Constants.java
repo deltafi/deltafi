@@ -38,6 +38,7 @@ public class Constants {
 
     public static final String REST_DATA_SOURCE_NAME = "sampleRestDataSource";
     public static final String TIMED_DATA_SOURCE_NAME = "sampleTimedDataSource";
+    public static final String TIMED_DATA_SOURCE_WITH_ANNOTATION_CONFIG_NAME = "sampleTimedDataSourceAnnot";
     public static final String TIMED_DATA_SOURCE_ERROR_NAME = "sampleTimedDataSourceError";
     public static final String EGRESS_FLOW_NAME = "sampleEgress";
     public static final String TRANSFORM_FLOW_NAME = "sampleTransform";

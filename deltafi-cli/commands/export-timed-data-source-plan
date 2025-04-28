@@ -35,6 +35,12 @@ QUERY="fragment ActionFields on ActionConfiguration {
               version
             }
             topic
+            metadata
+            annotationConfig {
+              annotations
+              metadataPatterns
+              discardPrefix
+            }
             timedIngressAction {
               ... ActionFields
             }

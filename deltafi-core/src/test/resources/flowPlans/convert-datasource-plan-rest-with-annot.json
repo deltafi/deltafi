@@ -1,0 +1,11 @@
+{
+  "name": "annotate-rest",
+  "type": "REST_DATA_SOURCE",
+  "description": "REST ingress that annotates",
+  "topic": "passthrough",
+  "annotationConfig": {
+    "annotations": {
+      "annot1": "Val1"
+    }
+  }
+}

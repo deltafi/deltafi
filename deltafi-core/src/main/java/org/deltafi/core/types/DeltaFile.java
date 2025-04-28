@@ -23,6 +23,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
@@ -336,6 +337,36 @@ public class DeltaFile {
 
   public void addAnnotationsIfAbsent(Map<String, String> metadata) {
     metadata.forEach(this::addAnnotationIfAbsent);
+  }
+
+  public void addAnnotationsIfAbsent(AnnotationConfig annotationConfig) {
+    if (annotationConfig == null || annotationConfig.nothingConfigured()) {
+      return;
+    }
+
+    Map<String, String> flowAnnotationsToAdd = new HashMap<>();
+    if (annotationConfig.getAnnotations() != null) {
+      flowAnnotationsToAdd.putAll(annotationConfig.getAnnotations());
+    }
+
+    if (annotationConfig.getMetadataPatterns() != null) {
+      Map<String, String> lastFlowMetadata = lastFlow().getMetadata();
+      flowAnnotationsToAdd.putAll(lastFlowMetadata.entrySet().stream()
+              .filter(entry -> annotationConfig.getMetadataPatterns().stream()
+                      .anyMatch(pattern -> entry.getKey().matches(pattern)))
+              .collect(Collectors.toMap(entry -> replaceMetaKeyPrefix(annotationConfig.getDiscardPrefix(), entry.getKey()),
+                      Map.Entry::getValue)));
+    }
+
+    addAnnotationsIfAbsent(flowAnnotationsToAdd);
+  }
+
+  private String replaceMetaKeyPrefix(String discardPrefix, String key) {
+    if (StringUtils.isNotEmpty(discardPrefix) && key.startsWith(discardPrefix) &&
+            key.length() > discardPrefix.length()) {
+      return key.replaceFirst(discardPrefix, "");
+    }
+    return key;
   }
 
   public void addAnnotationIfAbsent(String key, String value) {

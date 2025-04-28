@@ -50,7 +50,9 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static TimedDataSourcePlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetTimedDataSourcePlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedDataSourcePlanProjectionRoot<>().name().type().description().topic()
-                .name().timedIngressAction().name().actionType().type().parent().cronSchedule(), TimedDataSourcePlan.class);
+                .name().timedIngressAction().name().actionType().type().parent().cronSchedule()
+                .metadata().annotationConfig().annotations().metadataPatterns().discardPrefix().parent(),
+                TimedDataSourcePlan.class);
     }
 
     public static TransformFlow validateTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -83,8 +85,8 @@ public class FlowPlanDatafetcherTestHelper {
     public static SystemFlowPlans getAllFlowPlans(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowPlansGraphQLQuery.newRequest().build(),
                 new GetAllFlowPlansProjectionRoot<>()
-                        .timedDataSources().type().name().description().topic().timedIngressAction().name().type().actionType().parent().cronSchedule().parent()
-                        .restDataSources().type().name().description().topic().parent()
+                        .timedDataSources().type().name().description().topic().metadata().annotationConfig().annotations().metadataPatterns().discardPrefix().parent().timedIngressAction().name().type().actionType().parent().cronSchedule().parent()
+                        .restDataSources().type().name().description().topic().metadata().annotationConfig().annotations().metadataPatterns().discardPrefix().parent().parent()
                         .transformPlans().name().description().parent()
                         .dataSinkPlans().name().description().egressAction().name().type().actionType()
                         .root(), SystemFlowPlans.class);
@@ -127,6 +129,12 @@ public class FlowPlanDatafetcherTestHelper {
                 .version()
                 .parent()
                 .topic()
+                .metadata()
+                .annotationConfig()
+                .annotations()
+                .metadataPatterns()
+                .discardPrefix()
+                .parent()
                 .parent()
 
                 .timedDataSources()
@@ -144,6 +152,12 @@ public class FlowPlanDatafetcherTestHelper {
                 .parameters()
                 .parent()
                 .topic()
+                .metadata()
+                .annotationConfig()
+                .annotations()
+                .metadataPatterns()
+                .discardPrefix()
+                .parent()
                 .cronSchedule()
                 .parent()
 

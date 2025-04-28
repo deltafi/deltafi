@@ -16,6 +16,18 @@
 #    limitations under the License.
 #
 
+input AnnotationConfigInput {
+  annotations: Metadata
+  metadataPatterns: [String]
+  discardPrefix: String
+}
+
+type AnnotationConfig {
+  annotations: Metadata
+  metadataPatterns: [String]
+  discardPrefix: String
+}
+
 enum DataType {
   STRING
   BOOLEAN
@@ -75,6 +87,8 @@ interface DataSourcePlan {
   name: String!
   type: String!
   description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
   topic: String!
 }
@@ -83,6 +97,8 @@ type TimedDataSourcePlan implements DataSourcePlan {
   name: String!
   type: String!
   description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
   topic: String!
   timedIngressAction: ActionConfiguration!
@@ -93,6 +109,8 @@ type RestDataSourcePlan implements DataSourcePlan {
   name: String!
   type: String!
   description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
   topic: String!
 }
@@ -101,6 +119,8 @@ input TimedDataSourcePlanInput {
   name: String!
   type: String!
   description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfigInput
   topic: String!
   timedIngressAction: ActionConfigurationInput!
   cronSchedule: String
@@ -110,6 +130,8 @@ input RestDataSourcePlanInput {
   name: String!
   type: String!
   description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfigInput
   topic: String!
 }
 
@@ -220,6 +242,8 @@ type TimedDataSource implements DataSource {
   name: String!
   type: String!
   description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
   maxErrors: Int!
   flowStatus: FlowStatus!
@@ -240,6 +264,8 @@ type RestDataSource implements DataSource {
   name: String!
   type: String!
   description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
   maxErrors: Int!
   flowStatus: FlowStatus!

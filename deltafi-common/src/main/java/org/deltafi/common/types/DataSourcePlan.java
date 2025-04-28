@@ -24,20 +24,29 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collections;
+import java.util.Map;
+
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public abstract class DataSourcePlan extends FlowPlan {
     private String topic;
+    private Map<String, String> metadata;
+    private AnnotationConfig annotationConfig;
 
     @JsonCreator
     @SuppressWarnings("unused")
     public DataSourcePlan(@JsonProperty(value = "name", required = true) String name,
                           @JsonProperty(value = "type") FlowType type,
                           @JsonProperty(value = "description", required = true) String description,
+                          @JsonProperty(value = "metadata") Map<String, String> metadata,
+                          @JsonProperty(value = "annotationConfig") AnnotationConfig annotationConfig,
                           @JsonProperty(value = "topic", required = true) String topic) {
         super(name, type, description);
         this.topic = topic;
+        this.metadata = metadata == null ? Collections.emptyMap() : metadata;
+        this.annotationConfig = annotationConfig == null ? AnnotationConfig.emptyConfig() : annotationConfig;
     }
 }

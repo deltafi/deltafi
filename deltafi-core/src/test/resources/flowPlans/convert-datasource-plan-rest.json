@@ -1,0 +1,6 @@
+{
+  "name": "data-source-rest",
+  "type": "REST_DATA_SOURCE",
+  "description": "Ordinary REST ingress",
+  "topic": "passthrough"
+}

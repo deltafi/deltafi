@@ -1,0 +1,23 @@
+{
+  "name": "smoke-test-ingress",
+  "type": "TIMED_DATA_SOURCE",
+  "description": "Create smoke DeltaFiles",
+  "metadata": {
+    "keyX": "valueX",
+    "keyY": "valueY"
+  },
+  "annotationConfig": {
+    "annotations": {
+      "annot1": "Val1"
+    }
+  },
+  "topic": "topic",
+  "timedIngressAction": {
+    "name": "SmokeTestIngressAction",
+    "type": "org.deltafi.core.action.SmokeTestIngressAction",
+    "parameters": {
+      "metadata": { "smoke":  "test" }
+    }
+  },
+  "cronSchedule": "*/5 * * * * *"
+}

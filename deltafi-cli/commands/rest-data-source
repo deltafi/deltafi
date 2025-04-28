@@ -91,6 +91,12 @@ case "$SUBCOMMAND" in
                  }
                  maxErrors
                  topic
+                 metadata
+                 annotationConfig {
+                   annotations
+                   metadataPatterns
+                   discardPrefix
+                 }
              }
            }"
     ;;

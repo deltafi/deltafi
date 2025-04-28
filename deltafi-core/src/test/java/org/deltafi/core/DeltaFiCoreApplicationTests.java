@@ -462,10 +462,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	static final TimedDataSource TIMED_DATA_SOURCE = buildTimedDataSource(FlowState.RUNNING);
+	static final TimedDataSource TIMED_DATA_SOURCE_WITH_ANNOT = buildTimedDataSourceWithAnnotationConfig(FlowState.RUNNING);
 	static final TimedDataSource TIMED_DATA_SOURCE_ERROR = buildTimedDataSourceError(FlowState.RUNNING);
 
 	void loadTimedDataSources() {
-		timedDataSourceRepo.batchInsert(List.of(TIMED_DATA_SOURCE, TIMED_DATA_SOURCE_ERROR));
+		timedDataSourceRepo.batchInsert(List.of(TIMED_DATA_SOURCE, TIMED_DATA_SOURCE_WITH_ANNOT, TIMED_DATA_SOURCE_ERROR));
 	}
 
 	@Test
@@ -1316,11 +1317,22 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		TimedDataSourcePlan dataSourcePlanA = new TimedDataSourcePlan("timedIngressPlan", FlowType.TIMED_DATA_SOURCE, "description", "topic",
 				new ActionConfiguration("timedIngress", ActionType.TIMED_INGRESS, "type"),  "*/5 * * * * *");
+		dataSourcePlanA.setMetadata(Map.of(
+				"metaKeyX", "planX",
+				"metaKeyY", "planY",
+				"metaZ", "planZ"));
+		dataSourcePlanA.setAnnotationConfig(new AnnotationConfig(
+				Map.of("annotation1", "plan", "annotation2", "plan"),
+				List.of("metaKey.*"), "meta"));
+
 		TimedDataSourcePlan dataSourcePlanB = new TimedDataSourcePlan("b", FlowType.TIMED_DATA_SOURCE, "description", "topic",
 				new ActionConfiguration("timedIngress", ActionType.TIMED_INGRESS, "type"), "*/5 * * * * *");
+
 		savePlugin(List.of(dataSourcePlanA, dataSourcePlanB));
 		DataSourcePlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("timedIngressPlan");
+		assertThat(plan.getMetadata().size()).isEqualTo(3);
+		assertThat(plan.getAnnotationConfig().getAnnotations().size()).isEqualTo(2);
 	}
 
 	@Test
@@ -4490,6 +4502,33 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION, 1).addTags(tags));
 
 		Mockito.verifyNoMoreInteractions(metricService);
+	}
+
+	@Test
+	@SneakyThrows
+	void testTimedIngressUsingAnnotationConfig() {
+		UUID taskedDid = UUID.randomUUID();
+		UUID did = UUID.randomUUID();
+
+		timedDataSourceService.setLastRun(TIMED_DATA_SOURCE_WITH_ANNOTATION_CONFIG_NAME, OffsetDateTime.now(), taskedDid);
+		deltaFilesService.handleActionEvent(actionEvent("ingressAnnot", taskedDid, did));
+
+		DeltaFile afterMutation = deltaFilesService.getDeltaFile(did);
+		assertEquals("annotValue", Annotation.toMap(afterMutation.getAnnotations()) .get("timedAnnotKey"));
+		assertEquals("b", Annotation.toMap(afterMutation.getAnnotations()) .get("a"));
+		assertEquals("d", Annotation.toMap(afterMutation.getAnnotations()) .get("c"));
+		assertEquals(3, afterMutation.getAnnotations().size());
+
+		verifyIngressMetrics(TIMED_DATA_SOURCE_WITH_ANNOTATION_CONFIG_NAME, 36);
+		verifySubscribeMetrics(TIMED_DATA_SOURCE_WITH_ANNOTATION_CONFIG_NAME, "sampleTransform", 36);
+
+		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressAction", TIMED_DATA_SOURCE_WITH_ANNOTATION_CONFIG_NAME, null);
+		extendTagsForAction(tags, "type");
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION, 1).addTags(tags));
+
+		Mockito.verifyNoMoreInteractions(metricService);
+
 	}
 
 	private void verifyIngressMetrics(String dataSource, int bytes) {

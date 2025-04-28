@@ -1,0 +1,39 @@
+{
+    "did": "%1$s",
+    "flowName": "sampleTimedDataSourceAnnot",
+    "flowId": "00000000-0000-0000-0000-000000000000",
+    "actionName": "SampleTimedIngressAction",
+    "start": "3021-07-11T13:44:22.183Z",
+    "stop": "3021-07-11T13:44:22.184Z",
+    "type": "INGRESS",
+    "ingress": {
+        "ingressItems": [
+            {
+                "did": "%2$s",
+                "deltaFileName": "filename",
+                "metadata": {
+                    "smoke": "test"
+                },
+                "annotations": {
+                    "a": "b",
+                    "c": "d"
+                },
+                "content": [
+                    {
+                        "name": "filename",
+                        "mediaType": "application/text",
+                        "segments": [
+                            {
+                                "uuid": "11111111-1111-1111-1111-111111111111",
+                                "offset": 0,
+                                "size": 36,
+                                "did": "%2$s"
+                            }
+                        ],
+                        "size": 36
+                    }
+                ]
+            }
+        ]
+    }
+}
