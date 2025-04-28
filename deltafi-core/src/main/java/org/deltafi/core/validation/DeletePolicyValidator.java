@@ -38,6 +38,8 @@ public class DeletePolicyValidator {
 
         if (StringUtils.isBlank(policy.getName())) {
             errors.add("name is missing");
+        } else if (policy.getName().contains("=") || policy.getName().contains(";")) {
+            errors.add("name may not contain an equals sign or semicolon");
         }
 
         if ((policy.getFlow() != null) && StringUtils.isBlank(policy.getFlow())) {
@@ -70,6 +72,9 @@ public class DeletePolicyValidator {
         Duration afterComplete = parseDuration("afterComplete", policy.getAfterComplete(), errors);
 
         long minBytes = policy.getMinBytes() != null ? policy.getMinBytes() : 0;
+        if (minBytes < 0) {
+            errors.add("minBytes must not be negative");
+        }
 
         if (errors.isEmpty() && ((minBytes == 0 && afterCreate == null && afterComplete == null) || (afterCreate != null && afterComplete != null))) {
             errors.add("Timed delete policy " + policy.getName() + " must specify exactly one of afterCreate or afterComplete and/or minBytes");

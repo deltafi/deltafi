@@ -85,10 +85,10 @@ class DeletePolicyValidatorTest {
     }
 
     @Test
-    void testInvalidTimedDeletePolicy() {
+    void testInvalidTimedDeletePolicyWithEqualSign() {
         TimedDeletePolicy policy = makeAfterCreate(false);
         policy.setId(null);
-        policy.setName(null);
+        policy.setName("a=b");
         policy.setFlow("");
         policy.setAfterCreate(BAD_DURATION);
 
@@ -96,9 +96,26 @@ class DeletePolicyValidatorTest {
         assertEquals(4, errors.size());
         assertTrue(errors.containsAll(List.of(
                 "id is missing",
-                "name is missing",
+                "name may not contain an equals sign or semicolon",
                 "dataSource is invalid",
                 "Unable to parse duration for afterCreate")));
+    }
+
+    @Test
+    void testInvalidTimedDeletePolicyWithSemicolon() {
+        TimedDeletePolicy policy = makeAfterCreate(false);
+        policy.setId(null);
+        policy.setName("a;b");
+        policy.setFlow("");
+        policy.setMinBytes((long) -1);
+
+        List<String> errors = DeletePolicyValidator.validate(policy);
+        assertEquals(4, errors.size());
+        assertTrue(errors.containsAll(List.of(
+                "id is missing",
+                "name may not contain an equals sign or semicolon",
+                "dataSource is invalid",
+                "minBytes must not be negative")));
     }
 
     @Test
