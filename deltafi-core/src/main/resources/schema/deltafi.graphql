@@ -331,12 +331,6 @@ type CancelResult {
   error: String
 }
 
-type PinResult {
-  did: UUID!
-  success: Boolean!
-  error: String
-}
-
 type Result {
   success: Boolean!
   info: [String]
