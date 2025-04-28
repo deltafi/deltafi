@@ -981,4 +981,22 @@ class DeltaFilesServiceTest {
         deltaFilesService.cancel(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.CANCELLED).build());
         Mockito.verifyNoInteractions(deltaFileRepo);
     }
+
+    @Test
+    void replayMatching() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replay(filter, null, null);
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        assertThat(filter.getReplayable()).isTrue();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void replayMatching_skipNonReplayableFilters() {
+        deltaFilesService.replay(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), null, null);
+        deltaFilesService.replay(DeltaFilesFilter.newBuilder().replayed(true).build(), null, null);
+        deltaFilesService.replay(DeltaFilesFilter.newBuilder().replayable(false).build(), null, null);
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
 }

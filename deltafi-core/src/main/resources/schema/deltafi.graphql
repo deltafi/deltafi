@@ -452,7 +452,8 @@ type Mutation {
   resumeByFlow(flowType: FlowType!, name: String!, resumeMetadata: ResumeMetadata, includeAcknowledged: Boolean): [RetryResult]!
   resumeByErrorCause(errorCause: String!, includeAcknowledged: Boolean): [RetryResult]!
   resumeMatching(filter: DeltaFilesFilter!, resumeMetadata: [ResumeMetadata!]) : [RetryResult]!
-  replay(dids: [UUID!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
+  replay(dids: [UUID!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
+  replayMatching(filter: DeltaFilesFilter!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput]) : [RetryResult!]!
   acknowledge(dids: [UUID!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [UUID!]!) : [CancelResult!]!
   cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!

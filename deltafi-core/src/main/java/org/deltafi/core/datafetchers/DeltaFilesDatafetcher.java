@@ -201,9 +201,16 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileReplay
+  public List<RetryResult> replayMatching(@InputArgument DeltaFilesFilter filter, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
+    auditLogger.audit("replayed deltaFiles by filter");
+    return deltaFilesService.replay(filter, removeSourceMetadata, replaceSourceMetadata);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileReplay
   public List<RetryResult> replay(@InputArgument List<UUID> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     auditLogger.audit("replayed {} deltaFiles", dids.size());
-    return deltaFilesService.replay(dids, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
+    return deltaFilesService.replay(dids, removeSourceMetadata, replaceSourceMetadata);
   }
 
   @DgsMutation

@@ -926,21 +926,48 @@ public class DeltaFilesService {
         return retryResults;
     }
 
-    public List<RetryResult> replay(@NotNull List<UUID> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata)  {
-        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
+    public List<RetryResult> replay(@NotNull DeltaFilesFilter filter, List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata)  {
+        // check for filters set to values that would return DeltaFiles that cannot be replayed
+        if (Boolean.TRUE.equals(filter.getContentDeleted()) || Boolean.TRUE.equals(filter.getReplayed()) || Boolean.FALSE.equals(filter.getReplayable())) {
+            return List.of();
+        }
+
+        // make sure only replayable DeltaFiles are pulled back
+        filter.setReplayable(true);
+        ensureModifiedBeforeNow(filter);
+
+        List<RetryResult> retryResults = new ArrayList<>();
+
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            Map<UUID, DeltaFile> toReplay = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE)
+                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+            retryResults.addAll(replay(toReplay, removeSourceMetadata, replaceSourceMetadata));
+            numFound = toReplay.size();
+        }
+
+        return retryResults;
+    }
+
+    public List<RetryResult> replay(@NotNull List<UUID> dids, List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata)  {
+        Map<UUID, DeltaFile> deltaFileMap = didsToDeltaFiles(dids, deltaFiles(dids));
+        return replay(deltaFileMap, removeSourceMetadata, replaceSourceMetadata);
+    }
+
+    public List<RetryResult> replay(@NotNull Map<UUID, DeltaFile> deltaFiles, List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata)  {
         List<StateMachineInput> inputs = new ArrayList<>();
         List<DeltaFile> parents = new ArrayList<>();
 
-        List<RetryResult> results = dids.stream()
-                .map(did -> {
+        List<RetryResult> results = deltaFiles.entrySet().stream()
+                .map(entry -> {
+                    UUID did = entry.getKey();
+                    DeltaFile deltaFile = entry.getValue();
                     RetryResult result = RetryResult.newBuilder()
                             .did(did)
                             .success(true)
                             .build();
 
                     try {
-                        DeltaFile deltaFile = deltaFiles.get(did);
-
                         if (deltaFile == null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
@@ -982,10 +1009,10 @@ public class DeltaFilesService {
                                 replayAction.setContent(content);
                             }
 
-                            if (!removeSourceMetadata.isEmpty()) {
+                            if (removeSourceMetadata != null && !removeSourceMetadata.isEmpty()) {
                                 replayAction.setDeleteMetadataKeys(removeSourceMetadata);
                             }
-                            if (!replaceSourceMetadata.isEmpty()) {
+                            if (replaceSourceMetadata != null && !replaceSourceMetadata.isEmpty()) {
                                 replayAction.setMetadata(KeyValueConverter.convertKeyValues(replaceSourceMetadata));
                             }
 
