@@ -25,6 +25,7 @@ import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INVALID_ACTION_EVENT_RECEIVED;
@@ -65,8 +66,8 @@ public class FullFlowExemplarService {
                 .name("filename")
                 .dataSource(dataSource)
                 .stage(DeltaFileStage.IN_FLIGHT)
-                .created(OffsetDateTime.now())
-                .modified(OffsetDateTime.now())
+                .created(now())
+                .modified(now())
                 .flows(new LinkedHashSet<>())
                 .egressed(false)
                 .filtered(false)
@@ -82,14 +83,14 @@ public class FullFlowExemplarService {
         deltaFile.getFlows().add(ingressFlow);
 
         Action ingress = ingressFlow.addAction("SampleTimedIngressAction", null, ActionType.INGRESS,
-                ActionState.COMPLETE, OffsetDateTime.now());
+                ActionState.COMPLETE, now());
         ingress.setContent(List.of(content));
         ingress.setMetadata(metadata);
 
         DeltaFileFlow transformFlow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM),
-                ingressFlow, Set.of(TRANSFORM_TOPIC), OffsetDateTime.now());
+                ingressFlow, Set.of(TRANSFORM_TOPIC), now());
 
-        transformFlow.addAction("Utf8TransformAction", null, ActionType.TRANSFORM, ActionState.QUEUED, OffsetDateTime.now());
+        transformFlow.addAction("Utf8TransformAction", null, ActionType.TRANSFORM, ActionState.QUEUED, now());
 
         return deltaFile;
     }
@@ -103,7 +104,7 @@ public class FullFlowExemplarService {
         flow.setState(DeltaFileFlowState.ERROR);
         flow.firstAction().setName("SampleTimedIngressErrorAction");
 
-        Action action = flow.addAction("NO_SUBSCRIBERS", null, ActionType.PUBLISH, ActionState.ERROR, OffsetDateTime.now());
+        Action action = flow.addAction("NO_SUBSCRIBERS", null, ActionType.PUBLISH, ActionState.ERROR, now());
         action.setErrorCause(NO_SUBSCRIBER_CAUSE);
         action.setErrorContext("No subscribers found for timed data source 'sampleTimedDataSourceError' on topic 'missingPublishTopic'");
         action.setContent(flow.firstAction().getContent());
@@ -131,7 +132,7 @@ public class FullFlowExemplarService {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setState(DeltaFileFlowState.ERROR);
         Action action = getAction(flow,"SampleTransformAction");
-        action.changeState(ActionState.ERROR, START_TIME, STOP_TIME, OffsetDateTime.now());
+        action.changeState(ActionState.ERROR, START_TIME, STOP_TIME, now());
         action.setErrorCause(INVALID_ACTION_EVENT_RECEIVED);
         action.setErrorContext("STARTS:Action event type does not match the populated object");
 
@@ -142,12 +143,12 @@ public class FullFlowExemplarService {
         Content content = new Content("name", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFile deltaFile = utilService.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
         deltaFile.setIngressBytes(500L);
-        DeltaFileFlow flow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM), deltaFile.firstFlow(), OffsetDateTime.now());
+        DeltaFileFlow flow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM), deltaFile.firstFlow(), now());
         flow.setId(UUID_1);
         flow.setPendingActions(TRANSFORM_ACTIONS.stream().map(ActionConfiguration::getName).toList());
         flow.getInput().setMetadata(SOURCE_METADATA);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
-        flow.queueAction("Utf8TransformAction", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
+        flow.queueAction("Utf8TransformAction", null, ActionType.TRANSFORM, false, now());
         deltaFile.setName("input.txt");
         deltaFile.setDataSource(REST_DATA_SOURCE_NAME);
         return deltaFile;
@@ -160,8 +161,8 @@ public class FullFlowExemplarService {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
         Action action = flow.getAction("Utf8TransformAction");
-        action.complete(START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), OffsetDateTime.now());
-        flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
+        action.complete(START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), now());
+        flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, now());
         return deltaFile;
     }
 
@@ -171,32 +172,32 @@ public class FullFlowExemplarService {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setPublishTopics(List.of(EGRESS_TOPIC));
         Action action = flow.getAction("SampleTransformAction");
-        action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), OffsetDateTime.now());
-        Action noSubAction = flow.queueNewAction(NO_SUBSCRIBERS, null, ActionType.PUBLISH, false, OffsetDateTime.now());
-        noSubAction.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), NO_SUBSCRIBER_CAUSE, "");
+        action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), now());
+        Action noSubAction = flow.queueNewAction(NO_SUBSCRIBERS, null, ActionType.PUBLISH, false, now());
+        noSubAction.error(now(), now(), now(), NO_SUBSCRIBER_CAUSE, "");
         deltaFile.setStage(DeltaFileStage.ERROR);
         return deltaFile;
     }
 
     public DeltaFile postResumeNoSubscribersDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8NoSubscriberDeltaFile(did);
-        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, NO_SUBSCRIBERS, Map.of(), List.of())), OffsetDateTime.now());
+        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, NO_SUBSCRIBERS, Map.of(), List.of())), now());
 
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setState(DeltaFileFlowState.COMPLETE);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, OffsetDateTime.now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now());
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.getInput().setMetadata(flow.getMetadata());
         dataSink.getInput().setContent(flow.lastContent());
-        dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, OffsetDateTime.now());
+        dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         return deltaFile;
     }
 
     public DeltaFile postCancelDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
-        deltaFile.cancel(OffsetDateTime.now());
+        deltaFile.cancel(now());
         return deltaFile;
     }
 
@@ -206,7 +207,7 @@ public class FullFlowExemplarService {
         deltaFile.setStage(DeltaFileStage.ERROR);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         Action action = flow.getAction("SampleTransformAction");
-        action.error(START_TIME, STOP_TIME, OffsetDateTime.now(), "transform failed", "message");
+        action.error(START_TIME, STOP_TIME, now(), "transform failed", "message");
         flow.updateState();
         return deltaFile;
     }
@@ -214,10 +215,10 @@ public class FullFlowExemplarService {
     @SuppressWarnings("SameParameterValue")
     public DeltaFile postResumeTransformDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
-        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, "SampleTransformAction", Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue"), List.of("removeMe"))), OffsetDateTime.now());
+        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, "SampleTransformAction", Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue"), List.of("removeMe"))), now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
-        Action action = flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
+        Action action = flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, now());
         action.setAttempt(2);
         return deltaFile;
     }
@@ -226,12 +227,12 @@ public class FullFlowExemplarService {
         DeltaFile deltaFile = withCompleteTransformFlow(did);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, OffsetDateTime.now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now());
         dataSink.setId(UUID_2);
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.getInput().setMetadata(flow.getMetadata());
         dataSink.getInput().setContent(flow.lastContent());
-        dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, OffsetDateTime.now());
+        dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, now());
         return deltaFile;
     }
 
@@ -244,7 +245,7 @@ public class FullFlowExemplarService {
         flow.setPublishTopics(List.of(EGRESS_TOPIC));
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
         Action action = flow.getAction("SampleTransformAction");
-        action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), OffsetDateTime.now());
+        action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), now());
         return deltaFile;
     }
 
@@ -260,7 +261,7 @@ public class FullFlowExemplarService {
         flow.setPendingActions(List.of(EGRESS.getName()));
         flow.setState(DeltaFileFlowState.ERROR);
         Action action = flow.getAction(SAMPLE_EGRESS_ACTION);
-        action.error(START_TIME, STOP_TIME, OffsetDateTime.now(),
+        action.error(START_TIME, STOP_TIME, now(),
                 "Authority XYZ not recognized", "Dead beef feed face cafe");
         action.setNextAutoResume(nextAutoResume);
         if (policyName != null) {
@@ -274,7 +275,7 @@ public class FullFlowExemplarService {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_2);
         flow.getActions().getFirst().setState(ActionState.RETRIED);
         flow.firstAction().setMetadata(Map.of("a", "b"));
-        Action action = flow.addAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, QUEUED, OffsetDateTime.now());
+        Action action = flow.addAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, QUEUED, now());
         action.setAttempt(2);
         flow.setState(DeltaFileFlowState.IN_FLIGHT);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
@@ -313,7 +314,7 @@ public class FullFlowExemplarService {
         Content content = new Content("transformed", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFileFlow flow = deltaFile.getFlow(UUID_2);
         Action action = flow.getAction(SAMPLE_EGRESS_ACTION);
-        action.complete(START_TIME, STOP_TIME, List.of(content), flow.getMetadata(), List.of(), OffsetDateTime.now());
+        action.complete(START_TIME, STOP_TIME, List.of(content), flow.getMetadata(), List.of(), now());
         if (pendingAnnotations != null) {
             deltaFile.setPendingAnnotations("sampleEgress", pendingAnnotations);
             deltaFile.setTerminal(false);
@@ -327,5 +328,10 @@ public class FullFlowExemplarService {
             deltaFile.addAnnotations(annotations);
         }
         return deltaFile;
+    }
+    
+    private OffsetDateTime now() {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        return now.withNano((now.getNano() / 1000) * 1000); // truncate to microseconds
     }
 }

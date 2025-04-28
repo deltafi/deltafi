@@ -189,7 +189,14 @@ public class DeltaFilesDatafetcher {
   @NeedsPermission.DeltaFileResume
   public List<RetryResult> resume(@InputArgument List<UUID> dids, @InputArgument List<ResumeMetadata> resumeMetadata) {
     auditLogger.audit("resumed {} deltaFiles", dids.size());
-    return deltaFilesService.resume(dids, (resumeMetadata == null) ? Collections.emptyList() : resumeMetadata);
+    return deltaFilesService.resume(dids, resumeMetadata);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileResume
+  public List<RetryResult> resumeMatching(@InputArgument DeltaFilesFilter filter, @InputArgument List<ResumeMetadata> resumeMetadata) {
+    auditLogger.audit("resumed deltaFiles by filter");
+    return deltaFilesService.resume(filter, resumeMetadata);
   }
 
   @DgsMutation

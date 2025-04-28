@@ -2421,8 +2421,8 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(shouldResume, shouldAlsoResume, noErrors, differentFlowType, differentFlowName, cancelled, contentDeleted), 1000);
 
-		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  true,  10)).hasSize(2).contains(shouldResume.getDid(), shouldAlsoResume.getDid());
-		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  false,  10)).hasSize(1).contains(shouldResume.getDid());
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  true,  10)).hasSize(2).contains(shouldResume, shouldAlsoResume);
+		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME,  false,  10)).hasSize(1).contains(shouldResume);
 		assertThat(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME, true, 1)).hasSize(1);
 	}
 
@@ -2452,8 +2452,8 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(shouldResumeTransformError, shouldResumeEgressError, transformErrorDiffCause, egressErrorDiffCause, filterCause, cancelled, contentDeleted), 1000);
 
-		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  true,10)).hasSize(2).contains(shouldResumeTransformError.getDid(), shouldResumeEgressError.getDid());
-		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  false, 10)).hasSize(1).contains(shouldResumeTransformError.getDid());
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  true,10)).hasSize(2).contains(shouldResumeTransformError, shouldResumeEgressError);
+		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed",  false, 10)).hasSize(1).contains(shouldResumeTransformError);
 		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed", true, 1)).hasSize(1);
 	}
 
@@ -2464,7 +2464,6 @@ class DeltaFiCoreApplicationTests {
 	private DeltaFile makeEgressErroredDeltaFile() {
 		DeltaFile deltaFile = makeFlowsUnique(fullFlowExemplarService.postTransformDeltaFile(UUID.randomUUID()));
 		DeltaFileFlow egressFlow = deltaFile.lastFlow();
-		egressFlow.getFlowDefinition().setName(TRANSFORM_FLOW_NAME);
 		egressFlow.getActions().getLast().error(NOW, NOW, NOW, "transform failed", "failed context");
 		egressFlow.updateState();
 		deltaFile.updateState(NOW);
@@ -3280,6 +3279,9 @@ class DeltaFiCoreApplicationTests {
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
+
+		// use contains to ignore the order since this query does not include an order by clause
+		assertThat(deltaFileRepo.deltaFiles(filter, 50)).contains(expected);
 	}
 
 	@Test

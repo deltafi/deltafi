@@ -133,6 +133,14 @@ public interface DeltaFileRepoCustom {
      */
     DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields);
 
+    /** Return a list of DeltaFiles matching the given criteria
+     *
+     * @param limit Maximum number of DeltaFiles to return (defaults to 50)
+     * @param filter Filters are used to constrain DeltaFiles that are returned
+     * @return the list of DeltaFiles
+     */
+    List<DeltaFile> deltaFiles(DeltaFilesFilter filter, int limit);
+
     /**
      * For each did in the list, update the corresponding DeltaFile contentDeleted to value
      *
@@ -154,7 +162,7 @@ public interface DeltaFileRepoCustom {
      * @param limit max number of DeltaFile dids to return
      * @return the list of dids who can be resumed
      */
-    List<UUID> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit);
+    List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit);
 
     /**
      * Find the ids of the DeltaFiles with the given errorCause that can be resumed
@@ -163,7 +171,7 @@ public interface DeltaFileRepoCustom {
      * @param limit max number of DeltaFile dids to return
      * @return the list of dids who can be resumed
      */
-    List<UUID> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit);
+    List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit);
 
     /**
      * Finds all DeltaFiles marked as waitingForChildren that have no non-terminal children,

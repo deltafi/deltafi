@@ -810,14 +810,34 @@ public class DeltaFilesService {
         return new StateMachineInput(child, childFlow);
     }
 
-    public List<RetryResult> resume(@NotNull List<UUID> dids, @NotNull List<ResumeMetadata> resumeMetadata) {
+    public List<RetryResult> resume(@NotNull DeltaFilesFilter filter, List<ResumeMetadata> resumeMetadata) {
+        // check for filters set to values that would return DeltaFiles that cannot be resumed
+        if ((filter.getStage() != null && filter.getStage() != DeltaFileStage.ERROR) || Boolean.TRUE.equals(filter.getContentDeleted())) {
+            return List.of();
+        }
+        ensureModifiedBeforeNow(filter);
+
+        // make sure only resumable DeltaFiles are pulled back
+        filter.setStage(DeltaFileStage.ERROR);
+        filter.setContentDeleted(Boolean.FALSE);
+
+        List<RetryResult> retryResults = new ArrayList<>();
+
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            List<DeltaFile> toResume = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE);
+            retryResults.addAll(resumeDeltaFiles(toResume, resumeMetadata));
+            numFound = toResume.size();
+        }
+
+        return retryResults;
+    }
+
+    public List<RetryResult> resume(@NotNull List<UUID> dids, List<ResumeMetadata> resumeMetadata) {
         List<DeltaFile> deltaFiles = deltaFileCacheService.get(dids);
         Map<UUID, DeltaFile> deltaFilesMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, Function.identity()));
-        return resumeDeltaFiles(dids.stream()
-                        .collect(LinkedHashMap::new,
-                                (map, did) -> map.put(did, deltaFilesMap.get(did)),
-                                HashMap::putAll),
-                resumeMetadata);
+        Map<UUID, DeltaFile> inputDidsToDeltaFiles = dids.stream().collect(LinkedHashMap::new, (map, did) -> map.put(did, deltaFilesMap.get(did)), HashMap::putAll);
+        return resumeDeltaFiles(inputDidsToDeltaFiles, resumeMetadata);
     }
 
 
@@ -826,9 +846,9 @@ public class DeltaFilesService {
         List<ResumeMetadata> resumeMetadataList = resumeMetadata != null ? List.of(resumeMetadata) : List.of();
         int numFound = REQUEUE_BATCH_SIZE;
         while (numFound == REQUEUE_BATCH_SIZE) {
-            List<UUID> deltaFileIds = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged, REQUEUE_BATCH_SIZE);
-            numFound = deltaFileIds.size();
-            retryResults.addAll(this.resume(deltaFileIds, resumeMetadataList));
+            List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged, REQUEUE_BATCH_SIZE);
+            numFound = deltaFiles.size();
+            retryResults.addAll(this.resumeDeltaFiles(deltaFiles, resumeMetadataList));
         }
         return retryResults;
     }
@@ -837,14 +857,18 @@ public class DeltaFilesService {
         List<RetryResult> retryResults = new ArrayList<>();
         int numFound = REQUEUE_BATCH_SIZE;
         while (numFound == REQUEUE_BATCH_SIZE) {
-            List<UUID> deltaFileIds = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, REQUEUE_BATCH_SIZE);
+            List<DeltaFile> deltaFileIds = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, REQUEUE_BATCH_SIZE);
             numFound = deltaFileIds.size();
-            retryResults.addAll(this.resume(deltaFileIds, List.of()));
+            retryResults.addAll(this.resumeDeltaFiles(deltaFileIds, List.of()));
         }
         return retryResults;
     }
 
-    public List<RetryResult> resumeDeltaFiles(@NotNull Map<UUID, DeltaFile> deltaFiles, @NotNull List<ResumeMetadata> resumeMetadata) {
+    public List<RetryResult> resumeDeltaFiles(@NotNull List<DeltaFile> deltaFiles, List<ResumeMetadata> resumeMetadata) {
+        return resumeDeltaFiles(deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d)), resumeMetadata);
+    }
+
+    public List<RetryResult> resumeDeltaFiles(@NotNull Map<UUID, DeltaFile> deltaFiles, List<ResumeMetadata> resumeMetadata) {
         List<StateMachineInput> advanceAndSaveInputs = new ArrayList<>();
 
         List<RetryResult> retryResults = deltaFiles.keySet().stream()
@@ -1536,8 +1560,7 @@ public class DeltaFilesService {
         if (!autoResumeDeltaFiles.isEmpty()) {
             Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
                     .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
-            List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles.stream()
-                    .collect(Collectors.toMap(DeltaFile::getDid, Function.identity())), Collections.emptyList());
+            List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles, Collections.emptyList());
             Map<String, Integer> countByFlow = new HashMap<>();
             for (RetryResult result : results) {
                 if (result.getSuccess()) {
@@ -2063,6 +2086,13 @@ public class DeltaFilesService {
             deltaFile.recalculateBytes();
             analyticEventService.recordIngress(deltaFile.getDid(), deltaFile.getCreated(), deltaFile.getDataSource(), deltaFile.firstFlow().getType(),
                     deltaFile.getReferencedBytes(), Annotation.toMap(deltaFile.getAnnotations()), AnalyticIngressTypeEnum.CHILD);
+        }
+    }
+
+    void ensureModifiedBeforeNow(DeltaFilesFilter filter) {
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        if (filter.getModifiedBefore() == null || filter.getModifiedBefore().isAfter(now)) {
+            filter.setModifiedBefore(now);
         }
     }
 

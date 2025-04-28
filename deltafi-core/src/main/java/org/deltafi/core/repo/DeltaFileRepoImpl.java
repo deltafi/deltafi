@@ -244,9 +244,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<UUID> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit) {
+    public List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit) {
         String queryBuilder = """
-                    SELECT df.did
+                    SELECT *
                     FROM delta_files df
                     WHERE df.stage = 'ERROR'
                     AND df.content_deleted IS NULL
@@ -262,21 +262,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     )
                     LIMIT :limit
                 """;
-        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
+        Query query = entityManager.createNativeQuery(queryBuilder, DeltaFile.class)
                 .setParameter("flowType", flowType.name())
                 .setParameter("flowName", flowName)
                 .setParameter("includeAcknowledged", includeAcknowledged)
                 .setParameter("limit", limit);
 
         @SuppressWarnings("unchecked")
-        List<UUID> dids = query.getResultList();
-        return dids;
+        List<DeltaFile> deltaFiles = query.getResultList();
+        return deltaFiles;
     }
 
     @Override
-    public List<UUID> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit) {
+    public List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit) {
         String queryBuilder = """
-                    SELECT df.did
+                    SELECT *
                     FROM delta_files df
                     WHERE df.stage = 'ERROR'
                     AND df.content_deleted IS NULL
@@ -290,14 +290,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     )
                     LIMIT :limit
                 """;
-        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
+        Query query = entityManager.createNativeQuery(queryBuilder, DeltaFile.class)
                 .setParameter("errorCause", errorCause)
                 .setParameter("includeAcknowledged", includeAcknowledged)
                 .setParameter("limit", limit);
 
         @SuppressWarnings("unchecked")
-        List<UUID> dids = query.getResultList();
-        return dids;
+        List<DeltaFile> deltaFiles = query.getResultList();
+        return deltaFiles;
     }
 
     @Override
@@ -479,13 +479,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         /* String fields = (includeFields == null || includeFields.isEmpty()) ? "*" : includeFields.stream()
                 .map(DeltaFileRepoImpl::toSnakeCase)
                 .collect(Collectors.joining(", ")); */
-        StringBuilder sqlQuery = new StringBuilder("SELECT df.* FROM delta_files df ");
-        sqlQuery.append(buildAnnotationJoins(filter));
-        sqlQuery.append("WHERE TRUE\n");
         Map<String, Object> parameters = new HashMap<>();
-        String criteria = buildDeltaFilesCriteria(parameters, filter);
-
-        sqlQuery.append(criteria);
+        StringBuilder sqlQuery = new StringBuilder();
+        String criteria = populateQuery(filter, parameters, sqlQuery);
 
         sqlQuery.append("ORDER BY df.");
         if (orderBy != null) {
@@ -531,6 +527,33 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return deltaFiles;
+    }
+
+    @Override
+    public List<DeltaFile> deltaFiles(DeltaFilesFilter filter, int limit) {
+        Map<String, Object> parameters = new HashMap<>();
+        StringBuilder sqlQuery = new StringBuilder();
+        populateQuery(filter, parameters, sqlQuery);
+        sqlQuery.append("LIMIT :limit");
+
+        Query query = entityManager.createNativeQuery(sqlQuery.toString(), DeltaFile.class);
+        query.setParameter("limit", limit);
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        @SuppressWarnings("unchecked")
+        List<DeltaFile> deltaFileList = query.getResultList();
+        return deltaFileList;
+    }
+
+    private String populateQuery(DeltaFilesFilter filter, Map<String, Object> parameters, StringBuilder sqlQuery) {
+        sqlQuery.append("SELECT df.* FROM delta_files df ");
+        sqlQuery.append(buildAnnotationJoins(filter));
+        sqlQuery.append("WHERE TRUE\n");
+        String criteria = buildDeltaFilesCriteria(parameters, filter);
+        sqlQuery.append(criteria);
+        return criteria;
     }
 
     private static final Pattern CAMEL_CASE_PATTERN = Pattern.compile("([a-z])([A-Z])");

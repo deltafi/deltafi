@@ -28,6 +28,7 @@ import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.exceptions.MissingFlowException;
+import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
@@ -52,6 +53,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -877,5 +879,53 @@ class DeltaFilesServiceTest {
 
         assertFalse(deltaFile1.isPinned());
         assertFalse(deltaFile2.isPinned());
+    }
+
+    @Test
+    void resumeMatching() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.resume(filter, List.of());
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
+        assertThat(filter.getContentDeleted()).isFalse();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void resumeMatching_skipNonResumableFilters() {
+        deltaFilesService.resume(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.IN_FLIGHT).build(), List.of());
+        deltaFilesService.resume(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), List.of());
+
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void ensureModifiedBeforeNow_setMissing() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+
+        deltaFilesService.ensureModifiedBeforeNow(filter);
+        assertThat(filter.getModifiedBefore()).isEqualTo(OffsetDateTime.now(testClock));
+    }
+
+    @Test
+    void ensureModifiedBeforeNow_leaveOlder() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        OffsetDateTime yesterday = OffsetDateTime.now().minusDays(1);
+        filter.setModifiedBefore(yesterday);
+        deltaFilesService.ensureModifiedBeforeNow(filter);
+
+        assertThat(filter.getModifiedBefore()).isEqualTo(yesterday);
+    }
+
+    @Test
+    void ensureModifiedBeforeNow_replaceNewer() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        OffsetDateTime later = OffsetDateTime.now(testClock).plusMinutes(1);
+        filter.setModifiedBefore(later);
+
+        deltaFilesService.ensureModifiedBeforeNow(filter);
+
+        assertThat(filter.getModifiedBefore()).isEqualTo(OffsetDateTime.now(testClock));
     }
 }

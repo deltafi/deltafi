@@ -310,7 +310,7 @@ public class DeltaFile {
 
   public List<DeltaFileFlow> resumeErrors(@NotNull List<ResumeMetadata> resumeMetadata, OffsetDateTime now) {
     List<DeltaFileFlow> retries = flows.stream()
-            .filter(f -> f.resume(resumeMetadata, now))
+            .filter(f -> f.resume(Objects.requireNonNullElseGet(resumeMetadata, List::of), now))
             .toList();
 
     if (!retries.isEmpty()) {
