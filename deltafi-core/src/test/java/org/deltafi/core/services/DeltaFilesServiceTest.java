@@ -965,4 +965,20 @@ class DeltaFilesServiceTest {
 
         assertThat(filter.getModifiedBefore()).isEqualTo(OffsetDateTime.now(testClock));
     }
+
+    @Test
+    void cancelMatching() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.cancel(filter);
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.IN_FLIGHT);
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void cancelMatching_skipNonCancelableFilters() {
+        deltaFilesService.cancel(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.CANCELLED).build());
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
 }

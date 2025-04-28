@@ -455,6 +455,7 @@ type Mutation {
   replay(dids: [UUID!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [UUID!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [UUID!]!) : [CancelResult!]!
+  cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!
 
   pin(dids: [UUID!]!) : [Result!]!
   unpin(dids: [UUID!]!) : [Result!]!

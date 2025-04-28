@@ -847,7 +847,6 @@ public class DeltaFilesService {
         return resumeDeltaFiles(inputDidsToDeltaFiles, resumeMetadata);
     }
 
-
     public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, ResumeMetadata resumeMetadata, boolean includeAcknowledged) {
         List<RetryResult> retryResults = new ArrayList<>();
         List<ResumeMetadata> resumeMetadataList = resumeMetadata != null ? List.of(resumeMetadata) : List.of();
@@ -1172,20 +1171,46 @@ public class DeltaFilesService {
         return results;
     }
 
+    public List<CancelResult> cancel(DeltaFilesFilter filter) {
+        // if the stage is not null or IN_FLIGHT there is nothing to cancel
+        if ((filter.getStage() != null && filter.getStage() != DeltaFileStage.IN_FLIGHT)) {
+            return List.of();
+        }
+
+        // make sure only IN_FLIGHT stage is set in the filter
+        filter.setStage(DeltaFileStage.IN_FLIGHT);
+        ensureModifiedBeforeNow(filter);
+
+        List<CancelResult> cancelResults = new ArrayList<>();
+
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            Map<UUID, DeltaFile> toCancel = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE)
+                            .stream().collect(Collectors.toMap(DeltaFile::getDid, d->d));
+            cancelResults.addAll(cancel(toCancel));
+            numFound = toCancel.size();
+        }
+
+        return cancelResults;
+    }
+
     public List<CancelResult> cancel(List<UUID> dids) {
-        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
+        return cancel(didsToDeltaFiles(dids, deltaFiles(dids)));
+    }
+
+    public List<CancelResult> cancel(Map<UUID, DeltaFile> deltaFiles) {
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
 
-        List<CancelResult> results = dids.stream()
-                .map(did -> {
+        List<CancelResult> results = deltaFiles.entrySet().stream()
+                .map(entry -> {
+                    UUID did = entry.getKey();
+                    DeltaFile deltaFile = entry.getValue();
                     CancelResult result = CancelResult.newBuilder()
                             .did(did)
                             .success(true)
                             .build();
 
                     try {
-                        DeltaFile deltaFile = deltaFiles.get(did);
-
                         if (deltaFile == null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
@@ -2094,6 +2119,13 @@ public class DeltaFilesService {
             analyticEventService.recordIngress(deltaFile.getDid(), deltaFile.getCreated(), deltaFile.getDataSource(), deltaFile.firstFlow().getType(),
                     deltaFile.getReferencedBytes(), Annotation.toMap(deltaFile.getAnnotations()), AnalyticIngressTypeEnum.CHILD);
         }
+    }
+
+    private Map<UUID, DeltaFile> didsToDeltaFiles(List<UUID> dids, Map<UUID, DeltaFile> deltaFiles) {
+        return dids.stream()
+                .collect(LinkedHashMap::new,
+                        (map, did) -> map.put(did, deltaFiles.get(did)),
+                        HashMap::putAll);
     }
 
     void ensureModifiedBeforeNow(DeltaFilesFilter filter) {

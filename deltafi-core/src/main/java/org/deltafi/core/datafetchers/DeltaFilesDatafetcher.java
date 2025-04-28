@@ -221,6 +221,13 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileCancel
+  public List<CancelResult> cancelMatching(@InputArgument DeltaFilesFilter filter) {
+    auditLogger.audit("canceling deltaFiles by filter");
+    return deltaFilesService.cancel(filter);
+  }
+
+  @DgsMutation
   @NeedsPermission.DeletePolicyDelete
   public List<Result> pin(@InputArgument List<UUID> dids) {
     auditLogger.audit("pinning deltafiles with dids {}", CoreAuditLogger.listToString(dids));
