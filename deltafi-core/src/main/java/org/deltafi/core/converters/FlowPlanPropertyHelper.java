@@ -60,8 +60,9 @@ public class FlowPlanPropertyHelper {
     }
 
     public <C extends ActionConfiguration> void replaceCommonActionPlaceholders(C actionConfiguration, ActionConfiguration actionTemplate) {
-        actionConfiguration.setInternalParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
-        actionConfiguration.setParameters(maskedDelegate().orElse(this).replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
+        Map<String, Object> templateParameters = actionTemplate.getParameters() != null ? actionTemplate.getParameters() : new HashMap<>();
+        actionConfiguration.setInternalParameters(replaceMapPlaceholders(templateParameters, actionConfiguration.getName()));
+        actionConfiguration.setParameters(maskedDelegate().orElse(this).replaceMapPlaceholders(templateParameters, actionConfiguration.getName()));
 
         // fill in any unset parameters after resolving variables because the resolver prunes out keys with null values
         setDefaultValues(ParameterUtil.toMap(actionTemplate.getParameterSchema()), actionConfiguration.getParameters());

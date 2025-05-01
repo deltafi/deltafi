@@ -69,7 +69,7 @@ public class ActionConfiguration {
     public Map<String, Object> getInternalParameters() {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet
-            setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
+            setInternalParameters(Objects.requireNonNullElseGet(parameters, HashMap::new));
         }
 
         return internalParameters;
