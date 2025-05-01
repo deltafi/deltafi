@@ -233,11 +233,27 @@ const submit = async () => {
     notify.error(`Delete Policy Validation Errors`, `Unable to upload Delete Policy `, 4000);
   } else {
     const response = await loadDeletePolicies(newDeletePolicyUpload.value);
+
     if (!_.isEmpty(_.get(response, "errors", null))) {
       notify.error(`Upload failed`, `Unable to update Delete Policy.`, 4000);
+      return;
     }
-    closeDialogCommand.command();
-    emit("reloadDeletePolicies");
+
+    if (response.data.loadDeletePolicies.success) {
+      closeDialogCommand.command();
+      notify.success("Saved Delete Policy", `Successfully saved delete policy ${selectedDeleteName.value}.`, 3000);
+      emit("reloadDeletePolicies");
+      return;
+    }
+
+    const responseErrors = response.data.loadDeletePolicies.errors;
+    if (!_.isEmpty(responseErrors)) {
+      for (const errorMessage of responseErrors) {
+        errorsList.value.push(_.trim(errorMessage));
+      }
+      notify.error(`Policy format error`, `Unable to update Delete Policy.`, 4000);
+    }
+
   }
 };
 

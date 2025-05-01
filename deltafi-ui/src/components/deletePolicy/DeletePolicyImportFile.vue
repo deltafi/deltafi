@@ -85,7 +85,18 @@ const uploadFile = async (file) => {
   if (!_.isEmpty(_.get(response, "errors", null))) {
     notify.error(`Upload failed for ${file.name}`, `Removing ${file.name}.`, 4000);
   } else {
-    notify.success(`Uploaded ${file.name}`, `Successfully uploaded ${file.name}.`, 4000);
+    if (response.data.loadDeletePolicies.success) {
+      notify.success(`Imported ${file.name}`, `Successfully imported plicies from ${file.name}.`, 4000);
+    } else {
+      const responseErrors = response.data.loadDeletePolicies.errors;
+      if (!_.isEmpty(responseErrors)) {
+        for (const errorMessage of responseErrors) {
+          errorsList.value.push(_.trim(errorMessage));
+        }
+        errorOverlayPanel.value.toggle(overlayPanelPosition.value, overlayPanelPosition.value.target);
+      }
+      notify.error(`Policy format error`, `Removing ${file.name}.`, 4000);
+    }
   }
   deleteUploadFile();
   emit("reloadDeletePolicies");
