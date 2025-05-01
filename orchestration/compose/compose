@@ -11,17 +11,19 @@ Env Directory:     ${ENV_DIR}
 Secrets Directory: ${SECRETS_DIR}
 
 Subcommands:
-  start                       start all of the services
-  uninstall                   stop and remove all of the services (destructive to postgres storage)
-  restart <services>          restart the list of services (space delimited, restarts all services by default)
-  stop-services <services>    stop the list of services (space delimited, stops all services by default)
   build                       build and tag core docker images for use in compose
+  config                      print out DeltaFi compose configuration
   destroy                     remove all data directories for DeltaFi
   images                      list a manifest of all images used by the stack
-  top                         top listing for compose stack
   logs                        show logs for compose stack
-  ps                          show running compose stack
   pause                       pause the compose stack
+  ps                          show running compose stack
+  restart <services>          restart the list of services (space delimited, restarts all services by default)
+  start                       start all of the services
+  status                      show status of DeltaFi compose stack (requires lazydocker installation)
+  stop-services <services>    stop the list of services (space delimited, stops all services by default)
+  top                         top listing for compose stack
+  uninstall                   stop and remove all of the services (destructive to postgres storage)
   unpause                     unpause the compose stack
 
 Usage:
@@ -56,7 +58,9 @@ GROUP_ID=$(id -g)
 
 # Assumes that group with access to Docker is named "docker" and uses that to set the 'DOCKER_GID' environment variable,
 # else sets it to 0
-docker_gid_temp=$(getent group docker | cut -d: -f3)
+if which getent > /dev/null; then
+  docker_gid_temp=$(getent group docker | cut -d: -f3)
+fi
 if [ -z "$docker_gid_temp" ]; then
   docker_gid_temp=0
 fi
@@ -335,10 +339,8 @@ OS="$(uname)"
 ARCH="$(uname -m)"
 if [[ "${OS}" == "Linux" ]]; then
   DELTAFI_ON_LINUX=1
-  _ok "Linux environment detected"
 elif [[ "${OS}" == "Darwin" ]]; then
   DELTAFI_ON_MACOS=1
-  _ok "MacOS environment detected"
 else
   _fail "Compose orchestration for DeltaFi is only supported on macOS and Linux."
 fi
@@ -772,6 +774,26 @@ restart_service() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d --force-recreate --no-deps ${1}
 }
 
+up() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d "$@"
+}
+
+config() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" config "$@"
+}
+
+status() {
+  if which lazydocker > /dev/null; then
+    local temp_file
+    temp_file=$(mktemp -t lazydocker.XXXXXX)
+    trap 'rm -f "$temp_file"' EXIT INT TERM HUP
+    config > "$temp_file"
+    lazydocker -f "$temp_file" "$@"
+  else
+    _fail "Requires lazydocker installation"
+  fi
+}
+
 images() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" images "$@"
 }
@@ -869,6 +891,9 @@ case "$SUBCOMMAND" in
   uninstall)
     uninstall
     ;;
+  config)
+    config "$@"
+    ;;
   convert)
     convert "$@"
     ;;
@@ -887,8 +912,14 @@ case "$SUBCOMMAND" in
   pause)
     pause "$@"
     ;;
+  status)
+    status "$@"
+    ;;
   unpause)
     unpause "$@"
+    ;;
+  up)
+    up "$@"
     ;;
   destroy)
     destroy
