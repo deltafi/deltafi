@@ -826,9 +826,9 @@ smtp:
 sidecar:
   image:
     # -- The Docker registry
-    registry: quay.io
+    registry: docker.io
     repository: kiwigrid/k8s-sidecar
-    tag: 1.25.2
+    tag: 1.30.3
     sha: ""
   imagePullPolicy: IfNotPresent
   resources: {}
