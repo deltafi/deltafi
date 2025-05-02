@@ -92,10 +92,10 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
     private Duration pluginDeployTimeout = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the plugin. This must be greater than 30 seconds (or 0 to turn it off) and should be less than the requeueDuration.  By default, there is no timeout set. To turn off this feature set the value to null or 0s")
+    @PropertyInfo(description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the pod. Null (or 0) indicates disabled, which is the default. To enable, this value must be greater than 30 seconds and should be less than the requeueDuration. To disable this feature use 'Revert' (or set the value to 0)")
     private Duration actionExecutionTimeout;
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated (or 0 to disable).  Disabled by default. To disable this feature set the value to null or 0s")
+    @PropertyInfo(description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated . Null (or 0) indicates disabled, which is the default. To disable this feature use 'Revert' (or set the value to 0)")
     private Duration actionExecutionWarning;
 
     @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10", dataType = VariableDataType.NUMBER)
