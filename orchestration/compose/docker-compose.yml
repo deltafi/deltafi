@@ -35,6 +35,8 @@ services:
         condition: service_started
     expose:
       - "8080"
+    group_add:
+      - ${DOCKER_GID}
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
       UNIQUE_ID: deltafi-core-scheduler
