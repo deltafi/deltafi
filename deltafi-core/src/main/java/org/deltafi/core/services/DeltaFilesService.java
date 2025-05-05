@@ -665,6 +665,43 @@ public class DeltaFilesService {
                 .orElse(null);
     }
 
+    public void annotateMatching(DeltaFilesFilter filter, Map<String, String> annotations, boolean allowOverwrites) {
+        // there are no restrictions on the annotation filters, just make sure filter is capped by the modified time
+        ensureModifiedBeforeNow(filter);
+
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            List<DeltaFile> toAnnotate = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE);
+            annotateMatching(toAnnotate, annotations, allowOverwrites);
+            numFound = toAnnotate.size();
+        }
+    }
+
+    void annotateMatching(List<DeltaFile> deltaFiles, Map<String, String> annotations, boolean allowOverwrites) {
+        List<QueuedAnnotation> queuedAnnotations = new ArrayList<>();
+        for (DeltaFile deltaFile : deltaFiles) {
+            if (deltaFile.isTerminal()) {
+                addAnnotations(deltaFile, annotations, allowOverwrites, OffsetDateTime.now(clock));
+            } else if (deltaFileCacheService.isCached(deltaFile.getDid())) {
+                didMutexService.executeWithLock(deltaFile.getDid(), () -> {
+                    // make sure we are acting on the latest cached value with the lock
+                    DeltaFile deltaFileFromCache = getCachedDeltaFile(deltaFile.getDid());
+                    if (deltaFileFromCache != null) {
+                        addAnnotations(deltaFileFromCache, annotations, allowOverwrites, OffsetDateTime.now(clock));
+                    } else {
+                        queuedAnnotations.add(new QueuedAnnotation(deltaFile.getDid(), annotations, allowOverwrites));
+                    }
+                });
+            } else {
+                queuedAnnotations.add(new QueuedAnnotation(deltaFile.getDid(), annotations, allowOverwrites));
+            }
+        }
+
+        if (!queuedAnnotations.isEmpty()) {
+            queuedAnnotationRepo.saveAll(queuedAnnotations);
+        }
+    }
+
     public void addAnnotations(UUID did, Map<String, String> annotations, boolean allowOverwrites) {
         didMutexService.executeWithLock(did, () -> {
             DeltaFile deltaFile = getTerminalStageDeltaFileOrCache(did);

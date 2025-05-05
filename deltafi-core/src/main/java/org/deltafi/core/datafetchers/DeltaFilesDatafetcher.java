@@ -257,6 +257,14 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileMetadataWrite
+  public boolean annotateMatching(@InputArgument DeltaFilesFilter filter, List<KeyValue> annotations, boolean allowOverwrites) {
+    auditLogger.audit("annotated deltaFiles by filter with {}", CoreAuditLogger.listToString(annotations));
+    deltaFilesService.annotateMatching(filter, KeyValueConverter.convertKeyValues(annotations), allowOverwrites);
+    return true;
+  }
+
+  @DgsMutation
   @NeedsPermission.ResumePolicyApply
   public Result applyResumePolicies(@InputArgument List<String> names) {
     auditLogger.audit("applied resume policies: {}", String.join(", ", names));

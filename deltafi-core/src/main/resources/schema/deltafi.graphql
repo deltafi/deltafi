@@ -462,6 +462,7 @@ type Mutation {
   unpin(dids: [UUID!]!) : [Result!]!
 
   addAnnotations(did: UUID!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
+  annotateMatching(filter: DeltaFilesFilter!, annotations: [KeyValueInput]!, allowOverwrites: Boolean!) : Boolean!
 
   savePluginVariables(variables: [VariableInput]!) : Boolean!
   removePluginVariables: Boolean!

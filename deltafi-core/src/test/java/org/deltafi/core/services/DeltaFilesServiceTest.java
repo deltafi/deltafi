@@ -53,7 +53,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -79,6 +79,8 @@ class DeltaFilesServiceTest {
     private final MetricService metricService;
     private final UtilService utilService;
     private final FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
+    private final AnalyticEventService analyticEventService;
+
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
     @Captor
@@ -91,6 +93,8 @@ class DeltaFilesServiceTest {
     private ArgumentCaptor<List<UUID>> uuidListCaptor;
     @Captor
     private ArgumentCaptor<List<String>> stringListCaptor;
+    @Captor
+    ArgumentCaptor<List<QueuedAnnotation>> queuedAnnotationListCaptor;
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock DataSinkService dataSinkService, @Mock StateMachine stateMachine,
@@ -119,6 +123,7 @@ class DeltaFilesServiceTest {
         this.restDataSourceService = restDataSourceService;
         this.metricService = metricService;
         this.utilService = new UtilService(flowDefinitionService);
+        this.analyticEventService = analyticEventService;
 
         MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
@@ -998,5 +1003,48 @@ class DeltaFilesServiceTest {
         deltaFilesService.replay(DeltaFilesFilter.newBuilder().replayed(true).build(), null, null);
         deltaFilesService.replay(DeltaFilesFilter.newBuilder().replayable(false).build(), null, null);
         Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void annotateMatching() {
+        DeltaFile terminal = utilService.buildDeltaFile(UUID.randomUUID(), "terminal", DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+        terminal.setTerminal(true);
+        DeltaFile inFlight = utilService.buildDeltaFile(UUID.randomUUID());
+        DeltaFile cachedInFlight = utilService.buildDeltaFile(UUID.randomUUID());
+        DeltaFile flushedFromCache = utilService.buildDeltaFile(UUID.randomUUID());
+
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        Map<String, String> annotations = Map.of("k", "v");
+
+        Mockito.when(deltaFileRepo.deltaFiles(filter, 5000)).thenReturn(List.of(terminal, cachedInFlight, inFlight, flushedFromCache));
+        Mockito.when(deltaFileCacheService.isCached(cachedInFlight.getDid())).thenReturn(true);
+        Mockito.when(deltaFileCacheService.get(cachedInFlight.getDid())).thenReturn(cachedInFlight);
+        Mockito.when(deltaFileCacheService.isCached(flushedFromCache.getDid())).thenReturn(true);
+        Mockito.when(deltaFileCacheService.get(flushedFromCache.getDid())).thenReturn(null);
+
+        deltaFilesService.annotateMatching(filter, annotations, true);
+
+        assertThat(filter.getModifiedBefore()).isNotNull();
+
+        // terminal DeltaFile has save called immediately along with adding analytics
+        Mockito.verify(deltaFileCacheService).save(terminal);
+        Mockito.verify(analyticEventService).queueAnnotations(terminal.getDid(), annotations);
+
+        // locally cached DeltaFile is processed immediately
+        assertThat(cachedInFlight.getAnnotations()).anyMatch(annotation -> annotation.getKey().equals("k") && annotation.getValue().equals("v"));
+        Mockito.verify(deltaFileCacheService).save(cachedInFlight);
+        Mockito.verify(analyticEventService).queueAnnotations(cachedInFlight.getDid(), annotations);
+
+        // in-flight and flushed DeltaFile have queued annotation added
+        Mockito.verify(queuedAnnotationRepo).saveAll(queuedAnnotationListCaptor.capture());
+        List<QueuedAnnotation> queuedAnnotations = queuedAnnotationListCaptor.getValue();
+
+        assertThat(queuedAnnotations).hasSize(2)
+                .anyMatch(queuedAnnotation -> didMatches(queuedAnnotation, inFlight.getDid()))
+                .anyMatch(queuedAnnotation -> didMatches(queuedAnnotation, flushedFromCache.getDid()));
+    }
+
+    private boolean didMatches(QueuedAnnotation queuedAnnotation, UUID expectedDid) {
+        return queuedAnnotation.getDid().equals(expectedDid);
     }
 }
