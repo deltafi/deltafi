@@ -38,5 +38,5 @@ func AddLoadFlags(cmd *cobra.Command) {
 	_ = cmd.MarkPersistentFlagRequired("file")
 
 	// flags to control the output format after loading the resource
-	AddFormatFlag(loadTransformFlow)
+	AddFormatFlag(cmd)
 }

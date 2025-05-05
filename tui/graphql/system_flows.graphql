@@ -1,0 +1,83 @@
+fragment ActionFields on ActionConfiguration {
+    name
+    type
+    parameters
+}
+
+query GetSystemFlowPlans {
+    getAllSystemFlowPlans {
+        dataSinkPlans {
+            name
+            type
+            description
+            subscribe {
+                topic
+                condition
+            }
+            egressAction {
+                ...ActionFields
+            }
+        }
+        restDataSources {
+            name
+            type
+            description
+            topic
+            metadata
+            annotationConfig {
+                annotations
+                discardPrefix
+                metadataPatterns
+            }
+        }
+        timedDataSources {
+            name
+            type
+            description
+            topic
+            timedIngressAction {
+                ...ActionFields
+            }
+            cronSchedule
+            metadata
+            annotationConfig {
+                annotations
+                discardPrefix
+                metadataPatterns
+            }
+        }
+        transformPlans {
+            name
+            type
+            description
+            subscribe {
+                topic
+                condition
+            }
+            transformActions {
+                ...ActionFields
+                join {
+                    maxAge
+                    minNum
+                    maxNum
+                    metadataKey
+                }
+            }
+            publish {
+                matchingPolicy
+                defaultRule {
+                    defaultBehavior
+                    topic
+                }
+                rules {
+                    topic
+                    condition
+                }
+            }
+        }
+    }
+}
+
+mutation ImportSystemPlans($plans: SystemFlowPlansInput!) {
+    saveSystemFlowPlans(systemFlowPlansInput: $plans)
+}
