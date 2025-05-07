@@ -20,8 +20,7 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +28,8 @@ import java.util.Set;
 
 @Getter
 @Setter
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class DataSinkPlan extends FlowPlan {
     private final ActionConfiguration egressAction;

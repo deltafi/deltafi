@@ -54,7 +54,7 @@ class PluginServiceTest {
     private static final PluginCoordinates PLUGIN_COORDINATES_1 = new PluginCoordinates("org.mock", "plugin-1", "1.0.0");
     private static final PluginCoordinates PLUGIN_COORDINATES_2 = new PluginCoordinates("org.mock", "plugin-2", "1.0.0");
     private static final PluginSnapshot PLUGIN_1 = new PluginSnapshot(null, null, PLUGIN_COORDINATES_1);
-    private static final PluginSnapshot PLUGIN_2= new PluginSnapshot(null, null, PLUGIN_COORDINATES_2);
+    private static final PluginSnapshot PLUGIN_2 = new PluginSnapshot(null, null, PLUGIN_COORDINATES_2);
 
     @Mock
     PluginRepository pluginRepository;
@@ -182,6 +182,44 @@ class PluginServiceTest {
                 .thenReturn(Optional.of(plugin));
         // plugin with these coordinate found, and previous registration had the same hash
         assertFalse(pluginService.isRegistrationNew(pluginRegistration));
+    }
+
+    @Test
+    void testComputeHashDescriptionCheck() {
+        String orig = hashPlugin("description", Collections.emptyList());
+        String same = hashPlugin("description", Collections.emptyList());
+        String different = hashPlugin("description!!", Collections.emptyList());
+
+        assertThat(orig).isEqualTo(same);
+        assertThat(orig).isNotEqualTo(different);
+    }
+
+    private RestDataSourcePlan makeRestDataSourcePlan(Map<String, String> annotations) {
+         return new RestDataSourcePlan("rest", FlowType.REST_DATA_SOURCE, "desc", Collections.emptyMap(),
+                new AnnotationConfig(annotations, Collections.emptyList(), null), "topic");
+    }
+    private String hashPlugin(String description, List<FlowPlan> flowPlans) {
+        PluginEntity plugin = new PluginEntity();
+        plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .description(description)
+                .pluginCoordinates(plugin.getPluginCoordinates())
+                .flowPlans(flowPlans)
+                .build();
+        return PluginService.hashRegistration(pluginRegistration);
+    }
+
+    @Test
+    void testComputeHashFlowCheck() {
+        String orig = hashPlugin("desc",
+                List.of(makeRestDataSourcePlan(Map.of("a", "b"))));
+        String same = hashPlugin("desc",
+                List.of(makeRestDataSourcePlan(Map.of("a", "b"))));
+        String different = hashPlugin("desc",
+                List.of(makeRestDataSourcePlan(Map.of("a", "Z"))));
+
+        assertThat(orig).isEqualTo(same);
+        assertThat(orig).isNotEqualTo(different);
     }
 
     @Test
