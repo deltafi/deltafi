@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
+	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
 )
 
@@ -118,12 +120,14 @@ var startDataSourceFlow = &cobra.Command{
 	Use:   "start [flowNames...]",
 	Short: "Start data sources",
 	Long: `Start one or more data sources with the given names.
-If --all is specified, starts all data sources, ignoring any explicitly listed flows.`,
+If --all is specified, starts all data sources, ignoring any explicitly listed flows.
+If -a/--all-actions is specified, starts the data source and all connected actions.`,
 	ValidArgsFunction: getDataSourceNames,
 	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		all, _ := cmd.Flags().GetBool("all")
+		allActions, _ := cmd.Flags().GetBool("all-actions")
 
 		if all {
 			names, err := fetchRemoteDataSourceNames()
@@ -140,6 +144,13 @@ If --all is specified, starts all data sources, ignoring any explicitly listed f
 			// Try REST data source first
 			err := startFlow(graphql.FlowTypeRestDataSource, flowName)
 			if err == nil {
+				if allActions {
+					err = startAllConnectedActions(flowName)
+					if err != nil {
+						fmt.Printf("Error starting connected actions for %s: %v\n", flowName, err)
+						lastErr = err
+					}
+				}
 				continue
 			}
 
@@ -148,6 +159,12 @@ If --all is specified, starts all data sources, ignoring any explicitly listed f
 			if err != nil {
 				fmt.Printf("Error starting data source %s: %v\n", flowName, err)
 				lastErr = err
+			} else if allActions {
+				err = startAllConnectedActions(flowName)
+				if err != nil {
+					fmt.Printf("Error starting connected actions for %s: %v\n", flowName, err)
+					lastErr = err
+				}
 			}
 		}
 		return lastErr
@@ -158,12 +175,14 @@ var stopDataSourceFlow = &cobra.Command{
 	Use:   "stop [flowNames...]",
 	Short: "Stop data sources",
 	Long: `Stop one or more data sources with the given names.
-If --all is specified, stops all data sources, ignoring any explicitly listed flows.`,
+If --all is specified, stops all data sources, ignoring any explicitly listed flows.
+If -a/--all-actions is specified, stops the data source and all connected actions.`,
 	ValidArgsFunction: getDataSourceNames,
 	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		all, _ := cmd.Flags().GetBool("all")
+		allActions, _ := cmd.Flags().GetBool("all-actions")
 
 		if all {
 			names, err := fetchRemoteDataSourceNames()
@@ -180,6 +199,13 @@ If --all is specified, stops all data sources, ignoring any explicitly listed fl
 			// Try REST data source first
 			err := stopFlow(graphql.FlowTypeRestDataSource, flowName)
 			if err == nil {
+				if allActions {
+					err = stopAllConnectedActions(flowName)
+					if err != nil {
+						fmt.Printf("Error stopping connected actions for %s: %v\n", flowName, err)
+						lastErr = err
+					}
+				}
 				continue
 			}
 
@@ -188,6 +214,12 @@ If --all is specified, stops all data sources, ignoring any explicitly listed fl
 			if err != nil {
 				fmt.Printf("Error stopping data source %s: %v\n", flowName, err)
 				lastErr = err
+			} else if allActions {
+				err = stopAllConnectedActions(flowName)
+				if err != nil {
+					fmt.Printf("Error stopping connected actions for %s: %v\n", flowName, err)
+					lastErr = err
+				}
 			}
 		}
 		return lastErr
@@ -197,15 +229,23 @@ If --all is specified, stops all data sources, ignoring any explicitly listed fl
 var pauseDataSourceFlow = &cobra.Command{
 	Use:               "pause [flowName]",
 	Short:             "Pause a data source",
-	Long:              `Pause a data source with the given name.`,
+	Long:              `Pause a data source with the given name. If -a/--all-actions is specified, pauses the data source and all connected actions.`,
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getDataSourceNames,
 	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
+		allActions, _ := cmd.Flags().GetBool("all-actions")
+
 		// Try REST data source first
 		err := pauseFlow(graphql.FlowTypeRestDataSource, args[0])
 		if err == nil {
+			if allActions {
+				err = pauseAllConnectedActions(args[0])
+				if err != nil {
+					return fmt.Errorf("Error pausing connected actions for %s: %v", args[0], err)
+				}
+			}
 			return nil
 		}
 
@@ -213,6 +253,12 @@ var pauseDataSourceFlow = &cobra.Command{
 		err = pauseFlow(graphql.FlowTypeTimedDataSource, args[0])
 		if err != nil {
 			return fmt.Errorf("Error pausing data source %s: %v", args[0], err)
+		}
+		if allActions {
+			err = pauseAllConnectedActions(args[0])
+			if err != nil {
+				return fmt.Errorf("Error pausing connected actions for %s: %v", args[0], err)
+			}
 		}
 		return nil
 	},
@@ -287,6 +333,19 @@ func getDataSource(cmd *cobra.Command, name string) error {
 	return wrapInError("Error getting data source "+name, err)
 }
 
+func formatDataSourceState(state string) string {
+	switch strings.ToUpper(state) {
+	case "RUNNING":
+		return styles.SuccessStyle.Render(state)
+	case "STOPPED":
+		return styles.ErrorStyle.Render(state)
+	case "PAUSED":
+		return styles.WarningStyle.Render(state)
+	default:
+		return state
+	}
+}
+
 func listAllDataSources(cmd *cobra.Command) error {
 	var resp, err = graphql.ListDataSources()
 	if err != nil {
@@ -297,21 +356,25 @@ func listAllDataSources(cmd *cobra.Command) error {
 
 	// Add REST data sources
 	for _, dataSource := range resp.GetAllFlows.GetRestDataSource() {
+		actionCounts, _ := countActionsInFlow(dataSource.GetName())
 		rows = append(rows, []string{
 			dataSource.GetName(),
 			"REST",
-			string(dataSource.GetFlowStatus().State),
+			formatDataSourceState(string(dataSource.GetFlowStatus().State)),
 			strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
+			formatActionCounts(actionCounts),
 		})
 	}
 
 	// Add timed data sources
 	for _, dataSource := range resp.GetAllFlows.GetTimedDataSource() {
+		actionCounts, _ := countActionsInFlow(dataSource.GetName())
 		rows = append(rows, []string{
 			dataSource.GetName(),
 			"Timed",
-			string(dataSource.GetFlowStatus().State),
+			formatDataSourceState(string(dataSource.GetFlowStatus().State)),
 			strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
+			formatActionCounts(actionCounts),
 		})
 	}
 
@@ -319,7 +382,7 @@ func listAllDataSources(cmd *cobra.Command) error {
 		return rows[i][0] < rows[j][0]
 	})
 
-	columns := []string{"Name", "Type", "State", "Test Mode"}
+	columns := []string{"Name", "Type", "State", "Test Mode", "Downstream"}
 
 	plain, _ := cmd.Flags().GetBool("plain")
 
@@ -462,6 +525,499 @@ func deleteDataSource(cmd *cobra.Command, name string) error {
 	return newDataSourceError(fmt.Sprintf("Error deleting data source %s: %v", name, err))
 }
 
+type actionCounts struct {
+	running int
+	stopped int
+	paused  int
+}
+
+func countActionsInFlow(flowName string) (*actionCounts, error) {
+	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	if err != nil {
+		return nil, err
+	}
+
+	counts := &actionCounts{}
+	visitedTopics := make(map[string]bool)
+	visitedTransforms := make(map[string]bool)
+	visitedSinks := make(map[string]bool)
+
+	// Find the source node and its topic
+	var sourceTopic string
+	for _, flows := range flowGraph.GetFlows {
+		for _, source := range flows.GetRestDataSources() {
+			if source.GetName() == flowName {
+				sourceTopic = source.GetTopic()
+				break
+			}
+		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetTimedDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
+		if sourceTopic != "" {
+			break
+		}
+	}
+
+	if sourceTopic == "" {
+		return counts, nil
+	}
+
+	// Recursively traverse the flow tree starting from the source topic
+	countActionsFromTopic(flowGraph, sourceTopic, counts, visitedTopics, visitedTransforms, visitedSinks)
+
+	return counts, nil
+}
+
+func countActionsFromTopic(
+	flowGraph *graphql.GetFlowGraphResponse,
+	topic string,
+	counts *actionCounts,
+	visitedTopics map[string]bool,
+	visitedTransforms map[string]bool,
+	visitedSinks map[string]bool,
+) {
+	// Skip if we've already visited this topic
+	if visitedTopics[topic] {
+		return
+	}
+	visitedTopics[topic] = true
+
+	// Find all transforms that subscribe to this topic
+	for _, flows := range flowGraph.GetFlows {
+		for _, transform := range flows.GetTransformFlows() {
+			if visitedTransforms[transform.GetName()] {
+				continue
+			}
+
+			// Check if transform subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range transform.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedTransforms[transform.GetName()] = true
+				state := transform.GetFlowStatus().State
+				switch state {
+				case graphql.FlowStateRunning:
+					counts.running++
+				case graphql.FlowStateStopped:
+					counts.stopped++
+				case graphql.FlowStatePaused:
+					counts.paused++
+				}
+
+				// Process transform's published topics
+				if transform.GetPublish() != nil {
+					for _, rule := range transform.GetPublish().GetRules() {
+						if rule != nil {
+							countActionsFromTopic(flowGraph, rule.GetTopic(), counts, visitedTopics, visitedTransforms, visitedSinks)
+						}
+					}
+				}
+			}
+		}
+
+		// Find all sinks that subscribe to this topic
+		for _, sink := range flows.GetDataSinks() {
+			if visitedSinks[sink.GetName()] {
+				continue
+			}
+
+			// Check if sink subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range sink.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedSinks[sink.GetName()] = true
+				state := sink.GetFlowStatus().State
+				switch state {
+				case graphql.FlowStateRunning:
+					counts.running++
+				case graphql.FlowStateStopped:
+					counts.stopped++
+				case graphql.FlowStatePaused:
+					counts.paused++
+				}
+			}
+		}
+	}
+}
+
+func formatActionCounts(counts *actionCounts) string {
+	if counts == nil {
+		return ""
+	}
+
+	running := styles.SuccessStyle.Render(fmt.Sprintf("▶ %d", counts.running))
+	stopped := styles.ErrorStyle.Render(fmt.Sprintf("■ %d", counts.stopped))
+	paused := styles.WarningStyle.Render(fmt.Sprintf("⏸ %d", counts.paused))
+
+	return fmt.Sprintf("%s %s %s", running, stopped, paused)
+}
+
+func startAllConnectedActions(flowName string) error {
+	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	if err != nil {
+		return err
+	}
+
+	visitedTopics := make(map[string]bool)
+	visitedTransforms := make(map[string]bool)
+	visitedSinks := make(map[string]bool)
+
+	// Find the source node and its topic
+	var sourceTopic string
+	for _, flows := range flowGraph.GetFlows {
+		for _, source := range flows.GetRestDataSources() {
+			if source.GetName() == flowName {
+				sourceTopic = source.GetTopic()
+				break
+			}
+		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetTimedDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
+		if sourceTopic != "" {
+			break
+		}
+	}
+
+	if sourceTopic == "" {
+		return nil
+	}
+
+	return startActionsFromTopic(flowGraph, sourceTopic, visitedTopics, visitedTransforms, visitedSinks)
+}
+
+func stopAllConnectedActions(flowName string) error {
+	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	if err != nil {
+		return err
+	}
+
+	visitedTopics := make(map[string]bool)
+	visitedTransforms := make(map[string]bool)
+	visitedSinks := make(map[string]bool)
+
+	// Find the source node and its topic
+	var sourceTopic string
+	for _, flows := range flowGraph.GetFlows {
+		for _, source := range flows.GetRestDataSources() {
+			if source.GetName() == flowName {
+				sourceTopic = source.GetTopic()
+				break
+			}
+		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetTimedDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
+		if sourceTopic != "" {
+			break
+		}
+	}
+
+	if sourceTopic == "" {
+		return nil
+	}
+
+	return stopActionsFromTopic(flowGraph, sourceTopic, visitedTopics, visitedTransforms, visitedSinks)
+}
+
+func pauseAllConnectedActions(flowName string) error {
+	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	if err != nil {
+		return err
+	}
+
+	visitedTopics := make(map[string]bool)
+	visitedTransforms := make(map[string]bool)
+	visitedSinks := make(map[string]bool)
+
+	// Find the source node and its topic
+	var sourceTopic string
+	for _, flows := range flowGraph.GetFlows {
+		for _, source := range flows.GetRestDataSources() {
+			if source.GetName() == flowName {
+				sourceTopic = source.GetTopic()
+				break
+			}
+		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetTimedDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
+		if sourceTopic != "" {
+			break
+		}
+	}
+
+	if sourceTopic == "" {
+		return nil
+	}
+
+	return pauseActionsFromTopic(flowGraph, sourceTopic, visitedTopics, visitedTransforms, visitedSinks)
+}
+
+func startActionsFromTopic(
+	flowGraph *graphql.GetFlowGraphResponse,
+	topic string,
+	visitedTopics map[string]bool,
+	visitedTransforms map[string]bool,
+	visitedSinks map[string]bool,
+) error {
+	// Skip if we've already visited this topic
+	if visitedTopics[topic] {
+		return nil
+	}
+	visitedTopics[topic] = true
+
+	// Find all transforms that subscribe to this topic
+	for _, flows := range flowGraph.GetFlows {
+		for _, transform := range flows.GetTransformFlows() {
+			if visitedTransforms[transform.GetName()] {
+				continue
+			}
+
+			// Check if transform subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range transform.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedTransforms[transform.GetName()] = true
+				err := startFlow(graphql.FlowTypeTransform, transform.GetName())
+				if err != nil {
+					return fmt.Errorf("Error starting transform %s: %v", transform.GetName(), err)
+				}
+
+				// Process transform's published topics
+				if transform.GetPublish() != nil {
+					for _, rule := range transform.GetPublish().GetRules() {
+						if rule != nil {
+							err = startActionsFromTopic(flowGraph, rule.GetTopic(), visitedTopics, visitedTransforms, visitedSinks)
+							if err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Find all sinks that subscribe to this topic
+		for _, sink := range flows.GetDataSinks() {
+			if visitedSinks[sink.GetName()] {
+				continue
+			}
+
+			// Check if sink subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range sink.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedSinks[sink.GetName()] = true
+				err := startFlow(graphql.FlowTypeDataSink, sink.GetName())
+				if err != nil {
+					return fmt.Errorf("Error starting sink %s: %v", sink.GetName(), err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func stopActionsFromTopic(
+	flowGraph *graphql.GetFlowGraphResponse,
+	topic string,
+	visitedTopics map[string]bool,
+	visitedTransforms map[string]bool,
+	visitedSinks map[string]bool,
+) error {
+	// Skip if we've already visited this topic
+	if visitedTopics[topic] {
+		return nil
+	}
+	visitedTopics[topic] = true
+
+	// Find all transforms that subscribe to this topic
+	for _, flows := range flowGraph.GetFlows {
+		for _, transform := range flows.GetTransformFlows() {
+			if visitedTransforms[transform.GetName()] {
+				continue
+			}
+
+			// Check if transform subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range transform.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedTransforms[transform.GetName()] = true
+				err := stopFlow(graphql.FlowTypeTransform, transform.GetName())
+				if err != nil {
+					return fmt.Errorf("Error stopping transform %s: %v", transform.GetName(), err)
+				}
+
+				// Process transform's published topics
+				if transform.GetPublish() != nil {
+					for _, rule := range transform.GetPublish().GetRules() {
+						if rule != nil {
+							err = stopActionsFromTopic(flowGraph, rule.GetTopic(), visitedTopics, visitedTransforms, visitedSinks)
+							if err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Find all sinks that subscribe to this topic
+		for _, sink := range flows.GetDataSinks() {
+			if visitedSinks[sink.GetName()] {
+				continue
+			}
+
+			// Check if sink subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range sink.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedSinks[sink.GetName()] = true
+				err := stopFlow(graphql.FlowTypeDataSink, sink.GetName())
+				if err != nil {
+					return fmt.Errorf("Error stopping sink %s: %v", sink.GetName(), err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func pauseActionsFromTopic(
+	flowGraph *graphql.GetFlowGraphResponse,
+	topic string,
+	visitedTopics map[string]bool,
+	visitedTransforms map[string]bool,
+	visitedSinks map[string]bool,
+) error {
+	// Skip if we've already visited this topic
+	if visitedTopics[topic] {
+		return nil
+	}
+	visitedTopics[topic] = true
+
+	// Find all transforms that subscribe to this topic
+	for _, flows := range flowGraph.GetFlows {
+		for _, transform := range flows.GetTransformFlows() {
+			if visitedTransforms[transform.GetName()] {
+				continue
+			}
+
+			// Check if transform subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range transform.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedTransforms[transform.GetName()] = true
+				err := pauseFlow(graphql.FlowTypeTransform, transform.GetName())
+				if err != nil {
+					return fmt.Errorf("Error pausing transform %s: %v", transform.GetName(), err)
+				}
+
+				// Process transform's published topics
+				if transform.GetPublish() != nil {
+					for _, rule := range transform.GetPublish().GetRules() {
+						if rule != nil {
+							err = pauseActionsFromTopic(flowGraph, rule.GetTopic(), visitedTopics, visitedTransforms, visitedSinks)
+							if err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Find all sinks that subscribe to this topic
+		for _, sink := range flows.GetDataSinks() {
+			if visitedSinks[sink.GetName()] {
+				continue
+			}
+
+			// Check if sink subscribes to this topic
+			subscribesToTopic := false
+			for _, sub := range sink.GetSubscribe() {
+				if sub.GetTopic() == topic {
+					subscribesToTopic = true
+					break
+				}
+			}
+
+			if subscribesToTopic {
+				visitedSinks[sink.GetName()] = true
+				err := pauseFlow(graphql.FlowTypeDataSink, sink.GetName())
+				if err != nil {
+					return fmt.Errorf("Error pausing sink %s: %v", sink.GetName(), err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func init() {
 	rootCmd.AddCommand(dataSourceCmd)
 
@@ -476,7 +1032,10 @@ func init() {
 	dataSourceCmd.AddCommand(deleteDataSourceFlow)
 
 	startDataSourceFlow.Flags().Bool("all", false, "Start all data sources")
+	startDataSourceFlow.Flags().BoolP("all-actions", "a", false, "Start the data source and all connected actions")
 	stopDataSourceFlow.Flags().Bool("all", false, "Stop all data sources")
+	stopDataSourceFlow.Flags().BoolP("all-actions", "a", false, "Stop the data source and all connected actions")
+	pauseDataSourceFlow.Flags().BoolP("all-actions", "a", false, "Pause the data source and all connected actions")
 
 	setDataSourceTestMode.Flags().Bool("enable", false, "Enable test mode")
 	setDataSourceTestMode.Flags().Bool("disable", false, "Disable test mode")
