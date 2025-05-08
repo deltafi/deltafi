@@ -47,6 +47,7 @@ export default function useDeltaFilesQueryBuilder() {
     terminalStage?: string | null;
     replayable?: string | null;
     paused?: string | null;
+    pinned?: string | null;
     sizeMin?: string | null;
     sizeMax?: string | null;
     sizeType?: object;
@@ -89,6 +90,7 @@ export default function useDeltaFilesQueryBuilder() {
             terminalStage: queryParams.terminalStage,
             pendingAnnotations: queryParams.pendingAnnotations,
             paused: queryParams.paused,
+            pinned: queryParams.pinned,
           },
           orderBy: {
             direction: queryParams.sortDirection ? new EnumType(queryParams.sortDirection) : null,

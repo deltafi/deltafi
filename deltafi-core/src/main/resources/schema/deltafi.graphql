@@ -311,6 +311,7 @@ input DeltaFilesFilter {
   terminalStage: Boolean
   pendingAnnotations: Boolean
   paused: Boolean
+  pinned: Boolean
 }
 
 type RetryResult {
@@ -326,6 +327,12 @@ type AcknowledgeResult {
 }
 
 type CancelResult {
+  did: UUID!
+  success: Boolean!
+  error: String
+}
+
+type PinResult {
   did: UUID!
   success: Boolean!
   error: String
@@ -460,6 +467,8 @@ type Mutation {
 
   pin(dids: [UUID!]!) : [Result!]!
   unpin(dids: [UUID!]!) : [Result!]!
+  pinMatching(filter: DeltaFilesFilter!): [PinResult]!
+  unpinMatching(filter: DeltaFilesFilter!): [PinResult]!
 
   addAnnotations(did: UUID!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
   annotateMatching(filter: DeltaFilesFilter!, annotations: [KeyValueInput]!, allowOverwrites: Boolean!) : Boolean!

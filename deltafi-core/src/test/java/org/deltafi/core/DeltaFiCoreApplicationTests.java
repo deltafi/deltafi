@@ -2984,6 +2984,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testDeltaFiles_filter() {
 		DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "dataSource", DeltaFileStage.COMPLETE, NOW.minusSeconds(2), NOW.plusSeconds(2));
+		deltaFile1.setPinned(true);
 		deltaFile1.setIngressBytes(100L);
 		deltaFile1.setTotalBytes(1000L);
 		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
@@ -3112,6 +3113,8 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("topic2")).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("topic1", "topic2")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("fake")).build());
+		testFilter(DeltaFilesFilter.newBuilder().pinned(true).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().pinned(false).build(), deltaFile2, deltaFile3);
 	}
 
 	@Test

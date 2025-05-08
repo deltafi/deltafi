@@ -249,6 +249,20 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeletePolicyDelete
+  public List<PinResult> pinMatching(@InputArgument DeltaFilesFilter filter) {
+    auditLogger.audit("pinning deltaFiles by filter");
+    return deltaFilesService.setPinned(filter, true);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeletePolicyDelete
+  public List<PinResult> unpinMatching(@InputArgument DeltaFilesFilter filter) {
+    auditLogger.audit("unpinning deltaFiles by filter");
+    return deltaFilesService.setPinned(filter, false);
+  }
+
+  @DgsMutation
   @NeedsPermission.DeltaFileMetadataWrite
   public boolean addAnnotations(UUID did, List<KeyValue> annotations, boolean allowOverwrites) {
     auditLogger.audit("annotated deltafile with did {} with {}", did, CoreAuditLogger.listToString(annotations));

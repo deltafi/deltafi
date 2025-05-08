@@ -1304,6 +1304,39 @@ public class DeltaFilesService {
         return results;
     }
 
+    public List<PinResult> setPinned(DeltaFilesFilter filter, boolean pinned) {
+        // if the stage is not null or COMPLETE there is nothing to pin or unpin
+        // if the filter includes pinned and the new value is the same there is nothing to do
+        if ((filter.getStage() != null && filter.getStage() != DeltaFileStage.COMPLETE) ||
+                (filter.getPinned() != null && filter.getPinned() == pinned)) {
+            return List.of();
+        }
+
+        // make sure the stage is set to COMPLETE
+        filter.setStage(DeltaFileStage.COMPLETE);
+        // only return DeltaFiles where pinned is different from the new value
+        filter.setPinned(!pinned);
+        // make sure the query is capped by a modified before date
+        ensureModifiedBeforeNow(filter);
+
+        List<PinResult> pinResults = new ArrayList<>();
+
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            List<DeltaFile> toSetPin = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE);
+
+            for (DeltaFile deltaFile : toSetPin) {
+                deltaFile.setPinned(pinned);
+                pinResults.add(PinResult.newBuilder().did(deltaFile.getDid()).success(true).build());
+            }
+
+            deltaFileRepo.saveAll(toSetPin);
+            numFound = toSetPin.size();
+        }
+
+        return pinResults;
+    }
+
     public List<Result> pin(List<UUID> dids) {
         return dids.stream().map(this::pin).toList();
     }

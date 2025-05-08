@@ -1006,6 +1006,25 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void setPinned() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.setPinned(filter, true);
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
+        assertThat(filter.getModifiedBefore()).isNotNull();
+        assertThat(filter.getPinned()).isFalse();
+    }
+
+    @Test
+    void pinMatching_skipNonPinnableFilters() {
+        deltaFilesService.setPinned(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.IN_FLIGHT).build(), true);
+        deltaFilesService.setPinned(DeltaFilesFilter.newBuilder().pinned(true).build(), true);
+        deltaFilesService.setPinned(DeltaFilesFilter.newBuilder().pinned(false).build(), false);
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
     void annotateMatching() {
         DeltaFile terminal = utilService.buildDeltaFile(UUID.randomUUID(), "terminal", DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
         terminal.setTerminal(true);

@@ -273,7 +273,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.terminalStage, model.value.pendingAnnotations, model.value.paused],
+    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.terminalStage, model.value.pendingAnnotations, model.value.paused, model.value.pinned],
     () => {
       fetchDeltaFilesData();
     }
@@ -431,6 +431,7 @@ const defaultQueryParamsTemplate = {
   ingressBytesMax: null,
   totalBytesMin: null,
   totalBytesMax: null,
+  pinned: null,
 };
 
 const queryParamsModel = ref({});
@@ -479,8 +480,9 @@ const advanceOptionsPanelInfo = computed(() => {
     { field: "filteredCause", column: 3, order: 1, componentType: "InputText", label: "Filtered Cause:", placeholder: "Filtered Cause", class: "deltafi-input-field min-width" },
     { field: "requeueMin", column: 3, order: 2, componentType: "InputNumber", label: "Requeue Count:", placeholder: "Min", class: "p-inputnumber input-area-height" },
     { field: "stage", column: 3, order: 3, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
-    { field: "pendingAnnotations", column: 3, order: 4, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "annotations", column: 3, order: 5, componentType: "Annotations", label: "Annotations:" },
+    { field: "pinned", column: 3, order: 4, componentType: "Dropdown", label: "Pinned:", placeholder: "Select if DeltaFile is pinned", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "pendingAnnotations", column: 3, order: 5, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "annotations", column: 3, order: 6, componentType: "Annotations", label: "Annotations:" },
   ];
 });
 
@@ -601,13 +603,13 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType", "paused"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType", "paused", "pinned"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = isoStringToDate(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "pinned"].includes(k)) {
       r[k] = JSON.parse(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
@@ -640,7 +642,7 @@ const encodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = dateToISOString(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "pinned"].includes(k)) {
       r[k] = Boolean(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
