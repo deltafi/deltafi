@@ -67,11 +67,6 @@ DeltaFi exposes the full API for Graphite and Grafana, allowing for easy custom 
 - [Graphite REST API](https://graphite-api.readthedocs.io/en/latest/api.html)
 - [Grafana REST API](https://grafana.com/docs/grafana/latest/developers/http_api/)
 
-In addition, there are custom APIs that provide summary metric endpoints:
+In addition, this API provides summary node info:
 
-* <a href="/api/v1/metrics/action">`/api/v1/metrics/action`</a> provides a JSON representation of the current action activity
-* <a href="/api/v1/metrics/flow.json">`/api/v1/metrics/flow.json`</a> provides a time bound summary report (JSON) of flow ingress/egress activity
-* <a href="/api/v1/metrics/flow.csv">`/api/v1/metrics/flow.csv`</a> provides a time bound summary report (CSV) of flow ingress/egress activity
-* <a href="/api/v1/metrics/system/nodes">`/api/v1/metrics/system/nodes`</a> provides a JSON summary of the system disk, memory, and CPU status
-* <a href="/api/v1/metrics/system/content">`/api/v1/metrics/system/content`</a> provides a JSON summary of the content storage limit and usage
-* <a href="/api/v1/metrics/queues">`/api/v1/metrics/queues`</a> provides a JSON summary of the action queue statuses
+* <a href="/api/v2/metrics/system/nodes">`/api/v2/metrics/system/nodes`</a> provides a JSON summary of the system disk, memory, and CPU status

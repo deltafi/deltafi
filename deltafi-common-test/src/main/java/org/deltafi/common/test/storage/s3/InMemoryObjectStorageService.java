@@ -84,11 +84,11 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
 
     @Override
     public boolean removeObjects(String bucket, List<String> objectNames) {
-        Map<String, byte[]> entry = objects.get(bucket);
-        if (entry != null) {
-            entry.entrySet().stream()
+        Map<String, byte[]> entries = objects.get(bucket);
+        if (entries != null) {
+            entries.entrySet().stream()
                     .filter(mapEntry -> objectNames.contains(mapEntry.getKey()))
-                    .forEach(mapEntry -> entry.remove(mapEntry.getKey()));
+                    .forEach(mapEntry -> entries.remove(mapEntry.getKey()));
         }
         return true;
     }

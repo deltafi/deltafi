@@ -107,7 +107,7 @@ class DeltaFilesServiceTest {
                           @Mock TimedDataSourceService timedDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
                           @Mock Environment environment, @Mock IdentityService identityService,
-                          @Mock ParameterResolver parameterResolver) {
+                          @Mock ParameterResolver parameterResolver, @Mock LocalContentStorageService localContentStorageService) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.dataSinkService = dataSinkService;
@@ -130,7 +130,7 @@ class DeltaFilesServiceTest {
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
-                flowDefinitionService, parameterResolver);
+                flowDefinitionService, parameterResolver, localContentStorageService);
     }
 
     @AfterEach
@@ -339,7 +339,7 @@ class DeltaFilesServiceTest {
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
         DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
-        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false, 1000);
 
@@ -359,7 +359,7 @@ class DeltaFilesServiceTest {
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
         DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
-        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true, 1000);
 

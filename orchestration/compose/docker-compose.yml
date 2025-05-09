@@ -40,7 +40,7 @@ services:
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
       UNIQUE_ID: deltafi-core-scheduler
-      SPRING_PROFILES_ACTIVE: monitor
+      SPRING_PROFILES_ACTIVE: monitor,localContentStorage
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
@@ -123,6 +123,26 @@ services:
     volumes:
       - ${DATA_DIR}:/data/deltafi
       - /var/run/docker.sock:/var/run/docker.sock
+  deltafi-node-fastdelete:
+    image: ${DELTAFI_NODEMONITOR}
+    container_name: deltafi-node-fastdelete
+    command: ["/bin/bash", "-c", "/app/deleteit.sh"]
+    depends_on:
+      deltafi-graphite:
+        condition: service_started
+    env_file:
+      - ${CONFIG_DIR}/common.env
+      - ${SECRETS_DIR}/postgres.env
+    group_add:
+      - ${DOCKER_GID}
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    restart: unless-stopped
+    volumes:
+      - ${DATA_DIR}:/data/deltafi
   deltafi-file-ingress:
     image: ${DELTAFI_FILE_INGRESS}
     container_name: deltafi-file-ingress-service

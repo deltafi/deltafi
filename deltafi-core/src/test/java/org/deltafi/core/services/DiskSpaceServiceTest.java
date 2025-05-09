@@ -29,6 +29,8 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,7 +51,8 @@ class DiskSpaceServiceTest {
         diskSpaceRequirement(1);
 
         // fill in the metrics using the mock
-        Mockito.when(systemService.contentNodeDiskMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
+        Mockito.when(systemService.contentNodesDiskMetrics()).thenReturn(List.of(new DiskMetrics("node1",
+                10000000, 5000000), new DiskMetrics("node2", 50000000, 1000000)));
 
         diskSpaceRequirement(1);
         assertFalse(sut.isContentStorageDepleted());
@@ -75,8 +78,8 @@ class DiskSpaceServiceTest {
     @Test
     void failToGeMetrics() throws StorageCheckException {
         diskSpaceRequirement(1);
-        Mockito.when(systemService.contentNodeDiskMetrics()).thenThrow(new StorageCheckException("Failed"));
-        // When the API is unreachable storage is not considered depleted (contentMetrics is null at this point mimicking an unreachable API)
+        Mockito.when(systemService.contentNodesDiskMetrics()).thenThrow(new StorageCheckException("Failed"));
+        // When the API is unreachable, storage is not considered depleted (contentMetrics is null at this point mimicking an unreachable API)
         assertFalse(sut.isContentStorageDepleted());
     }
 

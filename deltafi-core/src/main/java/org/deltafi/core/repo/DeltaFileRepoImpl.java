@@ -337,16 +337,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore,
-            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize) {
+            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize, boolean returnContentObjectIds) {
         if (createdBefore == null && completedBefore == null) {
             return Collections.emptyList();
         }
 
-        StringBuilder queryBuilder = new StringBuilder("""
-                SELECT df.did, df.content_deleted, df.total_bytes, df.content_object_ids
-                FROM delta_files df
-                WHERE
-                """);
+        StringBuilder queryBuilder = new StringBuilder("SELECT df.did, df.content_deleted, df.total_bytes");
+        if (returnContentObjectIds) {
+            queryBuilder.append(", df.content_object_ids");
+        }
+
+        queryBuilder.append(" FROM delta_files df WHERE");
 
         if (!includePinned) {
             queryBuilder.append(" df.pinned = false AND");
@@ -400,12 +401,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
+    public List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize, boolean returnContentObjectIds) {
         if (bytesToDelete < 1) {
             throw new IllegalArgumentException("bytesToDelete (%s) must be positive".formatted(bytesToDelete));
         }
 
-        Query nativeQuery = entityManager.createNativeQuery(diskSpaceDeleteQuery(dataSource));
+        Query nativeQuery = entityManager.createNativeQuery(diskSpaceDeleteQuery(dataSource, returnContentObjectIds));
 
         if (dataSource != null) {
             nativeQuery.setParameter("dataSource", dataSource);
@@ -434,19 +435,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 : null;
         long totalBytes = ((Number) row[2]).longValue();
 
-        List<UUID> contentObjectIds = row[3] != null
+        List<UUID> contentObjectIds = (row.length > 3 && row[3] != null)
                 ? Arrays.asList((UUID[]) row[3])
                 : new ArrayList<>();
 
         return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentObjectIds);
     }
 
-    private static String diskSpaceDeleteQuery(String dataSource) {
-        StringBuilder queryBuilder = new StringBuilder("""
-            SELECT df.did, df.content_deleted, df.total_bytes, df.content_object_ids
-            FROM delta_files df
-            WHERE df.content_deletable = true AND df.pinned = false
-            """);
+    private static String diskSpaceDeleteQuery(String dataSource, boolean returnContentObjectIds) {
+        StringBuilder queryBuilder = new StringBuilder("SELECT df.did, df.content_deleted, df.total_bytes");
+
+        if (returnContentObjectIds) {
+            queryBuilder.append(", df.content_object_ids");
+        }
+
+        queryBuilder.append(" FROM delta_files df WHERE df.content_deletable = true AND df.pinned = false ");
 
         if (dataSource != null) {
             queryBuilder.append("AND df.data_source = :dataSource ");

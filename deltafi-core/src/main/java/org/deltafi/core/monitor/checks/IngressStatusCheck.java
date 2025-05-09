@@ -23,6 +23,7 @@ import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.services.*;
+import org.deltafi.core.types.DiskMetrics;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 
@@ -89,7 +90,7 @@ public class IngressStatusCheck extends StatusCheck {
     }
 
     private void doCheckForStorageDisabledIngress(ResultBuilder resultBuilder) throws StorageCheckException {
-        long remaining = systemService.contentNodeDiskMetrics().bytesRemaining();
+        long remaining = systemService.contentNodesDiskMetrics().stream().map(DiskMetrics::bytesRemaining).reduce(Long.MAX_VALUE, Long::min);
         long required = propertiesService.getDeltaFiProperties().getIngressDiskSpaceRequirementInBytes();
 
         if (remaining > required) {

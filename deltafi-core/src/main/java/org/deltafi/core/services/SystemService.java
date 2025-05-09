@@ -53,7 +53,7 @@ public class SystemService {
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
     private Map<String, NodeMetrics> cachedNodeMetrics;
-    private String cachedContentNodeName;
+    private List<String> cachedContentNodeNames;
     private Map<String, List<AppName>> cachedAppsByNode;
 
     @PostConstruct
@@ -63,7 +63,7 @@ public class SystemService {
     }
 
     public void refreshSystemInfo() {
-        this.cachedContentNodeName = platformService.contentNodeName();
+        this.cachedContentNodeNames = platformService.contentNodeNames();
         this.cachedAppsByNode = platformService.appsByNode();
     }
 
@@ -87,26 +87,33 @@ public class SystemService {
         return new Versions(platformService.getRunningVersions());
     }
 
-    public Map<String, Long> contentNodeMetrics() throws StorageCheckException {
+    public List<NodeMetrics> contentNodesMetrics() throws StorageCheckException {
         Map<String, NodeMetrics> allMetrics = getNodeMetrics();
-        String minioNode = getContentNodeName();
+        List<String> minioNodes = getContentNodeNames();
 
-        if (minioNode == null) {
-            throw new StorageCheckException("Could not find the node with content storage");
+        if (minioNodes.isEmpty()) {
+            throw new StorageCheckException("Could not find a node with content storage");
         }
 
-        NodeMetrics minioMetrics = allMetrics.get(minioNode);
+        List<NodeMetrics> minioMetrics = minioNodes.stream().map(allMetrics::get).toList();
 
-        if (!hasValidDiskMetric(minioMetrics)) {
-            throw new StorageCheckException("Unable to get content storage metrics, received metrics " + allMetrics + ", searching for node " + minioNode);
+        for (NodeMetrics nodeMetric : minioMetrics) {
+            if (!hasValidDiskMetric(nodeMetric)) {
+                throw new StorageCheckException("Unable to get content storage metrics, received metrics " + allMetrics + ", searching for node " + nodeMetric);
+            }
         }
 
-        return minioMetrics.resources().get("disk-minio");
+        return minioMetrics;
     }
 
-    public DiskMetrics contentNodeDiskMetrics() throws StorageCheckException {
-        Map<String, Long> contentMetrics = contentNodeMetrics();
-        return new DiskMetrics(contentMetrics.get("limit"), contentMetrics.get("usage"));
+    public List<DiskMetrics> contentNodesDiskMetrics() throws StorageCheckException {
+        List<NodeMetrics> contentMetrics = contentNodesMetrics().stream().toList();
+        return contentMetrics.stream()
+                .map(contentMetric -> {
+                    Map<String, Long> metrics = contentMetric.resources().get("disk-minio");
+                    return new DiskMetrics(contentMetric.name(), metrics.get("limit"), metrics.get("usage"));
+                })
+                .toList();
     }
 
     public Map<String, DiskMetrics> allDiskMetrics() {
@@ -125,7 +132,7 @@ public class SystemService {
     private DiskMetrics toDiskMetrics(NodeMetrics nodeMetrics) {
         if (hasValidDiskMetric(nodeMetrics)) {
             Map<String, Long> diskResources = nodeMetrics.resources().get("disk-minio");
-            return new DiskMetrics(diskResources.get("limit"), diskResources.get("usage"));
+            return new DiskMetrics(nodeMetrics.name(), diskResources.get("limit"), diskResources.get("usage"));
         }
 
         return null;
@@ -212,11 +219,11 @@ public class SystemService {
         return cachedAppsByNode;
     }
 
-    private String getContentNodeName() {
-        if (cachedContentNodeName == null) {
-            cachedContentNodeName = platformService.contentNodeName();
+    public List<String> getContentNodeNames() {
+        if (cachedContentNodeNames == null) {
+            cachedContentNodeNames = platformService.contentNodeNames();
         }
-        return this.cachedContentNodeName;
+        return this.cachedContentNodeNames;
     }
 
     public record Versions(List<AppInfo> versions, OffsetDateTime timestamp) {

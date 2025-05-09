@@ -24,6 +24,8 @@ import org.deltafi.core.types.DiskMetrics;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -42,7 +44,7 @@ public class DiskSpaceService {
      */
      public boolean isContentStorageDepleted() {
         try {
-            boolean storageDepleted = contentMetrics().bytesRemaining() <= requiredBytes();
+            boolean storageDepleted = contentMetrics().stream().anyMatch(c -> c.bytesRemaining() <= requiredBytes());
 
             if (!diskSpaceAPIReachable) {
                 log.info("Disk Space API is reachable again");
@@ -65,8 +67,8 @@ public class DiskSpaceService {
      * @return Disk metrics
      * @throws StorageCheckException when API is unavailable
      */
-    public @NotNull DiskMetrics contentMetrics() throws StorageCheckException {
-        return systemService.contentNodeDiskMetrics();
+    public @NotNull List<DiskMetrics> contentMetrics() throws StorageCheckException {
+        return systemService.contentNodesDiskMetrics();
     }
 
     private long requiredBytes() {

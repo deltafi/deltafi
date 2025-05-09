@@ -5,7 +5,8 @@ RUN apk -U add \
   curl \
   docker-cli \
   bc \
-  netcat-openbsd
+  netcat-openbsd \
+  postgresql-client
 
 WORKDIR /app
 

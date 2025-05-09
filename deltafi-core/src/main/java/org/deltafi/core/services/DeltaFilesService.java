@@ -115,6 +115,7 @@ public class DeltaFilesService {
     private final IdentityService identityService;
     private final FlowDefinitionService flowDefinitionService;
     private final ParameterResolver parameterResolver;
+    private final LocalContentStorageService localContentStorageService;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -1432,7 +1433,11 @@ public class DeltaFilesService {
         }
 
         try {
-            contentStorageService.delete(content);
+            if (isLocalStorage()) {
+                localContentStorageService.deleteContent(List.of(did), false);
+            } else {
+                contentStorageService.delete(content);
+            }
         } catch (Exception e) {
             log.error("Failed to remove the content for did {}", did, e);
         }
@@ -1469,22 +1474,22 @@ public class DeltaFilesService {
 
         List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(
                 createdBefore, completedBefore, minBytes, flow, deleteMetadata,
-                policy.equals(TTL_SYSTEM_POLICY), batchSize - alreadyDeleted);
-        delete(deltaFiles, policy, deleteMetadata, alreadyDeleted);
+                policy.equals(TTL_SYSTEM_POLICY), batchSize - alreadyDeleted, !isLocalStorage());
+        delete(deltaFiles, policy, deleteMetadata, alreadyDeleted, false);
 
         return deltaFiles.size() == batchSize;
     }
 
     public List<DeltaFileDeleteDTO> diskSpaceDelete(long bytesToDelete, String flow, String policy, int batchSize) {
         logBatch(batchSize, policy);
-        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize), policy, false, 0);
+        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize, !isLocalStorage()), policy, false, 0, true);
     }
 
     public void logBatch(int batchSize, String policy) {
         log.info("Searching for batch of up to {} deltaFiles to delete for policy {}", batchSize, policy);
     }
 
-    private List<DeltaFileDeleteDTO> delete(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, int alreadyDeleted) {
+    private List<DeltaFileDeleteDTO> delete(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, int alreadyDeleted, boolean blockUntilDeleted) {
         if (deltaFiles.isEmpty()) {
             log.info("No deltaFiles found to delete for policy {}", policy);
             if (alreadyDeleted > 0) {
@@ -1496,7 +1501,7 @@ public class DeltaFilesService {
         log.info("Deleting {} deltaFiles for policy {}", deltaFiles.size(), policy);
         long totalBytes = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).mapToLong(DeltaFileDeleteDTO::getTotalBytes).sum();
 
-        deleteContent(deltaFiles, policy, deleteMetadata);
+        deleteContent(deltaFiles, policy, deleteMetadata, blockUntilDeleted);
         metricService.increment(new Metric(DELETED_FILES, deltaFiles.size() + alreadyDeleted).addTag("policy", policy));
         metricService.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
         log.info("Finished deleting {} deltaFiles for policy {}", deltaFiles.size(), policy);
@@ -1504,13 +1509,17 @@ public class DeltaFilesService {
         return deltaFiles;
     }
 
-    private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata) {
+    private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, boolean blockUntilDeleted) {
         List<DeltaFileDeleteDTO> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
-        contentStorageService.deleteAllByObjectName(deltaFilesWithContent.stream()
-                .flatMap(d -> d.getContentObjectIds().stream()
-                        .map(contentId -> Segment.objectName(d.getDid(), contentId))
-                )
-                .toList());
+        if (isLocalStorage()) {
+            localContentStorageService.deleteContent(deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).toList(), blockUntilDeleted);
+        } else {
+            contentStorageService.deleteAllByObjectName(deltaFilesWithContent.stream()
+                    .flatMap(d -> d.getContentObjectIds().stream()
+                            .map(contentId -> Segment.objectName(d.getDid(), contentId))
+                    )
+                    .toList());
+        }
 
         if (deleteMetadata) {
             deleteMetadata(deltaFiles);
@@ -2240,5 +2249,9 @@ public class DeltaFilesService {
         int filteredFiles = 0;
         int erroredFiles = 0;
         long byteCount = 0L;
+    }
+
+    private boolean isLocalStorage() {
+        return environment.matchesProfiles("localContentStorage");
     }
 }

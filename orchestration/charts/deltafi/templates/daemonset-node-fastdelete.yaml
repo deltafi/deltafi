@@ -1,0 +1,44 @@
+---
+# Deploy a node-fastdelete instance per node for minio content cleanup
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: deltafi-node-fastdelete
+  namespace: deltafi
+  labels:
+    app: deltafi-node-fastdelete
+    group: deltafi-core
+spec:
+  selector:
+    matchLabels:
+      app: deltafi-node-fastdelete
+      group: deltafi-core
+  template:
+    metadata:
+      labels:
+        app: deltafi-node-fastdelete
+        group: deltafi-core
+    spec:
+      terminationGracePeriodSeconds: 1
+      imagePullSecrets:
+      - name: docker-secret
+      {{- include "initContainersWaitForDatabases" . | nindent 6 }}
+      containers:
+      - name: deltafi-node-fastdelete
+        image: {{ .Values.deltafi.nodemonitor.image }}
+        command: ["/bin/bash", "-c", "/app/deleteit.sh"]
+        env:
+        {{- include "defaultEnvVars" . | nindent 12 }}
+        {{- include "commonEnvVars" . | nindent 12 }}
+        {{- include "postgresEnvVars" . | nindent 12 }}
+        resources:
+          limits:
+            memory: 200Mi
+        volumeMounts:
+        - name: pvdata
+          mountPath: /data
+          readOnly: true
+      volumes:
+      - name: pvdata
+        hostPath:
+          path: /data

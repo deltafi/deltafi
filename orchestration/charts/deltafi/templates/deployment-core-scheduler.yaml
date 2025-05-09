@@ -37,7 +37,7 @@ spec:
         - name: UNIQUE_ID
           value: core-scheduler
         - name: SPRING_PROFILES_ACTIVE
-          value: kubernetes,monitor
+          value: kubernetes,monitor,localContentStorage
         {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080

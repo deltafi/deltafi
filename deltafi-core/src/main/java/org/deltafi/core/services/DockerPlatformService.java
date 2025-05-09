@@ -58,8 +58,8 @@ public class DockerPlatformService implements PlatformService {
     }
 
     @Override
-    public String contentNodeName() {
-        return hostname;
+    public List<String> contentNodeNames() {
+        return List.of(hostname);
     }
 
     private List<Container> getRunningContainers() {

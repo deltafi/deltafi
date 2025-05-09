@@ -39,8 +39,8 @@ public interface PlatformService {
     List<AppInfo> getRunningVersions();
 
     /**
-     * Return the name of the node where content is stored
-     * @return node name
+     * Return the names of the nodes where content is stored
+     * @return node names
      */
-    String contentNodeName();
+    List<String> contentNodeNames();
 }

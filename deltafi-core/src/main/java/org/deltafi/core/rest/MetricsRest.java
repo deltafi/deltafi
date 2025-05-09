@@ -38,21 +38,9 @@ public class MetricsRest {
     private final SystemService systemService;
 
     @NeedsPermission.MetricsView
-    @GetMapping("/content")
-    public ContentMetric contentMetrics() throws StorageCheckException {
-        return new ContentMetric(systemService.contentNodeMetrics());
-    }
-
-    @NeedsPermission.MetricsView
     @GetMapping("/nodes")
     public Nodes nodeAppsAndMetrics() {
         return new Nodes(systemService.nodeAppsAndMetrics());
-    }
-
-    public record ContentMetric(Map<String, Long> content, OffsetDateTime timestamp) {
-        public ContentMetric(Map<String, Long> content) {
-            this(content, OffsetDateTime.now());
-        }
     }
 
     public record Nodes(List<NodeMetrics> nodes, OffsetDateTime timestamp) {

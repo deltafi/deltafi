@@ -57,10 +57,11 @@ public class KubernetesPlatformService implements PlatformService {
     }
 
     @Override
-    public String contentNodeName() {
+    public List<String> contentNodeNames() {
         return k8sClient.pods().withLabels(Map.of("app", "minio")).list()
-                .getItems().stream().findFirst()
-                .map(this::extractNodeName).orElse(null);
+                .getItems().stream()
+                .map(this::extractNodeName)
+                .toList();
     }
 
     private PodList runningPods() {

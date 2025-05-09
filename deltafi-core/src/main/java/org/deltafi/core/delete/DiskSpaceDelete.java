@@ -42,19 +42,20 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
     }
 
     public boolean run(int batchSize) {
-        DiskMetrics contentMetrics = null;
+        List<DiskMetrics> contentMetrics = null;
         try {
             contentMetrics = diskSpaceService.contentMetrics();
         } catch (StorageCheckException e) {
             log.warn("Unable to evaluate deletion criteria: {}", e.getMessage());
         }
 
-        if (contentMetrics == null || contentMetrics.percentUsed() <= maxPercent) {
+        if (contentMetrics == null || contentMetrics.stream().map(DiskMetrics::percentUsed).reduce(0D, Double::max) <= maxPercent) {
             return false;
         }
 
-        log.info("Disk delete policy for {} executing: current used = {}%, maximum = {}%", flow == null ? "all flows" : flow, String.format("%.2f", contentMetrics.percentUsed()), maxPercent);
-        long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
+        log.info("Disk delete policy for {} executing: current used = {}%, maximum = {}%", flow == null ? "all flows" : flow,
+                String.format("%.2f", contentMetrics.stream().map(DiskMetrics::percentUsed).reduce(0D, Double::max)), maxPercent);
+        long bytesToDelete = contentMetrics.stream().map(c -> c.bytesOverPercentage(maxPercent)).reduce(0L, Long::max);
         log.info("Deleting up to {} bytes", bytesToDelete);
         List<DeltaFileDeleteDTO> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name, batchSize);
 
@@ -71,7 +72,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
         if (bytesToDelete > 0) {
             try {
                 contentMetrics = diskSpaceService.contentMetrics();
-                if (contentMetrics.percentUsed() <= maxPercent) {
+                if (contentMetrics.stream().allMatch(c -> c.percentUsed() <= maxPercent)) {
                     log.info("Disk space delete batching stopped early due to disk usage below threshold.");
                     return false;
                 }

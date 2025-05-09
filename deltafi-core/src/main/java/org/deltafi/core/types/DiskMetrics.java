@@ -23,6 +23,7 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class DiskMetrics {
+    String node;
     long limit;
     long usage;
 

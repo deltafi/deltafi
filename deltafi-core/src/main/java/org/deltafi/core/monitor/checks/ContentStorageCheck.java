@@ -22,6 +22,7 @@ import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.SystemService;
+import org.deltafi.core.types.DiskMetrics;
 
 import static org.deltafi.core.monitor.checks.CheckResult.CODE_RED;
 import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
@@ -42,7 +43,7 @@ public class ContentStorageCheck extends StatusCheck {
         ResultBuilder resultBuilder = new ResultBuilder();
         try {
             int threshold = deltaFiPropertiesService.getDeltaFiProperties().getCheckContentStoragePercentThreshold();
-            int usage = systemService.contentNodeDiskMetrics().percentUsedFloor();
+            int usage = systemService.contentNodesDiskMetrics().stream().map(DiskMetrics::percentUsedFloor).reduce(0, Integer::max);
 
             if (usage > threshold) {
                 resultBuilder.code(CODE_YELLOW);
