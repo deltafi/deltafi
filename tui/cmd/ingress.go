@@ -23,8 +23,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/app"
@@ -39,10 +43,27 @@ var (
 	plain       bool
 	verbose     bool
 	watch       bool
+	concurrency int
 )
 
 type IngressResponse struct {
 	Did string `json:"did"`
+}
+
+type IngressResult struct {
+	FilePath string
+	Result   string
+	Error    error
+}
+
+type progressMsg struct {
+	filePath string
+	progress float64
+}
+
+type completeMsg struct {
+	filePath string
+	result   IngressResult
 }
 
 // pollDeltaFileState polls the deltafile state until it reaches a terminal state
@@ -66,6 +87,136 @@ func pollDeltaFileState(did uuid.UUID) error {
 	}
 }
 
+func processFile(client *api.Client, filePath string, datasource string, contentType string, progressChan chan<- progressMsg) IngressResult {
+	// Open and read the file content
+	file, err := os.Open(filePath)
+	if err != nil {
+		return IngressResult{
+			FilePath: filePath,
+			Error:    err,
+		}
+	}
+
+	// Read the file content
+	fileContent, err := io.ReadAll(file)
+	file.Close()
+	if err != nil {
+		return IngressResult{
+			FilePath: filePath,
+			Error:    err,
+		}
+	}
+
+	// Create request options with headers
+	opts := &api.RequestOpts{
+		Headers: map[string]string{
+			"Filename":     filepath.Base(filePath),
+			"DataSource":   datasource,
+			"Content-Type": contentType,
+		},
+	}
+
+	// Send the request and get the response
+	var result string
+	err = client.Post("/api/v2/deltafile/ingress", bytes.NewBuffer(fileContent), &result, opts)
+	if err != nil {
+		return IngressResult{
+			FilePath: filePath,
+			Error:    err,
+		}
+	}
+
+	// Send progress update
+	progressChan <- progressMsg{filePath: filePath, progress: 1.0}
+
+	return IngressResult{
+		FilePath: filePath,
+		Result:   result,
+	}
+}
+
+type IngressCommand struct {
+	BaseCommand
+	progress    progress.Model
+	completed   int
+	totalFiles  int
+	results     []IngressResult
+	width       int
+	height      int
+	ready       bool
+	currentFile string
+}
+
+func NewIngressCommand(totalFiles int) *IngressCommand {
+	p := progress.New(
+		progress.WithDefaultGradient(),
+		progress.WithWidth(40),
+	)
+
+	return &IngressCommand{
+		BaseCommand: NewBaseCommand(),
+		progress:    p,
+		completed:   0,
+		totalFiles:  totalFiles,
+		results:     make([]IngressResult, 0),
+	}
+}
+
+func (c *IngressCommand) Init() tea.Cmd {
+	return tea.Batch(
+		tea.EnterAltScreen,
+		c.progress.IncrPercent(0.0),
+	)
+}
+
+func (c *IngressCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		c.width = msg.Width
+		c.height = msg.Height
+		c.ready = true
+		c.progress.Width = msg.Width - 4
+
+	case progressMsg:
+		c.completed++
+		c.currentFile = filepath.Base(msg.filePath)
+		return c, nil
+
+	case completeMsg:
+		c.results = append(c.results, msg.result)
+		if len(c.results) == c.totalFiles {
+			return c, tea.Quit
+		}
+		return c, nil
+
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyCtrlC {
+			return c, tea.Quit
+		}
+	}
+
+	return c, nil
+}
+
+func (c *IngressCommand) View() string {
+	if !c.ready {
+		return "Initializing..."
+	}
+
+	var s strings.Builder
+	s.WriteString("\nUploading files...\n\n")
+
+	progress := float64(c.completed) / float64(c.totalFiles)
+	s.WriteString(fmt.Sprintf("Progress: %d/%d files\n", c.completed, c.totalFiles))
+	if c.currentFile != "" {
+		s.WriteString(fmt.Sprintf("Current: %s\n", c.currentFile))
+	}
+	s.WriteString(c.progress.ViewAs(progress))
+	s.WriteString("\n")
+
+	return s.String()
+}
+
 var ingressCmd = &cobra.Command{
 	Use:     "ingress",
 	Short:   "Ingress files into DeltaFi",
@@ -84,70 +235,84 @@ var ingressCmd = &cobra.Command{
 		var rows [][]string
 		var uuids []string
 
-		for _, filePath := range args {
-			// Open and read the file content
-			file, err := os.Open(filePath)
-			if err != nil {
-				if plain || verbose {
-					uuids = append(uuids, fmt.Sprintf("error: %v", err))
-				} else {
-					rows = append(rows, []string{
-						styles.ErrorStyle.Render("✗"),
-						filepath.Base(filePath),
-						fmt.Sprintf("%v", err),
-					})
+		// Create channels for work distribution and results
+		jobs := make(chan string, len(args))
+		results := make(chan IngressResult, len(args))
+		progressChan := make(chan progressMsg, len(args))
+
+		// Start worker pool
+		var wg sync.WaitGroup
+		for i := 0; i < concurrency; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for filePath := range jobs {
+					result := processFile(client, filePath, datasource, contentType, progressChan)
+					results <- result
 				}
-				continue
-			}
+			}()
+		}
 
-			// Read the file content
-			fileContent, err := io.ReadAll(file)
-			file.Close()
-			if err != nil {
+		// Send jobs to workers
+		go func() {
+			for _, filePath := range args {
+				jobs <- filePath
+			}
+			close(jobs)
+		}()
+
+		// Create and run the progress UI
+		model := NewIngressCommand(len(args))
+		p := tea.NewProgram(model)
+
+		// Start progress updates
+		go func() {
+			for msg := range progressChan {
+				p.Send(msg)
+			}
+		}()
+
+		// Start result processing
+		go func() {
+			for result := range results {
+				p.Send(completeMsg{result: result})
+			}
+		}()
+
+		// Wait for all workers to finish
+		go func() {
+			wg.Wait()
+			close(results)
+			close(progressChan)
+		}()
+
+		// Run the program
+		if _, err := p.Run(); err != nil {
+			return fmt.Errorf("error running progress UI: %v", err)
+		}
+
+		// Process results
+		for _, result := range model.results {
+			if result.Error != nil {
 				if plain || verbose {
-					uuids = append(uuids, fmt.Sprintf("error: %v", err))
+					uuids = append(uuids, fmt.Sprintf("error: %v", result.Error))
 				} else {
 					rows = append(rows, []string{
 						styles.ErrorStyle.Render("✗"),
-						filepath.Base(filePath),
-						fmt.Sprintf("%v", err),
-					})
-				}
-				continue
-			}
-
-			// Create request options with headers
-			opts := &api.RequestOpts{
-				Headers: map[string]string{
-					"Filename":     filepath.Base(filePath),
-					"DataSource":   datasource,
-					"Content-Type": contentType,
-				},
-			}
-
-			// Send the request and get the response
-			var result string
-			err = client.Post("/api/v2/deltafile/ingress", bytes.NewBuffer(fileContent), &result, opts)
-			if err != nil {
-				if plain || verbose {
-					uuids = append(uuids, fmt.Sprintf("error: %v", err))
-				} else {
-					rows = append(rows, []string{
-						styles.ErrorStyle.Render("✗"),
-						filepath.Base(filePath),
-						fmt.Sprintf("%v", err),
+						filepath.Base(result.FilePath),
+						fmt.Sprintf("%v", result.Error),
 					})
 				}
 				continue
 			}
 
 			if plain || verbose {
-				uuids = append(uuids, result)
+				uuids = append(uuids, result.Result)
 			} else {
 				rows = append(rows, []string{
 					styles.SuccessStyle.Render("✓"),
-					filepath.Base(filePath),
-					result,
+					filepath.Base(result.FilePath),
+					result.Result,
 				})
 			}
 		}
@@ -205,6 +370,7 @@ func init() {
 	ingressCmd.Flags().BoolVarP(&plain, "plain", "p", false, "Output only UUIDs, one per line")
 	ingressCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show detailed deltafile information for each uploaded file")
 	ingressCmd.Flags().BoolVarP(&watch, "watch", "w", false, "Wait for each deltafile to complete before showing results")
+	ingressCmd.Flags().IntVarP(&concurrency, "jobs", "j", 8, "Number of concurrent jobs to run")
 	ingressCmd.MarkFlagRequired("datasource")
 
 	// Register completion function for the datasource flag
