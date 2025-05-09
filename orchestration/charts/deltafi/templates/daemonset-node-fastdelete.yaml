@@ -37,7 +37,6 @@ spec:
         volumeMounts:
         - name: pvdata
           mountPath: /data
-          readOnly: true
       volumes:
       - name: pvdata
         hostPath:
