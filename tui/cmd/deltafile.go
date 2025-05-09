@@ -34,9 +34,10 @@ import (
 
 var (
 	deltafileCmd = &cobra.Command{
-		Use:   "deltafile",
-		Short: "View DeltaFile details",
-		Long:  `View detailed information about a DeltaFile, including its flows, actions, and status.`,
+		Use:     "deltafile",
+		Short:   "View DeltaFile details",
+		Long:    `View detailed information about a DeltaFile, including its flows, actions, and status.`,
+		GroupID: "deltafile",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
 				return fmt.Errorf("deltafile ID is required")

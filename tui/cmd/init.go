@@ -120,7 +120,7 @@ var initCmd = &cobra.Command{
 		command := NewInitCommand()
 		runProgram(command)
 
-		app.GetOrchestrator().Deploy([]string{})
+		app.GetOrchestrator().Up([]string{})
 	},
 }
 

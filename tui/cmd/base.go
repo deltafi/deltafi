@@ -163,7 +163,7 @@ To start a DeltaFi with your current configuration:
 
     %s
 
-		`, styles.AccentStyle.Render("deltafi init"), styles.AccentStyle.Render("deltafi deploy"))))
+		`, styles.AccentStyle.Render("deltafi init"), styles.AccentStyle.Render("deltafi up"))))
 		os.Exit(1)
 	}
 }

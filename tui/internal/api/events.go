@@ -18,8 +18,9 @@
 package api
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Event struct {
@@ -31,4 +32,48 @@ type Event struct {
 	Timestamp    time.Time `json:"timestamp"`
 	Notification bool      `json:"notification"`
 	Acknowledged bool      `json:"acknowledged"`
+}
+
+func NewEvent() *Event {
+	return &Event{
+		ID:        uuid.New(),
+		Timestamp: time.Now(),
+		Source:    "TUI",
+	}
+}
+
+const (
+	ErrorSeverity   = "error"
+	WarnSeverity    = "warn"
+	InfoSeverity    = "info"
+	SuccessSeverity = "success"
+)
+
+func (e *Event) Error() *Event {
+	e.Severity = ErrorSeverity
+	return e
+}
+func (e *Event) Warn() *Event {
+	e.Severity = WarnSeverity
+	return e
+}
+func (e *Event) Info() *Event {
+	e.Severity = InfoSeverity
+	return e
+}
+func (e *Event) Success() *Event {
+	e.Severity = SuccessSeverity
+	return e
+}
+func (e *Event) WithSummary(summary string) *Event {
+	e.Summary = summary
+	return e
+}
+func (e *Event) WithContent(content string) *Event {
+	e.Content = content
+	return e
+}
+func (e *Event) Important() *Event {
+	e.Notification = true
+	return e
 }

@@ -27,13 +27,14 @@ type Orchestrator interface {
 	GetServiceIP(string) (string, error)
 	GetPostgresCmd([]string) (exec.Cmd, error)
 	GetPostgresExecCmd([]string) (exec.Cmd, error)
-	Deploy([]string) error
-	Destroy([]string) error
+	Up([]string) error
+	Down([]string) error
 	Environment() []string
 }
 
-func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string) Orchestrator {
+func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion string) Orchestrator {
 
+	orchestrationPath := filepath.Join(distroPath, "orchestration")
 	switch mode {
 	case Kubernetes:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
@@ -41,11 +42,11 @@ func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string,
 		reposPath := filepath.Join(installDirectory, "repos")
 		configPath := filepath.Join(installDirectory, "config")
 		secretsPath := filepath.Join(configPath, "secrets")
-		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, reposPath: reposPath, configPath: configPath, secretsPath: secretsPath, sitePath: sitePath}
+		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, reposPath: reposPath, configPath: configPath, secretsPath: secretsPath, sitePath: sitePath, orchestrationPath: orchestrationPath, coreVersion: coreVersion}
 	case Kind:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	default:
-		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath}
+		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, orchestrationPath: orchestrationPath, coreVersion: coreVersion}
 	}
 }
 

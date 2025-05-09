@@ -20,11 +20,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/yaml"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/deltafi/tui/internal/api"
@@ -91,6 +92,14 @@ func printJSON(data interface{}) error {
 	}
 	fmt.Println(string(jsonData))
 	return nil
+}
+
+func asJSON(data interface{}) (string, error) {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return "", wrapInError("Error reading Json", err)
+	}
+	return string(jsonData), nil
 }
 
 func printYAML(data interface{}) error {

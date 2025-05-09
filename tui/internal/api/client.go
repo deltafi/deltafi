@@ -19,9 +19,11 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 )
@@ -29,16 +31,59 @@ import (
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
+	dnsMap     map[string]string
 }
 
 // NewClient creates a new instance of the DeltaFi API Client with the specified baseURL.
 // It initializes an HTTP client with a timeout of 30 seconds.
 func NewClient(baseURL string) *Client {
-	return &Client{
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+	}
+
+	client := &Client{
 		baseURL: baseURL,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   30 * time.Second,
+			Transport: transport,
 		},
+		dnsMap: make(map[string]string),
+	}
+
+	client.AddCustomDNS("deltafi-core-service", "127.0.0.1")
+
+	return client
+}
+
+// AddCustomDNS adds a custom DNS resolution for a specific hostname.
+func (c *Client) AddCustomDNS(hostname string, ip string) {
+	c.dnsMap[hostname] = ip
+
+	transport := c.httpClient.Transport.(*http.Transport)
+	if transport.DialContext == nil {
+		transport.DialContext = (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext
+	}
+
+	// Create a custom dialer that overrides DNS resolution
+	originalDialer := transport.DialContext
+	transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(addr)
+		if err != nil {
+			return nil, err
+		}
+
+		// If the host matches any of our custom DNS entries, use the specified IP
+		if ip, exists := c.dnsMap[host]; exists {
+			addr = net.JoinHostPort(ip, port)
+		}
+
+		return originalDialer(ctx, network, addr)
 	}
 }
 
@@ -70,15 +115,6 @@ func (c *Client) Get(path string, result interface{}, opts *RequestOpts) error {
 		return fmt.Errorf("failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
-
-	// body, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	fmt.Printf("Error reading response body: %v\n", err)
-	// }
-
-	// // Print the response body
-	// fmt.Println("Response body:")
-	// fmt.Println(string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d - %s", resp.StatusCode, c.baseURL+path)
@@ -166,10 +202,10 @@ func (c *Client) Post(path string, requestBody interface{}, result interface{}, 
 // Do performs the provided HTTP request and returns the response.
 //
 // The request will be sent with the X-User-Permissions and X-User-Name headers
-// set to "Admin" and "deltafi-cli" respectively.
+// set to "Admin" and "TUI" respectively.
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-User-Permissions", "Admin")
-	req.Header.Add("X-User-Name", "deltafi-cli")
+	req.Header.Add("X-User-Name", "TUI")
 	return c.httpClient.Do(req)
 }
 

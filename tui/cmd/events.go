@@ -163,10 +163,12 @@ func listAllEvents(cmd *cobra.Command) error {
 			strconv.FormatBool(event.Acknowledged),
 			strconv.FormatBool(event.Notification),
 		})
-		sort.Slice(rows, func(i, j int) bool {
-			return rows[i][0] < rows[j][0]
-		})
 	}
+	sort.Slice(rows, func(i, j int) bool {
+		timeI, _ := time.Parse(time.RFC3339, rows[i][1])
+		timeJ, _ := time.Parse(time.RFC3339, rows[j][1])
+		return timeI.After(timeJ)
+	})
 	columns := []string{"ID", "Timestamp", "Level", "Summary", "Source", "Ack", "Notify"}
 
 	plain, _ := cmd.Flags().GetBool("plain")

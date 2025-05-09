@@ -95,8 +95,14 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
     @Override
     public void restartPlugin(String plugin) {
-        findExisting(plugin)
-                .forEach(container -> dockerClient.restartContainerCmd(container.getId()).exec());
+
+        List<Container> containers = findExisting(plugin);
+        if (isEmpty(containers)) {
+            // no container found, so assume this is a container ID
+            dockerClient.restartContainerCmd(plugin).exec();
+        } else {
+            containers.forEach(container -> dockerClient.restartContainerCmd(container.getId()).exec());
+        }
     }
 
     @Override

@@ -432,12 +432,7 @@ _check_local_fqdns() {
 
   domain=$(_from_values ".ingress.domain")
   _verify_or_replace_fqdn "$domain"
-  _verify_or_replace_fqdn "graphite.$domain"
-  _verify_or_replace_fqdn "minio.$domain"
-  _verify_or_replace_fqdn "orchestration.$domain"
-  _verify_or_replace_fqdn "deltafi-api-service"
   _verify_or_replace_fqdn "deltafi-core-service"
-  _verify_or_replace_fqdn "deltafi-ingress-service"
 }
 
 # creates a default values yaml using the local repo if this is a snapshot version otherwise it will use docker.io/deltafi
@@ -486,7 +481,7 @@ dependencies:
   nginx: nginx:1.28.0-alpine3.21
   promtail: grafana/promtail:2.9.14
   valkey: bitnami/valkey:8.1.1
-  docker_web_gui: deltafi/docker-web-gui:1.0.2-0
+  docker_web_gui: deltafi/docker-web-gui:1.0.2-1
   postgres: deltafi/timescaledb:2.19.3-pg16-0
 EOF
 }
@@ -850,6 +845,25 @@ case "$SUBCOMMAND" in
     done
     restart_service "${SERVICES}"
     ;;
+  write_config)
+    config_files=()
+    while [[ $# -gt 0 ]]; do
+      key="$1"
+      case $key in
+        -f|--values)
+          shift
+          config_files+=("$1")
+          shift
+          ;;
+        *)
+          # skip over anything else
+          shift
+          ;;
+      esac
+    done
+    _write_config "${config_files[@]}"
+    ;;
+
   start)
     config_files=()
     post_install_files=()

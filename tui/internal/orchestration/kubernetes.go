@@ -130,7 +130,7 @@ func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, er
 	return *cmd, nil
 }
 
-func (o *KubernetesOrchestrator) Deploy(args []string) error {
+func (o *KubernetesOrchestrator) Up(args []string) error {
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
@@ -145,7 +145,7 @@ func (o *KubernetesOrchestrator) Deploy(args []string) error {
 	return c.Run()
 }
 
-func (o *KubernetesOrchestrator) Destroy(args []string) error {
+func (o *KubernetesOrchestrator) Down(args []string) error {
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 

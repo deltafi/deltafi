@@ -76,14 +76,64 @@ http {
             proxy_cache_valid 200 1m;
         }
 
-        location / {
+        location /orchestration {
             client_max_body_size 10G;
-            proxy_pass           http://deltafi-core;
+            proxy_pass           http://deltafi-docker-ui/;
+
+            # Add necessary headers for React app
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+
+            # Handle API requests
+            location /orchestration/api/ {
+                proxy_pass http://deltafi-docker-ui/api/;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Host $host;
+                proxy_set_header X-Forwarded-Port $server_port;
+            }
+
+            location /orchestration/images/ {
+                proxy_pass http://deltafi-docker-ui/;
+                sub_filter_once off;
+                sub_filter_types text/html;
+                sub_filter 'href="/' 'href="/orchestration/';
+                sub_filter 'src="/' 'src="/orchestration/';
+                sub_filter '"/manifest.json"' '"/orchestration/manifest.json"';
+                sub_filter 'url: "/api/"' 'url: "/orchestration/api/"';
+            }
+            location /orchestration/cleanup/ {
+                proxy_pass http://deltafi-docker-ui/;
+                sub_filter_once off;
+                sub_filter_types text/html;
+                sub_filter 'href="/' 'href="/orchestration/';
+                sub_filter 'src="/' 'src="/orchestration/';
+                sub_filter '"/manifest.json"' '"/orchestration/manifest.json"';
+                sub_filter 'url: "/api/"' 'url: "/orchestration/api/"';
+            }
+
+            # Handle all other requests
+            location /orchestration/ {
+                proxy_pass http://deltafi-docker-ui/;
+                sub_filter_once off;
+                sub_filter_types text/html;
+                sub_filter 'href="/' 'href="/orchestration/';
+                sub_filter 'src="/' 'src="/orchestration/';
+                sub_filter '"/manifest.json"' '"/orchestration/manifest.json"';
+                sub_filter 'url: "/api/"' 'url: "/orchestration/api/"';
+            }
         }
 
         location /visualization {
             client_max_body_size 10G;
             proxy_pass           http://deltafi-grafana;
+        }
+ 
+        location / {
+            client_max_body_size 10G;
+            proxy_pass           http://deltafi-core;
         }
     }
 

@@ -67,9 +67,10 @@ func pollDeltaFileState(did uuid.UUID) error {
 }
 
 var ingressCmd = &cobra.Command{
-	Use:   "ingress",
-	Short: "Ingress files into DeltaFi",
-	Long:  `Ingress one or more files into DeltaFi with the specified data source.`,
+	Use:     "ingress",
+	Short:   "Ingress files into DeltaFi",
+	Long:    `Ingress one or more files into DeltaFi with the specified data source.`,
+	GroupID: "deltafile",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if datasource == "" {
 			return fmt.Errorf("data source is required (use -d or --datasource)")

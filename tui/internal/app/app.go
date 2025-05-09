@@ -100,7 +100,7 @@ func build() {
 
 	instance = &App{
 		config:       &config,
-		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory, config.InstallDirectory, config.SiteDirectory),
+		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory, config.InstallDirectory, config.SiteDirectory, Version),
 		os:           runtime.GOOS,
 		arch:         runtime.GOARCH,
 		distroPath:   distroPath,
@@ -138,6 +138,10 @@ func TuiPath() string {
 
 func GetOrchestrator() orchestration.Orchestrator {
 	return GetInstance().orchestrator
+}
+
+func GetDataDir() string {
+	return GetInstance().config.DataDirectory
 }
 
 func IsRunning() bool {
@@ -198,6 +202,10 @@ func (a *App) FormatWarning(msg string) string {
 	return styles.WarningStyle.Render(msg)
 }
 
+func (a *App) FormatInfo(msg string) string {
+	return styles.InfoStyle.Render(msg)
+}
+
 func (a *App) FormatErrors(errorPointers []*string) string {
 	errors := make([]string, len(errorPointers))
 	for i, errorStr := range errorPointers {
@@ -239,4 +247,9 @@ func (a *App) FAIL(msg string) string {
 		a.FormatError("FAIL"),
 		styles.BaseStyle.Render(msg),
 	)
+}
+
+func SendEvent(event *api.Event) error {
+	_, err := GetInstance().GetAPIClient().CreatEvent(*event)
+	return err
 }

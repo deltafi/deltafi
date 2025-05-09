@@ -254,7 +254,7 @@ const staticMenuItems = ref([
       {
         name: "Docker Dashboard",
         icon: "fa-brands fa-docker fa-fw",
-        url: computed(() => buildURL("orchestration", "")),
+        url: "/orchestration",
         visible: computed(() => hasPermission("Admin") && !uiConfig.clusterMode),
       },
       {

@@ -13,6 +13,7 @@ operations:
 - snapshots.graphql
 - deltafile.graphql
 - system_flows.graphql
+- version.graphql
 generated: generated.go
 client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
 context_type: "-"
