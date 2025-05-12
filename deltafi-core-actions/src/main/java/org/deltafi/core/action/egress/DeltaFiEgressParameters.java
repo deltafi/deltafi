@@ -30,14 +30,6 @@ public class DeltaFiEgressParameters extends ActionParameters implements IHttpEg
     @JsonPropertyDescription("The URL to send the DeltaFile to")
     private String url;
 
-    @JsonProperty(defaultValue = "3")
-    @JsonPropertyDescription("Number of times to retry a failing HTTP request")
-    private Integer retryCount = 3;
-
-    @JsonProperty(defaultValue = "150")
-    @JsonPropertyDescription("Number of milliseconds to wait for an HTTP retry")
-    private Integer retryDelayMs = 150;
-
     @JsonPropertyDescription("Name of the data source on the receiving DeltaFi")
     private String flow;
 

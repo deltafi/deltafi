@@ -49,7 +49,7 @@ public class HttpEgress extends HttpEgressBase<HttpEgress.Parameters> {
 
     @Override
     public EgressResultType egress(@NotNull ActionContext context, @NotNull HttpEgress.Parameters params, @NotNull EgressInput input) {
-        return egressWithMethod(context, params, params.getMethod(), input);
+        return doEgress(context, params, params.getMethod(), input);
     }
 
     @Override

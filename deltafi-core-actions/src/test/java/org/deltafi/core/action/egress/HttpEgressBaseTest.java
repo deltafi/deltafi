@@ -41,7 +41,6 @@ import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.util.Map;
 
-import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
@@ -97,42 +96,7 @@ class HttpEgressBaseTest {
     }
 
     @Test
-    void egressesAfterRetry() {
-        // First POST fails with status 999
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader("header-1", WireMock.equalTo("value-1"))
-                .withHeader("header-2", WireMock.equalTo("value-2"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .inScenario("test").whenScenarioStateIs(STARTED)
-                .willReturn(WireMock.status(999))
-                .willSetStateTo("succeed"));
-
-        // Second POST succeeds
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader("header-1", WireMock.equalTo("value-1"))
-                .withHeader("header-2", WireMock.equalTo("value-2"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .inScenario("test").whenScenarioStateIs("succeed")
-                .willReturn(WireMock.ok()));
-
-        EgressInput egressInput = EgressInput.builder()
-                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
-                .build();
-
-        HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
-        params.setRetryCount(1);
-        params.setRetryDelayMs(0);
-        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
-
-        assertInstanceOf(EgressResult.class, egressResultType);
-    }
-
-    @Test
-    void errorsAfterMaxRetries() {
+    void errors() {
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
                 .withHeader("header-1", WireMock.equalTo("value-1"))
@@ -147,8 +111,6 @@ class HttpEgressBaseTest {
         HttpEgressParameters params = new HttpEgressParameters();
         String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
         params.setUrl(url);
-        params.setRetryCount(1);
-        params.setRetryDelayMs(0);
         EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
@@ -171,8 +133,6 @@ class HttpEgressBaseTest {
         HttpEgressParameters params = new HttpEgressParameters();
         String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
         params.setUrl(url);
-        params.setRetryCount(1);
-        params.setRetryDelayMs(0);
         EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);

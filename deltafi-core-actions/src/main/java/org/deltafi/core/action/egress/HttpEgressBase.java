@@ -49,36 +49,10 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     public EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input) {
-        return egressWithMethod(context, params, HttpRequestMethod.POST, input);
+        return doEgress(context, params, HttpRequestMethod.POST, input);
     }
 
-    @SuppressWarnings("BusyWait")
-    protected EgressResultType egressWithMethod(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
-        int tries = 0;
-
-        while (true) {
-            EgressResultType result = doEgress(context, params, method, input);
-            tries++;
-
-            if (!(result instanceof ErrorResult) || (tries > params.getRetryCount())) {
-                return result;
-            }
-
-            log.error("Retrying HTTP POST after error: {} (retry {}/{})",
-                    ((ErrorResult) result).getErrorCause(), tries, params.getRetryCount());
-
-            try {
-                Thread.sleep(params.getRetryDelayMs());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                // in the future we might want this to requeue instead of error
-                // but first we want to catch the error in the wild and identify if and why it is happening
-                return new ErrorResult(context, "HTTP egress thread interrupted", e).logErrorTo(log);
-            }
-        }
-    }
-
-    private EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
+    public EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
         try {
             HttpRequest.Builder httpRequestBuilder = HttpService.newRequestBuilder(params.getUrl(), buildHeaders(context, params, input), getMediaType(input));
             switch (method) {

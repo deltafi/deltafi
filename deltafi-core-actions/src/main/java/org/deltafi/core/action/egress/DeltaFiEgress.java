@@ -63,7 +63,7 @@ public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
             params.setUrl(localIngressUrl);
         }
 
-        return egressWithMethod(context, params, HttpRequestMethod.POST, input);
+        return doEgress(context, params, HttpRequestMethod.POST, input);
     }
 
     @Override

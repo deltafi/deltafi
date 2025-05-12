@@ -19,8 +19,4 @@ package org.deltafi.core.action.egress;
 
 public interface IHttpEgressParameters {
     String getUrl();
-
-    Integer getRetryCount();
-
-    Integer getRetryDelayMs();
 }
