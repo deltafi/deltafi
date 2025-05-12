@@ -41,20 +41,6 @@ _info "Fast delete worker starting on $NODE_NAME"
 _info "Postgres URL: $PG_URL"
 _info "Monitoring: $DATA_DIR"
 
-delete_did() {
-    local bucket="$1"
-    local did="$2"
-    local prefix="${did:0:3}"
-    local path="${DATA_DIR}/${bucket}/${prefix}/${did}"
-
-    if [[ -d "$path" ]]; then
-        rm -rf "$path"
-        _info "Deleted $path"
-    else
-        _warn "Path not found, skipping delete: $path"
-    fi
-}
-
 while true; do
     # Query up to 100 pending deletes for this node
     results=$(psql "$PG_URL" -Atc "
@@ -70,10 +56,19 @@ while true; do
     fi
 
     to_delete=()
+    paths_to_delete=()
+
     while IFS='|' read -r bucket did; do
         to_delete+=("'$did'")
-        delete_did "$bucket" "$did"
+        prefix="${did:0:3}"
+        path="${DATA_DIR}/${bucket}/${prefix}/${did}"
+        paths_to_delete+=("$path")
     done <<< "$results"
+
+    if (( ${#paths_to_delete[@]} > 0 )); then
+        rm -rf "${paths_to_delete[@]}"
+        _info "Deleted ${#paths_to_delete[@]}"
+    fi
 
     if (( ${#to_delete[@]} > 0 )); then
         delete_query="DELETE FROM pending_deletes WHERE node = '${NODE_NAME}' AND did IN ($(IFS=,; echo "${to_delete[*]}"))"
@@ -93,6 +88,6 @@ while true; do
 
     # If we got a full batch, keep processing immediately
     if (( $(wc -l <<< "$results") < 100 )); then
-        sleep 0.1
+        sleep 1
     fi
 done
