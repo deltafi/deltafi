@@ -31,6 +31,16 @@ HAS_GO := $(shell command -v go 2> /dev/null)
 USE_DOCKER ?= $(if $(HAS_GO),false,true)
 
 # Environment checks
+NATIVE_ARCH := $(shell uname -m | tr A-Z a-z)
+ifeq ($(NATIVE_ARCH),x86_64)
+  NATIVE_ARCH := amd64
+endif
+
+NATIVE_OS := $(shell basename $(shell uname -o | tr A-Z a-z))
+ifneq ($(NATIVE_OS),darwin)
+  NATIVE_OS := linux
+endif
+
 HAS_DOCKER := $(shell command -v docker 2> /dev/null)
 MIN_GO_VERSION := 1.24
 GO_VERSION_CHECK := $(shell go version 2>/dev/null | grep -q "go$(MIN_GO_VERSION)" && echo 1 || echo 0)
@@ -42,13 +52,19 @@ GOBINPATH = $(GOPATH)/bin
 
 # Docker settings
 DOCKER_IMAGE := golang:1.24.2
-DOCKER_WORKDIR := /go/src/deltafi
+DOCKER_SOURCE := /go/src/deltafi
+DOCKER_BIN := /go/bin
+DOCKER_WORKDIR := $(DOCKER_SOURCE)/tui
 DOCKER_GOPATH := $(DOCKER_WORKDIR)/.go
+
 DOCKER_CMD := docker run --rm \
-              -v $(CURDIR):$(DOCKER_WORKDIR) \
+              -v $(BUILD_DIR):$(DOCKER_SOURCE) \
+              -v $(BIN_DIR):$(DOCKER_BIN) \
               -v $(GOPATH):$(DOCKER_GOPATH) \
               -e GOPATH=$(DOCKER_GOPATH) \
               -e CGO_ENABLED=0 \
+              -e GOOS=$(NATIVE_OS) \
+              -e GOARCH=$(NATIVE_ARCH) \
               -e GOCACHE=/tmp/.cache \
               -w $(DOCKER_WORKDIR)
 
@@ -62,6 +78,7 @@ ifeq ($(USE_DOCKER),true)
   endif
   CMD_PREFIX := $(DOCKER_CMD) $(DOCKER_IMAGE)
   GOBINPATH := $(DOCKER_GOPATH)/bin
+  BIN_DIR := $(DOCKER_BIN)
 else
   ifeq ($(GO_VERSION_CHECK), 0)
     $(warning Go $(MIN_GO_VERSION) or higher is required. Consider using USE_DOCKER=true)
@@ -103,6 +120,9 @@ all: check-env build test
 check-env:
 	@if [ "$(USE_DOCKER)" = "false" ] && [ "$(GO_VERSION_CHECK)" = "0" ]; then \
 		echo "WARNING: Go $(MIN_GO_VERSION) is required. Consider using USE_DOCKER=true"; \
+	fi
+	@if [ "$(USE_DOCKER)" = "true" ]; then \
+		echo "Using Docker GO environment [ $(NATIVE_OS) $(NATIVE_ARCH) ]"; \
 	fi
 	@mkdir -p $(GOPATH)
 
