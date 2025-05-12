@@ -58,7 +58,7 @@ public class PluginRegistrar {
 
     @PostConstruct
     public void register() {
-        String coreUrl = Objects.requireNonNull(environment.getProperty("CORE_URL"));
+        String coreUrl = environment.getProperty("CORE_URL", String.class, "http://localhost");
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());

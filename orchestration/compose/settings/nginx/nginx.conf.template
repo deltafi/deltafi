@@ -10,12 +10,7 @@ http {
         "~^ingress.*" "deltafi-core";
         "~^graphite.*" "deltafi-graphite";
         "~^minio.*" "deltafi-minio";
-    }
-
-    map $host $internal_upstream_mapping {
-        "deltafi-core-service" "deltafi-core";
-        "deltafi-ingress-service" "deltafi-core";
-        "ingress" "deltafi-core";
+        default "deltafi-core";
     }
 
     upstream deltafi-core {
@@ -173,7 +168,7 @@ http {
 
         location / {
             client_max_body_size 10G;
-            proxy_pass           http://$internal_upstream_mapping;
+            proxy_pass           http://deltafi-core;
         }
     }
 }

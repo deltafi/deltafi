@@ -23,8 +23,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("minio")
 @Data
 public class MinioProperties {
-    String url;
+    String url = "http://localhost:9000";
     String accessKey;
     String secretKey;
-    long partSize;
+    long partSize = 5242880L;
 }

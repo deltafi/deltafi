@@ -25,7 +25,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class EventQueueProperties {
     public static final String DGS_QUEUE = "dgs";
 
-    private String url;
+    private String url = "http://localhost:6379";
     private String password = null;
     private int maxIdle = 16;
     private int maxTotal = 16;
