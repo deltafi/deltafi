@@ -385,9 +385,7 @@ public class DeltaFilesService {
                                     .value(Duration.between(deltaFile.getCreated(), deltaFile.getModified()).toMillis())
                                     .build());
                     generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
-                    if (flow.getState() == DeltaFileFlowState.COMPLETE) {
-                        analyticEventService.recordEgress(deltaFile, flow);
-                    }
+                    analyticEventService.recordEgress(deltaFile, flow);
                 }
                 case ERROR -> {
                     error(deltaFile, flow, action, event);
@@ -589,7 +587,6 @@ public class DeltaFilesService {
         long bytes = Segment.calculateTotalSize(flow.lastAction().getContent().stream().flatMap(s -> s.getSegments().stream()).collect(Collectors.toSet()));
         metricService.increment(new Metric(BYTES_TO_SINK, bytes, tags));
         metricService.increment(new Metric(FILES_TO_SINK, 1, tags));
-
     }
 
     public void filter(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event, OffsetDateTime now) {

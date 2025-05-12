@@ -78,8 +78,6 @@ public class AnalyticEventService {
                         "egressor", flow.getName()
                 ))) return;
 
-        // it doesn't matter whether the data source was rest or timed and we may not be able to determine
-        // we just need a key that can be looked up later
         FlowDefinition dataSourceFlow = flowDefinitionService.getOrCreateFlow(deltaFile.getDataSource(), deltaFile.firstFlow().getType());
         FlowDefinition egressFlow = flowDefinitionService.getOrCreateFlow(flow.getName(), flow.getType());
         Map<String, String> annotations = Annotation.toMap(deltaFile.getAnnotations());
