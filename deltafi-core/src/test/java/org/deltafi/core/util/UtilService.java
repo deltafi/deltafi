@@ -133,13 +133,10 @@ public class UtilService {
 
         DeltaFileFlow flow = DeltaFileFlow.builder()
                 .flowDefinition(flowDefinitionService.getOrCreateFlow(dataSource, FlowType.TIMED_DATA_SOURCE))
+                .number(0)
                 .state(DeltaFileFlowState.COMPLETE)
                 .created(created)
                 .modified(modified)
-                .input(DeltaFileFlowInput.builder()
-                        .content(content)
-                        .metadata(metadata)
-                        .build())
                 .publishTopics(List.of(TRANSFORM_TOPIC))
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .build();

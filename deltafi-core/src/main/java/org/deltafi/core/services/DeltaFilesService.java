@@ -1020,7 +1020,6 @@ public class DeltaFilesService {
                             DeltaFileFlow flow = DeltaFileFlow.builder()
                                     .flowDefinition(firstFlow.getFlowDefinition())
                                     .state(flowConfig.isPaused() ? DeltaFileFlowState.PAUSED : DeltaFileFlowState.COMPLETE)
-                                    .input(firstFlow.getInput())
                                     .created(now)
                                     .modified(now)
                                     .testMode(firstFlow.getType().isDataSource() ? flowConfig.isTestMode() : firstFlow.isTestMode())
@@ -1391,7 +1390,7 @@ public class DeltaFilesService {
 
         Map<String, UniqueKeyValues> keyValues = new HashMap<>();
         deltaFileFlows.stream()
-                .map(f -> f.getInput().getMetadata())
+                .map(f -> f.getMetadata())
                 .forEach(map -> map.forEach((key, value) -> keyValues.computeIfAbsent(key, UniqueKeyValues::new).addValue(value)));
         return new ArrayList<>(keyValues.values());
     }
