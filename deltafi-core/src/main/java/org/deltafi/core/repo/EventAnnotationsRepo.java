@@ -27,8 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 public interface EventAnnotationsRepo extends JpaRepository<EventAnnotationEntity, EventAnnotationId>, EventAnnotationsRepoCustom {
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM event_annotations ea WHERE NOT EXISTS (" +
-            "SELECT 1 FROM analytics a WHERE a.did = ea.did" +
-            ")", nativeQuery = true)
+    @Query(value = "CALL clean_unused_annotations()", nativeQuery = true)
     void deleteUnusedEventAnnotations();
 }

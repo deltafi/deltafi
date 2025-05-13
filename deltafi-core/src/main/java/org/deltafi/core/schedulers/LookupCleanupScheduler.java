@@ -39,13 +39,22 @@ public class LookupCleanupScheduler {
     private final EventGroupRepo eventGroupRepo;
     private final EventAnnotationsRepo eventAnnotationsRepo;
 
-    @Scheduled(fixedDelay = 60_000)
+    // run every 6 hours, which is half the frequency at which analytics chunks are dropped
+    @Scheduled(fixedDelayString = "PT6H")
     public void cleanup() {
+        log.info("Analytic lookup tables cleanup started");
         actionNameRepo.deleteUnusedActionNames();
+        log.info("Cleaned up unused action name lookups");
         annotationKeyRepo.deleteUnusedAnnotationKeys();
+        log.info("Cleaned up unused annotation key lookups");
         annotationValueRepo.deleteUnusedAnnotationValues();
+        log.info("Cleaned up unused annotation value lookups");
         errorCauseRepo.deleteUnusedErrorCauses();
+        log.info("Cleaned up unused error cause lookups");
         eventGroupRepo.deleteUnusedEventGroups();
+        log.info("Cleaned up unused event group lookups");
         eventAnnotationsRepo.deleteUnusedEventAnnotations();
+        log.info("Cleaned up unused event annotation lookups");
+        log.info("Analytic lookup tables cleanup complete");
     }
 }
