@@ -1020,6 +1020,7 @@ func pauseActionsFromTopic(
 
 func init() {
 	rootCmd.AddCommand(dataSourceCmd)
+	AddFormatFlag(getDataSourceFlow)
 
 	dataSourceCmd.AddCommand(listDataSourceFlows)
 	dataSourceCmd.AddCommand(getDataSourceFlow)
