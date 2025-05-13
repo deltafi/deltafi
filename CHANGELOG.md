@@ -5,6 +5,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.17.0] - 2025-05-12
+
+### Added
+- Added a `pinMatching` mutation that pins all complete DeltaFiles matching a given `DeltaFilesFilter`
+- Added an `unpinMatching` mutation that unpins all pinned DeltaFiles matching a given `DeltaFilesFilter`
+- Added a pinned flag to the `DeltaFilesFilter` to allow filtering by the pinned value
+- Added an option to search by pinned on the DeltaFile Search page
+- Compose: deltafi-core-worker can be added via site/values.yaml:
+```yaml
+---
+deltafi:
+  core_worker:
+    enable: true
+    replicas: 1 # Or as many instances as you want
+```
+- Compose: deltafi-core-actions can be scaled via site/values.yaml:
+```yaml
+---
+deltafi:
+  core_actions:
+    replicas: 2 # Or as many instances as you want
+```
+- TUI: HTTP client allows internal DNS mapping to remove the need for changes to /etc/hosts
+- TUI: `site/compose.yaml` can be used to override or extend the compose orchestration
+- TUI: Compose orchestration creates required data directories and creates the Docker DeltaFi network if it does not exist
+- TUI: Compose orchestration automatically detects and configures local user ID, group ID, and docker group ID
+- TUI: Ingress command has a progress bar
+- TUI: Ingress command will upload multiple files concurrently
+
+### Changed
+- Compose: Docker UI now uses `/orchestration` path instead of `orchestration.<fqdn>`
+- TUI: Compose orchestration no longer needs to place domains in /etc/hosts
+- UI sidebar links to new Docker Dashboard location
+- TUI: No dependencies on legacy CLI or compose scripts for operation of compose stack
+- When configured for local storage, perform minio deletes directly on the filesystem 
+
+### Fixed
+- When registering a plugin that has the same version but has flow plan changes, the hMD5 hash now correctly detects those changes
+- Retry was not pulling the correct metadata for the Modify Metadata option
+- Fix bug where egress metrics were not recorded when awaiting a read receipt 
+- Remove internal retry from Http egress actions, fixing stream reuse issues. External Auto Resume should be used instead. 
+- TUI: Container based builds in the docker environment
+
+### Removed
+- CLI: Removed `_api_v1` deprecated function
+
+### Tech-Debt/Refactor
+- Cleanup the Nginx internal mapping used for the CLI
+- Added default properties for connecting to MinIO and Valkey
+
+### Upgrade and Migration
+- Compose docker-web-gui updated to 1.0.2-1
+- HttpEgressParameters and DeltaFiEgressParamters removed: retryCount, retryDelayMs
+
 ## [2.16.0] - 2025-05-06
 
 ### Added
@@ -4097,7 +4151,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.16.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.17.0...main
+[2.17.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.16.0...2.17.0
 [2.16.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.15.1...2.16.0
 [2.15.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.15.0...2.15.1
 [2.15.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.14.0...2.15.0
