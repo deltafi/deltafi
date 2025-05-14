@@ -44,7 +44,6 @@ public class Delay extends TransformAction<DelayParameters> {
 
         TransformResult result = new TransformResult(context);
         result.setContent(input.content());
-        result.addMetadata(input.getMetadata());
         return result;
     }
 

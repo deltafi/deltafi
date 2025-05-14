@@ -53,6 +53,6 @@ public class DelayTest {
 
         assertInstanceOf(TransformResult.class, transformResultType);
         assertEquals(content, ((TransformResult) transformResultType).getContent());
-        assertEquals(metadata, ((TransformResult) transformResultType).getMetadata());
+        assertTrue(((TransformResult) transformResultType).getMetadata().isEmpty());
     }
 }

@@ -76,7 +76,6 @@ public class Compress extends TransformAction<CompressParameters> {
         String fileName = String.join(".", params.getName(), params.getFormat().getValue());
         result.saveContent(new ArchiveWriter(input.content(), params.getFormat(), clock), fileName,
                 params.getMediaType() != null ? params.getMediaType() : params.getFormat().getMediaType());
-        result.addMetadata(input.getMetadata());
         result.addMetadata("compressFormat", params.getFormat().getValue());
         return result;
     }
@@ -88,7 +87,6 @@ public class Compress extends TransformAction<CompressParameters> {
             result.saveContent(new CompressWriter(inputContent, params.getFormat()), fileName,
                     params.getMediaType() != null ? params.getMediaType() : params.getFormat().getMediaType());
         }
-        result.addMetadata(input.getMetadata());
         result.addMetadata("compressFormat", params.getFormat().getValue());
         return result;
     }
