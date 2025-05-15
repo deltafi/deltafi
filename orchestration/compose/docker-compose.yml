@@ -454,13 +454,14 @@ services:
     container_name: deltafi-dev-container
     environment:
       APP_NAME: deltafi-dev-container
-      GRADLE_USER_HOME: /home/gradle/.gradle
-      DOCKER_HOST: unix:///var/run/docker.sock
+      DOCKER_USER: "${USER:-coder}"
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
       - ${SECRETS_DIR}/ssl.env
+    group_add:
+      - ${DOCKER_GID}
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
@@ -470,17 +471,16 @@ services:
     volumes:
       - ${DATA_DIR}/certs:/certs
       - ${REPOS_DIR}:/app
-      - ${CONFIG_DIR}/.vscode:/home/gradle/.vscode
-      - ${CONFIG_DIR}/.gradle:/home/gradle/.gradle
-      - ${CONFIG_DIR}/.m2:/home/gradle/.m2
+      - ${CONFIG_DIR}/vscode/.local:/home/coder/.local
+      - ${CONFIG_DIR}/vscode/.config:/home/coder/.config
+      - ${CONFIG_DIR}/.gradle:/home/coder/.gradle
+      - ${CONFIG_DIR}/.m2:/home/coder/.m2
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8888:8080"  # VS Code Server
     working_dir: /app
     command: ["/usr/bin/code-server", "--auth", "none", "--bind-addr", "0.0.0.0:8080", "."]
-    entrypoint: /entrypoint.sh
-    privileged: true
     tty: true
     stdin_open: true
-    user: "gradle:gradle"
+    user: "${USER_ID}:${GROUP_ID}"
     profiles: ["dev"]

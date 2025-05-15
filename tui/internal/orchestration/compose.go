@@ -52,7 +52,7 @@ type valuesData struct {
 	ValkeyContainer       string `default:"bitnami/valkey:8.1.1"`
 	DockerWebGuiContainer string `default:"deltafi/docker-web-gui:1.0.2-1"`
 	PostgresContainer     string `default:"deltafi/timescaledb:2.19.3-pg16-0"`
-	DevContainer          string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-0"`
+	DevContainer          string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-1"`
 }
 
 const defaultValuesTemplate = `deltafi:
