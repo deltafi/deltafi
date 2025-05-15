@@ -24,7 +24,7 @@ ui:license:
     - ./deltafi-ui/licenseCheck.sh
 
 ui:test:
-  image: deltafi/deltafi-ui-test:2.7.0
+  image: deltafi/deltafi-ui-test:2.17.1
   stage: test
   allow_failure: false
   needs:

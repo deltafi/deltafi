@@ -27,7 +27,7 @@ export default ({ mode }) => {
                 res.setHeader("Content-Type", "application/json");
                 res.end(JSON.stringify({ branch }));
               }
-            });
+            }); ``
           },
         },
         "/visualization": {

@@ -28,8 +28,13 @@
                 {{ item.name }}
               </span>
               <router-link v-else-if="item.path" :to="item.path" :class="menuItemClass(item)">
-                <i :class="item.icon" />
-                {{ item.name }}
+                <span class="d-flex justify-content-between">
+                  <span>
+                    <i :class="item.icon" />
+                    {{ item.name }}
+                  </span>
+                  <span v-if="item.badge && item.badge().visible" :class="item.badge().class">{{ item.badge().value }}</span>
+                </span>
               </router-link>
               <a v-else-if="item.url" :href="item.url" target="_blank" :class="menuItemClass(item)">
                 <span class="d-flex justify-content-between">
@@ -96,6 +101,15 @@ const externalLinks = computed(() => {
 
 const staticMenuItems = ref([
   { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/", visible: computed(() => hasPermission("DashboardView")) },
+  {
+    name: "System Map",
+    icon: "fas fa-hexagon-nodes fa-fw",
+    path: "/system-map",
+    badge: () => {
+      return betaBadge.value;
+    },
+    visible: computed(() => hasPermission("DashboardView"))
+  },
   {
     name: "DeltaFiles",
     expand: true,
@@ -292,6 +306,14 @@ const errorsBadge = computed(() => {
     visible: errorCount.value > 0,
     class: "badge badge-danger badge-pill",
     value: errorCount.value,
+  };
+});
+
+const betaBadge = computed(() => {
+  return {
+    visible: true,
+    class: "badge badge-info badge-pill",
+    value: "BETA",
   };
 });
 

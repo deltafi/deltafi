@@ -34,6 +34,7 @@ import TransformsPage from "@/pages/TransformsPage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
 import RolesPage from "@/pages/RolesPage.vue";
+import SystemMapPage from "@/pages/SystemMapPage.vue";
 import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
 import SystemPropertiesPage from "@/pages/SystemPropertiesPage.vue";
 import SystemSnapshotsPage from "@/pages/SystemSnapshotsPage.vue";
@@ -47,6 +48,14 @@ const routes: Array<RouteRecordRaw> = [
     path: "/",
     name: "",
     component: DashboardPage,
+    meta: {
+      permission: "DashboardView",
+    },
+  },
+  {
+    path: "/system-map",
+    name: "System Map",
+    component: SystemMapPage,
     meta: {
       permission: "DashboardView",
     },
