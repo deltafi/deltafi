@@ -30,6 +30,14 @@ public class DeltaFiEgressParameters extends ActionParameters implements IHttpEg
     @JsonPropertyDescription("The URL to send the DeltaFile to")
     private String url;
 
+    @JsonProperty(defaultValue = "3")
+    @JsonPropertyDescription("DEPRECATED: will be removed in a future release. Remove from your data sink configuration. Configure auto retry rules to trigger an external retry.")
+    private Integer retryCount = 3;
+
+    @JsonProperty(defaultValue = "150")
+    @JsonPropertyDescription("DEPRECATED: will be removed in a future release. Remove from your data sink configuration. Configure auto retry rules to trigger an external retry.")
+    private Integer retryDelayMs = 150;
+
     @JsonPropertyDescription("Name of the data source on the receiving DeltaFi")
     private String flow;
 
