@@ -31,6 +31,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/orchestration"
+	"github.com/deltafi/tui/internal/types"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
 )
@@ -177,7 +178,7 @@ func (c *InitCommand) cloneRepo() tea.Cmd {
 }
 
 func (c *InitCommand) needsCoreSetup() bool {
-	if c.config.DeploymentMode != app.CoreDevelopment {
+	if c.config.DeploymentMode != types.CoreDevelopment {
 		return false
 	}
 
@@ -238,7 +239,7 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				c.step = deploymentStep
 				if c.config.OrchestrationMode == orchestration.Kubernetes {
 					// Kubernetes skips the deployment step
-					c.config.DeploymentMode = app.Deployment
+					c.config.DeploymentMode = types.Deployment
 					c.step = confirmationStep
 				}
 			case key.Matches(msg, c.keys.Back):
@@ -257,7 +258,7 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					c.selectedOption++
 				}
 			case key.Matches(msg, c.keys.Select):
-				c.config.DeploymentMode = app.DeploymentMode(c.selectedOption)
+				c.config.DeploymentMode = types.DeploymentMode(c.selectedOption)
 				c.selectedOption = 0
 				if c.needsCoreSetup() {
 					if c.config.Development.CoreRepo == "" {
@@ -312,6 +313,8 @@ func (c *InitCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					c.err = err
 					return c, nil
 				}
+
+				app.ReloadInstance() // Rebuild app config based on config changes
 
 				// Configure shell if possible
 				shell := app.DetectShell()
@@ -433,7 +436,7 @@ func (c *InitCommand) renderConfirmation() string {
 		"Orchestration Mode:  " + c.config.OrchestrationMode.String() + "\n" +
 		"Shell hooks:         " + string(app.DetectShell())
 
-	if c.config.DeploymentMode == app.CoreDevelopment {
+	if c.config.DeploymentMode == types.CoreDevelopment {
 		content += "\nCore Repository: " + c.config.Development.CoreRepo
 		if c.cloneError != nil {
 			content += "\n\n" + styles.ErrorStyle.Render("Failed to clone repository: "+c.cloneError.Error())
@@ -489,13 +492,9 @@ func (c *InitCommand) renderMenu(items []string, header string) string {
 
 // Update the deployment mode selection to use the new layout
 func (c *InitCommand) renderDeploymentMode() string {
-
 	menu := c.renderMenu(c.deploymentModes, "Select Operational Mode")
-	menu = lipgloss.NewStyle().MarginLeft(1).Render(menu)
-
-	description := app.DeploymentMode(c.selectedOption).Description()
-
-	return c.renderTwoPane(c.width-8, 40, menu, description)
+	description := types.DeploymentMode(c.selectedOption).Description()
+	return c.renderTwoPane(c.width, 40, menu, description)
 }
 
 // Update the core repo step to use the new layout

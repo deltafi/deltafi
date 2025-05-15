@@ -28,13 +28,16 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/deltafi/tui/internal/types"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/mcuadros/go-defaults"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	networkName = "deltafi"
+	networkName          = "deltafi"
+	composeCoreDevFile   = "compose.core-dev.yaml"
+	composePluginDevFile = "compose.plugin-dev.yaml"
 )
 
 type valuesData struct {
@@ -113,6 +116,7 @@ type ComposeOrchestrator struct {
 	configPath        string
 	sitePath          string
 	coreVersion       string
+	deploymentMode    types.DeploymentMode
 }
 
 func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
@@ -144,15 +148,175 @@ func (o *ComposeOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error
 func (o *ComposeOrchestrator) SiteValuesFile() (string, error) {
 	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
 	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {
-		return "", fmt.Errorf("site values file does not exist: %s", siteValuesFile)
+		defaultContent := `# Site values file
+# To restore to defaults, remove this file and run 'deltafi up'
+---
+deltafi:
+  core_worker:
+    enabled: true
+    replicas: 0
+  core_actions:
+    replicas: 1
+  auth:
+    mode: disabled # basic, cert, or disabled
+    entityResolver:
+      config:
+        README: |-
+          Add files to the site/values.yaml at deltafi.auth.config to inject files here
+  api:
+    workers: 8
+  file_ingress:
+    enabled: true
+  egress_sink:
+    enabled: true
+ingress:
+  domain: local.deltafi.org
+  tls:
+    enabled: false
+`
+		if err := os.WriteFile(siteValuesFile, []byte(defaultContent), 0644); err != nil {
+			return siteValuesFile, fmt.Errorf("error creating default %s file: %w", "values.yaml", err)
+		}
 	}
 	return siteValuesFile, nil
+}
+
+func (o *ComposeOrchestrator) PluginDevelopmentComposeFile() (string, error) {
+	pluginDevelopmentFile := filepath.Join(o.sitePath, composePluginDevFile)
+	if _, err := os.Stat(pluginDevelopmentFile); os.IsNotExist(err) {
+		defaultContent := `# Plugin Development Mode compose orchestration overrides
+# To restore to defaults, remove this file and run 'deltafi up'
+---
+services:
+  core-scheduler:
+    environment:
+      VALKEY_PASSWORD: ~
+  core-worker:
+    environment:
+      VALKEY_PASSWORD: ~
+  core-actions:
+    environment:
+      VALKEY_PASSWORD: ~
+  deltafi-nodemonitor:
+    environment:
+      VALKEY_PASSWORD: ~
+  java-dev:
+    environment:
+      VALKEY_PASSWORD: ~
+  deltafi-valkey:
+    environment:
+      ALLOW_EMPTY_PASSWORD: yes
+      VALKEY_PASSWORD: ~
+    ports:
+      - "6379:6379"
+  # allow anonymous access to the storage bucket for plugin development
+  deltafi-minio:
+    ports:
+      - "9000:9000"
+    post_start:
+      - command: >
+          /bin/sh -c "
+          sleep 8;
+          mc alias set deltafi http://deltafi-minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD";
+          mc anonymous set download deltafi/storage;
+          mc anonymous set upload deltafi/storage;
+          "
+`
+		if err := os.WriteFile(pluginDevelopmentFile, []byte(defaultContent), 0644); err != nil {
+			return pluginDevelopmentFile, fmt.Errorf("error creating default %s file: %w", composePluginDevFile, err)
+		}
+	}
+	return pluginDevelopmentFile, nil
+}
+
+func (o *ComposeOrchestrator) CoreDevelopmentComposeFile() (string, error) {
+	coreDevelopmentFile := filepath.Join(o.sitePath, composeCoreDevFile)
+	if _, err := os.Stat(coreDevelopmentFile); os.IsNotExist(err) {
+		// Create the default compose-dev.yaml content
+		defaultContent := `# Core Development Mode compose orchestration overrides
+# To restore to defaults, remove this file and run 'deltafi up'
+---
+services:
+  core-scheduler:
+    entrypoint: [ "java", "-agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n", "-jar", "deltafi-app.jar" ]
+    environment:
+      VALKEY_PASSWORD: ~
+    ports:
+      - "5005:5005"
+  core-worker:
+    environment:
+      VALKEY_PASSWORD: ~
+  core-actions:
+    environment:
+      VALKEY_PASSWORD: ~
+  deltafi-nodemonitor:
+    environment:
+      VALKEY_PASSWORD: ~
+  java-dev:
+    environment:
+      VALKEY_PASSWORD: ~
+  deltafi-valkey:
+    environment:
+      ALLOW_EMPTY_PASSWORD: yes
+      VALKEY_PASSWORD: ~
+    ports:
+      - "6379:6379"
+  deltafi-postgres:
+    ports:
+      - "5432:5432"
+  # allow anonymous access to the storage bucket for plugin development
+  deltafi-minio:
+    ports:
+      - "9000:9000"
+    post_start:
+      - command: >
+          /bin/sh -c "
+          sleep 8;
+          mc alias set deltafi http://deltafi-minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD";
+          mc anonymous set download deltafi/storage;
+          mc anonymous set upload deltafi/storage;
+          "
+`
+		if err := os.WriteFile(coreDevelopmentFile, []byte(defaultContent), 0644); err != nil {
+			return coreDevelopmentFile, fmt.Errorf("error creating default %s file: %w", composeCoreDevFile, err)
+		}
+	}
+	return coreDevelopmentFile, nil
 }
 
 func (o *ComposeOrchestrator) SiteComposeFile() (string, error) {
 	siteFile := filepath.Join(o.sitePath, "compose.yaml")
 	if _, err := os.Stat(siteFile); os.IsNotExist(err) {
-		return "", fmt.Errorf("site compose file does not exist: %s", siteFile)
+		defaultContent := `# Site compose file contains overrides for the DeltaFi docker-compose services
+# To restore to defaults, remove this file and run 'deltafi up'
+
+# Example of adding a service to the site compose file:
+# ---
+# services:
+#   dozzle:
+#     container_name: dozzle
+#     image: amir20/dozzle:latest
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+#     ports:
+#       - 8080:8080
+#
+# Example of exposing a DeltaFi service to the host:
+# ---
+# services:
+#   deltafi-minio:
+#     ports:
+#       - 9000:9000
+#       - 9001:9001
+#       - 9002:9002
+#       - 9003:9003
+#       - 9004:9004
+#
+# V V V   Put your overrides here   V V V
+`
+		if err := os.WriteFile(siteFile, []byte(defaultContent), 0644); err != nil {
+			return siteFile, fmt.Errorf("error creating default %s file: %w", "compose.yaml", err)
+		}
 	}
 	return siteFile, nil
 }
@@ -200,6 +364,26 @@ func (o *ComposeOrchestrator) dockerCompose(args []string) error {
 	dockerComposeFile := filepath.Join(o.orchestrationPath, "compose", "docker-compose.yml")
 	envFile := filepath.Join(o.configPath, "startup.env")
 	dockerArgs := []string{"compose", "-f", dockerComposeFile, "--env-file", envFile}
+
+	if o.deploymentMode == types.PluginDevelopment {
+		pluginDevelopmentFile, err := o.PluginDevelopmentComposeFile()
+		if err == nil {
+			dockerArgs = append(dockerArgs, "-f", pluginDevelopmentFile)
+		} else {
+			warning := fmt.Sprintf("%s Unable to find plugin development compose file: %s", styles.WarningStyle.Render("WARNING:"), pluginDevelopmentFile)
+			fmt.Println(warning)
+		}
+	}
+
+	if o.deploymentMode == types.CoreDevelopment {
+		coreDevelopmentFile, err := o.CoreDevelopmentComposeFile()
+		if err == nil {
+			dockerArgs = append(dockerArgs, "-f", coreDevelopmentFile)
+		} else {
+			warning := fmt.Sprintf("%s Unable to find core development compose file: %s", styles.WarningStyle.Render("WARNING:"), coreDevelopmentFile)
+			fmt.Println(warning)
+		}
+	}
 
 	if overridesFile, err := o.SiteComposeFile(); err == nil {
 		dockerArgs = append(dockerArgs, "-f", overridesFile)
@@ -386,7 +570,7 @@ func (o *ComposeOrchestrator) getMergedValues() (map[string]interface{}, error) 
 	}
 
 	// Read and merge site values if they exist
-	siteValues := filepath.Join(o.sitePath, "values.yaml")
+	siteValues, _ := o.SiteValuesFile()
 	if siteData, err := os.ReadFile(siteValues); err == nil {
 		var site map[string]interface{}
 		if err := yaml.Unmarshal(siteData, &site); err != nil {

@@ -21,6 +21,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/deltafi/tui/internal/types"
 )
 
 type Orchestrator interface {
@@ -32,7 +34,7 @@ type Orchestrator interface {
 	Environment() []string
 }
 
-func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion string) Orchestrator {
+func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion string, deploymentMode types.DeploymentMode) Orchestrator {
 
 	orchestrationPath := filepath.Join(distroPath, "orchestration")
 	switch mode {
@@ -42,7 +44,17 @@ func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string,
 		reposPath := filepath.Join(installDirectory, "repos")
 		configPath := filepath.Join(installDirectory, "config")
 		secretsPath := filepath.Join(configPath, "secrets")
-		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, reposPath: reposPath, configPath: configPath, secretsPath: secretsPath, sitePath: sitePath, orchestrationPath: orchestrationPath, coreVersion: coreVersion}
+		return &ComposeOrchestrator{
+			distroPath:        distroPath,
+			dataPath:          dataPath,
+			reposPath:         reposPath,
+			configPath:        configPath,
+			secretsPath:       secretsPath,
+			sitePath:          sitePath,
+			orchestrationPath: orchestrationPath,
+			coreVersion:       coreVersion,
+			deploymentMode:    deploymentMode,
+		}
 	case Kind:
 		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
 	default:

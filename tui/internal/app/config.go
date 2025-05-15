@@ -25,11 +25,12 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/deltafi/tui/internal/orchestration"
+	"github.com/deltafi/tui/internal/types"
 )
 
 type Config struct {
 	OrchestrationMode orchestration.OrchestrationMode `yaml:"orchestrationMode"`
-	DeploymentMode    DeploymentMode                  `yaml:"deploymentMode"`
+	DeploymentMode    types.DeploymentMode            `yaml:"deploymentMode"`
 	CoreVersion       string                          `yaml:"coreVersion"`
 	InstallDirectory  string                          `yaml:"installDirectory"`
 	DataDirectory     string                          `yaml:"dataDirectory"`
@@ -42,10 +43,6 @@ type DevelopmentConfig struct {
 	CoreRepo string `yaml:"coreRepo"`
 }
 
-type DeploymentConfig struct {
-	Mode DeploymentMode `yaml:"mode"`
-}
-
 const (
 	defaultConfigFileName = "config.yaml"
 )
@@ -53,7 +50,7 @@ const (
 func DefaultConfig() Config {
 	return Config{
 		OrchestrationMode: orchestration.Compose,
-		DeploymentMode:    Deployment,
+		DeploymentMode:    types.Deployment,
 		CoreVersion:       Version,
 		InstallDirectory:  TuiPath(),
 		DataDirectory:     filepath.Join(TuiPath(), "data"),

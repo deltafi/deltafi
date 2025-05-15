@@ -28,6 +28,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/orchestration"
+	"github.com/deltafi/tui/internal/types"
 	"github.com/deltafi/tui/internal/ui/styles"
 )
 
@@ -92,7 +93,7 @@ func build() {
 	}
 
 	distroPath := ""
-	if config.DeploymentMode == CoreDevelopment || strings.Contains(Version, "SNAPSHOT") {
+	if config.DeploymentMode == types.CoreDevelopment || strings.Contains(Version, "SNAPSHOT") {
 		distroPath = filepath.Join(config.Development.RepoPath, "deltafi")
 	} else {
 		distroPath = filepath.Join(TuiPath(), Version)
@@ -100,7 +101,7 @@ func build() {
 
 	instance = &App{
 		config:       &config,
-		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory, config.InstallDirectory, config.SiteDirectory, Version),
+		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory, config.InstallDirectory, config.SiteDirectory, Version, config.DeploymentMode),
 		os:           runtime.GOOS,
 		arch:         runtime.GOARCH,
 		distroPath:   distroPath,
