@@ -32,24 +32,28 @@ type SimpleTable struct {
 	re          *lipgloss.Renderer
 	BaseStyle   lipgloss.Style
 	HeaderStyle lipgloss.Style
+	OddRowStyle lipgloss.Style
 	Border      lipgloss.Border
 	BorderStyle lipgloss.Style
 	width       int
 	StyleFunc   func(row, col int) lipgloss.Style
+	verbose     bool
 }
 
 func NewSimpleTable(t *api.Table) *SimpleTable {
-
 	re := lipgloss.NewRenderer(os.Stdout)
 	baseStyle := re.NewStyle().Padding(0, 1)
+	oddRowStyle := baseStyle
 
 	return &SimpleTable{
 		Table:       t,
 		re:          re,
 		BaseStyle:   baseStyle,
 		HeaderStyle: baseStyle.Foreground(styles.Blue).Bold(true),
+		OddRowStyle: oddRowStyle,
 		Border:      lipgloss.RoundedBorder(),
 		BorderStyle: re.NewStyle().Foreground(styles.Surface1),
+		verbose:     false,
 	}
 }
 
@@ -58,11 +62,54 @@ func (t *SimpleTable) Width(width int) *SimpleTable {
 	return t
 }
 
+func (t *SimpleTable) Verbose(verbose bool) *SimpleTable {
+	t.verbose = verbose
+	return t
+}
+
+func (t *SimpleTable) calculateKeyColumnWidth() int {
+	maxWidth := 0
+	// Check header width
+	if len(t.Table.Columns) > 0 {
+		maxWidth = len(t.Table.Columns[0])
+	}
+	// Check all key values in rows
+	for _, row := range t.Table.Rows {
+		if len(row) > 0 {
+			keyWidth := len(row[0])
+			if keyWidth > maxWidth {
+				maxWidth = keyWidth
+			}
+		}
+	}
+	// Add padding
+	return maxWidth + 2
+}
+
+func (t *SimpleTable) getRowsWithSpacing() [][]string {
+	if !t.verbose {
+		return t.Table.Rows
+	}
+
+	var rows [][]string
+	for i, row := range t.Table.Rows {
+		rows = append(rows, row)
+		if i < len(t.Table.Rows)-1 {
+			// Add empty row after each data row except the last one
+			emptyRow := make([]string, len(row))
+			rows = append(rows, emptyRow)
+		}
+	}
+	return rows
+}
+
 func (t *SimpleTable) Render() string {
+	keyColumnWidth := t.calculateKeyColumnWidth()
+	rows := t.getRowsWithSpacing()
 
 	tab := table.New().
 		Headers(t.Table.Columns...).
-		Rows(t.Table.Rows...).
+		Rows(rows...).
 		Border(t.Border).
 		BorderStyle(t.BorderStyle).
 		Width(t.width).
@@ -72,20 +119,87 @@ func (t *SimpleTable) Render() string {
 				return t.HeaderStyle
 			}
 
+			// Skip styling for empty rows
+			if t.verbose && row%2 == 1 {
+				return lipgloss.NewStyle()
+			}
+
+			// Calculate the actual data row index for alternating colors
+			dataRowIndex := row
+			if t.verbose {
+				dataRowIndex = row / 2
+			}
+
+			if dataRowIndex%2 == 1 {
+				return t.OddRowStyle
+			}
 			return t.BaseStyle
 		})
+
+	// Set the width of the first column by padding the content
+	if len(t.Table.Columns) > 0 {
+		// Create a new style with the calculated width
+		keyStyle := t.BaseStyle.Width(keyColumnWidth)
+		// Apply the style to the first column
+		tab = tab.StyleFunc(func(row, col int) lipgloss.Style {
+			dataRowIndex := row
+			if t.verbose {
+				dataRowIndex = row / 2
+			}
+			if col == 0 {
+				if dataRowIndex%2 == 1 {
+					return t.OddRowStyle.Width(keyColumnWidth)
+				}
+				return keyStyle
+			}
+			if row == table.HeaderRow {
+				return t.HeaderStyle
+			}
+
+			// Skip styling for empty rows
+			if t.verbose && row%2 == 1 {
+				return lipgloss.NewStyle()
+			}
+
+			if dataRowIndex%2 == 1 {
+				return t.OddRowStyle
+			}
+			return t.BaseStyle
+		})
+	}
 
 	return tab.Render()
 }
 
 func (t *SimpleTable) RenderPlain() string {
+	keyColumnWidth := t.calculateKeyColumnWidth()
+	rows := t.getRowsWithSpacing()
+
 	tab := table.New().
 		Headers(t.Table.Columns...).
-		Rows(t.Table.Rows...).
+		Rows(rows...).
 		Border(lipgloss.HiddenBorder()).
 		BorderStyle(t.BorderStyle).
 		Wrap(false).
 		StyleFunc(func(row, col int) lipgloss.Style {
+			if col == 0 {
+				return t.BaseStyle.Copy().Width(keyColumnWidth)
+			}
+
+			// Skip styling for empty rows
+			if t.verbose && row%2 == 1 {
+				return lipgloss.NewStyle()
+			}
+
+			// Calculate the actual data row index for alternating colors
+			dataRowIndex := row
+			if t.verbose {
+				dataRowIndex = row / 2
+			}
+
+			if dataRowIndex%2 == 1 {
+				return t.OddRowStyle
+			}
 			return t.BaseStyle
 		})
 

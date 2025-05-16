@@ -18,8 +18,9 @@
 package styles
 
 import (
-	"github.com/charmbracelet/lipgloss"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -65,6 +66,12 @@ var (
 			Foreground(Text).
 			Background(Base)
 
+	CenteredStyle = lipgloss.NewStyle().
+			AlignHorizontal(lipgloss.Center)
+
+	RightAlignedStyle = lipgloss.NewStyle().
+				AlignHorizontal(lipgloss.Right)
+
 	HeaderStyle = lipgloss.NewStyle().
 			Foreground(Blue).
 			Bold(true)
@@ -93,6 +100,8 @@ var (
 			Foreground(Subtext0).
 			Italic(true)
 
+	ItalicStyle = lipgloss.NewStyle().
+			Italic(true)
 	AccentStyle = lipgloss.NewStyle().
 			Foreground(Lavender)
 

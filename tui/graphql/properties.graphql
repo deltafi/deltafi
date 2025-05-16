@@ -1,0 +1,19 @@
+# Get all property sets
+query GetPropertySets {
+  getPropertySets {
+    displayName
+    properties {
+      key
+      value
+      defaultValue
+      description
+      propertySource
+      dataType
+    }
+  }
+}
+
+# Update properties
+mutation UpdateProperties($updates: [KeyValueInput!]!) {
+  updateProperties(updates: $updates)
+} 
