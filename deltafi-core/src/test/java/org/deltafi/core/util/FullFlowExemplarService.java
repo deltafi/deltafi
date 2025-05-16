@@ -91,6 +91,7 @@ public class FullFlowExemplarService {
                 ingressFlow, Set.of(TRANSFORM_TOPIC), now());
 
         transformFlow.addAction("Utf8TransformAction", null, ActionType.TRANSFORM, ActionState.QUEUED, now());
+        deltaFile.wireBackPointers();
 
         return deltaFile;
     }
@@ -142,11 +143,11 @@ public class FullFlowExemplarService {
     public DeltaFile postIngressDeltaFile(UUID did) {
         Content content = new Content("name", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFile deltaFile = utilService.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
+        deltaFile.firstFlow().firstAction().setMetadata(SOURCE_METADATA);
         deltaFile.setIngressBytes(500L);
         DeltaFileFlow flow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM), deltaFile.firstFlow(), now());
         flow.setId(UUID_1);
         flow.setPendingActions(TRANSFORM_ACTIONS.stream().map(ActionConfiguration::getName).toList());
-        flow.getInput().setMetadata(SOURCE_METADATA);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
         flow.queueAction("Utf8TransformAction", null, ActionType.TRANSFORM, false, now());
         deltaFile.setName("input.txt");
@@ -188,8 +189,6 @@ public class FullFlowExemplarService {
 
         DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now());
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
-        dataSink.getInput().setMetadata(flow.getMetadata());
-        dataSink.getInput().setContent(flow.lastContent());
         dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         return deltaFile;
@@ -230,8 +229,6 @@ public class FullFlowExemplarService {
         DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now());
         dataSink.setId(UUID_2);
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
-        dataSink.getInput().setMetadata(flow.getMetadata());
-        dataSink.getInput().setContent(flow.lastContent());
         dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, now());
         return deltaFile;
     }
@@ -314,7 +311,7 @@ public class FullFlowExemplarService {
         Content content = new Content("transformed", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
         DeltaFileFlow flow = deltaFile.getFlow(UUID_2);
         Action action = flow.getAction(SAMPLE_EGRESS_ACTION);
-        action.complete(START_TIME, STOP_TIME, List.of(content), flow.getMetadata(), List.of(), now());
+        action.complete(START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), now());
         if (pendingAnnotations != null) {
             deltaFile.setPendingAnnotations("sampleEgress", pendingAnnotations);
             deltaFile.setTerminal(false);

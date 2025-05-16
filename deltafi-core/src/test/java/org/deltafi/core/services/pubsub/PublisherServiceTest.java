@@ -257,6 +257,7 @@ class PublisherServiceTest {
     @Test
     void getMatchingTopicNames() {
         DeltaFileFlow deltaFileFlow = new DeltaFileFlow();
+        deltaFileFlow.getInput().setFlow(deltaFileFlow);
         Mockito.when(ruleEvaluator.evaluateCondition("a", deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(false);
         Mockito.when(ruleEvaluator.evaluateCondition("b", deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
         Mockito.when(ruleEvaluator.evaluateCondition("c", deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);

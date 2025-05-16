@@ -140,13 +140,17 @@ public class TimedDataSource extends DataSource {
         DeltaFileFlow flow = DeltaFileFlow.builder()
                 .flowDefinition(flowDefinition)
                 .number(0)
+                .input(new DeltaFileFlowInput())
                 .build();
+        deltaFile.getFlows().add(flow);
         Action action = Action.builder()
                 .name(timedIngressAction.getName())
                 .actionClass(timedIngressAction.getType())
                 .created(now)
                 .state(ActionState.QUEUED)
                 .build();
+        flow.getActions().add(action);
+        deltaFile.wireBackPointers();
         return deltaFile.buildActionInput(timedIngressAction, flow, action, systemName, returnAddress, memo);
     }
 }

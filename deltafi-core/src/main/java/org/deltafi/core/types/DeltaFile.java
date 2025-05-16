@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.uuid.Generators;
 import jakarta.persistence.*;
 import jakarta.persistence.CascadeType;
@@ -174,6 +175,22 @@ public class DeltaFile {
     this.dataSinks = new ArrayList<>(other.dataSinks);
     this.paused = other.paused;
     this.waitingForChildren = other.waitingForChildren;
+  }
+
+  @JsonProperty("flows")
+  public void setFlows(Set<DeltaFileFlow> flows) {
+    this.flows = flows != null ? new LinkedHashSet<>(flows) : new LinkedHashSet<>();
+    wireBackPointers();
+  }
+
+  @PostLoad
+  public void wireBackPointers() {
+    for (DeltaFileFlow f : flows) {
+      f.setOwner(this);
+      if (f.getInput() != null) {
+        f.getInput().setFlow(f);
+      }
+    }
   }
 
   @EqualsAndHashCode.Include(replaces = "flows")
@@ -404,6 +421,10 @@ public class DeltaFile {
     return flows.stream().filter(f -> f.getId().equals(flowId)).findFirst().orElse(null);
   }
 
+  public DeltaFileFlow getFlow(int flowNumber) {
+    return flows.stream().filter(f -> f.getNumber() == flowNumber).findFirst().orElse(null);
+  }
+
   public DeltaFileFlow getPendingFlow(String flowName, UUID flowId) {
     DeltaFileFlow flow = getFlow(flowId);
     if (flow == null || flow.terminal()) {
@@ -530,15 +551,15 @@ public class DeltaFile {
             .created(now)
             .modified(now)
             .input(DeltaFileFlowInput.builder()
-                    .metadata(previousFlow.getMetadata())
-                    .content(previousFlow.lastContent())
                     .topics(subscribedTopics)
                     .ancestorIds(Stream.concat(Stream.of(previousFlow.getNumber()), previousFlow.getInput().getAncestorIds().stream()).toList())
                     .build())
             .depth(previousFlow.getDepth() + 1)
             .testMode(previousFlow.isTestMode())
             .testModeReason(previousFlow.getTestModeReason())
+            .owner(this)
             .build();
+    flow.getInput().setFlow(flow);
     flows.add(flow);
     updateFlowArrays();
 
@@ -616,5 +637,17 @@ public class DeltaFile {
     return flows.stream()
             .max(Comparator.comparingInt(DeltaFileFlow::getNumber))
             .orElse(null);
+  }
+
+  public Map<String,String> metadataFor(Collection<Integer> flowNums) {
+    Map<String,String> metadata = new HashMap<>();
+    flows.stream()
+            .filter(f -> flowNums.contains(f.getNumber()))
+            .sorted(Comparator.comparingInt(DeltaFileFlow::getNumber))
+            .forEach(f -> f.getActions().forEach(a -> {
+              metadata.putAll(a.getMetadata());
+              a.getDeleteMetadataKeys().forEach(metadata::remove);
+            }));
+    return metadata;
   }
 }

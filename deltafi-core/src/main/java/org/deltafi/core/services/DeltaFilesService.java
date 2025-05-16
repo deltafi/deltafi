@@ -305,6 +305,8 @@ public class DeltaFilesService {
                 .egressed(false)
                 .filtered(false)
                 .build();
+        ingressFlow.setOwner(deltaFile);
+        ingressFlow.getInput().setFlow(ingressFlow);
         deltaFile.addAnnotations(ingressEventItem.getAnnotations());
         deltaFile.addAnnotationsIfAbsent(dataSource.getAnnotationConfig());
         return deltaFile;
@@ -352,6 +354,7 @@ public class DeltaFilesService {
                 return;
             }
 
+            deltaFile.wireBackPointers();
             DeltaFileFlow flow = deltaFile.getPendingFlow(event.getFlowName(), event.getFlowId());
             Action action = flow.getPendingAction(event.getActionName(), event.getDid());
             ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), flow.getType(), action.getName());
@@ -575,7 +578,6 @@ public class DeltaFilesService {
         flow.setState(DeltaFileFlowState.COMPLETE);
         action.setModified(now);
         action.setContent(flow.getInput().getContent());
-        action.setMetadata(flow.getMetadata());
         action.setState(ActionState.COMPLETE);
         action.setStart(start);
         action.setStop(stop);
@@ -933,6 +935,7 @@ public class DeltaFilesService {
                             List<DeltaFileFlow> retryFlows = deltaFile.resumeErrors(resumeMetadata, now);
                             if (!retryFlows.isEmpty()) {
                                 deltaFile.updateState(now);
+                                deltaFile.wireBackPointers();
                                 advanceAndSaveInputs.addAll(retryFlows.stream()
                                         .map(flow -> new StateMachineInput(deltaFile, flow))
                                         .toList());
@@ -1071,6 +1074,7 @@ public class DeltaFilesService {
 
                             child.updateFlags();
                             child.recalculateBytes();
+                            child.wireBackPointers();
                             analyticEventService.recordIngress(child.getDid(), child.getCreated(), child.getDataSource(), deltaFile.firstFlow().getType(),
                                     child.getReferencedBytes(), Annotation.toMap(child.getAnnotations()), AnalyticIngressTypeEnum.CHILD);
 
@@ -1365,22 +1369,22 @@ public class DeltaFilesService {
 
     public List<PerActionUniqueKeyValues> errorMetadataUnion(List<UUID> dids) {
         // TODO: limit fields returned
-        List<DeltaFileFlow> deltaFileFlows = deltaFileFlowRepo.findAllByDeltaFileIds(dids);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findByIdsIn(dids);
 
         Map<Pair<String, String>, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
-        for (DeltaFileFlow flow : deltaFileFlows) {
-            for (Action action : flow.getActions()) {
-                if (action.getType() == ActionType.UNKNOWN || action.getState() != ActionState.ERROR) {
-                    // ignore synthetic actions like NoDataSinkConfigured
-                    continue;
-                }
-                if (!actionKeyValues.containsKey(Pair.of(flow.getName(), action.getName()))) {
-                    actionKeyValues.put(Pair.of(flow.getName(), action.getName()), new PerActionUniqueKeyValues(flow.getName(), action.getName()));
-                }
-                flow.getMetadata()
-                        .forEach((key, value) -> actionKeyValues.get(Pair.of(flow.getName(), action.getName())).addValue(key, value));
-            }
-        }
+        deltaFiles.stream()
+                .map(DeltaFile::getFlows)
+                .flatMap(Collection::stream)
+                .filter(flow -> flow.getState() == DeltaFileFlowState.ERROR && flow.lastAction().getType() != ActionType.UNKNOWN && flow.lastAction().getState() == ActionState.ERROR)
+                .forEach(flow -> {
+                    Action action = flow.lastAction();
+                    if (!actionKeyValues.containsKey(Pair.of(flow.getName(), action.getName()))) {
+                        actionKeyValues.put(Pair.of(flow.getName(), action.getName()), new PerActionUniqueKeyValues(flow.getName(), action.getName()));
+                    }
+                    flow.getMetadata()
+                            .forEach((key, value) -> actionKeyValues.get(Pair.of(flow.getName(), action.getName())).addValue(key, value));
+                });
+
         return new ArrayList<>(actionKeyValues.values());
     }
 
@@ -1390,7 +1394,7 @@ public class DeltaFilesService {
 
         Map<String, UniqueKeyValues> keyValues = new HashMap<>();
         deltaFileFlows.stream()
-                .map(f -> f.getMetadata())
+                .map(DeltaFileFlow::getMetadata)
                 .forEach(map -> map.forEach((key, value) -> keyValues.computeIfAbsent(key, UniqueKeyValues::new).addValue(value)));
         return new ArrayList<>(keyValues.values());
     }

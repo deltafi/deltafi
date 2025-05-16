@@ -137,6 +137,7 @@ public class UtilService {
                 .state(DeltaFileFlowState.COMPLETE)
                 .created(created)
                 .modified(modified)
+                .input(new DeltaFileFlowInput())
                 .publishTopics(List.of(TRANSFORM_TOPIC))
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .build();
@@ -150,6 +151,7 @@ public class UtilService {
 
         flow.updateState();
         deltaFile.updateFlags();
+        deltaFile.wireBackPointers();
         return deltaFile;
     }
 

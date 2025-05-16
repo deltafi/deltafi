@@ -239,6 +239,7 @@ class DeltaFilesServiceTest {
                 .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
                 .flows(Set.of(ingressFlow))
                 .build();
+        deltaFile.wireBackPointers();
         when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile(DID, false);
         assertTrue(json.contains("\"did\":\"%s\"".formatted(DID)));
@@ -257,6 +258,7 @@ class DeltaFilesServiceTest {
                 .did(DID)
                 .flows(Set.of(ingressFlow))
                 .build();
+        deltaFile.wireBackPointers();
         when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
         String json = deltaFilesService.getRawDeltaFile(DID, true);
         assertTrue(json.contains("  \"did\" : \"%s\",\n".formatted(DID)));
@@ -281,9 +283,9 @@ class DeltaFilesServiceTest {
         metadata.put("k2", "val2");
         metadata.put("k3", null);
         metadata.put("k4", "val4");
-        ingressFlow.getInput().setMetadata(metadata);
         Action action = Action.builder().metadata(metadata).build();
         ingressFlow.getActions().add(action);
+        deltaFile3.wireBackPointers();
 
         List<UUID> dids = List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), UUID.randomUUID());
         List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.firstFlow(), deltaFile2.firstFlow(), deltaFile3.firstFlow());
@@ -480,6 +482,7 @@ class DeltaFilesServiceTest {
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction("egress", null, ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
+        deltaFile.wireBackPointers();
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).hasSize(1);
@@ -563,6 +566,8 @@ class DeltaFilesServiceTest {
         deltaFileFlow1.firstAction().setMetadata(Map.of("a", "1", "b", "2"));
         Action error1 = deltaFileFlow1.queueAction("TransformAction1", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         error1.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+        deltaFileFlow1.setState(DeltaFileFlowState.ERROR);
+        deltaFile1.wireBackPointers();
 
         DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow2 = deltaFile2.firstFlow();
@@ -570,6 +575,8 @@ class DeltaFilesServiceTest {
         deltaFileFlow2.firstAction().setMetadata(Map.of("a", "somethingElse", "c", "3"));
         Action error2 = deltaFileFlow2.queueAction("TransformAction1", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         error2.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+        deltaFileFlow2.setState(DeltaFileFlowState.ERROR);
+        deltaFile2.wireBackPointers();
 
         DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow3 = deltaFile3.firstFlow();
@@ -577,15 +584,18 @@ class DeltaFilesServiceTest {
         deltaFileFlow3.firstAction().setMetadata(Map.of("d", "4"));
         Action error3 = deltaFileFlow3.queueAction("TransformAction2", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
         error3.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+        deltaFileFlow3.setState(DeltaFileFlowState.ERROR);
+        deltaFile3.wireBackPointers();
 
         DeltaFile deltaFile4 = utilService.buildDeltaFile(UUID.randomUUID(), List.of());
         DeltaFileFlow deltaFileFlow4 = deltaFile4.firstFlow();
         deltaFileFlow4.setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow3", deltaFileFlow4.getType()));
         deltaFileFlow4.firstAction().setMetadata(Map.of("e", "5"));
         deltaFileFlow4.queueAction("TransformAction3", null, ActionType.TRANSFORM, false, OffsetDateTime.now());
+        deltaFile4.wireBackPointers();
 
-        List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.firstFlow(), deltaFile2.firstFlow(), deltaFile3.firstFlow(), deltaFile4.firstFlow());
-        when(deltaFileFlowRepo.findAllByDeltaFileIds(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()))).thenReturn(deltaFileFlows);
+        List<DeltaFile> deltaFiles = List.of(deltaFile1, deltaFile2, deltaFile3, deltaFile4);
+        when(deltaFileRepo.findByIdsIn(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()))).thenReturn(deltaFiles);
 
         List<PerActionUniqueKeyValues> actionVals = deltaFilesService.errorMetadataUnion(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()));
 

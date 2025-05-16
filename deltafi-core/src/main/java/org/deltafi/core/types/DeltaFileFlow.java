@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
@@ -95,6 +96,11 @@ public class DeltaFileFlow {
     @EqualsAndHashCode.Exclude
     private long version;
 
+    @Transient
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    private DeltaFile owner;
+
     public DeltaFileFlow(DeltaFileFlow other) {
         this.id = other.id;
         this.flowDefinition = other.flowDefinition;
@@ -117,6 +123,7 @@ public class DeltaFileFlow {
         this.coldQueued = other.coldQueued;
         this.errorOrFilterCause = other.errorOrFilterCause;
         this.nextAutoResume = other.nextAutoResume;
+        this.owner = other.owner;
     }
 
     public String getName() {
@@ -134,15 +141,21 @@ public class DeltaFileFlow {
      */
     @Transient
     public Map<String, String> getMetadata() {
-        Map<String, String> metadata = new HashMap<>(input.getMetadata());
-        for (Action action : actions) {
-            metadata.putAll(action.getMetadata());
-            for (String key : action.getDeleteMetadataKeys()) {
-                metadata.remove(key);
-            }
+        if (number == 0) {
+            Map<String, String> metadata = new HashMap<>();
+            actions.forEach(a -> {
+                metadata.putAll(a.getMetadata());
+                a.getDeleteMetadataKeys().forEach(metadata::remove);
+            });
+            return metadata;
+        }
+        else if (owner == null) {
+            throw new IllegalStateException("DeltaFileFlow missing pointer back to DeltaFile");
         }
 
-        return metadata;
+        List<Integer> lineage = new ArrayList<>(input.getAncestorIds());
+        lineage.add(number);
+        return owner.metadataFor(lineage);
     }
 
     public List<Segment> uniqueSegments() {
@@ -177,7 +190,7 @@ public class DeltaFileFlow {
     }
 
     private List<Content> inputContent() {
-        return input != null ? input.content : List.of();
+        return input != null ? input.getContent() : List.of();
     }
 
     @Transient

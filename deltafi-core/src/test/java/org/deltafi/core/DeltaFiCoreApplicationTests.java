@@ -745,6 +745,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		deltaFile.lastFlow().lastAction().error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+		deltaFile.lastFlow().setState(DeltaFileFlowState.ERROR);
 		deltaFileRepo.save(deltaFile);
 
 		List<PerActionUniqueKeyValues> errorMetadataUnion = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -1071,7 +1072,6 @@ class DeltaFiCoreApplicationTests {
 		action.setContent(expected.firstFlow().firstAction().getContent());
 		action.setMetadata(replayMetadata);
 		action.setDeleteMetadataKeys(List.of("removeMe"));
-		expected.lastFlow().getInput().setMetadata(expected.firstFlow().getMetadata());
 		verifyActionEventResults(expected, ActionContext.builder().flowName("sampleTransform").actionName("Utf8TransformAction").build());
 
 		List<RetryResult> secondResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -2992,7 +2992,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setTotalBytes(1000L);
 		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
 		deltaFile1.setContentDeleted(NOW);
-		deltaFile1.firstFlow().getInput().setMetadata(Map.of("key1", "value1", "key2", "value2"));
+		deltaFile1.firstFlow().firstAction().setMetadata(Map.of("key1", "value1", "key2", "value2"));
 		deltaFile1.setName("filename1");
 		deltaFile1.setDataSource("flow1");
 		DeltaFileFlow flow1 = deltaFile1.addFlow(flowDefinitionService.getOrCreateFlow("MyDataSink", FlowType.DATA_SINK), deltaFile1.firstFlow(), NOW);
