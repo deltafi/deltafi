@@ -280,7 +280,7 @@ services:
     env_file:
       - ${SECRETS_DIR}/valkey.env
     healthcheck:
-      test: [ "CMD", "valkey-cli", "--raw", "incr", "ping" ]
+      test: [ "CMD", "valkey-cli", "--raw", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 8
