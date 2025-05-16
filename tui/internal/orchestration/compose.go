@@ -800,7 +800,7 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	grafanaPath := filepath.Join(secretsDir, "grafana.env")
 	if _, err := os.Stat(grafanaPath); os.IsNotExist(err) {
 		grafanaPassword := randomPassword(16)
-		grafanaContent := fmt.Sprintf("GF_SECURITY_ADMIN_USER=admin\nGF_SECURITY_ADMIN_PASSWORD=%s\n", grafanaPassword)
+		grafanaContent := fmt.Sprintf("GF_SECURITY_ADMIN_USER='admin'\nGF_SECURITY_ADMIN_PASSWORD='%s'\n", grafanaPassword)
 		if err := os.WriteFile(grafanaPath, []byte(grafanaContent), 0600); err != nil {
 			return fmt.Errorf("error writing grafana secrets: %w", err)
 		}
@@ -810,7 +810,7 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	minioPath := filepath.Join(secretsDir, "minio.env")
 	if _, err := os.Stat(minioPath); os.IsNotExist(err) {
 		minioPassword := randomPassword(40)
-		minioContent := fmt.Sprintf("MINIO_ROOT_USER=deltafi\nMINIO_ROOT_PASSWORD=%s\nMINIO_ACCESSKEY=deltafi\nMINIO_SECRETKEY=%s\n", minioPassword, minioPassword)
+		minioContent := fmt.Sprintf("MINIO_ROOT_USER='deltafi'\nMINIO_ROOT_PASSWORD='%s'\nMINIO_ACCESSKEY='deltafi'\nMINIO_SECRETKEY='%s'\n", minioPassword, minioPassword)
 		if err := os.WriteFile(minioPath, []byte(minioContent), 0600); err != nil {
 			return fmt.Errorf("error writing minio secrets: %w", err)
 		}
@@ -820,7 +820,7 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	postgresPath := filepath.Join(secretsDir, "postgres.env")
 	if _, err := os.Stat(postgresPath); os.IsNotExist(err) {
 		postgresPassword := randomPassword(20)
-		postgresContent := fmt.Sprintf("POSTGRES_USER=postgres\nPOSTGRES_PASSWORD=%s\nPOSTGRES_DB=postgres\nPGUSER=postgres\n", postgresPassword)
+		postgresContent := fmt.Sprintf("POSTGRES_USER='postgres'\nPOSTGRES_PASSWORD='%s'\nPOSTGRES_DB='postgres'\nPGUSER='postgres'\n", postgresPassword)
 		if err := os.WriteFile(postgresPath, []byte(postgresContent), 0600); err != nil {
 			return fmt.Errorf("error writing postgres secrets: %w", err)
 		}
@@ -830,7 +830,7 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	valkeyPath := filepath.Join(secretsDir, "valkey.env")
 	if _, err := os.Stat(valkeyPath); os.IsNotExist(err) {
 		valkeyPassword := randomPassword(16)
-		valkeyContent := fmt.Sprintf("REDIS_PASSWORD=%s\nVALKEY_PASSWORD=%s\n", valkeyPassword, valkeyPassword)
+		valkeyContent := fmt.Sprintf("REDIS_PASSWORD='%s'\nVALKEY_PASSWORD='%s'\n", valkeyPassword, valkeyPassword)
 		if err := os.WriteFile(valkeyPath, []byte(valkeyContent), 0600); err != nil {
 			return fmt.Errorf("error writing valkey secrets: %w", err)
 		}
@@ -848,7 +848,7 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 }
 
 func randomPassword(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+"
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, length)
 	for i := range b {
 		b[i] = charset[rand.Intn(len(charset))]
