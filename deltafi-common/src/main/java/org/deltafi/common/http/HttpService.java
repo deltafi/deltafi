@@ -58,7 +58,7 @@ public class HttpService {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new HttpSendException(e.getClass().getSimpleName(), request.method(), e.getMessage());
+            throw new HttpSendException(e.getClass().getSimpleName(), request.method(), e.getMessage(), e);
         }
     }
 

@@ -18,7 +18,7 @@
 package org.deltafi.common.http;
 
 public class HttpPostException extends HttpSendException {
-    public HttpPostException(String clazz, String reason) {
-        super(clazz, "POST", reason);
+    public HttpPostException(String clazz, String reason, Throwable e) {
+        super(clazz, "POST", reason, e);
     }
 }

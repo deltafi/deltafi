@@ -18,7 +18,7 @@
 package org.deltafi.common.http;
 
 public class HttpSendException extends RuntimeException {
-    public HttpSendException(String clazz, String method, String reason) {
-        super(clazz + "/" + method + ": " + reason);
+    public HttpSendException(String clazz, String method, String reason, Throwable e) {
+        super(clazz + "/" + method + ": " + reason, e);
     }
 }

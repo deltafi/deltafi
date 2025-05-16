@@ -122,7 +122,7 @@ class HttpEgressBaseTest {
     void errorsOnHttpPostException() {
         HttpService mockHttpService = Mockito.mock(HttpService.class);
         Mockito.when(mockHttpService.execute(Mockito.any()))
-                .thenThrow(new HttpPostException("class", "post exception"));
+                .thenThrow(new HttpPostException("class", "post exception", new IOException()));
 
         TestHttpEgress testAction = new TestHttpEgress(mockHttpService);
 
