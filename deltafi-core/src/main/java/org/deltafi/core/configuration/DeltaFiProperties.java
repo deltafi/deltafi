@@ -65,6 +65,9 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
     private int ageOffDays = 13;
 
+    @PropertyInfo(description = "The max percentage of disk space to use. When the system exceeds this percentage, content will be removed to lower the disk space usage.", defaultValue = "80")
+    private int diskSpacePercentThreshold = 80;
+
     @PropertyInfo(description = "[Duration or ISO 8601] Frequency that the delete action is triggered", defaultValue = "PT5M")
     private Duration deleteFrequency = Duration.ofMinutes(5);
 
@@ -182,6 +185,13 @@ public class DeltaFiProperties {
     public void setAgeOffDays(int ageOffDays) {
         minCheck(ageOffDays, 1, "ageOffDays");
         this.ageOffDays = ageOffDays;
+    }
+
+    public void setDiskSpacePercentThreshold(int diskSpacePercentThreshold) {
+        if (diskSpacePercentThreshold < 1 || diskSpacePercentThreshold > 100) {
+            throw new IllegalArgumentException("The diskSpacePercentThreshold property must be between 1 and 100");
+        }
+        this.diskSpacePercentThreshold = diskSpacePercentThreshold;
     }
 
     public void setDeleteFrequency(Duration deleteFrequency) {

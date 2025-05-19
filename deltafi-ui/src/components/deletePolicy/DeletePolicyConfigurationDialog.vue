@@ -40,8 +40,8 @@
           <dd>
             <Dropdown v-model="selectedDeleteFlow" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="deletePolicyConfigurationMap.get('dataSource').placeholder" :disabled="deletePolicyConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
           </dd>
-          <dt>{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
-          <dd>
+          <dt v-if="deletePolicyTypes.length > 1">{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
+          <dd v-if="deletePolicyTypes.length > 1">
             <Dropdown v-model="selectedDeleteType" :options="deletePolicyTypes" :placeholder="deletePolicyConfigurationMap.get('__typename').placeholder" :disabled="deletePolicyConfigurationMap.get('__typename').disabled" class="inputWidth" />
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("enabled").header }}</dt>
@@ -73,19 +73,6 @@
                     <dt>{{ deletePolicyConfigurationMap.get("deleteMetadata").header }}</dt>
                     <dd>
                       <InputSwitch v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
-                    </dd>
-                  </div>
-                </div>
-              </dd>
-            </template>
-            <template v-else>
-              <dt>Disk Space Delete Policy Options</dt>
-              <dd>
-                <div class="deltafi-fieldset">
-                  <div class="px-2 pt-3">
-                    <dt>{{ deletePolicyConfigurationMap.get("maxPercent").header }}</dt>
-                    <dd>
-                      <InputNumber v-model="selectedMaxPercent" show-buttons :min="deletePolicyConfigurationMap.get('maxPercent').min" :max="deletePolicyConfigurationMap.get('maxPercent').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('maxPercent').disabled" />
                     </dd>
                   </div>
                 </div>
@@ -148,14 +135,14 @@ const { loadDeletePolicies } = useDeletePolicyQueryBuilder();
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 const notify = useNotifications();
 
-const deletePolicyTypes = ref(["TimedDeletePolicy", "DiskSpaceDeletePolicy"]);
+const deletePolicyTypes = ref(["TimedDeletePolicy"]);
 const newDeletePolicyUpload = ref({});
 const formattedDataSourceNames = ref([]);
 const errorsList = ref([]);
 
 const deletePolicyConfigurationMap = new Map([
-  ["name", { header: "Name*", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy }],
-  ["__typename", { header: "Type*", placeholder: "e.g. TimedDeletePolicy, DiskSpaceDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
+  ["name", { header: "Name*", placeholder: "e.g. oneHourAfterComplete", type: "string", disabled: viewDeletePolicy }],
+  ["__typename", { header: "Type*", placeholder: "e.g. TimedDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
   ["dataSource", { header: "Data Source", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
   ["enabled", { header: "Enabled", type: "boolean", disabled: viewDeletePolicy }],
   ["afterCreate", { header: "After Create", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
@@ -168,13 +155,12 @@ const deletePolicyConfigurationMap = new Map([
 const selectedDeleteId = ref(_.get(rowData, "id", null));
 const selectedDeleteName = ref(_.get(rowData, "name", null));
 const selectedDeleteFlow = ref(_.isEmpty(_.get(rowData, "flow")) || _.isEqual(_.get(rowData, "flow"), "All") ? null : rowData["flow"]);
-const selectedDeleteType = ref(_.get(rowData, "__typename", null));
+const selectedDeleteType = ref(_.get(rowData, "__typename", 'TimedDeletePolicy'));
 const selectedEnabledBoolean = ref(_.get(rowData, "enabled", false));
 const selectedAfterCreate = ref(_.get(rowData, "afterCreate", null));
 const selectedAfterComplete = ref(_.get(rowData, "afterComplete", null));
 const selectedMinBytes = ref(_.get(rowData, "minBytes", null));
 const selectedDeleteMetadata = ref(_.get(rowData, "deleteMetadata", false));
-const selectedMaxPercent = ref(_.get(rowData, "maxPercent", null));
 const isMounted = ref(useMounted());
 
 onMounted(async () => {
@@ -195,7 +181,6 @@ const createNewPolicy = () => {
   const newDeletePolicy = {};
   newDeletePolicyUpload.value = {};
   newDeletePolicyUpload.value["timedPolicies"] = [];
-  newDeletePolicyUpload.value["diskSpacePolicies"] = [];
 
   newDeletePolicy["id"] = selectedDeleteId.value;
   newDeletePolicy["name"] = selectedDeleteName.value;
@@ -213,11 +198,6 @@ const createNewPolicy = () => {
     newDeletePolicy["minBytes"] = selectedMinBytes.value;
     newDeletePolicy["deleteMetadata"] = selectedDeleteMetadata.value;
     newDeletePolicyUpload.value["timedPolicies"].push(newDeletePolicy);
-  }
-
-  if (_.isEqual(selectedDeleteType.value, "DiskSpaceDeletePolicy")) {
-    newDeletePolicy["maxPercent"] = selectedMaxPercent.value;
-    newDeletePolicyUpload.value["diskSpacePolicies"].push(newDeletePolicy);
   }
 };
 

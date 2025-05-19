@@ -54,12 +54,12 @@ class DeletePolicyServiceTest {
 
     @Test
     void testEnableSuccess() {
-        when(deletePolicyRepo.findById(Mockito.any())).thenReturn(Optional.of(getDisabled()));
-        assertTrue(deletePolicyService.enablePolicy(DISABLED_POLICY, true));
+        DeletePolicy deletePolicy = getDisabled();
+        when(deletePolicyRepo.findById(deletePolicy.getId())).thenReturn(Optional.of(deletePolicy));
+        assertTrue(deletePolicyService.enablePolicy(deletePolicy.getId(), true));
 
-        DeletePolicy changed = getDisabled();
-        changed.setEnabled(true);
-        verify(deletePolicyRepo, times(1)).save(changed);
+        deletePolicy.setEnabled(true);
+        verify(deletePolicyRepo, times(1)).save(deletePolicy);
     }
 
     @Test
@@ -107,14 +107,12 @@ class DeletePolicyServiceTest {
 
     @Test
     void testUpdateSnapshot() {
-        DiskSpaceDeletePolicy diskSpaceDeletePolicy = buildDiskSpaceDeletePolicy(50);
         TimedDeletePolicy timedDeletePolicy = buildTimeDeletePolicy();
         Snapshot snapshot = new Snapshot();
 
-        Mockito.when(deletePolicyRepo.findAll()).thenReturn(List.of(diskSpaceDeletePolicy, timedDeletePolicy));
+        Mockito.when(deletePolicyRepo.findAll()).thenReturn(List.of(timedDeletePolicy));
         deletePolicyService.updateSnapshot(snapshot);
 
-        assertThat(snapshot.getDeletePolicies().getDiskSpacePolicies()).hasSize(1).contains(diskSpaceDeletePolicy);
         assertThat(snapshot.getDeletePolicies().getTimedPolicies()).hasSize(1).contains(timedDeletePolicy);
     }
 
@@ -143,31 +141,21 @@ class DeletePolicyServiceTest {
     }
 
     private DeletePolicy buildPolicy(boolean enabled) {
-        DiskSpaceDeletePolicy policy = new DiskSpaceDeletePolicy();
-        policy.setId(DeletePolicyServiceTest.ENABLED_POLICY);
-        policy.setEnabled(enabled);
-        policy.setMaxPercent(90);
-        return policy;
+        DeletePolicy deletePolicy = buildTimeDeletePolicy();
+        deletePolicy.setEnabled(enabled);
+        return deletePolicy;
     }
 
     private DeletePolicies getValidSave() {
         return DeletePolicies.builder()
-                .diskSpacePolicies(List.of(buildDiskSpaceDeletePolicy(90)))
                 .timedPolicies(List.of(buildTimeDeletePolicy())).build();
     }
 
     private DeletePolicies getInvalidSave() {
+        TimedDeletePolicy timedDeletePolicy = buildTimeDeletePolicy();
+        timedDeletePolicy.setAfterComplete(null);
         return DeletePolicies.builder()
-                .diskSpacePolicies(List.of(buildDiskSpaceDeletePolicy(-1)))
-                .timedPolicies(List.of(buildTimeDeletePolicy())).build();
-    }
-
-    DiskSpaceDeletePolicy buildDiskSpaceDeletePolicy(int maxPercent) {
-        return DiskSpaceDeletePolicy.builder()
-                .id(UUID.randomUUID())
-                .name("disk1")
-                .maxPercent(maxPercent)
-                .build();
+                .timedPolicies(List.of(timedDeletePolicy)).build();
     }
 
     TimedDeletePolicy buildTimeDeletePolicy() {

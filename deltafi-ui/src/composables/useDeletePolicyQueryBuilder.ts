@@ -38,10 +38,6 @@ export default function useDeletePolicyQueryBuilder() {
             minBytes: true,
             deleteMetadata: true,
           },
-          {
-            __typeName: "DiskSpaceDeletePolicy",
-            maxPercent: true,
-          },
         ],
       },
     };

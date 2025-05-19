@@ -23,22 +23,6 @@ interface DeletePolicy {
     flow: String
 }
 
-type DiskSpaceDeletePolicy implements DeletePolicy {
-    id: UUID!
-    name: String!
-    enabled: Boolean!
-    flow: String
-    maxPercent: Int!
-}
-
-input DiskSpaceDeletePolicyInput {
-    id: UUID
-    name: String!
-    enabled: Boolean!
-    flow: String
-    maxPercent: Int!
-}
-
 type TimedDeletePolicy implements DeletePolicy {
     id: UUID!
     name: String!
@@ -65,12 +49,10 @@ input TimedDeletePolicyInput {
 
 input DeletePoliciesInput {
     timedPolicies: [TimedDeletePolicyInput!]!
-    diskSpacePolicies: [DiskSpaceDeletePolicyInput!]!
 }
 
 type DeletePolicies {
     timedPolicies: [TimedDeletePolicy!]!
-    diskSpacePolicies: [DiskSpaceDeletePolicy!]!
 }
 
 extend type Query {
@@ -81,6 +63,5 @@ extend type Mutation {
     removeDeletePolicy(id: UUID!) : Boolean!
     loadDeletePolicies(replaceAll: Boolean!, policies: DeletePoliciesInput!) : Result!
     enablePolicy(id: UUID!, enabled: Boolean!) : Boolean!
-    updateDiskSpaceDeletePolicy(policyUpdate: DiskSpaceDeletePolicyInput!) : Result!
     updateTimedDeletePolicy(policyUpdate: TimedDeletePolicyInput!) : Result!
 }

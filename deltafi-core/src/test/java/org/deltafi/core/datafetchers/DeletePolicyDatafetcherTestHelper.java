@@ -21,9 +21,11 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import org.deltafi.core.generated.client.*;
-import org.deltafi.core.types.*;
+import org.deltafi.core.types.DeletePolicies;
+import org.deltafi.core.types.DeletePolicy;
+import org.deltafi.core.types.Result;
+import org.deltafi.core.types.TimedDeletePolicy;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,17 +33,8 @@ import static org.deltafi.core.util.Constants.SCALARS;
 
 public class DeletePolicyDatafetcherTestHelper {
 
-    public static final String DISK_SPACE_PERCENT_POLICY = "diskSpacePercent";
     public static final String AFTER_COMPLETE_POLICY = "afterCompletePolicy";
     public static final String OFFLINE_POLICY = "offlinePolicy";
-
-    private static final List<DiskSpaceDeletePolicy> DISK_POLICY_LIST = List.of(
-            DiskSpaceDeletePolicy.builder()
-                    .id(UUID.randomUUID())
-                    .name(DISK_SPACE_PERCENT_POLICY)
-                    .enabled(true)
-                    .maxPercent(99)
-                    .build());
 
     private static final List<TimedDeletePolicy> TIMED_POLICY_LIST = List.of(
             TimedDeletePolicy.builder()
@@ -66,9 +59,6 @@ public class DeletePolicyDatafetcherTestHelper {
             .name()
             .enabled()
             .flow()
-            .onDiskSpaceDeletePolicy()
-            .maxPercent()
-            .parent()
             .onTimedDeletePolicy()
             .afterComplete()
             .afterCreate()
@@ -92,7 +82,7 @@ public class DeletePolicyDatafetcherTestHelper {
     }
 
     public static void loadOneDeletePolicy(DgsQueryExecutor dgsQueryExecutor) {
-        executeLoad(dgsQueryExecutor, Collections.emptyList());
+        executeLoad(dgsQueryExecutor, List.of(TIMED_POLICY_LIST.getFirst()));
     }
 
     public static Result replaceAllDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
@@ -100,9 +90,7 @@ public class DeletePolicyDatafetcherTestHelper {
     }
 
     private static Result executeLoad(DgsQueryExecutor dgsQueryExecutor, List<TimedDeletePolicy> timedPolicies) {
-
         DeletePolicies input = DeletePolicies.builder()
-                .diskSpacePolicies(DISK_POLICY_LIST)
                 .timedPolicies(timedPolicies)
                 .build();
 
@@ -145,24 +133,6 @@ public class DeletePolicyDatafetcherTestHelper {
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(), Boolean.class);
-    }
-
-    public static Result updateDiskSpaceDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
-                                                     DiskSpaceDeletePolicy input) {
-        UpdateDiskSpaceDeletePolicyGraphQLQuery query = UpdateDiskSpaceDeletePolicyGraphQLQuery.newRequest()
-                .policyUpdate(input)
-                .build();
-
-        UpdateDiskSpaceDeletePolicyProjectionRoot<?, ?> projection = new UpdateDiskSpaceDeletePolicyProjectionRoot<>()
-                .success()
-                .errors();
-
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection, SCALARS);
-
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-                graphQLQueryRequest.serialize(),
-                "data." + query.getOperationName(),
-                Result.class);
     }
 
     public static Result updateTimedDeletePolicy(DgsQueryExecutor dgsQueryExecutor,

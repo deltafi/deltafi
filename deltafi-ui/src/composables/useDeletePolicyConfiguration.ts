@@ -78,21 +78,6 @@ export default function useDeletePolicyConfiguration() {
             },
           },
         },
-        {
-          properties: {
-            diskSpacePolicies: {
-              type: "array",
-              minItems: 1,
-              uniqueItems: true,
-              items: {
-                $ref: "#/definitions/schemaDiskSpaceDeletePolicy",
-              },
-              errorMessage: {
-                minItems: "No Disk Space Delete Policies were uploaded.",
-              },
-            },
-          },
-        },
       ],
       errorMessage: {
         anyOf: "Errors were found validating uploaded Delete Policies.",
@@ -129,30 +114,6 @@ export default function useDeletePolicyConfiguration() {
     };
   };
 
-  const schemaDiskSpaceDeletePolicy = () => {
-    return {
-      type: "object",
-      properties: {
-        id: { $ref: "#/definitions/idSchema" },
-        name: { $ref: "#/definitions/nameSchema" },
-        flow: { $ref: "#/definitions/flowSchema" },
-        enabled: { $ref: "#/definitions/enabledSchema" },
-        maxPercent: { $ref: "#/definitions/maxPercentSchema" },
-      },
-      required: ["name"],
-      additionalProperties: false,
-      errorMessage: {
-        required: "Must have required property 'name'.",
-        additionalProperties: "Must NOT have additional properties.",
-        properties: {
-          name: "name is a required field.",
-          enabled: "${0/name} - enabled must be true or false",
-          maxPercent: "${0/name} - maxPercent must be a number between 0 and 100.",
-        },
-      },
-    };
-  };
-
   const deletePolicyFileSchema = {
     type: "object",
     allOf: [
@@ -162,16 +123,12 @@ export default function useDeletePolicyConfiguration() {
           timedPolicies: {
             type: "array",
           },
-          diskSpacePolicies: {
-            type: "array",
-          },
         },
       },
       anyOfSchema(),
     ],
     definitions: {
       schemaTimedDeletePolicy: schemaTimedDeletePolicy(),
-      schemaDiskSpaceDeletePolicy: schemaDiskSpaceDeletePolicy(),
       ISO8601Duration: ISO8601Duration(),
       idSchema: idSchema(),
       nameSchema: nameSchema(),
@@ -179,15 +136,14 @@ export default function useDeletePolicyConfiguration() {
       enabledSchema: enabledSchema(),
       maxPercentSchema: maxPercentSchema(),
     },
-    required: ["timedPolicies", "diskSpacePolicies"],
+    required: ["timedPolicies"],
   };
 
   const deletePolicySchema = {
     type: "object",
-    oneOf: [{ $ref: "#/definitions/schemaDiskSpaceDeletePolicy" }, { $ref: "#/definitions/schemaTimedDeletePolicy" }],
+    oneOf: [{ $ref: "#/definitions/schemaTimedDeletePolicy" }],
     definitions: {
       schemaTimedDeletePolicy: schemaTimedDeletePolicy(),
-      schemaDiskSpaceDeletePolicy: schemaDiskSpaceDeletePolicy(),
       ISO8601Duration: ISO8601Duration(),
       idSchema: idSchema(),
       nameSchema: nameSchema(),

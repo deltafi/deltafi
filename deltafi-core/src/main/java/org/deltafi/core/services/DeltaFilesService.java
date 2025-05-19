@@ -37,6 +37,7 @@ import org.deltafi.common.util.ParameterTemplateException;
 import org.deltafi.common.util.ParameterUtil;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.delete.DiskSpaceDelete;
 import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
@@ -1480,9 +1481,9 @@ public class DeltaFilesService {
         return deltaFiles.size() == batchSize;
     }
 
-    public List<DeltaFileDeleteDTO> diskSpaceDelete(long bytesToDelete, String flow, String policy, int batchSize) {
-        logBatch(batchSize, policy);
-        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize, !isLocalStorage()), policy, false, 0, true);
+    public List<DeltaFileDeleteDTO> diskSpaceDelete(long bytesToDelete, int batchSize) {
+        logBatch(batchSize, DiskSpaceDelete.POLICY_NAME);
+        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, batchSize, !isLocalStorage()), DiskSpaceDelete.POLICY_NAME, false, 0, true);
     }
 
     public void logBatch(int batchSize, String policy) {

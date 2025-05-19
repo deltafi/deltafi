@@ -480,16 +480,16 @@ class DeltaFiCoreApplicationTests {
 		Result result = replaceAllDeletePolicies(dgsQueryExecutor);
 		assertTrue(result.isSuccess());
 		assertTrue(result.getErrors().isEmpty());
-		assertEquals(3, deletePolicyRepo.count());
+		assertEquals(2, deletePolicyRepo.count());
 	}
 
 	@Test
 	void testRemoveDeletePolicy() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
-		assertEquals(3, deletePolicyRepo.count());
+		assertEquals(2, deletePolicyRepo.count());
 		UUID id = getIdByPolicyName(AFTER_COMPLETE_POLICY);
 		assertTrue(removeDeletePolicy(dgsQueryExecutor, id));
-		assertEquals(2, deletePolicyRepo.count());
+		assertEquals(1, deletePolicyRepo.count());
 		assertFalse(removeDeletePolicy(dgsQueryExecutor, id));
 	}
 
@@ -510,71 +510,10 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testUpdateDiskSpaceDeletePolicy() {
-		loadOneDeletePolicy(dgsQueryExecutor);
-		assertEquals(1, deletePolicyRepo.count());
-		UUID idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
-
-		Result validationError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.builder()
-						.id(idToUpdate)
-						.name(DISK_SPACE_PERCENT_POLICY)
-						.maxPercent(-1)
-						.enabled(false)
-						.build());
-		checkUpdateResult(true, validationError, "maxPercent is invalid", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
-
-		Result updateNameIsGood = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.builder()
-						.id(idToUpdate)
-						.name("newName")
-						.maxPercent(50)
-						.enabled(false)
-						.build());
-		checkUpdateResult(true, updateNameIsGood, null, idToUpdate, "newName", false);
-
-		UUID notFoundUUID = UUID.randomUUID();
-		Result notFoundError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.builder()
-						.id(notFoundUUID)
-						.name("blah")
-						.maxPercent(50)
-						.enabled(true)
-						.build());
-		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, "newName", false);
-
-		Result missingId = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.builder()
-						.name("blah")
-						.maxPercent(50)
-						.enabled(true)
-						.build());
-		checkUpdateResult(true, missingId, "policy not found", idToUpdate, "newName", false);
-
-		DiskSpaceDeletePolicy anotherPolicy = DiskSpaceDeletePolicy.builder()
-				.id(UUID.randomUUID())
-				.name("another")
-				.maxPercent(60)
-				.enabled(false)
-				.build();
-		deletePolicyRepo.save(anotherPolicy);
-
-		Result duplicateName = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.builder()
-						.id(anotherPolicy.getId())
-						.name("newName")
-						.maxPercent(60)
-						.enabled(false)
-						.build());
-		assertFalse(duplicateName.isSuccess());
-		assertTrue(duplicateName.getErrors().contains("duplicate policy name"));
-	}
-
-	@Test
 	void testUpdateTimedDeletePolicy() {
 		loadOneDeletePolicy(dgsQueryExecutor);
 		assertEquals(1, deletePolicyRepo.count());
-		UUID idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
+		UUID idToUpdate = getIdByPolicyName(AFTER_COMPLETE_POLICY);
 
 		Result validationError = updateTimedDeletePolicy(dgsQueryExecutor,
 				TimedDeletePolicy.builder()
@@ -584,7 +523,7 @@ class DeltaFiCoreApplicationTests {
 						.enabled(false)
 						.deleteMetadata(false)
 						.build());
-		checkUpdateResult(true, validationError, "Unable to parse duration for afterComplete", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
+		checkUpdateResult(validationError, "Unable to parse duration for afterComplete", idToUpdate, AFTER_COMPLETE_POLICY, true);
 
 		UUID wrongUUID = UUID.randomUUID();
 		Result notFoundError = updateTimedDeletePolicy(dgsQueryExecutor,
@@ -595,7 +534,7 @@ class DeltaFiCoreApplicationTests {
 						.enabled(true)
 						.deleteMetadata(false)
 						.build());
-		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
+		checkUpdateResult(notFoundError, "policy not found", idToUpdate, AFTER_COMPLETE_POLICY, true);
 
 		Result goodUpdate = updateTimedDeletePolicy(dgsQueryExecutor,
 				TimedDeletePolicy.builder()
@@ -605,10 +544,10 @@ class DeltaFiCoreApplicationTests {
 						.enabled(false)
 						.deleteMetadata(false)
 						.build());
-		checkUpdateResult(false, goodUpdate, null, idToUpdate, "newTypesAndName", false);
+		checkUpdateResult(goodUpdate, null, idToUpdate, "newTypesAndName", false);
 	}
 
-	private void checkUpdateResult(boolean disk, Result result, String error, UUID id, String name, boolean enabled) {
+	private void checkUpdateResult(Result result, String error, UUID id, String name, boolean enabled) {
 		if (error == null) {
 			assertTrue(result.isSuccess());
 		} else {
@@ -623,32 +562,22 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(name, policyList.getFirst().getName());
 		assertEquals(enabled, policyList.getFirst().isEnabled());
 
-		if (disk) {
-            assertInstanceOf(DiskSpaceDeletePolicy.class, policyList.getFirst());
-		} else {
-            assertInstanceOf(TimedDeletePolicy.class, policyList.getFirst());
-		}
+		assertInstanceOf(TimedDeletePolicy.class, policyList.getFirst());
 	}
 
 	@Test
 	void testGetDeletePolicies() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
 		List<DeletePolicy> policyList = getDeletePolicies(dgsQueryExecutor);
-		assertEquals(3, policyList.size());
+		assertEquals(2, policyList.size());
 
 		boolean foundAfterCompletePolicy = false;
 		boolean foundOfflinePolicy = false;
-		boolean foundDiskSpacePercent = false;
 		Set<UUID> ids = new HashSet<>();
 
 		for (DeletePolicy policy : policyList) {
 			ids.add(policy.getId());
-			if (policy instanceof DiskSpaceDeletePolicy diskPolicy) {
-				if (diskPolicy.getName().equals(DISK_SPACE_PERCENT_POLICY)) {
-					assertTrue(diskPolicy.isEnabled());
-					foundDiskSpacePercent = true;
-				}
-			} else if (policy instanceof TimedDeletePolicy timedPolicy) {
+			if (policy instanceof TimedDeletePolicy timedPolicy) {
 				if (timedPolicy.getName().equals(AFTER_COMPLETE_POLICY)) {
 					assertTrue(timedPolicy.isEnabled());
 					assertEquals("PT2S", timedPolicy.getAfterComplete());
@@ -668,18 +597,17 @@ class DeltaFiCoreApplicationTests {
 
 		assertTrue(foundAfterCompletePolicy);
 		assertTrue(foundOfflinePolicy);
-		assertTrue(foundDiskSpacePercent);
-		assertEquals(3, ids.size());
+		assertEquals(2, ids.size());
 	}
 
 	@Test
 	void testDeleteRunnerPoliciesScheduled() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
-		assertThat(deletePolicyRepo.count()).isEqualTo(3);
+		assertThat(deletePolicyRepo.count()).isEqualTo(2);
 		List<DeletePolicyWorker> policiesScheduled = deleteRunner.refreshPolicies();
-		assertThat(policiesScheduled).hasSize(3); // only 2 of 3 are enabled + the TTL policy
+		assertThat(policiesScheduled).hasSize(2); // only 2 of 3 are enabled + the TTL policy
 		List<String> names = policiesScheduled.stream().map(DeletePolicyWorker::getName).toList();
-		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_POLICY, TTL_SYSTEM_POLICY)));
+		assertThat(names).containsExactly(AFTER_COMPLETE_POLICY, TTL_SYSTEM_POLICY);
 	}
 
 	@Test
@@ -2826,14 +2754,14 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.updateContentObjectIds();
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(250L, null, 100, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(250L, 100, true);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
 		assertEquals(1, deltaFiles.getFirst().getContentObjectIds().size());
 		assertEquals(deltaFile1.getContentObjectIds(), deltaFiles.getFirst().getContentObjectIds());
 		assertEquals(2, deltaFiles.getLast().getContentObjectIds().size());
 		assertEquals(deltaFile2.getContentObjectIds(), deltaFiles.getLast().getContentObjectIds());
 
-		List<DeltaFileDeleteDTO> deltaFilesNoContent = deltaFileRepo.findForDiskSpaceDelete(250L, null, 100, false);
+		List<DeltaFileDeleteDTO> deltaFilesNoContent = deltaFileRepo.findForDiskSpaceDelete(250L, 100, false);
 		assertTrue(deltaFilesNoContent.stream().allMatch(d -> d.getContentObjectIds().isEmpty()));
 	}
 
@@ -2870,7 +2798,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile7.updateFlags();
 		deltaFileRepo.save(deltaFile7);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, null, 100, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L,  100, true);
 		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).sorted().toList());
 	}
 
@@ -2886,23 +2814,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, null, 2, true);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-	}
-
-	@Test
-	void testFindForDeleteDiskSpaceBatchSizeFlow() {
-		DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
-		deltaFile1.setTotalBytes(100L);
-		deltaFileRepo.save(deltaFile1);
-		DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(1), OffsetDateTime.now().plusSeconds(2));
-		deltaFile2.setTotalBytes(300L);
-		deltaFileRepo.save(deltaFile2);
-		DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID(), "b", DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now());
-		deltaFile3.setTotalBytes(500L);
-		deltaFileRepo.save(deltaFile3);
-
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, "a", 100, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, 2, true);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
 	}
 
@@ -4731,9 +4643,9 @@ class DeltaFiCoreApplicationTests {
 		errorAcked.updateFlags();
 
 		deltaFileRepo.saveAll(List.of(error, complete, errorAcked));
-		deltaFilesService.diskSpaceDelete(500, null, "policyName", 1000);
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policyName"));
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 6).addTag("policy", "policyName"));
+		deltaFilesService.diskSpaceDelete(500, 1000);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", DiskSpaceDelete.POLICY_NAME));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 6).addTag("policy", DiskSpaceDelete.POLICY_NAME));
 		Mockito.verifyNoMoreInteractions(metricService);
 
 		assertEquals(3, deltaFileRepo.count());

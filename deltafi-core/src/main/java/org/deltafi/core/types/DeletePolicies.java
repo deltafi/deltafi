@@ -32,17 +32,11 @@ import java.util.List;
 public class DeletePolicies {
     @Builder.Default
     private List<TimedDeletePolicy> timedPolicies = new ArrayList<>();
-    @Builder.Default
-    private List<DiskSpaceDeletePolicy> diskSpacePolicies = new ArrayList<>();
 
     public List<DeletePolicy> allPolicies() {
         List<DeletePolicy> allPolicies = new ArrayList<>();
         if (null != timedPolicies) {
             allPolicies.addAll(timedPolicies);
-        }
-
-        if (null != diskSpacePolicies) {
-            allPolicies.addAll(diskSpacePolicies);
         }
 
         return allPolicies;

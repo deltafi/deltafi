@@ -67,13 +67,6 @@ public class DeletePolicyDatafetcher {
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
-    public Result updateDiskSpaceDeletePolicy(@InputArgument DiskSpaceDeletePolicy policyUpdate) {
-        auditUpdate(policyUpdate, "disk space");
-        return deletePolicyService.update(policyUpdate);
-    }
-
-    @DgsMutation
-    @NeedsPermission.DeletePolicyUpdate
     public Result updateTimedDeletePolicy(@InputArgument TimedDeletePolicy policyUpdate) {
         auditUpdate(policyUpdate, "timed");
         return deletePolicyService.update(policyUpdate);

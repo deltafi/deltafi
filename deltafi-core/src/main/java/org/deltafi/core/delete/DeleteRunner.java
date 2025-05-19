@@ -31,7 +31,7 @@ import java.util.List;
 @Slf4j
 public class DeleteRunner {
     private final DeltaFilesService deltaFilesService;
-    private final DiskSpaceService diskSpaceService;
+    private final DiskSpaceDelete diskSpaceDelete;
     private final DeletePolicyService deletePolicyService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
 
@@ -44,15 +44,16 @@ public class DeleteRunner {
         boolean rerun;
         do {
             // run this inside the loop in case policies change while deletes are running
+            boolean needSpace = true;
+            while (needSpace) {
+                needSpace = diskSpaceDelete.run();
+            }
+
             List<DeletePolicyWorker> policiesScheduled = refreshPolicies();
             rerun = false;
             for (DeletePolicyWorker policy : policiesScheduled) {
                 if (policy.run(deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize())) {
                     rerun = true;
-                }
-                if (rerun && policy instanceof DiskSpaceDelete) {
-                    // disk needs attention, stop running other policies, restart the outer loop
-                    break;
                 }
             }
         } while (rerun);
@@ -61,10 +62,8 @@ public class DeleteRunner {
     public List<DeletePolicyWorker> refreshPolicies() {
         List<DeletePolicyWorker> policies = new ArrayList<>();
         for (DeletePolicy policy : deletePolicyService.getEnabledPolicies()) {
-            if (policy instanceof DiskSpaceDeletePolicy) {
-                policies.addFirst(new DiskSpaceDelete(deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
-            } else if (policy instanceof TimedDeletePolicy) {
-                policies.add(new TimedDelete(deltaFilesService, (TimedDeletePolicy) policy));
+           if (policy instanceof TimedDeletePolicy timedDeletePolicy) {
+                policies.add(new TimedDelete(deltaFilesService, timedDeletePolicy));
             } else {
                 throw new IllegalArgumentException("Unknown delete policy type " + policy.getClass().getSimpleName());
             }

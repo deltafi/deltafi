@@ -212,8 +212,6 @@ public class DeletePolicyService implements Snapshotter {
         for (DeletePolicy deletePolicy : allPolicies) {
             if (deletePolicy instanceof TimedDeletePolicy timedDeletePolicy) {
                 deletePolicies.getTimedPolicies().add(timedDeletePolicy);
-            } else if (deletePolicy instanceof DiskSpaceDeletePolicy diskSpaceDeletePolicy) {
-                deletePolicies.getDiskSpacePolicies().add(diskSpaceDeletePolicy);
             } else {
                 String type = null != deletePolicy ? deletePolicy.getClass().getName() : "null";
                 throw new IllegalStateException("Delete Policy is not a known instance type: " + type);

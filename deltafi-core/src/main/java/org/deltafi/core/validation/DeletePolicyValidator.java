@@ -19,7 +19,6 @@ package org.deltafi.core.validation;
 
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.types.DeletePolicy;
-import org.deltafi.core.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.types.TimedDeletePolicy;
 
 import java.time.DateTimeException;
@@ -28,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DeletePolicyValidator {
+
+    private DeletePolicyValidator() {}
 
     public static List<String> validate(DeletePolicy policy) {
         List<String> errors = new ArrayList<>();
@@ -46,22 +47,10 @@ public class DeletePolicyValidator {
             errors.add("dataSource is invalid");
         }
 
-        if (policy instanceof DiskSpaceDeletePolicy) {
-            errors.addAll(validateDiskSpaceDeletePolicy((DiskSpaceDeletePolicy) policy));
+        if (policy instanceof TimedDeletePolicy timedDeletePolicy) {
+            errors.addAll(validateTimedDeletePolicy(timedDeletePolicy));
         }
 
-        if (policy instanceof TimedDeletePolicy) {
-            errors.addAll(validateTimedDeletePolicy((TimedDeletePolicy) policy));
-        }
-
-        return errors;
-    }
-
-    private static List<String> validateDiskSpaceDeletePolicy(DiskSpaceDeletePolicy policy) {
-        List<String> errors = new ArrayList<>();
-        if (policy.getMaxPercent() < 0) {
-            errors.add("maxPercent is invalid");
-        }
         return errors;
     }
 

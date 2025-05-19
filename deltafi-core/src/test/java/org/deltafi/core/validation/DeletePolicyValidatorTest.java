@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.validation;
 
-import org.deltafi.core.types.DiskSpaceDeletePolicy;
 import org.deltafi.core.types.TimedDeletePolicy;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DeletePolicyValidatorTest {
 
-    private static final int MAX_PERCENT = 80;
     private static final Long MIN_BYTES = 9999L;
     private static final UUID POLICY_ID = UUID.randomUUID();
     private static final String POLICY_NAME = "policyName";
@@ -38,31 +36,6 @@ class DeletePolicyValidatorTest {
     private static final String BAD_DURATION = "GARBAGE";
     private static final String ERROR_MESSAGE = "Timed delete policy " + POLICY_NAME
             + " must specify exactly one of afterCreate or afterComplete and/or minBytes";
-
-    @Test
-    void testDiskSpaceDeletePolicy() {
-        DiskSpaceDeletePolicy policy = makeDiskSpaceDeletePolicy(false);
-        DiskSpaceDeletePolicy withOptional = makeDiskSpaceDeletePolicy(true);
-        assertTrue(DeletePolicyValidator.validate(policy).isEmpty());
-        assertTrue(DeletePolicyValidator.validate(withOptional).isEmpty());
-    }
-
-    @Test
-    void testInvalidDiskSpaceDeletePolicy() {
-        DiskSpaceDeletePolicy policy = makeDiskSpaceDeletePolicy(false);
-        policy.setId(null);
-        policy.setName(null);
-        policy.setFlow("");
-        policy.setMaxPercent(-1);
-
-        List<String> errors = DeletePolicyValidator.validate(policy);
-        assertEquals(4, errors.size());
-        assertTrue(errors.containsAll(List.of(
-                "id is missing",
-                "name is missing",
-                "dataSource is invalid",
-                "maxPercent is invalid")));
-    }
 
     @Test
     void testAfterCreate() {
@@ -134,17 +107,6 @@ class DeletePolicyValidatorTest {
         List<String> errors = DeletePolicyValidator.validate(policy);
         assertEquals(1, errors.size());
         assertEquals(ERROR_MESSAGE, errors.getFirst());
-    }
-
-    private DiskSpaceDeletePolicy makeDiskSpaceDeletePolicy(boolean withOptional) {
-        DiskSpaceDeletePolicy policy = new DiskSpaceDeletePolicy();
-        policy.setId(POLICY_ID);
-        policy.setName(POLICY_NAME);
-        policy.setMaxPercent(MAX_PERCENT);
-        if (withOptional) {
-            policy.setFlow(FLOW);
-        }
-        return policy;
     }
 
     private TimedDeletePolicy makeAfterCreate(boolean withOptional) {

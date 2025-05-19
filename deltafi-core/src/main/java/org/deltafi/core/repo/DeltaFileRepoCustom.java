@@ -117,12 +117,11 @@ public interface DeltaFileRepoCustom {
      * marked the DeltaFile for deletion.
      *
      * @param bytesToDelete the number of bytes that must be deleted
-     * @param flow if non-null the DeltaFiles must have this dataSource set in the source info
      * @param batchSize maximum number to delete
      * @param returnContentObjectIds whether content object ids should be included in the response
      * @return the list of DeltaFile information marked for deletion
      */
-    List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String flow, int batchSize, boolean returnContentObjectIds);
+    List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, int batchSize, boolean returnContentObjectIds);
 
     /** Return a list of DeltaFiles matching the given criteria
      *

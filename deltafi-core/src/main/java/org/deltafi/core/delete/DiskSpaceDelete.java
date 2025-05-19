@@ -17,31 +17,30 @@
  */
 package org.deltafi.core.delete;
 
-import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.exceptions.StorageCheckException;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.DiskSpaceService;
-import org.deltafi.core.types.*;
+import org.deltafi.core.types.DeltaFileDeleteDTO;
+import org.deltafi.core.types.DiskMetrics;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Getter
 @Slf4j
-public class DiskSpaceDelete extends DeletePolicyWorker {
-    private final Integer maxPercent;
-    private final String flow;
+@Service
+@RequiredArgsConstructor
+public class DiskSpaceDelete {
+    public static final String POLICY_NAME = "Disk Space Policy";
     private final DiskSpaceService diskSpaceService;
+    private final DeltaFilesService deltaFilesService;
+    private final DeltaFiPropertiesService propertiesService;
 
-    public DiskSpaceDelete(DeltaFilesService deltaFilesService, DiskSpaceService diskSpaceService, DiskSpaceDeletePolicy policy) {
-        super(deltaFilesService, policy.getName());
-
-        this.diskSpaceService = diskSpaceService;
-        this.maxPercent = policy.getMaxPercent();
-        this.flow = policy.getFlow();
-    }
-
-    public boolean run(int batchSize) {
+    public boolean run() {
+        int maxPercent = propertiesService.getDeltaFiProperties().getDiskSpacePercentThreshold();
+        int batchSize = propertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
         List<DiskMetrics> contentMetrics = null;
         try {
             contentMetrics = diskSpaceService.contentMetrics();
@@ -53,11 +52,11 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
             return false;
         }
 
-        log.info("Disk delete policy for {} executing: current used = {}%, maximum = {}%", flow == null ? "all flows" : flow,
+        log.info("Disk delete policy executing: current used = {}%, maximum = {}%",
                 String.format("%.2f", contentMetrics.stream().map(DiskMetrics::percentUsed).reduce(0D, Double::max)), maxPercent);
         long bytesToDelete = contentMetrics.stream().map(c -> c.bytesOverPercentage(maxPercent)).reduce(0L, Long::max);
         log.info("Deleting up to {} bytes", bytesToDelete);
-        List<DeltaFileDeleteDTO> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name, batchSize);
+        List<DeltaFileDeleteDTO> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, batchSize);
 
         long bytesDeleted = deleted.stream().map(DeltaFileDeleteDTO::getTotalBytes).reduce(0L, Long::sum);
         bytesToDelete -= bytesDeleted;

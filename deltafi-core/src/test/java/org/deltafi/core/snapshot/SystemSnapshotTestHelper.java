@@ -101,9 +101,6 @@ public class SystemSnapshotTestHelper {
 
         deletePolicies.setTimedPolicies(List.of(afterComplete, deleteSmoke));
 
-        DiskSpaceDeletePolicy diskSpaceDeletePolicy = DiskSpaceDeletePolicy.builder().id(UUID.fromString("66e4572f-3c5f-45dc-b35d-b3ffd7f70246")).name("percentDisk").enabled(true).maxPercent(75).build();
-        deletePolicies.setDiskSpacePolicies(List.of(diskSpaceDeletePolicy));
-
         snapshot.setDeletePolicies(deletePolicies);
     }
 

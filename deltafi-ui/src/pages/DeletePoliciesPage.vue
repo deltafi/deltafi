@@ -107,7 +107,6 @@ const filters = ref({
 
 const deletePolicyType = new Map([
   ["TimedDeletePolicy", { tooltip: "Timed Delete Policy", class: "far fa-clock text-muted ml-1" }],
-  ["DiskSpaceDeletePolicy", { tooltip: "DiskSpace Delete Policy", class: "fas fa-hdd text-muted ml-1" }],
 ]);
 
 const uiDeletePoliciesList = computed(() => {
@@ -122,19 +121,15 @@ const uiDeletePoliciesList = computed(() => {
 const formatExportPolicyData = () => {
   // Separate the two types of policies into their own list
   const TimedDeletePolicyList = deletePolicies.value.filter((e) => e.__typename === "TimedDeletePolicy");
-  const DiskSpaceDeletePolicyList = deletePolicies.value.filter((e) => e.__typename === "DiskSpaceDeletePolicy");
 
   // Remove the __typename key from policies
   TimedDeletePolicyList.forEach((e, index) => (TimedDeletePolicyList[index] = _.omit(e, ["__typename"])));
-  DiskSpaceDeletePolicyList.forEach((e, index) => (DiskSpaceDeletePolicyList[index] = _.omit(e, ["__typename"])));
 
   // Remove the id key from policies
   TimedDeletePolicyList.forEach((e, index) => (TimedDeletePolicyList[index] = _.omit(e, ["id"])));
-  DiskSpaceDeletePolicyList.forEach((e, index) => (DiskSpaceDeletePolicyList[index] = _.omit(e, ["id"])));
 
   const formattedDeletePolicies = {};
   formattedDeletePolicies["timedPolicies"] = TimedDeletePolicyList;
-  formattedDeletePolicies["diskSpacePolicies"] = DiskSpaceDeletePolicyList;
   return formattedDeletePolicies;
 };
 

@@ -33,7 +33,6 @@ import java.util.UUID;
     property = "__typename"
 )
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = DiskSpaceDeletePolicy.class, name = "DiskSpaceDeletePolicy"),
     @JsonSubTypes.Type(value = TimedDeletePolicy.class, name = "TimedDeletePolicy")
 })
 @Entity
