@@ -52,7 +52,7 @@ var statusCmd = &cobra.Command{
 				cmd.PrintErrf("Error fetching status: %v\n", err)
 				return
 			}
-			cmd.Print(status.renderStatus(result))
+			cmd.Print(RenderStatus(result, false, nil))
 		}
 	},
 }
@@ -108,18 +108,15 @@ func NewStatusCommand(interactive bool) *StatusCommand {
 	}
 
 	// Initialize renderer for both interactive and non-interactive modes
-	style, err := cmd.getMarkdownStyle()
-	if err == nil {
-		width := 80
-		if !interactive {
-			width = 80
-		}
-		r, _ := glamour.NewTermRenderer(
-			glamour.WithStylesFromJSONBytes([]byte(style)),
-			glamour.WithWordWrap(width),
-		)
-		cmd.renderer = r
+	width := 80
+	if !interactive {
+		width = 80
 	}
+	r, _ := glamour.NewTermRenderer(
+		glamour.WithStylesFromJSONBytes([]byte(GetMarkdownStyle())),
+		glamour.WithWordWrap(width),
+	)
+	cmd.renderer = r
 
 	return cmd
 }
@@ -147,14 +144,12 @@ func (c *StatusCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.width = msg.Width
 		c.height = msg.Height
 		c.ready = true
-		style, err := c.getMarkdownStyle()
-		if err == nil {
-			r, _ := glamour.NewTermRenderer(
-				glamour.WithStylesFromJSONBytes([]byte(style)),
-				glamour.WithWordWrap(max(c.width-8, 20)),
-			)
-			c.renderer = r
-		}
+		style := GetMarkdownStyle()
+		r, _ := glamour.NewTermRenderer(
+			glamour.WithStylesFromJSONBytes([]byte(style)),
+			glamour.WithWordWrap(max(c.width-8, 20)),
+		)
+		c.renderer = r
 
 	case tea.KeyMsg:
 		if msg.Type == tea.KeyCtrlC || msg.Type == tea.KeyEsc {
@@ -199,7 +194,7 @@ func (c *StatusCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, nil
 }
 
-func (c *StatusCommand) getStatusStyle(color string) lipgloss.Style {
+func getStatusStyle(color string) lipgloss.Style {
 	style := lipgloss.NewStyle().Bold(true)
 	switch color {
 	case "green":
@@ -213,7 +208,7 @@ func (c *StatusCommand) getStatusStyle(color string) lipgloss.Style {
 	}
 }
 
-func (c *StatusCommand) getStatusIcon(code int) string {
+func getStatusIcon(code int) string {
 	switch code {
 	case 0:
 		return "✓"
@@ -226,7 +221,7 @@ func (c *StatusCommand) getStatusIcon(code int) string {
 	}
 }
 
-func (c *StatusCommand) getIconStyle(code int) lipgloss.Style {
+func getIconStyle(code int) lipgloss.Style {
 	style := lipgloss.NewStyle()
 	switch code {
 	case 0:
@@ -240,7 +235,7 @@ func (c *StatusCommand) getIconStyle(code int) lipgloss.Style {
 	}
 }
 
-func (c *StatusCommand) renderStatus(status api.StatusResponse) string {
+func RenderStatus(status api.StatusResponse, interactive bool, renderer *glamour.TermRenderer) string {
 	var sb strings.Builder
 
 	// Title and overall status
@@ -248,18 +243,17 @@ func (c *StatusCommand) renderStatus(status api.StatusResponse) string {
 		Foreground(styles.Blue).
 		Bold(true)
 
-	sb.WriteString(titleStyle.Render("DeltaFi System Status"))
-	sb.WriteString("\n")
+	sb.WriteString(titleStyle.Render("DeltaFi System Status: "))
 
 	// Status state with color
-	stateStyle := c.getStatusStyle(status.Status.Color)
+	stateStyle := getStatusStyle(status.Status.Color)
 	sb.WriteString(stateStyle.Render(status.Status.State))
 	sb.WriteString("\n\n")
 
 	// Status checks
 	for _, check := range status.Status.Checks {
-		iconStyle := c.getIconStyle(check.Code)
-		icon := c.getStatusIcon(check.Code)
+		iconStyle := getIconStyle(check.Code)
+		icon := getStatusIcon(check.Code)
 
 		// Render check with icon
 		checkLine := lipgloss.JoinHorizontal(lipgloss.Left,
@@ -270,7 +264,7 @@ func (c *StatusCommand) renderStatus(status api.StatusResponse) string {
 		sb.WriteString("\n")
 
 		if check.Message != "" {
-			sb.WriteString(c.renderMarkdown(check.Message))
+			sb.WriteString(renderMarkdown(check.Message, interactive, renderer))
 			sb.WriteString("\n")
 		}
 	}
@@ -315,7 +309,7 @@ func (c *StatusCommand) View() string {
 		Align(lipgloss.Right).
 		Width(contentWidth - 2)
 
-	stateStyle := c.getStatusStyle(c.status.Status.Color).
+	stateStyle := getStatusStyle(c.status.Status.Color).
 		Width(contentWidth - 2).
 		Align(lipgloss.Center)
 
@@ -328,8 +322,8 @@ func (c *StatusCommand) View() string {
 
 	var checks []string
 	for _, check := range c.status.Status.Checks {
-		iconStyle := c.getIconStyle(check.Code)
-		icon := c.getStatusIcon(check.Code)
+		iconStyle := getIconStyle(check.Code)
+		icon := getStatusIcon(check.Code)
 
 		checkLine := lipgloss.JoinHorizontal(lipgloss.Left,
 			iconColumn.Render(iconStyle.Render(icon)),
@@ -338,7 +332,7 @@ func (c *StatusCommand) View() string {
 		checks = append(checks, checkLine)
 
 		if check.Message != "" {
-			checks = append(checks, c.renderMarkdown(check.Message))
+			checks = append(checks, renderMarkdown(check.Message, c.interactive, c.renderer))
 		}
 	}
 
@@ -380,16 +374,13 @@ func nextPoints(current string) string {
 	}
 }
 
-func (c *StatusCommand) renderMarkdown(text string) string {
+func renderMarkdown(text string, interactive bool, renderer *glamour.TermRenderer) string {
 	var r *glamour.TermRenderer
 	var err error
 
-	style, err := c.getMarkdownStyle()
-	if err != nil {
-		return text
-	}
+	style := GetMarkdownStyle()
 
-	if c.renderer == nil {
+	if renderer == nil {
 		// For non-interactive mode
 		r, err = glamour.NewTermRenderer(
 			glamour.WithStylesFromJSONBytes([]byte(style)),
@@ -399,7 +390,7 @@ func (c *StatusCommand) renderMarkdown(text string) string {
 			return text
 		}
 	} else {
-		r = c.renderer
+		r = renderer
 	}
 
 	rendered, err := r.Render(text)
@@ -412,7 +403,7 @@ func (c *StatusCommand) renderMarkdown(text string) string {
 	rendered = strings.ReplaceAll(rendered, "\n\n", "\n")
 
 	// If this is non-interactive mode, add padding for alignment
-	if !c.interactive {
+	if !interactive {
 		lines := strings.Split(rendered, "\n")
 		for i, line := range lines {
 			if i > 0 { // Don't pad the first line since it comes after the icon
@@ -425,7 +416,7 @@ func (c *StatusCommand) renderMarkdown(text string) string {
 	return rendered
 }
 
-func (c *StatusCommand) getMarkdownStyle() (string, error) {
+func GetMarkdownStyle() string {
 	return `{
 		"document": {
 			"margin": 4,
@@ -489,5 +480,5 @@ func (c *StatusCommand) getMarkdownStyle() (string, error) {
 			"color": "39",
 			"underline": true
 		}
-	}`, nil
+	}`
 }

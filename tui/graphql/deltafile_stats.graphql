@@ -1,0 +1,7 @@
+query GetDeltaFileStats {
+    deltaFileStats {
+        totalCount
+        inFlightCount
+        inFlightBytes
+    }
+} 
