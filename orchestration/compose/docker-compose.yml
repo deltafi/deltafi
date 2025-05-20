@@ -135,6 +135,7 @@ services:
     networks:
       - deltafi
     restart: unless-stopped
+    user: "${USER_ID}:${GROUP_ID}"
     volumes:
       - ${DATA_DIR}/certs:/certs
   deltafi-nodemonitor:
@@ -176,6 +177,7 @@ services:
     networks:
       - deltafi
     restart: unless-stopped
+    user: "${USER_ID}:${GROUP_ID}"
     volumes:
       - ${DATA_DIR}:/data/deltafi
   file-ingress:
@@ -204,7 +206,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/file-ingress:/watched-dir
-    user: "${USER_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
   deltafi-egress-sink:
     image: ${DELTAFI_EGRESS_SINK}
     container_name: deltafi-egress-sink-service
@@ -226,7 +228,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/egress-sink:/data/deltafi/egress-sink
-    user: "${USER_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
   deltafi-minio:
     image: ${MINIO}
     command: server /export -S /etc/minio/certs/ --address :9000 --console-address :9001
@@ -248,7 +250,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/minio:/export
-    user: "${USER_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
   deltafi-postgres:
     image: ${POSTGRES}
     container_name: deltafi-postgres
@@ -321,7 +323,7 @@ services:
       - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
       - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
     restart: unless-stopped
-    user: "${USER_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
       interval: 10s
@@ -384,7 +386,7 @@ services:
     volumes:
       - ${SETTINGS_DIR}/loki/loki.yaml:/etc/loki/loki.yaml
       - ${DATA_DIR}/loki:/data
-    user: "${USER_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
       interval: 10s
