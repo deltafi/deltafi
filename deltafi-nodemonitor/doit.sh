@@ -241,7 +241,7 @@ convert_to_mbytes() {
             result=$(echo "$value * 1024 * 1024 * 1024 / 1000000" | bc)  # 1 GiB = 1024 * 1024 * 1024 bytes
             ;;
         *)
-            result=$value
+            result=$(echo "$value" | grep -o '^[0-9]*')
             ;;
     esac
     printf "%.0f\n" "$result"
