@@ -20,7 +20,7 @@ image: deltafi/deltafi-build:jdk21.0.5-python3.12-0
     GRADLE: "./gradlew -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
 .golang:
-  image: deltafi/deltafi-build:jdk21.0.7_6-golang1.24.2-alpine-0
+  image: deltafi/deltafi-build:jdk21.0.7_6-golang1.24.3-alpine-0
   variables:
     GOPATH: /cache/go.${CI_CONCURRENT_ID}
 

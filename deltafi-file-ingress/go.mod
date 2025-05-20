@@ -1,6 +1,6 @@
 module deltafi.org/deltafi-file-ingress
 
-go 1.24.2
+go 1.24.3
 
 require (
 	github.com/fsnotify/fsnotify v1.8.0
