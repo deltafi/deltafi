@@ -221,8 +221,8 @@ func (m model) View() string {
 
 	statsRow := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		m.styles.panelStyle.Width(m.width/2-2).Render(fmt.Sprintf("Total DeltaFiles\n%s", totalCount)),
-		m.styles.panelStyle.Width(m.width-m.width/2-2).Render(fmt.Sprintf("In Flight DeltaFiles\n%s", inFlightCount)),
+		m.styles.panelStyle.Align(lipgloss.Center).Width(m.width/2-2).Render(fmt.Sprintf("Total DeltaFiles\n%s", styles.AccentStyle.Render(totalCount))),
+		m.styles.panelStyle.Align(lipgloss.Center).Width(m.width-m.width/2-2).Render(fmt.Sprintf("In Flight DeltaFiles\n%s", styles.AccentStyle.Render(inFlightCount))),
 	)
 
 	s += statsRow + "\n"
