@@ -19,7 +19,7 @@
 <template>
   <div class="system-snapshots-page">
     <PageHeader heading="System Snapshots">
-      <div class="d-flex mb-2">
+      <div class="d-flex">
         <FileUpload ref="fileUploader" v-has-permission:SnapshotCreate mode="basic" choose-label="Import Snapshot" class="p-button p-button-secondary p-button-sm p-button-outlined p-button-secondary-upload mx-1" :auto="true" :custom-upload="true" @uploader="onUpload" />
         <Button v-has-permission:SnapshotCreate label="Create Snapshot" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="onCreateSnapshot()" />
       </div>

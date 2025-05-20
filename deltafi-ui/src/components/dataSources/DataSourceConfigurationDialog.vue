@@ -67,9 +67,7 @@
               </template>
               <dd v-else>
                 <div class="px-2">
-                  <Message severity="info" :closable="false">
-                    No action variables available
-                  </Message>
+                  <Message severity="info" :closable="false"> No action variables available </Message>
                 </div>
               </dd>
             </template>
@@ -173,7 +171,7 @@ const dataSourceTemplate = {
   topic: null,
 };
 
-const rowData = ref(_.cloneDeepWith(props.rowDataProp || dataSourceTemplate));
+const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rowDataProp) ? dataSourceTemplate : props.rowDataProp));
 
 const model = computed({
   get() {

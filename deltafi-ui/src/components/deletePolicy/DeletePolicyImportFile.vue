@@ -86,7 +86,7 @@ const uploadFile = async (file) => {
     notify.error(`Upload failed for ${file.name}`, `Removing ${file.name}.`, 4000);
   } else {
     if (response.data.loadDeletePolicies.success) {
-      notify.success(`Imported ${file.name}`, `Successfully imported plicies from ${file.name}.`, 4000);
+      notify.success(`Imported ${file.name}`, `Successfully imported policies from ${file.name}.`, 4000);
     } else {
       const responseErrors = response.data.loadDeletePolicies.errors;
       if (!_.isEmpty(responseErrors)) {

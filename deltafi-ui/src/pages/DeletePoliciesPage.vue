@@ -19,7 +19,7 @@
 <template>
   <div class="delete-policies-page">
     <PageHeader heading="Delete Policies">
-      <div class="d-flex mb-2">
+      <div class="d-flex">
         <Button label="Export Policies" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies" />
         <DeletePolicyImportFile v-has-permission:DeletePolicyCreate @reload-delete-policies="fetchDeletePolicies()" />
         <div>

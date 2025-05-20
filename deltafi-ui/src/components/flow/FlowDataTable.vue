@@ -29,9 +29,7 @@
         </span>
       </template>
       <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
-        <template #empty>
-          No flows found.
-        </template>
+        <template #empty> No flows found. </template>
         <Column header="Name" field="name" class="name-column" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between">
@@ -43,15 +41,7 @@
                 </DialogTemplate>
               </span>
               <span>
-                <span v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
-                  <i class="ml-2 text-muted fa-solid fa-trash-can" />
-                </span>
-                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data, true)">
-                  <i v-tooltip.top="{ value: `Edit`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-pencil" />
-                </PermissionedRouterLink>
-                <PermissionedRouterLink v-if="$hasPermission('FlowPlanCreate')" :to="{ path: 'transform-builder/' }" @click="setTransformParams(data)">
-                  <i v-tooltip.top="{ value: `Clone`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-clone" />
-                </PermissionedRouterLink>
+                <FlowNameColumnButtonGroup key="name" :row-data-prop="data" @reload-Transforms="refresh" @remove-transform-from-table="removeFlowFromProp" />
               </span>
             </div>
           </template>
@@ -90,10 +80,10 @@
         <Column class="flow-state-column">
           <template #body="{ data }">
             <template v-if="_.isEqual(data.flowStatus.state, 'INVALID')">
-              <FlowStateValidationButton :row-data-prop="data" @update-flows="emit('updateFlows')" />
+              <FlowStateValidationButton :row-data-prop="data" @reload-transforms="refresh" />
             </template>
             <template v-else>
-              <FlowStateInputSwitch :row-data-prop="data" @change="emit('updateFlows')" />
+              <FlowStateInputSwitch :row-data-prop="data" @change="refresh" />
             </template>
           </template>
         </Column>
@@ -112,6 +102,7 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
+import FlowNameColumnButtonGroup from "@/components/flow/FlowNameColumnButtonGroup.vue";
 import FlowStateInputSwitch from "@/components/flow/FlowStateInputSwitch.vue";
 import FlowStateValidationButton from "@/components/flow/FlowStateValidationButton.vue";
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
@@ -119,9 +110,7 @@ import SubscribeCell from "@/components/SubscribeCell.vue";
 import PublishCell from "@/components/PublishCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { useStorage, StorageSerializers } from "@vueuse/core";
 import { onBeforeMount, ref, reactive, onUnmounted, watch } from "vue";
 import ContextMenu from "primevue/contextmenu";
 import Column from "primevue/column";
@@ -134,13 +123,11 @@ import _ from "lodash";
 
 const notify = useNotifications();
 const confirm = useConfirm();
-const { removeTransformFlowPlanByName } = useFlowPlanQueryBuilder();
 
 const autoRefresh = null;
-const emit = defineEmits(["updateFlows"]);
+const emit = defineEmits(["reloadTransforms"]);
 const flowData = ref({});
 const flowDataByPlugin = ref({});
-const linkedTransform = useStorage("linked-transform-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const { startTransformFlowByName, stopTransformFlowByName, enableTestTransformFlowByName, disableTestTransformFlowByName } = useFlowQueryBuilder();
 const menu = ref();
@@ -186,7 +173,7 @@ const props = defineProps({
     required: true,
   },
   flowDataProp: {
-    type: Object,
+    type: Array,
     required: true,
   },
   pluginNameSelectedProp: {
@@ -221,7 +208,7 @@ const runForAllFlowsForPlugin = (runType) => {
       notify.info("Disabling Test Mode", `Disabling Test Mode for all <b>${selectedPlugin.value}</b> transforms.`, 3000);
       await disableTestTransformFlowByName(element.name);
     }
-    emit("updateFlows");
+    emit("reloadTransforms");
   });
 };
 const filters = ref({
@@ -258,17 +245,6 @@ watch(
     flowData.value = props.flowDataProp;
   }
 );
-const deleteFlow = async (data) => {
-  let response = false;
-  response = await removeTransformFlowPlanByName(data.name);
-  if (response) {
-    notify.success(`Removed ${data.flowType}:`, data.name);
-    removeFlowFromProp(data);
-    emit("updateFlows");
-  } else {
-    notify.error(`Failed to remove`, data.name);
-  }
-};
 
 const onPanelRightClick = (event, curentPlugin) => {
   selectedPlugin.value = curentPlugin;
@@ -289,24 +265,6 @@ const errorTooltip = (data) => {
 
 const actionRowClass = (data) => {
   return !_.isEmpty(data.flowStatus.errors) ? "table-danger action-error" : null;
-};
-
-const confirmationPopup = (event, data) => {
-  if (_.isEqual(data.flowStatus.state, "RUNNING")) {
-    notify.warn(`Unable to remove running flow: `, data.name);
-    return;
-  }
-  confirm.require({
-    target: event.currentTarget,
-    message: `Are you sure you want to remove ${data.name}?`,
-    icon: "pi pi-exclamation-triangle",
-    acceptLabel: "Remove",
-    rejectLabel: "Cancel",
-    accept: () => {
-      deleteFlow(data);
-    },
-    reject: () => { },
-  });
 };
 
 const confirmAllFlows = (runType, message) => {
@@ -333,13 +291,13 @@ const confirmAllFlows = (runType, message) => {
 };
 
 const removeFlowFromProp = (data) => {
-  flowData.value[props.flowTypeProp] = flowData.value[props.flowTypeProp].filter((flow) => {
+  flowData.value = flowData.value.filter((flow) => {
     return flow.name !== data.name;
   });
 };
 
-const setTransformParams = (data, editExistingTransform) => {
-  linkedTransform.value["transformParams"] = { type: data.flowType, selectedTransformName: data.name, selectedTransform: data, editExistingTransform: editExistingTransform };
+const refresh = async () => {
+  emit("reloadTransforms");
 };
 </script>
 

@@ -41,6 +41,12 @@ export default function useDataSource() {
       artifactId: true,
       version: true,
     },
+    annotationConfig: {
+      annotations: true,
+      metadataPatterns: true,
+      discardPrefix: true,
+    },
+    metadata: true,
     __typename: true,
     topic: true,
   };
@@ -115,9 +121,9 @@ export default function useDataSource() {
     const query = {
       setFlowState: {
         __args: {
-          flowType: new EnumType('REST_DATA_SOURCE'),
+          flowType: new EnumType("REST_DATA_SOURCE"),
           flowName: name,
-          flowState: new EnumType('RUNNING'),
+          flowState: new EnumType("RUNNING"),
         },
       },
     };
@@ -129,9 +135,9 @@ export default function useDataSource() {
     const query = {
       setFlowState: {
         __args: {
-          flowType: new EnumType('TIMED_DATA_SOURCE'),
+          flowType: new EnumType("TIMED_DATA_SOURCE"),
           flowName: name,
-          flowState: new EnumType('RUNNING'),
+          flowState: new EnumType("RUNNING"),
         },
       },
     };
@@ -143,9 +149,9 @@ export default function useDataSource() {
     const query = {
       setFlowState: {
         __args: {
-          flowType: new EnumType('REST_DATA_SOURCE'),
+          flowType: new EnumType("REST_DATA_SOURCE"),
           flowName: name,
-          flowState: new EnumType('STOPPED'),
+          flowState: new EnumType("STOPPED"),
         },
       },
     };
@@ -157,9 +163,9 @@ export default function useDataSource() {
     const query = {
       setFlowState: {
         __args: {
-          flowType: new EnumType('TIMED_DATA_SOURCE'),
+          flowType: new EnumType("TIMED_DATA_SOURCE"),
           flowName: name,
-          flowState: new EnumType('STOPPED'),
+          flowState: new EnumType("STOPPED"),
         },
       },
     };
@@ -210,7 +216,7 @@ export default function useDataSource() {
 
   const removeDataSourcePlan = (name: string, dataSourceType: string) => {
     let query = {};
-    if (dataSourceType === 'REST_DATA_SOURCE') {
+    if (dataSourceType === "REST_DATA_SOURCE") {
       query = {
         removeRestDataSourcePlan: {
           __args: {
@@ -218,7 +224,7 @@ export default function useDataSource() {
           },
         },
       };
-    } else if (dataSourceType === 'TIMED_DATA_SOURCE') {
+    } else if (dataSourceType === "TIMED_DATA_SOURCE") {
       query = {
         removeTimedDataSourcePlan: {
           __args: {

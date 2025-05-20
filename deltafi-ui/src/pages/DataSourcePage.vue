@@ -19,26 +19,34 @@
 <template>
   <div>
     <PageHeader heading="Data Sources">
-      <div class="mb-2">
-        <DialogTemplate component-name="dataSources/DataSourceConfigurationDialog" header="Add New Data Source" dialog-width="50vw" @reload-data-sources="refresh">
-          <Button v-has-permission:FlowPlanCreate label="Add Data Source" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
-        </DialogTemplate>
+      <div class="d-flex">
+        <div class="btn-toolbar">
+          <IconField iconPosition="left">
+            <InputIcon class="pi pi-search"> </InputIcon>
+            <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
+          </IconField>
+          <DataSourcePageHeaderButtonGroup :export-data-sources="dataSourceExport" @reload-data-sources="refresh" />
+        </div>
       </div>
     </PageHeader>
-    <RestDataSourcesPanel ref="restDataSourcesPanel" @data-sources-list="exportableDataSource" />
-    <TimedDataSourcesPanel ref="timedDataSourcesPanel" @data-sources-list="exportableDataSource" />
+    <RestDataSourcesPanel ref="restDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableRestDataSource" />
+    <TimedDataSourcesPanel ref="timedDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableTimedDataSource" />
   </div>
 </template>
 
 <script setup>
-import useTopics from "@/composables/useTopics";
-import DialogTemplate from "@/components/DialogTemplate.vue";
+import DataSourcePageHeaderButtonGroup from "@/components/dataSources/DataSourcePageHeaderButtonGroup.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import RestDataSourcesPanel from "@/components/dataSources/RestDataSourcesPanel.vue";
 import TimedDataSourcesPanel from "@/components/dataSources/TimedDataSourcesPanel.vue";
-import { ref, inject, onMounted, provide, onUnmounted, onBeforeMount } from "vue";
+import useTopics from "@/composables/useTopics";
+import { computed, inject, onBeforeMount, onMounted, onUnmounted, provide, ref } from "vue";
 
-import Button from "primevue/button";
+import _ from "lodash";
+
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
+import InputText from "primevue/inputtext";
 
 const { getAllTopics } = useTopics();
 const refreshInterval = 5000; // 5 seconds
@@ -46,6 +54,7 @@ const isIdle = inject("isIdle");
 const restDataSourcesPanel = ref(null);
 const timedDataSourcesPanel = ref(null);
 const editing = ref(false);
+const filterFlowsText = ref("");
 provide("isEditing", editing);
 let autoRefresh;
 
@@ -56,7 +65,7 @@ const refresh = async () => {
 
 onBeforeMount(async () => {
   await getAllTopics();
-})
+});
 
 onMounted(() => {
   autoRefresh = setInterval(() => {
@@ -70,9 +79,27 @@ onUnmounted(() => {
   clearInterval(autoRefresh);
 });
 
-const dataSourceList = ref(null);
+const restDataSourceList = ref([]);
+const timedDataSourceList = ref([]);
 
-const exportableDataSource = (value) => {
-  dataSourceList.value = value;
+const dataSourceExport = computed(() => {
+  const dataSourceObject = {};
+  dataSourceObject["restDataSources"] = restDataSourceList.value;
+  dataSourceObject["timedDataSources"] = timedDataSourceList.value;
+  return dataSourceObject;
+});
+
+const exportableRestDataSource = (value) => {
+  const formatRestDataSourcesList = JSON.parse(JSON.stringify(value));
+  formatRestDataSourcesList.forEach((e, index) => (formatRestDataSourcesList[index] = _.pick(e, ["name", "type", "description", "metadata", "annotationConfig", "topic"])));
+
+  restDataSourceList.value = formatRestDataSourcesList;
+};
+
+const exportableTimedDataSource = (value) => {
+  const formatTimedDataSourceList = JSON.parse(JSON.stringify(value));
+  formatTimedDataSourceList.forEach((e, index) => (formatTimedDataSourceList[index] = _.pick(e, ["name", "type", "description", "metadata", "topic", "cronSchedule", "timedIngressAction.name", "timedIngressAction.type", "timedIngressAction.parameters", "timedIngressAction.apiVersion", "timedIngressAction.join", "annotationConfig.annotations", "annotationConfig.metadataPatterns", "annotationConfig.discardPrefix"])));
+
+  timedDataSourceList.value = formatTimedDataSourceList;
 };
 </script>

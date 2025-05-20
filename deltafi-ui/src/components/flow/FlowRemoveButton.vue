@@ -23,18 +23,16 @@
 </template>
 
 <script setup>
-import useDataSource from "@/composables/useDataSource";
+import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { defineExpose, reactive } from "vue";
-
-import _ from "lodash";
+import { reactive } from "vue";
 
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
-const { removeDataSourcePlan } = useDataSource();
-const emit = defineEmits(["reloadDataSources"]);
+const { removeTransformFlowPlanByName } = useFlowPlanQueryBuilder();
+const emit = defineEmits(["reloadTransforms", "removeTransformFromTable"]);
 const notify = useNotifications();
 
 const props = defineProps({
@@ -50,34 +48,30 @@ const confirmationPopup = () => {
   confirm.require({
     position: "center",
     group: rowData.name,
-    message: `Remove ${rowData.name} Data Source?`,
+    message: `Remove ${rowData.name} Transform?`,
     acceptLabel: "Remove",
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",
     accept: () => {
-      notify.info("Removing Data Source", `Removing Data Source ${rowData.name}.`, 3000);
-      confirmedRemoveDataSource();
+      notify.info("Removing Transform", `Removing Transform ${rowData.name}.`, 3000);
+      confirmedRemoveTransform();
     },
     reject: () => { },
   });
 };
 
-const confirmedRemoveDataSource = async () => {
-  let response = await removeDataSourcePlan(rowData.name, rowData.type);
+const confirmedRemoveTransform = async () => {
+  let response = await removeTransformFlowPlanByName(rowData.name);
 
-  if (_.isEqual(rowData.type, "REST_DATA_SOURCE")) {
-    response = response.data.removeRestDataSourcePlan;
-  } else {
-    response = response.data.removeTimedDataSourcePlan;
-  }
+  response = response.data.removeTransformFlowPlan;
 
   if (response) {
-    notify.success("Removed Data Source", `Removed Data Source ${rowData.name}.`, 3000);
+    notify.success("Removed Transform", `Removed Transform ${rowData.name}.`, 3000);
   } else {
-    notify.error("Error Removing Data Source", `Error removing Data Source ${rowData.name}.`, 3000);
+    notify.error("Error Removing Transform", `Error removing Transform ${rowData.name}.`, 3000);
   }
-
-  emit("reloadDataSources");
+  emit("removeTransformFromTable", rowData);
+  emit("reloadTransforms");
 };
 
 const showDialog = () => {

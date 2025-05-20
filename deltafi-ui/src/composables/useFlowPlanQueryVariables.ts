@@ -43,6 +43,7 @@ export const defaultActionFields = {
 
 export const transformFlowFields = {
   name: true,
+  type: true,
   subscribe: {
     condition: true,
     topic: true,
@@ -51,12 +52,12 @@ export const transformFlowFields = {
     matchingPolicy: true,
     defaultRule: {
       defaultBehavior: true,
-      topic: true
+      topic: true,
     },
     rules: {
       condition: true,
       topic: true,
-    }
+    },
   },
   description: true,
   flowStatus: {

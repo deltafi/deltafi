@@ -19,7 +19,7 @@
 <template>
   <div class="timed-data-source-panel">
     <CollapsiblePanel header="Timed Data Sources" class="table-panel pb-3">
-      <DataTable :loading="showLoading" :value="timedDataSources" data-key="name" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines data-sources-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
+      <DataTable v-model:filters="filters" :loading="showLoading" :value="timedDataSources" data-key="name" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines data-sources-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
         <template #empty> No Timed Data Sources found. </template>
         <template #loading> Loading Timed Data Sources. Please wait. </template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
@@ -28,16 +28,7 @@
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-data-sources="refresh" />
-                  <DialogTemplate ref="updateDataSourceDialog" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @reload-data-sources="refresh">
-                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" />
-                  </DialogTemplate>
-                  <DialogTemplate ref="updateDataSourceDialog" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="cloneDataSource(data)" @reload-data-sources="refresh">
-                    <i v-if="$hasPermission('FlowPlanCreate')" v-tooltip.top="`Clone`" class="ml-2 text-muted pi pi-clone cursor-pointer" />
-                  </DialogTemplate>
-                  <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
-                    <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />
-                  </PermissionedRouterLink>
+                  <DataSourceNameColumnButtonGroup key="name" :row-data-prop="data" @reload-data-sources="refresh" />
                 </span>
               </span>
             </div>
@@ -120,16 +111,14 @@
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import DialogTemplate from "@/components/DialogTemplate.vue";
-import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
+import DataSourceNameColumnButtonGroup from "@/components/dataSources/DataSourceNameColumnButtonGroup.vue";
 import StatusBadge from "@/components/dataSources/StatusBadge.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
-import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import TimedDataSourceTestModeInputSwitch from "@/components/dataSources/TimedDataSourceTestModeInputSwitch.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
-import { computed, onMounted, inject, ref } from "vue";
+import { computed, onMounted, inject, ref, watch } from "vue";
 import CronScheduleEditDialog from "@/components/dataSources/CronScheduleEditDialog.vue";
 
 const cronEditView = ref({
@@ -139,6 +128,7 @@ const cronEditView = ref({
 const cronString = require("cronstrue");
 import _ from "lodash";
 
+import { FilterMatchMode } from "primevue/api";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
@@ -148,12 +138,31 @@ const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
 const { getTimedDataSources, setTimedDataSourceCronSchedule, setTimedDataSourceMaxErrors, loaded, loading, errors } = useDataSource();
+
+const props = defineProps({
+  filterFlowsTextProp: {
+    type: String,
+    required: false,
+    default: null,
+  },
+});
+
 const showLoading = computed(() => loading.value && !loaded.value);
 const timedDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
 const onEditCancel = () => (editing.value = false);
-const updateDataSourceDialog = ref(null);
 const confirming = ref(false);
+
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+});
+
+watch(
+  () => props.filterFlowsTextProp,
+  () => {
+    filters.value["global"].value = props.filterFlowsTextProp;
+  }
+);
 
 const onEditComplete = async (event) => {
   const { data, newValue, field } = event;
@@ -223,16 +232,6 @@ const showAction = (actionName) => {
   viewDialogVisible.value = true;
 };
 // End Dialog
-
-const cloneDataSource = (data) => {
-  const clonedDataSourceObject = _.cloneDeepWith(data);
-  clonedDataSourceObject["name"] = "";
-  return clonedDataSourceObject;
-};
-
-const concatMvnCoordinates = (sourcePlugin) => {
-  return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
-};
 
 const refresh = async () => {
   // Do not refresh data while editing or confirming.

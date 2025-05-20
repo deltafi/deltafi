@@ -19,7 +19,7 @@
 <template>
   <div class="auto-resume-page">
     <PageHeader heading="Auto Resume">
-      <div class="d-flex mb-2">
+      <div class="d-flex">
         <Button label="Export Rules" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportAutoResume()" />
         <AutoResumeImportFile v-has-permission:ResumePolicyCreate @reload-resume-rules="fetchAutoResumeRules()" />
         <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="{}" @reload-resume-rules="fetchAutoResumeRules()">

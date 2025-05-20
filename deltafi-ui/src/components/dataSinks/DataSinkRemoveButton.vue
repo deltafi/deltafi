@@ -18,20 +18,7 @@
 
 <template>
   <span>
-    <ConfirmPopup />
-    <ConfirmPopup :group="rowData.name">
-      <template #message="slotProps">
-        <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
-          <p class="pl-2">
-            {{ slotProps.message.message }}
-          </p>
-        </div>
-      </template>
-    </ConfirmPopup>
-    <span v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, rowData.name)">
-      <i class="ml-2 text-muted fa-solid fa-trash-can" />
-    </span>
+    <ConfirmDialog :group="rowData.name" />
   </span>
 </template>
 
@@ -40,12 +27,12 @@ import useEgressActions from "@/composables/useDataSink";
 import useNotifications from "@/composables/useNotifications";
 import { reactive } from "vue";
 
-import ConfirmPopup from "primevue/confirmpopup";
+import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
 const { removeDataSinkPlan } = useEgressActions();
-const emit = defineEmits(["reloadEgressActions"]);
+const emit = defineEmits(["reloadDataSinks"]);
 const notify = useNotifications();
 
 const props = defineProps({
@@ -57,24 +44,40 @@ const props = defineProps({
 
 const { rowDataProp: rowData } = reactive(props);
 
-const confirmationPopup = (event, actionName) => {
+const confirmationPopup = () => {
   confirm.require({
-    target: event.currentTarget,
-    group: `${actionName}`,
-    message: `Remove ${actionName} Egress?`,
+    position: "center",
+    group: rowData.name,
+    message: `Remove ${rowData.name} Data Sink?`,
     acceptLabel: "Remove",
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",
     accept: () => {
-      notify.info("Removing Egress", `Removing ${actionName}.`, 3000);
-      confirmedRemoveEgressAction(actionName);
+      notify.info("Removing Data Sink", `Removing Data Sink ${rowData.name}.`, 3000);
+      confirmedRemoveDataSink();
     },
     reject: () => { },
   });
 };
 
-const confirmedRemoveEgressAction = async (actionName) => {
-  await removeDataSinkPlan(actionName);
-  emit("reloadEgressActions");
+const confirmedRemoveDataSink = async () => {
+  let response = await removeDataSinkPlan(rowData.name, rowData.type);
+
+  response = response.data.removeDataSinkPlan;
+
+  if (response) {
+    notify.success("Removed Data Sink", `Removed Data Sink ${rowData.name}.`, 3000);
+  } else {
+    notify.error("Error Removing Data Sink", `Error removing Data Sink ${rowData.name}.`, 3000);
+  }
+  emit("reloadDataSinks");
 };
+
+const showDialog = () => {
+  confirmationPopup();
+};
+
+defineExpose({
+  showDialog,
+});
 </script>

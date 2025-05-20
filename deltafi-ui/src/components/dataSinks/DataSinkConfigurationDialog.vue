@@ -34,7 +34,7 @@
         <dl>
           <dt>Name*</dt>
           <dd>
-            <InputText v-model="model['name']" placeholder="Data Sink Name" :disabled="editEgressAction" class="inputWidth" />
+            <InputText v-model="model['name']" placeholder="Data Sink Name" :disabled="editDataSink" class="inputWidth" />
           </dd>
           <dt>Description*</dt>
           <dd>
@@ -70,9 +70,7 @@
             </template>
             <dd v-else>
               <div class="px-2">
-                <Message severity="info" :closable="false">
-                  No action variables available
-                </Message>
+                <Message severity="info" :closable="false"> No action variables available </Message>
               </div>
             </dd>
           </template>
@@ -113,7 +111,7 @@ const props = defineProps({
     required: false,
     default: null,
   },
-  editEgressAction: {
+  editDataSink: {
     type: Boolean,
     required: false,
     default: false,
@@ -125,8 +123,8 @@ const props = defineProps({
 });
 
 const { getAllTopicNames } = useTopics();
-const { editEgressAction, closeDialogCommand } = reactive(props);
-const emit = defineEmits(["reloadEgressActions"]);
+const { editDataSink, closeDialogCommand } = reactive(props);
+const emit = defineEmits(["reloadDataSinks"]);
 const { getPluginActionSchema } = useFlowActions();
 const { getAllDataSinks, saveDataSinkPlan } = useDataSink();
 
@@ -166,7 +164,7 @@ const dataSinkTemplate = {
   subscribe: defaultTopicTemplate,
 };
 
-const rowData = ref(_.cloneDeepWith(props.rowDataProp || dataSinkTemplate));
+const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rowDataProp) ? dataSinkTemplate : props.rowDataProp));
 
 const model = computed({
   get() {
@@ -214,7 +212,7 @@ onBeforeMount(async () => {
   allActionsData.value = responseFlowAction.data.plugins;
 
   const response = await getAllDataSinks();
-  dataSinks.value = response.data.getAllFlows.Egress;
+  dataSinks.value = response.data.getAllFlows.dataSinks;
 
   flattenedActionsTypes.value = await getEgressActions();
 
@@ -314,7 +312,7 @@ const submit = async () => {
     const activeSystemEgressActionNames = _.map(dataSinks.value, "name");
     const isFlowNamedUsed = _.includes(activeSystemEgressActionNames, egressActionObject["name"]);
 
-    if (isFlowNamedUsed && !editEgressAction) {
+    if (isFlowNamedUsed && !editDataSink) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
     }
   }
@@ -333,7 +331,7 @@ const submit = async () => {
   }
 
   closeDialogCommand.command();
-  emit("reloadEgressActions");
+  emit("reloadDataSinks");
 };
 
 const clearErrors = () => {

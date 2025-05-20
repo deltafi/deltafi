@@ -19,13 +19,9 @@
 <template>
   <div class="egress-actions-panel">
     <CollapsiblePanel header="Data Sinks" class="table-panel pb-3">
-      <DataTable v-model:filters="filters" :loading="showLoading" :value="egressActionsList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
-        <template #empty>
-          No Data Sinks found.
-        </template>
-        <template #loading>
-          Loading Data Sinks. Please wait.
-        </template>
+      <DataTable v-model:filters="filters" :loading="showLoading" :value="dataSinkList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
+        <template #empty> No Data Sinks found. </template>
+        <template #loading> Loading Data Sinks. Please wait. </template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
@@ -38,7 +34,8 @@
               </span>
               <span>
                 <span class="d-flex align-items-center">
-                  <EgressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-egress-actions="refresh" />
+                  <DataSinkNameColumnButtonGroup key="name" :row-data-prop="data" @reload-data-sinks="refresh" />
+                  <!-- <EgressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanDelete')" :row-data-prop="data" @reload-egress-actions="refresh" />
                   <DialogTemplate ref="updateEgressDialog" component-name="dataSinks/DataSinkConfigurationDialog" header="Edit Egress Action" dialog-width="50vw" :row-data-prop="data" edit-egress-action @reload-egress-actions="refresh">
                     <i v-if="data.sourcePlugin.artifactId === 'system-plugin' && $hasPermission('FlowPlanCreate')" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" />
                   </DialogTemplate>
@@ -47,7 +44,7 @@
                   </DialogTemplate>
                   <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
                     <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />
-                  </PermissionedRouterLink>
+                  </PermissionedRouterLink> -->
                 </span>
               </span>
             </div>
@@ -78,12 +75,11 @@
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import DataSinkNameColumnButtonGroup from "@/components/dataSinks/DataSinkNameColumnButtonGroup.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import EgressActionRemoveButton from "@/components/dataSinks/DataSinkRemoveButton.vue";
-import StateInputSwitch from "@/components/dataSinks/StateInputSwitch.vue";
 import EgressTestModeInputSwitch from "@/components/dataSinks/DataSinkTestModeInputSwitch.vue";
+import StateInputSwitch from "@/components/dataSinks/StateInputSwitch.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
-import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import useDataSink from "@/composables/useDataSink";
 import { computed, inject, onMounted, ref, watch } from "vue";
 
@@ -93,12 +89,11 @@ import { FilterMatchMode } from "primevue/api";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 
-const emit = defineEmits(["egressActionsList"]);
+const emit = defineEmits(["dataSinksList"]);
 const editing = inject("isEditing");
 const { getAllDataSinks, loaded, loading } = useDataSink();
 const showLoading = computed(() => loading.value && !loaded.value);
-const egressActionsList = ref([]);
-const updateEgressDialog = ref(null);
+const dataSinkList = ref([]);
 const confirming = ref(false);
 
 const props = defineProps({
@@ -133,23 +128,18 @@ const errorTooltip = (data) => {
   return _.isEmpty(data.flowStatus.errors) ? "" : " and errors";
 };
 
-const cloneEgressAction = (data) => {
-  const clonedEgressActionObject = _.cloneDeepWith(data);
-  clonedEgressActionObject["name"] = "";
-  return clonedEgressActionObject;
-};
-
-const concatMvnCoordinates = (sourcePlugin) => {
-  return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
-};
-
 const refresh = async () => {
   // Do not refresh data while editing or confirming.
   if (editing.value || confirming.value) return;
 
   const response = await getAllDataSinks();
-  egressActionsList.value = response.data.getAllFlows.dataSink;
-  emit("egressActionsList", egressActionsList.value);
+  dataSinkList.value = response.data.getAllFlows.dataSink;
+  dataSinkList.value = _.map(dataSinkList.value, (obj) => ({
+    ...obj,
+    type: "DATA_SINK",
+  }));
+
+  emit("dataSinksList", dataSinkList.value);
 };
 
 const flowViewerPopup = () => {

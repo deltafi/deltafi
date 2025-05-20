@@ -19,34 +19,31 @@
 <template>
   <div class="transforms-page">
     <PageHeader heading="Transforms">
-      <div class="btn-toolbar mb-2 mb-md-0 align-items-center">
+      <div class="btn-toolbar align-items-center">
         <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field mx-1 transform-dropdown" />
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search"> </InputIcon>
           <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
         </IconField>
-        <PermissionedRouterLink :disabled="!$hasPermission('FlowPlanCreate')" :to="{ path: 'transform-builder' }">
-          <Button v-has-permission:FlowPlanCreate label="Add Transform" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
-        </PermissionedRouterLink>
+        <FlowPageHeaderButtonGroup :export-transforms="transformsExport" @reload-transforms="refresh" />
       </div>
     </PageHeader>
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
     <div v-else>
-      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @update-flows="fetchFlows()" />
+      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @reload-transforms="refresh" />
     </div>
   </div>
 </template>
 
 <script setup>
-import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import FlowDataTable from "@/components/flow/FlowDataTable.vue";
+import FlowPageHeaderButtonGroup from "@/components/flow/FlowPageHeaderButtonGroup.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { onBeforeMount, ref, computed } from "vue";
 import _ from "lodash";
 
-import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
@@ -54,8 +51,8 @@ import InputText from "primevue/inputtext";
 
 const { getAllFlows, loaded, loading } = useFlowQueryBuilder();
 
-const allFlowData = ref("");
-const flowData = ref({});
+const transformsFlowData = ref([]);
+const flowData = ref([]);
 const flowDataByPlugin = ref({});
 const filterFlowsText = ref("");
 const pluginNames = ref([]);
@@ -68,43 +65,52 @@ onBeforeMount(async () => {
 
 const fetchFlows = async () => {
   const response = await getAllFlows();
-  allFlowData.value = response.data.getAllFlows;
-  pluginNames.value = pluginNamesList(allFlowData.value);
-  flowData.value = formatData(allFlowData.value);
-  flowDataByPlugin.value = _.chain(flowData.value.transform).sortBy("artifactId").groupBy("artifactId").value();
+
+  transformsFlowData.value = response.data.getAllFlows.transform;
+  pluginNames.value = pluginNamesList(transformsFlowData.value);
+  flowData.value = formatData(transformsFlowData.value);
+  flowDataByPlugin.value = _.chain(flowData.value).sortBy("artifactId").groupBy("artifactId").value();
 };
 
-const pluginNamesList = (allFlowData) => {
+const pluginNamesList = (data) => {
   const mvnCoordinatesArray = [];
-  Object.values(allFlowData).forEach((flowTypes) => {
-    Object.values(flowTypes).forEach((flow) => {
-      let mvnCoordinates = "";
-      mvnCoordinates = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
-      mvnCoordinatesArray.push({ name: mvnCoordinates });
-    });
+
+  data.forEach((flow) => {
+    let mvnCoordinates = "";
+    mvnCoordinates = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
+    mvnCoordinatesArray.push({ name: mvnCoordinates });
   });
 
   return _.uniqBy(mvnCoordinatesArray, "name").sort((a, b) => a.name.localeCompare(b.name));
 };
 
-const formatData = (allFlowData) => {
-  const formattedFlowData = JSON.parse(JSON.stringify(allFlowData));
-  const flowTypes = ["transform"];
+const formatData = (data) => {
+  const formattedFlowData = JSON.parse(JSON.stringify(data));
 
-  for (const flowType of flowTypes) {
-    formattedFlowData[flowType.toString()].forEach((flow) => {
-      flow["flowType"] = flowType;
-      const mvnCoordinates = "";
-      flow["mvnCoordinates"] = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
-      const searchableFlowKeys = (({ name, description, mvnCoordinates, publish }) => ({ name, description, mvnCoordinates, publish }))(flow);
-      flow["searchField"] = JSON.stringify(Object.values(searchableFlowKeys));
-      flow["artifactId"] = flow.sourcePlugin.artifactId;
-    });
-  }
+  formattedFlowData.forEach((flow) => {
+    flow["flowType"] = "transform";
+    const mvnCoordinates = "";
+    flow["mvnCoordinates"] = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
+    const searchableFlowKeys = (({ name, description, mvnCoordinates, publish }) => ({ name, description, mvnCoordinates, publish }))(flow);
+    flow["searchField"] = JSON.stringify(Object.values(searchableFlowKeys));
+    flow["artifactId"] = flow.sourcePlugin.artifactId;
+  });
+
   return formattedFlowData;
 };
-</script>
 
+const transformsExport = computed(() => {
+  const formatTransformsList = JSON.parse(JSON.stringify(flowData.value));
+  formatTransformsList.forEach((e, index) => (formatTransformsList[index] = _.pick(e, ["name", "type", "description", "subscribe", "transformActions", "publish.matchingPolicy", "publish.defaultRule", "publish.rules"])));
+
+  const transformsObject = {};
+  transformsObject["transforms"] = formatTransformsList;
+  return transformsObject;
+});
+const refresh = async () => {
+  await fetchFlows();
+};
+</script>
 <style>
 .transforms-page {
   .transform-dropdown {

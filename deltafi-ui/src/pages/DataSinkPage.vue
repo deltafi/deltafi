@@ -19,27 +19,26 @@
 <template>
   <div>
     <PageHeader heading="Data Sinks">
-      <div class="btn-toolbar mb-2">
+      <div class="btn-toolbar">
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search"> </InputIcon>
           <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
         </IconField>
-        <DialogTemplate component-name="dataSinks/DataSinkConfigurationDialog" header="Add New Data Sink" dialog-width="50vw" @reload-egress-actions="refresh">
-          <Button v-has-permission:FlowPlanCreate label="Add Data Sink" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
-        </DialogTemplate>
+        <DataSinkPageHeaderButtonGroup :export-data-sinks="dataSinkExport" @reload-data-sinks="refresh" />
       </div>
     </PageHeader>
-    <DataSinksPanel ref="dataSinksPanel" :filter-flows-text-prop="filterFlowsText" @egress-actions-list="exportableDataSinks" />
+    <DataSinksPanel ref="dataSinksPanel" :filter-flows-text-prop="filterFlowsText" @data-sinks-list="exportableRestDataSource" />
   </div>
 </template>
 
 <script setup>
-import DialogTemplate from "@/components/DialogTemplate.vue";
-import PageHeader from "@/components/PageHeader.vue";
+import DataSinkPageHeaderButtonGroup from "@/components/dataSinks/DataSinkPageHeaderButtonGroup.vue";
 import DataSinksPanel from "@/components/dataSinks/DataSinksPanel.vue";
-import { ref, inject, onMounted, provide, onUnmounted } from "vue";
+import PageHeader from "@/components/PageHeader.vue";
+import { computed, inject, onMounted, onUnmounted, provide, ref } from "vue";
 
-import Button from "primevue/button";
+import _ from "lodash";
+
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
@@ -70,7 +69,16 @@ onUnmounted(() => {
 
 const dataSinksList = ref(null);
 
-const exportableDataSinks = (value) => {
-  dataSinksList.value = value;
+const dataSinkExport = computed(() => {
+  const dataSinkObject = {};
+  dataSinkObject["dataSinks"] = dataSinksList.value;
+  return dataSinkObject;
+});
+
+const exportableRestDataSource = (value) => {
+  const formatDataSinksList = JSON.parse(JSON.stringify(value));
+  formatDataSinksList.forEach((e, index) => (formatDataSinksList[index] = _.pick(e, ["name", "type", "description", "subscribe", "egressAction.name", "egressAction.type", "egressAction.parameters", "egressAction.apiVersion", "egressAction.join"])));
+
+  dataSinksList.value = formatDataSinksList;
 };
 </script>

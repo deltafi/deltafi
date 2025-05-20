@@ -28,11 +28,11 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, inject, nextTick, ref, useAttrs } from "vue";
+import { computed, defineAsyncComponent, defineExpose, inject, nextTick, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
 import _ from "lodash";
 
-const components = import.meta.glob('@/components/**/*.vue')
+const components = import.meta.glob("@/components/**/*.vue");
 const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate"]);
 const hasPermission = inject("hasPermission");
 const dialogTemplate = ref(null);
@@ -102,6 +102,10 @@ const showDialog = async () => {
 const closeDialog = () => {
   dialogVisible.value = false;
 };
+
+defineExpose({
+  showDialog,
+});
 </script>
 
 <style />

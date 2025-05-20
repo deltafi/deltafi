@@ -19,7 +19,7 @@
 <template>
   <div>
     <PageHeader heading="Topics">
-      <div class="d-flex mb-2 btn-toolbar">
+      <div class="d-flex btn-toolbar">
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search"> </InputIcon>
           <InputText v-model="filters['global'].value" class="deltafi-input-field mx-1" placeholder="Search" />

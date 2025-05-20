@@ -67,7 +67,7 @@ export default function useDataSink() {
         },
       },
     };
-    return sendGraphQLQuery(query, "getAllFlows");
+    return sendGraphQLQuery(query, "getAllDataSinks");
   };
 
   // Starts a data sink
@@ -75,9 +75,9 @@ export default function useDataSink() {
     const query = {
       setFlowState: {
         __args: {
-          flowType: new EnumType('DATA_SINK'),
+          flowType: new EnumType("DATA_SINK"),
           flowName: flowName,
-          flowState: new EnumType('RUNNING'),
+          flowState: new EnumType("RUNNING"),
         },
       },
     };
@@ -89,9 +89,9 @@ export default function useDataSink() {
     const query = {
       setFlowState: {
         __args: {
-          flowType: new EnumType('DATA_SINK'),
+          flowType: new EnumType("DATA_SINK"),
           flowName: flowName,
-          flowState: new EnumType('PAUSED'),
+          flowState: new EnumType("PAUSED"),
         },
       },
     };
@@ -103,9 +103,9 @@ export default function useDataSink() {
     const query = {
       setFlowState: {
         __args: {
-          flowType: new EnumType('DATA_SINK'),
+          flowType: new EnumType("DATA_SINK"),
           flowName: flowName,
-          flowState: new EnumType('STOPPED'),
+          flowState: new EnumType("STOPPED"),
         },
       },
     };
