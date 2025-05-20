@@ -40,7 +40,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class HttpEgressTest {
+class HttpEgressTest {
     private static final String URL_CONTEXT = "/endpoint";
     private static final String CONTENT = "This is the test content.";
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
@@ -54,12 +54,12 @@ public class HttpEgressTest {
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("HttpEgressTest");
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         wireMockHttp.resetAll();
     }
 
     @Test
-    public void egressDelete() {
+    void egressDelete() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.delete(URL_CONTEXT)
@@ -75,11 +75,12 @@ public class HttpEgressTest {
     }
 
     @Test
-    public void egressPost() {
+    void egressPost() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
                 .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
                         "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
                         "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
@@ -92,12 +93,13 @@ public class HttpEgressTest {
     }
 
     @Test
-    public void egressPostWithExtraHeaders() {
+    void egressPostWithExtraHeaders() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo("xml"))
                 .withHeader("extraKey", WireMock.equalTo("extraValue"))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
                 .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
                         "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
                         "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
@@ -111,11 +113,12 @@ public class HttpEgressTest {
     }
 
     @Test
-    public void egressPut() {
+    void egressPut() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.put(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
                 .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
                         "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
                         "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
@@ -128,11 +131,12 @@ public class HttpEgressTest {
     }
 
     @Test
-    public void egressPatch() {
+    void egressPatch() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.patch(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
                 .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
                         "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
                         "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))

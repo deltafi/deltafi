@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.util.*;
 
@@ -79,14 +80,14 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
-        return HttpRequest.BodyPublishers.ofInputStream(() -> {
+        return HttpRequest.BodyPublishers.fromPublisher(BodyPublishers.ofInputStream(() -> {
             try {
                 return this.openInputStream(context, input);
             } catch (IOException e) {
                 log.error("Failed to open input stream", e);
                 throw new UncheckedIOException(e);
             }
-        });
+        }), input.getContent().getSize());
     }
 
     protected InputStream openInputStream(@NotNull ActionContext context, @NotNull EgressInput input)

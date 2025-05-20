@@ -27,6 +27,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,6 +43,19 @@ public class FlowfileEgress extends HttpEgressBase<HttpEgressParameters> {
     public FlowfileEgress(HttpService httpService) {
         super(String.format("Egresses content and metadata in a NiFi V1 FlowFile (%s).", APPLICATION_FLOWFILE),
                 httpService);
+    }
+
+    @Override
+    protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
+        // the FLowFile size will be different than the content size, override the method so it does not include Content-Length
+        return HttpRequest.BodyPublishers.ofInputStream(() -> {
+            try {
+                return this.openInputStream(context, input);
+            } catch (IOException e) {
+                log.error("Failed to open input stream", e);
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
     @Override
