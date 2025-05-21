@@ -31,6 +31,7 @@ import org.deltafi.core.types.DiskMetrics;
 import org.deltafi.core.types.AppInfo;
 import org.deltafi.core.types.AppName;
 import org.deltafi.core.types.NodeMetrics;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -51,6 +52,7 @@ public class SystemService {
 
     private final PlatformService platformService;
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
+    private final BuildProperties buildProperties;
 
     private Map<String, NodeMetrics> cachedNodeMetrics;
     private List<String> cachedContentNodeNames;
@@ -77,6 +79,7 @@ public class SystemService {
 
         try {
             ObjectNode statusJson = MAPPER.readValue(status, ObjectNode.class);
+            statusJson.put("version", buildProperties.getVersion());
             return new Status(statusJson);
         } catch (IOException ioException) {
             throw new SystemStatusException("Unable to parse the system status");
