@@ -333,14 +333,17 @@ release:
     description: "release_notes.md"
     assets:
       links:
-        - name: "deltafi ${CI_COMMIT_TAG} (darwin, arm64, tgz)"
-          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-darwin-arm64.tgz"
+        - name: "deltafi ${CI_COMMIT_TAG} (linux, amd64, tgz)"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-linux-amd64.tgz"
+          link_type: "package"
+        - name: "deltafi ${CI_COMMIT_TAG} (linux, arm64, tgz)"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-linux-arm64.tgz"
           link_type: "package"
         - name: "deltafi ${CI_COMMIT_TAG} (darwin, amd64, tgz)"
           url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-darwin-amd64.tgz"
           link_type: "package"
-        - name: "deltafi ${CI_COMMIT_TAG} (linux, amd64, tgz)"
-          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-linux-amd64.tgz"
+        - name: "deltafi ${CI_COMMIT_TAG} (darwin, arm64, tgz)"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${CI_PROJECT_NAME}/${CI_COMMIT_TAG}/deltafi-${CI_COMMIT_TAG}-darwin-arm64.tgz"
           link_type: "package"
   artifacts:
     paths:
