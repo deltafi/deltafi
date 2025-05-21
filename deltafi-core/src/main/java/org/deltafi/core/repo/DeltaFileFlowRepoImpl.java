@@ -110,7 +110,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         StringBuilder sql = new StringBuilder("""
             SELECT dff.error_or_filter_cause, fd.name, fd.type, COUNT(dff.id) AS count, ARRAY_AGG(dff.delta_file_id) AS dids
             FROM delta_file_flows dff
-            LEFT JOIN flow_definitions fd
+            JOIN flow_definitions fd
             ON dff.flow_definition_id = fd.id
             WHERE dff.state = CAST(:state AS dff_state_enum)\s""");
 

@@ -68,7 +68,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         String deltaFileQuery = """
             SELECT DISTINCT df FROM DeltaFile df
-            LEFT JOIN FETCH df.flows f
+            JOIN FETCH df.flows f
             LEFT JOIN FETCH df.annotations a
             WHERE df.did IN :dids
         """;
