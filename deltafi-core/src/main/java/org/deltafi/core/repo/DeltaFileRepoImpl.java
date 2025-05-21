@@ -187,12 +187,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, int batchSize) {
         String queryStr = """
             SELECT DISTINCT df.did
-            FROM delta_files df
-            JOIN delta_file_flows dff
+            FROM delta_file_flows dff
+            JOIN delta_files df
             ON dff.delta_file_id = df.did
             WHERE df.stage = 'ERROR'
             AND df.content_deleted IS NULL
             AND dff.state = 'ERROR'
+            AND dff.error_acknowledged IS NULL
             AND dff.next_auto_resume < :maxReadyTime
             LIMIT :batchSize
             """;
