@@ -73,7 +73,7 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
             COUNT(*) as in_flight_count,
             COALESCE(SUM(referenced_bytes), 0) as in_flight_bytes
           FROM delta_files
-          WHERE stage = 'IN_FLIGHT'
+          WHERE stage = 'IN_FLIGHT'::df_stage_enum
         )
         SELECT
           CASE
