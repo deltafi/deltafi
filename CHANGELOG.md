@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.19.0] - 2025-05-20
+
+### Added
+- Added the ability to import and export flows from the Data Source, Transform, and Data Sink Pages 
+- Added Linux/arm64 to the distribution architectures
+
+### Changed
+- The HttpEgress action now includes the `Content-Length` header in the request
+
+### Fixed
+- Bash bug in nodemonitor doit.sh that occasionally generates an error upon startup
+- Fixed compose user for deltafi-node-fastdelete and deltafi-core-actions
+- Made compose user/group consistent for all images
+- TUI: Dashboard layout fixed
+
+### Tech-Debt/Refactor
+- Improve performance of auto-resume 
+
 ## [2.18.0] - 2025-05-19
 
 ### Added
@@ -4187,7 +4205,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.18.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.19.0...main
+[2.19.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.18.0...2.19.0
 [2.18.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.17.0...2.18.0
 [2.17.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.16.0...2.17.0
 [2.16.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.15.1...2.16.0
