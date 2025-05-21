@@ -184,23 +184,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
+    public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, int batchSize) {
         String queryStr = """
-            SELECT df.did
+            SELECT DISTINCT df.did
             FROM delta_files df
+            JOIN delta_file_flows dff
+            ON dff.delta_file_id = df.did
             WHERE df.stage = 'ERROR'
             AND df.content_deleted IS NULL
-            AND EXISTS (
-                SELECT 1
-                FROM delta_file_flows dff
-                WHERE dff.delta_file_id = df.did
-                AND dff.state = 'ERROR'
-                AND dff.next_auto_resume < :maxReadyTime
-            )
+            AND dff.state = 'ERROR'
+            AND dff.next_auto_resume < :maxReadyTime
+            LIMIT :batchSize
             """;
 
         Query query = entityManager.createNativeQuery(queryStr, UUID.class)
-                .setParameter("maxReadyTime", maxReadyTime);
+                .setParameter("maxReadyTime", maxReadyTime)
+                .setParameter("batchSize", batchSize);
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = query.getResultList();

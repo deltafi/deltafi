@@ -2320,15 +2320,17 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(shouldResume, shouldNotResume, notResumable, cancelled, contentDeleted, shouldAlsoResume), 1000);
 
-		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(NOW);
+		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(NOW, 5000);
 		assertEquals(2, hits.size());
 		assertEquals(Stream.of(shouldResume, shouldAlsoResume).map(DeltaFile::getDid).sorted().toList(),
 				hits.stream().map(DeltaFile::getDid).sorted().toList());
 
-		assertEquals(2, deltaFilesService.autoResume(NOW));
+		// test that splitting into two batches works
+		assertEquals(2, deltaFilesService.autoResume(NOW, 1));
 
-		Mockito.verify(metricService).increment
-				(new Metric(DeltaFiConstants.FILES_AUTO_RESUMED, 2)
+		// metrics should be incremented once for each batch
+		Mockito.verify(metricService, times(2)).increment
+				(new Metric(DeltaFiConstants.FILES_AUTO_RESUMED, 1)
 						.addTag(DATA_SOURCE, TRANSFORM_FLOW_NAME));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}

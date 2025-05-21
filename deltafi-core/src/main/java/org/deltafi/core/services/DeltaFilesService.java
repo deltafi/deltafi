@@ -1690,35 +1690,39 @@ public class DeltaFilesService {
     }
 
     public void autoResume() {
-        autoResume(OffsetDateTime.now(clock));
+        autoResume(OffsetDateTime.now(clock), REQUEUE_BATCH_SIZE);
     }
 
-    public int autoResume(OffsetDateTime timestamp) {
+    public int autoResume(OffsetDateTime timestamp, int batchSize) {
         int queued = 0;
-        List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp);
-        if (!autoResumeDeltaFiles.isEmpty()) {
-            Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
-                    .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
-            List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles, Collections.emptyList());
+        int currentBatchSize = batchSize;
+        while (currentBatchSize == batchSize) {
             Map<String, Integer> countByFlow = new HashMap<>();
-            for (RetryResult result : results) {
-                if (result.getSuccess()) {
-                    ++queued;
-                    String flow = flowByDid.get(result.getDid());
-                    Integer count = 1;
-                    if (countByFlow.containsKey(flow)) {
-                        count += countByFlow.get(flow);
+            List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp, batchSize);
+            currentBatchSize = autoResumeDeltaFiles.size();
+            if (!autoResumeDeltaFiles.isEmpty()) {
+                Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
+                        .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
+                List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles, Collections.emptyList());
+                for (RetryResult result : results) {
+                    if (result.getSuccess()) {
+                        ++queued;
+                        String flow = flowByDid.get(result.getDid());
+                        Integer count = 1;
+                        if (countByFlow.containsKey(flow)) {
+                            count += countByFlow.get(flow);
+                        }
+                        countByFlow.put(flow, count);
+                    } else {
+                        log.error("Auto-resume: {}", result.getError());
                     }
-                    countByFlow.put(flow, count);
-                } else {
-                    log.error("Auto-resume: {}", result.getError());
                 }
-            }
-            if (queued > 0) {
-                log.info("Queued {} DeltaFiles for auto-resume", queued);
+
+                log.info("Queued batch of {} DeltaFiles for auto-resume", currentBatchSize);
                 generateMetricsByName(FILES_AUTO_RESUMED, countByFlow);
             }
         }
+        log.info("Queued total of {} DeltaFiles for auto-resume", queued);
         return queued;
     }
 

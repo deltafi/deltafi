@@ -68,9 +68,10 @@ public interface DeltaFileRepoCustom {
      * Find DeltaFiles that are ready for an automatic resume after encountering an error.
      *
      * @param maxReadyTime upper limit for finding matching DeltaFiles
+     * @param batchSize maximum number of files to return
      * @return the list of the DeltaFiles to be resumed
      */
-    List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime);
+    List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, int batchSize);
 
     /**
      * Search for DeltaFiles in an ERROR stage which may be candidates for applying
