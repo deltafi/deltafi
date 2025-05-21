@@ -78,6 +78,7 @@ class HttpEgressBaseTest {
     void egresses() {
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
                 .withHeader("header-1", WireMock.equalTo("value-1"))
                 .withHeader("header-2", WireMock.equalTo("value-2"))
                 .withRequestBody(WireMock.equalTo(CONTENT))
@@ -99,6 +100,7 @@ class HttpEgressBaseTest {
     void errors() {
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
                 .withHeader("header-1", WireMock.equalTo("value-1"))
                 .withHeader("header-2", WireMock.equalTo("value-2"))
                 .withRequestBody(WireMock.equalTo(CONTENT))
@@ -155,6 +157,7 @@ class HttpEgressBaseTest {
     void errorsOnIoExceptionOpeningInputStream() {
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
                 .withHeader("header-1", WireMock.equalTo("value-1"))
                 .withHeader("header-2", WireMock.equalTo("value-2"))
                 .withRequestBody(WireMock.equalTo(CONTENT))

@@ -80,7 +80,7 @@ class HttpEgressTest {
 
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching(String.valueOf(CONTENT.length())))
                 .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
                         "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
                         "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
@@ -149,7 +149,7 @@ class HttpEgressTest {
     }
 
     private EgressResultType runTest(UUID did, HttpEgress.Parameters params) {
-        EgressResultType egressResultType = action.egress(
+        return action.egress(
                 ActionContext.builder()
                         .contentStorageService(CONTENT_STORAGE_SERVICE)
                         .did(did)
@@ -158,7 +158,6 @@ class HttpEgressTest {
                         .flowName("test-flow-name")
                         .build(),
                 params, egressInput());
-        return egressResultType;
     }
 
     private HttpEgress.Parameters makeParameters(HttpRequestMethod method) {
@@ -178,10 +177,9 @@ class HttpEgressTest {
     }
 
     private EgressInput egressInput() {
-        EgressInput egressInput = EgressInput.builder()
+        return EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
                 .build();
-        return egressInput;
     }
 }

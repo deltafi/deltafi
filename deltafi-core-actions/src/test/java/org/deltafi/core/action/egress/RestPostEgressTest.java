@@ -70,6 +70,7 @@ public class RestPostEgressTest {
 
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
                 .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
                         "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
                         "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))

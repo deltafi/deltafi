@@ -80,6 +80,10 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
+        if (input.getContent().getSize() < 1) {
+            return BodyPublishers.noBody();
+        }
+
         return HttpRequest.BodyPublishers.fromPublisher(BodyPublishers.ofInputStream(() -> {
             try {
                 return this.openInputStream(context, input);

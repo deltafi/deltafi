@@ -71,8 +71,6 @@ public class DeltaFiEgressTest {
                 .build();
 
         DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_ENDPOINT;
-
         ResultType resultType = action.egress(
                 getContext(UUID.randomUUID()), deltaFiEgressParameters, egressInput);
 
@@ -88,7 +86,6 @@ public class DeltaFiEgressTest {
                 .build();
 
         DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_ENDPOINT;
         deltaFiEgressParameters.setSendLocal(true);
         deltaFiEgressParameters.setFlow("data-source");
 
@@ -105,6 +102,7 @@ public class DeltaFiEgressTest {
 
         wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
                 .withHeader("Filename", WireMock.equalTo("test-content"))
                 .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
                 .withHeader("Metadata", WireMock.equalTo("{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
@@ -128,11 +126,41 @@ public class DeltaFiEgressTest {
     }
 
     @Test
+    public void egressEmptyContent() {
+        UUID did = UUID.randomUUID();
+
+        wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
+                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo("0"))
+                .withHeader("Filename", WireMock.equalTo("test-content"))
+                .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
+                .withHeader("Metadata", WireMock.equalTo("{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
+                        "\"originalDid\":\"" + did + "\",\"originalSystem\":\"test-system-name\"}"))
+                .withRequestBody(WireMock.absent())
+                .willReturn(WireMock.ok()));
+
+        EgressInput egressInput = EgressInput.builder()
+                .content(runner.saveContent("", "test-content", MediaType.TEXT_PLAIN))
+                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
+                .build();
+
+        DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
+        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_ENDPOINT;
+        deltaFiEgressParameters.setUrl(url);
+        deltaFiEgressParameters.setFlow("test-flow-name");
+        EgressResultType egressResultType = action.egress(
+                getContext(did), deltaFiEgressParameters, egressInput);
+
+        assertInstanceOf(EgressResult.class, egressResultType);
+    }
+
+    @Test
     public void egressLocalWithUrl() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
                 .withHeader("Filename", WireMock.equalTo("test-content"))
                 .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
                 .withHeader("X-User-Name", WireMock.equalTo("host"))
@@ -164,6 +192,7 @@ public class DeltaFiEgressTest {
 
         wireMockHttp.stubFor(WireMock.post(DeltaFiEgress.INGRESS_URL_PATH)
                 .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
+                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
                 .withHeader("Filename", WireMock.equalTo("test-content"))
                 .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
                 .withHeader("X-User-Name", WireMock.equalTo("host"))
