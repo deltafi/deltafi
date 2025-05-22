@@ -56,6 +56,9 @@ export default function useErrors() {
   const fetchAllMessage = async () => {
     const searchParams = {
       errorSummaryByMessage: {
+        __args: {
+          filter: { errorAcknowledged: false },
+        },
         countPerMessage: {
           message: true,
         },
@@ -68,6 +71,9 @@ export default function useErrors() {
   const fetchUniqueErrorMessages = async () => {
     const searchParams = {
       errorSummaryByMessage: {
+        __args: {
+          filter: { errorAcknowledged: false },
+        },
         countPerMessage: {
           message: true,
         },
@@ -78,7 +84,7 @@ export default function useErrors() {
       .map((o) => o.message)
       .uniq()
       .sort()
-      .value()
+      .value();
   };
 
   const fetchErrorSummaryByFlow = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
