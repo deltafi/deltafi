@@ -54,6 +54,7 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     public EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
+        HttpRequest request;
         try {
             HttpRequest.Builder httpRequestBuilder = HttpService.newRequestBuilder(params.getUrl(), buildHeaders(context, params, input), getMediaType(input));
             switch (method) {
@@ -62,21 +63,63 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
                 case PUT -> httpRequestBuilder.PUT(bodyPublisher(context, input));
                 case DELETE -> httpRequestBuilder.DELETE();
             }
-
-            HttpResponse<InputStream> response = httpService.execute(httpRequestBuilder.build());
-            Response.Status status = Response.Status.fromStatusCode(response.statusCode());
-            if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-                return processErrorResponse(context, response);
-            }
+            request = httpRequestBuilder.build();
         } catch (JsonProcessingException e) {
-            return new ErrorResult(context, "Unable to build post headers", e).logErrorTo(log);
+            return new ErrorResult(context, "Unable to build " + method + " headers", e).logErrorTo(log);
         } catch (IOException e) {
-            return new ErrorResult(context, "Unable to open input stream", e).logErrorTo(log);
-        } catch (HttpSendException e) {
-            return new ErrorResult(context, "Service " + method.toString().toLowerCase() + " failure", e).logErrorTo(log);
+            return new ErrorResult(context, "Unable to prepare request body for " + method, e).logErrorTo(log);
+        } catch (Exception e) {
+            return new ErrorResult(context, "Unexpected error building request for " + method, e.getMessage(), e).logErrorTo(log);
         }
 
-        return new EgressResult(context);
+        // --- First Attempt (Optimistic: Discard body to reduce latency) ---
+        HttpResponse<Void> initialResponse;
+        try {
+            initialResponse = httpService.execute(request, HttpResponse.BodyHandlers.discarding());
+        } catch (HttpSendException e) {
+            // Network or send error on the first attempt, no HTTP status to check.
+            return new ErrorResult(context, "Service " + method + " failure", e.getMessage(), e.getCause() != null ? e.getCause() : e).logErrorTo(log);
+        }
+
+        Response.Status initialStatus = Response.Status.fromStatusCode(initialResponse.statusCode());
+        if (initialStatus != null && initialStatus.getFamily() == Response.Status.Family.SUCCESSFUL) {
+            return new EgressResult(context);
+        }
+
+        // --- Error on First Attempt: Log and Prepare to Retry for Body ---
+        String initialErrorMsg = "Initial " + method + " attempt returned unsuccessful HTTP status: " + initialResponse.statusCode();
+        log.warn("{}. Retrying to capture error response body for DID: {}. URL: {}", initialErrorMsg, context.getDid(), request.uri());
+
+        // --- Second Attempt (Get body so if it's still an error, we can record the error message) ---
+        try {
+            HttpResponse<InputStream> retryResponse = httpService.execute(request, HttpResponse.BodyHandlers.ofInputStream());
+            int retryStatusCode = retryResponse.statusCode();
+
+            try (InputStream responseBodyStream = retryResponse.body()) {
+                Response.Status retryHttpStatus = Response.Status.fromStatusCode(retryStatusCode);
+                if (retryHttpStatus != null && retryHttpStatus.getFamily() == Response.Status.Family.SUCCESSFUL) {
+                    log.info("For DID {}: {} to {} succeeded on retry (HTTP {}) after initial failure (HTTP {}).",
+                            context.getDid(), method, request.uri(), retryStatusCode, initialResponse.statusCode());
+                    return new EgressResult(context);
+                }
+
+                String errorBodyContent = "Error response body could not be read or was empty.";
+                if (responseBodyStream != null) {
+                    try {
+                        errorBodyContent = new String(responseBodyStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8); // Or appropriate charset
+                    } catch (IOException readEx) {
+                        errorBodyContent = "Failed to read error response body: " + readEx.getMessage();
+                    }
+                }
+                return new ErrorResult(context, "Unsuccessful HTTP " + method + ": " + retryResponse.statusCode(), errorBodyContent).logErrorTo(log);
+            }
+        } catch (HttpSendException e) {
+            return new ErrorResult(context, initialErrorMsg + ". Retry attempt to get error body also failed: " + e.getMessage(), e.getCause() != null ? e.getCause() : e).logErrorTo(log);
+        } catch (IOException e) {
+            return new ErrorResult(context, initialErrorMsg + ". IO Error during retry attempt for error body: " + e.getMessage(), e).logErrorTo(log);
+        } catch (Exception e) {
+            return new ErrorResult(context, "Unexpected error during retry attempt for " + method, e.getMessage(), e).logErrorTo(log);
+        }
     }
 
     protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
@@ -106,15 +149,5 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull P params,
                                                @NotNull EgressInput input) throws JsonProcessingException {
         return Collections.emptyMap();
-    }
-
-    protected ErrorResult processErrorResponse(ActionContext context, HttpResponse<InputStream> response) {
-        try (InputStream body = response.body()) {
-            return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode(),
-                    new String(body.readAllBytes())).logErrorTo(log);
-        } catch (IOException e) {
-            return new ErrorResult(context, "Unsuccessful HTTP POST: " + response.statusCode(),
-                    "Unable to read response body: " + e.getMessage()).logErrorTo(log);
-        }
     }
 }

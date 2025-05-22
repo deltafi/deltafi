@@ -50,10 +50,10 @@ public class HttpService {
         return requestBuilder;
     }
 
-    public HttpResponse<InputStream> execute(@NotNull HttpRequest request) throws HttpSendException {
+    public <T> HttpResponse<T> execute(@NotNull HttpRequest request, @NotNull HttpResponse.BodyHandler<T> bodyHandler) throws HttpSendException {
         try {
             // TODO: Should exceptions be thrown for 4xx return codes?
-            return httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
+            return httpClient.send(request, bodyHandler);
         } catch (IOException | InterruptedException | IllegalArgumentException | SecurityException e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -79,7 +79,7 @@ public class HttpService {
         HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
         requestBuilder.POST(HttpRequest.BodyPublishers.ofInputStream(is));
         HttpRequest request = requestBuilder.build();
-        return execute(request);
+        return execute(request, HttpResponse.BodyHandlers.ofInputStream());
     }
 
     /**
@@ -99,7 +99,7 @@ public class HttpService {
         HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
         requestBuilder.PUT(HttpRequest.BodyPublishers.ofInputStream(is));
         HttpRequest request = requestBuilder.build();
-        return execute(request);
+        return execute(request, HttpResponse.BodyHandlers.ofInputStream());
     }
 
     /**
@@ -119,7 +119,7 @@ public class HttpService {
         HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
         requestBuilder.method("PATCH", HttpRequest.BodyPublishers.ofInputStream(is));
         HttpRequest request = requestBuilder.build();
-        return execute(request);
+        return execute(request, HttpResponse.BodyHandlers.ofInputStream());
     }
 
     /**
@@ -137,6 +137,6 @@ public class HttpService {
         HttpRequest.Builder requestBuilder = newRequestBuilder(url, headers, mediaType);
         requestBuilder.DELETE();
         HttpRequest request = requestBuilder.build();
-        return execute(request);
+        return execute(request, HttpResponse.BodyHandlers.ofInputStream());
     }
 }

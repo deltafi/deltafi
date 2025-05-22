@@ -123,7 +123,7 @@ class HttpEgressBaseTest {
     @Test
     void errorsOnHttpPostException() {
         HttpService mockHttpService = Mockito.mock(HttpService.class);
-        Mockito.when(mockHttpService.execute(Mockito.any()))
+        Mockito.when(mockHttpService.execute(Mockito.any(), Mockito.any()))
                 .thenThrow(new HttpPostException("class", "post exception", new IOException()));
 
         TestHttpEgress testAction = new TestHttpEgress(mockHttpService);
@@ -138,7 +138,7 @@ class HttpEgressBaseTest {
         EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
-        assertEquals("Service post failure", ((ErrorResult) egressResultType).getErrorCause());
+        assertEquals("Service POST failure", ((ErrorResult) egressResultType).getErrorCause());
     }
 
     private static class IOExceptionOpeningInputStream extends TestHttpEgress {
@@ -174,6 +174,6 @@ class HttpEgressBaseTest {
         EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
-        assertEquals("Service post failure", ((ErrorResult) egressResultType).getErrorCause());
+        assertEquals("Service POST failure", ((ErrorResult) egressResultType).getErrorCause());
     }
 }
