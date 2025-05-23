@@ -32,6 +32,8 @@ type Orchestrator interface {
 	Up([]string) error
 	Down([]string) error
 	Environment() []string
+	GetExecCmd(string, bool, []string) (exec.Cmd, error)
+	GetValkeyName() string
 }
 
 func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion string, deploymentMode types.DeploymentMode) Orchestrator {

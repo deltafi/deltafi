@@ -145,6 +145,24 @@ func (o *ComposeOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error
 	return *exec.Command("docker", cmdArgs...), nil
 }
 
+func (o *ComposeOrchestrator) GetExecCmd(name string, tty bool, args []string) (exec.Cmd, error) {
+	flags := "-i"
+	if tty {
+		flags += "t"
+	}
+
+	cmdArgs := []string{"exec", flags, name, "sh", "-c"}
+
+	extraCmdArgs := fmt.Sprintf("%s", strings.Join(args, " "))
+	cmdArgs = append(cmdArgs, extraCmdArgs)
+
+	return *exec.Command("docker", cmdArgs...), nil
+}
+
+func (o *ComposeOrchestrator) GetValkeyName() string {
+	return "deltafi-valkey"
+}
+
 func (o *ComposeOrchestrator) SiteValuesFile() (string, error) {
 	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
 	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {

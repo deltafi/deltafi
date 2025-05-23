@@ -130,6 +130,24 @@ func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, er
 	return *cmd, nil
 }
 
+func (o *KubernetesOrchestrator) GetExecCmd(name string, tty bool, args []string) (exec.Cmd, error) {
+	flags := "-i"
+	if tty {
+		flags += "t"
+	}
+
+	cmdArgs := []string{"exec", flags, "-n", "deltafi", name, "--", "sh", "-c"}
+
+	extraCmdArgs := fmt.Sprintf("%s", strings.Join(args, " "))
+	cmdArgs = append(cmdArgs, extraCmdArgs)
+
+	return *exec.Command("kubectl", cmdArgs...), nil
+}
+
+func (o *KubernetesOrchestrator) GetValkeyName() string {
+	return "deltafi-valkey-master-0"
+}
+
 func (o *KubernetesOrchestrator) Up(args []string) error {
 
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
