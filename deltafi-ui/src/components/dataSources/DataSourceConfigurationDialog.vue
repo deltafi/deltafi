@@ -76,6 +76,22 @@
           <dd>
             <AutoComplete v-model="model['topic']" placeholder="Publish to Topic" class="auto-complete-input-width" :suggestions="topicList" dropdown @complete="search" />
           </dd>
+          <dt>Annotation Configuration</dt>
+          <dd>
+            <div class="deltafi-fieldset">
+              <div class="mb-n3">
+                <JsonForms :data="model['annotationConfig']" :renderers="annotationConfigRenderers" :uischema="annotationConfigUISchema" :schema="annotationConfigSchema" @change="onAnnotationConfigChange($event, model)" />
+              </div>
+            </div>
+          </dd>
+          <dt>Metadata</dt>
+          <dd>
+            <div class="deltafi-fieldset">
+              <div class="mb-n3">
+                <JsonForms :data="metadataObject" :renderers="metadataRenderers" :uischema="metadataUISchema" :schema="metadataSchema" @change="onMetadataChange" />
+              </div>
+            </div>
+          </dd>
         </dl>
       </div>
     </div>
@@ -110,6 +126,16 @@ import "@vue-js-cron/light/dist/light.css";
 import { CronLight } from "@vue-js-cron/light";
 
 const editing = inject("isEditing");
+const { rendererList, publishRenderList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
+provide("style", myStyles);
+const renderers = ref(Object.freeze(rendererList));
+const annotationConfigRenderers = ref(Object.freeze(rendererList));
+const metadataRenderers = ref(Object.freeze(publishRenderList));
+const annotationConfigUISchema = ref(undefined);
+const metadataUISchema = ref(undefined);
+const parametersSchema = ref(undefined);
+const allTopics = ref(["default"]);
+const topicList = ref(undefined);
 
 const props = defineProps({
   rowDataProp: {
@@ -134,13 +160,6 @@ const emit = defineEmits(["reloadDataSources"]);
 const { getPluginActionSchema } = useFlowActions();
 const { saveTimedDataSourcePlan, saveRestDataSourcePlan } = useDataSource();
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
-
-const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
-provide("style", myStyles);
-const renderers = ref(Object.freeze(rendererList));
-const parametersSchema = ref(undefined);
-const allTopics = ref(["default"]);
-const topicList = ref(undefined);
 
 const errors = ref([]);
 
@@ -169,9 +188,13 @@ const dataSourceTemplate = {
   },
   variables: null,
   topic: null,
+  annotationConfig: null,
+  metadata: null,
 };
 
+
 const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rowDataProp) ? dataSourceTemplate : props.rowDataProp));
+const metadataObject = ref({ metadata: JSON.parse(JSON.stringify(_.get(props.rowDataProp, "metadata", {}))) });
 
 const model = computed({
   get() {
@@ -255,6 +278,14 @@ onUnmounted(() => {
 
 const onParametersChange = (event, element) => {
   element["timedIngressActionOption"]["parameters"] = event.data;
+};
+
+const onAnnotationConfigChange = (event, element) => {
+  element["annotationConfig"] = event.data;
+};
+
+const onMetadataChange = (event) => {
+  metadataObject.value.metadata = event.data.metadata || {};
 };
 
 const schemaProvided = (schema) => {
@@ -345,6 +376,9 @@ const scrollToErrors = async () => {
 
 const submit = async () => {
   let dataSourceObject = _.cloneDeepWith(model.value);
+  if (!_.isEmpty(metadataObject.value.metadata)) {
+    dataSourceObject["metadata"] = JSON.parse(JSON.stringify(metadataObject.value.metadata));
+  }
   dataSourceObject = formatData(dataSourceObject);
   errors.value = [];
   if (_.isEmpty(dataSourceObject["name"])) {
@@ -408,6 +442,42 @@ const submit = async () => {
 
 const clearErrors = () => {
   errors.value = [];
+};
+
+const annotationConfigSchema = {
+  type: "object",
+  properties: {
+    annotations: {
+      type: "object",
+      label: "Annotations",
+      additionalProperties: {
+        type: "string",
+      },
+    },
+    metadataPatterns: {
+      type: "array",
+      label: "Metadata Patterns",
+      items: {
+        type: "string",
+      },
+    },
+    discardPrefix: {
+      label: "Discard Prefix",
+      type: "string",
+    },
+  },
+};
+
+const metadataSchema = {
+  type: "object",
+  properties: {
+    metadata: {
+      type: "object",
+      additionalProperties: {
+        type: "string",
+      },
+    },
+  },
 };
 </script>
 
