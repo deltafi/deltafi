@@ -21,12 +21,13 @@ import org.deltafi.common.http.HttpClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.http.HttpClient;
 import java.time.Duration;
 
 @Configuration
 public class HttpClientConfig {
     @Bean
     public HttpClientCustomizer httpClientConfigConsumer() {
-        return builder -> builder.connectTimeout(Duration.ofMillis(500L));
+        return builder -> builder.connectTimeout(Duration.ofMillis(500L)).version(HttpClient.Version.HTTP_1_1);
     }
 }
