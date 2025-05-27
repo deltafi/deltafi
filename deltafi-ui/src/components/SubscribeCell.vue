@@ -1,10 +1,10 @@
 <template>
   <div>
     <div v-if="!_.isEmpty(subscribeData)" @mouseover="showOverlayPanel($event)" @mouseleave="hideOverlayPanel($event)">
-      <div v-for="(subscribe, index) in subscribeData" :key="index">
-        <div v-if="!_.isEmpty(subscribe.topic)">
-          <span v-if="subscribeData.length > 1">&bull;</span>
-          {{ subscribe.topic }}
+      <div v-for="(topic, index) in _.uniq(_.map(subscribeData, 'topic'))" :key="index">
+        <div v-if="!_.isEmpty(topic)">
+          <span v-if="_.uniq(_.map(subscribeData, 'topic')) > 1">&bull;</span>
+          {{ topic }} {{ counts[topic] > 1 ? `(x${counts[topic]})` : "" }}
         </div>
       </div>
     </div>
@@ -13,12 +13,8 @@
         <strong>Subscriptions</strong>
       </div>
       <div v-for="(subscribe, index) in subscribeData" :key="index" class="ml-2">
-        <div v-if="!_.isEmpty(subscribe.topic)">
-          Topic Name: {{ subscribe.topic }}
-        </div>
-        <div v-if="!_.isEmpty(subscribe.condition)">
-          Condition: {{ subscribe.condition }}
-        </div>
+        <div v-if="!_.isEmpty(subscribe.topic)">Topic Name: {{ subscribe.topic }}</div>
+        <div v-if="!_.isEmpty(subscribe.condition)">Condition: {{ subscribe.condition }}</div>
         <Divider v-if="subscribeData.length > index + 1" class="mt-1 mb-3" />
       </div>
     </OverlayPanel>
@@ -26,7 +22,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import Divider from "primevue/divider";
 import OverlayPanel from "primevue/overlaypanel";
 import _ from "lodash";
@@ -47,5 +43,13 @@ const showOverlayPanel = (event) => {
 const hideOverlayPanel = (event) => {
   subscribeOverlayPanel.value.hide(event);
 };
+
+const counts = computed(() => {
+  const counts = {};
+  _.map(subscribeData, "topic").forEach(function (x) {
+    counts[x] = (counts[x] || 0) + 1;
+  });
+  return counts;
+});
 </script>
 <style />

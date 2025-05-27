@@ -28,7 +28,7 @@
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                  <DataSourceNameColumnButtonGroup key="name" :row-data-prop="data" @reload-data-sources="refresh" />
+                  <DataSourceNameColumnButtonGroup :key="Math.random()" :row-data-prop="data" @reload-data-sources="refresh" />
                 </span>
               </span>
             </div>

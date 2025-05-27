@@ -1,10 +1,14 @@
 <template>
   <div>
     <div v-if="!_.isEmpty(publishData.rules)" @mouseover="showOverlayPanel($event)" @mouseleave="hideOverlayPanel($event)">
-      <div v-for="(rule, index) in publishData.rules" :key="index">
-        <div v-if="!_.isEmpty(rule.topic)">
+      <div v-if="!_.isEmpty(publishData.defaultRule.topic)">
+        <span v-if="publishData.rules.length > 1">&bull;</span>
+        {{ publishData.defaultRule.topic }}
+      </div>
+      <div v-for="(topic, index) in _.uniq(_.map(publishData.rules, 'topic'))" :key="index">
+        <div v-if="!_.isEmpty(topic)">
           <span v-if="publishData.rules.length > 1">&bull;</span>
-          {{ rule.topic }}
+          {{ topic }} {{ counts[topic] > 1 ? `(x${counts[topic]})` : '' }}
         </div>
       </div>
     </div>
@@ -48,7 +52,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import Divider from "primevue/divider";
 import OverlayPanel from "primevue/overlaypanel";
 import _ from "lodash";
@@ -69,6 +73,12 @@ const showOverlayPanel = (event) => {
 const hideOverlayPanel = (event) => {
   publishOverlayPanel.value.hide(event);
 };
+
+const counts = computed(() => {
+  const counts = {};
+  _.map(publishData.rules, 'topic').forEach(function (x) { counts[x] = (counts[x] || 0) + 1; });
+  return counts;
+});
 
 const formatDisplayValue = (valueToDisplay) => {
   if (_.isEqual(valueToDisplay, "ALL_MATCHING")) {

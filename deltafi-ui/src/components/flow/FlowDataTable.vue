@@ -41,7 +41,7 @@
                 </DialogTemplate>
               </span>
               <span>
-                <FlowNameColumnButtonGroup key="name" :row-data-prop="data" @reload-Transforms="refresh" @remove-transform-from-table="removeFlowFromProp" />
+                <FlowNameColumnButtonGroup :key="Math.random()" :row-data-prop="data" @reload-Transforms="refresh" @remove-transform-from-table="removeFlowFromProp" />
               </span>
             </div>
           </template>

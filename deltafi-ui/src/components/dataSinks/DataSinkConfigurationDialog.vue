@@ -330,6 +330,7 @@ const submit = async () => {
     return;
   }
 
+  editing.value = false;
   closeDialogCommand.command();
   emit("reloadDataSinks");
 };
