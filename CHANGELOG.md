@@ -5,6 +5,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.20.0] - 2025-05-27
+
+### Added
+- Added metadata and annotation configuration to Data Source Configuration Dialog. 
+- Added the system build version (`version`) to the REST `api/v2/status` JSON output
+
+### Changed
+- Changed the Publish Cell UI to remove duplicate topics and to show default topics. 
+- Change deltafi-core-actions HttpClient from HTTP 2.0 to 1.1
+
+### Fixed
+- Fixed Data Source, Transform, Data Sink dialogs not updating on save
+- Added ErrorAcknowledged filter to error summary queries 
+- Ensure HTTP egress response bodies are closed even if the body is not read on success
+
+### Tech-Debt/Refactor
+- Improve auto resume query performance 
+- Speed up event annotation cleanup 
+- Improve in-flight query speed 
+- Improve performance of query checking to see if actions are still cold queued
+- Remove unnecessary left joins 
+
+### Upgrade and Migration
+- Java dependency updates:
+  - dgsVersion=10.1.2
+  - jacksonVersion=2.19.0
+  - jsonschemaGeneratorVersion=4.38.0
+  - jupiterVersion=5.12.2
+  - lombokVersion=1.18.38
+  - minioVersion=8.5.17
+  - mockitoJupiterVersion=5.18.0
+  - springBootVersion=3.3.11
+  - testContainersVersion=1.21.0
+- Upgrade to Go 1.24.3
+
 ## [2.19.0] - 2025-05-20
 
 ### Added
@@ -4205,7 +4240,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.19.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.20.0...main
+[2.20.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.19.0...2.20.0
 [2.19.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.18.0...2.19.0
 [2.18.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.17.0...2.18.0
 [2.17.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.16.0...2.17.0
