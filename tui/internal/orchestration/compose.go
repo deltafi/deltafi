@@ -163,6 +163,10 @@ func (o *ComposeOrchestrator) GetValkeyName() string {
 	return "deltafi-valkey"
 }
 
+func (o *ComposeOrchestrator) GetMinioName() (string, error) {
+	return "deltafi-minio", nil
+}
+
 func (o *ComposeOrchestrator) SiteValuesFile() (string, error) {
 	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
 	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {

@@ -60,6 +60,22 @@ func (o *KubernetesOrchestrator) GetMasterPod(selector string) (string, error) {
 	return podName, nil
 }
 
+func (o *KubernetesOrchestrator) GetMinioName() (string, error) {
+	cmd := exec.Command("kubectl", "get", "pod", "-l app=minio", "-o", "name")
+
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get the minio pod: %v", err)
+	}
+
+	podName := strings.TrimSpace(string(output))
+	if podName == "" {
+		return "", fmt.Errorf("no pod found with a label of app=minio")
+	}
+
+	return podName, nil
+}
+
 func (o *KubernetesOrchestrator) GetServiceIP(service string) (string, error) {
 	cmd := exec.Command("kubectl",
 		"get", "service", service,

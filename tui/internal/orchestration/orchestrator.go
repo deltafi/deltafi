@@ -34,6 +34,7 @@ type Orchestrator interface {
 	Environment() []string
 	GetExecCmd(string, bool, []string) (exec.Cmd, error)
 	GetValkeyName() string
+	GetMinioName() (string, error)
 }
 
 func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion string, deploymentMode types.DeploymentMode) Orchestrator {
