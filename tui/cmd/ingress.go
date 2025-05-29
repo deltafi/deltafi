@@ -374,5 +374,30 @@ func init() {
 	ingressCmd.MarkFlagRequired("datasource")
 
 	// Register completion function for the datasource flag
-	ingressCmd.RegisterFlagCompletionFunc("datasource", getDataSourceNames)
+	ingressCmd.RegisterFlagCompletionFunc("datasource", getRunningDataSourceNames)
+}
+
+func getRunningDataSourceNames(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	suggestions, err := fetchDataSourceNames()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return suggestions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func fetchRunningDataSourceNames() ([]string, error) {
+	var resp, err = graphql.ListDataSources()
+	if err != nil {
+		return nil, err
+	}
+
+	var names []string
+
+	for _, obj := range resp.GetAllFlows.GetRestDataSource() {
+		if obj.GetFlowStatus().State == "RUNNING" {
+			names = append(names, obj.GetName())
+		}
+	}
+
+	return names, nil
 }

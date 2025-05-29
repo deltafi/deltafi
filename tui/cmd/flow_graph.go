@@ -50,7 +50,7 @@ var flowGraphCmd = &cobra.Command{
 		all, _ := cmd.Flags().GetBool("all")
 
 		if all {
-			names, err := fetchRemoteDataSourceNames()
+			names, err := fetchDataSourceNames()
 			if err != nil {
 				return wrapInError("Error fetching data source names", err)
 			}

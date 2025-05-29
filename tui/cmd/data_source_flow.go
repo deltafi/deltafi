@@ -130,7 +130,7 @@ If -a/--all-actions is specified, starts the data source and all connected actio
 		allActions, _ := cmd.Flags().GetBool("all-actions")
 
 		if all {
-			names, err := fetchRemoteDataSourceNames()
+			names, err := fetchDataSourceNames()
 			if err != nil {
 				return wrapInError("Error fetching data source names", err)
 			}
@@ -185,7 +185,7 @@ If -a/--all-actions is specified, stops the data source and all connected action
 		allActions, _ := cmd.Flags().GetBool("all-actions")
 
 		if all {
-			names, err := fetchRemoteDataSourceNames()
+			names, err := fetchDataSourceNames()
 			if err != nil {
 				return wrapInError("Error fetching data source names", err)
 			}
@@ -429,14 +429,14 @@ func disableDataSourceTestMode(flowName string) error {
 }
 
 func getDataSourceNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-	suggestions, err := fetchRemoteDataSourceNames()
+	suggestions, err := fetchDataSourceNames()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 	return suggestions, cobra.ShellCompDirectiveNoFileComp
 }
 
-func fetchRemoteDataSourceNames() ([]string, error) {
+func fetchDataSourceNames() ([]string, error) {
 	var resp, err = graphql.ListDataSources()
 	if err != nil {
 		return nil, err
@@ -444,12 +444,10 @@ func fetchRemoteDataSourceNames() ([]string, error) {
 
 	var names []string
 
-	// Add REST data source names
 	for _, obj := range resp.GetAllFlows.GetRestDataSource() {
 		names = append(names, obj.GetName())
 	}
 
-	// Add timed data source names
 	for _, obj := range resp.GetAllFlows.GetTimedDataSource() {
 		names = append(names, obj.GetName())
 	}
