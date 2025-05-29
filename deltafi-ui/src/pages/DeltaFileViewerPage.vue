@@ -31,24 +31,16 @@
         <div class="col-4">
           <div class="p-inputgroup">
             <InputText v-model="did" placeholder="DID (UUID)" :class="{ 'p-invalid': did && !validDID }" @keyup.enter="navigateToDID" />
-            <Button class="p-button-primary" :disabled="!did || !validDID" @click="navigateToDID">
-              View
-            </Button>
+            <Button class="p-button-primary" :disabled="!did || !validDID" @click="navigateToDID"> View </Button>
           </div>
           <small v-if="did && !validDID" class="p-error ml-1">Invalid UUID</small>
         </div>
       </div>
     </div>
     <div v-else-if="loaded">
-      <Message v-if="deltaFile.pinned" severity="warn" :closable="false">
-        This DeltaFile is pinned and won't be deleted by delete policies
-      </Message>
-      <Message v-if="contentDeleted" severity="warn" :closable="false">
-        The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }}
-      </Message>
-      <Message v-if="testMode" severity="info" :closable="false">
-        This DeltaFile was processed in test mode.
-      </Message>
+      <Message v-if="deltaFile.pinned" severity="warn" :closable="false"> This DeltaFile is pinned and won't be deleted by delete policies </Message>
+      <Message v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
+      <Message v-if="testMode" severity="info" :closable="false"> This DeltaFile was processed in test mode. </Message>
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileInfoPanel :delta-file-data="deltaFile" />
@@ -88,8 +80,8 @@
     </Dialog>
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
-    <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
-    <MetadataDialogResume ref="metadataDialogResume" :did="[did]" @update="loadDeltaFileData" />
+    <ReplayDialog ref="replayDialog" :did="[did]" @refresh-page="loadDeltaFileData" />
+    <ResumeDialog ref="resumeDialog" :did="[did]" @refresh-page="loadDeltaFileData" />
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
@@ -109,8 +101,8 @@ import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import MetadataDialog from "@/components/MetadataDialogReplay.vue";
-import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
+import ReplayDialog from "@/components/ReplayDialog.vue";
+import ResumeDialog from "@/components/errors/ResumeDialog.vue";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useErrorCount from "@/composables/useErrorCount";
@@ -153,8 +145,8 @@ const rawJSONDialog = reactive({
   header: null,
   body: null,
 });
-const metadataDialog = ref();
-const metadataDialogResume = ref();
+const replayDialog = ref();
+const resumeDialog = ref();
 const menu = ref();
 const staticMenuItems = reactive([
   {
@@ -169,7 +161,7 @@ const staticMenuItems = reactive([
     icon: "fas fa-sync fa-fw",
     visible: () => !beenReplayed.value && !beenDeleted.value && hasPermission("DeltaFileReplay"),
     command: () => {
-      metadataDialog.value.showConfirmDialog();
+      replayDialog.value.showConfirmDialog();
     },
   },
   {
@@ -213,7 +205,7 @@ const staticMenuItems = reactive([
     icon: "fas fa-redo fa-fw",
     visible: computed(() => isError.value && hasPermission("DeltaFileResume")),
     command: () => {
-      metadataDialogResume.value.showConfirmDialog();
+      resumeDialog.value.showConfirmDialog();
     },
   },
   {
@@ -417,7 +409,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 

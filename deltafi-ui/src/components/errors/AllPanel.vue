@@ -28,12 +28,8 @@
         <Paginator v-if="errors.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
       <DataTable id="errorsTable" v-model:expanded-rows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-        <template #empty>
-          No results to display.
-        </template>
-        <template #loading>
-          Loading. Please wait...
-        </template>
+        <template #empty> No results to display. </template>
+        <template #loading> Loading. Please wait... </template>
         <Column class="expander-column" :expander="true" />
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
@@ -111,7 +107,7 @@
     <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" @update="onRefresh" />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
     <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
-    <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" />
+    <ResumeDialog ref="resumeDialog" :did="filterSelectedDids" @refresh-page="onRefresh" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="allPanelAutoResumeDialog" />
     </DialogTemplate>
@@ -126,7 +122,7 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import DidLink from "@/components/DidLink.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
-import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
+import ResumeDialog from "@/components/errors/ResumeDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useErrors from "@/composables/useErrors";
 import useErrorsSummary from "@/composables/useErrorsSummary";
@@ -135,7 +131,6 @@ import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-
 
 import _ from "lodash";
 
@@ -150,7 +145,7 @@ import { FilterMatchMode } from "primevue/api";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
-const metadataDialogResume = ref();
+const resumeDialog = ref();
 const { fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
@@ -232,7 +227,7 @@ const menuItems = ref([
     label: "Resume Selected",
     icon: "fas fa-redo fa-fw",
     command: () => {
-      metadataDialogResume.value.showConfirmDialog();
+      resumeDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),

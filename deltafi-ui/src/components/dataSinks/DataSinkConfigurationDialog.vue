@@ -116,15 +116,11 @@ const props = defineProps({
     required: false,
     default: false,
   },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
-  },
 });
 
 const { getAllTopicNames } = useTopics();
-const { editDataSink, closeDialogCommand } = reactive(props);
-const emit = defineEmits(["reloadDataSinks"]);
+const { editDataSink } = reactive(props);
+const emit = defineEmits(["refreshAndClose"]);
 const { getPluginActionSchema } = useFlowActions();
 const { getAllDataSinks, saveDataSinkPlan } = useDataSink();
 
@@ -331,8 +327,7 @@ const submit = async () => {
   }
 
   editing.value = false;
-  closeDialogCommand.command();
-  emit("reloadDataSinks");
+  emit("refreshAndClose");
 };
 
 const clearErrors = () => {
@@ -406,7 +401,7 @@ const subscribeSchema = {
   .auto-complete-input-width {
     width: 90% !important;
 
-    >.p-inputtext {
+    > .p-inputtext {
       width: 100% !important;
     }
   }

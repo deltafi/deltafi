@@ -27,12 +27,8 @@
       <Paginator v-if="errorsMessage.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsMessage" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-      <template #empty>
-        No results to display.
-      </template>
-      <template #loading>
-        Loading. Please wait...
-      </template>
+      <template #empty> No results to display. </template>
+      <template #loading> Loading. Please wait... </template>
       <Column field="flow" header="Flow" sortable class="filename-column" />
       <Column field="type" header="Flow Type" sortable />
       <Column field="count" header="Count" sortable />
@@ -43,7 +39,7 @@
       </Column>
     </DataTable>
   </Panel>
-  <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" @update="onRefresh" />
+  <ResumeDialog ref="resumeDialog" :did="filterSelectedDids" @refresh-page="onRefresh" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -55,7 +51,7 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
+import ResumeDialog from "@/components/errors/ResumeDialog.vue";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
@@ -83,7 +79,7 @@ const totalErrorsMessage = ref(0);
 const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
-const metadataDialogResume = ref();
+const resumeDialog = ref();
 const sortField = ref("NAME");
 const sortDirection = ref("ASC");
 const selectedErrors = ref([]);
@@ -152,7 +148,7 @@ const menuItems = ref([
     label: "Resume Selected",
     icon: "fas fa-redo fa-fw",
     command: () => {
-      metadataDialogResume.value.showConfirmDialog();
+      resumeDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),

@@ -122,14 +122,10 @@ const props = defineProps({
     required: false,
     default: false,
   },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
-  },
 });
 
-const { rowDataProp: rowData, editDeletePolicy, viewDeletePolicy, closeDialogCommand } = reactive(props);
-const emit = defineEmits(["reloadDeletePolicies"]);
+const { rowDataProp: rowData, editDeletePolicy, viewDeletePolicy } = reactive(props);
+const emit = defineEmits(["refreshAndClose"]);
 const { validateDeletePolicyFile } = useDeletePolicyConfiguration();
 const { loadDeletePolicies } = useDeletePolicyQueryBuilder();
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
@@ -155,7 +151,7 @@ const deletePolicyConfigurationMap = new Map([
 const selectedDeleteId = ref(_.get(rowData, "id", null));
 const selectedDeleteName = ref(_.get(rowData, "name", null));
 const selectedDeleteFlow = ref(_.isEmpty(_.get(rowData, "flow")) || _.isEqual(_.get(rowData, "flow"), "All") ? null : rowData["flow"]);
-const selectedDeleteType = ref(_.get(rowData, "__typename", 'TimedDeletePolicy'));
+const selectedDeleteType = ref(_.get(rowData, "__typename", "TimedDeletePolicy"));
 const selectedEnabledBoolean = ref(_.get(rowData, "enabled", false));
 const selectedAfterCreate = ref(_.get(rowData, "afterCreate", null));
 const selectedAfterComplete = ref(_.get(rowData, "afterComplete", null));
@@ -220,9 +216,8 @@ const submit = async () => {
     }
 
     if (response.data.loadDeletePolicies.success) {
-      closeDialogCommand.command();
       notify.success("Saved Delete Policy", `Successfully saved delete policy ${selectedDeleteName.value}.`, 3000);
-      emit("reloadDeletePolicies");
+      emit("refreshAndClose");
       return;
     }
 
@@ -233,7 +228,6 @@ const submit = async () => {
       }
       notify.error(`Policy format error`, `Unable to update Delete Policy.`, 4000);
     }
-
   }
 };
 

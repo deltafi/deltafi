@@ -141,10 +141,6 @@ const props = defineProps({
     required: false,
     default: false,
   },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
-  },
 });
 const confirm = useConfirm();
 
@@ -163,8 +159,8 @@ const confirmApply = (event) => {
 };
 
 const rowData = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
-const { viewAutoResumeRule, closeDialogCommand } = reactive(props);
-const emit = defineEmits(["reloadResumeRules", "applyChanges"]);
+const { viewAutoResumeRule } = reactive(props);
+const emit = defineEmits(["refreshAndClose"]);
 const { validateAutoResumeFile, validateAutoResumeRule } = useAutoResumeConfiguration();
 const { loadResumePolicies, updateResumePolicy, applyResumePolicies } = useAutoResumeQueryBuilder();
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
@@ -322,8 +318,7 @@ const submit = async () => {
       }
       notify.error(`Auto Resume Upload failed`, "Unable to update Auto Resume Rules", 4000);
     } else {
-      emit("reloadResumeRules");
-      closeDialogCommand.command();
+      emit("refreshAndClose");
     }
   }
 };

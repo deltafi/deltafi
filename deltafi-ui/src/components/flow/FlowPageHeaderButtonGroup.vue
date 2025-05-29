@@ -35,7 +35,7 @@
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineEmits, inject, ref } from "vue";
+import { computed, inject, ref } from "vue";
 
 import _ from "lodash";
 

@@ -43,7 +43,7 @@ import Button from "primevue/button";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
-const emit = defineEmits(["reloadResumeRules"]);
+const emit = defineEmits(["refreshPage"]);
 const { removeResumePolicy } = useAutoResumeQueryBuilder();
 const notify = useNotifications();
 
@@ -68,12 +68,12 @@ const confirmationPopup = (event, rule) => {
       notify.info("Removing Rule", `Removing rule ${rule.name}.`, 3000);
       confirmedRemoveAutoResumeRule(rule.id);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
 const confirmedRemoveAutoResumeRule = async (ruleId) => {
   await removeResumePolicy(ruleId);
-  emit("reloadResumeRules");
+  emit("refreshPage");
 };
 </script>

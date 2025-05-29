@@ -21,30 +21,43 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog id="dialogTemplate" ref="dialogTemplate" v-model:visible="dialogVisible" :header="$attrs['header']" :position="modelPosition" :style="{ width: dialogSize }" :maximizable="true" :modal="!disableModel" :dismissable-mask="dismissableMask" :draggable="false" :closable="isClosable" @hide="closeDialogTemplate" @show="openDialogTemplate">
-      <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" :close-dialog-command="closeDialogCommand" />
+    <Dialog
+      id="dialogTemplate"
+      ref="dialogTemplate"
+      v-model:visible="dialogVisible"
+      :header="$attrs['header']"
+      :position="modelPosition"
+      :style="{ width: dialogSize }"
+      :maximizable="true"
+      :modal="!disableModel"
+      :dismissable-mask="dismissableMask"
+      :draggable="false"
+      :closable="isClosable"
+      @hide="closeDialogTemplate"
+      @show="openDialogTemplate"
+      :pt="{
+        content: {
+          id: 'dialogTemplateContent',
+        },
+      }"
+    >
+      <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" @refresh-and-close="refreshAndClose" />
     </Dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, defineExpose, inject, nextTick, ref, useAttrs } from "vue";
+import { computed, defineAsyncComponent, inject, nextTick, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
 import _ from "lodash";
 
 const components = import.meta.glob("@/components/**/*.vue");
-const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate"]);
+const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate", "refreshPage"]);
 const hasPermission = inject("hasPermission");
 const dialogTemplate = ref(null);
 
 //View dynamic props being sent down
 const attrs = useAttrs();
-
-const closeDialogCommand = ref({
-  command: () => {
-    closeDialog();
-  },
-});
 
 const loadComponent = computed(() => {
   return defineAsyncComponent(async () => await components[`/src/components/${attrs["component-name"]}.vue`]());
@@ -97,6 +110,11 @@ const showDialog = async () => {
   } else {
     dialogVisible.value = true;
   }
+};
+
+const refreshAndClose = () => {
+  emit("refreshPage");
+  closeDialog();
 };
 
 const closeDialog = () => {

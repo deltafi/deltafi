@@ -70,7 +70,7 @@ import _ from "lodash";
 const { getAllFlows } = useFlowQueryBuilder();
 
 const isMounted = ref(useMounted());
-const emit = defineEmits(["createTransform"]);
+const emit = defineEmits(["createTransform", "refreshAndClose"]);
 const props = defineProps({
   dataProp: {
     type: Object,
@@ -82,10 +82,6 @@ const props = defineProps({
     required: false,
     default: false,
   },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
-  },
 });
 
 const transformTemplate = {
@@ -95,7 +91,7 @@ const transformTemplate = {
   selectedTransform: null,
 };
 
-const { editTransform, closeDialogCommand } = reactive(props);
+const { editTransform } = reactive(props);
 const errors = ref([]);
 const transformData = ref(Object.assign({}, props.dataProp || transformTemplate));
 
@@ -167,8 +163,8 @@ const submit = async () => {
     return;
   }
 
-  closeDialogCommand.command();
   emit("createTransform", { type: model.value.type, name: model.value.name.trim(), description: model.value.description, selectedTransform: model.value.selectedTransform });
+  emit("refreshAndClose");
 };
 </script>
 

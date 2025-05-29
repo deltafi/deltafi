@@ -90,10 +90,6 @@ const props = defineProps({
     required: false,
     default: false,
   },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
-  },
 });
 
 const linkTemplate = {
@@ -102,14 +98,14 @@ const linkTemplate = {
   description: null,
 };
 
-const { viewLink, editLink, closeDialogCommand } = reactive(props);
+const { viewLink, editLink } = reactive(props);
 const { saveLink } = useExternalLinks();
 const rowData = ref(Object.assign({}, props.rowDataProp || linkTemplate));
 const originalData = ref(Object.assign({}, props.rowDataProp || linkTemplate));
 const selectedLinkType = ref(props.rowLinkType);
 const errorsList = ref([]);
 
-const emit = defineEmits(["reloadExternalLinks"]);
+const emit = defineEmits(["refreshAndClose"]);
 
 const model = computed({
   get() {
@@ -169,8 +165,7 @@ const submit = () => {
     model.value.linkType = new EnumType("EXTERNAL");
   }
   saveLink(model.value);
-  closeDialogCommand.command();
-  emit("reloadExternalLinks");
+  emit("refreshAndClose");
 };
 </script>
 

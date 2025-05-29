@@ -148,15 +148,11 @@ const props = defineProps({
     required: false,
     default: false,
   },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
-  },
 });
 
 const { getAllTopicNames } = useTopics();
-const { editDataSource, closeDialogCommand } = reactive(props);
-const emit = defineEmits(["reloadDataSources"]);
+const { editDataSource } = reactive(props);
+const emit = defineEmits(["refreshAndClose"]);
 const { getPluginActionSchema } = useFlowActions();
 const { saveTimedDataSourcePlan, saveRestDataSourcePlan } = useDataSource();
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
@@ -191,7 +187,6 @@ const dataSourceTemplate = {
   annotationConfig: null,
   metadata: null,
 };
-
 
 const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rowDataProp) ? dataSourceTemplate : props.rowDataProp));
 const metadataObject = ref({ metadata: JSON.parse(JSON.stringify(_.get(props.rowDataProp, "metadata", {}))) });
@@ -436,8 +431,9 @@ const submit = async () => {
     scrollToErrors();
     return;
   }
-  closeDialogCommand.command();
-  emit("reloadDataSources");
+
+  editing.value = false;
+  emit("refreshAndClose");
 };
 
 const clearErrors = () => {
@@ -523,7 +519,7 @@ const metadataSchema = {
   .auto-complete-input-width {
     width: 90% !important;
 
-    >.p-inputtext {
+    > .p-inputtext {
       width: 100% !important;
     }
   }

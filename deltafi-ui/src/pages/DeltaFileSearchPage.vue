@@ -142,7 +142,7 @@
     </Panel>
   </div>
   <ConfirmDialog />
-  <RetryResumeDialog ref="retryResumeDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData()" />
+  <ReplayDialog ref="replayDialog" :did="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
   <Dialog v-model:visible="displayCancelBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Canceling">
     <div>
       <p>Cancel in progress. Please do not refresh the page!</p>
@@ -162,7 +162,7 @@ import DidLink from "@/components/DidLink.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
-import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
+import ReplayDialog from "@/components/ReplayDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useAnnotate from "@/composables/useAnnotate";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
@@ -218,7 +218,7 @@ const uiConfig = inject("uiConfig");
 const selectedDids = ref([]);
 const menu = ref();
 const customCalendarRef = ref(null);
-const retryResumeDialog = ref();
+const replayDialog = ref();
 const annotateDialog = ref();
 const annotationsOverlay = ref(null);
 const newAnnotationKey = ref(null);
@@ -235,10 +235,9 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const selectedErrorDids = computed(() => {
-  return _
-    .chain(selectedDids.value)
+  return _.chain(selectedDids.value)
     .filter((selected) => selected.stage === "ERROR")
-    .map('did')
+    .map("did")
     .value();
 });
 
@@ -746,7 +745,7 @@ const menuItems = ref([
     label: "Replay Selected",
     icon: "fas fa-sync fa-fw",
     command: () => {
-      retryResumeDialog.value.showConfirmDialog();
+      replayDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileReplay")),
     disabled: computed(() => selectedDids.value.length == 0),
@@ -767,7 +766,7 @@ const menuItems = ref([
       acknowledgeClickConfirm();
     },
     visible: computed(() => hasPermission("DeltaFileAcknowledge")),
-    disabled: computed(() => selectedErrorDids.value.length == 0 ),
+    disabled: computed(() => selectedErrorDids.value.length == 0),
   },
   {
     label: "Cancel Selected",
@@ -806,7 +805,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -963,7 +962,7 @@ const onAcknowledged = (dids, reason) => {
   }
 
   .size-container {
-    >* {
+    > * {
       vertical-align: middle !important;
     }
   }
@@ -1023,7 +1022,7 @@ const onAcknowledged = (dids, reason) => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
     color: #ffffff;
 
     a,

@@ -44,7 +44,7 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const emit = defineEmits(["reloadExternalLinks"]);
+const emit = defineEmits(["refreshPage"]);
 const { removeLink } = useExternalLinks();
 const notify = useNotifications();
 
@@ -73,7 +73,7 @@ const confirmationPopup = (event, linkName, linkId) => {
       notify.info(`Removing ${rowLinkType}`, `Removing link ${linkName}.`, 3000);
       confirmedRemoveLink(linkName, linkId);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -82,6 +82,6 @@ const confirmedRemoveLink = async (linkName, linkId) => {
   if (!_.get(response.data, "removeLink")) {
     notify.error(`Removing ${rowLinkType} failed`, `Unable to remove ${linkName}.`, 4000);
   }
-  emit("reloadExternalLinks");
+  emit("refreshPage");
 };
 </script>

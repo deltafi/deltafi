@@ -23,7 +23,7 @@
         <Button label="Export Policies" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDeletePolicies" />
         <DeletePolicyImportFile v-has-permission:DeletePolicyCreate @reload-delete-policies="fetchDeletePolicies()" />
         <div>
-          <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Add New Delete Policy" dialog-width="25vw" @reload-delete-policies="fetchDeletePolicies()">
+          <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Add New Delete Policy" dialog-width="25vw" @refresh-page="fetchDeletePolicies()">
             <Button v-has-permission:DeletePolicyCreate label="Add Policy" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
           </DialogTemplate>
         </div>
@@ -40,7 +40,7 @@
         <template #empty> No delete policies to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
-            <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="25vw" :row-data-prop="data" view-delete-policy @reload-delete-policies="fetchDeletePolicies()">
+            <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="View Delete Policy" dialog-width="25vw" :row-data-prop="data" view-delete-policy @refresh-page="fetchDeletePolicies()">
               <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
             </DialogTemplate>
           </template>
@@ -54,7 +54,7 @@
         <Column :style="{ width: '10%' }" class="deletePolicy-state-column">
           <template #body="{ data }">
             <div class="d-flex justify-content-between">
-              <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Update Delete Policy" dialog-width="25vw" :row-data-prop="data" edit-delete-policy @reload-delete-policies="fetchDeletePolicies()">
+              <DialogTemplate component-name="deletePolicy/DeletePolicyConfigurationDialog" header="Update Delete Policy" dialog-width="25vw" :row-data-prop="data" edit-delete-policy @refresh-page="fetchDeletePolicies()">
                 <Button v-has-permission:DeletePolicyUpdate v-tooltip.top="`Edit Delete Policy`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
               </DialogTemplate>
               <DeletePolicyRemoveButton v-has-permission:DeletePolicyDelete :row-data-prop="data" @reload-delete-policies="fetchDeletePolicies()" />
@@ -105,9 +105,7 @@ const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-const deletePolicyType = new Map([
-  ["TimedDeletePolicy", { tooltip: "Timed Delete Policy", class: "far fa-clock text-muted ml-1" }],
-]);
+const deletePolicyType = new Map([["TimedDeletePolicy", { tooltip: "Timed Delete Policy", class: "far fa-clock text-muted ml-1" }]]);
 
 const uiDeletePoliciesList = computed(() => {
   return deletePolicies.value.map((obj) => {

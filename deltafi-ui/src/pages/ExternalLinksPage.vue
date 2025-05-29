@@ -24,7 +24,7 @@
           <InputIcon class="pi pi-search"> </InputIcon>
           <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Description'" placeholder="Search" class="deltafi-input-field mx-1" />
         </IconField>
-        <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Add New Link" dialog-width="25vw" :row-data-prop="{}" @reload-external-links="reloadUIConfigs()">
+        <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Add New Link" dialog-width="25vw" :row-data-prop="{}" @refresh-page="reloadUIConfigs()">
           <Button label="Add Link" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-2" />
         </DialogTemplate>
       </div>
@@ -35,7 +35,7 @@
         <template #loading> Loading External Links. Please wait. </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
-            <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" view-link @reload-external-links="reloadUIConfigs()">
+            <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" view-link @refresh-page="reloadUIConfigs()">
               <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
             </DialogTemplate>
           </template>
@@ -45,10 +45,10 @@
         <Column :style="{ width: '5rem' }" :body-style="{ padding: 0 }">
           <template #body="{ data }">
             <div class="d-flex">
-              <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Edit External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" edit-link @reload-external-links="reloadUIConfigs()">
+              <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Edit External Link" dialog-width="25vw" :row-data-prop="data" row-link-type="External Link" edit-link @refresh-page="reloadUIConfigs()">
                 <Button v-tooltip.top="`Edit External Link`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
               </DialogTemplate>
-              <LinkRemoveButton class="pl-2" :row-data-prop="data" row-link-type="External Link" @reload-external-links="reloadUIConfigs()" />
+              <LinkRemoveButton class="pl-2" :row-data-prop="data" row-link-type="External Link" @refresh-page="reloadUIConfigs()" />
             </div>
           </template>
         </Column>
@@ -60,7 +60,7 @@
         <template #loading> Loading DeltaFile Links. Please wait. </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
           <template #body="{ data }">
-            <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" view-link @reload-external-links="reloadUIConfigs()">
+            <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="View DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" view-link @refresh-page="reloadUIConfigs()">
               <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
             </DialogTemplate>
           </template>
@@ -70,10 +70,10 @@
         <Column :style="{ width: '5rem' }" :body-style="{ padding: 0 }">
           <template #body="{ data }">
             <div class="d-flex">
-              <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Edit DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" edit-link @reload-external-links="reloadUIConfigs()">
+              <DialogTemplate component-name="externalLink/ExternalLinkConfigurationDialog" header="Edit DeltaFile Link" dialog-width="25vw" :row-data-prop="data" row-link-type="DeltaFile Link" edit-link @refresh-page="reloadUIConfigs()">
                 <Button v-tooltip.top="`Edit DeltaFile Link`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
               </DialogTemplate>
-              <LinkRemoveButton class="pl-2" :row-data-prop="data" row-link-type="DeltaFile Link" @reload-external-links="reloadUIConfigs()" />
+              <LinkRemoveButton class="pl-2" :row-data-prop="data" row-link-type="DeltaFile Link" @refresh-page="reloadUIConfigs()" />
             </div>
           </template>
         </Column>

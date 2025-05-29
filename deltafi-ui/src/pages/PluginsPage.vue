@@ -20,7 +20,7 @@
   <div class="plugins-page">
     <PageHeader heading="Plugins">
       <div class="d-flex btn-toolbar">
-        <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="40vw" @reload-plugins="loadPlugins()">
+        <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Install Plugin" required-permission="PluginInstall" dialog-width="40vw" @refresh-page="loadPlugins()">
           <Button v-has-permission:PluginInstall label="Install Plugin" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
@@ -30,12 +30,8 @@
       <Splitter style="height: 77vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
         <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
           <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" data-key="displayName">
-            <template #empty>
-              No Plugins found.
-            </template>
-            <template #loading>
-              Loading Plugins. Please wait.
-            </template>
+            <template #empty> No Plugins found. </template>
+            <template #loading> Loading Plugins. Please wait. </template>
             <Column header="Name" field="displayName" :sortable="true" />
             <Column header="Description" field="description" />
             <Column header="Version" field="pluginCoordinates.version" />
@@ -43,7 +39,7 @@
             <Column :style="{ width: '5%' }" class="plugin-actions-column" :hidden="!$hasSomePermissions('PluginInstall', 'PluginUninstall')">
               <template #body="{ data }">
                 <div v-if="!data.readOnly" class="d-flex justify-content-between">
-                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="40vw" :row-data-prop="data" @reload-plugins="loadPlugins()">
+                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="40vw" :row-data-prop="data" @refresh-page="loadPlugins()">
                     <Button v-has-permission:PluginInstall v-tooltip.top="`Update Plugin`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
                   </DialogTemplate>
                   <PluginRemoveButton v-has-permission:PluginUninstall :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" />

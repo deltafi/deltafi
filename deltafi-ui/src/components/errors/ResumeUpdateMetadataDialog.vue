@@ -17,14 +17,10 @@
 -->
 
 <template>
-  <div class="metadataDialog">
-    <Dialog v-model:visible="metadataDialogVisible" header="Metadata" :modal="true" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '60vw' }">
-      <Message v-if="hasDuplicateKeys" severity="error" :closable="false">
-        No duplicate keys permitted
-      </Message>
-      <template #header>
-        <strong>Modify Metadata</strong>
-      </template>
+  <div class="update-metadata-dialog">
+    <div v-if="modifiedMetadata !== 'undefined' && metadataDialogVisible" class="metadata-body">
+      <Message v-if="hasDuplicateKeys" severity="error" :closable="false"> No duplicate keys permitted </Message>
+      <Message v-if="modifiedMetadata.length == 0" severity="info" :closable="false"> No metadata to display </Message>
       <CollapsiblePanel v-for="actions in modifiedMetadata" :key="actions" :header="actions.flow + '.' + actions.action" class="mb-3">
         <div v-for="pairs in actions.keyVals" :key="pairs">
           <div v-if="pairs.changed !== 'deleted'" class="row p-fluid mb-4">
@@ -43,38 +39,26 @@
         </div>
         <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addMetadataField(actions.flow, actions.action)" />
       </CollapsiblePanel>
-      <template #footer>
+    </div>
+    <div v-else-if="displayFetchingMetadataDialog">
+      <div>
+        <p>Metadata loading in progress. Please do not refresh the page!</p>
+        <ProgressBar :value="batchCompleteValue" />
+      </div>
+    </div>
+    <div v-else-if="displayBatchingMetadataDialog">
+      <div>
+        <p>{{ errorRequestType }} in progress. Please do not refresh the page!</p>
+        <ProgressBar :value="batchCompleteValue" />
+      </div>
+    </div>
+    <teleport v-if="isMounted && metadataDialogVisible" to="#dialogTemplate">
+      <div class="p-dialog-footer">
         <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeMetadataDialog" />
-        <Button label="Resume" icon="fas fa-play" :disabled="hasDuplicateKeys" @click="resumeClick" />
-      </template>
-    </Dialog>
-    <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true">
-      <template #header>
-        <strong>Resume</strong>
-      </template>
-      Resume {{ pluralized }}?
-      <template #footer>
-        <Button v-if="allMetadata.length > 0" label="Modify Metadata" icon="fas fa-database fa-fw" class="p-button-secondary p-button-outlined" @click="showMetadataDialog" />
-        <span v-else v-tooltip.top="'No metadata to display'">
-          <Button label="Modify Metadata" icon="fas fa-database fa-fw" class="p-button-secondary p-button-outlined" disabled @click="showMetadataDialog" />
-        </span>
-        <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeConfirmDialog" />
-        <Button label="Resume" icon="fas fa-play" @click="resumeClean" />
-      </template>
-    </Dialog>
+        <Button :label="`${errorRequestType}`" icon="fas fa-play" :disabled="hasDuplicateKeys" @click="submitClick" />
+      </div>
+    </teleport>
   </div>
-  <Dialog v-model:visible="displayBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Resuming">
-    <div>
-      <p>Resume in progress. Please do not refresh the page!</p>
-      <ProgressBar :value="batchCompleteValue" />
-    </div>
-  </Dialog>
-  <Dialog v-model:visible="displayMetadataBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Loading Metadata">
-    <div>
-      <p>Metadata loading in progress. Please do not refresh the page!</p>
-      <ProgressBar :value="batchCompleteValue" />
-    </div>
-  </Dialog>
 </template>
 
 <script setup>
@@ -84,20 +68,21 @@ import useErrorResume from "@/composables/useErrorResume";
 import useMetadata from "@/composables/useMetadata";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, ref } from "vue";
+import { computed, onBeforeMount, reactive, ref } from "vue";
+import { useMounted } from "@vueuse/core";
 
 import _ from "lodash";
 
 import Button from "primevue/button";
-import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 
-const emit = defineEmits(["update"]);
+const emit = defineEmits(["refreshAndClose"]);
+const isMounted = ref(useMounted());
 const { pluralize } = useUtilFunctions();
 const maxSuccessDisplay = 10;
-const displayBatchingDialog = ref(false);
-const displayMetadataBatchingDialog = ref(false);
+const displayFetchingMetadataDialog = ref(false);
+const displayBatchingMetadataDialog = ref(false);
 const notify = useNotifications();
 const batchCompleteValue = ref(0);
 const props = defineProps({
@@ -105,9 +90,14 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  errorRequestType: {
+    type: String,
+    required: true,
+  },
 });
 
 const { resume } = useErrorResume();
+const { errorRequestType } = reactive(props);
 const { fetchAll: meta, data: batchMetadata } = useMetadata();
 
 const modifiedMetadata = ref([]);
@@ -117,15 +107,14 @@ const pluralized = ref();
 const batchSize = 500;
 const allMetadata = ref([]);
 
-const showMetadataDialog = async () => {
-  confirmDialogVisible.value = false;
+onBeforeMount(async () => {
+  displayFetchingMetadataDialog.value = true;
   await formatMetadata();
   metadataDialogVisible.value = true;
-};
+});
 
 const getAllMeta = async () => {
   const batchedDids = getBatchDids(props.did);
-  displayMetadataBatchingDialog.value = props.did.length > batchSize;
   batchCompleteValue.value = 0;
   let completedBatches = 0;
   allMetadata.value = [];
@@ -138,22 +127,18 @@ const getAllMeta = async () => {
     completedBatches += dids.length;
     batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
   }
-  displayMetadataBatchingDialog.value = false;
+  displayFetchingMetadataDialog.value = false;
 };
 
 const showConfirmDialog = async () => {
   modifiedMetadata.value = [];
   pluralized.value = pluralize(props.did.length, "DeltaFile");
-  await getAllMeta();
   confirmDialogVisible.value = true;
 };
 
 const closeMetadataDialog = () => {
   metadataDialogVisible.value = false;
-};
-
-const closeConfirmDialog = () => {
-  confirmDialogVisible.value = false;
+  emit("refreshAndClose");
 };
 
 const addMetadataField = (flowValue, actionValue) => {
@@ -175,9 +160,8 @@ const removeMetadataField = (keyVal, flow, action) => {
   }
 };
 
-const resumeClick = () => {
-  requestResume();
-  closeMetadataDialog();
+const submitClick = async () => {
+  submit();
 };
 
 const onCellEditComplete = (keyVal, flow, action) => {
@@ -214,6 +198,7 @@ const hasDuplicateKeys = computed(() => {
 });
 
 const formatMetadata = async () => {
+  await getAllMeta();
   if (allMetadata.value !== undefined) {
     modifiedMetadata.value = JSON.parse(JSON.stringify(allMetadata.value)).map((metadata) => {
       return {
@@ -230,52 +215,49 @@ const formatMetadata = async () => {
     });
   }
 };
-const resumeClean = () => {
-  closeConfirmDialog();
-  requestResume();
-};
 
-const requestResume = async () => {
+const submit = async () => {
   let response;
   const batchedDids = getBatchDids(props.did);
   let success = false;
   let completedBatches = 0;
   try {
-    displayBatchingDialog.value = true;
+    displayBatchingMetadataDialog.value = true;
     batchCompleteValue.value = 0;
     for (const dids of batchedDids) {
-      response = await resume(dids, getAllModifiedMetadata());
+      response = await resume(dids, getModifiedMetadata());
       if (response.value.data !== undefined && response.value.data !== null) {
-        const successResume = [];
-        for (const resumeStatus of response.value.data.resume) {
-          if (resumeStatus.success) {
-            successResume.push(resumeStatus);
+        const successfulBatch = [];
+        for (const responseStatus of response.value.data.resume) {
+          if (responseStatus.success) {
+            successfulBatch.push(responseStatus);
           } else {
-            notify.error(`Resume request failed for ${resumeStatus.did}`, resumeStatus.error);
+            notify.error(`${errorRequestType} request failed for ${responseStatus.did}`, responseStatus.error);
           }
         }
-        if (successResume.length > 0) {
+        if (successfulBatch.length > 0) {
           success = true;
         }
       }
       completedBatches += dids.length;
       batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
     }
-    displayBatchingDialog.value = false;
+    displayBatchingMetadataDialog.value = false;
     batchCompleteValue.value = 0;
+
     if (success) {
       const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
       if (props.did.length > maxSuccessDisplay) links.push("...");
       const pluralized = pluralize(props.did.length, "DeltaFile");
-      notify.success(`Resume request sent successfully for ${pluralized}`, links.join(", "));
-      emit("update");
+      notify.success(`${errorRequestType} request sent successfully for ${pluralized}`, links.join(", "));
+      emit("refreshAndClose");
     }
   } catch (error) {
-    displayBatchingDialog.value = false;
+    displayBatchingMetadataDialog.value = false;
   }
 };
 
-const getAllModifiedMetadata = () => {
+const getModifiedMetadata = () => {
   const results = [];
   modifiedMetadata.value.forEach((metadata) => {
     const removedMetadata = [];
@@ -309,8 +291,4 @@ defineExpose({
 });
 </script>
 
-<style>
-.metadata-body {
-  width: 98%;
-}
-</style>
+<style />

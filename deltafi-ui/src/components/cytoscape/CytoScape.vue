@@ -6,7 +6,7 @@
 
 <script setup>
 import Controller from "@/components/cytoscape/useCytoscapeController";
-import { defineProps, onMounted, onUnmounted, provide, ref, toRefs } from "vue";
+import { onMounted, onUnmounted, provide, ref, toRefs } from "vue";
 
 import Cytoscape from "cytoscape";
 import { cxtMenuDefaults, cytoEvent, layout, style } from "./config";

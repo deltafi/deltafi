@@ -25,7 +25,7 @@
 <script setup>
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
-import { defineExpose, reactive } from "vue";
+import { reactive } from "vue";
 
 import _ from "lodash";
 

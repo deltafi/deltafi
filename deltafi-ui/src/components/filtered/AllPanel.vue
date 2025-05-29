@@ -107,13 +107,13 @@
         </template>
       </DataTable>
     </Panel>
-    <RetryResumeDialog ref="retryResumeDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData()" />
+    <ReplayDialog ref="replayDialog" :did="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
   </div>
 </template>
 
 <script setup>
 import DidLink from "@/components/DidLink.vue";
-import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
+import ReplayDialog from "@/components/ReplayDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useFiltered from "@/composables/useFiltered";
 import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
@@ -135,7 +135,7 @@ const emit = defineEmits(["refreshFilters", "filterCauseChanged:filteredCause"])
 const loading = ref(true);
 const menu = ref();
 const filtered = ref([]);
-const retryResumeDialog = ref();
+const replayDialog = ref();
 const expandedRows = ref([]);
 
 const totalFiltered = ref(0);
@@ -181,7 +181,7 @@ const menuItems = ref([
     label: "Replay Selected",
     icon: "fas fa-sync fa-fw",
     command: () => {
-      retryResumeDialog.value.showConfirmDialog();
+      replayDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileReplay")),
     disabled: computed(() => selectedDids.value.length == 0),

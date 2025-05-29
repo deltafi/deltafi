@@ -44,7 +44,7 @@ import { ref } from "vue";
 
 import _ from "lodash";
 
-const emit = defineEmits(["reloadResumeRules"]);
+const emit = defineEmits(["refreshPage"]);
 const { validateAutoResumeFile: validateFile } = useAutoResumeConfiguration();
 const { loadResumePolicies } = useAutoResumeQueryBuilder();
 const notify = useNotifications();
@@ -87,7 +87,7 @@ const uploadFile = async (file) => {
     notify.success(`Uploaded ${file.name}`, `Successfully uploaded ${file.name}.`, 4000);
   }
   deleteUploadFile();
-  emit("reloadResumeRules");
+  emit("refreshPage");
 };
 
 const deleteUploadFile = () => {

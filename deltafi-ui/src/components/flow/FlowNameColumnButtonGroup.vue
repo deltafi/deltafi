@@ -30,7 +30,7 @@
 <script setup>
 import FlowRemoveButton from "@/components/flow/FlowRemoveButton.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
-import { computed, defineProps, inject, reactive, ref } from "vue";
+import { computed, inject, reactive, ref } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 
 const linkedTransform = useStorage("linked-transform-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });

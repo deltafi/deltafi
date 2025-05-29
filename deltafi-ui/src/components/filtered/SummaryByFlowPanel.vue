@@ -27,12 +27,8 @@
       <Paginator v-if="filteredFlow.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
     <DataTable id="filteredSummaryTable" v-model:selection="selectedFiltered" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
-      <template #empty>
-        No results to display.
-      </template>
-      <template #loading>
-        Loading. Please wait...
-      </template>
+      <template #empty> No results to display. </template>
+      <template #loading> Loading. Please wait... </template>
       <Column field="flow" header="Flow" :sortable="true" class="filename-column">
         <template #body="{ data }">
           <a class="monospace" @click="showAllTab(data.flow, data.type)">{{ data.flow }}</a>
@@ -42,11 +38,11 @@
       <Column field="count" header="Count" :sortable="true" />
     </DataTable>
   </Panel>
-  <RetryResumeDialog ref="retryResumeDialog" :did="selectedDids" @update="fetchDeltaFilesData()" />
+  <ReplayDialog ref="replayDialog" :did="selectedDids" @refresh-page="fetchDeltaFilesData()" />
 </template>
 
 <script setup>
-import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
+import ReplayDialog from "@/components/ReplayDialog.vue";
 import useFiltered from "@/composables/useFiltered";
 import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
@@ -66,7 +62,7 @@ const hasSomePermissions = inject("hasSomePermissions");
 
 const emit = defineEmits(["refreshFilters", "showAllTab"]);
 const { data: response, fetchFilteredSummaryByFlow } = useFiltered();
-const retryResumeDialog = ref();
+const replayDialog = ref();
 const loading = ref(true);
 const menu = ref();
 const filteredFlow = ref([]);
@@ -108,7 +104,7 @@ const menuItems = ref([
     label: "Replay Selected",
     icon: "fas fa-sync fa-fw",
     command: () => {
-      retryResumeDialog.value.showConfirmDialog();
+      replayDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileReplay")),
     disabled: computed(() => selectedDids.value.length == 0),

@@ -21,8 +21,8 @@
     <PageHeader heading="Auto Resume">
       <div class="d-flex">
         <Button label="Export Rules" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportAutoResume()" />
-        <AutoResumeImportFile v-has-permission:ResumePolicyCreate @reload-resume-rules="fetchAutoResumeRules()" />
-        <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="{}" @reload-resume-rules="fetchAutoResumeRules()">
+        <AutoResumeImportFile v-has-permission:ResumePolicyCreate @refresh-page="fetchAutoResumeRules()" />
+        <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="{}" @refresh-page="fetchAutoResumeRules()">
           <Button v-has-permission:ResumePolicyCreate label="Add Rule" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
@@ -45,7 +45,7 @@
         <template #empty> No Auto Resume rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15%' }">
           <template #body="{ data }">
-            <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="View Auto Resume Rule" dialog-width="75vw" :row-data-prop="data" view-auto-resume-rule @reload-resume-rules="fetchAutoResumeRules()">
+            <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="View Auto Resume Rule" dialog-width="75vw" :row-data-prop="data" view-auto-resume-rule @refresh-page="fetchAutoResumeRules()">
               <a class="cursor-pointer" style="color: black">{{ data.name }}</a>
             </DialogTemplate>
           </template>
@@ -65,10 +65,10 @@
         <Column :style="{ width: '5%' }" :body-style="{ padding: 0 }" :hidden="!$hasSomePermissions('ResumePolicyUpdate', 'ResumePolicyDelete')">
           <template #body="{ data }">
             <div class="d-flex">
-              <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Edit Auto Resume Rule" required-permission="ResumePolicyUpdate" dialog-width="75vw" :row-data-prop="data" @reload-resume-rules="fetchAutoResumeRules()">
+              <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Edit Auto Resume Rule" required-permission="ResumePolicyUpdate" dialog-width="75vw" :row-data-prop="data" @refresh-page="fetchAutoResumeRules()">
                 <Button v-has-permission:ResumePolicyUpdate v-tooltip.top="`Edit Rule`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
               </DialogTemplate>
-              <AutoResumeRemoveButton v-has-permission:ResumePolicyDelete class="pl-2" :row-data-prop="data" @reload-resume-rules="fetchAutoResumeRules()" />
+              <AutoResumeRemoveButton v-has-permission:ResumePolicyDelete class="pl-2" :row-data-prop="data" @refresh-page="fetchAutoResumeRules()" />
             </div>
           </template>
         </Column>
@@ -266,7 +266,7 @@ const onCellEditComplete = async (event) => {
         width: 7rem;
         padding: 0 !important;
 
-        >span {
+        > span {
           padding: 0.5rem !important;
         }
 
@@ -276,7 +276,7 @@ const onCellEditComplete = async (event) => {
           display: flex;
         }
 
-        .value-clickable>* {
+        .value-clickable > * {
           flex: 0 0 auto;
         }
 

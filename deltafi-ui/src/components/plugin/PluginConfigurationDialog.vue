@@ -62,7 +62,7 @@
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import { useMounted } from "@vueuse/core";
-import { computed, nextTick, reactive, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
@@ -75,10 +75,6 @@ const props = defineProps({
     required: false,
     default: null,
   },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
-  },
 });
 
 const pluginInstallDetails = {
@@ -89,9 +85,8 @@ const pluginInstallDetails = {
 const notify = useNotifications();
 const submitLoad = ref(false);
 const { errors, installPlugin } = usePlugins();
-const { closeDialogCommand } = reactive(props);
 const rowData = ref(Object.assign({}, props.rowDataProp || pluginInstallDetails));
-const emit = defineEmits(["reloadPlugins"]);
+const emit = defineEmits(["refreshAndClose"]);
 const isMounted = ref(useMounted());
 const errorsList = ref([]);
 const model = computed({
@@ -129,8 +124,7 @@ const submit = async () => {
   submitLoad.value = false;
 
   if (errorsList.value.length === 0) {
-    closeDialogCommand.command();
-    emit("reloadPlugins");
+    emit("refreshAndClose");
   }
 };
 

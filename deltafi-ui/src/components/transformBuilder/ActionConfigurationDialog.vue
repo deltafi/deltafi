@@ -120,7 +120,7 @@ provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
 const uiSchema = ref(undefined);
 const isMounted = ref(useMounted());
-const emit = defineEmits(["updateAction"]);
+const emit = defineEmits(["updateAction", "refreshAndClose"]);
 const props = defineProps({
   rowDataProp: {
     type: Object,
@@ -129,10 +129,6 @@ const props = defineProps({
   actionIndexProp: {
     type: Number,
     required: true,
-  },
-  closeDialogCommand: {
-    type: Object,
-    default: null,
   },
 });
 
@@ -145,7 +141,7 @@ const defaultJoinTemplate = ref({
 
 const errors = ref([]);
 
-const { actionIndexProp: actionIndex, closeDialogCommand } = reactive(props);
+const { actionIndexProp: actionIndex } = reactive(props);
 
 const rowData = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
 const data = ref(_.isEmpty(_.get(rowData, "parameters", null)) ? {} : rowData["parameters"]);
@@ -246,8 +242,8 @@ const submit = async () => {
     rowData["join"] = newJoin;
   }
 
-  closeDialogCommand.command();
   emit("updateAction", { actionIndex: actionIndex, updatedAction: rowData });
+  emit("refreshAndClose");
 };
 </script>
 
