@@ -147,15 +147,13 @@ class DeletePolicyServiceTest {
     }
 
     private DeletePolicies getValidSave() {
-        return DeletePolicies.builder()
-                .timedPolicies(List.of(buildTimeDeletePolicy())).build();
+        return new DeletePolicies(List.of(buildTimeDeletePolicy()));
     }
 
     private DeletePolicies getInvalidSave() {
         TimedDeletePolicy timedDeletePolicy = buildTimeDeletePolicy();
         timedDeletePolicy.setAfterComplete(null);
-        return DeletePolicies.builder()
-                .timedPolicies(List.of(timedDeletePolicy)).build();
+        return new DeletePolicies(List.of(timedDeletePolicy));
     }
 
     TimedDeletePolicy buildTimeDeletePolicy() {

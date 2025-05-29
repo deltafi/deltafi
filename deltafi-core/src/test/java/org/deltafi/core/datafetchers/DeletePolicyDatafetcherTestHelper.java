@@ -36,7 +36,7 @@ public class DeletePolicyDatafetcherTestHelper {
     public static final String AFTER_COMPLETE_POLICY = "afterCompletePolicy";
     public static final String OFFLINE_POLICY = "offlinePolicy";
 
-    private static final List<TimedDeletePolicy> TIMED_POLICY_LIST = List.of(
+    private static final List<DeletePolicy> TIMED_POLICY_LIST = List.of(
             TimedDeletePolicy.builder()
                     .id(UUID.randomUUID())
                     .name(AFTER_COMPLETE_POLICY)
@@ -89,10 +89,8 @@ public class DeletePolicyDatafetcherTestHelper {
         return executeLoad(dgsQueryExecutor, TIMED_POLICY_LIST);
     }
 
-    private static Result executeLoad(DgsQueryExecutor dgsQueryExecutor, List<TimedDeletePolicy> timedPolicies) {
-        DeletePolicies input = DeletePolicies.builder()
-                .timedPolicies(timedPolicies)
-                .build();
+    private static Result executeLoad(DgsQueryExecutor dgsQueryExecutor, List<DeletePolicy> timedPolicies) {
+        DeletePolicies input = new DeletePolicies(timedPolicies);
 
         LoadDeletePoliciesGraphQLQuery query = LoadDeletePoliciesGraphQLQuery.newRequest()
                 .replaceAll(true)

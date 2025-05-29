@@ -1,0 +1,53 @@
+query GetDeletePolicies {
+    getDeletePolicies {
+        id
+        name
+        flow
+        __typename
+        enabled
+        ... on TimedDeletePolicy {
+            afterCreate
+            afterComplete
+            minBytes
+            deleteMetadata
+        }
+    }
+}
+
+query ExportDeletePolicies {
+    exportDeletePolicies {
+        timedPolicies {
+            id
+            name
+            flow
+            enabled
+            afterCreate
+            afterComplete
+            minBytes
+            deleteMetadata
+        }
+    }
+}
+
+mutation ImportDeletePolicies($replaceAll: Boolean!, $policies: DeletePoliciesInput!) {
+    loadDeletePolicies(replaceAll: $replaceAll, policies: $policies) {
+        success
+        errors
+    }
+}
+
+mutation LoadTimedDeletePolicy($policy: TimedDeletePolicyInput!) {
+    updateTimedDeletePolicy(policyUpdate: $policy) {
+        success
+        info
+        errors
+    }
+}
+
+mutation ToggleDeletePolicy($enabled: Boolean!, $id: UUID!) {
+    enablePolicy(enabled: $enabled, id: $id)
+}
+
+mutation RemoveDeletePolicy($id: UUID!) {
+    removeDeletePolicy(id: $id)
+}

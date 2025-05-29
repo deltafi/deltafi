@@ -43,6 +43,12 @@ public class DeletePolicyDatafetcher {
         return deletePolicyService.getAll();
     }
 
+    @DgsQuery
+    @NeedsPermission.DeletePolicyRead
+    public DeletePolicies exportDeletePolicies() {
+        return new DeletePolicies(deletePolicyService.getAll());
+    }
+
     @DgsMutation
     @NeedsPermission.DeletePolicyCreate
     public Result loadDeletePolicies(@InputArgument Boolean replaceAll, @InputArgument DeletePolicies policies) {

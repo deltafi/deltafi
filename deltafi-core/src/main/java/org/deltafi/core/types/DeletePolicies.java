@@ -17,21 +17,30 @@
  */
 package org.deltafi.core.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class DeletePolicies {
-    @Builder.Default
-    private List<TimedDeletePolicy> timedPolicies = new ArrayList<>();
+
+    private List<TimedDeletePolicy> timedPolicies;
+
+    public DeletePolicies() {
+        timedPolicies = new ArrayList<>();
+    }
+
+    public DeletePolicies(List<DeletePolicy> policies) {
+        this.timedPolicies = new ArrayList<>();
+        if (policies != null) {
+            for (DeletePolicy policy : policies) {
+                if (policy instanceof TimedDeletePolicy timedPolicy) {
+                    timedPolicies.add(timedPolicy);
+                }
+            }
+        }
+    }
 
     public List<DeletePolicy> allPolicies() {
         List<DeletePolicy> allPolicies = new ArrayList<>();

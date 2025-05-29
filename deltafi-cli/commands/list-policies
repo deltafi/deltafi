@@ -20,10 +20,6 @@ QUERY="query {
     name
     __typename
     enabled
-    ... on DiskSpaceDeletePolicy {
-      maxPercent
-      flow
-    }
     ... on TimedDeletePolicy {
       afterCreate
       afterComplete

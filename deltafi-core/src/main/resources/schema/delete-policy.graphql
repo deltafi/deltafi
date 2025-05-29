@@ -57,6 +57,7 @@ type DeletePolicies {
 
 extend type Query {
     getDeletePolicies: [DeletePolicy!]!
+    exportDeletePolicies: DeletePolicies!
 }
 
 extend type Mutation {
