@@ -30,6 +30,9 @@ import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.deltafi.core.services.DockerPlatformService.DELTAFI_GROUP;
@@ -38,6 +41,7 @@ import static org.deltafi.core.services.DockerPlatformService.DELTAFI_GROUP;
 public class DockerDeployerService extends BaseDeployerService implements DeployerService {
 
     public static final int IMAGE_PULL_TIMEOUT_SECONDS = 60;
+    private static final String APP_LABEL_KEY = "app";
 
     // the times are all in nanoseconds
     private static final HealthCheck PLUGIN_HEALTH_CHECK = new HealthCheck()
@@ -95,13 +99,59 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
     @Override
     public void restartPlugin(String plugin) {
+        restartPlugin(plugin, true);
+    }
 
-        List<Container> containers = findExisting(plugin);
+    @Override
+    public boolean restartPlugin(String plugin, boolean waitForSuccess) {
+        List<Container> containers = findByLabel(plugin);
         if (isEmpty(containers)) {
             // no container found, so assume this is a container ID
-            dockerClient.restartContainerCmd(plugin).exec();
+            return restartById(plugin, waitForSuccess);
         } else {
-            containers.forEach(container -> dockerClient.restartContainerCmd(container.getId()).exec());
+            return restartContainers(containers, waitForSuccess);
+        }
+    }
+
+    private boolean restartContainers(List<Container> containers, boolean waitForSuccess) {
+        if (containers.size() == 1) {
+            return restartById(containers.getFirst().getId(), waitForSuccess);
+        }
+
+        List<Callable<Boolean>> pendingHealthChecks = new ArrayList<>();
+        for (Container container : containers) {
+            dockerClient.restartContainerCmd(container.getId()).exec();
+            if (waitForSuccess) {
+                pendingHealthChecks.add(() -> awaitHealthy(container.getId()));
+            }
+        }
+
+        return pendingHealthChecks.isEmpty() || awaitAllHealth(pendingHealthChecks);
+    }
+
+    private boolean restartById(String containerId, boolean waitForSuccess) {
+        dockerClient.restartContainerCmd(containerId).exec();
+        return !waitForSuccess || awaitHealthy(containerId);
+    }
+
+    private boolean awaitAllHealth(List<Callable<Boolean>> pendingHealthChecks) {
+        try {
+            long timeout = deltaFiPropertiesService.getDeltaFiProperties().getPluginDeployTimeout().toMillis();
+            List<Future<Boolean>> healthChecks = executorService.invokeAll(pendingHealthChecks, timeout, TimeUnit.MILLISECONDS);
+            boolean allHealthy = true;
+            for (Future<Boolean> containerCheck : healthChecks) {
+                if (containerCheck.isDone() && !containerCheck.isCancelled()) {
+                    allHealthy &= containerCheck.get();
+                }
+            }
+            return allHealthy;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted while waiting for health checks to complete", e);
+            return false;
+        } catch (ExecutionException e) {
+            log.error("Health check failed during plugin restart", e);
+            return false;
         }
     }
 
@@ -112,7 +162,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     }
 
     private void install(InstallDetails installDetails) {
-        Map<String, String> containerLabels = Map.of(DELTAFI_GROUP, "deltafi-plugins", "logging", "promtail", "logging_jobname", "containerlogs");
+        Map<String, String> containerLabels = Map.of(APP_LABEL_KEY, installDetails.appName(), DELTAFI_GROUP, "deltafi-plugins", "logging", "promtail", "logging_jobname", "containerlogs");
 
         List<String> envVars = new ArrayList<>(environmentVariables);
         envVars.add(IMAGE + "=" + installDetails.image());
@@ -224,11 +274,18 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .exec();
     }
 
-    private void awaitHealthy(String containerId) throws UnhealthyContainer {
+    private List<Container> findByLabel(String appName) {
+        return dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .withLabelFilter(Map.of(APP_LABEL_KEY, appName, DELTAFI_GROUP, getGroupName(appName)))
+                .exec();
+    }
+
+    private boolean awaitHealthy(String containerId) throws UnhealthyContainer {
         // wait up to 30 seconds for the health check to pass
         for (int i = 0; i < 30; i++) {
             if (isHealthy(containerId)) {
-                return;
+                return true;
             }
             try {
                 Thread.sleep(1_000);

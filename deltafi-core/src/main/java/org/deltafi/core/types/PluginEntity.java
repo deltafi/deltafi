@@ -23,6 +23,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.*;
+import org.deltafi.core.plugin.deployer.InstallDetails;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -43,6 +44,7 @@ public class PluginEntity {
     private String imageName;
     private String imageTag;
     private String imagePullSecret;
+    private String deploymentName;
     private String displayName;
     private String description;
     private String actionKitVersion;
@@ -84,6 +86,7 @@ public class PluginEntity {
         this.imageName = plugin.getImageName();
         this.imageTag = plugin.getImageTag();
         this.imagePullSecret = plugin.getImagePullSecret();
+        this.deploymentName = plugin.getImageName() != null ? InstallDetails.from(plugin.getImageName()).appName() : null;
         this.displayName = plugin.getDisplayName();
         this.description = plugin.getDescription();
         this.actionKitVersion = plugin.getActionKitVersion();
@@ -98,6 +101,7 @@ public class PluginEntity {
         plugin.setImageName(imageName);
         plugin.setImageTag(imageTag);
         plugin.setImagePullSecret(imagePullSecret);
+        plugin.setDeploymentName(deploymentName);
         plugin.setPluginCoordinates(this.getPluginCoordinates());
         plugin.setDisplayName(this.displayName);
         plugin.setDescription(this.description);

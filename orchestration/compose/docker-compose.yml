@@ -130,6 +130,7 @@ services:
       retries: 4
       start_period: 10s
     labels:
+      app: deltafi-core-actions
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:

@@ -51,10 +51,17 @@ public interface DeployerService extends Snapshotter {
     }
 
     /**
-     * Restart or recreate the plugin with the given names
+     * Restart or recreate the plugin with the given name
      * @param plugin name of the plugin to bounce
      */
     void restartPlugin(String plugin);
+
+    /**
+     * Restart or recreate the plugin with the given names
+     * @param plugin name of the plugin to bounce
+     * @param waitForSuccess true to wait for the restart to complete, false returns after the restart is initiated
+     */
+    boolean restartPlugin(String plugin, boolean waitForSuccess);
 
     /**
      * Restart (or delete) the resources with the given names

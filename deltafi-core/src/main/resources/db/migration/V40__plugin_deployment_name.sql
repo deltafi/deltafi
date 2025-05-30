@@ -1,0 +1,1 @@
+ALTER TABLE plugins ADD COLUMN deployment_name text;

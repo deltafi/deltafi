@@ -72,6 +72,14 @@ public class PluginDataFetcher {
         return deployerService.uninstallPlugin(pluginCoordinates, true);
     }
 
+    @DgsMutation
+    @NeedsPermission.Admin
+    public boolean restartPlugin(@InputArgument String pluginName, @InputArgument Boolean waitForSuccess) {
+        auditLogger.audit("restarted plugin {}", pluginName);
+        // waitForSuccess is false by default
+        return deployerService.restartPlugin(pluginName, Boolean.TRUE.equals(waitForSuccess));
+    }
+
     @DgsQuery
     @NeedsPermission.PluginsView
     public Collection<ActionDescriptor> actionDescriptors() {

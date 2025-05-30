@@ -27,6 +27,7 @@ public class Plugin {
   private String imageName;
   private String imageTag;
   private String imagePullSecret;
+  private String deploymentName;
   private String displayName;
   private String description;
   private String actionKitVersion;

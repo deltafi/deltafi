@@ -28,6 +28,8 @@ type Plugin {
     imageTag: String
     "The name of the secret containing the registry credentials to pull the image"
     imagePullSecret: String
+    "The name of the plugin deployment"
+    deploymentName: String
     "A user-friendly name"
     displayName: String!
     "A description of the functionality provided"
@@ -184,4 +186,7 @@ extend type Mutation {
 
     "Uninstall the plugin with the given coordinates, even if there are blockers"
     forcePluginUninstall(pluginCoordinates: PluginCoordinatesInput!): Result!
+
+    "Restart the plugin with the given coordinates"
+    restartPlugin(pluginName: String!, waitForSuccess: Boolean): Boolean!
 }

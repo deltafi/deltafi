@@ -46,7 +46,7 @@ public abstract class BaseDeployerService implements DeployerService {
 
     private final EventService eventService;
     protected final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+    protected final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
     protected BaseDeployerService(PluginService pluginService, EventService eventService, DeltaFiPropertiesService deltaFiPropertiesService) {
         this.deltaFiPropertiesService = deltaFiPropertiesService;
@@ -171,6 +171,10 @@ public abstract class BaseDeployerService implements DeployerService {
     @Override
     public int getOrder() {
         return SnapshotRestoreOrder.PLUGIN_INSTALL_ORDER;
+    }
+
+    protected String getGroupName(String appName) {
+        return "deltafi-core-actions".equals(appName) ? "deltafi-core" : "deltafi-plugins";
     }
 
     private Callable<Result> toCallableDeploy(InstallDetails installDetails) {

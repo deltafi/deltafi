@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @Slf4j
 public class K8sDeployerService extends BaseDeployerService {
@@ -81,11 +83,24 @@ public class K8sDeployerService extends BaseDeployerService {
 
     @Override
     public void restartPlugin(String plugin) {
-        Deployment dep = k8sClient.apps().deployments().withName(plugin).get();
-        if (dep != null) {
-            k8sClient.apps().deployments().resource(dep).rolling().restart();
-            k8sClient.resource(dep).waitUntilCondition(this::rolloutSuccessful, getTimeoutInMillis(), TimeUnit.MILLISECONDS);
+        restartPlugin(plugin, true);
+    }
+
+    @Override
+    public boolean restartPlugin(String plugin, boolean waitForSuccess) {
+        List<RollableScalableResource<Deployment>> deployments = k8sClient.apps().deployments()
+                .withLabels(Map.of(APP_LABEL_KEY, plugin, "group", getGroupName(plugin)))
+                .resources().toList();
+        if (!deployments.isEmpty()) {
+            for (RollableScalableResource<Deployment> deployment : deployments) {
+                deployment.rolling().restart();
+                if (waitForSuccess) {
+                    k8sClient.resource(deployment.get()).waitUntilCondition(this::rolloutSuccessful, getTimeoutInMillis(), TimeUnit.MILLISECONDS);
+                }
+            }
+            return true;
         }
+        return false;
     }
 
     @Override
