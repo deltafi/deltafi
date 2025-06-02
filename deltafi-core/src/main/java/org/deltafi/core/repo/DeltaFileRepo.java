@@ -21,6 +21,7 @@ import org.deltafi.core.generated.types.DeltaFileStats;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
+import org.deltafi.core.types.MetadataStats;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -87,6 +88,23 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     """, nativeQuery = true)
     List<Object[]> getRawDeltaFileStats();
 
+    @Query(value = """
+        WITH table_sizes AS (
+            SELECT
+                schemaname, tablename,
+                pg_total_relation_size(schemaname||'.'||tablename) AS actual_size,
+                (SELECT reltuples FROM pg_class WHERE oid = (schemaname||'.'||tablename)::regclass) AS est_rows,
+                (SELECT sum(avg_width) FROM pg_stats WHERE schemaname = t.schemaname AND tablename = t.tablename) AS avg_row_width
+            FROM pg_tables t
+            WHERE (schemaname, tablename) IN (('public','delta_file_flows'), ('public','annotations'), ('public','delta_files'))
+        )
+        SELECT
+            SUM(est_rows * (avg_row_width + 28)) as estimated_non_bloat_bytes, -- 28 = tuple header + item pointer overhead
+            MAX(CASE WHEN tablename = 'delta_files' THEN est_rows ELSE 0 END) as delta_files_live_rows
+        FROM table_sizes
+    """, nativeQuery = true)
+    List<Object[]> getRawMetadataStorageStats();
+
     /**
      * Get estimated count and sizes of deltaFiles in the system
      * @return stats
@@ -94,13 +112,25 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     default DeltaFileStats deltaFileStats() {
         List<Object[]> rawStats = getRawDeltaFileStats();
         if (rawStats.isEmpty()) {
-            return new DeltaFileStats(0L, 0L, 0L);  // or however you want to handle no results
+            return new DeltaFileStats(0L, 0L, 0L);
         }
         Object[] row = rawStats.getFirst();
         return new DeltaFileStats(
                 Math.max(0, ((Number) row[0]).longValue()),
                 Math.max(0, ((Number) row[1]).longValue()),
                 Math.max(0, ((Number) row[2]).longValue())
+        );
+    }
+
+    default MetadataStats metadataStats() {
+        List<Object[]> rawStats = getRawMetadataStorageStats();
+        if (rawStats.isEmpty()) {
+            return new MetadataStats(0L, 0L);
+        }
+        Object[] row = rawStats.getFirst();
+        return new MetadataStats(
+                Math.max(0, row[0] == null ? 0 : ((Number) row[0]).longValue()),
+                Math.max(0, row[1] == null ? 0 : ((Number) row[1]).longValue())
         );
     }
 }

@@ -2639,7 +2639,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile4.setContentDeleted(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile4);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, false, 10, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, false, 10, true, false);
 		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile2.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).sorted().toList());
 	}
 
@@ -2653,9 +2653,9 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setPinned(true);
 		deltaFileRepo.save(deltaFile2);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(now.plusSeconds(3), null, 0, null, false, false, 10, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(now.plusSeconds(3), null, 0, null, false, false, 10, true, false);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		deltaFiles = deltaFileRepo.findForTimedDelete(now.plusSeconds(3), null, 0, null, false, true, 10, true);
+		deltaFiles = deltaFileRepo.findForTimedDelete(now.plusSeconds(3), null, 0, null, false, true, 10, true, false);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
 	}
 
@@ -2671,7 +2671,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile4.setContentDeleted(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile4);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, false, 1, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, false, 1, true, false);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
 	}
 
@@ -2681,7 +2681,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setContentDeleted(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile1);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, true, false, 10, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, true, false, 10, true, false);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
 	}
 
@@ -2705,7 +2705,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile5.updateFlags();
 		deltaFileRepo.save(deltaFile5);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, false, false, 10, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, false, false, 10, true, false);
 		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile4.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).sorted().toList());
 	}
 
@@ -2716,7 +2716,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), "b", DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile2);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", false, false, 10, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", false, false, 10, true, false);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2729,7 +2729,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setContentDeleted(oneSecondAgo);
 		deltaFileRepo.save(deltaFile1);
 
-		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now(), null, 0, null, false, false, 10, true);
+		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now(), null, 0, null, false, false, 10, true, false);
 		assertTrue(deltaFiles.isEmpty());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -4596,7 +4596,7 @@ class DeltaFiCoreApplicationTests {
 		}
 		deltaFileRepo.insertBatch(deltaFiles, 1000);
 		assertEquals(1500, deltaFileRepo.count());
-		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now(), null, 0L, null, "policyName", true, 1000);
+		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now(), null, 0L, null, "policyName", true, 1000, false);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 10000).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);
@@ -4675,7 +4675,7 @@ class DeltaFiCoreApplicationTests {
 		contentDeleted.updateFlags();
 
 		deltaFileRepo.saveAll(List.of(complete, contentDeleted));
-		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(5), null, 0L, null, "policyName", true, 1000);
+		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(5), null, 0L, null, "policyName", true, 1000, false);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 1).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);

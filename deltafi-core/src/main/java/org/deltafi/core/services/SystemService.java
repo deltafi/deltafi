@@ -56,6 +56,7 @@ public class SystemService {
 
     private Map<String, NodeMetrics> cachedNodeMetrics;
     private List<String> cachedContentNodeNames;
+    private List<String> cachedMetadataNodeNames;
     private Map<String, List<AppName>> cachedAppsByNode;
 
     @PostConstruct
@@ -90,6 +91,25 @@ public class SystemService {
         return new Versions(platformService.getRunningVersions());
     }
 
+    public List<NodeMetrics> metadataNodesMetrics() throws StorageCheckException {
+        Map<String, NodeMetrics> allMetrics = getNodeMetrics();
+        List<String> metadataNodes = getMetadataNodeNames();
+
+        if (metadataNodes.isEmpty()) {
+            throw new StorageCheckException("Could not find a node with metadata storage");
+        }
+
+        List<NodeMetrics> metadataMetrics = metadataNodes.stream().map(allMetrics::get).toList();
+
+        for (NodeMetrics nodeMetric : metadataMetrics) {
+            if (!hasValidMetadataMetric(nodeMetric)) {
+                throw new StorageCheckException("Unable to get metadata storage metrics, received metrics " + allMetrics + ", searching for node " + nodeMetric);
+            }
+        }
+
+        return metadataMetrics;
+    }
+
     public List<NodeMetrics> contentNodesMetrics() throws StorageCheckException {
         Map<String, NodeMetrics> allMetrics = getNodeMetrics();
         List<String> minioNodes = getContentNodeNames();
@@ -107,6 +127,16 @@ public class SystemService {
         }
 
         return minioMetrics;
+    }
+
+    public List<DiskMetrics> metadataNodesDiskMetrics() throws StorageCheckException {
+        List<NodeMetrics> metadataMetrics = metadataNodesMetrics().stream().toList();
+        return metadataMetrics.stream()
+                .map(metadataMetric -> {
+                    Map<String, Long> metrics = metadataMetric.resources().get("disk-postgres");
+                    return new DiskMetrics(metadataMetric.name(), metrics.get("limit"), metrics.get("usage"));
+                })
+                .toList();
     }
 
     public List<DiskMetrics> contentNodesDiskMetrics() throws StorageCheckException {
@@ -159,6 +189,19 @@ public class SystemService {
         }
 
         Map<String, Long> values = nodeMetrics.resources().get("disk-minio");
+        if (values == null) {
+            return false;
+        }
+
+        return values.values().stream().allMatch(this::isValid);
+    }
+
+    private boolean hasValidMetadataMetric(NodeMetrics nodeMetrics) {
+        if (nodeMetrics == null) {
+            return false;
+        }
+
+        Map<String, Long> values = nodeMetrics.resources().get("disk-postgres");
         if (values == null) {
             return false;
         }
@@ -227,6 +270,13 @@ public class SystemService {
             cachedContentNodeNames = platformService.contentNodeNames();
         }
         return this.cachedContentNodeNames;
+    }
+
+    public List<String> getMetadataNodeNames() {
+        if (cachedMetadataNodeNames == null) {
+            cachedMetadataNodeNames = platformService.metadataNodeNames();
+        }
+        return this.cachedMetadataNodeNames;
     }
 
     public record Versions(List<AppInfo> versions, OffsetDateTime timestamp) {

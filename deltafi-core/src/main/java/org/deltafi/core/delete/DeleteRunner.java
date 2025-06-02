@@ -32,10 +32,14 @@ import java.util.List;
 public class DeleteRunner {
     private final DeltaFilesService deltaFilesService;
     private final DiskSpaceDelete diskSpaceDelete;
+    private final MetadataDelete metadataDelete;
     private final DeletePolicyService deletePolicyService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     public void runDeletes() {
+        // do not run metadata delete in the loop as metadata statistics may refresh slowly in the db stats
+        metadataDelete.run();
+
         // refresh policies places disk delete policies first
         // disk policies loop and delete files until disk pressure has been relieved
         // timed policies only run the first batch and return true if there's more to be deleted

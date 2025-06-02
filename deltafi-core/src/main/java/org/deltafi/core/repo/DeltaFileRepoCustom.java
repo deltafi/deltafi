@@ -90,9 +90,11 @@ public interface DeltaFileRepoCustom {
      * @param minBytes only delete deltaFiles greater than or equal to this size
      * @param flow if non-null the deltaFiles must have this flow set in the source info
      * @param batchSize the maximum number of deltaFiles to delete
+     *                  @param ordered whether the oldest deltaFiles should be deleted first
      * @return the number of rows deleted
      */
-    int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, int batchSize);
+    int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow,
+                          int batchSize, boolean ordered);
 
     /**
      * Find DeltaFiles that match the given criteria.
@@ -107,10 +109,12 @@ public interface DeltaFileRepoCustom {
      * @param includePinned whether to include pinned DeltaFiles
      * @param batchSize maximum number to delete
      * @param returnContentObjectIds whether content object ids should be included in the response
+     * @param ordered whether the oldest deltaFiles should be deleted first
      * @return the list of DeltaFile information marked for deletion
      */
     List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore,
-            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize, boolean returnContentObjectIds);
+            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize,
+            boolean returnContentObjectIds, boolean ordered);
 
     /**
      * Find the oldest DeltaFiles up to bytesToDelete size that match the dataSource (if given).

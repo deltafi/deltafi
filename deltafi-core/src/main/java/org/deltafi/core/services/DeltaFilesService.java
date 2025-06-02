@@ -1456,14 +1456,14 @@ public class DeltaFilesService {
      * @param batchSize        maximum size of the batch to delete
      * @return                 true if there are more DeltaFiles to delete, false otherwise
      */
-    public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow,
-                               String policy, boolean deleteMetadata, int batchSize) {
+    public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow,
+                               String policy, boolean deleteMetadata, int batchSize, boolean ordered) {
         int alreadyDeleted = 0;
 
         logBatch(batchSize, policy);
 
         if (deleteMetadata) {
-            alreadyDeleted = deltaFileRepo.deleteIfNoContent(createdBefore, completedBefore, minBytes, flow, batchSize);
+            alreadyDeleted = deltaFileRepo.deleteIfNoContent(createdBefore, completedBefore, minBytes, flow, batchSize, ordered);
 
             if (alreadyDeleted > 0) {
                 log.info("Deleted {} deltaFiles with no content for policy {}", alreadyDeleted, policy);
@@ -1475,7 +1475,7 @@ public class DeltaFilesService {
 
         List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(
                 createdBefore, completedBefore, minBytes, flow, deleteMetadata,
-                policy.equals(TTL_SYSTEM_POLICY), batchSize - alreadyDeleted, !isLocalStorage());
+                policy.equals(TTL_SYSTEM_POLICY), batchSize - alreadyDeleted, !isLocalStorage(), ordered);
         delete(deltaFiles, policy, deleteMetadata, alreadyDeleted, false);
 
         return deltaFiles.size() == batchSize;
@@ -1722,7 +1722,9 @@ public class DeltaFilesService {
                 generateMetricsByName(FILES_AUTO_RESUMED, countByFlow);
             }
         }
-        log.info("Queued total of {} DeltaFiles for auto-resume", queued);
+        if (queued > 0) {
+            log.info("Queued total of {} DeltaFiles for auto-resume", queued);
+        }
         return queued;
     }
 

@@ -240,7 +240,7 @@ class DeltaFilesServiceTest {
                 .flows(Set.of(ingressFlow))
                 .build();
         deltaFile.wireBackPointers();
-        when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
+        when(deltaFileRepo.findById(DID)).thenReturn(Optional.of(deltaFile));
         String json = deltaFilesService.getRawDeltaFile(DID, false);
         assertTrue(json.contains("\"did\":\"%s\"".formatted(DID)));
         assertTrue(json.contains("\"created\":\"2022-09-29T11:30:00.000Z\""));
@@ -259,7 +259,7 @@ class DeltaFilesServiceTest {
                 .flows(Set.of(ingressFlow))
                 .build();
         deltaFile.wireBackPointers();
-        when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
+        when(deltaFileRepo.findById(DID)).thenReturn(Optional.of(deltaFile));
         String json = deltaFilesService.getRawDeltaFile(DID, true);
         assertTrue(json.contains("  \"did\" : \"%s\",\n".formatted(DID)));
         assertNotEquals(1, json.split("\n").length);
@@ -341,9 +341,9 @@ class DeltaFilesServiceTest {
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
         DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
-        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false, 1000);
+        deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false, 1000, false);
 
         verify(contentStorageService).deleteAllByObjectName(stringListCaptor.capture());
         assertEquals(List.of(content1.getSegments().getFirst().objectName(), content2.getSegments().getFirst().objectName()), stringListCaptor.getValue());
@@ -361,9 +361,9 @@ class DeltaFilesServiceTest {
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
         DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2.getSegments().getFirst().getUuid()));
-        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true, 1000);
+        deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true, 1000, false);
 
         verify(contentStorageService).deleteAllByObjectName(stringListCaptor.capture());
         assertEquals(List.of(content1.getSegments().getFirst().objectName(), content2.getSegments().getFirst().objectName()), stringListCaptor.getValue());

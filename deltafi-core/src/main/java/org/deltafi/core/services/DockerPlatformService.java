@@ -62,6 +62,11 @@ public class DockerPlatformService implements PlatformService {
         return List.of(hostname);
     }
 
+    @Override
+    public List<String> metadataNodeNames() {
+        return List.of(hostname);
+    }
+
     private List<Container> getRunningContainers() {
         return dockerClient.listContainersCmd()
                 .withStatusFilter(List.of("running"))

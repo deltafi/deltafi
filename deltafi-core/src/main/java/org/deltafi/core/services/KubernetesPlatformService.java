@@ -64,6 +64,14 @@ public class KubernetesPlatformService implements PlatformService {
                 .toList();
     }
 
+    @Override
+    public List<String> metadataNodeNames() {
+        return k8sClient.pods().withLabels(Map.of("application", "spilo")).list()
+                .getItems().stream()
+                .map(this::extractNodeName)
+                .toList();
+    }
+
     private PodList runningPods() {
         return k8sClient.pods().withField("status.phase", "Running").list();
     }

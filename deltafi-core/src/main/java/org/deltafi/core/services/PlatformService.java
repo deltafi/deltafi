@@ -43,4 +43,10 @@ public interface PlatformService {
      * @return node names
      */
     List<String> contentNodeNames();
+
+    /**
+     * Return the names of the nodes where metadata is stored
+     * @return node names
+     */
+    List<String> metadataNodeNames();
 }

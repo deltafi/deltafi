@@ -47,8 +47,8 @@ public class DiskMetrics {
         return (int) Math.floor(this.percentUsed());
     }
 
-    public long bytesOverPercentage(int percent) {
-        long targetBytes = (long)((double) percent / 100 * limit);
+    public long bytesOverPercentage(double percent) {
+        long targetBytes = (long)(percent / 100.0 * limit);
         return usage - targetBytes;
     }
 

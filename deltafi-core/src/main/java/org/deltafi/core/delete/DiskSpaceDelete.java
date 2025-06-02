@@ -39,7 +39,7 @@ public class DiskSpaceDelete {
     private final DeltaFiPropertiesService propertiesService;
 
     public boolean run() {
-        int maxPercent = propertiesService.getDeltaFiProperties().getDiskSpacePercentThreshold();
+        double maxPercent = propertiesService.getDeltaFiProperties().getDiskSpacePercentThreshold();
         int batchSize = propertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
         List<DiskMetrics> contentMetrics = null;
         try {
@@ -48,12 +48,18 @@ public class DiskSpaceDelete {
             log.warn("Unable to evaluate deletion criteria: {}", e.getMessage());
         }
 
-        if (contentMetrics == null || contentMetrics.stream().map(DiskMetrics::percentUsed).reduce(0D, Double::max) <= maxPercent) {
+        if (contentMetrics == null) {
             return false;
         }
 
-        log.info("Disk delete policy executing: current used = {}%, maximum = {}%",
-                String.format("%.2f", contentMetrics.stream().map(DiskMetrics::percentUsed).reduce(0D, Double::max)), maxPercent);
+        double currentUsed = contentMetrics.stream().map(DiskMetrics::percentUsed).reduce(0D, Double::max);
+        log.info("Evaluating content disk space: current used = {}%, maximum = {}%",
+                String.format("%.2f", currentUsed), String.format("%.2f", maxPercent));
+
+        if (contentMetrics.stream().map(DiskMetrics::percentUsed).reduce(0D, Double::max) <= maxPercent) {
+            return false;
+        }
+
         long bytesToDelete = contentMetrics.stream().map(c -> c.bytesOverPercentage(maxPercent)).reduce(0L, Long::max);
         log.info("Deleting up to {} bytes", bytesToDelete);
         List<DeltaFileDeleteDTO> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, batchSize);

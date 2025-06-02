@@ -301,7 +301,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, int batchSize) {
+    public int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes,
+                                 String flow, int batchSize, boolean ordered) {
         if (createdBefore == null && completedBefore == null) return 0;
 
         StringBuilder conditions = new StringBuilder(" content_deleted IS NOT NULL ");
@@ -324,9 +325,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             params.add(minBytes);
         }
 
+        String orderBySql = "";
+        if (ordered) {
+            orderBySql = " ORDER BY " + (createdBefore != null ? "created " : "modified ");
+        }
+
         String deleteFilesSql = "WITH batch AS ( " +
                 " SELECT did FROM delta_files " +
                 " WHERE " + conditions + " " +
+                orderBySql +
                 " LIMIT " + batchSize +
                 ") " +
                 "DELETE FROM delta_files " +
@@ -337,7 +344,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore,
-            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize, boolean returnContentObjectIds) {
+            long minBytes, String flow, boolean deleteMetadata, boolean includePinned, int batchSize,
+            boolean returnContentObjectIds, boolean ordered) {
         if (createdBefore == null && completedBefore == null) {
             return Collections.emptyList();
         }
@@ -381,6 +389,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (!deleteMetadata) {
             queryBuilder.append(" AND df.content_deletable = true");
+        }
+
+        if (ordered) {
+            queryBuilder.append(" ORDER BY ").append(createdBefore != null ? "created " : "modified ");
         }
 
         queryBuilder.append(" LIMIT :batchSize");
