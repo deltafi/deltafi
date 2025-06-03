@@ -108,7 +108,7 @@ If --all is specified, starts all transform flows, ignoring any explicitly liste
 		all, _ := cmd.Flags().GetBool("all")
 
 		if all {
-			names, err := fetchRemoteTransformNames()
+			names, err := fetchTransformNames()
 			if err != nil {
 				return wrapInError("Error fetching transform names", err)
 			}
@@ -140,7 +140,7 @@ If --all is specified, stops all transform flows, ignoring any explicitly listed
 		all, _ := cmd.Flags().GetBool("all")
 
 		if all {
-			names, err := fetchRemoteTransformNames()
+			names, err := fetchTransformNames()
 			if err != nil {
 				return wrapInError("Error fetching transform names", err)
 			}
@@ -279,7 +279,7 @@ func disableTransformTestMode(flowName string) error {
 }
 
 func getTransformNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-	suggestions, err := fetchRemoteTransformNames()
+	suggestions, err := fetchTransformNames()
 	if err != nil {
 		// TODO - log this somewhere, how should this be handled?
 		//fmt.Println("Error fetching suggestions:", err)
@@ -288,7 +288,7 @@ func getTransformNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.
 	return suggestions, cobra.ShellCompDirectiveNoFileComp
 }
 
-func fetchRemoteTransformNames() ([]string, error) {
+func fetchTransformNames() ([]string, error) {
 	var resp, err = graphql.ListTransforms()
 	if err != nil {
 		return nil, err

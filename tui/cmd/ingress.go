@@ -351,8 +351,10 @@ var ingressCmd = &cobra.Command{
 					continue
 				}
 				fmt.Printf("\nDetails for %s:\n", uuidStr)
-				if err := viewDeltaFile(did); err != nil {
+				if result, err := RenderDeltaFile(did); err != nil {
 					fmt.Printf("error viewing deltafile: %v\n", err)
+				} else {
+					fmt.Println(result)
 				}
 			}
 		} else {

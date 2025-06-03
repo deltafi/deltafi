@@ -18,8 +18,6 @@
 package components
 
 import (
-	"os"
-
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/ui/styles"
 
@@ -29,7 +27,6 @@ import (
 
 type SimpleTable struct {
 	Table       *api.Table
-	re          *lipgloss.Renderer
 	BaseStyle   lipgloss.Style
 	HeaderStyle lipgloss.Style
 	OddRowStyle lipgloss.Style
@@ -41,18 +38,16 @@ type SimpleTable struct {
 }
 
 func NewSimpleTable(t *api.Table) *SimpleTable {
-	re := lipgloss.NewRenderer(os.Stdout)
-	baseStyle := re.NewStyle().Padding(0, 1)
+	baseStyle := lipgloss.NewStyle().Padding(0, 1)
 	oddRowStyle := baseStyle
 
 	return &SimpleTable{
 		Table:       t,
-		re:          re,
 		BaseStyle:   baseStyle,
 		HeaderStyle: baseStyle.Foreground(styles.Blue).Bold(true),
 		OddRowStyle: oddRowStyle,
 		Border:      lipgloss.RoundedBorder(),
-		BorderStyle: re.NewStyle().Foreground(styles.Surface1),
+		BorderStyle: lipgloss.NewStyle().Foreground(styles.Surface1),
 		verbose:     false,
 	}
 }

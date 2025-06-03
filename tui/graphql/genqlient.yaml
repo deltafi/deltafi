@@ -17,6 +17,7 @@ operations:
 - properties.graphql
 - deltafile_stats.graphql
 - delete_policies.graphql
+- deltafile_search.graphql
 generated: generated.go
 client_getter: "github.com/deltafi/tui/internal/app.GetGraphqlClient"
 context_type: "-"

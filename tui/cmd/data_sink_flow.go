@@ -95,7 +95,7 @@ If --all is specified, starts all data sinks, ignoring any explicitly listed flo
 		all, _ := cmd.Flags().GetBool("all")
 
 		if all {
-			names, err := fetchRemoteDataSinkNames()
+			names, err := fetchDataSinkNames()
 			if err != nil {
 				return wrapInError("Error fetching data sink names", err)
 			}
@@ -127,7 +127,7 @@ If --all is specified, stops all data sinks, ignoring any explicitly listed flow
 		all, _ := cmd.Flags().GetBool("all")
 
 		if all {
-			names, err := fetchRemoteDataSinkNames()
+			names, err := fetchDataSinkNames()
 			if err != nil {
 				return wrapInError("Error fetching data sink names", err)
 			}
@@ -256,14 +256,14 @@ func disableDataSinkTestMode(flowName string) error {
 }
 
 func getDataSinkNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-	suggestions, err := fetchRemoteDataSinkNames()
+	suggestions, err := fetchDataSinkNames()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 	return suggestions, cobra.ShellCompDirectiveNoFileComp
 }
 
-func fetchRemoteDataSinkNames() ([]string, error) {
+func fetchDataSinkNames() ([]string, error) {
 	resp, err := graphql.ListDataSinks()
 	if err != nil {
 		return nil, err

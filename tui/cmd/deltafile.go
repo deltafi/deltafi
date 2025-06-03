@@ -19,6 +19,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
@@ -46,7 +47,12 @@ var (
 			if err != nil {
 				return fmt.Errorf("invalid DeltaFile ID: %v", err)
 			}
-			return viewDeltaFile(did)
+			output, err := RenderDeltaFile(did)
+			if err != nil {
+				return err
+			}
+			fmt.Print(output)
+			return nil
 		},
 	}
 )
@@ -55,14 +61,14 @@ func init() {
 	rootCmd.AddCommand(deltafileCmd)
 }
 
-func viewDeltaFile(did uuid.UUID) error {
+func RenderDeltaFile(did uuid.UUID) (string, error) {
 	resp, err := graphql.DeltaFile(did)
 	if err != nil {
-		return fmt.Errorf("failed to fetch DeltaFile: %v", err)
+		return "", fmt.Errorf("failed to fetch DeltaFile: %v", err)
 	}
 
 	if resp == nil || resp.DeltaFile == nil {
-		return fmt.Errorf("no DeltaFile found with ID: %s", did)
+		return "", fmt.Errorf("no DeltaFile found with ID: %s", did)
 	}
 
 	return displayStructuredView(resp)
@@ -72,36 +78,17 @@ func formatTimestamp(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
-func formatState(state string) string {
-	switch state {
-	case "COMPLETE":
-		return styles.SuccessStyle.Render(state)
-	case "ERROR":
-		return styles.ErrorStyle.Render(state)
-	case "FILTERED":
-		return styles.WarningStyle.Render(state)
-	case "JOINED":
-		return styles.SuccessStyle.Render(state)
-	case "INHERITED":
-		return styles.InfoStyle.Render(state)
-	default:
-		return state
-	}
-}
-
-func displayFlowTree(flows []graphql.DeltaFileDeltaFileFlowsDeltaFileFlow) {
+func displayFlowTree(flows []graphql.DeltaFileDeltaFileFlowsDeltaFileFlow) string {
+	var sb strings.Builder
 
 	flowDepthMap := make(map[int]*tree.Tree)
 
 	enumeratorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("63")).MarginRight(1).Bold(true)
 	actionEnumeratorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("64")).MarginRight(1).Bold(true)
 
-	// itemStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
-
 	t := tree.Root(styles.SubheaderStyle.Render("\nFlow Details")).
 		Enumerator(tree.RoundedEnumerator).
 		EnumeratorStyle(enumeratorStyle)
-		// ItemStyle(itemStyle)
 
 	flowDepthMap[0] = t
 
@@ -164,16 +151,17 @@ func displayFlowTree(flows []graphql.DeltaFileDeltaFileFlowsDeltaFileFlow) {
 		flowDepthMap[flow.Depth].Child(flowTree)
 	}
 
-	fmt.Print(t)
-	fmt.Println()
+	sb.WriteString(t.String())
+	sb.WriteString("\n")
+	return sb.String()
 }
 
-func displayStructuredView(resp *graphql.DeltaFileResponse) error {
+func displayStructuredView(resp *graphql.DeltaFileResponse) (string, error) {
+	var sb strings.Builder
 	df := resp.DeltaFile
 
 	// Basic Information section
 	basicInfoTable := &api.Table{
-		// Columns: []string{"Deltafile Details", ""},
 		Rows: [][]string{
 			{"DID", df.Did.String()},
 			{"Name", *df.Name},
@@ -187,13 +175,12 @@ func displayStructuredView(resp *graphql.DeltaFileResponse) error {
 		},
 	}
 
-	// terminalWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
-	basicInfoTableComponent := components.NewSimpleTable(basicInfoTable) //.Width(terminalWidth)
-	fmt.Println(basicInfoTableComponent.Render())
+	basicInfoTableComponent := components.NewSimpleTable(basicInfoTable)
+	sb.WriteString(basicInfoTableComponent.Render())
+	sb.WriteString("\n")
 
 	// Status Flags section
 	statusFlagsTable := &api.Table{
-		// Columns: []string{"Flags", ""},
 		Rows: [][]string{},
 	}
 
@@ -218,12 +205,13 @@ func displayStructuredView(resp *graphql.DeltaFileResponse) error {
 	}
 
 	statusFlagsTableComponent := components.NewSimpleTable(statusFlagsTable)
-	fmt.Println(statusFlagsTableComponent.Render())
+	sb.WriteString(statusFlagsTableComponent.Render())
+	sb.WriteString("\n")
 
-	displayAnnotations(*df)
-	displayDeltaFileTable(df.ChildDids, "Child DeltaFiles")
-	displayDeltaFileTable(df.ParentDids, "Parent DeltaFiles")
-	displayFlowTree(df.Flows)
+	sb.WriteString(displayAnnotations(*df))
+	sb.WriteString(displayDeltaFileTable(df.ChildDids, "Child DeltaFiles"))
+	sb.WriteString(displayDeltaFileTable(df.ParentDids, "Parent DeltaFiles"))
+	sb.WriteString(displayFlowTree(df.Flows))
 
 	contentTags := map[string]bool{}
 	hasContentTags := false
@@ -239,23 +227,25 @@ func displayStructuredView(resp *graphql.DeltaFileResponse) error {
 	}
 
 	if hasContentTags {
-		fmt.Println(styles.SubheaderStyle.Render("\nContent Tags"))
-		fmt.Println()
+		sb.WriteString(styles.SubheaderStyle.Render("\nContent Tags"))
+		sb.WriteString("\n\n")
 		tagList := list.New()
 		for tag := range contentTags {
 			tagList.Items(tag)
 		}
-		fmt.Println(tagList)
+		sb.WriteString(tagList.String())
 	}
 
-	fmt.Println()
-	return nil
+	sb.WriteString("\n")
+	return sb.String(), nil
 }
 
-func displayDeltaFileTable(dids []uuid.UUID, title string) {
+func displayDeltaFileTable(dids []uuid.UUID, title string) string {
+	var sb strings.Builder
 	if len(dids) > 0 {
-		fmt.Println()
-		fmt.Println(styles.SubheaderStyle.PaddingLeft(2).Render(title))
+		sb.WriteString("\n")
+		sb.WriteString(styles.SubheaderStyle.PaddingLeft(2).Render(title))
+		sb.WriteString("\n")
 		childTable := &api.Table{
 			Columns: []string{"DID", "Filename", "Stage"},
 			Rows:    make([][]string, 0),
@@ -278,13 +268,14 @@ func displayDeltaFileTable(dids []uuid.UUID, title string) {
 			}
 		}
 		table := components.NewSimpleTable(childTable)
-		fmt.Println(table.Render())
+		sb.WriteString(table.Render())
 	}
+	return sb.String()
 }
 
-func displayAnnotations(df graphql.DeltaFileDeltaFile) {
+func displayAnnotations(df graphql.DeltaFileDeltaFile) string {
+	var sb strings.Builder
 	if df.Annotations != nil && len(*df.Annotations) > 0 {
-
 		table := &api.Table{
 			Columns: []string{"Annotation Key", "Value"},
 			Rows:    make([][]string, 0),
@@ -293,9 +284,9 @@ func displayAnnotations(df graphql.DeltaFileDeltaFile) {
 		for k, v := range *df.Annotations {
 			table.Rows = append(table.Rows, []string{k, fmt.Sprintf("%v", v)})
 		}
-		fmt.Println(components.NewSimpleTable(table).Render())
+		sb.WriteString(components.NewSimpleTable(table).Render())
 	}
-
+	return sb.String()
 }
 
 func formatBytes(bytes int64) string {

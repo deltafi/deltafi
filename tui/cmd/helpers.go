@@ -30,6 +30,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/ui/components"
+	"github.com/deltafi/tui/internal/ui/styles"
 )
 
 func renderAsSimpleTable(t api.Table, plain bool) {
@@ -110,4 +111,21 @@ func printYAML(data interface{}) error {
 
 	fmt.Println(string(yamlData))
 	return nil
+}
+
+func formatState(state string) string {
+	switch state {
+	case "COMPLETE":
+		return styles.SuccessStyle.Render(state)
+	case "ERROR":
+		return styles.ErrorStyle.Render(state)
+	case "FILTERED":
+		return styles.WarningStyle.Render(state)
+	case "JOINED":
+		return styles.SuccessStyle.Render(state)
+	case "INHERITED":
+		return styles.InfoStyle.Render(state)
+	default:
+		return state
+	}
 }

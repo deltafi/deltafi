@@ -47,4 +47,22 @@ query GetFlowGraph {
       }
     }
   }
+}
+
+query GetAllTopics {
+  getAllTopics {
+    name
+    publishers {
+      name
+      type
+      state
+      condition
+    }
+    subscribers {
+      name
+      type
+      state
+      condition
+    }
+  }
 } 
