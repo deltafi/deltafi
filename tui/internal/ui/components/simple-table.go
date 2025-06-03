@@ -178,7 +178,7 @@ func (t *SimpleTable) RenderPlain() string {
 		Wrap(false).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if col == 0 {
-				return t.BaseStyle.Copy().Width(keyColumnWidth)
+				return t.BaseStyle.Width(keyColumnWidth)
 			}
 
 			// Skip styling for empty rows

@@ -22,15 +22,23 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
+	gstyles "github.com/charmbracelet/glamour/styles"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/ui/components"
 	"github.com/deltafi/tui/internal/ui/styles"
+)
+
+var (
+	markdownHeaderColor  string = "39"
+	markdownHeaderMargin uint   = 0
 )
 
 func renderAsSimpleTable(t api.Table, plain bool) {
@@ -128,4 +136,105 @@ func formatState(state string) string {
 	default:
 		return state
 	}
+}
+
+func renderMarkdown(text string, width int) string {
+	r, err := glamour.NewTermRenderer(
+		GetMarkdownStyle(),
+		glamour.WithWordWrap(width),
+	)
+	if err != nil {
+		return text
+	}
+
+	return renderGlamourMarkdown(text, true, r)
+}
+
+func renderGlamourMarkdown(text string, interactive bool, renderer *glamour.TermRenderer) string {
+	var r *glamour.TermRenderer
+	var err error
+
+	if renderer == nil {
+		// For non-interactive mode
+		r, err = glamour.NewTermRenderer(
+			GetMarkdownStyle(),
+			glamour.WithWordWrap(80),
+		)
+		if err != nil {
+			return text
+		}
+	} else {
+		r = renderer
+	}
+
+	rendered, err := r.Render(text)
+	if err != nil {
+		return text
+	}
+
+	// Clean up the rendered text
+	rendered = strings.TrimSpace(rendered)
+	rendered = strings.ReplaceAll(rendered, "\n\n", "\n")
+
+	// If this is non-interactive mode, add padding for alignment
+	if !interactive {
+		lines := strings.Split(rendered, "\n")
+		for i, line := range lines {
+			if i > 0 { // Don't pad the first line since it comes after the icon
+				lines[i] = "  " + line
+			}
+		}
+		rendered = strings.Join(lines, "\n")
+	}
+
+	return rendered
+}
+
+func GetMarkdownStyle() glamour.TermRendererOption {
+
+	gstyles.DarkStyleConfig.Heading.Color = &markdownHeaderColor
+	gstyles.DarkStyleConfig.H1.Color = &markdownHeaderColor
+	gstyles.DarkStyleConfig.H2.Color = &markdownHeaderColor
+	gstyles.DarkStyleConfig.H3.Color = &markdownHeaderColor
+	gstyles.DarkStyleConfig.H4.Color = &markdownHeaderColor
+	gstyles.DarkStyleConfig.H5.Color = &markdownHeaderColor
+	gstyles.DarkStyleConfig.H6.Color = &markdownHeaderColor
+	gstyles.DarkStyleConfig.Heading.Margin = &markdownHeaderMargin
+	gstyles.DarkStyleConfig.H1.Margin = &markdownHeaderMargin
+	gstyles.DarkStyleConfig.H1.Prefix = ""
+	gstyles.DarkStyleConfig.H2.Prefix = "▌ "
+	gstyles.DarkStyleConfig.H3.Prefix = "┃ "
+	gstyles.DarkStyleConfig.H4.Prefix = "│ "
+	gstyles.DarkStyleConfig.H5.Prefix = "┆ "
+	gstyles.DarkStyleConfig.H6.Prefix = "┊ "
+
+	gstyles.DarkStyleConfig.Heading.BackgroundColor = nil
+	gstyles.DarkStyleConfig.H1.BackgroundColor = nil
+
+	return glamour.WithOptions(
+		glamour.WithAutoStyle(),
+	)
+}
+
+func escapedCompletions(values []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	var results []string
+
+	// Get the current shell
+	shell := os.Getenv("SHELL")
+	isZsh := strings.Contains(shell, "zsh")
+
+	for _, value := range values {
+		if isZsh {
+			// For zsh, we need simple escaping
+			value = strings.ReplaceAll(value, " ", "\\ ")
+		} else {
+			// For bash, we need crazy triple backslash escaping
+			value = strings.ReplaceAll(value, " ", "\\\\\\ ")
+		}
+		if strings.HasPrefix(value, toComplete) {
+			results = append(results, value)
+		}
+	}
+	sort.Strings(results)
+	return results, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveDefault
 }

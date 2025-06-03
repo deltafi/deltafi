@@ -25,7 +25,7 @@ import (
 
 var (
 	// Base colors (Latte for Light, Mocha for Dark)
-	Base   = lipgloss.AdaptiveColor{Light: "#eff1f5", Dark: "#000000"} // Base
+	Base   = lipgloss.AdaptiveColor{Light: "#eff1f5", Dark: "#1e1e2e"} // Base
 	Mantle = lipgloss.AdaptiveColor{Light: "#e6e9ef", Dark: "#181825"} // Mantle
 	Crust  = lipgloss.AdaptiveColor{Light: "#dce0e8", Dark: "#11111b"} // Crust
 

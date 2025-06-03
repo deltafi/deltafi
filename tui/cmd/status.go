@@ -113,7 +113,7 @@ func NewStatusCommand(interactive bool) *StatusCommand {
 		width = 80
 	}
 	r, _ := glamour.NewTermRenderer(
-		glamour.WithStylesFromJSONBytes([]byte(GetMarkdownStyle())),
+		GetMarkdownStyle(),
 		glamour.WithWordWrap(width),
 	)
 	cmd.renderer = r
@@ -144,9 +144,8 @@ func (c *StatusCommand) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.width = msg.Width
 		c.height = msg.Height
 		c.ready = true
-		style := GetMarkdownStyle()
 		r, _ := glamour.NewTermRenderer(
-			glamour.WithStylesFromJSONBytes([]byte(style)),
+			GetMarkdownStyle(),
 			glamour.WithWordWrap(max(c.width-8, 20)),
 		)
 		c.renderer = r
@@ -264,7 +263,7 @@ func RenderStatus(status api.StatusResponse, interactive bool, renderer *glamour
 		sb.WriteString("\n")
 
 		if check.Message != "" {
-			sb.WriteString(renderMarkdown(check.Message, interactive, renderer))
+			sb.WriteString(renderGlamourMarkdown(check.Message, interactive, renderer))
 			sb.WriteString("\n")
 		}
 	}
@@ -332,7 +331,7 @@ func (c *StatusCommand) View() string {
 		checks = append(checks, checkLine)
 
 		if check.Message != "" {
-			checks = append(checks, renderMarkdown(check.Message, c.interactive, c.renderer))
+			checks = append(checks, renderGlamourMarkdown(check.Message, c.interactive, c.renderer))
 		}
 	}
 
@@ -372,113 +371,4 @@ func nextPoints(current string) string {
 	default:
 		return "⋅"
 	}
-}
-
-func renderMarkdown(text string, interactive bool, renderer *glamour.TermRenderer) string {
-	var r *glamour.TermRenderer
-	var err error
-
-	style := GetMarkdownStyle()
-
-	if renderer == nil {
-		// For non-interactive mode
-		r, err = glamour.NewTermRenderer(
-			glamour.WithStylesFromJSONBytes([]byte(style)),
-			glamour.WithWordWrap(80),
-		)
-		if err != nil {
-			return text
-		}
-	} else {
-		r = renderer
-	}
-
-	rendered, err := r.Render(text)
-	if err != nil {
-		return text
-	}
-
-	// Clean up the rendered text
-	rendered = strings.TrimSpace(rendered)
-	rendered = strings.ReplaceAll(rendered, "\n\n", "\n")
-
-	// If this is non-interactive mode, add padding for alignment
-	if !interactive {
-		lines := strings.Split(rendered, "\n")
-		for i, line := range lines {
-			if i > 0 { // Don't pad the first line since it comes after the icon
-				lines[i] = "  " + line
-			}
-		}
-		rendered = strings.Join(lines, "\n")
-	}
-
-	return rendered
-}
-
-func GetMarkdownStyle() string {
-	return `{
-		"document": {
-			"margin": 4,
-			"color": "39"
-		},
-		"block_quote": {
-			"indent": 2,
-			"indent_token": "│ "
-		},
-		"paragraph": {
-		    "indent": 0,
-			"color": "8",
-			"margin": 0
-		},
-		"list": {
-			"margin": 0,
-			"level_indent": 2
-		},
-		"heading": {
-			"block_suffix": "",
-			"margin": 2,
-			"level_1": {
-				"bold": true,
-				"color": "39",
-				"prefix": "",
-				"suffix": ""
-			},
-			"level_2": {
-				"bold": true,
-				"color": "39",
-				"prefix": "",
-				"suffix": ""
-			},
-			"level_3": {
-				"bold": true,
-				"color": "39",
-				"prefix": "",
-				"suffix": ""
-			},
-			"level_4": {
-				"bold": true,
-				"color": "39",
-				"prefix": "",
-				"suffix": ""
-			}
-		},
-		"code_block": {
-			"margin": 0,
-			"theme": "dracula"
-		},
-		"code": {
-			"color": "203"
-		},
-		"bold": {
-			"bold": true
-		},
-		"italic": {
-			"italic": true
-		},
-		"link": {
-			"color": "39",
-			"underline": true
-		}
-	}`
 }

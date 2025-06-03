@@ -164,9 +164,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.progress.Width = m.width - 37
-		style := GetMarkdownStyle()
 		r, _ := glamour.NewTermRenderer(
-			glamour.WithStylesFromJSONBytes([]byte(style)),
+			GetMarkdownStyle(),
 			glamour.WithWordWrap(max(m.width-8, 20)),
 		)
 		m.renderer = r
@@ -201,7 +200,7 @@ func (m model) View() string {
 	}
 
 	r, _ := glamour.NewTermRenderer(
-		glamour.WithStylesFromJSONBytes([]byte(GetMarkdownStyle())),
+		GetMarkdownStyle(),
 		glamour.WithWordWrap(max(m.width-8, 20)),
 	)
 	m.renderer = r
