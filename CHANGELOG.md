@@ -5,6 +5,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.21.0] - 2025-06-03
+
+### Added
+- Added lazy loading of resume/replay metadata 
+- Add property `metadataDiskSpacePercentThreshold`. If DB size exceeds this % DeltaFiles will be deleted. 
+- Added a `restartPlugin` mutation for restarting plugins
+- Added TUI commands for managing delete policies 
+- Added a minio cli command to the TUI  
+- TUI: `deltafi plugin describe` command
+- TUI: `deltafi search` command added to list and search deltafiles
+- Added valkey cli, stat, monitor and watch commands to the TUI 
+
+### Changed
+- Changed the egress-sink deployment to use a RollingUpdate strategy instead of Recreate
+- diskSpacePercentThreshold can now hold decimal values
+- TUI: Improved markdown rendering
+
+### Fixed
+- TUI: ingress command should only tab complete data-sources that are running
+
+### Tech-Debt/Refactor
+- Updated Python base image to 3.12.10
+  - pydantic to 2.11.5
+  - redis to 6.2.0
+  - pytest-mock to 3.14.1
+
+### Upgrade and Migration
+- Downgraded jacksonVersion from 2.19.0 to 2.18.4 to fix fabric8 kubernetes client issue  
+
 ## [2.20.0] - 2025-05-27
 
 ### Added
@@ -4240,7 +4269,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.20.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.21.0...main
+[2.21.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.20.0...2.21.0
 [2.20.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.19.0...2.20.0
 [2.19.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.18.0...2.19.0
 [2.18.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.17.0...2.18.0
