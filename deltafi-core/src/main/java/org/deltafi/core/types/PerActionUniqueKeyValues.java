@@ -19,6 +19,7 @@ package org.deltafi.core.types;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.types.FlowType;
 
 import java.util.*;
 
@@ -30,9 +31,17 @@ public class PerActionUniqueKeyValues {
     private String flow;
 
     @Getter
+    private FlowType flowType;
+
+    @Getter
     private String action;
 
-    public PerActionUniqueKeyValues(String flow, String action) {
+    public PerActionUniqueKeyValues(Key key) {
+        this(key.flowType, key.flowName, key.actionName);
+    }
+
+    public PerActionUniqueKeyValues(FlowType flowType, String flow, String action) {
+        this.flowType = flowType;
         this.flow = flow;
         this.action = action;
     }
@@ -52,11 +61,16 @@ public class PerActionUniqueKeyValues {
         }
     }
 
-    public void addValue(String key, String value) {
-        if (!keyVals.containsKey(key)) {
-            keyVals.put(key, new UniqueKeyValues(key));
+    public void addValues(Map<String, String> metadata) {
+        if (metadata == null) {
+            return;
         }
-
-        keyVals.get(key).addValue(value);
+        metadata.forEach(this::addValue);
     }
+
+    public void addValue(String key, String value) {
+        keyVals.computeIfAbsent(key, UniqueKeyValues::new).addValue(value);
+    }
+
+    public record Key(FlowType flowType, String flowName, String actionName) {}
 }

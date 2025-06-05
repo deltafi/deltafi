@@ -35,6 +35,7 @@ input KeyValueInput {
 
 type PerActionUniqueKeyValues {
   flow: String!
+  flowType: FlowType!
   action: String!
   keyVals: [UniqueKeyValues!]!
 }

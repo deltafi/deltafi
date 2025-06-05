@@ -1373,18 +1373,15 @@ public class DeltaFilesService {
         // TODO: limit fields returned
         List<DeltaFile> deltaFiles = deltaFileRepo.findByIdsIn(dids);
 
-        Map<Pair<String, String>, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
+        Map<PerActionUniqueKeyValues.Key, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
         deltaFiles.stream()
                 .map(DeltaFile::getFlows)
                 .flatMap(Collection::stream)
                 .filter(flow -> flow.getState() == DeltaFileFlowState.ERROR && flow.lastAction().getType() != ActionType.UNKNOWN && flow.lastAction().getState() == ActionState.ERROR)
                 .forEach(flow -> {
                     Action action = flow.lastAction();
-                    if (!actionKeyValues.containsKey(Pair.of(flow.getName(), action.getName()))) {
-                        actionKeyValues.put(Pair.of(flow.getName(), action.getName()), new PerActionUniqueKeyValues(flow.getName(), action.getName()));
-                    }
-                    flow.getMetadata()
-                            .forEach((key, value) -> actionKeyValues.get(Pair.of(flow.getName(), action.getName())).addValue(key, value));
+                    PerActionUniqueKeyValues.Key key = new PerActionUniqueKeyValues.Key(flow.getType(), flow.getName(), action.getName());
+                    actionKeyValues.computeIfAbsent(key, PerActionUniqueKeyValues::new).addValues(flow.getMetadata());
                 });
 
         return new ArrayList<>(actionKeyValues.values());
