@@ -25,6 +25,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -206,6 +207,11 @@ func (c *Client) Post(path string, requestBody interface{}, result interface{}, 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-User-Permissions", "Admin")
 	req.Header.Add("X-User-Name", "TUI")
+	// fmt.Println("--------------------------------")
+	// fmt.Println(fmt.Sprintf("%+v", req))
+	// fmt.Println(fmt.Sprintf("Sending request to %s", req.URL.String()))
+	// fmt.Println(fmt.Sprintf("Headers: %v", req.Header))
+	// fmt.Println("--------------------------------")
 	return c.httpClient.Do(req)
 }
 
@@ -243,4 +249,53 @@ func (c *Client) CreatEvent(event Event) (*Event, error) {
 	var newEvent Event
 	err := c.Post("/api/v2/events", event, &newEvent, nil)
 	return &newEvent, err
+}
+
+// PostToFile sends a POST request and writes the response directly to a file
+func (c *Client) PostToFile(path string, requestBody interface{}, outfile string, opts *RequestOpts) error {
+	var req *http.Request
+	var err error
+
+	// Handle JSON request body
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to encode request body: %w", err)
+	}
+	req, err = http.NewRequest("POST", c.baseURL+path, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	if opts != nil {
+		for key, value := range opts.Headers {
+			req.Header.Set(key, value)
+		}
+	}
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("%d - %s", resp.StatusCode, body)
+	}
+
+	// Create the output file
+	out, err := os.Create(outfile)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer out.Close()
+
+	// Copy the response body to the file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to write response to file: %w", err)
+	}
+
+	return nil
 }
