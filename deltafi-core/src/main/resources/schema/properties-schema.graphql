@@ -95,6 +95,7 @@ type DeltaFiProperties {
     checkActionQueueSizeThreshold: Int!
     checkContentStoragePercentThreshold: Int!
     uiUseUTC: Boolean!
+    uiContentPreviewSize: String
     topBarBackgroundColor: String
     topBarTextColor: String
     securityBannerText: String
@@ -128,6 +129,7 @@ input DeltaFiPropertiesInput {
     checkActionQueueSizeThreshold: Int!
     checkContentStoragePercentThreshold: Int!
     uiUseUTC: Boolean!
+    uiContentPreviewSize: String
     topBarBackgroundColor: String
     topBarTextColor: String
     securityBannerText: String

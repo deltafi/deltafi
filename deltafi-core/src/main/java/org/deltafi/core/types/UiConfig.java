@@ -33,12 +33,14 @@ public class UiConfig {
     private boolean clusterMode;
     private boolean useUTC = true;
     private TopBar topBar;
+    private long contentPreviewSize;
     private SecurityBanner securityBanner;
     private List<Link> deltaFileLinks = new ArrayList<>();
     private List<Link> externalLinks = new ArrayList<>();
 
     public void setProperties(DeltaFiProperties properties) {
         this.setTitle(properties.getSystemName());
+        this.setContentPreviewSize(properties.getUiContentPreviewSize());
         this.topBar = new TopBar(properties);
         this.securityBanner = new SecurityBanner(properties);
     }

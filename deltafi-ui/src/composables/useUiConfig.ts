@@ -43,7 +43,8 @@ export type UiConfig = {
   }>
   useUTC?: Boolean,
   authMode?: String,
-  clusterMode?: Boolean
+  clusterMode?: Boolean,
+  contentPreviewSize?: Number
 }
 
 const uiConfig: UiConfig = reactive({
@@ -58,6 +59,7 @@ const uiConfig: UiConfig = reactive({
   useUTC: false,
   authMode: 'disabled',
   clusterMode: true,
+  contentPreviewSize: 32768
 })
 
 export default function useUiConfig(): {

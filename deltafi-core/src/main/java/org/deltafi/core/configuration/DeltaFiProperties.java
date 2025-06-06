@@ -113,6 +113,9 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean uiUseUTC = true;
 
+    @PropertyInfo(description = "Maximum number of bytes the UI will retrieve from the backend when viewing content", defaultValue = "32768", dataType = VariableDataType.NUMBER)
+    private long uiContentPreviewSize = 32768; // 32KB
+
     @PropertyInfo(description = "Background color of the top bar")
     private String topBarBackgroundColor;
 

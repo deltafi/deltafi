@@ -19,7 +19,7 @@
 <template>
   <div class="content-selector-container">
     <div v-if="showListbox" class="left-column">
-      <Listbox v-model="selectedItem" :options="listboxItems" option-label="name" />
+      <Listbox v-model="selectedItem" :options="listboxItems" filter option-label="name" />
     </div>
     <div class="right-column">
       <ContentViewer :content="selectedContent" />
@@ -67,6 +67,8 @@ watch(selectedItem, (newItem, oldValue) => {
   .p-listbox {
     border-radius: 4px 4px 0 0;
     height: 100%;
+    max-height: 100%;
+    overflow-y: auto;
   }
 
   .left-column {

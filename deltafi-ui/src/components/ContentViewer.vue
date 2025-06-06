@@ -65,6 +65,7 @@ import FormattedBytes from "@/components/FormattedBytes.vue";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import useContent from "@/composables/useContent";
 import useNotifications from "@/composables/useNotifications";
+import useUiConfig from "@/composables/useUiConfig";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { prettyPrint } from "@/workers/prettyPrint.worker";
 import { computed, onMounted, ref, toRefs, watch, reactive } from "vue";
@@ -93,8 +94,8 @@ const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data 
 const { formattedBytes } = useUtilFunctions();
 const { copy: copyToClipboard } = useClipboard();
 const notify = useNotifications();
+const { uiConfig } = useUiConfig();
 
-const maxPreviewSize = 100000; // 100kB
 const contentLoaded = ref(false);
 const highlightCode = ref(true);
 const contentBuffer = ref(new ArrayBuffer());
@@ -223,11 +224,11 @@ watch(
   () => loadContent()
 );
 
-const partialContent = computed(() => content.value.size > maxPreviewSize);
+const partialContent = computed(() => content.value.size > uiConfig.contentPreviewSize);
 
 const embeddedContent = computed(() => "content" in content.value);
 
-const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
+const formattedMaxPreviewSize = computed(() => formattedBytes(uiConfig.contentPreviewSize));
 
 const warnings = computed(() => {
   const warnings = [];
@@ -262,7 +263,7 @@ const loadContent = async () => {
   }
   const request = {
     ...content.value,
-    size: partialContent.value ? maxPreviewSize : content.value.size,
+    size: partialContent.value ? uiConfig.contentPreviewSize : content.value.size,
   };
   delete request.tags;
   try {
