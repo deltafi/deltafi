@@ -66,7 +66,24 @@ export default function useIngress() {
         result.loading = false;
         result.error = true;
         console.error(error);
-        notify.error(`Failed to ingress ${file.name}`, error);
+
+        let errorMessage = "Unknown error occurred";
+        let statusCode = "";
+
+        if (error.response?.status) {
+          statusCode = `HTTP ${error.response.status}`;
+
+          if (error.response?.data) {
+            const serverMessage = typeof error.response.data === 'string' ? error.response.data : error.response.data.message || error.response.data.error || "Server error";
+            errorMessage = `${statusCode}: ${serverMessage}`;
+          } else {
+            errorMessage = `${statusCode}: ${error.response.statusText || "Server error"}`;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        notify.error(`Failed to ingress ${file.name}`, errorMessage);
       });
     return result;
   };
