@@ -31,7 +31,7 @@ public class UiConfig {
     private String domain;
     private String authMode;
     private boolean clusterMode;
-    private boolean useUTC = true;
+    private boolean useUTC;
     private TopBar topBar;
     private long contentPreviewSize;
     private SecurityBanner securityBanner;
@@ -41,6 +41,7 @@ public class UiConfig {
     public void setProperties(DeltaFiProperties properties) {
         this.setTitle(properties.getSystemName());
         this.setContentPreviewSize(properties.getUiContentPreviewSize());
+        this.setUseUTC(properties.isUiUseUTC());
         this.topBar = new TopBar(properties);
         this.securityBanner = new SecurityBanner(properties);
     }
