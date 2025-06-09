@@ -530,7 +530,7 @@ type actionCounts struct {
 }
 
 func countActionsInFlow(flowName string) (*actionCounts, error) {
-	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	flowGraph, err := graphql.GetFlowGraph()
 	if err != nil {
 		return nil, err
 	}
@@ -669,7 +669,7 @@ func formatActionCounts(counts *actionCounts) string {
 }
 
 func startAllConnectedActions(flowName string) error {
-	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	flowGraph, err := graphql.GetFlowGraph()
 	if err != nil {
 		return err
 	}
@@ -708,7 +708,7 @@ func startAllConnectedActions(flowName string) error {
 }
 
 func stopAllConnectedActions(flowName string) error {
-	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	flowGraph, err := graphql.GetFlowGraph()
 	if err != nil {
 		return err
 	}
@@ -747,7 +747,7 @@ func stopAllConnectedActions(flowName string) error {
 }
 
 func pauseAllConnectedActions(flowName string) error {
-	flowGraph, err := graphql.GetFlowGraphData(flowName)
+	flowGraph, err := graphql.GetFlowGraph()
 	if err != nil {
 		return err
 	}

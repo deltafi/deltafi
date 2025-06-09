@@ -61,8 +61,7 @@ var flowGraphCmd = &cobra.Command{
 
 		var lastErr error
 		for _, flowName := range args {
-			fmt.Printf("\nGenerating flow graph for %s:\n", flowName)
-			err := displayFlowGraph(cmd, flowName)
+			err := displayFlowGraph(flowName)
 			if err != nil {
 				fmt.Printf("Error generating graph for %s: %v\n", flowName, err)
 				lastErr = err
@@ -71,7 +70,7 @@ var flowGraphCmd = &cobra.Command{
 		return lastErr
 	},
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		flowGraph, err := graphql.GetFlowGraphData("")
+		flowGraph, err := graphql.GetFlowGraph()
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
@@ -101,8 +100,8 @@ type flowNode struct {
 	willRepeat    bool
 }
 
-func displayFlowGraph(cmd *cobra.Command, flowName string) error {
-	flowGraph, err := graphql.GetFlowGraphData(flowName)
+func displayFlowGraph(flowName string) error {
+	flowGraph, err := graphql.GetFlowGraph()
 	if err != nil {
 		return err
 	}

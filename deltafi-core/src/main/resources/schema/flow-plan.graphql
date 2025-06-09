@@ -301,13 +301,3 @@ type DataSourceErrorState {
   currErrors: Int!
   maxErrors: Int!
 }
-
-type FlowGraphResponse {
-  dataSources: [DataSource!]!
-  transforms: [TransformFlow!]!
-  dataSinks: [DataSink!]!
-}
-
-extend type Query {
-  getFlowGraph(flowName: String!): FlowGraphResponse!
-}
