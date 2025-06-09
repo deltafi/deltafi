@@ -328,7 +328,7 @@ class Plugin(object):
             num_threads = 1
             if self.action_name(action) in self.thread_config:
                 maybe_num_threads = self.thread_config[self.action_name(action)]
-                if maybe_num_threads is int and maybe_num_threads > 0:
+                if type(maybe_num_threads) is int and maybe_num_threads > 0:
                     num_threads = maybe_num_threads
                 else:
                     self.logger.error(f"Ignoring non-int or invalid thread value {maybe_num_threads}")
