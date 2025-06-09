@@ -63,8 +63,7 @@ var (
 // UI Component styles
 var (
 	BaseStyle = lipgloss.NewStyle().
-			Foreground(Text).
-			Background(Base)
+			Foreground(Text)
 
 	CenteredStyle = lipgloss.NewStyle().
 			AlignHorizontal(lipgloss.Center)

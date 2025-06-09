@@ -26,6 +26,7 @@ import (
 	"sync"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/Masterminds/semver/v3"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/types"
@@ -47,9 +48,9 @@ type App struct {
 
 // Global singleton instance
 var (
-	instance *App
-	once     sync.Once
-	Version  string
+	instance        *App
+	once            sync.Once
+	SemanticVersion *semver.Version
 )
 
 // GetInstance returns the singleton App instance
@@ -81,7 +82,22 @@ func GetArch() string {
 }
 
 func SetVersion(version string) {
-	Version = version
+	sv, err := semver.NewVersion(version)
+	if err != nil {
+		sv = semver.MustParse("0.0.0")
+	}
+	SemanticVersion = sv
+}
+
+func GetVersion() string {
+	if SemanticVersion != nil {
+		return SemanticVersion.String()
+	}
+	return "0.0.0"
+}
+
+func GetSemanticVersion() *semver.Version {
+	return SemanticVersion
 }
 
 func build() {
@@ -93,15 +109,15 @@ func build() {
 	}
 
 	distroPath := ""
-	if config.DeploymentMode == types.CoreDevelopment || strings.Contains(Version, "SNAPSHOT") {
+	if config.DeploymentMode == types.CoreDevelopment || strings.Contains(GetVersion(), "SNAPSHOT") {
 		distroPath = filepath.Join(config.Development.RepoPath, "deltafi")
 	} else {
-		distroPath = filepath.Join(TuiPath(), Version)
+		distroPath = filepath.Join(TuiPath(), GetVersion())
 	}
 
 	instance = &App{
 		config:       &config,
-		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory, config.InstallDirectory, config.SiteDirectory, Version, config.DeploymentMode),
+		orchestrator: orchestration.NewOrchestrator(config.OrchestrationMode, distroPath, config.DataDirectory, config.InstallDirectory, config.SiteDirectory, SemanticVersion, config.DeploymentMode),
 		os:           runtime.GOOS,
 		arch:         runtime.GOARCH,
 		distroPath:   distroPath,

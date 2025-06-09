@@ -33,7 +33,7 @@ var printVersion bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: app.Version,
+	Version: app.GetVersion(),
 	Use:     "deltafi",
 	Short:   "The DeltaFi Text User Interface",
 	Long: art.Logo + `
@@ -49,7 +49,7 @@ func Execute() {
 		app.CreateConfig()
 	}
 
-	rootCmd.Version = app.Version
+	rootCmd.Version = app.GetVersion()
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 
 	rootCmd.SilenceErrors = true

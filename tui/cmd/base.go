@@ -22,9 +22,11 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/ui/styles"
@@ -166,6 +168,18 @@ To start a DeltaFi with your current configuration:
 		`, styles.AccentStyle.Render("deltafi init"), styles.AccentStyle.Render("deltafi up"))))
 		os.Exit(1)
 	}
+}
+
+func GetRunningVersion() *semver.Version {
+	version := &semver.Version{}
+
+	liveVersion, err := graphql.Version()
+	if err == nil {
+		version, _ = semver.NewVersion(liveVersion.Version)
+	} else {
+		version = app.GetInstance().GetConfig().GetCoreVersion()
+	}
+	return version
 }
 
 func ShellExec(executable string, env []string, args []string) error {

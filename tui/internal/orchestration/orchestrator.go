@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/deltafi/tui/internal/types"
 )
 
@@ -37,7 +38,7 @@ type Orchestrator interface {
 	GetMinioName() (string, error)
 }
 
-func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion string, deploymentMode types.DeploymentMode) Orchestrator {
+func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) Orchestrator {
 
 	orchestrationPath := filepath.Join(distroPath, "orchestration")
 	switch mode {

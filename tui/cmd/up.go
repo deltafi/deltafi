@@ -39,32 +39,36 @@ var upCmd = &cobra.Command{
 	SilenceErrors: true,
 	GroupID:       "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Get the TUI version
-		tuiVersion := app.Version
+		force, _ := cmd.Flags().GetBool("force")
 
-		// Get the running DeltaFi version
-		resp, err := graphql.Version()
-		coreVersion := ""
-		if err == nil {
-			coreVersion = resp.Version
-		}
+		// Get the TUI version
+		tuiVersion := app.GetSemanticVersion()
+
+		activeVersion := GetRunningVersion()
 
 		upgrade := false
-		if coreVersion != "" && coreVersion != tuiVersion {
-			fmt.Println(app.GetInstance().FormatWarning(fmt.Sprintf("Warning: DeltaFi will be upgraded from (%s) to (%s), which may have irreversable effects", coreVersion, tuiVersion)))
+		if activeVersion != nil && activeVersion.Compare(tuiVersion) != 0 {
 
-			// Create a styled prompt
-			promptStyle := lipgloss.NewStyle().
-				Foreground(lipgloss.Color("205")).
-				Bold(true)
+			if activeVersion.Compare(tuiVersion) == 1 {
+				fmt.Println(app.GetInstance().FormatError(fmt.Sprintf("Danger: DeltaFi will be DOWNGRADED from (%s) to (%s).  Downgrades to prior versions are not supported and void the warranty of the DeltaFi database integrity.", activeVersion, tuiVersion)))
+			} else {
+				fmt.Println(app.GetInstance().FormatWarning(fmt.Sprintf("Warning: DeltaFi will be upgraded from (%s) to (%s), which may have irreversable effects", activeVersion, tuiVersion)))
+			}
 
-			fmt.Print(promptStyle.Render("Continue with deployment? [y/N] "))
+			if !force {
+				// Create a styled prompt
+				promptStyle := lipgloss.NewStyle().
+					Foreground(lipgloss.Color("205")).
+					Bold(true)
 
-			var response string
-			fmt.Scanln(&response)
+				fmt.Print(promptStyle.Render("Continue with this upgrade? [y/N] "))
 
-			if response != "y" && response != "Y" {
-				return fmt.Errorf("deployment cancelled")
+				var response string
+				fmt.Scanln(&response)
+
+				if response != "y" && response != "Y" {
+					return fmt.Errorf("upgrade cancelled")
+				}
 			}
 			upgrade = true
 		} else {
@@ -72,10 +76,10 @@ var upCmd = &cobra.Command{
 		}
 
 		if upgrade {
-			reason := fmt.Sprintf("Initiating upgrade from %s to %s", coreVersion, tuiVersion)
+			reason := fmt.Sprintf("Initiating upgrade from %s to %s", activeVersion, tuiVersion)
 			app.SendEvent(api.NewEvent().Info().WithSummary(reason))
 
-			err = writeSnapshot(coreVersion, reason)
+			err := writeSnapshot(activeVersion.String(), reason)
 			if err != nil {
 				return wrapInError("Error writing snapshot", err)
 			}
@@ -83,15 +87,23 @@ var upCmd = &cobra.Command{
 			app.SendEvent(api.NewEvent().Info().WithSummary("Initiating orchestration update"))
 		}
 
-		err = app.GetOrchestrator().Up(args)
+		err := app.GetOrchestrator().Up(args)
 		if err != nil {
 			app.SendEvent(api.NewEvent().Error().WithSummary("Failed to complete orchestration update").WithContent(err.Error()))
 			return err
 		}
 
+		app.GetInstance().GetConfig().SetCoreVersion(tuiVersion)
+
+		if upgrade {
+			fmt.Println(app.GetInstance().OK(fmt.Sprintf("DeltaFi core upgraded from %s to %s", activeVersion, tuiVersion)))
+		} else {
+			fmt.Println(app.GetInstance().OK("Orchestration update completed"))
+		}
+
 		event := api.NewEvent().Success()
 		if upgrade {
-			event.WithSummary(fmt.Sprintf("Orchestration upgrade from %s to %s completed", coreVersion, tuiVersion))
+			event.WithSummary(fmt.Sprintf("Orchestration upgrade from %s to %s completed", activeVersion, tuiVersion))
 			event.Important()
 		} else {
 			event.WithSummary("Orchestration update completed")
@@ -129,4 +141,5 @@ func writeSnapshot(version string, reason string) error {
 
 func init() {
 	rootCmd.AddCommand(upCmd)
+	upCmd.Flags().BoolP("force", "f", false, "Force update.  Skip upgrade confirmation prompt")
 }

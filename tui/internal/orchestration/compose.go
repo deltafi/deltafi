@@ -28,6 +28,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/deltafi/tui/internal/types"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/mcuadros/go-defaults"
@@ -115,7 +116,7 @@ type ComposeOrchestrator struct {
 	secretsPath       string
 	configPath        string
 	sitePath          string
-	coreVersion       string
+	coreVersion       *semver.Version
 	deploymentMode    types.DeploymentMode
 }
 
@@ -538,7 +539,7 @@ func (o *ComposeOrchestrator) defaultValuesYaml() error {
 
 	// Prepare template data
 	data := valuesData{
-		Tag: o.coreVersion, // Default to latest if not specified
+		Tag: o.coreVersion.String(), // Default to latest if not specified
 	}
 
 	defaults.SetDefaults(&data)

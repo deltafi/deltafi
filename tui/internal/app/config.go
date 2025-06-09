@@ -24,6 +24,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/types"
 )
@@ -51,12 +52,30 @@ func DefaultConfig() Config {
 	return Config{
 		OrchestrationMode: orchestration.Compose,
 		DeploymentMode:    types.Deployment,
-		CoreVersion:       Version,
+		CoreVersion:       GetVersion(),
 		InstallDirectory:  TuiPath(),
 		DataDirectory:     filepath.Join(TuiPath(), "data"),
 		SiteDirectory:     filepath.Join(TuiPath(), "site"),
 		Development:       DefaultDevelopmentConfig(),
 	}
+}
+
+func (c *Config) GetCoreVersion() *semver.Version {
+	if c.CoreVersion == "" {
+		return GetSemanticVersion()
+	}
+
+	version, err := semver.NewVersion(c.CoreVersion)
+	if err != nil {
+		return GetSemanticVersion()
+	}
+
+	return version
+}
+
+func (c *Config) SetCoreVersion(version *semver.Version) {
+	c.CoreVersion = version.String()
+	c.Save()
 }
 
 func DefaultDevelopmentConfig() DevelopmentConfig {
