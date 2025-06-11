@@ -885,25 +885,26 @@ public class DeltaFilesService {
         return resumeDeltaFiles(inputDidsToDeltaFiles, resumeMetadata);
     }
 
-    public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, ResumeMetadata resumeMetadata, boolean includeAcknowledged) {
+    @Transactional
+    public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged) {
         List<RetryResult> retryResults = new ArrayList<>();
-        List<ResumeMetadata> resumeMetadataList = resumeMetadata != null ? List.of(resumeMetadata) : List.of();
         int numFound = REQUEUE_BATCH_SIZE;
         while (numFound == REQUEUE_BATCH_SIZE) {
             List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged, REQUEUE_BATCH_SIZE);
             numFound = deltaFiles.size();
-            retryResults.addAll(this.resumeDeltaFiles(deltaFiles, resumeMetadataList));
+            retryResults.addAll(this.resumeDeltaFiles(deltaFiles, resumeMetadata));
         }
         return retryResults;
     }
 
-    public List<RetryResult> resumeByErrorCause(String errorCause, boolean includeAcknowledged) {
+    @Transactional
+    public List<RetryResult> resumeByErrorCause(String errorCause, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged) {
         List<RetryResult> retryResults = new ArrayList<>();
         int numFound = REQUEUE_BATCH_SIZE;
         while (numFound == REQUEUE_BATCH_SIZE) {
-            List<DeltaFile> deltaFileIds = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, REQUEUE_BATCH_SIZE);
-            numFound = deltaFileIds.size();
-            retryResults.addAll(this.resumeDeltaFiles(deltaFileIds, List.of()));
+            List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, REQUEUE_BATCH_SIZE);
+            numFound = deltaFiles.size();
+            retryResults.addAll(this.resumeDeltaFiles(deltaFiles, resumeMetadata));
         }
         return retryResults;
     }

@@ -246,7 +246,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit) {
         String queryBuilder = """
-                    SELECT *
+                    SELECT df.did
                     FROM delta_files df
                     WHERE df.stage = 'ERROR'
                     AND df.content_deleted IS NULL
@@ -262,21 +262,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     )
                     LIMIT :limit
                 """;
-        Query query = entityManager.createNativeQuery(queryBuilder, DeltaFile.class)
+        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
                 .setParameter("flowType", flowType.name())
                 .setParameter("flowName", flowName)
                 .setParameter("includeAcknowledged", includeAcknowledged)
                 .setParameter("limit", limit);
 
         @SuppressWarnings("unchecked")
-        List<DeltaFile> deltaFiles = query.getResultList();
-        return deltaFiles;
+        List<UUID> dids = query.getResultList();
+        return fetchByDidIn(dids);
     }
 
     @Override
     public List<DeltaFile> findForResumeByErrorCause(String errorCause, boolean includeAcknowledged, int limit) {
         String queryBuilder = """
-                    SELECT *
+                    SELECT df.did
                     FROM delta_files df
                     WHERE df.stage = 'ERROR'
                     AND df.content_deleted IS NULL
@@ -290,14 +290,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     )
                     LIMIT :limit
                 """;
-        Query query = entityManager.createNativeQuery(queryBuilder, DeltaFile.class)
+        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
                 .setParameter("errorCause", errorCause)
                 .setParameter("includeAcknowledged", includeAcknowledged)
                 .setParameter("limit", limit);
 
         @SuppressWarnings("unchecked")
-        List<DeltaFile> deltaFiles = query.getResultList();
-        return deltaFiles;
+        List<UUID> dids = query.getResultList();
+        return fetchByDidIn(dids);
     }
 
     @Override
