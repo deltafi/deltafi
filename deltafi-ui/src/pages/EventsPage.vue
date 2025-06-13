@@ -30,6 +30,7 @@
     <Panel :header="'Events' + eventCount" class="events-panel table-panel" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
+        <Paginator v-if="events.length > 0" :rows="pageSize" :first="pageOffset" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalCount" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search"> </InputIcon>
           <InputText v-model="filters['global'].value" class="deltafi-input-field" placeholder="Search" />
@@ -139,6 +140,7 @@ import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
+import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
 import Tag from "primevue/tag";
 import TriStateCheckbox from "primevue/tristatecheckbox";
@@ -154,7 +156,7 @@ const activeEvent = ref({});
 const showEventDialog = ref(false);
 const customCalendarRef = ref(null);
 const eventsTable = ref(null);
-const { data: events, fetch: fetchEvents, acknowledgeEvent, unacknowledgeEvent } = useEvents();
+const { data: events, fetch: fetchEvents, acknowledgeEvent, unacknowledgeEvent, totalCount } = useEvents();
 const { shortTimezone } = useUtilFunctions();
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -182,6 +184,9 @@ const setDateTimeToday = () => {
   startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
   endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
 };
+
+const pageSize = ref(10); // Default page size, can be adjusted as needed
+const pageOffset = ref(0); // Default page number, can be adjusted as needed
 
 const updateInputDateTime = async (startDate, endDate) => {
   startTimeDate.value = startDate;
@@ -283,12 +288,18 @@ const refreshEventsData = async () => {
 
 const getEvents = async () => {
   loading.value = true;
-  await fetchEvents({ start: dateToISOString(startTimeDate.value), end: dateToISOString(endTimeDate.value) });
+  await fetchEvents({ start: dateToISOString(startTimeDate.value), end: dateToISOString(endTimeDate.value), size: pageSize.value, offset: pageOffset.value }, true);
   loading.value = false;
 };
 
 const dateToISOString = (dateData) => {
   return dayjs(dateData).utc(uiConfig.useUTC).toISOString();
+};
+
+const onPage = (event) => {
+  pageSize.value = event.rows;
+  pageOffset.value = event.first;
+  getEvents();
 };
 
 onBeforeMount(() => {
@@ -331,11 +342,37 @@ watch(endTimeDate, () => {
   }
 
   .events-panel {
+    .p-paginator {
+      background: inherit !important;
+      color: inherit !important;
+      border: none !important;
+      padding: 0 !important;
+      font-size: inherit !important;
+
+      .p-paginator-current {
+        background: unset;
+        color: unset;
+        border: unset;
+        margin-right: 0.75rem;
+        font-weight: 500;
+      }
+    }
+
     .p-panel-header {
       padding: 0 1.25rem;
 
+      .p-panel-icons {
+        display: flex;
+      }
+
       .p-panel-title {
         padding: 1rem 0;
+      }
+
+      .p-panel-header-icon {
+        margin-top: 0.25rem;
+        margin-right: 0;
+        background-color: #d00f27;
       }
     }
 

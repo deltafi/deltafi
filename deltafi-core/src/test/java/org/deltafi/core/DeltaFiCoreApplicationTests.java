@@ -5097,19 +5097,25 @@ class DeltaFiCoreApplicationTests {
 
         eventRepo.saveAll(List.of(event1, event2));
 
-        List<Event> found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second.plusSeconds(1)));
+        List<Event> found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second.plusSeconds(1)), 0, 20);
         assertThat(found).isEqualTo(List.of(event2, event1));
 
-        found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second));
+        found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second), 0, 20);
         assertThat(found).hasSize(1).containsExactly(event1);
 
-        found = eventRepo.findEvents(eventFilters(first, second.plusSeconds(1)));
+        found = eventRepo.findEvents(eventFilters(first, second.plusSeconds(1)), 0, 20);
         assertThat(found).hasSize(1).containsExactly(event2);
 
         Map<String, String> filters = new HashMap<>(eventFilters(first.minusSeconds(1), second.plusSeconds(1)));
         filters.put("acknowledged", "true");
-        found = eventRepo.findEvents(filters);
+        found = eventRepo.findEvents(filters, 0, 20);
         assertThat(found).isEqualTo(List.of(event2));
+
+		found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second.plusSeconds(1)), 0, 1);
+		assertThat(found).isEqualTo(List.of(event2));
+
+		found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second.plusSeconds(1)), 1, 1000);
+		assertThat(found).isEqualTo(List.of(event1));
     }
 
     private Map<String, String> eventFilters(OffsetDateTime start, OffsetDateTime stop) {

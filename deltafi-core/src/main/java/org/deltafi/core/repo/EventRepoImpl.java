@@ -54,11 +54,37 @@ public class EventRepoImpl implements EventRepoCustom {
     }
 
     @Override
-    public List<Event> findEvents(Map<String, String> filters) {
+    public List<Event> findEvents(Map<String, String> filters, int offset, int size) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Event> query = cb.createQuery(Event.class);
         Root<Event> root = query.from(Event.class);
 
+        Predicate predicate = buildEventPredicate(cb, root, filters);
+
+        query.where(predicate);
+        query.orderBy(cb.desc(root.get("timestamp")));
+
+        return entityManager.createQuery(query)
+                .setFirstResult(offset)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    @Override
+    public long countEvents(Map<String, String> filters) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<Event> root = query.from(Event.class);
+
+        Predicate predicate = buildEventPredicate(cb, root, filters);
+
+        query.where(predicate);
+        query.select(cb.count(root));
+
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
+    private Predicate buildEventPredicate(CriteriaBuilder cb, Root<Event> root, Map<String, String> filters) {
         Predicate predicate = cb.conjunction();
 
         OffsetDateTime end = null;
@@ -66,8 +92,10 @@ public class EventRepoImpl implements EventRepoCustom {
 
         for (Map.Entry<String, String> entry : filters.entrySet()) {
             switch (entry.getKey()) {
-                case "acknowledged", "notification" -> predicate = cb.and(predicate, cb.equal(root.get(entry.getKey()), Boolean.parseBoolean(entry.getValue())));
-                case "id", "severity", "summary", "content", "source" -> predicate = cb.and(predicate, cb.equal(root.get(entry.getKey()), entry.getValue()));
+                case "acknowledged", "notification" ->
+                        predicate = cb.and(predicate, cb.equal(root.get(entry.getKey()), Boolean.parseBoolean(entry.getValue())));
+                case "id", "severity", "summary", "content", "source" ->
+                        predicate = cb.and(predicate, cb.equal(root.get(entry.getKey()), entry.getValue()));
                 case "start" -> start = OffsetDateTime.parse(entry.getValue());
                 case "end" -> end = OffsetDateTime.parse(entry.getValue());
                 default -> log.warn("Unexpected filter {}: {}", entry.getKey(), entry.getValue());
@@ -80,9 +108,6 @@ public class EventRepoImpl implements EventRepoCustom {
         predicate = cb.and(predicate, cb.greaterThan(root.get("timestamp"), start));
         predicate = cb.and(predicate, cb.lessThan(root.get("timestamp"), endTime));
 
-        query.where(predicate);
-        query.orderBy(cb.desc(root.get("timestamp")));
-
-        return entityManager.createQuery(query).getResultList();
+        return predicate;
     }
 }

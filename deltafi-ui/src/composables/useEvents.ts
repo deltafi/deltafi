@@ -27,17 +27,28 @@ export default function useEvents() {
   const { response, get, put, loading, loaded } = useApi();
   const endpoint: string = 'events';
   const data: Ref<Array<any>> = ref([]);
+  const totalCount: Ref<number> = ref(0);
   const errors: Ref<Array<string>> = ref([]);
 
-  const fetch = async (options?: Record<string, any>) => {
+  const fetch = async (options?: Record<string, any>, counts?: boolean) => {
+    const apiEndpoint = counts ? `${endpoint}/with-count` : endpoint;
     try {
       if (options) {
         const params = new URLSearchParams(options);
-        await get(endpoint, params);
+        console.log(apiEndpoint)
+        await get(apiEndpoint, params);
       } else {
-        await get(endpoint);
+        await get(apiEndpoint);
       }
-      data.value = response.value;
+      if (counts) {
+        console.log(response.value);
+        totalCount.value = response.value.totalCount;
+        data.value = response.value.events;
+      } else {
+        totalCount.value = response.value.length;
+        data.value = response.value;
+      }
+      data.value = counts ? response.value.events : response.value;
     } catch (response: any) {
       return Promise.reject(response);
     }
@@ -66,5 +77,5 @@ export default function useEvents() {
     await acknowledgeEvent(ids, false);
   }
 
-  return { data, loaded, loading, fetch, acknowledgeEvent, unacknowledgeEvent, errors };
+  return { data, loaded, loading, fetch, acknowledgeEvent, unacknowledgeEvent, errors, totalCount };
 }

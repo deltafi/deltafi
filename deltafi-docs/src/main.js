@@ -242,6 +242,10 @@ new Docute({
           link: '/operating/errors'
         },
         {
+          title: 'Events API',
+          link: '/operating/events_api'
+        },
+        {
           title: 'Metrics',
           link: '/operating/metrics'
         },

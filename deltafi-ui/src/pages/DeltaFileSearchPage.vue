@@ -805,7 +805,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -962,7 +962,7 @@ const onAcknowledged = (dids, reason) => {
   }
 
   .size-container {
-    > * {
+    >* {
       vertical-align: middle !important;
     }
   }
@@ -1022,7 +1022,7 @@ const onAcknowledged = (dids, reason) => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
     color: #ffffff;
 
     a,

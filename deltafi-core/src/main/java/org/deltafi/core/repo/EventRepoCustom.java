@@ -36,7 +36,16 @@ public interface EventRepoCustom {
     /**
      * Find the events matching the filters
      * @param filters map that will be converted to search criteria
+     * @param offset offset in the resultSet
+     * @param size number of results
      * @return list of matching events
      */
-    List<Event> findEvents(Map<String, String> filters);
+    List<Event> findEvents(Map<String, String> filters, int offset, int size);
+
+    /**
+     * Count the events matching the filters
+     * @param filters map that will be converted to search criteria
+     * @return count of matching events
+     */
+    long countEvents(Map<String, String> filters);
 }

@@ -26,6 +26,7 @@ import org.deltafi.core.exceptions.ValidationException;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
+import org.deltafi.core.types.EventsWithCount;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,7 @@ class EventControllerTest {
     private EventService eventService;
 
     @MockBean
+    @SuppressWarnings("unused")
     private CoreAuditLogger auditLogger;
 
     @Test
@@ -71,8 +73,8 @@ class EventControllerTest {
         String start = "2024-05-22T04:00:00.000Z";
         String end = "2024-05-23T03:59:59.999Z";
 
-        Mockito.when(eventService.getEvents(Map.of())).thenReturn(List.of(event1, event2));
-        Mockito.when(eventService.getEvents(Map.of("start", start, "end", end, "acknowledged", "true"))).thenReturn(List.of(event2, event1));
+        Mockito.when(eventService.getEvents(Map.of(), 0, 20)).thenReturn(List.of(event1, event2));
+        Mockito.when(eventService.getEvents(Map.of("start", start, "end", end, "acknowledged", "true"), 0, 20)).thenReturn(List.of(event2, event1));
 
         mockMvc.perform(get("/api/v2/events"))
                 .andExpect(status().isOk())
@@ -85,6 +87,42 @@ class EventControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value(event2.getId().toString()))
                 .andExpect(jsonPath("$[1].id").value(event1.getId().toString()));
+    }
+
+    @Test
+    void getEventsWithCountTest() throws Exception {
+        Event event1 = createEvent(EVENT_1);
+        Event event2 = createEvent(EVENT_2);
+
+        Mockito.when(eventService.getEventsWithCount(Map.of(), 0, 20)).thenReturn(new EventsWithCount(0, 2, 50, List.of(event1, event2)));
+
+        mockMvc.perform(get("/api/v2/events/with-count"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.offset").value(0))
+                .andExpect(jsonPath("$.count").value(2))
+                .andExpect(jsonPath("$.events[0].id").value(event1.getId().toString()))
+                .andExpect(jsonPath("$.events[1].id").value(event2.getId().toString()))
+                .andExpect(jsonPath("$.totalCount").value(50));
+    }
+
+    @Test
+    void getEventsWithCountTestFiltered() throws Exception {
+        Event event1 = createEvent(EVENT_1);
+
+        String start = "2024-05-22T04:00:00.000Z";
+        String end = "2024-05-23T03:59:59.999Z";
+
+        Mockito.when(eventService.getEventsWithCount(Map.of("start", start, "end", end, "severity", "ERROR"), 0, 20))
+                .thenReturn(new EventsWithCount(0, 1, 10, List.of(event1)));
+
+        mockMvc.perform(get("/api/v2/events/with-count?start="+start+"&end="+end+"&severity=ERROR"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.offset").value(0))
+                .andExpect(jsonPath("$.count").value(1))
+                .andExpect(jsonPath("$.events[0].id").value(event1.getId().toString()))
+                .andExpect(jsonPath("$.totalCount").value(10));
     }
 
     @Test

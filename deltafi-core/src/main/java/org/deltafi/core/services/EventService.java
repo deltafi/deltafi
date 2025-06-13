@@ -24,6 +24,7 @@ import org.deltafi.core.exceptions.ValidationException;
 import org.deltafi.core.repo.EventRepo;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
+import org.deltafi.core.types.EventsWithCount;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -40,8 +41,19 @@ public class EventService {
 
     private final EventRepo eventRepo;
 
-    public List<Event> getEvents(Map<String, String> filters) {
-        return eventRepo.findEvents(filters);
+    public List<Event> getEvents(Map<String, String> filters, int offset, int size) {
+        return eventRepo.findEvents(filters, offset, size);
+    }
+
+    public EventsWithCount getEventsWithCount(Map<String, String> filters, int offset, int size) {
+        List<Event> events = getEvents(filters, offset, size);
+        long totalCount;
+        if (events.size() < size) {
+            totalCount = offset + events.size();
+        } else {
+            totalCount = eventRepo.countEvents(filters);
+        }
+        return new EventsWithCount((int) Math.min(totalCount, offset), events.size(), (int) totalCount, events);
     }
 
     public Event getEvent(UUID id) {

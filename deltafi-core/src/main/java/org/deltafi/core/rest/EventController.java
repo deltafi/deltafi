@@ -22,6 +22,7 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.EventService;
+import org.deltafi.core.types.EventsWithCount;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,14 +34,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.Produces;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v2/events")
-@Produces(MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v2/events", produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 public class EventController {
 
@@ -49,8 +48,18 @@ public class EventController {
 
     @GetMapping
     @NeedsPermission.EventRead
-    public List<Event> getEvents(@RequestParam Map<String, String> filters) {
-        return eventService.getEvents(filters);
+    public List<Event> getEvents(@RequestParam Map<String, String> filters,
+                                 @RequestParam(defaultValue = "0") int offset,
+                                 @RequestParam(defaultValue = "20") int size) {
+        return eventService.getEvents(filters, offset, size);
+    }
+
+    @GetMapping("/with-count")
+    @NeedsPermission.EventRead
+    public EventsWithCount getEventsWithCount(@RequestParam Map<String, String> filters,
+                                              @RequestParam(defaultValue = "0") int offset,
+                                              @RequestParam(defaultValue = "20") int size) {
+        return eventService.getEventsWithCount(filters, offset, size);
     }
 
     @GetMapping("/{id}")
