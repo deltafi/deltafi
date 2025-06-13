@@ -1,0 +1,26 @@
+# Site values file
+# To restore to defaults, remove this file and run 'deltafi up'
+---
+deltafi:
+  core_worker:
+    enabled: true
+    replicas: 0
+  core_actions:
+    replicas: 1
+  auth:
+    mode: disabled # basic, cert, or disabled
+    entityResolver:
+      config:
+        README: |-
+          Add files to the site/values.yaml at deltafi.auth.config to inject files here
+  api:
+    workers: 8
+  file_ingress:
+    enabled: true
+  egress_sink:
+    enabled: true
+ingress:
+  domain: local.deltafi.org
+  tls:
+    enabled: false
+

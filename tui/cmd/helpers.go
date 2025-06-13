@@ -51,12 +51,22 @@ func renderAsSimpleTable(t api.Table, plain bool) {
 	}
 }
 
-func runProgram(model tea.Model) {
+func runProgram(model tea.Model) bool {
 	p := tea.NewProgram(model)
-	if _, err := p.Run(); err != nil {
+	finalModel, err := p.Run()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		return false
 	}
+
+	// Check if the model has an error
+	if errModel, ok := finalModel.(interface{ GetError() error }); ok {
+		if err := errModel.GetError(); err != nil {
+			return false
+		}
+	}
+
+	return true
 }
 
 func parseFile(cmd *cobra.Command, out interface{}) error {
@@ -90,7 +100,7 @@ func prettyPrint(cmd *cobra.Command, data interface{}) error {
 	case "yaml":
 		return printYAML(data)
 	default:
-		return newError("Invalid argument "+format, "Please use json or yaml")
+		return printJSON(data)
 	}
 }
 

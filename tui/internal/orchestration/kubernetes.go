@@ -202,3 +202,7 @@ func (o *KubernetesOrchestrator) Environment() []string {
 	env = append(env, "DELTAFI_WRAPPER=true")
 	return env
 }
+
+func (o *KubernetesOrchestrator) ExecuteMinioCommand(cmd []string) error {
+	return execMinioCommand(o, cmd)
+}

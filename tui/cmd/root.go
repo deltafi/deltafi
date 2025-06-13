@@ -44,9 +44,13 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-
 	if !app.ConfigExists() {
-		app.CreateConfig()
+		err := ExecuteConfigWizard()
+		if err != nil {
+			fmt.Println(styles.ErrorStyle.Render(err.Error()))
+			os.Exit(1)
+		}
+		return
 	}
 
 	rootCmd.Version = app.GetVersion()

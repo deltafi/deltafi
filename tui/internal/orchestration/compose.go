@@ -19,6 +19,7 @@ package orchestration
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"math/rand"
 	"os"
@@ -34,6 +35,9 @@ import (
 	"github.com/mcuadros/go-defaults"
 	"gopkg.in/yaml.v3"
 )
+
+//go:embed compose.plugin-dev.yaml compose.core-dev.yaml compose.site.yaml compose.values.yaml compose.values.site.yaml
+var embeddedFiles embed.FS
 
 const (
 	networkName          = "deltafi"
@@ -53,12 +57,16 @@ type valuesData struct {
 	ValkeyContainer       string `default:"bitnami/valkey:8.1.1"`
 	DockerWebGuiContainer string `default:"deltafi/docker-web-gui:1.0.2-1"`
 	PostgresContainer     string `default:"deltafi/timescaledb:2.19.3-pg16-0"`
-	DevContainer          string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-1"`
+	JavaIDEContainer      string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-1"`
+	JavaDevContainer      string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`
 }
 
 const defaultValuesTemplate = `deltafi:
-  devContainer:
-    image: {{.DevContainer}}
+  java_ide:
+    image: {{.JavaIDEContainer}}
+    enabled: false
+  java_devcontainer:
+    image: {{.JavaDevContainer}}
     enabled: false
   core_actions:
     replicas: 1
@@ -168,36 +176,26 @@ func (o *ComposeOrchestrator) GetMinioName() (string, error) {
 	return "deltafi-minio", nil
 }
 
+func (o *ComposeOrchestrator) enforceSiteValuesDir() error {
+	if err := os.MkdirAll(o.sitePath, 0755); err != nil {
+		return fmt.Errorf("error creating site values directory: %w", err)
+	}
+	return nil
+}
+
 func (o *ComposeOrchestrator) SiteValuesFile() (string, error) {
+	if err := o.enforceSiteValuesDir(); err != nil {
+		return "", err
+	}
+
 	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
 	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {
-		defaultContent := `# Site values file
-# To restore to defaults, remove this file and run 'deltafi up'
----
-deltafi:
-  core_worker:
-    enabled: true
-    replicas: 0
-  core_actions:
-    replicas: 1
-  auth:
-    mode: disabled # basic, cert, or disabled
-    entityResolver:
-      config:
-        README: |-
-          Add files to the site/values.yaml at deltafi.auth.config to inject files here
-  api:
-    workers: 8
-  file_ingress:
-    enabled: true
-  egress_sink:
-    enabled: true
-ingress:
-  domain: local.deltafi.org
-  tls:
-    enabled: false
-`
-		if err := os.WriteFile(siteValuesFile, []byte(defaultContent), 0644); err != nil {
+		defaultContent, err := embeddedFiles.ReadFile("compose.values.site.yaml")
+		if err != nil {
+			return "", fmt.Errorf("error reading site values template: %w", err)
+		}
+
+		if err := os.WriteFile(siteValuesFile, defaultContent, 0644); err != nil {
 			return siteValuesFile, fmt.Errorf("error creating default %s file: %w", "values.yaml", err)
 		}
 	}
@@ -205,139 +203,52 @@ ingress:
 }
 
 func (o *ComposeOrchestrator) PluginDevelopmentComposeFile() (string, error) {
-	pluginDevelopmentFile := filepath.Join(o.sitePath, composePluginDevFile)
-	if _, err := os.Stat(pluginDevelopmentFile); os.IsNotExist(err) {
-		defaultContent := `# Plugin Development Mode compose orchestration overrides
-# To restore to defaults, remove this file and run 'deltafi up'
----
-services:
-  core-scheduler:
-    environment:
-      VALKEY_PASSWORD: ~
-  core-worker:
-    environment:
-      VALKEY_PASSWORD: ~
-  core-actions:
-    environment:
-      VALKEY_PASSWORD: ~
-  deltafi-nodemonitor:
-    environment:
-      VALKEY_PASSWORD: ~
-  java-dev:
-    environment:
-      VALKEY_PASSWORD: ~
-  deltafi-valkey:
-    environment:
-      ALLOW_EMPTY_PASSWORD: yes
-      VALKEY_PASSWORD: ~
-    ports:
-      - "6379:6379"
-  # allow anonymous access to the storage bucket for plugin development
-  deltafi-minio:
-    ports:
-      - "9000:9000"
-    post_start:
-      - command: >
-          /bin/sh -c "
-          sleep 8;
-          mc alias set deltafi http://deltafi-minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD";
-          mc anonymous set download deltafi/storage;
-          mc anonymous set upload deltafi/storage;
-          "
-`
-		if err := os.WriteFile(pluginDevelopmentFile, []byte(defaultContent), 0644); err != nil {
-			return pluginDevelopmentFile, fmt.Errorf("error creating default %s file: %w", composePluginDevFile, err)
-		}
+	if err := os.MkdirAll(o.configPath, 0755); err != nil {
+		return "", fmt.Errorf("error creating config directory: %w", err)
+	}
+
+	pluginDevelopmentFile := filepath.Join(o.configPath, composePluginDevFile)
+	defaultContent, err := embeddedFiles.ReadFile("compose.plugin-dev.yaml")
+	if err != nil {
+		return "", fmt.Errorf("error reading plugin development compose template: %w", err)
+	}
+
+	if err := os.WriteFile(pluginDevelopmentFile, defaultContent, 0644); err != nil {
+		return pluginDevelopmentFile, fmt.Errorf("error creating default %s file: %w", composePluginDevFile, err)
 	}
 	return pluginDevelopmentFile, nil
 }
 
 func (o *ComposeOrchestrator) CoreDevelopmentComposeFile() (string, error) {
-	coreDevelopmentFile := filepath.Join(o.sitePath, composeCoreDevFile)
-	if _, err := os.Stat(coreDevelopmentFile); os.IsNotExist(err) {
-		// Create the default compose-dev.yaml content
-		defaultContent := `# Core Development Mode compose orchestration overrides
-# To restore to defaults, remove this file and run 'deltafi up'
----
-services:
-  core-scheduler:
-    entrypoint: [ "java", "-agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n", "-jar", "deltafi-app.jar" ]
-    environment:
-      VALKEY_PASSWORD: ~
-    ports:
-      - "5005:5005"
-  core-worker:
-    environment:
-      VALKEY_PASSWORD: ~
-  core-actions:
-    environment:
-      VALKEY_PASSWORD: ~
-  deltafi-nodemonitor:
-    environment:
-      VALKEY_PASSWORD: ~
-  java-dev:
-    environment:
-      VALKEY_PASSWORD: ~
-  deltafi-valkey:
-    environment:
-      ALLOW_EMPTY_PASSWORD: yes
-      VALKEY_PASSWORD: ~
-    ports:
-      - "6379:6379"
-  deltafi-postgres:
-    ports:
-      - "5432:5432"
-  # allow anonymous access to the storage bucket for plugin development
-  deltafi-minio:
-    ports:
-      - "9000:9000"
-    post_start:
-      - command: >
-          /bin/sh -c "
-          sleep 8;
-          mc alias set deltafi http://deltafi-minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD";
-          mc anonymous set download deltafi/storage;
-          mc anonymous set upload deltafi/storage;
-          "
-`
-		if err := os.WriteFile(coreDevelopmentFile, []byte(defaultContent), 0644); err != nil {
-			return coreDevelopmentFile, fmt.Errorf("error creating default %s file: %w", composeCoreDevFile, err)
-		}
+	if err := os.MkdirAll(o.configPath, 0755); err != nil {
+		return "", fmt.Errorf("error creating config directory: %w", err)
+	}
+
+	coreDevelopmentFile := filepath.Join(o.configPath, composeCoreDevFile)
+	defaultContent, err := embeddedFiles.ReadFile("compose.core-dev.yaml")
+	if err != nil {
+		return "", fmt.Errorf("error reading core development compose template: %w", err)
+	}
+
+	if err := os.WriteFile(coreDevelopmentFile, defaultContent, 0644); err != nil {
+		return coreDevelopmentFile, fmt.Errorf("error creating default %s file: %w", composeCoreDevFile, err)
 	}
 	return coreDevelopmentFile, nil
 }
 
 func (o *ComposeOrchestrator) SiteComposeFile() (string, error) {
+	if err := o.enforceSiteValuesDir(); err != nil {
+		return "", err
+	}
+
 	siteFile := filepath.Join(o.sitePath, "compose.yaml")
 	if _, err := os.Stat(siteFile); os.IsNotExist(err) {
-		defaultContent := `# Site compose file contains overrides for the DeltaFi docker-compose services
-# To restore to defaults, remove this file and run 'deltafi up'
+		defaultContent, err := embeddedFiles.ReadFile("compose.site.yaml")
+		if err != nil {
+			return "", fmt.Errorf("error reading site compose template: %w", err)
+		}
 
-# Example of adding a service to the site compose file:
-# ---
-# services:
-#   dozzle:
-#     container_name: dozzle
-#     image: amir20/dozzle:latest
-#     volumes:
-#       - /var/run/docker.sock:/var/run/docker.sock
-#     ports:
-#       - 8080:8080
-#
-# Example of exposing a DeltaFi service to the host:
-# ---
-# services:
-#   deltafi-minio:
-#     ports:
-#       - 9000:9000
-#       - 9001:9001
-#       - 9002:9002
-#       - 9003:9003
-#       - 9004:9004
-#
-# V V V   Put your overrides here   V V V
-`
-		if err := os.WriteFile(siteFile, []byte(defaultContent), 0644); err != nil {
+		if err := os.WriteFile(siteFile, defaultContent, 0644); err != nil {
 			return siteFile, fmt.Errorf("error creating default %s file: %w", "compose.yaml", err)
 		}
 	}
@@ -380,7 +291,26 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 		dockerUpArgs = append(dockerUpArgs, "--scale", "core-actions="+o.getValue(values, "deltafi.core_actions.replicas"))
 	}
 
-	return o.dockerCompose(dockerUpArgs)
+	err = o.dockerCompose(dockerUpArgs)
+	if err != nil {
+		return err
+	}
+
+	if o.inDevelopment() {
+		err := o.ExecuteMinioCommand([]string{"mc mb -p deltafi/storage > /dev/null"})
+		if err != nil {
+			fmt.Println(styles.ComposeFAIL("MinIO configured for development", "Error"))
+			return err
+		}
+		err = o.ExecuteMinioCommand([]string{"mc anonymous set public deltafi/storage > /dev/null"})
+		if err != nil {
+			fmt.Println(styles.ComposeFAIL("MinIO configured for development", "Error"))
+			return err
+		}
+		fmt.Println(styles.ComposeOK("MinIO configured for development", "Ready"))
+	}
+
+	return nil
 }
 
 func (o *ComposeOrchestrator) dockerCompose(args []string) error {
@@ -420,6 +350,7 @@ func (o *ComposeOrchestrator) Environment() []string {
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
 	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
+	env = append(env, "DELTAFI_SITE_DIR="+o.sitePath)
 	env = append(env, "DELTAFI_REPOS_DIR="+o.reposPath)
 	env = append(env, "DELTAFI_CONFIG_DIR="+o.configPath)
 	env = append(env, "DELTAFI_SECRETS_DIR="+o.secretsPath)
@@ -532,7 +463,14 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 
 func (o *ComposeOrchestrator) defaultValuesYaml() error {
 	// Create template
-	tmpl, err := template.New("values").Parse(defaultValuesTemplate)
+
+	content, err := embeddedFiles.ReadFile("compose.values.yaml")
+	if err != nil {
+		return fmt.Errorf("error reading values template: %w", err)
+	}
+
+	tmpl, err := template.New("values").Parse(string(content))
+
 	if err != nil {
 		return fmt.Errorf("error parsing values template: %w", err)
 	}
@@ -651,6 +589,10 @@ func (o *ComposeOrchestrator) getValue(values map[string]interface{}, path strin
 	return ""
 }
 
+func (o *ComposeOrchestrator) inDevelopment() bool {
+	return o.deploymentMode == types.PluginDevelopment || o.deploymentMode == types.CoreDevelopment
+}
+
 func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 	values, err := o.getMergedValues()
 	if err != nil {
@@ -690,6 +632,10 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"DOMAIN":                  o.getValue(values, "ingress.domain"),
 		"CONFIG_DIR":              o.configPath,
 		"DATA_DIR":                o.dataPath,
+		"SITE_DIR":                o.sitePath,
+		"SECRETS_DIR":             o.secretsPath,
+		"ORCHESTRATION_DIR":       o.orchestrationPath,
+		"DISTRO_DIR":              o.distroPath,
 		"REPOS_DIR":               o.reposPath,
 		"ENTITY_RESOLVER_ENABLED": o.getValue(values, "deltafi.auth.entityResolver.enabled"),
 		"ENTITY_RESOLVER_URL":     fmt.Sprintf("http://deltafi-entity-resolver:%s", o.getValue(values, "deltafi.auth.entityResolver.port")),
@@ -759,32 +705,34 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	}
 
 	envVars := map[string]string{
-		"SETTINGS_DIR":            filepath.Join(o.orchestrationPath, "compose", "settings"),
-		"SECRETS_DIR":             o.secretsPath,
-		"ENV_DIR":                 o.configPath,
-		"CONFIG_DIR":              o.configPath,
-		"DATA_DIR":                o.dataPath,
-		"REPOS_DIR":               o.reposPath,
-		"COMPOSE_PROJECT_NAME":    "deltafi",
-		"DELTAFI_API":             o.getValue(values, "deltafi.api.image"),
-		"DELTAFI_ENTITY_RESOLVER": o.getValue(values, "deltafi.auth.entityResolver.image"),
-		"DELTAFI_DEV_CONTAINER":   o.getValue(values, "deltafi.devContainer.image"),
-		"DELTAFI_CORE":            o.getValue(values, "deltafi.core.image"),
-		"DELTAFI_CORE_ACTIONS":    o.getValue(values, "deltafi.core_actions.image"),
-		"DELTAFI_FILE_INGRESS":    o.getValue(values, "deltafi.file_ingress.image"),
-		"DELTAFI_EGRESS_SINK":     o.getValue(values, "deltafi.egress_sink.image"),
-		"DELTAFI_NODEMONITOR":     o.getValue(values, "deltafi.nodemonitor.image"),
-		"GRAFANA":                 o.getValue(values, "dependencies.grafana"),
-		"GRAPHITE":                o.getValue(values, "dependencies.graphite"),
-		"LOKI":                    o.getValue(values, "dependencies.loki"),
-		"MINIO":                   o.getValue(values, "dependencies.minio"),
-		"POSTGRES":                o.getValue(values, "dependencies.postgres"),
-		"NGINX":                   o.getValue(values, "dependencies.nginx"),
-		"PROMTAIL":                o.getValue(values, "dependencies.promtail"),
-		"VALKEY":                  o.getValue(values, "dependencies.valkey"),
-		"REDIS":                   o.getValue(values, "dependencies.valkey"),
-		"DOCKER_WEB_GUI":          o.getValue(values, "dependencies.docker_web_gui"),
-		"ENTITY_RESOLVER_PORT":    o.getValue(values, "deltafi.auth.entityResolver.port"),
+		"SETTINGS_DIR":              filepath.Join(o.orchestrationPath, "compose", "settings"),
+		"SECRETS_DIR":               o.secretsPath,
+		"ENV_DIR":                   o.configPath,
+		"CONFIG_DIR":                o.configPath,
+		"DATA_DIR":                  o.dataPath,
+		"SITE_DIR":                  o.sitePath,
+		"REPOS_DIR":                 o.reposPath,
+		"COMPOSE_PROJECT_NAME":      "deltafi",
+		"DELTAFI_API":               o.getValue(values, "deltafi.api.image"),
+		"DELTAFI_ENTITY_RESOLVER":   o.getValue(values, "deltafi.auth.entityResolver.image"),
+		"DELTAFI_JAVA_DEVCONTAINER": o.getValue(values, "deltafi.java_devcontainer.image"),
+		"DELTAFI_JAVA_IDE":          o.getValue(values, "deltafi.java_ide.image"),
+		"DELTAFI_CORE":              o.getValue(values, "deltafi.core.image"),
+		"DELTAFI_CORE_ACTIONS":      o.getValue(values, "deltafi.core_actions.image"),
+		"DELTAFI_FILE_INGRESS":      o.getValue(values, "deltafi.file_ingress.image"),
+		"DELTAFI_EGRESS_SINK":       o.getValue(values, "deltafi.egress_sink.image"),
+		"DELTAFI_NODEMONITOR":       o.getValue(values, "deltafi.nodemonitor.image"),
+		"GRAFANA":                   o.getValue(values, "dependencies.grafana"),
+		"GRAPHITE":                  o.getValue(values, "dependencies.graphite"),
+		"LOKI":                      o.getValue(values, "dependencies.loki"),
+		"MINIO":                     o.getValue(values, "dependencies.minio"),
+		"POSTGRES":                  o.getValue(values, "dependencies.postgres"),
+		"NGINX":                     o.getValue(values, "dependencies.nginx"),
+		"PROMTAIL":                  o.getValue(values, "dependencies.promtail"),
+		"VALKEY":                    o.getValue(values, "dependencies.valkey"),
+		"REDIS":                     o.getValue(values, "dependencies.valkey"),
+		"DOCKER_WEB_GUI":            o.getValue(values, "dependencies.docker_web_gui"),
+		"ENTITY_RESOLVER_PORT":      o.getValue(values, "deltafi.auth.entityResolver.port"),
 	}
 
 	// Add compose profiles based on enabled features
@@ -798,8 +746,11 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	if o.getValue(values, "deltafi.auth.entityResolver.enabled") == "true" {
 		profiles = append(profiles, "entity-resolver")
 	}
-	if o.getValue(values, "deltafi.devContainer.enabled") == "true" {
-		profiles = append(profiles, "dev")
+	if o.getValue(values, "deltafi.java_devcontainer.enabled") == "true" {
+		profiles = append(profiles, "java-devcontainer")
+	}
+	if o.getValue(values, "deltafi.java_ide.enabled") == "true" {
+		profiles = append(profiles, "java-ide")
 	}
 	if o.getValue(values, "deltafi.core_worker.enabled") == "true" {
 		profiles = append(profiles, "worker")
@@ -938,4 +889,8 @@ func (o *ComposeOrchestrator) entityResolverConfig() error {
 	}
 
 	return nil
+}
+
+func (o *ComposeOrchestrator) ExecuteMinioCommand(cmd []string) error {
+	return execMinioCommand(o, cmd)
 }

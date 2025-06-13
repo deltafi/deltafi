@@ -1,0 +1,27 @@
+# Site compose file contains overrides for the DeltaFi docker-compose services
+# To restore to defaults, remove this file and run 'deltafi up'
+
+# Example of adding a service to the site compose file:
+# ---
+# services:
+#   dozzle:
+#     container_name: dozzle
+#     image: amir20/dozzle:latest
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+#     ports:
+#       - 8080:8080
+#
+# Example of exposing a DeltaFi service to the host:
+# ---
+# services:
+#   deltafi-minio:
+#     ports:
+#       - 9000:9000
+#       - 9001:9001
+#       - 9002:9002
+#       - 9003:9003
+#       - 9004:9004
+#
+# V V V   Put your overrides here   V V V
+

@@ -252,6 +252,12 @@ services:
     volumes:
       - ${DATA_DIR}/minio:/export
     user: "${USER_ID}:${GROUP_ID}"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   deltafi-postgres:
     image: ${POSTGRES}
     container_name: deltafi-postgres
@@ -452,11 +458,11 @@ services:
       retries: 30
       timeout: 10s
 
-  java-dev:
-    image: ${DELTAFI_DEV_CONTAINER}
-    container_name: deltafi-dev-container
+  java-devcontainer:
+    image: ${DELTAFI_JAVA_DEVCONTAINER}
+    container_name: java-devcontainer
     environment:
-      APP_NAME: deltafi-dev-container
+      APP_NAME: java-devcontainer
       DOCKER_USER: "${USER:-coder}"
     env_file:
       - ${CONFIG_DIR}/common.env
@@ -486,4 +492,39 @@ services:
     tty: true
     stdin_open: true
     user: "${USER_ID}:${GROUP_ID}"
-    profiles: ["dev"]
+    profiles: ["java-devcontainer"]
+  java-ide:
+    image: ${DELTAFI_JAVA_IDE}
+    container_name: java-ide
+    environment:
+      APP_NAME: java-ide
+      DOCKER_USER: "${USER:-coder}"
+    env_file:
+      - ${CONFIG_DIR}/common.env
+      - ${SECRETS_DIR}/valkey.env
+      - ${SECRETS_DIR}/minio.env
+      - ${SECRETS_DIR}/ssl.env
+    group_add:
+      - ${DOCKER_GID}
+    labels:
+      deltafi-group: deltafi-core
+      <<: *logging-label
+    networks:
+      - deltafi
+    restart: unless-stopped
+    volumes:
+      - ${DATA_DIR}/certs:/certs
+      - ${REPOS_DIR}:/app
+      - ${CONFIG_DIR}/vscode/.local:/home/coder/.local
+      - ${CONFIG_DIR}/vscode/.config:/home/coder/.config
+      - ${CONFIG_DIR}/.gradle:/home/coder/.gradle
+      - ${CONFIG_DIR}/.m2:/home/coder/.m2
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8888:8080"  # VS Code Server
+    working_dir: /app
+    command: ["/usr/bin/code-server", "--auth", "none", "--bind-addr", "0.0.0.0:8080", "."]
+    tty: true
+    stdin_open: true
+    user: "${USER_ID}:${GROUP_ID}"
+    profiles: ["java-ide"]

@@ -91,12 +91,21 @@ func initialModel(interval time.Duration) model {
 	}
 	s.Style = lipgloss.NewStyle().Foreground(styles.DarkGray)
 
+	// Initialize with a reasonable default width
+	defaultWidth := 80
+	r, _ := glamour.NewTermRenderer(
+		GetMarkdownStyle(),
+		glamour.WithWordWrap(max(defaultWidth-8, 20)),
+	)
+
 	return model{
 		progress: progress.New(progress.WithGradient("#40a02b", "#f38ba8")),
 		spinner:  s,
 		client:   app.GetInstance().GetAPIClient(),
 		interval: interval,
 		title:    "DeltaFi System Dashboard",
+		width:    defaultWidth,
+		renderer: r,
 		styles: struct {
 			panelStyle      lipgloss.Style
 			metricNameStyle lipgloss.Style
@@ -158,8 +167,11 @@ func (m model) fetchMetrics() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
+		if msg.String() == "ctrl+c" || msg.String() == "q" || msg.String() == "Q" || msg.String() == "esc" {
 			return m, tea.Quit
+		}
+		if msg.String() == " " {
+			return m, m.fetchMetrics()
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -199,12 +211,6 @@ func (m model) View() string {
 		return fmt.Sprintf("Error: %v", m.err)
 	}
 
-	r, _ := glamour.NewTermRenderer(
-		GetMarkdownStyle(),
-		glamour.WithWordWrap(max(m.width-8, 20)),
-	)
-	m.renderer = r
-
 	var s string
 	s += m.styles.titleStyle.Width(m.width).Render(m.title) + "\n"
 	s += m.styles.titleStyle.Width(m.width).Render(m.spinner.View()) + "\n"
@@ -236,7 +242,7 @@ func (m model) View() string {
 
 	helpStyle := lipgloss.NewStyle().
 		Foreground(styles.Surface2)
-	s += helpStyle.Width(m.width).Align(lipgloss.Center).Render("\nPress Ctrl+C to exit")
+	s += helpStyle.Width(m.width).Align(lipgloss.Center).Render("\nPress q to exit")
 
 	return s
 }

@@ -30,7 +30,6 @@ import (
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/types"
-	"github.com/deltafi/tui/internal/ui/styles"
 )
 
 // App represents the global application state
@@ -213,57 +212,6 @@ func (a *App) GetConfig() *Config {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	return a.config
-}
-
-func (a *App) FormatWarning(msg string) string {
-	return styles.WarningStyle.Render(msg)
-}
-
-func (a *App) FormatInfo(msg string) string {
-	return styles.InfoStyle.Render(msg)
-}
-
-func (a *App) FormatErrors(errorPointers []*string) string {
-	errors := make([]string, len(errorPointers))
-	for i, errorStr := range errorPointers {
-		errors[i] = *errorStr
-	}
-
-	return a.FormatError(strings.Join(errors, "\n                "))
-}
-
-func (a *App) FormatError(msg string) string {
-	return styles.ErrorStyle.Render(msg)
-}
-
-func (a *App) FormatErrorObj(errorObj error) string {
-	return styles.ErrorStyle.Render(errorObj.Error())
-}
-
-func (a *App) FormatSuccess(msg string) string {
-	return styles.SuccessStyle.Render(msg)
-}
-
-func (a *App) FormatMessage(msg string) string {
-	return styles.InfoStyle.Render(msg)
-}
-
-func (a *App) formatMoniker(moniker string, msg string) string {
-	return "[ " + moniker + " ] " + msg
-}
-
-func (a *App) OK(msg string) string {
-	return a.formatMoniker(
-		a.FormatSuccess(" OK "),
-		styles.BaseStyle.Render(msg),
-	)
-}
-
-func (a *App) FAIL(msg string) string {
-	return a.formatMoniker(
-		a.FormatError("FAIL"),
-		styles.BaseStyle.Render(msg),
-	)
 }
 
 func SendEvent(event *api.Event) error {

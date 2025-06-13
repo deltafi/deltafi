@@ -29,7 +29,6 @@ import (
 
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
-	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/ui/components"
 	"github.com/deltafi/tui/internal/ui/styles"
 )
@@ -97,11 +96,9 @@ var installCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 
-		app := app.GetInstance()
-
 		if len(args) < 1 {
 			fmt.Println()
-			return fmt.Errorf("invalid arguments: %s", app.FormatError("Please specify an image to install"))
+			return fmt.Errorf("invalid arguments: %s", styles.ErrorStyle.Render("Please specify an image to install"))
 		}
 
 		var errored bool = false
@@ -113,16 +110,17 @@ var installCmd = &cobra.Command{
 			resp, err := graphql.InstallPlugin(image, secret)
 
 			if err != nil {
-				fmt.Println("\n         Error: " + app.FormatError(err.Error()))
-				fmt.Println(app.FAIL(image))
+				fmt.Println(styles.RenderError(err))
+				fmt.Println(styles.FAIL(image))
 				errored = true
 			} else {
 				if !resp.InstallPlugin.Success {
-					fmt.Println("\n         Error: " + app.FormatErrors(resp.InstallPlugin.Errors))
-					fmt.Println(app.FAIL(image))
+					errorStrings := make([]string, len(resp.InstallPlugin.Errors))
+					fmt.Println(styles.RenderErrorStringsWithContext(errorStrings, "Unable to complete installation"))
+					fmt.Println(styles.FAIL(image))
 					errored = true
 				} else {
-					fmt.Println(app.OK(image))
+					fmt.Println(styles.OK(image))
 				}
 			}
 		}
@@ -142,19 +140,19 @@ var uninstallCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 
-		app := app.GetInstance()
+		//app := app.GetInstance()
 
 		if len(args) < 1 {
 			fmt.Println()
-			return fmt.Errorf("invalid arguments: %s", app.FormatError("Please specify at least one plugin to uninstall"))
+			return fmt.Errorf("invalid arguments: %s", styles.ErrorStyle.Render("Please specify at least one plugin to uninstall"))
 		}
 
 		var errored bool = false
 		resp, err := graphql.GetPlugins()
 
 		if err != nil {
-			fmt.Println("         Error: " + app.FormatError(err.Error()))
-			fmt.Println(app.FAIL("Unable to obtain list of installed plugins"))
+			fmt.Println("         Error: " + styles.ErrorStyle.Render(err.Error()))
+			fmt.Println(styles.FAIL("Unable to obtain list of installed plugins"))
 			return nil
 		}
 
@@ -167,7 +165,7 @@ var uninstallCmd = &cobra.Command{
 			if slices.Contains(args, displayName) {
 				// Attempt to uninstall permanent plugin
 				if plugin.PluginCoordinates.GroupId == "" || plugin.PluginCoordinates.ArtifactId == "" || plugin.PluginCoordinates.Version == "" {
-					fmt.Println("         Error: (" + displayName + ") " + app.FormatError("Cannot determine coordinates of plugin: "+displayName))
+					fmt.Println(styles.RenderErrorString(fmt.Sprintf("(%s) %s", displayName, styles.ErrorStyle.Render("Cannot determine plugin coordinates"))))
 					errored = true
 					continue
 				}
@@ -176,7 +174,7 @@ var uninstallCmd = &cobra.Command{
 
 				// Command returns an error
 				if err != nil {
-					fmt.Println("         Error: (" + displayName + ") " + app.FormatError(err.Error()))
+					fmt.Println(styles.RenderErrorWithContext(err, fmt.Sprintf("(%s)", displayName)))
 					errored = true
 					continue
 				}
@@ -187,7 +185,13 @@ var uninstallCmd = &cobra.Command{
 
 				// Uninstall was not successful
 				if !resp.UninstallPlugin.Success {
-					fmt.Println("         Error: (" + displayName + ") " + app.FormatErrors(resp.UninstallPlugin.Errors))
+					var errorStrings []string
+					for _, val := range resp.UninstallPlugin.Errors {
+						if val != nil {
+							errorStrings = append(errorStrings, *val)
+						}
+					}
+					fmt.Println(styles.RenderErrorStringsWithContext(errorStrings, fmt.Sprintf("(%s)", displayName)))
 					errored = true
 					continue
 				}
@@ -198,12 +202,12 @@ var uninstallCmd = &cobra.Command{
 
 		for _, name := range args {
 			if slices.Contains(uninstalled, name) {
-				fmt.Println(app.OK(name + " uninstalled successfully"))
+				fmt.Println(styles.OK(name + " uninstalled successfully"))
 			} else {
 				if slices.Contains(allPlugins, name) {
-					fmt.Println(app.FAIL("Unable to uninstall " + name))
+					fmt.Println(styles.FAIL("Unable to uninstall " + name))
 				} else {
-					fmt.Println(app.FAIL("Unable to find plugin named " + name))
+					fmt.Println(styles.FAIL("Unable to find plugin named " + name))
 				}
 				errored = true
 			}

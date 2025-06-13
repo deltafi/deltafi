@@ -60,6 +60,14 @@ func DefaultConfig() Config {
 	}
 }
 
+func (c *Config) IsDevelopment() bool {
+	if c.OrchestrationMode != orchestration.Compose {
+		return false
+	}
+
+	return c.DeploymentMode == types.CoreDevelopment || c.DeploymentMode == types.PluginDevelopment
+}
+
 func (c *Config) GetCoreVersion() *semver.Version {
 	if c.CoreVersion == "" {
 		return GetSemanticVersion()
@@ -116,9 +124,7 @@ func LoadConfig() (Config, error) {
 				return config, fmt.Errorf("config.yaml file is invalid: \n%v", err)
 			}
 		}
-	} else if os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "Warning: config.yaml file does not exist (%s)\n", configFile)
-	} else {
+	} else if !os.IsNotExist(err) {
 		return config, fmt.Errorf("config.yaml unreadable: %v", err)
 	}
 

@@ -128,14 +128,22 @@ func (c *Client) Get(path string, result interface{}, opts *RequestOpts) error {
 	return nil
 }
 
-// Post sends a request and returns a typed response
 func (c *Client) Post(path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
+	return c.DoWithBody("POST", path, requestBody, result, opts)
+}
+
+func (c *Client) Put(path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
+	return c.DoWithBody("PUT", path, requestBody, result, opts)
+}
+
+// Post sends a request and returns a typed response
+func (c *Client) DoWithBody(method string, path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
 	var req *http.Request
 	var err error
 
 	// Check if the request body is a bytes.Buffer (multipart form data)
 	if buf, ok := requestBody.(*bytes.Buffer); ok {
-		req, err = http.NewRequest("POST", c.baseURL+path, buf)
+		req, err = http.NewRequest(method, c.baseURL+path, buf)
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err)
 		}
@@ -147,7 +155,7 @@ func (c *Client) Post(path string, requestBody interface{}, result interface{}, 
 		if err != nil {
 			return fmt.Errorf("failed to encode request body: %w", err)
 		}
-		req, err = http.NewRequest("POST", c.baseURL+path, bytes.NewBuffer(jsonData))
+		req, err = http.NewRequest(method, c.baseURL+path, bytes.NewBuffer(jsonData))
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err)
 		}
@@ -180,21 +188,22 @@ func (c *Client) Post(path string, requestBody interface{}, result interface{}, 
 		return fmt.Errorf("%d - %s", resp.StatusCode, body)
 	}
 
-	// Read the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("unreadable response body: %w", err)
-	}
+	if result != nil {
+		// Read the response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("unreadable response body: %w", err)
+		}
+		// If we're expecting a string, just set it directly
+		if strResult, ok := result.(*string); ok {
+			*strResult = string(body)
+			return nil
+		}
 
-	// If we're expecting a string, just set it directly
-	if strResult, ok := result.(*string); ok {
-		*strResult = string(body)
-		return nil
-	}
-
-	// Otherwise try to decode as JSON
-	if err := json.Unmarshal(body, result); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
+		// Otherwise try to decode as JSON
+		if err := json.Unmarshal(body, result); err != nil {
+			return fmt.Errorf("failed to decode response: %w", err)
+		}
 	}
 
 	return nil
@@ -207,11 +216,6 @@ func (c *Client) Post(path string, requestBody interface{}, result interface{}, 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-User-Permissions", "Admin")
 	req.Header.Add("X-User-Name", "TUI")
-	// fmt.Println("--------------------------------")
-	// fmt.Println(fmt.Sprintf("%+v", req))
-	// fmt.Println(fmt.Sprintf("Sending request to %s", req.URL.String()))
-	// fmt.Println(fmt.Sprintf("Headers: %v", req.Header))
-	// fmt.Println("--------------------------------")
 	return c.httpClient.Do(req)
 }
 
@@ -249,6 +253,39 @@ func (c *Client) CreatEvent(event Event) (*Event, error) {
 	var newEvent Event
 	err := c.Post("/api/v2/events", event, &newEvent, nil)
 	return &newEvent, err
+}
+
+type PasswordUpdate struct {
+	Password string `json:"password"`
+}
+
+type Permission string
+type Role struct {
+	ID          string       `json:"id"`
+	Name        string       `json:"name"`
+	Permissions []Permission `json:"permissions"`
+	CreatedAt   string       `json:"createdAt"`
+	UpdatedAt   string       `json:"updatedAt"`
+}
+
+type UserResponse struct {
+	ID          string       `json:"id"`
+	DN          string       `json:"dn"`
+	Name        string       `json:"name"`
+	Username    string       `json:"username"`
+	CreatedAt   string       `json:"createdAt"`
+	UpdatedAt   string       `json:"updatedAt"`
+	Roles       []Role       `json:"roles"`
+	Permissions []Permission `json:"permissions"`
+}
+
+func (c *Client) SetAdminPassword(password PasswordUpdate) (*UserResponse, error) {
+	adminID := "00000000-0000-0000-0000-000000000000"
+	response := &UserResponse{}
+
+	err := c.Put(fmt.Sprintf("/api/v2/users/%s", adminID), password, response, nil)
+
+	return response, err
 }
 
 // PostToFile sends a POST request and writes the response directly to a file

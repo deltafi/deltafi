@@ -18,6 +18,8 @@
 package orchestration
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,6 +38,7 @@ type Orchestrator interface {
 	GetExecCmd(string, bool, []string) (exec.Cmd, error)
 	GetValkeyName() string
 	GetMinioName() (string, error)
+	ExecuteMinioCommand([]string) error
 }
 
 func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) Orchestrator {
@@ -73,4 +76,37 @@ func ShellExec(executable string, env []string, args []string) error {
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	return c.Run()
+}
+
+// Generic implementation of the MinIO command execution.
+func execMinioCommand(orchestrator Orchestrator, cmd []string) error {
+	minioCliArgs := []string{"mc alias set deltafi http://deltafi-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD > /dev/null && "}
+
+	minioName, err := orchestrator.GetMinioName()
+	if err != nil {
+		return err
+	}
+	c, err := orchestrator.GetExecCmd(minioName, true, append(minioCliArgs, cmd...))
+	if err != nil {
+		return err
+	}
+
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	err = c.Run()
+	if err == nil {
+		return nil
+	}
+
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
+		// Ignore common interrupt exit codes
+		if exitError.ExitCode() == 130 || exitError.ExitCode() == 2 {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("command execution failed: %w", err)
 }

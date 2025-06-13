@@ -18,12 +18,10 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
+
 	"github.com/deltafi/tui/internal/app"
 	"github.com/spf13/cobra"
-	"os"
-	"os/exec"
 )
 
 var minioCmd = &cobra.Command{
@@ -43,44 +41,58 @@ var minioCliCmd = &cobra.Command{
 	Short: "Start an interactive MinIO CLI session",
 	Long:  "Start an interactive MinIO CLI session",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return execMinioCommand([]string{})
+		return ExecMinioCommand([]string{"exec bash"})
 	},
 }
 
-func execMinioCommand(cmd []string) error {
-	minioCliArgs := []string{"mc alias set deltafi http://deltafi-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && exec bash"}
-
-	orchestrator := app.GetOrchestrator()
-	minioName, err := orchestrator.GetMinioName()
-	if err != nil {
-		return err
-	}
-	c, err := orchestrator.GetExecCmd(minioName, true, append(minioCliArgs, cmd...))
-	if err != nil {
-		return err
-	}
-
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-
-	err = c.Run()
-	if err == nil {
-		return nil
-	}
-
-	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		// Ignore common interrupt exit codes
-		if exitError.ExitCode() == 130 || exitError.ExitCode() == 2 {
-			return nil
+var minioExecCmd = &cobra.Command{
+	Use:   "exec",
+	Short: "Execute each argument as a MinIO CLI command",
+	Long:  "Execute each argument as a MinIO CLI command.  Example: `deltafi minio exec \"ls --json foo\" \"ls --summarize bar\"`",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		for _, arg := range args {
+			error := ExecMinioCommand(append([]string{"mc"}, arg))
+			if error != nil {
+				return error
+			}
 		}
-	}
+		fmt.Println(fmt.Sprintf("\nMinIO CLI commands executed successfully: %d", len(args)))
+		return nil
+	},
+}
 
-	return fmt.Errorf("command execution failed: %w", err)
+var minioMcCmd = &cobra.Command{
+	Use:                "mc",
+	Short:              "Execute a MinIO CLI command",
+	Long:               "Execute a MinIO CLI command.  Example: `deltafi minio mc ls --summarize`",
+	DisableFlagParsing: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return ExecMinioCommand(append([]string{"mc"}, args...))
+	},
+}
+
+var minioWatchCmd = &cobra.Command{
+	Use:                "watch",
+	Short:              "Watch a MinIO bucket",
+	Long:               "Watch a MinIO bucket.  Example: `deltafi minio watch deltafi/storage`",
+	DisableFlagParsing: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			args = []string{"deltafi/storage"}
+		}
+		return ExecMinioCommand(append([]string{"mc", "watch"}, args...))
+	},
+}
+
+func ExecMinioCommand(cmd []string) error {
+	orchestrator := app.GetOrchestrator()
+	return orchestrator.ExecuteMinioCommand(cmd)
 }
 
 func init() {
 	rootCmd.AddCommand(minioCmd)
 	minioCmd.AddCommand(minioCliCmd)
+	minioCmd.AddCommand(minioExecCmd)
+	minioCmd.AddCommand(minioMcCmd)
+	minioCmd.AddCommand(minioWatchCmd)
 }

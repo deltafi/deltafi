@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/app"
+	"github.com/deltafi/tui/internal/ui/components"
+	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
 )
 
@@ -50,29 +51,19 @@ var upCmd = &cobra.Command{
 		if activeVersion != nil && activeVersion.Compare(tuiVersion) != 0 {
 
 			if activeVersion.Compare(tuiVersion) == 1 {
-				fmt.Println(app.GetInstance().FormatError(fmt.Sprintf("Danger: DeltaFi will be DOWNGRADED from (%s) to (%s).  Downgrades to prior versions are not supported and void the warranty of the DeltaFi database integrity.", activeVersion, tuiVersion)))
+				fmt.Println(styles.ErrorStyle.Render(fmt.Sprintf("Danger: DeltaFi will be DOWNGRADED from (%s) to (%s).  Downgrades to prior versions are not supported and void the warranty of the DeltaFi database integrity.", activeVersion, tuiVersion)))
 			} else {
-				fmt.Println(app.GetInstance().FormatWarning(fmt.Sprintf("Warning: DeltaFi will be upgraded from (%s) to (%s), which may have irreversable effects", activeVersion, tuiVersion)))
+				fmt.Println(styles.WarningStyle.Render(fmt.Sprintf("Warning: DeltaFi will be upgraded from (%s) to (%s), which may have irreversable effects", activeVersion, tuiVersion)))
 			}
 
 			if !force {
-				// Create a styled prompt
-				promptStyle := lipgloss.NewStyle().
-					Foreground(lipgloss.Color("205")).
-					Bold(true)
-
-				fmt.Print(promptStyle.Render("Continue with this upgrade? [y/N] "))
-
-				var response string
-				fmt.Scanln(&response)
-
-				if response != "y" && response != "Y" {
+				if !components.SimpleContinuePrompt("Continue with this upgrade?") {
 					return fmt.Errorf("upgrade cancelled")
 				}
 			}
 			upgrade = true
 		} else {
-			fmt.Println(app.GetInstance().FormatInfo(fmt.Sprintf("DeltaFi version: %s", tuiVersion)))
+			fmt.Println(styles.InfoStyle.Render(fmt.Sprintf("DeltaFi version: %s", tuiVersion)))
 		}
 
 		if upgrade {
@@ -87,18 +78,21 @@ var upCmd = &cobra.Command{
 			app.SendEvent(api.NewEvent().Info().WithSummary("Initiating orchestration update"))
 		}
 
-		err := app.GetOrchestrator().Up(args)
+		orchestrator := app.GetOrchestrator()
+		err := orchestrator.Up(args)
 		if err != nil {
 			app.SendEvent(api.NewEvent().Error().WithSummary("Failed to complete orchestration update").WithContent(err.Error()))
 			return err
 		}
 
-		app.GetInstance().GetConfig().SetCoreVersion(tuiVersion)
+		config := app.GetInstance().GetConfig()
+
+		config.SetCoreVersion(tuiVersion)
 
 		if upgrade {
-			fmt.Println(app.GetInstance().OK(fmt.Sprintf("DeltaFi core upgraded from %s to %s", activeVersion, tuiVersion)))
+			fmt.Println(styles.OK(fmt.Sprintf("DeltaFi core upgraded from %s to %s", activeVersion, tuiVersion)))
 		} else {
-			fmt.Println(app.GetInstance().OK("Orchestration update completed"))
+			fmt.Println(styles.OK("Orchestration update completed"))
 		}
 
 		event := api.NewEvent().Success()

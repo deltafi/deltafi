@@ -33,6 +33,51 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var pluginGenerateCmd = &cobra.Command{
+	Use:   "generate",
+	Short: "Generate a new plugin",
+	RunE:  runPluginGenerate,
+}
+
+func init() {
+	pluginCmd.AddCommand(pluginGenerateCmd)
+	pluginGenerateCmd.Flags().StringP("zip", "z", "", "Name of the zip file to create")
+}
+
+func runPluginGenerate(cmd *cobra.Command, args []string) error {
+	zipFile, _ := cmd.Flags().GetString("zip")
+
+	// Run the Tea app to get the plugin configuration
+	p := tea.NewProgram(initialPluginModel())
+	m, err := p.Run()
+	if err != nil {
+		return fmt.Errorf("error running plugin generator: %v", err)
+	}
+
+	model := m.(pluginModel)
+	if model.errorMsg != "" {
+		return fmt.Errorf("%s", model.errorMsg)
+	}
+
+	// fmt.Println("--------------------------------")
+	// fmt.Println(fmt.Sprintf("Error Msg: %+v", model.errorMsg))
+	// fmt.Println(fmt.Sprintf("model: %+v", model))
+	// fmt.Println(fmt.Sprintf("Form: %+v", model.form))
+	// fmt.Println(fmt.Sprintf("Form State: %+v", model.form.State))
+	// fmt.Println(fmt.Sprintf("Plugin: %+v", model.plugin))
+	// fmt.Println("--------------------------------")
+
+	location, err := generatePlugin(*model.plugin, zipFile)
+	if err != nil {
+		return fmt.Errorf("error generating plugin: %v", err)
+	}
+
+	fmt.Println(styles.SuccessStyle.Render("Plugin generated successfully"))
+	fmt.Println(fmt.Sprintf("Plugin location: %s", location))
+
+	return nil
+}
+
 // enumerated type for view state
 type pluginGenerateViewState int
 
@@ -347,49 +392,4 @@ func validPluginGroupID(name string) error {
 	}
 
 	return nil
-}
-
-func runPluginGenerate(cmd *cobra.Command, args []string) error {
-	zipFile, _ := cmd.Flags().GetString("zip")
-
-	// Run the Tea app to get the plugin configuration
-	p := tea.NewProgram(initialPluginModel())
-	m, err := p.Run()
-	if err != nil {
-		return fmt.Errorf("error running plugin generator: %v", err)
-	}
-
-	model := m.(pluginModel)
-	if model.errorMsg != "" {
-		return fmt.Errorf("%s", model.errorMsg)
-	}
-
-	// fmt.Println("--------------------------------")
-	// fmt.Println(fmt.Sprintf("Error Msg: %+v", model.errorMsg))
-	// fmt.Println(fmt.Sprintf("model: %+v", model))
-	// fmt.Println(fmt.Sprintf("Form: %+v", model.form))
-	// fmt.Println(fmt.Sprintf("Form State: %+v", model.form.State))
-	// fmt.Println(fmt.Sprintf("Plugin: %+v", model.plugin))
-	// fmt.Println("--------------------------------")
-
-	location, err := generatePlugin(*model.plugin, zipFile)
-	if err != nil {
-		return fmt.Errorf("error generating plugin: %v", err)
-	}
-
-	fmt.Println(styles.SuccessStyle.Render("Plugin generated successfully"))
-	fmt.Println(fmt.Sprintf("Plugin location: %s", location))
-
-	return nil
-}
-
-var pluginGenerateCmd = &cobra.Command{
-	Use:   "generate",
-	Short: "Generate a new plugin",
-	RunE:  runPluginGenerate,
-}
-
-func init() {
-	pluginCmd.AddCommand(pluginGenerateCmd)
-	pluginGenerateCmd.Flags().StringP("zip", "z", "", "Name of the zip file to create")
 }

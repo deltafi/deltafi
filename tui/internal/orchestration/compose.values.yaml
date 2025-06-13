@@ -1,0 +1,52 @@
+deltafi:
+  java_ide:
+    image: {{.JavaIDEContainer}}
+    enabled: false
+  java_devcontainer:
+    image: {{.JavaDevContainer}}
+    enabled: false
+  core_actions:
+    replicas: 1
+    image: {{.Repo}}/deltafi-core-actions:{{.Tag}}
+  core:
+    image: {{.Repo}}/deltafi-core:{{.Tag}}
+    envVar:
+      HTTP_MAX_BODY_SIZE: 5G
+  core_worker:
+    enabled: false
+    replicas: 1
+  auth:
+    mode: disabled # basic, cert, or disabled
+    entityResolver:
+      enabled: false
+      image: {{.Repo}}/deltafi-entity-resolver:{{.Tag}}
+      port: 8080
+      config:
+        README: |-
+          Add files to the site/values.yaml at deltafi.auth.config to inject files here
+  api:
+    image: {{.Repo}}/deltafi-api:{{.Tag}}
+    workers: 8
+  file_ingress:
+    enabled: true
+    image: {{.Repo}}/deltafi-file-ingress:{{.Tag}}
+  egress_sink:
+    enabled: true
+    image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
+  nodemonitor:
+    image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
+# nginx domain
+ingress:
+  domain: local.deltafi.org
+  tls:
+    enabled: false
+dependencies:
+  grafana: {{.GrafanaContainer}}
+  graphite: {{.GraphiteContainer}}
+  loki: {{.LokiContainer}}
+  minio: {{.MinioContainer}}
+  nginx: {{.NginxContainer}}
+  promtail: {{.PromtailContainer}}
+  valkey: {{.ValkeyContainer}}
+  docker_web_gui: {{.DockerWebGuiContainer}}
+  postgres: {{.PostgresContainer}}
