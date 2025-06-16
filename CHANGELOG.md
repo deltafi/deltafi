@@ -5,6 +5,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.22.0] - 2025-06-16
+
+### Added
+- Added a search/filter feature to the Content Viewer file list.
+- New `ValidateMetadata` action offers a way to validate required metadata
+- Add pagination for events. 
+- Updated default python builds  to python 3.13.3; python 3.12 is still supported
+- The `resumeByErrorCause` mutation now accepts a list of ResumeMetadata
+- TUI: Added minio commands: exec, mc, watch
+- TUI: Development modes will now set up ports for local development automatically
+- TUI: `set-admin-password` command
+- TUI: Upgrade command
+
+### Changed
+- Made the Content Viewer preview size a system property (`uiContentPreviewSize`) and set the default to 32KB.
+- Include the `FlowType` in the `PerActionUniqueKeyValues` GraphQL type
+- The `resumeByFlow` now takes a list of ResumeMetadata instead of a single ResumeMetadata object
+- TUI: Dashboard can terminate with q or esc keys, and refresh with space bar
+- TUI: `config` command is now a wizard for system configuration
+- TUI: Use semantic versioning rules to warn about upgrades and downgrades
+- TUI: Up command will always write out new version to config
+
+### Fixed
+- Fixed a bug in the Content Viewer that caused the file list to scroll off the screen when viewing many files.
+- Fixed a bug that caused the `/api/v2/config` API to always report `useUTC` as `true` regardless of how the `uiUseUTC` system property was set.
+- Fixed a bug in the pythin action kit that was ignoring thread scaling values
+
+### Removed
+- TUI: `init` command removed, functionality now in `config` command
+
+### Tech-Debt/Refactor
+- TUI: Cleaned up styling for error and warning logging
+- Show error code and message on failed GUI upload 
+
 ## [2.21.0] - 2025-06-03
 
 ### Added
@@ -4269,7 +4303,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.21.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.0...main
+[2.22.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.21.0...2.22.0
 [2.21.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.20.0...2.21.0
 [2.20.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.19.0...2.20.0
 [2.19.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.18.0...2.19.0
