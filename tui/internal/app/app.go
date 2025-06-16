@@ -152,6 +152,10 @@ func TuiPath() string {
 	return filepath.Dir(ex)
 }
 
+func GetInstallDir() string {
+	return GetInstance().config.InstallDirectory
+}
+
 func GetOrchestrator() orchestration.Orchestrator {
 	return GetInstance().orchestrator
 }

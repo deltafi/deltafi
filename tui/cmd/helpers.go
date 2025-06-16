@@ -20,6 +20,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -247,4 +248,36 @@ func escapedCompletions(values []string, toComplete string) ([]string, cobra.She
 	}
 	sort.Strings(results)
 	return results, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveDefault
+}
+
+func copyFileWithPerms(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	sourceInfo, err := sourceFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	// Copy permissions
+	err = os.Chmod(dst, sourceInfo.Mode())
+	if err != nil {
+		return err
+	}
+
+	return destFile.Sync()
 }
