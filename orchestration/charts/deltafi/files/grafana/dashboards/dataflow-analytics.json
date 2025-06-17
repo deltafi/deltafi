@@ -446,7 +446,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, time) AS time,\n  CASE \n    WHEN $annotationKey = 'All' THEN datasource_name || ' - ' || group_name\n    ELSE datasource_name || ' - ' || group_name || ' - ' || annotation_value\n  END AS series_name,\n  ingress_bytes,\n  ingress_files,\n  egress_bytes,\n  egress_files,\n  error_files,\n  filter_files\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms')\n)",
+          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, time, start => $__timeFrom(), finish => $__timeTo()) AS time,\n  CASE \n    WHEN $annotationKey = 'All' THEN datasource_name || ' - ' || group_name\n    ELSE datasource_name || ' - ' || group_name || ' - ' || annotation_value\n  END AS series_name,\n  COALESCE(SUM(ingress_bytes), 0) AS ingress_bytes,\n  COALESCE(SUM(ingress_files), 0) AS ingress_files,\n  COALESCE(SUM(egress_bytes), 0) AS egress_bytes,\n  COALESCE(SUM(egress_files), 0) AS egress_files,\n  COALESCE(SUM(error_files), 0) AS error_files,\n  COALESCE(SUM(filter_files), 0) AS filter_files\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms')\n)\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A",
           "sql": {
             "columns": [
