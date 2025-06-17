@@ -28,6 +28,8 @@ input ExpectedContentDataInput {
   mediaType: String
   value: String
   contains: [String]
+  ignoreWhitespace: Boolean
+  macroSubstitutions: Boolean
 }
 
 type ExpectedContentData {
@@ -35,6 +37,8 @@ type ExpectedContentData {
   mediaType: String
   value: String
   contains: [String]
+  ignoreWhitespace: Boolean
+  macroSubstitutions: Boolean
 }
 
 input ExpectedContentListInput {

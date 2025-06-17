@@ -319,14 +319,14 @@ public class TestEvaluator {
         for (Action action : deltaFileFlows.getFirst().getActions()) {
             // Find the action in this dataSource we want to compare content for
             if (action.getName().equals(expectedContent.getAction())) {
-                return allContentsForActionAreEqual(action.getContent(), expectedContent.getData());
+                return allContentsForActionAreEqual(deltaFile, action.getContent(), expectedContent.getData());
             }
         }
         // Did not find the action we wanted to compare
         return false;
     }
 
-    private boolean allContentsForActionAreEqual(List<Content> actualContent, List<ExpectedContentData> expectedData) {
+    private boolean allContentsForActionAreEqual(DeltaFile deltaFile, List<Content> actualContent, List<ExpectedContentData> expectedData) {
         if (actualContent.size() != expectedData.size()) {
             fatalSizeError("content", expectedData.size(), actualContent.size());
             return false;
@@ -345,7 +345,7 @@ public class TestEvaluator {
                 return false;
             }
 
-            if (!contentIsEqual(actualContent.get(i), expectedData.get(i))) {
+            if (!contentIsEqual(deltaFile, actualContent.get(i), expectedData.get(i))) {
                 return false;
             }
         }
@@ -353,14 +353,23 @@ public class TestEvaluator {
         return true;
     }
 
-    private boolean contentIsEqual(Content actualContent, ExpectedContentData expectedData) {
+    private boolean contentIsEqual(DeltaFile deltaFile, Content actualContent, ExpectedContentData expectedData) {
         try {
             String loadedContent = loadContent(actualContent);
             String expectedValue = expectedData.getValue();
 
             // Compare either the expected 'value', or the 'contains' strings
             if (StringUtils.isNotEmpty(expectedValue)) {
-                if (loadedContent.equals(expectedValue)) {
+                if (expectedData.getMacroSubstitutions()) {
+                    expectedValue = expectedValue.replace("{{DID}}", deltaFile.getDid().toString());
+                    if (!deltaFile.getParentDids().isEmpty()) {
+                        expectedValue = expectedValue.replace("{{PARENT_DID}}", deltaFile.getParentDids().getFirst().toString());
+                    }
+                }
+                if ((expectedData.getIgnoreWhitespace() &&
+                        StringUtils.deleteWhitespace(loadedContent)
+                                .equals(StringUtils.deleteWhitespace(expectedValue))) ||
+                        (loadedContent.equals(expectedValue))) {
                     return true;
                 } else {
                     fatalError(actualContent.getName(), "content", expectedValue, loadedContent);

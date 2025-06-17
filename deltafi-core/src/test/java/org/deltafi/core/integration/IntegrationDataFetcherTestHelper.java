@@ -89,6 +89,8 @@ public class IntegrationDataFetcherTestHelper {
             .mediaType()
             .value()
             .contains()
+            .ignoreWhitespace()
+            .macroSubstitutions()
             .parent()
             .parent()
 
@@ -130,6 +132,8 @@ public class IntegrationDataFetcherTestHelper {
             .mediaType()
             .value()
             .contains()
+            .ignoreWhitespace()
+            .macroSubstitutions()
             .parent()
 
             .parent()
@@ -171,6 +175,8 @@ public class IntegrationDataFetcherTestHelper {
             .mediaType()
             .value()
             .contains()
+            .ignoreWhitespace()
+            .macroSubstitutions()
             .parent()
 
             .parent()
@@ -240,6 +246,8 @@ public class IntegrationDataFetcherTestHelper {
             .mediaType()
             .value()
             .contains()
+            .ignoreWhitespace()
+            .macroSubstitutions()
             .parent()
             .parent()
 
@@ -281,6 +289,8 @@ public class IntegrationDataFetcherTestHelper {
             .mediaType()
             .value()
             .contains()
+            .ignoreWhitespace()
+            .macroSubstitutions()
             .parent()
 
             .parent()
@@ -322,6 +332,8 @@ public class IntegrationDataFetcherTestHelper {
             .mediaType()
             .value()
             .contains()
+            .ignoreWhitespace()
+            .macroSubstitutions()
             .parent()
 
             .parent()

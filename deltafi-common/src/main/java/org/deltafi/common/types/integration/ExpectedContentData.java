@@ -39,6 +39,10 @@ public class ExpectedContentData {
     // exactly one of value or contains is required
     private String value;
     private List<String> contains;
+    // The  "ignoreWhitespace" is not used when performing the "contains" checks
+    private Boolean ignoreWhitespace;
+    // The  "macroSubstitutions" is not used when performing the "contains" checks
+    private Boolean macroSubstitutions;
 
     public Collection<String> validate() {
         List<String> errors = new ArrayList<>();
@@ -51,6 +55,13 @@ public class ExpectedContentData {
         } else if (!StringUtils.isEmpty(value) &&
                 contains != null && !contains.isEmpty()) {
             errors.add("ExpectedContentData must contain only one of 'value' or 'contains'");
+        }
+
+        if (ignoreWhitespace == null) {
+            ignoreWhitespace = false;
+        }
+        if (macroSubstitutions == null) {
+            macroSubstitutions = false;
         }
 
         return errors;

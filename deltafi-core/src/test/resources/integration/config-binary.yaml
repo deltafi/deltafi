@@ -103,5 +103,6 @@ expectedDeltaFiles:
           action: PassthroughEgress
           data:
             - name: input/c
+              macroSubstitutions: true
               value: >
                 Cccccccccccc.
