@@ -6,9 +6,9 @@ deltafi:
   ssl:
     secret: ssl-secret
   core_actions:
-    image: deltafi/deltafi-core-actions:2.22.0
+    image: deltafi/deltafi-core-actions:2.22.1
   core:
-    image: deltafi/deltafi-core:2.22.0
+    image: deltafi/deltafi-core:2.22.1
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
@@ -17,17 +17,17 @@ deltafi:
     secret: auth-secret
     entityResolver:
       enabled: false
-      image: deltafi/deltafi-entity-resolver:2.22.0
+      image: deltafi/deltafi-entity-resolver:2.22.1
       url: http://127.0.0.1:8080/
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:2.22.0
+    image: deltafi/deltafi-egress-sink:2.22.1
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:2.22.0
+    image: deltafi/deltafi-nodemonitor:2.22.1
     period: 9
   clustermonitor:
     enabled: true
-    image: deltafi/deltafi-clustermonitor:2.22.0
+    image: deltafi/deltafi-clustermonitor:2.22.1
     period: 9
 
 # Kubernetes ingress config

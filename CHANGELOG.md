@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.22.1] - 2025-06-16
+
+### Added
+- Added to the `ExpectedContentData` for integration tests the options to `ignoreWhitespace` and `macroSubstitutions`
+
+### Changed
+- Replace `HttpService` with `OkHttpClient` for core egress actions to deal with thread pooling issues
+
 ## [2.22.0] - 2025-06-16
 
 ### Added
@@ -4303,7 +4311,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.1...main
+[2.22.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.0...2.22.1
 [2.22.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.21.0...2.22.0
 [2.21.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.20.0...2.21.0
 [2.20.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.19.0...2.20.0
