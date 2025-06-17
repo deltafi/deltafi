@@ -25,7 +25,7 @@ minio_mc_spec='{
                    "containers": [
                      {
                        "name": "deltafi-minio-cli",
-                       "image": "minio/mc:RELEASE.2025-04-28T18-11-17Z",
+                       "image": "minio/mc:RELEASE.2025-04-16T18-13-26Z",
                        "tty": true,
                        "stdin": true,
                        "command": [
