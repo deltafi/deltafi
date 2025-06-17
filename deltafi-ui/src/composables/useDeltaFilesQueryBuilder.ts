@@ -57,6 +57,7 @@ export default function useDeltaFilesQueryBuilder() {
     totalBytesMin?: string | null;
     totalBytesMax?: string | null;
     queryAnnotations?: Array<object>;
+    queryDateTypeOptions?: string | null;
   }
 
   const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, queryParams: queryParams) => {
@@ -66,9 +67,11 @@ export default function useDeltaFilesQueryBuilder() {
           offset: queryParams.offset,
           limit: queryParams.perPage,
           filter: {
-            nameFilter: queryParams.fileName ? {
-              name: queryParams.fileName
-            } : null,
+            nameFilter: queryParams.fileName
+              ? {
+                  name: queryParams.fileName,
+                }
+              : null,
             egressed: queryParams.egressed,
             filtered: queryParams.filtered,
             testMode: queryParams.testMode,
@@ -77,8 +80,10 @@ export default function useDeltaFilesQueryBuilder() {
             transforms: queryParams.transforms,
             topics: queryParams.topics,
             stage: queryParams.stage ? new EnumType(queryParams.stage) : null,
-            modifiedAfter: startDateISOString,
-            modifiedBefore: endDateISOString,
+            modifiedAfter: queryParams.queryDateTypeOptions === "Modified" ? startDateISOString : null,
+            modifiedBefore: queryParams.queryDateTypeOptions === "Modified" ? endDateISOString : null,
+            createdAfter: queryParams.queryDateTypeOptions === "Created" ? startDateISOString : null,
+            createdBefore: queryParams.queryDateTypeOptions === "Created" ? endDateISOString : null,
             annotations: queryParams.annotations,
             ingressBytesMin: queryParams.ingressBytesMin,
             ingressBytesMax: queryParams.ingressBytesMax,
@@ -108,7 +113,7 @@ export default function useDeltaFilesQueryBuilder() {
           created: true,
           totalBytes: true,
           name: true,
-          paused: true
+          paused: true,
         },
       },
     };

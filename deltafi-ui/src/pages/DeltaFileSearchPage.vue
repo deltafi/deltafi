@@ -57,7 +57,7 @@
                     <InputNumber v-model="model.sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Max" />
                     <Dropdown v-model="model.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" class="deltafi-input-field ml-2" />
                   </div>
-                  <Dropdown v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="true" :class="formInfo.class">
+                  <Dropdown v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="formInfo.showClear" :class="formInfo.class">
                     <template #value="slotProps">
                       <div v-if="slotProps.value != null" class="flex align-items-center">
                         <div>{{ formatOption(formInfo.formatOptions, slotProps.value) }}</div>
@@ -244,6 +244,7 @@ const selectedErrorDids = computed(() => {
 // Advanced Options Dropdown Variables
 const annotationsKeysOptions = ref([]);
 const stageOptions = ref([]);
+const queryDateTypeOptions = ref(["Modified", "Created"]);
 const booleanOptions = ref([true, false]);
 const sizeUnitsOptionsMap = ref(
   new Map([
@@ -274,6 +275,18 @@ const setupWatchers = () => {
   watch(
     () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.terminalStage, model.value.pendingAnnotations, model.value.paused, model.value.pinned],
     () => {
+      fetchDeltaFilesData();
+    }
+  );
+
+  watch(
+    () => [model.value.queryDateTypeOptions],
+    () => {
+      if (_.isEqual(model.value.queryDateTypeOptions, "Created")) {
+        model.value.sortField = "created";
+      } else {
+        model.value.sortField = "modified";
+      }
       fetchDeltaFilesData();
     }
   );
@@ -425,6 +438,7 @@ const defaultQueryParamsTemplate = {
   sizeMin: null,
   sizeMax: null,
   sizeType: sizeTypesOptions.value[0],
+  queryDateTypeOptions: queryDateTypeOptions.value[0],
   sizeUnit: [...sizeUnitsOptionsMap.value.keys()][0],
   ingressBytesMin: null,
   ingressBytesMax: null,
@@ -462,25 +476,26 @@ const advanceOptionsPanelInfo = computed(() => {
   return [
     // The Advanced Options fields are broken up into three columns. The fields are sorted in ascending order in each column by the 'order' field.
     // First Column fields
-    { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
-    { field: "dataSources", column: 1, order: 2, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: formattedDataSourceNames.value, optionGroupLabel: "group", optionGroupChildren: "sources", optionLabel: "label", optionValue: "label", filter: true, class: "deltafi-input-field responsive-width" },
-    { field: "transforms", column: 1, order: 3, componentType: "MultiSelect", label: "Transforms:", placeholder: "Select a Transform", options: transformOptions.value, class: "deltafi-input-field responsive-width" },
-    { field: "dataSinks", column: 1, order: 4, componentType: "MultiSelect", label: "Data Sinks:", placeholder: "Select a Data Sink", options: dataSinkOptions.value, class: "deltafi-input-field responsive-width" },
-    { field: "topics", column: 1, order: 4, componentType: "MultiSelect", label: "Topics:", placeholder: "Select a Topic", options: topicOptions.value, class: "deltafi-input-field responsive-width" },
-    { field: "size", column: 1, order: 5, componentType: "SizeUnit", label: "Size:" },
+    { field: "queryDateTypeOptions", column: 1, order: 1, componentType: "Dropdown", label: "Query by Date Type:", options: queryDateTypeOptions.value, showClear: false, class: "deltafi-input-field min-width" },
+    { field: "fileName", column: 1, order: 2, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
+    { field: "dataSources", column: 1, order: 3, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: formattedDataSourceNames.value, optionGroupLabel: "group", optionGroupChildren: "sources", optionLabel: "label", optionValue: "label", filter: true, class: "deltafi-input-field responsive-width" },
+    { field: "transforms", column: 1, order: 4, componentType: "MultiSelect", label: "Transforms:", placeholder: "Select a Transform", options: transformOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "dataSinks", column: 1, order: 5, componentType: "MultiSelect", label: "Data Sinks:", placeholder: "Select a Data Sink", options: dataSinkOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "topics", column: 1, order: 6, componentType: "MultiSelect", label: "Topics:", placeholder: "Select a Topic", options: topicOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "size", column: 1, order: 7, componentType: "SizeUnit", label: "Size:" },
     // 2nd Column fields
-    { field: "testMode", column: 2, order: 1, componentType: "Dropdown", label: "Test Mode:", placeholder: "Select if in Test Mode", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "replayable", column: 2, order: 2, componentType: "Dropdown", label: "Replayable:", placeholder: "Select if Replayable", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "terminalStage", column: 2, order: 3, componentType: "Dropdown", label: "Terminal Stage:", placeholder: "Select if Terminal Stage", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "egressed", column: 2, order: 4, componentType: "Dropdown", label: "Egressed:", placeholder: "Select if Egressed", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "paused", column: 2, order: 5, componentType: "Dropdown", label: "Paused:", placeholder: "Select if Paused", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "filtered", column: 2, order: 5, componentType: "Dropdown", label: "Filtered:", placeholder: "Select if Filtered", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "testMode", column: 2, order: 1, componentType: "Dropdown", label: "Test Mode:", placeholder: "Select if in Test Mode", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "replayable", column: 2, order: 2, componentType: "Dropdown", label: "Replayable:", placeholder: "Select if Replayable", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "terminalStage", column: 2, order: 3, componentType: "Dropdown", label: "Terminal Stage:", placeholder: "Select if Terminal Stage", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "egressed", column: 2, order: 4, componentType: "Dropdown", label: "Egressed:", placeholder: "Select if Egressed", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "paused", column: 2, order: 5, componentType: "Dropdown", label: "Paused:", placeholder: "Select if Paused", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "filtered", column: 2, order: 5, componentType: "Dropdown", label: "Filtered:", placeholder: "Select if Filtered", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
     // 3nd Column fields
     { field: "filteredCause", column: 3, order: 1, componentType: "InputText", label: "Filtered Cause:", placeholder: "Filtered Cause", class: "deltafi-input-field min-width" },
     { field: "requeueMin", column: 3, order: 2, componentType: "InputNumber", label: "Requeue Count:", placeholder: "Min", class: "p-inputnumber input-area-height" },
-    { field: "stage", column: 3, order: 3, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
-    { field: "pinned", column: 3, order: 4, componentType: "Dropdown", label: "Pinned:", placeholder: "Select if DeltaFile is pinned", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
-    { field: "pendingAnnotations", column: 3, order: 5, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "stage", column: 3, order: 3, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "pinned", column: 3, order: 4, componentType: "Dropdown", label: "Pinned:", placeholder: "Select if DeltaFile is pinned", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "pendingAnnotations", column: 3, order: 5, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
     { field: "annotations", column: 3, order: 6, componentType: "Annotations", label: "Annotations:" },
   ];
 });
@@ -518,6 +533,7 @@ const fetchAnnotationKeys = async () => {
 
 const clearOptions = () => {
   model.value = JSON.parse(JSON.stringify(_.pick(defaultQueryParamsTemplate, openPanel)));
+  model.value.sortField = "modified";
   setPersistedParams();
 };
 
@@ -602,7 +618,7 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType", "paused", "pinned"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType", "paused", "pinned", "queryDateTypeOptions"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
