@@ -19,34 +19,33 @@ package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.egress.*;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.deltafi.actionkit.action.egress.EgressAction;
+import org.deltafi.actionkit.action.egress.EgressInput;
+import org.deltafi.actionkit.action.egress.EgressResult;
+import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.http.HttpSendException;
-import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 
 @Slf4j
 public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> extends EgressAction<P> {
-    protected final HttpService httpService;
+    protected final OkHttpClient httpClient;
 
-    public HttpEgressBase(String description, HttpService httpService) {
+    public HttpEgressBase(String description, OkHttpClient httpClient) {
         super(ActionOptions.builder()
                 .description(description)
                 .build());
-        this.httpService = httpService;
+        this.httpClient = httpClient;
     }
 
     public EgressResultType egress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input) {
@@ -54,92 +53,56 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     public EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
-        HttpRequest request;
         try {
-            HttpRequest.Builder httpRequestBuilder = HttpService.newRequestBuilder(params.getUrl(), buildHeaders(context, params, input), getMediaType(input));
-            switch (method) {
-                case PATCH -> httpRequestBuilder.method("PATCH", bodyPublisher(context, input));
-                case POST -> httpRequestBuilder.POST(bodyPublisher(context, input));
-                case PUT -> httpRequestBuilder.PUT(bodyPublisher(context, input));
-                case DELETE -> httpRequestBuilder.DELETE();
+            Request request = buildOkHttpRequest(context, params, input, method);
+            try (Response response = httpClient.newCall(request).execute()) {
+                return response.isSuccessful() ? new EgressResult(context) : processError(context, response, method);
             }
-            request = httpRequestBuilder.build();
-        } catch (JsonProcessingException e) {
-            return new ErrorResult(context, "Unable to build " + method + " headers", e).logErrorTo(log);
         } catch (IOException e) {
-            return new ErrorResult(context, "Unable to prepare request body for " + method, e).logErrorTo(log);
+            return new ErrorResult(context, "Service " + method + " failure", e.getMessage(), e).logErrorTo(log);
         } catch (Exception e) {
-            return new ErrorResult(context, "Unexpected error building request for " + method, e.getMessage(), e).logErrorTo(log);
-        }
-
-        // --- First Attempt (Optimistic: Discard body to reduce latency) ---
-        HttpResponse<Void> initialResponse;
-        try {
-            initialResponse = httpService.execute(request, HttpResponse.BodyHandlers.discarding());
-        } catch (HttpSendException e) {
-            // Network or send error on the first attempt, no HTTP status to check.
-            return new ErrorResult(context, "Service " + method + " failure", e.getMessage(), e.getCause() != null ? e.getCause() : e).logErrorTo(log);
-        }
-
-        Response.Status initialStatus = Response.Status.fromStatusCode(initialResponse.statusCode());
-        if (initialStatus != null && initialStatus.getFamily() == Response.Status.Family.SUCCESSFUL) {
-            return new EgressResult(context);
-        }
-
-        // --- Error on First Attempt: Log and Prepare to Retry for Body ---
-        String initialErrorMsg = "Initial " + method + " attempt returned unsuccessful HTTP status: " + initialResponse.statusCode();
-        log.warn("{}. Retrying to capture error response body for DID: {}. URL: {}", initialErrorMsg, context.getDid(), request.uri());
-
-        // --- Second Attempt (Get body so if it's still an error, we can record the error message) ---
-        try {
-            HttpResponse<InputStream> retryResponse = httpService.execute(request, HttpResponse.BodyHandlers.ofInputStream());
-            int retryStatusCode = retryResponse.statusCode();
-
-            try (InputStream responseBodyStream = retryResponse.body()) {
-                Response.Status retryHttpStatus = Response.Status.fromStatusCode(retryStatusCode);
-                if (retryHttpStatus != null && retryHttpStatus.getFamily() == Response.Status.Family.SUCCESSFUL) {
-                    log.info("For DID {}: {} to {} succeeded on retry (HTTP {}) after initial failure (HTTP {}).",
-                            context.getDid(), method, request.uri(), retryStatusCode, initialResponse.statusCode());
-                    return new EgressResult(context);
-                }
-
-                String errorBodyContent = "Error response body could not be read or was empty.";
-                if (responseBodyStream != null) {
-                    try {
-                        errorBodyContent = new String(responseBodyStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8); // Or appropriate charset
-                    } catch (IOException readEx) {
-                        errorBodyContent = "Failed to read error response body: " + readEx.getMessage();
-                    }
-                }
-                return new ErrorResult(context, "Unsuccessful HTTP " + method + ": " + retryResponse.statusCode(), errorBodyContent).logErrorTo(log);
-            }
-        } catch (HttpSendException e) {
-            return new ErrorResult(context, initialErrorMsg + ". Retry attempt to get error body also failed: " + e.getMessage(), e.getCause() != null ? e.getCause() : e).logErrorTo(log);
-        } catch (IOException e) {
-            return new ErrorResult(context, initialErrorMsg + ". IO Error during retry attempt for error body: " + e.getMessage(), e).logErrorTo(log);
-        } catch (Exception e) {
-            return new ErrorResult(context, "Unexpected error during retry attempt for " + method, e.getMessage(), e).logErrorTo(log);
+            return new ErrorResult(context, "Unexpected error during " + method + " request", e.getMessage(), e).logErrorTo(log);
         }
     }
 
-    protected BodyPublisher bodyPublisher(@NotNull ActionContext context, @NotNull EgressInput input) throws IOException {
-        if (input.getContent().getSize() < 1) {
-            return BodyPublishers.noBody();
+    private Request buildOkHttpRequest(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input, @NotNull HttpRequestMethod method) throws IOException {
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(params.getUrl());
+
+        Map<String, String> headers = buildHeaders(context, params, input);
+        headers.forEach(requestBuilder::addHeader);
+
+        String mediaType = getMediaType(input);
+        if (mediaType != null) {
+            requestBuilder.addHeader("Content-Type", mediaType);
         }
 
-        return HttpRequest.BodyPublishers.fromPublisher(BodyPublishers.ofInputStream(() -> {
+        switch (method) {
+            case POST -> requestBuilder.post(prepareRequestBody(context, input));
+            case PUT -> requestBuilder.put(prepareRequestBody(context, input));
+            case PATCH -> requestBuilder.patch(prepareRequestBody(context, input));
+            case DELETE -> requestBuilder.delete();
+            default -> throw new IllegalArgumentException("Unsupported HTTP method: " + method);
+        }
+
+        return requestBuilder.build();
+    }
+
+    private ErrorResult processError(ActionContext context, Response response, HttpRequestMethod method) {
+        String errorBodyContent = "Error response body could not be read or was empty.";
+        if (response.body() != null) {
             try {
-                return this.openInputStream(context, input);
+                errorBodyContent = response.body().string();
             } catch (IOException e) {
-                log.error("Failed to open input stream", e);
-                throw new UncheckedIOException(e);
+                errorBodyContent = "Failed to read error response body: " + e.getMessage();
             }
-        }), input.getContent().getSize());
+        }
+
+        return new ErrorResult(context, "Unsuccessful HTTP " + method + ": " + response.code(), errorBodyContent).logErrorTo(log);
     }
 
-    protected InputStream openInputStream(@NotNull ActionContext context, @NotNull EgressInput input)
-            throws IOException {
-        return input.getContent().loadInputStream();
+    protected RequestBody prepareRequestBody(ActionContext context, EgressInput input){
+        return new InputStreamRequestBody(input);
     }
 
     protected String getMediaType(@NotNull EgressInput input) {

@@ -17,36 +17,44 @@
  */
 package org.deltafi.core.action.egress;
 
-import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
+import lombok.RequiredArgsConstructor;
+import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import okio.BufferedSink;
+import okio.Okio;
+import okio.Source;
 import org.deltafi.actionkit.action.egress.EgressInput;
+import org.deltafi.common.nifi.FlowFileInputStream;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
 
-@Component
-@Slf4j
-public class FlowfileEgress extends HttpEgressBase<HttpEgressParameters> {
-    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
+@RequiredArgsConstructor
+public class FlowFileRequestBody extends RequestBody {
 
-    public FlowfileEgress(OkHttpClient httpClient) {
-        super(String.format("Egresses content and metadata in a NiFi V1 FlowFile (%s).", APPLICATION_FLOWFILE),
-                httpClient);
+    private final ActionContext context;
+    private final EgressInput input;
+    private final ExecutorService executorService;
+
+    @Override
+    public MediaType contentType() {
+        return MediaType.parse(APPLICATION_FLOWFILE);
     }
 
     @Override
-    protected RequestBody prepareRequestBody(ActionContext context, EgressInput input){
-        return new FlowFileRequestBody(context, input, executorService);
+    public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
+        try (Source source = Okio.source(FlowFileInputStream.create(input.getContent().loadInputStream(),
+                StandardEgressHeaders.buildMap(context, input), input.getContent().getSize(), executorService))) {
+            bufferedSink.writeAll(source);
+        }
     }
 
     @Override
-    protected String getMediaType(@NotNull EgressInput input) {
-        return APPLICATION_FLOWFILE;
+    public boolean isOneShot() {
+        return true;
     }
 }

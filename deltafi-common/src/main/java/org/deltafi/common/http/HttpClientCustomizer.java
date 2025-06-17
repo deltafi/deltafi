@@ -17,6 +17,8 @@
  */
 package org.deltafi.common.http;
 
+import okhttp3.OkHttpClient;
+
 import java.net.http.HttpClient;
 
 /**
@@ -32,4 +34,12 @@ public interface HttpClientCustomizer {
      * @param builder the HttpClient.Builder used to build the HttpClient bean
      */
     void customize(HttpClient.Builder builder);
+
+    /**
+     * Customize the OkHttpClient.Builder used to create OkHttpClient bean
+     * By default, the builder will add an SSLContext based on {@link org.deltafi.common.ssl.SslContextProvider}
+     * and set the connectTimeout to {@link HttpServiceAutoConfiguration#DEFAULT_CONNECT_TIMEOUT}.
+     * @param builder the OkHttpClient.Builder used to build the OkHttpClient bean
+     */
+    default void customize(OkHttpClient.Builder builder) {}
 }

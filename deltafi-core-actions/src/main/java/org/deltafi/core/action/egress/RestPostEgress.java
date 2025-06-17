@@ -21,8 +21,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.deltafi.actionkit.action.egress.EgressInput;
-import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -38,8 +38,8 @@ import java.util.Map;
 public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    public RestPostEgress(HttpService httpService) {
-        super("Egress to an HTTP endpoint using POST", httpService);
+    public RestPostEgress(OkHttpClient httpClient) {
+        super("Egress to an HTTP endpoint using POST", httpClient);
     }
 
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull RestPostEgressParameters params,

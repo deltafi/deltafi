@@ -20,6 +20,7 @@ package org.deltafi.core.action.egress;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import okhttp3.OkHttpClient;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
@@ -53,7 +54,7 @@ public class DeltaFiEgressTest {
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
             .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
             .build();
-    private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
+    private final OkHttpClient httpService = new OkHttpClient();
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("DeltaFiEgressTest");
 
     private final DeltaFiEgress action = new DeltaFiEgress(httpService, ENV_CORE_URL);

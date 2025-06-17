@@ -20,15 +20,17 @@ package org.deltafi.core.action.egress;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import okio.BufferedSink;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.common.http.HttpPostException;
-import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -37,8 +39,6 @@ import org.mockito.Mockito;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.http.HttpClient;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class HttpEgressBaseTest {
     private static class TestHttpEgress extends HttpEgressBase<HttpEgressParameters> {
-        public TestHttpEgress(HttpService httpService) {
-            super("Test HTTP egress", httpService);
+        public TestHttpEgress(OkHttpClient httpClient) {
+            super("Test HTTP egress", httpClient);
         }
 
         @Override
@@ -60,7 +60,7 @@ class HttpEgressBaseTest {
     private static final String URL_CONTEXT = "/endpoint";
     private static final String CONTENT = "This is the test content.";
 
-    private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
+    private final OkHttpClient httpService = new OkHttpClient();
     private final TestHttpEgress action = new TestHttpEgress(httpService);
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("RestPostEgressTest");
 
@@ -122,9 +122,9 @@ class HttpEgressBaseTest {
 
     @Test
     void errorsOnHttpPostException() {
-        HttpService mockHttpService = Mockito.mock(HttpService.class);
-        Mockito.when(mockHttpService.execute(Mockito.any(), Mockito.any()))
-                .thenThrow(new HttpPostException("class", "post exception", new IOException()));
+        OkHttpClient mockHttpService = Mockito.mock(OkHttpClient.class);
+        Mockito.when(mockHttpService.newCall(Mockito.any()))
+                .thenThrow(new RuntimeException());
 
         TestHttpEgress testAction = new TestHttpEgress(mockHttpService);
 
@@ -138,18 +138,28 @@ class HttpEgressBaseTest {
         EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
-        assertEquals("Service POST failure", ((ErrorResult) egressResultType).getErrorCause());
+        assertEquals("Unexpected error during POST request", ((ErrorResult) egressResultType).getErrorCause());
     }
 
     private static class IOExceptionOpeningInputStream extends TestHttpEgress {
-        public IOExceptionOpeningInputStream(HttpService httpService) {
-            super(httpService);
+        public IOExceptionOpeningInputStream(OkHttpClient httpClient) {
+            super(httpClient);
         }
 
         @Override
-        protected InputStream openInputStream(@NotNull ActionContext context, @NotNull EgressInput input)
-                throws IOException {
-            throw new IOException();
+        protected RequestBody prepareRequestBody(@NotNull ActionContext context, @NotNull EgressInput input){
+            return new RequestBody() {
+
+                @Override
+                public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
+                    throw new IOException();
+                }
+
+                @Override
+                public @Nullable okhttp3.MediaType contentType() {
+                    return null;
+                }
+            };
         }
     }
 

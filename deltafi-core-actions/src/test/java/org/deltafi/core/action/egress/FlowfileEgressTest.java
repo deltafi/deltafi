@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import okhttp3.OkHttpClient;
 import org.apache.nifi.util.FlowFileUnpackagerV1;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
@@ -52,8 +53,7 @@ class FlowfileEgressTest {
     private static final String URL_CONTEXT = "/endpoint";
     private static final String CONTENT = "This is the test content.";
 
-    private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
-    private final FlowfileEgress action = new FlowfileEgress(httpService);
+    private final FlowfileEgress action = new FlowfileEgress(new OkHttpClient());
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("FlowfileEgressTest");
 
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =

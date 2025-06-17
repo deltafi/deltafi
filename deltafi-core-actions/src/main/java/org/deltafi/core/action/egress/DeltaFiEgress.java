@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResultType;
@@ -42,8 +43,8 @@ public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private final String localIngressUrl;
 
-    public DeltaFiEgress(HttpService httpService, @Value("${CORE_URL:Unknown}") String coreUrl) {
-        super("Egresses to local or remote DeltaFi.", httpService);
+    public DeltaFiEgress(OkHttpClient httpClient, @Value("${CORE_URL:Unknown}") String coreUrl) {
+        super("Egresses to local or remote DeltaFi.", httpClient);
         this.localIngressUrl = coreUrl + INGRESS_URL_PATH;
     }
 

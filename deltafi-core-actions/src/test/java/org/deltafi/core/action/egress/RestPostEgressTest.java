@@ -20,11 +20,11 @@ package org.deltafi.core.action.egress;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import okhttp3.OkHttpClient;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.http.HttpService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
@@ -34,21 +34,16 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.net.http.HttpClient;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.deltafi.common.constant.DeltaFiConstants.BYTES_OUT;
-import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class RestPostEgressTest {
     private static final String URL_CONTEXT = "/endpoint";
     private static final String CONTENT = "This is the test content.";
 
-    private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
-    private final RestPostEgress action = new RestPostEgress(httpService);
+    private final RestPostEgress action = new RestPostEgress(new OkHttpClient());
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("RestPostEgressTest");
 
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =

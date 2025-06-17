@@ -31,15 +31,13 @@ import java.util.concurrent.TimeUnit;
 @AutoConfiguration
 @EnableConfigurationProperties(MinioProperties.class)
 public class MinioAutoConfiguration {
-    @Bean
-    public OkHttpClient okHttpClient() {
-        return new OkHttpClient.Builder()
-                .connectionPool(new ConnectionPool(32, 5, TimeUnit.MINUTES))
-                .build();
-    }
 
     @Bean
-    public MinioClient minioClient(MinioProperties minioProperties, OkHttpClient okHttpClient) {
+    public MinioClient minioClient(MinioProperties minioProperties) {
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .connectionPool(new ConnectionPool(32, 5, TimeUnit.MINUTES))
+                .build();
+
         MinioClient.Builder builder = MinioClient.builder()
                 .endpoint(minioProperties.getUrl())
                 .httpClient(okHttpClient);

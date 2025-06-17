@@ -18,6 +18,7 @@
 package org.deltafi.common.http;
 
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.deltafi.common.ssl.SslContextProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -25,6 +26,8 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
@@ -55,6 +58,30 @@ public class HttpServiceAutoConfiguration {
         }
 
         return httpClientBuilder.build();
+    }
+
+    @Bean
+    public OkHttpClient okHttpClient(SslContextProvider sslContextProvider) {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.connectTimeout(DEFAULT_CONNECT_TIMEOUT);
+        if (sslContextProvider != null && sslContextProvider.isConfigured()) {
+            TrustManager[] trustManagers = sslContextProvider.getBundle().getManagers().getTrustManagers();
+            if (trustManagers == null || trustManagers.length != 1) {
+                throw new IllegalStateException("OKHttp requires a trust manager to be configured to enable SSL");
+            }
+
+            if (trustManagers[0] instanceof X509TrustManager trustManager) {
+                builder.sslSocketFactory(sslContextProvider.createSslContext().getSocketFactory(), trustManager);
+            } else {
+                throw new IllegalStateException("OKHttp requires a trust manager to be configured to enable SSL");
+            }
+        }
+
+        if (httpClientCustomizers != null) {
+            httpClientCustomizers.forEach(httpClientCustomizer -> httpClientCustomizer.customize(builder));
+        }
+
+        return builder.build();
     }
 
     @Bean

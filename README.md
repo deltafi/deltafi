@@ -53,4 +53,4 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Contact
 
-For more information, contact us at info@deltafi.org.
+For more information, contact us at info@deltafi.org. 

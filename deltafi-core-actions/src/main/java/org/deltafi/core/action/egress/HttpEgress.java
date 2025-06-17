@@ -27,9 +27,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -43,8 +43,8 @@ public class HttpEgress extends HttpEgressBase<HttpEgress.Parameters> {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    public HttpEgress(HttpService httpService) {
-        super("Egresses to an HTTP endpoint.", httpService);
+    public HttpEgress(OkHttpClient httpClient) {
+        super("Egresses to an HTTP endpoint.", httpClient);
     }
 
     @Override

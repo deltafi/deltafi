@@ -20,11 +20,11 @@ package org.deltafi.core.action.egress;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import okhttp3.OkHttpClient;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.http.HttpService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
@@ -34,7 +34,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.net.http.HttpClient;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,8 +48,7 @@ class HttpEgressTest {
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
             .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
             .build();
-    private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
-    private final HttpEgress action = new HttpEgress(httpService);
+    private final HttpEgress action = new HttpEgress(new OkHttpClient());
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("HttpEgressTest");
 
     @BeforeEach
@@ -97,7 +95,7 @@ class HttpEgressTest {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo("xml"))
+                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo("text/plain")) // TODO - should extra parameters be allowed to override this?
                 .withHeader("extraKey", WireMock.equalTo("extraValue"))
                 .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
                 .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
