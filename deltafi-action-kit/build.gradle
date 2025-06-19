@@ -13,10 +13,12 @@ dependencies {
     api "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     implementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
-    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
+    testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
+    testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
+    testImplementation "org.mockito:mockito-junit-jupiter"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
-    testImplementation 'org.hamcrest:hamcrest:3.0'
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    testImplementation "org.hamcrest:hamcrest:${hamcrestVersion}"
     testImplementation 'org.assertj:assertj-core'
 }

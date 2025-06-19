@@ -8,6 +8,7 @@ description "Common test library for DeltaFi"
 dependencies {
     implementation project(':deltafi-common')
 
+    testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
     api "org.testcontainers:testcontainers:${testContainersVersion}"
 
     implementation "io.minio:minio:${minioVersion}"

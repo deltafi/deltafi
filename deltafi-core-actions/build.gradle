@@ -19,13 +19,15 @@ dependencies {
     testImplementation project(':deltafi-common-test')
     testImplementation project(':deltafi-action-kit-test')
 
+    testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
+    testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
     testImplementation 'io.rest-assured:rest-assured:5.5.5'
-    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
+    testImplementation "org.mockito:mockito-junit-jupiter"
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
-    testImplementation "org.junit.jupiter:junit-jupiter-params:${jupiterVersion}"
-    testImplementation 'org.assertj:assertj-core:3.25.3'
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    testImplementation "org.junit.jupiter:junit-jupiter-params"
+    testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.wiremock:wiremock-standalone:3.12.0'
     testImplementation 'org.apache.sshd:sshd-core:2.15.0'
     testImplementation 'org.apache.sshd:sshd-sftp:2.15.0'

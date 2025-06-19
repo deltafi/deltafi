@@ -12,13 +12,17 @@ javadoc {
 }
 
 dependencies {
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
     api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     api(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}"))
     api 'com.netflix.graphql.dgs:graphql-dgs-client'
     api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenClientVersion}"
     api 'commons-io:commons-io:2.19.0'
-    api(platform('io.github.openfeign:feign-bom:13.6'))
+    api(platform("io.github.openfeign:feign-bom:${openFeignVersion}"))
     api 'io.github.openfeign:feign-core'
     api 'io.github.openfeign:feign-jackson'
     api 'io.github.openfeign:feign-slf4j'
@@ -44,7 +48,6 @@ dependencies {
         }
     }
 
-    implementation 'net.minidev:json-smart:2.5.2'
     compileOnly 'org.springframework.boot:spring-boot-starter-cache'
     testImplementation 'org.springframework.boot:spring-boot-starter-cache'
     compileOnly 'com.github.ben-manes.caffeine:caffeine:3.2.0'
@@ -52,17 +55,20 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'ch.qos.logback:logback-classic:1.5.18'
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation "com.squareup.okhttp3:okhttp:${okhttpVersion}"
     implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
     implementation 'org.apache.maven:maven-artifact:3.9.9'
 
+    testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
+    testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
+    testImplementation platform("org.assertj:assertj-bom:${assertJVersion}")
     testImplementation project(':deltafi-common-test')
-    testImplementation 'org.assertj:assertj-core:3.25.3'
-    testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
-    testImplementation "org.junit.jupiter:junit-jupiter-params:${jupiterVersion}"
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.jupiter:junit-jupiter-params"
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
-    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    testImplementation "org.mockito:mockito-junit-jupiter"
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     testImplementation 'org.wiremock:wiremock-standalone:3.12.0'
