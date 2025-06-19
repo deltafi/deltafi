@@ -143,11 +143,76 @@ allprojects {
 }
 
 docker {
-    name "${project.name}:${project.version}"
+    name "deltafi/${project.name}:${project.version}"
     tag "local", "${localDockerRegistry}/${project.name}:latest"
     copySpec.from(bootJar.archiveFile).into("build/libs/")
     dockerfile file("${buildDir}/Dockerfile")
 }
+
+task install {
+    group = 'install'
+    description = 'Install plugin in local DeltaFi instance (plugin image will be built first)'
+}
+
+
+
+import org.yaml.snakeyaml.Yaml
+def loadDeltafiConfig() {
+    def retval = [:];
+
+    def homeDir = System.getenv('HOME');
+    File testFile = new File(homeDir + '/.deltafi/config.yaml');
+
+    if ( testFile.isFile() ) {
+        retval = new Yaml().load(testFile.newInputStream());
+        println ('Loaded configuration from ' + testFile.getPath());
+    } else {
+        println ('WARNING: ' + testFile.getPath() + ' not found');
+    }
+    retval = retval ?: [:]
+
+    if (! retval.isEmpty()) println(retval.pprint());
+
+    return retval;
+}
+ext.deltafiConfig = loadDeltafiConfig();
+
+if (!deltafiConfig.isEmpty()) {
+    task deployPluginImage {
+        var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
+        if (orchestrationMode != null) {
+            group = 'install'
+            description = 'build and push docker images for ' + orchestrationMode + ' deployment'
+        }
+        if (orchestrationMode == 'compose') {
+            dependsOn "dockerTag${project.version}"
+        } else if (orchestrationMode == 'kind') {
+            dependsOn 'dockerPushLocal'
+        } else {
+            println ('WARNING: Cannot install docker images for orchestration mode:' + deltafiConfig['orchestrationMode'])
+        }
+    }
+
+    install.dependsOn 'deployPluginImage'
+
+    if (deltafiConfig['orchestrationMode'].toLowerCase() == 'compose') {
+        task installPlugin(type: Exec) {
+            workingDir deltafiConfig['installDirectory']
+            commandLine 'deltafi', 'plugin', 'install', "deltafi/${project.name}:${project.version}"
+        }
+        installPlugin.dependsOn 'deployPluginImage'
+        install.dependsOn 'installPlugin'
+
+        task uninstall(type: Exec) {
+            group = 'install'
+            description = 'uninstall the plugin from local DeltaFi'
+            workingDir deltafiConfig['installDirectory']
+            commandLine 'deltafi', 'plugin', 'uninstall', "${project.name}"
+        }
+    }
+}
+
+
 
 abstract class DocsExtension {
     abstract DirectoryProperty getDocsDirectory()
