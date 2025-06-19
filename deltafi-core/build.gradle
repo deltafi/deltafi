@@ -17,7 +17,7 @@ dependencies {
 
     implementation project(':deltafi-common')
 
-    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'org.apache.commons:commons-collections4:4.5.0'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -34,17 +34,18 @@ dependencies {
     implementation 'com.github.docker-java:docker-java-core:3.4.0'
     implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.4.0'
     implementation 'org.lz4:lz4-java:1.8.0'
-    implementation 'org.postgresql:postgresql:42.7.4'
+    implementation 'org.postgresql:postgresql:42.7.5'
     implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.3'
     implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
-    implementation 'org.flywaydb:flyway-core:10.20.0'
-    implementation 'org.flywaydb:flyway-database-postgresql:10.20.0'
+    implementation 'org.flywaydb:flyway-core:10.22.0'
+    implementation 'org.flywaydb:flyway-database-postgresql:10.22.0'
+    implementation 'jakarta.annotation:jakarta.annotation-api:1.2.2.1-jre17'
 
     testImplementation project(':deltafi-common-test')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.27.0'
-    testImplementation 'org.awaitility:awaitility:4.2.2'
+    testImplementation 'org.apache.nifi:nifi-flowfile-packager:2.4.0'
+    testImplementation 'org.awaitility:awaitility:4.3.0'
     testImplementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     testImplementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 

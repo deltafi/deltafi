@@ -17,6 +17,6 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
-    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.hamcrest:hamcrest:3.0'
     testImplementation 'org.assertj:assertj-core'
 }
