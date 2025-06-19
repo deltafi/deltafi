@@ -18,6 +18,7 @@
 package orchestration
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,9 +26,13 @@ import (
 	"strings"
 )
 
+//go:embed kubernetes.values.site.yaml
+var kubernetesEmbeddedFiles embed.FS
+
 type KubernetesOrchestrator struct {
 	Orchestrator
 	distroPath string
+	sitePath   string
 	dataPath   string
 	namespace  string
 }
@@ -166,7 +171,12 @@ func (o *KubernetesOrchestrator) GetValkeyName() string {
 
 func (o *KubernetesOrchestrator) Up(args []string) error {
 
-	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
+	siteValues, err := o.SiteValuesFile()
+	if err != nil {
+		return fmt.Errorf("Unable to findsite values file: %w", err)
+	}
+
+	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi", "-f", siteValues)
 
 	args = append([]string{"install"}, args...)
 
@@ -205,4 +215,30 @@ func (o *KubernetesOrchestrator) Environment() []string {
 
 func (o *KubernetesOrchestrator) ExecuteMinioCommand(cmd []string) error {
 	return execMinioCommand(o, cmd)
+}
+
+func (o *KubernetesOrchestrator) enforceSiteValuesDir() error {
+	if err := os.MkdirAll(o.sitePath, 0755); err != nil {
+		return fmt.Errorf("error creating site values directory: %w", err)
+	}
+	return nil
+}
+
+func (o *KubernetesOrchestrator) SiteValuesFile() (string, error) {
+	if err := o.enforceSiteValuesDir(); err != nil {
+		return "", err
+	}
+
+	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
+	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {
+		defaultContent, err := composeEmbeddedFiles.ReadFile("kubernetes.values.site.yaml")
+		if err != nil {
+			return "", fmt.Errorf("error reading site values template: %w", err)
+		}
+
+		if err := os.WriteFile(siteValuesFile, defaultContent, 0644); err != nil {
+			return siteValuesFile, fmt.Errorf("error creating default %s file: %w", "values.yaml", err)
+		}
+	}
+	return siteValuesFile, nil
 }

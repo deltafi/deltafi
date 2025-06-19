@@ -37,7 +37,7 @@ import (
 )
 
 //go:embed compose.plugin-dev.yaml compose.core-dev.yaml compose.site.yaml compose.values.yaml compose.values.site.yaml
-var embeddedFiles embed.FS
+var composeEmbeddedFiles embed.FS
 
 const (
 	networkName          = "deltafi"
@@ -60,60 +60,6 @@ type valuesData struct {
 	JavaIDEContainer      string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-1"`
 	JavaDevContainer      string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`
 }
-
-const defaultValuesTemplate = `deltafi:
-  java_ide:
-    image: {{.JavaIDEContainer}}
-    enabled: false
-  java_devcontainer:
-    image: {{.JavaDevContainer}}
-    enabled: false
-  core_actions:
-    replicas: 1
-    image: {{.Repo}}/deltafi-core-actions:{{.Tag}}
-  core:
-    image: {{.Repo}}/deltafi-core:{{.Tag}}
-    envVar:
-      HTTP_MAX_BODY_SIZE: 5G
-  core_worker:
-    enabled: false
-    replicas: 1
-  auth:
-    mode: disabled # basic, cert, or disabled
-    entityResolver:
-      enabled: false
-      image: {{.Repo}}/deltafi-entity-resolver:{{.Tag}}
-      port: 8080
-      config:
-        README: |-
-          Add files to the site/values.yaml at deltafi.auth.config to inject files here
-  api:
-    image: {{.Repo}}/deltafi-api:{{.Tag}}
-    workers: 8
-  file_ingress:
-    enabled: true
-    image: {{.Repo}}/deltafi-file-ingress:{{.Tag}}
-  egress_sink:
-    enabled: true
-    image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
-  nodemonitor:
-    image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
-# nginx domain
-ingress:
-  domain: local.deltafi.org
-  tls:
-    enabled: false
-dependencies:
-  grafana: {{.GrafanaContainer}}
-  graphite: {{.GraphiteContainer}}
-  loki: {{.LokiContainer}}
-  minio: {{.MinioContainer}}
-  nginx: {{.NginxContainer}}
-  promtail: {{.PromtailContainer}}
-  valkey: {{.ValkeyContainer}}
-  docker_web_gui: {{.DockerWebGuiContainer}}
-  postgres: {{.PostgresContainer}}
-`
 
 type ComposeOrchestrator struct {
 	Orchestrator
@@ -190,7 +136,7 @@ func (o *ComposeOrchestrator) SiteValuesFile() (string, error) {
 
 	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
 	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {
-		defaultContent, err := embeddedFiles.ReadFile("compose.values.site.yaml")
+		defaultContent, err := composeEmbeddedFiles.ReadFile("compose.values.site.yaml")
 		if err != nil {
 			return "", fmt.Errorf("error reading site values template: %w", err)
 		}
@@ -208,7 +154,7 @@ func (o *ComposeOrchestrator) PluginDevelopmentComposeFile() (string, error) {
 	}
 
 	pluginDevelopmentFile := filepath.Join(o.configPath, composePluginDevFile)
-	defaultContent, err := embeddedFiles.ReadFile("compose.plugin-dev.yaml")
+	defaultContent, err := composeEmbeddedFiles.ReadFile("compose.plugin-dev.yaml")
 	if err != nil {
 		return "", fmt.Errorf("error reading plugin development compose template: %w", err)
 	}
@@ -225,7 +171,7 @@ func (o *ComposeOrchestrator) CoreDevelopmentComposeFile() (string, error) {
 	}
 
 	coreDevelopmentFile := filepath.Join(o.configPath, composeCoreDevFile)
-	defaultContent, err := embeddedFiles.ReadFile("compose.core-dev.yaml")
+	defaultContent, err := composeEmbeddedFiles.ReadFile("compose.core-dev.yaml")
 	if err != nil {
 		return "", fmt.Errorf("error reading core development compose template: %w", err)
 	}
@@ -243,7 +189,7 @@ func (o *ComposeOrchestrator) SiteComposeFile() (string, error) {
 
 	siteFile := filepath.Join(o.sitePath, "compose.yaml")
 	if _, err := os.Stat(siteFile); os.IsNotExist(err) {
-		defaultContent, err := embeddedFiles.ReadFile("compose.site.yaml")
+		defaultContent, err := composeEmbeddedFiles.ReadFile("compose.site.yaml")
 		if err != nil {
 			return "", fmt.Errorf("error reading site compose template: %w", err)
 		}
@@ -464,7 +410,7 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 func (o *ComposeOrchestrator) defaultValuesYaml() error {
 	// Create template
 
-	content, err := embeddedFiles.ReadFile("compose.values.yaml")
+	content, err := composeEmbeddedFiles.ReadFile("compose.values.yaml")
 	if err != nil {
 		return fmt.Errorf("error reading values template: %w", err)
 	}

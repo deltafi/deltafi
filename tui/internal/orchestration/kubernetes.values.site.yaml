@@ -1,0 +1,26 @@
+# Site values file
+# To restore to defaults, remove this file and run 'deltafi up'
+---
+# DeltaFi config
+deltafi:
+  auth:
+    mode: basic # basic, cert, or disabled
+    secret: auth-secret
+    entityResolver:
+      enabled: false
+      image: deltafi/deltafi-entity-resolver:2.22.1
+      url: http://127.0.0.1:8080/
+  ingress:
+    envVar:
+      HTTP_MAX_BODY_SIZE: 5G
+  egress_sink:
+    enabled: true
+
+# Kubernetes ingress config
+ingress:
+  domain: local.deltafi.org
+  tls:
+    enabled: false
+    # ssl_ciphers: "ECDHE-RSA-AES256-GCM-SHA384"
+    secrets:
+      default: local-deltafi-org
