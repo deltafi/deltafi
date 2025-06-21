@@ -77,8 +77,8 @@ func blackholeHandler(w http.ResponseWriter, r *http.Request) {
 func fileSinkHandler(w http.ResponseWriter, r *http.Request) {
 	metadataJSON := r.Header.Get("DeltafiMetadata")
 	if metadataJSON == "" {
-		logger.Error("Missing metadata header")
-		http.Error(w, "Missing metadata header", http.StatusBadRequest)
+		logger.Error("Missing HTTP header: DeltafiMetadata")
+		http.Error(w, "Missing HTTP header: DeltafiMetadata", http.StatusBadRequest)
 		return
 	}
 
