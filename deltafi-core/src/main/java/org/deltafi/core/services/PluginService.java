@@ -105,6 +105,7 @@ public class PluginService implements Snapshotter {
             PluginEntity systemPlugin = maybeSystemPlugin.get();
             if (!Objects.equals(systemPlugin.getPluginCoordinates().getVersion(), buildProperties.getVersion())) {
                 systemPlugin.setVersion(buildProperties.getVersion());
+                systemPlugin.setActionKitVersion(buildProperties.getVersion());
                 if (systemPlugin.getFlowPlans() != null) {
                     systemPlugin.getFlowPlans()
                             .forEach(fp -> fp.getSourcePlugin().setVersion(buildProperties.getVersion()));
