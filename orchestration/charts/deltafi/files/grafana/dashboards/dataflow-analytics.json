@@ -148,7 +148,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "stat"
     },
     {
@@ -174,7 +174,7 @@
       },
       "pluginVersion": "11.5.2",
       "title": "",
-      "transparent": true,
+      "transparent": false,
       "type": "text"
     },
     {
@@ -260,7 +260,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "stat"
     },
     {
@@ -278,13 +278,14 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": false,
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 1,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 25,
+            "fillOpacity": 0,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -493,7 +494,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -679,13 +680,14 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": false,
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 25,
+            "fillOpacity": 0,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -858,7 +860,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -958,7 +960,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "stat"
     },
     {
@@ -984,7 +986,7 @@
       },
       "pluginVersion": "11.5.2",
       "title": "",
-      "transparent": true,
+      "transparent": false,
       "type": "text"
     },
     {
@@ -1070,7 +1072,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "stat"
     },
     {
@@ -1087,13 +1089,14 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": false,
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 1,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 25,
+            "fillOpacity": 0,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -1266,7 +1269,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -1452,13 +1455,14 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": false,
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 25,
+            "fillOpacity": 0,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -1631,7 +1635,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -1749,7 +1753,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "stat"
     },
     {
@@ -1835,7 +1839,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -1852,13 +1856,14 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": false,
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 25,
+            "fillOpacity": 0,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -2030,7 +2035,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2124,7 +2129,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "stat"
     },
     {
@@ -2209,7 +2214,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "piechart"
     },
     {
@@ -2226,13 +2231,14 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": false,
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 25,
+            "fillOpacity": 0,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -2404,7 +2410,7 @@
           }
         }
       ],
-      "transparent": true,
+      "transparent": false,
       "type": "timeseries"
     },
     {
