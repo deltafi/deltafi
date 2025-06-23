@@ -659,11 +659,29 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
             for (int i = 0; i < filter.getAnnotations().size(); i++) {
                 KeyValue keyValue = filter.getAnnotations().get(i);
-                criteria.append("AND df.did = a").append(i).append(".delta_file_id ");
-                criteria.append("AND a").append(i).append(".key = :annotationKey").append(i).append(" ");
-                criteria.append("AND a").append(i).append(".value = :annotationValue").append(i).append(" ");
+                criteria.append("AND df.did = a").append(i).append(".delta_file_id ")
+                        .append("AND a").append(i).append(".key = :annotationKey").append(i).append(" ");
                 parameters.put("annotationKey" + i, keyValue.getKey());
-                parameters.put("annotationValue" + i, keyValue.getValue());
+
+                String annotationValue = keyValue.getValue();
+                // Is this just a 'key exists' search?
+                if (!"*".equals(annotationValue)) {
+                    // no, must check value, too
+                    String operator = "="; // default to exact match
+                    boolean insertNot = false;
+                    if (annotationValue.startsWith("!")) {
+                        annotationValue = annotationValue.substring(1);
+                        operator = "!=";
+                        insertNot = true;
+                    }
+                    if (annotationValue.contains("*")) {
+                        annotationValue = annotationValue.replace("*", "%");
+                        operator = insertNot ? "NOT LIKE" : "LIKE";
+                    }
+                    criteria.append("AND a").append(i).append(".value ").append(operator)
+                            .append(" :annotationValue").append(i).append(" ");
+                    parameters.put("annotationValue" + i, annotationValue);
+                }
             }
         }
 

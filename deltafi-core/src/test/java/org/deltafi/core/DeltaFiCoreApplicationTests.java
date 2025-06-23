@@ -2912,7 +2912,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setPinned(true);
 		deltaFile1.setIngressBytes(100L);
 		deltaFile1.setTotalBytes(1000L);
-		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
+		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "abcdef"));
 		deltaFile1.setContentDeleted(NOW);
 		deltaFile1.firstFlow().firstAction().setMetadata(Map.of("key1", "value1", "key2", "value2"));
 		deltaFile1.setName("filename1");
@@ -2934,7 +2934,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), "dataSource", DeltaFileStage.ERROR, NOW.plusSeconds(2), NOW.minusSeconds(2));
 		deltaFile2.setIngressBytes(200L);
 		deltaFile2.setTotalBytes(2000L);
-		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
+		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "abcdef"));
 		deltaFile2.setName("filename2");
 		deltaFile2.setDataSource("flow2");
 		DeltaFileFlow flow2 = deltaFile2.addFlow(flowDefinitionService.getOrCreateFlow("MyDataSink", FlowType.DATA_SINK), deltaFile2.firstFlow(), NOW);
@@ -2958,7 +2958,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID(), "dataSource", DeltaFileStage.COMPLETE, NOW.plusSeconds(3), NOW.minusSeconds(3));
 		deltaFile3.setIngressBytes(300L);
 		deltaFile3.setTotalBytes(3000L);
-		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
+		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "abc123"));
 		deltaFile3.setName("filename3");
 		deltaFile3.setDataSource("flow3");
 		DeltaFileFlow flow3 = deltaFile3.addFlow(flowDefinitionService.getOrCreateFlow("MyTransformFlow", FlowType.TRANSFORM), deltaFile3.firstFlow(), NOW);
@@ -3021,10 +3021,18 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(true).build(), deltaFile2, deltaFile3);
-		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "value"))).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "abcdef"))).build(), deltaFile1, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "abc*"))).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "a*3"))).build(), deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "!a*3"))).build(), deltaFile1, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "!abcdef"))).build(), deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "*"))).build(), deltaFile1, deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"))).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"))).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"), new KeyValue("extra", "missing"))).build());
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "abcdef"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "abc*"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "abc*"), new KeyValue("a.1", "first"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "*"), new KeyValue("a.1", "first"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "abcdef"), new KeyValue("extra", "missing"))).build());
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "miss"))).build());
 		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSinkz")).build());
 		testFilter(DeltaFilesFilter.newBuilder().dataSinks(List.of("MyDataSink")).build(), deltaFile1, deltaFile2);
