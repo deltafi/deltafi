@@ -250,7 +250,7 @@ func (m model) View() string {
 var dashboardCmd = &cobra.Command{
 	Use:     "dashboard",
 	Short:   "Display system metrics dashboard",
-	GroupID: "deltafi",
+	GroupID: "metrics",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		interval, _ := cmd.Flags().GetInt("interval")
 		p := tea.NewProgram(initialModel(time.Duration(interval)*time.Second), tea.WithAltScreen())

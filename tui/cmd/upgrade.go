@@ -80,6 +80,7 @@ var upgradeCmd = &cobra.Command{
 	Long: `Upgrade DeltaFi system to the latest version.
 	
 	Use upgrade list command to see available versions.`,
+	GroupID: "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if len(args) == 0 {

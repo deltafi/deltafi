@@ -4,37 +4,22 @@ Source code for the final result of this example can be found here:  https://git
 
 ## Prerequisites
 
-Ensure that your system meets the [prerequisites](/kind#prerequisites) for installing and running a development instance of DeltaFi in a self-contained KinD (Kubernetes in Docker) cluster.
+You will need a Docker Compose system running on your local development system.  You can [follow the quick-start instructions](/getting-started/quick-start) to get a DeltaFi up and running.
 
-For development, it is recommended that an IDE like IntelliJ or Visual Studio Code is installed for writing plugin code.  The IDE will be presumed and not covered in this tutorial.
+For Java plugin development, you will need an IDE (VSCode or IntelliJ will work great) and you will need a Java 21 JDK installed.  
 
-## Installing the Development Environment
+## Configure DeltaFi for Plugin Development
 
-To execute a singlestep install of the latest released version of DeltaFi in a self-contained KinD cluster:
+Run the config wizard to reconfigure your system for plugin development.  Select compose orchestration and plugin development mode when prompted.
 
 ```bash
-curl -fsSL https://gitlab.com/deltafi/installer/-/raw/main/kind-install.sh > kind-install.sh
-chmod +x kind-install.sh
-./kind-install.sh --dev
+deltafi config
 ```
 
-If you have previously done a demo install, you can simply execute the development bootstrap as follows:
+Your system will be configured to execute plugins locally in your DeltaFi cluster.
 
 ```bash
-deltafi/bootstrap-dev.sh
-```
-
-The UI can be accessed at `http://local.deltafi.org` and the Grafana metrics dashboard can be accessed at `http://metrics.local.deltafi.org/dashboards`.  You should visit those links in your browser to verify that the installation process is complete.
-
-You can execute the following commands to see status from the command line:
-
-```bash
-# See status of the DeltaFi subsystems running in the local Kubernetes cluster
-kubectl get pods
-```
-
-```bash
-# See the DeltaFi system check status
+# See the DeltaFi system status
 deltafi status
 ```
 
@@ -44,44 +29,29 @@ deltafi versions
 ```
 
 ## Creating a Skeleton Plugin
-A new plugin can be initialized using the `deltafi plugin-init` command. This will prompt for the information necessary to create the plugin. Alternatively, you can initialize a new plugin by passing a configuration file to the command: `deltafi plugin-init -f plugin-config.json`.
+A new plugin can be initialized using the `deltafi plugin generate` command. This will launch a wizard that will prompt for the information necessary to create the plugin. 
 
-Below are the steps to generate the [example-project](https://gitlab.com/deltafi/example-plugin). This must be run in the parent directory of the `deltafi` directory that was created by the installer (your location after running the singlestep install process).
+When you run the `deltafi plugin generate` command, specify the following:
+- group id: `org.deltafi.example`
+- plugin name: `example-plugin`
+- description: `A plugin that takes in json and outputs yaml`
 
-Create `plugin-config.json`:
-```json
-{
-  "artifactId": "example-plugin",
-  "groupId": "org.deltafi.example",
-  "description": "A plugin that takes in json and outputs yaml",
-  "pluginLanguage": "JAVA",
-  "actions": [
-    {
-      "className": "JsonToYamlAction",
-      "description": "Converts arbitrary json to yaml",
-      "actionType": "TRANSFORM"
-    }
-  ]
-}
-```
+Also specify an action class:
+- Action class name: `JsonToYamlAction`
+- Action description: `Converts arbitrary json to yaml`
 
-Generate the skeleton plugin with the following command:
-```bash
-deltafi plugin-init -f plugin-config.json
-```
+After the generator completes, you will have a complete plugin project generated in your deltafi repository directory, at `deltafi/repos/example-plugin`
+
 ## Building and Installing Your Plugin
 
-DeltaFi has a development CLI command called `cluster` which we will use for this example.
+The generated plugin is ready to build and install (although it does not do much yet).  This gradle task will rebuild the plugin and install it on your running DeltaFi instance.
 
 ```bash
-# Register the example plugin with cluster tool
-cluster plugin add-local example-plugin org.deltafi.example
-
-# Build and install the example-plugin
-cluster plugin build install
+# from the example-plugin directory
+./gradlew install
 ```
 
-If you make changes to your plugin, you may re-run `cluster plugin build install` to update the plugin with your changes.
+If you make changes to your plugin, you may re-run `./gradlew install` to update the plugin with your changes.
 
 If you want to compile and execute tests for your plugin, you can do so from the `example-plugin` directory:
 ```bash
@@ -222,15 +192,15 @@ dependencies {
 
 ## Testing Your Plugin
 
-Now that your plugin has some new logic, you can rebuild and deploy your new plugin version.
+Now that your plugin has some new logic, you can rebuild and deploy your new plugin version. The `build` task will insure that tests are executed, and the `install` task will install your plugin on the local DeltaFi system.
 
 ```
-cluster plugin build install
+./gradlew build install
 ```
 
 Generate some test data for your plugin:
 
-`example-plugin/src/test/resources`:
+`example-plugin/src/test/resources/test1.json`:
 ```json
 {
   "THING1": "This is thing 1",
@@ -266,12 +236,25 @@ Generate some test data for your plugin:
 }
 ```
 
-Once the plugin installation is complete you can enable the flows on the [flow config page](http://local.deltafi.org/config/flows)
-To run data through the flow you can go to the [upload page](http://local.deltafi.org/deltafile/upload/), choose your ingress flow and upload a file.
-There will be link to the DeltaFile after the file is uploaded.
+Once the plugin is installed, you can enable the flows with a DeltaFI TUI command:
 
-You can see the results of all uploaded DeltaFiles in the [search page](Http://local.deltafi.org/deltafile/search?ingressFlow=example-ingress).
+```bash
+# Graph the end to end path, noting that all the flows are stopped
+deltafi graph example-plugin-rest-data-source
+# Turn on all the flows for our example-plugin
+deltafi data-source start --all-actions example-plugin-rest-data-source
+# Graph and verify that all the flows are now enabled
+deltafi graph example-plugin-rest-data-source
+```
 
+To run data through the flow you can go to the [upload page](http://local.deltafi.org/deltafile/upload/), choose your data source and upload a file, or you can upload via the TUI (as we will do here).
+
+You can see the results of all uploaded DeltaFiles in the [search page](Http://local.deltafi.org/deltafile/search?ingressFlow=example-ingress), or in the TUI search tool (`deltafi search`)
+
+Now we can ingress our test data:
+```
+deltafi ingress -d example-plugin-rest-data-source -w src/test/resources/test1.json src/test/resources/test3.json src/test/resources/test3.json
+```
 When `test1.json` is uploaded, the file should complete and be egressed.  However `test2.json` and `test3.json` result in errors based on our initial implementation.
 
 The following changes to the load action should fix the problem:
@@ -339,10 +322,10 @@ public class JsonToYamlAction extends TransformAction<ActionParameters> {
 After making this code change, rebuild and reinstall the plugin:
 
 ```bash
-cluster plugin build install
+./gradlew install
 ```
 
 Now you can go to the [errors page](http://local.deltafi.org/errors) in the DeltaFi UI and resume the errored flows.  They should continue without error and egress well-formed YAML versions of the normalized input.
 
 ## Adding Another Flow to Your Plugin
-New flows can be created under the `flows` directory. Any code changes or flow changes will require the docker image to be rebuilt via the `cluster plugin build install` command.
+New flows can be created under the `flows` directory. Any code changes or flow changes will require the docker image to be rebuilt via the `./gradlew install` command.

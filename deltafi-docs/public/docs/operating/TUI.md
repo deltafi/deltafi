@@ -329,15 +329,15 @@ Manage DeltaFi system properties.
 #### `minio`
 Command line access to the running DeltaFi MinIO instance.
 
-- `cli`: Start an interactive MinIO CLI session
+- `cli`: Start an interactive MinIO TUI session
   ```bash
   deltafi minio cli
   ```
-- `exec`: Execute MinIO CLI commands
+- `exec`: Execute MinIO TUI commands
   ```bash
   deltafi minio exec <commands...>
   ```
-- `mc`: Execute a MinIO CLI command
+- `mc`: Execute a MinIO TUI command
   ```bash
   deltafi minio mc <command>
   ```
@@ -349,19 +349,19 @@ Command line access to the running DeltaFi MinIO instance.
 #### `valkey`
 Command line access to the running DeltaFi Valkey instance.
 
-- `cli`: Start an interactive Valkey CLI session
+- `cli`: Start an interactive Valkey TUI session
   ```bash
   deltafi valkey cli
   ```
-- `latency`: Start the Valkey CLI latency command
+- `latency`: Start the Valkey TUI latency command
   ```bash
   deltafi valkey latency
   ```
-- `stat`: Start the Valkey CLI stat command
+- `stat`: Start the Valkey TUI stat command
   ```bash
   deltafi valkey stat
   ```
-- `monitor`: Start the Valkey CLI monitor command
+- `monitor`: Start the Valkey TUI monitor command
   ```bash
   deltafi valkey monitor
   ```

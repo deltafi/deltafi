@@ -30,9 +30,18 @@ import (
 )
 
 var dataSourceCmd = &cobra.Command{
-	Use:                "data-source",
-	Short:              "Manage the data sources in DeltaFi",
-	Long:               `Manage the data sources in DeltaFi`,
+	Use:   "data-source",
+	Short: "Configure and control data ingestion sources",
+	Long: `Configure and control data sources that ingest data into DeltaFi.
+
+Data sources define how external data enters the DeltaFi system.
+They can be file watchers, API endpoints, message queues, or other
+data ingestion mechanisms.
+
+Examples:
+  deltafi data-source list                    # List all sources
+  deltafi data-source start file-watcher      # Start specific source
+  deltafi data-source load-rest source-config.yaml # Load from file`,
 	GroupID:            "flow",
 	SilenceUsage:       true,
 	DisableSuggestions: true,
@@ -44,8 +53,8 @@ var dataSourceCmd = &cobra.Command{
 
 var listDataSourceFlows = &cobra.Command{
 	Use:          "list",
-	Short:        "List data sources",
-	Long:         `Get the list of data sources.`,
+	Short:        "Show all data sources",
+	Long:         `Display a list of all configured data sources with their current status, type, and configuration details.`,
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -55,8 +64,8 @@ var listDataSourceFlows = &cobra.Command{
 
 var getDataSourceFlow = &cobra.Command{
 	Use:               "get",
-	Short:             "Get a data source",
-	Long:              `Get the details of the specified data source.`,
+	Short:             "Get data source details",
+	Long:              `Display detailed configuration and status information for a specific data source.`,
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getDataSourceNames,
 	SilenceUsage:      true,
@@ -68,10 +77,16 @@ var getDataSourceFlow = &cobra.Command{
 
 var loadRestDataSourceFlow = &cobra.Command{
 	Use:   "load-rest",
-	Short: "Create or update a REST data source",
-	Long: `Creates or update a REST data source with the given input.
-If a data source already exists with the same name this will replace it.
-Otherwise, this command will create a new REST data source with the given name.`,
+	Short: "Load REST data source configuration",
+	Long: `Create or update a REST data source from a configuration file.
+
+The configuration file should contain REST data source settings including
+endpoints, authentication, and processing parameters. If a data source
+with the same name already exists, it will be replaced.
+
+Examples:
+  deltafi data-source load-rest --file rest-source.yaml
+  deltafi data-source load-rest < rest-source.json`,
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -93,10 +108,16 @@ Otherwise, this command will create a new REST data source with the given name.`
 
 var loadTimedDataSourceFlow = &cobra.Command{
 	Use:   "load-timed",
-	Short: "Create or update a timed data source",
-	Long: `Creates or update a timed data source with the given input.
-If a data source already exists with the same name this will replace it.
-Otherwise, this command will create a new timed data source with the given name.`,
+	Short: "Load timed data source configuration",
+	Long: `Create or update a timed data source from a configuration file.
+
+The configuration file should contain timed data source settings including
+scheduling parameters, data retrieval logic, and processing options.
+If a data source with the same name already exists, it will be replaced.
+
+Examples:
+  deltafi data-source load-timed --file timed-source.yaml
+  deltafi data-source load-timed < timed-source.json`,
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -118,10 +139,17 @@ Otherwise, this command will create a new timed data source with the given name.
 
 var startDataSourceFlow = &cobra.Command{
 	Use:   "start [flowNames...]",
-	Short: "Start data sources",
-	Long: `Start one or more data sources with the given names.
-If --all is specified, starts all data sources, ignoring any explicitly listed flows.
-If -a/--all-actions is specified, starts the data source and all connected actions.`,
+	Short: "Start data source processing",
+	Long: `Start one or more data sources to begin processing data.
+
+This will activate the data source and begin ingesting data according to
+its configuration. Use --all to start all data sources, or specify
+individual data source names.
+
+Examples:
+  deltafi data-source start file-watcher
+  deltafi data-source start --all
+  deltafi data-source start source1 source2 --all-actions`,
 	ValidArgsFunction: getDataSourceNames,
 	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -173,10 +201,16 @@ If -a/--all-actions is specified, starts the data source and all connected actio
 
 var stopDataSourceFlow = &cobra.Command{
 	Use:   "stop [flowNames...]",
-	Short: "Stop data sources",
-	Long: `Stop one or more data sources with the given names.
-If --all is specified, stops all data sources, ignoring any explicitly listed flows.
-If -a/--all-actions is specified, stops the data source and all connected actions.`,
+	Short: "Stop data source processing",
+	Long: `Stop one or more data sources to halt data processing.
+
+This will deactivate the data source and stop ingesting new data.
+Use --all to stop all data sources, or specify individual data source names.
+
+Examples:
+  deltafi data-source stop file-watcher
+  deltafi data-source stop --all
+  deltafi data-source stop source1 source2 --all-actions`,
 	ValidArgsFunction: getDataSourceNames,
 	SilenceUsage:      true,
 	RunE: func(cmd *cobra.Command, args []string) error {

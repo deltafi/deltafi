@@ -31,11 +31,18 @@ import (
 
 var upCmd = &cobra.Command{
 	Use:   "up",
-	Short: "Start up or update the DeltaFi cluster",
-	Long: `Start up or update the DeltaFi cluster.
+	Short: "Start or upgrade DeltaFi cluster",
+	Long: `Start or upgrade the DeltaFi cluster with the current configuration.
 
-	This command will create or update the DeltaFi cluster with the current configuration.
-	`,
+This command will:
+- Create a new DeltaFi cluster if none exists
+- Update an existing cluster with configuration changes
+- Perform version upgrades with automatic snapshot creation
+- Validate cluster health after startup
+
+Examples:
+  deltafi up                    # Start/update with confirmation prompts
+  deltafi up --force           # Skip upgrade confirmation prompts`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	GroupID:       "orchestration",
@@ -146,5 +153,5 @@ func writeSnapshot(version string, reason string) error {
 
 func init() {
 	rootCmd.AddCommand(upCmd)
-	upCmd.Flags().BoolP("force", "f", false, "Force update.  Skip upgrade confirmation prompt")
+	upCmd.Flags().BoolP("force", "f", false, "Skip upgrade confirmation prompts and proceed automatically")
 }

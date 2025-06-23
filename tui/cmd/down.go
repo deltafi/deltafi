@@ -41,11 +41,21 @@ type cleanupDoneMsg struct{ err error }
 
 var downCmd = &cobra.Command{
 	Use:   "down",
-	Short: "Take down the DeltaFi cluster",
-	Long: `Take down the DeltaFi cluster.
+	Short: "Stop and optionally destroy DeltaFi cluster",
+	Long: `Stop the DeltaFi cluster and optionally destroy all data.
 
-	This is a destructive operation and can result in the loss of all persistent data (if using the --destroy flag).
-	`,
+This is a destructive operation that will:
+- Stop all DeltaFi services
+- Remove containers and network resources
+- Optionally delete all persistent data (with --destroy flag)
+
+WARNING: Using --destroy will permanently delete all DeltaFiles, 
+configurations, and snapshots.
+
+Examples:
+  deltafi down                 # Stop cluster, preserve data
+  deltafi down --destroy       # Stop cluster and delete all data
+  deltafi down --force         # Skip confirmation prompts`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	GroupID:       "orchestration",
@@ -157,6 +167,6 @@ func (c *downCommand) View() string {
 
 func init() {
 	rootCmd.AddCommand(downCmd)
-	downCmd.Flags().BoolP("force", "f", false, "Force down without confirmation")
+	downCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompts and proceed automatically")
 	downCmd.Flags().BoolP("destroy", "d", false, "Remove data directory contents after successful down")
 }

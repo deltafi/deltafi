@@ -34,9 +34,19 @@ import (
 )
 
 var pluginCmd = &cobra.Command{
-	Use:          "plugin",
-	Short:        "Plugin management commands",
-	Long:         `Plugin management commands`,
+	Use:   "plugin",
+	Short: "Install and manage DeltaFi plugins",
+	Long: `Install, configure, and manage DeltaFi plugins.
+
+Plugins extend DeltaFi functionality with custom transforms, data sources,
+data sinks, and other components. They can be developed locally or
+installed from container registries.
+
+Examples:
+  deltafi plugin list                                    # List plugins
+  deltafi plugin install my-plugin:latest               # Install plugin
+  deltafi plugin describe my-plugin                     # Show details
+  deltafi plugin generate --zip my-new-plugin.zip       # Generate template`,
 	GroupID:      "flow",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -47,8 +57,8 @@ var pluginCmd = &cobra.Command{
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List installed plugins",
-	Long:  `List installed plugins`,
+	Short: "Show installed plugins",
+	Long:  `Display a list of all installed plugins with their names, container images, and versions.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireRunningDeltaFi()
 
@@ -91,8 +101,17 @@ var listCmd = &cobra.Command{
 
 var installCmd = &cobra.Command{
 	Use:   "install [flags] <image>",
-	Short: "Install one or more plugins",
-	Long:  `Install one or more plugins`,
+	Short: "Install plugins from container images",
+	Long: `Install one or more plugins from container registry images.
+
+The plugin image must be available in a container registry and contain
+the necessary DeltaFi plugin components. Installation will download
+the image and register the plugin with the system.
+
+Examples:
+  deltafi plugin install my-plugin:latest
+  deltafi plugin install plugin1:1.0 plugin2:2.0
+  deltafi plugin install private-registry.com/my-plugin:latest --secret my-secret`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 
@@ -135,8 +154,16 @@ var installCmd = &cobra.Command{
 
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall [flags] [<name>]",
-	Short: "Uninstall one or more plugins",
-	Long:  `Uninstall one or more plugins`,
+	Short: "Remove installed plugins",
+	Long: `Uninstall one or more plugins from the DeltaFi system.
+
+This will remove the plugin from the system and clean up any associated
+resources. The plugin must be properly installed with valid coordinates
+to be uninstalled.
+
+Examples:
+  deltafi plugin uninstall my-plugin
+  deltafi plugin uninstall plugin1 plugin2`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 
@@ -223,8 +250,16 @@ var uninstallCmd = &cobra.Command{
 
 var describeCmd = &cobra.Command{
 	Use:   "describe [flags] <plugin-name> [<action-name>]",
-	Short: "Describe a plugin or specific action",
-	Long:  `Display detailed information about a specific plugin or action`,
+	Short: "Show plugin details and actions",
+	Long: `Display detailed information about a specific plugin or action.
+
+Shows plugin metadata, available actions, configuration options,
+and usage examples. Use --action flag to get details about a
+specific action within the plugin.
+
+Examples:
+  deltafi plugin describe my-plugin
+  deltafi plugin describe my-plugin --action transform-data`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		actionFlag := cmd.Flags().Lookup("action").Value.String() == "true"
 		if actionFlag && len(args) != 2 {
@@ -459,7 +494,7 @@ func init() {
 
 	listCmd.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 
-	installCmd.Flags().StringP("secret", "s", "", "Image pull secret (optional)")
+	installCmd.Flags().StringP("secret", "s", "", "Image pull secret for private image repositories(optional and Kubernetes only)")
 	describeCmd.Flags().BoolP("verbose", "v", false, "Show verbose output with more details")
 	describeCmd.Flags().BoolP("action", "a", false, "Show details for a specific action")
 }

@@ -34,9 +34,19 @@ import (
 
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
-	Use:     "status",
-	Short:   "Display current health and status for DeltaFi system",
-	Long:    `Display current health and status for DeltaFi system`,
+	Use:   "status",
+	Short: "Show DeltaFi system health and status",
+	Long: `Display real-time health and status information for the DeltaFi system.
+
+Shows:
+- Service health status (healthy, degraded, unhealthy)
+- Component status (API, database, storage, etc.)
+- System metrics and resource usage
+- Recent events and notifications
+
+Examples:
+  deltafi status               # Show current status once
+  deltafi status --watch       # Continuously monitor status`,
 	GroupID: "orchestration",
 	Run: func(cmd *cobra.Command, args []string) {
 		watch, _ := cmd.Flags().GetBool("watch")
@@ -59,7 +69,7 @@ var statusCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
-	statusCmd.Flags().BoolP("watch", "w", false, "Watch status updates continuously")
+	statusCmd.Flags().BoolP("watch", "w", false, "Continuously monitor status updates")
 
 	// Here you will define your flags and configuration settings.
 

@@ -57,38 +57,34 @@ new Docute({
       title: 'Getting Started',
       children: [
         {
-          title: 'Getting Started with a Demo Cluster',
-          link: '/getting-started/cluster'
+          title: 'Quick Start With Docker Compose',
+          link: '/getting-started/quick-start'
         },
         {
-          title: 'Getting Started Developing a Simple Plugin',
+          title: 'Extending DeltaFi with Plugins',
+          link: '/getting-started/install-plugins'
+        },
+        {
+          title: 'Creating a Simple Plugin',
           link: '/getting-started/simple-plugin'
-        }
+        },
       ]
     },
     {
       title: 'Installation',
       children: [
         {
-          title: 'Prerequisites',
-          link: '/install/prerequisites'
+          title: 'Docker Compose',
+          link: '/install/compose'
         },
         {
-          title: 'Ansible Setup',
-          link: '/install/ansible'
-        },
-        {
-          title: 'Install Kubernetes',
+          title: 'Kubernetes',
           link: '/install/kubernetes'
         },
         {
-          title: 'Install DeltaFi Core',
-          link: '/install/core'
+          title: 'KinD (Kubernetes in Docker)',
+          link: '/install/kind'
         },
-        {
-          title: 'Install Plugins',
-          link: '/install/plugins'
-        }
       ]
     },
     {
@@ -226,8 +222,8 @@ new Docute({
           link: '/operating/ingress'
         },
         {
-          title: 'CLI',
-          link: '/operating/CLI'
+          title: 'TUI (Text User Interface)',
+          link: '/operating/TUI'
         },
         {
           title: 'GUI',

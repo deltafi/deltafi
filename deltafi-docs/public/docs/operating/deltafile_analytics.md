@@ -140,10 +140,10 @@ The following formats can be used for timestamp fields:
 Annotation Allow-List:
 By default, no annotations submitted with a DeltaFile or survey event are stored in the analytics system.
 If you wish to record annotations for grouping or filtering, you must explicitly specify a comma-separated
-list of keys in the `allowedAnalyticsAnnotations` property (configured via the GUI or CLI). Only those annotation keys
+list of keys in the `allowedAnalyticsAnnotations` property (configured via the GUI or TUI). Only those annotation keys
 present in this allow-list will be inserted into the analytics database.
 
-Example configuration in the GUI or CLI:
+Example configuration in the GUI or TUI:
 
     allowedAnalyticsAnnotations="annotation1,annotation2,annotation3"
 
@@ -154,7 +154,7 @@ Analytics supports an additional top-level group for classification, controlled 
 When a new analytic event is recorded, if an annotation key matches the analyticsGroupName, its value is used as the
 event group. Otherwise, the event group is recorded as "Not Present".
 
-Example configuration in the GUI or CLI:
+Example configuration in the GUI or TUI:
 
     analyticsGroupName="annotation1"
 

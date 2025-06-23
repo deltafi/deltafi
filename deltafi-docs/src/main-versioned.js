@@ -222,8 +222,8 @@ new Docute({
           link: '/operating/ingress'
         },
         {
-          title: 'CLI',
-          link: '/operating/CLI'
+          title: 'TUI (Text User Interface)',
+          link: '/operating/TUI'
         },
         {
           title: 'GUI',

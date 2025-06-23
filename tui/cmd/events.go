@@ -31,9 +31,17 @@ import (
 )
 
 var eventCmd = &cobra.Command{
-	Use:          "event",
-	Short:        "Manage events in DeltaFi",
-	Long:         `Manage events in DeltaFi.`,
+	Use:   "event",
+	Short: "Create and manage system events",
+	Long: `Create and manage system events for monitoring and notifications.
+
+Events provide visibility into system activities, errors, and important
+state changes. They can trigger notifications and be used for auditing.
+
+Examples:
+  deltafi event list                           # List all events
+  deltafi event create "System maintenance"    # Create info event
+  deltafi event create "Error detected" --error # Create error event`,
 	GroupID:      "deltafi",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -44,8 +52,8 @@ var eventCmd = &cobra.Command{
 
 var listEvents = &cobra.Command{
 	Use:   "list",
-	Short: "List the events",
-	Long:  "List the events",
+	Short: "Show all system events",
+	Long:  "Display a list of all system events with their details including timestamp, severity, summary, and source.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		return listAllEvents(cmd)
@@ -54,8 +62,8 @@ var listEvents = &cobra.Command{
 
 var getEvent = &cobra.Command{
 	Use:   "get",
-	Short: "Get an event",
-	Long:  `Get the details of the specified event.`,
+	Short: "Get event details",
+	Long:  `Display detailed information about a specific event including its full content, metadata, and status.`,
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
@@ -76,9 +84,20 @@ var warnFlag, errorFlag, successFlag bool
 
 var createEventCmd = &cobra.Command{
 	Use:   "create [summary]",
-	Short: "Create a new event",
-	Long: `Create an event with a required summary text. 
-The event can include optional source, content, severity level, and notification flags.`,
+	Short: "Create a new system event",
+	Long: `Create a new system event with custom severity, content, and notification settings.
+
+The event can include:
+- Summary text (required)
+- Source identifier (default: cli)
+- Detailed content
+- Severity level (info, warn, error, success)
+- Notification flag for alerts
+
+Examples:
+  deltafi event create "System update completed" --level success
+  deltafi event create "Error detected" --error --notification
+  deltafi event create "Maintenance window" --content "Scheduled maintenance from 2-4 AM"`,
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {

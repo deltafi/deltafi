@@ -4,7 +4,7 @@ Authentication in DeltaFi is handled at the Kubernetes Ingress level. Each reque
 
 ## Basic Authentication
 
-By default, DeltaFi is configured for Basic Authentication. The default user is `admin` and the password can be set by running the following CLI command:
+By default, DeltaFi is configured for Basic Authentication. The default user is `admin` and the password can be set by running the following TUI command:
 
 ```
  deltafi set-admin-password

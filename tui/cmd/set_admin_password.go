@@ -29,10 +29,11 @@ import (
 )
 
 var setAdminPasswordCmd = &cobra.Command{
-	Use:   "set-admin-password [password]",
-	Short: "Set the admin password",
-	Long:  `Set the admin password for the DeltaFi system. If a password is provided as an argument, it will be used directly. Otherwise, an interactive form will be shown.`,
-	RunE:  runSetAdminPassword,
+	Use:     "set-admin-password [password]",
+	Short:   "Set the admin password",
+	Long:    `Set the admin password for the DeltaFi system. If a password is provided as an argument, it will be used directly. Otherwise, an interactive form will be shown.`,
+	GroupID: "deltafi",
+	RunE:    runSetAdminPassword,
 }
 
 func init() {

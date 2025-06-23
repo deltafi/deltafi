@@ -782,10 +782,25 @@ func (m searchModel) View() string {
 
 var searchCmd = &cobra.Command{
 	Use:   "search",
-	Short: "Search DeltaFiles",
-	Long: `Search DeltaFiles and display them in a table format with detailed information available in a modal.
-	
-	Human readable time expressions are supported like "today", "yesterday", "last week", "next month", "in 5 days", "in 2 hours", "now".`,
+	Short: "Search and filter DeltaFiles with advanced criteria",
+	Long: `Search and filter DeltaFiles using comprehensive criteria and filters.
+
+Provides an interactive interface to search through all DeltaFiles
+in the system with powerful filtering options including:
+- Time-based filtering (creation, modification)
+- Status filtering (egressed, filtered, paused, etc.)
+- Content filtering (size, annotations, metadata)
+- Flow-based filtering (data sources, transforms, sinks)
+- Error and cause filtering
+
+Supports human-readable time expressions like "today", "yesterday",
+"last week", "in 2 hours", etc.
+
+Examples:
+  deltafi search --from "yesterday" --to "now"          # Time range
+  deltafi search --datasources "file-watcher"           # By data source
+  deltafi search --stage "ERROR" --error-cause "timeout" # Error filtering
+  deltafi search --annotations "priority=high"          # Annotation filtering`,
 	GroupID: "deltafile",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Validate start time
