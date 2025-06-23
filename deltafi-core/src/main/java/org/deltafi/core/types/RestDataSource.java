@@ -17,12 +17,16 @@
  */
 package org.deltafi.core.types;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.generated.types.RateLimit;
+import org.hibernate.annotations.Type;
 
 import java.util.List;
 
@@ -31,6 +35,10 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class RestDataSource extends DataSource {
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private RateLimit rateLimit;
+    
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {
         return null;
@@ -49,6 +57,7 @@ public class RestDataSource extends DataSource {
     public void copyFlowSpecificState(Flow sourceFlow) {
         if (sourceFlow instanceof RestDataSource restDataSource) {
             setMaxErrors(restDataSource.getMaxErrors());
+            setRateLimit(restDataSource.getRateLimit());
         }
     }
 }

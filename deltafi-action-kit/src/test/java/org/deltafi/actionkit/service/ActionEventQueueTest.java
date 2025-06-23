@@ -18,13 +18,11 @@
 package org.deltafi.actionkit.service;
 
 import lombok.SneakyThrows;
-import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.types.ActionExecution;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
@@ -36,23 +34,22 @@ import static org.mockito.Mockito.*;
 class ActionEventQueueTest {
     private static final ActionExecution ACTION_EXECUTION = new ActionExecution("TestClass", "testAction",0,  UUID.randomUUID(), OffsetDateTime.now(), "appName");
 
+    @Mock
+    private ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
+
     @Test
     @SneakyThrows
     void testRecordLongRunningTask() {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
-            ActionEventQueue actionEventQueue = new ActionEventQueue(new EventQueueProperties(), 2);
-            actionEventQueue.recordLongRunningTask(ACTION_EXECUTION);
-            verify(mock.constructed().getFirst(), times(1)).recordLongRunningTask(anyString(), anyString());
-        }
+        ActionEventQueue actionEventQueue = new ActionEventQueue(valkeyKeyedBlockingQueue);
+        actionEventQueue.recordLongRunningTask(ACTION_EXECUTION);
+        verify(valkeyKeyedBlockingQueue, times(1)).recordLongRunningTask(anyString(), anyString());
     }
 
     @Test
     @SneakyThrows
     void testRemoveLongRunningTask() {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
-            ActionEventQueue actionEventQueue = new ActionEventQueue(new EventQueueProperties(), 2);
-            actionEventQueue.removeLongRunningTask(ACTION_EXECUTION);
-            verify(mock.constructed().getFirst(), times(1)).removeLongRunningTask(ACTION_EXECUTION.key());
-        }
+        ActionEventQueue actionEventQueue = new ActionEventQueue(valkeyKeyedBlockingQueue);
+        actionEventQueue.removeLongRunningTask(ACTION_EXECUTION);
+        verify(valkeyKeyedBlockingQueue, times(1)).removeLongRunningTask(ACTION_EXECUTION.key());
     }
 }

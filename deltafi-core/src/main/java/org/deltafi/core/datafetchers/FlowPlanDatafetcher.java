@@ -88,6 +88,28 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
+    public boolean setRestDataSourceRateLimit(@InputArgument String name, @InputArgument RateLimitInput rateLimit) {
+        if (restDataSourceService.hasFlow(name)) {
+            auditLogger.audit("set rate limit to {} for data source {}", rateLimit, name);
+            return restDataSourceService.setRateLimit(name, rateLimit);
+        } else {
+            throw new DgsEntityNotFoundException("No RestDataSource exists with the name: " + name);
+        }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean removeRestDataSourceRateLimit(@InputArgument String name) {
+        if (restDataSourceService.hasFlow(name)) {
+            auditLogger.audit("remove rate limit for data source {}", name);
+            return restDataSourceService.removeRateLimit(name);
+        } else {
+            throw new DgsEntityNotFoundException("No RestDataSource exists with the name: " + name);
+        }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
     public boolean setDataSinkExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
         auditLogger.audit("set expected annotations for dataSource {} to {}", flowName, expectedAnnotations);
         return annotationService.setExpectedAnnotations(flowName, expectedAnnotations);

@@ -36,6 +36,7 @@ import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
+import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -59,7 +60,7 @@ public class ActionKitAutoConfiguration {
     private ActionsProperties actionsProperties;
 
     @Bean
-    public ActionEventQueue actionEventQueue(EventQueueProperties eventQueueProperties, List<Action<?, ?, ?>> actions)
+    public ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue(EventQueueProperties eventQueueProperties, List<Action<?, ?, ?>> actions)
             throws URISyntaxException {
         // Calculate the total number of threads for all actions
         int totalThreads = actions.stream()
@@ -69,7 +70,12 @@ public class ActionKitAutoConfiguration {
         // Add a thread for heartbeats
         totalThreads += 1;
 
-        return new ActionEventQueue(eventQueueProperties, totalThreads);
+        return new ValkeyKeyedBlockingQueue(eventQueueProperties, totalThreads);
+    }
+
+    @Bean
+    public ActionEventQueue actionEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue) {
+        return new ActionEventQueue(valkeyKeyedBlockingQueue);
     }
 
     @Bean

@@ -25,6 +25,7 @@ import io.jackey.resps.Tuple;
 import io.jackey.util.KeyValue;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.deltafi.common.action.EventQueueProperties;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -45,25 +46,39 @@ public class ValkeyKeyedBlockingQueue {
     private final JedisPool jedisPool;
 
     /**
-     * Constructs a JackeyKeyedBlockingQueue.
+     * Constructs a ValkeyKeyedBlockingQueue with an existing JedisPool.
      *
-     * @param url      the url of the valkey server
-     * @param password the password for the valkey server
-     * @param maxIdle  the maximum number of idle pooled connections to the valkey server
-     * @param maxTotal the maximum number of pooled connections to the valkey server. This should be set higher than the
-     *                 expected number of keys in the queue.
-     * @throws URISyntaxException if the provided url is not valid
+     * @param jedisPool the JedisPool to use for Valkey connections
      */
-    public ValkeyKeyedBlockingQueue(String url, String password, int maxIdle, int maxTotal) throws URISyntaxException {
+    public ValkeyKeyedBlockingQueue(JedisPool jedisPool) {
+        this.jedisPool = jedisPool;
+    }
+
+    /**
+     * Constructs a ValkeyKeyedBlockingQueue with custom connection parameters.
+     *
+     * @param eventQueueProperties the queue configuration properties
+     * @param maxTotal the maximum number of pooled connections
+     * @throws URISyntaxException if the URL is invalid
+     */
+    public ValkeyKeyedBlockingQueue(EventQueueProperties eventQueueProperties, int maxTotal) throws URISyntaxException {
+        this.jedisPool = createJedisPool(eventQueueProperties, maxTotal, maxTotal / 2);
+        log.info("Valkey pool size: {}", maxTotal);
+    }
+
+    /**
+     * Helper method to create a JedisPool with specified configuration.
+     */
+    public static JedisPool createJedisPool(EventQueueProperties eventQueueProperties, int maxTotal, int maxIdle) throws URISyntaxException {
         GenericObjectPoolConfig<Jedis> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMaxTotal(maxTotal);
 
-        URI uri = new URI(url);
+        URI uri = new URI(eventQueueProperties.getUrl());
 
-        jedisPool = (password == null || password.isEmpty()) ? new JedisPool(poolConfig, uri) :
-                new JedisPool(poolConfig, uri.getHost(), uri.getPort(), Protocol.DEFAULT_TIMEOUT, password);
-        log.info("Valkey pool size: {}", maxTotal);
+        return (eventQueueProperties.getPassword() == null || eventQueueProperties.getPassword().isEmpty()) ? 
+                new JedisPool(poolConfig, uri) :
+                new JedisPool(poolConfig, uri.getHost(), uri.getPort(), Protocol.DEFAULT_TIMEOUT, eventQueueProperties.getPassword());
     }
 
     /**

@@ -1,0 +1,1 @@
+ALTER TABLE flows ADD COLUMN rate_limit jsonb;

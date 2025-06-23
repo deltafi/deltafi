@@ -39,8 +39,8 @@ dependencies {
     api 'org.apache.nifi:nifi-flowfile-packager:2.4.0'
     // moving to 5.4 breaks the core's ability to communicate with docker when running in compose
     api 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
+    api 'io.jackey:jackey:5.2.0'
 
-    implementation 'io.jackey:jackey:5.2.0'
     implementation 'org.apache.commons:commons-text'
     constraints {
         implementation('org.apache.commons:commons-text:1.13.1') {

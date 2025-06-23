@@ -23,15 +23,14 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.queue.jackey.SortedSetEntry;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
 import org.deltafi.common.types.ActionInput;
 
-import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -40,6 +39,7 @@ import static org.deltafi.common.action.EventQueueProperties.DGS_QUEUE;
 /**
  * Service for pushing and popping action events to a valkey queue.
  */
+@RequiredArgsConstructor
 @Slf4j
 public class ActionEventQueue {
 
@@ -59,14 +59,6 @@ public class ActionEventQueue {
     }
 
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
-
-    public ActionEventQueue(EventQueueProperties eventQueueProperties, int poolSize) throws URISyntaxException {
-        int maxIdle = poolSize > 0 ? poolSize : eventQueueProperties.getMaxIdle();
-        int maxTotal = poolSize > 0 ? poolSize : eventQueueProperties.getMaxTotal();
-        valkeyKeyedBlockingQueue = new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(),
-                eventQueueProperties.getPassword(), maxIdle, maxTotal);
-        log.info("Jackey pool size: {}", maxTotal);
-    }
 
     /**
      * Request an ActionInput object from the ActionEvent queue for the specified action

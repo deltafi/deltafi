@@ -443,6 +443,8 @@ type Mutation {
 
   setRestDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   setTimedDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
+  setRestDataSourceRateLimit(name: String!, rateLimit: RateLimitInput!) : Boolean!
+  removeRestDataSourceRateLimit(name: String!) : Boolean!
   enableDataSinkTestMode(flowName: String!) : Boolean!
   disableDataSinkTestMode(flowName: String!) : Boolean!
   setTimedDataSourceMemo(name: String!, memo: String) : Boolean!

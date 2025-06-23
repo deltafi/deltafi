@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.configuration;
 
+import io.jackey.JedisPool;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.rules.RuleEvaluator;
@@ -46,8 +47,16 @@ public class DeltaFiConfiguration {
         // add two additional threads to the pool for the incoming action event threads
         int poolSize = deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads() + 2;
 
-        return new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(),
-                eventQueueProperties.getPassword(), poolSize, poolSize);
+        return new ValkeyKeyedBlockingQueue(eventQueueProperties, poolSize);
+    }
+
+    @Bean
+    public JedisPool jedisPool(EventQueueProperties eventQueueProperties,
+                               DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
+        // add two additional threads to the pool for the incoming action event threads
+        int poolSize = deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads() + 2;
+        
+        return ValkeyKeyedBlockingQueue.createJedisPool(eventQueueProperties, poolSize, poolSize);
     }
 
     @Bean

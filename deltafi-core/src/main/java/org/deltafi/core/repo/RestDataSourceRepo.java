@@ -26,4 +26,14 @@ public interface RestDataSourceRepo extends FlowRepo, RestDataSourceRepoCustom {
     @Transactional
     @Query("UPDATE RestDataSource r SET r.maxErrors = :maxErrors WHERE r.name = :flowName")
     int updateMaxErrors(String flowName, int maxErrors);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE flows SET rate_limit = CAST(:rateLimitJson AS jsonb) WHERE name = :flowName AND type = 'REST_DATA_SOURCE'", nativeQuery = true)
+    int updateRateLimit(String flowName, String rateLimitJson);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE flows SET rate_limit = NULL WHERE name = :flowName AND type = 'REST_DATA_SOURCE'", nativeQuery = true)
+    int removeRateLimit(String flowName);
 }

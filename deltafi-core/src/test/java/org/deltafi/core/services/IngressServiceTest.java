@@ -34,6 +34,7 @@ import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
+import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
 import org.deltafi.core.exceptions.MissingFlowException;
@@ -47,6 +48,8 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.deltafi.core.generated.types.RateLimit;
+import org.deltafi.core.generated.types.RateLimitUnit;
 
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
@@ -63,6 +66,9 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class IngressServiceTest {
@@ -81,6 +87,7 @@ class IngressServiceTest {
     private final ErrorCountService errorCountService;
     // TODO: add to tests
     private final AnalyticEventService analyticEventService;
+    private final RateLimitService rateLimitService;
 
     private final IngressService ingressService;
 
@@ -97,7 +104,8 @@ class IngressServiceTest {
                        @Mock DeltaFiPropertiesService deltaFiPropertiesService,
                        @Mock RestDataSourceService restDataSourceService,
                        @Mock ErrorCountService errorCountService,
-                       @Mock AnalyticEventService analyticEventService) {
+                       @Mock AnalyticEventService analyticEventService,
+                       @Mock RateLimitService rateLimitService) {
         this.metricService = metricService;
         this.diskSpaceService = diskSpaceService;
         this.deltaFilesService = deltaFilesService;
@@ -105,10 +113,11 @@ class IngressServiceTest {
         this.restDataSourceService = restDataSourceService;
         this.errorCountService = errorCountService;
         this.analyticEventService = analyticEventService;
+        this.rateLimitService = rateLimitService;
 
         ingressService = new IngressService(metricService, diskSpaceService, CONTENT_STORAGE_SERVICE,
                 deltaFilesService, deltaFiPropertiesService, restDataSourceService, errorCountService, UUID_GENERATOR,
-                analyticEventService);
+                analyticEventService, rateLimitService);
     }
 
     @Test
@@ -119,7 +128,7 @@ class IngressServiceTest {
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         verifyNormalExecution(ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
                 "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
-                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME), "content");
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
         assertEquals(2, ingressEventItem.getMetadata().size());
@@ -144,13 +153,13 @@ class IngressServiceTest {
         Mockito.when(deltaFilesService.ingressRest(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
     }
 
-    private void verifyNormalExecution(List<IngressResult> ingressResults) throws IOException, ObjectStorageException {
+    private void verifyNormalExecution(List<IngressResult> ingressResults, String expectedContent) throws IOException, ObjectStorageException {
         Mockito.verifyNoMoreInteractions(metricService);
         String content;
         try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResults.getFirst().content())) {
             content = new String(contentInputStream.readAllBytes());
         }
-        assertEquals("content", content);
+        assertEquals(expectedContent, content);
         assertEquals("dataSource", ingressResults.getFirst().dataSource());
         assertEquals("filename", ingressResults.getFirst().content().getName());
         assertEquals(UUID_GENERATOR.generate(), ingressResults.getFirst().did());
@@ -273,7 +282,7 @@ class IngressServiceTest {
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
-                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
+                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME), "content");
         }
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
@@ -293,7 +302,7 @@ class IngressServiceTest {
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
-                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
+                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME), "content");
         }
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
@@ -312,7 +321,7 @@ class IngressServiceTest {
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress("dataSource", null, ContentType.APPLICATION_FLOWFILE_V_1,
-                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
+                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME), "content");
         }
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
@@ -332,7 +341,7 @@ class IngressServiceTest {
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress("dataSource", null, ContentType.APPLICATION_FLOWFILE_V_1,
-                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
+                    "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME), "content");
         }
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
@@ -383,15 +392,15 @@ class IngressServiceTest {
     void ingressBinaryFlowErrorsExceeded() {
         mockNormalExecution();
 
-        Mockito.doThrow(new IngressUnavailableException("errors exceeded")).when(errorCountService).checkErrorsExceeded(FlowType.REST_DATA_SOURCE,"dataSource");
+        Mockito.doThrow(new IngressRateLimitException("errors exceeded")).when(errorCountService).checkErrorsExceeded(FlowType.REST_DATA_SOURCE,"dataSource");
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
-        IngressUnavailableException ingressUnavailableException = assertThrows(IngressUnavailableException.class,
+        IngressRateLimitException ingressRateLimitException = assertThrows(IngressRateLimitException.class,
                 () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
                         "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
-        assertEquals("errors exceeded", ingressUnavailableException.getMessage());
+        assertEquals("errors exceeded", ingressRateLimitException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
@@ -403,15 +412,15 @@ class IngressServiceTest {
     void transformFlowErrorsExceeded() {
         mockNormalExecution();
 
-        Mockito.doThrow(new IngressUnavailableException("errors exceeded")).when(errorCountService).checkErrorsExceeded(FlowType.REST_DATA_SOURCE,"dataSource");
+        Mockito.doThrow(new IngressRateLimitException("errors exceeded")).when(errorCountService).checkErrorsExceeded(FlowType.REST_DATA_SOURCE,"dataSource");
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
-        IngressUnavailableException ingressUnavailableException = assertThrows(IngressUnavailableException.class,
+        IngressRateLimitException ingressRateLimitException = assertThrows(IngressRateLimitException.class,
                 () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
                         "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
-        assertEquals("errors exceeded", ingressUnavailableException.getMessage());
+        assertEquals("errors exceeded", ingressRateLimitException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
@@ -444,5 +453,157 @@ class IngressServiceTest {
         Map<String, String> map = ingressService.parseMetadata(metadata);
         Assertions.assertEquals(1, map.size());
         Assertions.assertEquals("{\"key\":{\"list\":[1,2,3]}}", map.get("complex"));
+    }
+
+    @Test
+    @SneakyThrows
+    void ingressBinaryFileWithFilesRateLimit() {
+        mockNormalExecution();
+
+        RestDataSource restDataSourceWithRateLimit = FlowBuilders.buildDataSource("rest-data-source");
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(10L)
+                .durationSeconds(60)
+                .build();
+        restDataSourceWithRateLimit.setRateLimit(rateLimit);
+
+        Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(restDataSourceWithRateLimit);
+        Mockito.when(rateLimitService.tryConsume(eq("dataSource"), eq(1L), eq(10L), any())).thenReturn(true);
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        verifyNormalExecution(ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME), "content");
+
+        Mockito.verify(rateLimitService).tryConsume(eq("dataSource"), eq(1L), eq(10L), any());
+    }
+
+    @Test
+    @SneakyThrows
+    void ingressBinaryFileWithBytesRateLimit() {
+        mockNormalExecution();
+
+        RestDataSource restDataSourceWithRateLimit = FlowBuilders.buildDataSource("rest-data-source");
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(1000L)
+                .durationSeconds(60)
+                .build();
+        restDataSourceWithRateLimit.setRateLimit(rateLimit);
+
+        Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(restDataSourceWithRateLimit);
+        Mockito.when(rateLimitService.tryConsume(eq("dataSource"), eq(1L), eq(1000L), any())).thenReturn(true);
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        verifyNormalExecution(ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME), "content");
+
+        Mockito.verify(rateLimitService).tryConsume(eq("dataSource"), eq(1L), eq(1000L), any());
+        Mockito.verify(rateLimitService).consume(eq("dataSource"), eq(6L), eq(1000L), any()); // "content" is 7 bytes, minus 1 already consumed
+    }
+
+    @Test
+    @SneakyThrows
+    void ingressBinaryFileFilesRateLimitExceeded() {
+        mockNormalExecution();
+
+        RestDataSource restDataSourceWithRateLimit = FlowBuilders.buildDataSource("rest-data-source");
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(5L)
+                .durationSeconds(60)
+                .build();
+        restDataSourceWithRateLimit.setRateLimit(rateLimit);
+
+        Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(restDataSourceWithRateLimit);
+        Mockito.when(rateLimitService.tryConsume(eq("dataSource"), eq(1L), eq(5L), any())).thenReturn(false);
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        IngressRateLimitException exception = assertThrows(IngressRateLimitException.class,
+                () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
+                        new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
+
+        assertEquals("Rate limit exceeded - dataSource allows 5 files per 60 seconds", exception.getMessage());
+
+        Mockito.verify(rateLimitService).tryConsume(eq("dataSource"), eq(1L), eq(5L), any());
+        Mockito.verifyNoMoreInteractions(rateLimitService);
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+    }
+
+    @Test
+    @SneakyThrows
+    void ingressBinaryFileBytesRateLimitExceeded() {
+        mockNormalExecution();
+
+        RestDataSource restDataSourceWithRateLimit = FlowBuilders.buildDataSource("rest-data-source");
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build();
+        restDataSourceWithRateLimit.setRateLimit(rateLimit);
+
+        Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(restDataSourceWithRateLimit);
+        Mockito.when(rateLimitService.tryConsume(eq("dataSource"), eq(1L), eq(100L), any())).thenReturn(false);
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        IngressRateLimitException exception = assertThrows(IngressRateLimitException.class,
+                () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
+                        new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
+
+        assertEquals("Rate limit exceeded - dataSource allows 100 bytes per 60 seconds", exception.getMessage());
+
+        Mockito.verify(rateLimitService).tryConsume(eq("dataSource"), eq(1L), eq(100L), any());
+        Mockito.verifyNoMoreInteractions(rateLimitService);
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+    }
+
+    @Test
+    @SneakyThrows
+    void ingressBinaryFileWithBytesRateLimitOneByteFile() {
+        mockNormalExecution();
+
+        RestDataSource restDataSourceWithRateLimit = FlowBuilders.buildDataSource("rest-data-source");
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(1000L)
+                .durationSeconds(60)
+                .build();
+        restDataSourceWithRateLimit.setRateLimit(rateLimit);
+
+        Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(restDataSourceWithRateLimit);
+        Mockito.when(rateLimitService.tryConsume(eq("dataSource"), eq(1L), eq(1000L), any())).thenReturn(true);
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        verifyNormalExecution(ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
+                new ByteArrayInputStream("X".getBytes(StandardCharsets.UTF_8)), TIME), "X");
+
+        Mockito.verify(rateLimitService).tryConsume(eq("dataSource"), eq(1L), eq(1000L), any());
+        // For 1-byte file, no additional consume() call should be made since remainingBytes = 1 - 1 = 0
+        Mockito.verify(rateLimitService, Mockito.never()).consume(anyString(), anyLong(), anyLong(), any());
+    }
+
+    @Test
+    @SneakyThrows
+    void ingressBinaryFileWithoutRateLimit() {
+        mockNormalExecution();
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        verifyNormalExecution(ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME), "content");
+
+        Mockito.verifyNoInteractions(rateLimitService);
     }
 }

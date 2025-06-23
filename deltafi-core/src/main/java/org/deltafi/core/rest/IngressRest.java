@@ -21,9 +21,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
@@ -60,11 +62,13 @@ public class IngressRest {
             return ResponseEntity.ok(String.join(",", ingressResults.stream().map(r -> r.did().toString()).toList()));
         } catch (IngressUnavailableException e) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
-        } catch (IngressStorageException e) {
+        } catch (IngressRateLimitException e) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(e.getMessage());
+        } catch (IngressStorageException | ObjectStorageException e) {
             return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body(e.getMessage());
         } catch (IngressMetadataException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Throwable e) { // includes IngressException and ObjectStorageException
+        } catch (Throwable e) { // includes IngressException
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }

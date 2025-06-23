@@ -40,6 +40,7 @@ dependencies {
     implementation 'org.flywaydb:flyway-core:10.22.0'
     implementation 'org.flywaydb:flyway-database-postgresql:10.22.0'
     implementation 'jakarta.annotation:jakarta.annotation-api:1.2.2.1-jre17'
+    implementation 'com.bucket4j:bucket4j_jdk17-jedis:8.14.0'
 
     testImplementation project(':deltafi-common-test')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -51,6 +52,7 @@ dependencies {
 
     testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
     testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

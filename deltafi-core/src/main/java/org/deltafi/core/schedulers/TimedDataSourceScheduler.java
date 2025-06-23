@@ -20,7 +20,7 @@ package org.deltafi.core.schedulers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.TimedDataSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -54,7 +54,7 @@ public class TimedDataSourceScheduler {
                     !diskSpaceService.isContentStorageDepleted()) {
                 try {
                     errorCountService.checkErrorsExceeded(FlowType.TIMED_DATA_SOURCE, dataSource.getName());
-                } catch (IngressUnavailableException e) {
+                } catch (IngressRateLimitException e) {
                     log.error(e.getMessage());
                     continue;
                 }

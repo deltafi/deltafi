@@ -32,6 +32,7 @@ import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
@@ -135,7 +136,7 @@ public class IntegrationService {
         return errors;
     }
 
-    private List<IngressResult> ingress(String testId, List<TestCaseIngress> inputs) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
+    private List<IngressResult> ingress(String testId, List<TestCaseIngress> inputs) throws IngressUnavailableException, IngressRateLimitException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, JsonProcessingException {
         List<IngressResult> results = new ArrayList<>();
         for (TestCaseIngress input : inputs) {
             String contentType = StringUtils.isNoneEmpty(input.getContentType()) ? input.getContentType() : DEFAULT_CONTENT_TYPE;

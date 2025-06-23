@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.queue.jackey.SortedSetEntry;
 import org.deltafi.common.types.ActionEvent;
@@ -33,7 +32,6 @@ import org.deltafi.common.types.ActionExecution;
 import org.deltafi.common.types.ActionInput;
 import org.deltafi.core.types.WrappedActionInput;
 
-import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -63,13 +61,6 @@ public class CoreEventQueue {
     private static final Duration LONG_RUNNING_HEARTBEAT_THRESHOLD = Duration.ofSeconds(30);
 
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
-
-    public CoreEventQueue(EventQueueProperties eventQueueProperties, int poolSize) throws URISyntaxException {
-        int maxIdle = poolSize > 0 ? poolSize : eventQueueProperties.getMaxIdle();
-        int maxTotal = poolSize > 0 ? poolSize : eventQueueProperties.getMaxTotal();
-        valkeyKeyedBlockingQueue = new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(),
-                eventQueueProperties.getPassword(), maxIdle, maxTotal);
-    }
 
     public CoreEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue) {
         this.valkeyKeyedBlockingQueue = valkeyKeyedBlockingQueue;

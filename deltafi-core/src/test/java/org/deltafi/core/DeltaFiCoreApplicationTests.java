@@ -30,9 +30,11 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
@@ -83,6 +85,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
@@ -99,12 +102,14 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -147,7 +152,12 @@ class DeltaFiCoreApplicationTests {
 			.parse("deltafi/timescaledb:2.19.0-pg16")
 			.asCompatibleSubstituteFor("postgres");
 	@Container
+	@ServiceConnection
 	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(TS_POSTGRES_IMAGE);
+
+	@Container
+	public static final GenericContainer<?> VALKEY_CONTAINER = new GenericContainer<>("valkey/valkey:8.1.1-alpine")
+			.withExposedPorts(6379);
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
 	public static final String JOIN_TOPIC = "join-topic";
@@ -162,10 +172,7 @@ class DeltaFiCoreApplicationTests {
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
-		registry.add("spring.datasource.url", POSTGRES_CONTAINER::getJdbcUrl);
-		registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
-		registry.add("spring.datasource.password", POSTGRES_CONTAINER::getPassword);
-		registry.add("spring.datasource.driver-class-name", POSTGRES_CONTAINER::getDriverClassName);
+		registry.add("valkey.url", () -> "redis://" + VALKEY_CONTAINER.getHost() + ":" + VALKEY_CONTAINER.getMappedPort(6379));
 		registry.add("schedule.actionEvents", () -> false);
 		registry.add("schedule.maintenance", () -> false);
 		registry.add("schedule.flowSync", () -> false);
@@ -192,6 +199,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	AnnotationRepo annotationRepo;
+
+	@MockBean
+	ContentStorageService contentStorageService;
 
 	@Autowired
 	DeltaFileFlowRepo deltaFileFlowRepo;
@@ -276,9 +286,6 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	TestRestTemplate restTemplate;
-
-	@MockBean
-	IngressService ingressService;
 
 	@MockBean
 	MetricService metricService;
@@ -393,6 +400,7 @@ class DeltaFiCoreApplicationTests {
 
 	@BeforeEach
 	void setup() {
+		deltaFiPropertiesService.getDeltaFiProperties().setIngressEnabled(true);
 		deltaFiPropertiesService.upsertProperties();
 		resumePolicyService.refreshCache();
 		loadConfig();
@@ -3942,9 +3950,9 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(UUID.randomUUID());
 		deltaFile.setFiltered(true);
-		deltaFile.firstFlow().getActions().add(filteredAction("filtered one", OffsetDateTime.now(), deltaFile.firstFlow().getActions().size()));
+		deltaFile.firstFlow().getActions().add(filteredAction("filtered one", OffsetDateTime.now()));
 		deltaFile.firstFlow().updateState();
-		deltaFile.lastFlow().getActions().add(filteredAction("filtered two", OffsetDateTime.now(), deltaFile.lastFlow().getActions().size()));
+		deltaFile.lastFlow().getActions().add(filteredAction("filtered two", OffsetDateTime.now()));
 		deltaFile.lastFlow().updateState();
 		deltaFile.getFlows().forEach(f -> f.setId(UUID.randomUUID()));
 
@@ -3952,7 +3960,7 @@ class DeltaFiCoreApplicationTests {
 		tooNew.setFiltered(true);
 		tooNew.setDataSource("other");
 		tooNew.setModified(plusTwo);
-		tooNew.firstFlow().getActions().add(filteredAction("another message", plusTwo, tooNew.firstFlow().getActions().size()));
+		tooNew.firstFlow().getActions().add(filteredAction("another message", plusTwo));
 		tooNew.firstFlow().updateState();
 		tooNew.getFlows().forEach(f -> f.setId(UUID.randomUUID()));
 
@@ -3960,7 +3968,7 @@ class DeltaFiCoreApplicationTests {
 		notMarkedFiltered.setFiltered(null);
 		notMarkedFiltered.setDataSource("other");
 		notMarkedFiltered.setModified(plusTwo);
-		notMarkedFiltered.firstFlow().getActions().add(filteredAction("another message", OffsetDateTime.now(), notMarkedFiltered.firstFlow().getActions().size()));
+		notMarkedFiltered.firstFlow().getActions().add(filteredAction("another message", OffsetDateTime.now()));
 		notMarkedFiltered.firstFlow().getActions().getLast().setState(COMPLETE);
 		notMarkedFiltered.firstFlow().updateState();
 		notMarkedFiltered.getFlows().forEach(f -> f.setId(UUID.randomUUID()));
@@ -3970,7 +3978,7 @@ class DeltaFiCoreApplicationTests {
 		return List.of(deltaFile.getDid(), tooNew.getDid(), notMarkedFiltered.getDid());
 	}
 
-	private Action filteredAction(String message, OffsetDateTime time, int num) {
+	private Action filteredAction(String message, OffsetDateTime time) {
 		Action action = new Action();
 		action.setName("someAction");
 		action.setFilteredCause(message);
@@ -4387,16 +4395,24 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	private ResponseEntity<String> ingress(String filename, byte[] body) {
+		return ingress(REST_DATA_SOURCE_NAME, filename, body);
+	}
+
+	@SneakyThrows
+	private ResponseEntity<String> ingress(String dataSource, String filename, byte[] body) {
 		HttpHeaders headers = new HttpHeaders();
 		if (filename != null) {
 			headers.add("Filename", filename);
 		}
-		headers.add("DataSource", TRANSFORM_FLOW_NAME);
+		headers.add("DataSource", dataSource);
 		headers.add("Metadata", METADATA);
 		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
 		headers.add(USER_NAME_HEADER, USERNAME);
 		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
 		HttpEntity<byte[]> request = new HttpEntity<>(body, headers);
+
+		Content defaultContent = new Content(filename, MediaType.APPLICATION_OCTET_STREAM, new Segment(UUID.randomUUID(), 0, CONTENT_DATA.length(), UUID.randomUUID()));
+		Mockito.lenient().when(contentStorageService.save(any(), (InputStream) any(), any(), any())).thenReturn(defaultContent);
 
 		return restTemplate.postForEntity("/api/v2/deltafile/ingress", request, String.class);
 	}
@@ -4497,40 +4513,24 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	@SneakyThrows
 	void testIngress() {
-		UUID did1 = UUID.randomUUID();
-		Content content1 = new Content(FILENAME, MEDIA_TYPE, new Segment(UUID.randomUUID(), 0, CONTENT_DATA.length(), did1));
-		UUID did2 = UUID.randomUUID();
-		Content content2 = new Content(FILENAME, MEDIA_TYPE, new Segment(UUID.randomUUID(), 0, CONTENT_DATA.length(), did2));
-		List<IngressResult> ingressResults = List.of(
-				new IngressResult(TRANSFORM_FLOW_NAME, did1, content1),
-				new IngressResult(TRANSFORM_FLOW_NAME, did2, content2));
-
-		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
-				.thenReturn(ingressResults);
-
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-		assertEquals(String.join(",", did1.toString(), did2.toString()), response.getBody());
+		assertNotNull(response.getBody());
+		Optional<DeltaFile> deltaFile = deltaFileRepo.findById(UUID.fromString(response.getBody()));
+		assertTrue(deltaFile.isPresent());
 	}
 
 	@Test
-	@SneakyThrows
 	void testIngress_missingFilename() {
-		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), isNull(), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
-				.thenThrow(new IngressMetadataException(""));
-
 		ResponseEntity<String> response = ingress(null, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+		assertEquals("Filename must be passed in as a header", response.getBody());
 	}
 
 	@Test
-	@SneakyThrows
 	void testIngress_disabled() {
-		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
-				.thenThrow(new IngressUnavailableException(""));
-
+		deltaFiPropertiesService.getDeltaFiProperties().setIngressEnabled(false);
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.SERVICE_UNAVAILABLE.value(), response.getStatusCode().value());
 	}
@@ -4538,21 +4538,74 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_storageLimit() {
-		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
-				.thenThrow(new IngressStorageException(""));
-
-		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
+		Mockito.when(contentStorageService.save(any(), (InputStream) any(), any(), any())).thenThrow(new ObjectStorageException("out of space"));
+		
+		// Make the REST call directly to avoid the helper method's mock setup
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Filename", FILENAME);
+		headers.add("DataSource", REST_DATA_SOURCE_NAME);
+		headers.add("Metadata", METADATA);
+		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
+		headers.add(USER_NAME_HEADER, USERNAME);
+		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
+		HttpEntity<byte[]> request = new HttpEntity<>(CONTENT_DATA.getBytes(), headers);
+		
+		ResponseEntity<String> response = restTemplate.postForEntity("/api/v2/deltafile/ingress", request, String.class);
 		assertEquals(HttpStatus.INSUFFICIENT_STORAGE.value(), response.getStatusCode().value());
 	}
 
 	@Test
-	@SneakyThrows
-	void testIngress_internalServerError() {
-		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
-				.thenThrow(new RuntimeException());
+	void testRestDataSourceFilesRateLimitDuringIngress() {
+		RestDataSource dataSource = buildRestDataSource("files-rate-test", FlowState.RUNNING);
+		dataSource.setName("files-rate-test");
+		RateLimit rateLimit = RateLimit.newBuilder()
+				.unit(RateLimitUnit.FILES)
+				.maxAmount(2L)
+				.durationSeconds(60)
+				.build();
+		dataSource.setRateLimit(rateLimit);
+		restDataSourceRepo.save(dataSource);
+		refreshFlowCaches();
 
-		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
-		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getStatusCode().value());
+		// First ingress should succeed (file 1/2)
+		ResponseEntity<String> response = ingress("files-rate-test", "test1.txt", "test content 1".getBytes());
+		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+
+		// Second ingress should succeed (file 2/2)
+		response = ingress("files-rate-test", "test2.txt", "test content 2".getBytes());
+		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+
+		// Third ingress should fail due to rate limit exceeded
+		response = ingress("files-rate-test", "test3.txt", "test content 3".getBytes());
+		assertEquals(HttpStatus.TOO_MANY_REQUESTS.value(), response.getStatusCode().value());
+		assertEquals("Rate limit exceeded - files-rate-test allows 2 files per 60 seconds", response.getBody());
+	}
+
+	@Test
+	void testRestDataSourceBytesRateLimitDuringIngress() {
+		RestDataSource dataSource = buildRestDataSource("bytes-rate-test", FlowState.RUNNING);
+		dataSource.setName("bytes-rate-test");
+		RateLimit rateLimit = RateLimit.newBuilder()
+				.unit(RateLimitUnit.BYTES)
+				.maxAmount(20L)
+				.durationSeconds(60)
+				.build();
+		dataSource.setRateLimit(rateLimit);
+		restDataSourceRepo.save(dataSource);
+		refreshFlowCaches();
+
+		// First ingress with 10 bytes should succeed
+		ResponseEntity<String> response = ingress("bytes-rate-test", "test1.txt", "1234567890".getBytes());
+		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+
+		// Second ingress with 11 bytes should succeed (total: 21/20 bytes)
+		response =  ingress("bytes-rate-test", "test2.txt", "1234567890a".getBytes());
+		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+
+		// Third ingress with 5 bytes should fail (20 byte limit has been exceeded by previous ingress)
+		response = ingress("bytes-rate-test", "test3.txt", "12345".getBytes());
+		assertEquals(HttpStatus.TOO_MANY_REQUESTS.value(), response.getStatusCode().value());
+		assertEquals("Rate limit exceeded - bytes-rate-test allows 20 bytes per 60 seconds", response.getBody());
 	}
 
 	@Test
@@ -5508,4 +5561,58 @@ class DeltaFiCoreApplicationTests {
 		assertThat(deltaFileFlowRepo.isColdQueued(actionClass+"1")).isFalse();
 
 	}
+
+	@Test
+	void testRestDataSourceRateLimitSetAndRemove() {
+		// Create a REST data source
+		RestDataSource dataSource = buildRestDataSource("rate-limit-test", FlowState.RUNNING);
+		dataSource.setRateLimit(null);
+		restDataSourceRepo.save(dataSource);
+		refreshFlowCaches();
+
+		// Test setting a rate limit via GraphQL
+		RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
+				.unit(RateLimitUnit.FILES)
+				.maxAmount(100L)
+				.durationSeconds(60)
+				.build();
+
+		SetRestDataSourceRateLimitGraphQLQuery mutation = SetRestDataSourceRateLimitGraphQLQuery.newRequest()
+				.name("rate-limit-test")
+				.rateLimit(rateLimitInput)
+				.build();
+
+		Boolean result = dgsQueryExecutor.executeAndExtractJsonPath(
+				new GraphQLQueryRequest(mutation).serialize(),
+				"data.setRestDataSourceRateLimit"
+		);
+
+		assertThat(result).isTrue();
+
+		// Verify rate limit was set in database
+		RestDataSource updated = restDataSourceRepo.findByNameAndType("rate-limit-test", FlowType.REST_DATA_SOURCE, RestDataSource.class)
+				.orElseThrow(() -> new AssertionError("Data source not found"));
+		assertThat(updated.getRateLimit()).isNotNull();
+		assertThat(updated.getRateLimit().getUnit()).isEqualTo(RateLimitUnit.FILES);
+		assertThat(updated.getRateLimit().getMaxAmount()).isEqualTo(100L);
+		assertThat(updated.getRateLimit().getDurationSeconds()).isEqualTo(60);
+
+		// Test removing rate limit via GraphQL
+		RemoveRestDataSourceRateLimitGraphQLQuery removeMutation = RemoveRestDataSourceRateLimitGraphQLQuery.newRequest()
+				.name("rate-limit-test")
+				.build();
+
+		Boolean removeResult = dgsQueryExecutor.executeAndExtractJsonPath(
+				new GraphQLQueryRequest(removeMutation).serialize(),
+				"data.removeRestDataSourceRateLimit"
+		);
+
+		assertThat(removeResult).isTrue();
+
+		// Verify rate limit was removed from database
+		RestDataSource afterRemove = restDataSourceRepo.findByNameAndType("rate-limit-test", FlowType.REST_DATA_SOURCE, RestDataSource.class)
+				.orElseThrow(() -> new AssertionError("Data source not found"));
+		assertThat(afterRemove.getRateLimit()).isNull();
+	}
+
 }

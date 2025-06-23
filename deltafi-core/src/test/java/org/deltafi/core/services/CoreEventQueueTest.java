@@ -21,17 +21,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
-import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedConstruction;
-import org.mockito.Mockito;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -43,11 +40,15 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CoreEventQueueTest {
 
+    @Mock
+    private ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private static final String QUEUE_NAME = "queueName";
     private static final String DGS_QUEUE_NAME = "dgs-" + QUEUE_NAME;
     private static final UUID DID = UUID.randomUUID();
+
     private static final String GOOD_BASIC = """
             {
               "did": "%s",
@@ -148,174 +149,135 @@ class CoreEventQueueTest {
             """.formatted(DID.toString());
 
     @Test
-    void testConvertBasic() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                             -> when(mockJackey.take(DGS_QUEUE_NAME))
-                                     .thenReturn(GOOD_BASIC))) {
+    void testConvertBasic() throws JsonProcessingException {
+        when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(GOOD_BASIC);
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
-            assertEquals(DID, actionEvent.getDid());
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
+        assertEquals(DID, actionEvent.getDid());
     }
 
     @Test
-    void testConvertUnicode() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                             -> when(mockJackey.take(DGS_QUEUE_NAME))
-                                     .thenReturn(GOOD_UNICODE))) {
+    void testConvertUnicode() throws JsonProcessingException {
+        when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(GOOD_UNICODE);
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
-            assertEquals("āȂ.̃Є", actionEvent.getActionName());
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
+        assertEquals("āȂ.̃Є", actionEvent.getActionName());
     }
 
     @Test
-    void testExtraFieldsIgnored() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                             -> when(mockJackey.take(DGS_QUEUE_NAME))
-                                     .thenReturn(EXTRA_FIELDS_IGNORED))) {
+    void testExtraFieldsIgnored() throws JsonProcessingException {
+        when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(EXTRA_FIELDS_IGNORED);
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
-            assertEquals(DID, actionEvent.getDid());
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
+        assertEquals(DID, actionEvent.getDid());
     }
 
     @Test
-    void testWrongJsonType() throws URISyntaxException {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
+    void testWrongJsonType() {
+        when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(getActionEventsArray());
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ValkeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
-            when(mockJackey.take(DGS_QUEUE_NAME))
-                    .thenReturn(getActionEventsArray());
-            org.assertj.core.api.Assertions.assertThatThrownBy(
-                            () -> coreEventQueue.takeResult(QUEUE_NAME))
-                    .isInstanceOf(JsonProcessingException.class)
-                    .hasMessageContaining("from Array value");
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> coreEventQueue.takeResult(QUEUE_NAME))
+                .isInstanceOf(JsonProcessingException.class)
+                .hasMessageContaining("from Array value");
     }
 
     @Test
-    void testInvalidConversion() throws URISyntaxException {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
+    void testInvalidConversion() {
+        when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(INVALID_DATE);
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ValkeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
-            when(mockJackey.take(DGS_QUEUE_NAME))
-                    .thenReturn(INVALID_DATE);
-            org.assertj.core.api.Assertions.assertThatThrownBy(
-                            () -> coreEventQueue.takeResult(QUEUE_NAME))
-                    .isInstanceOf(JsonProcessingException.class)
-                    .hasMessageContaining("Cannot deserialize value of type `java.time.OffsetDateTime");
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> coreEventQueue.takeResult(QUEUE_NAME))
+                .isInstanceOf(JsonProcessingException.class)
+                .hasMessageContaining("Cannot deserialize value of type `java.time.OffsetDateTime");
     }
 
     @Test
-    void testIllegalControlChars() throws URISyntaxException {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
+    void testIllegalControlChars() {
+        when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(ILLEGAL_CONTROL_CHARS);
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ValkeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
-            when(mockJackey.take(DGS_QUEUE_NAME))
-                    .thenReturn(ILLEGAL_CONTROL_CHARS);
-            org.assertj.core.api.Assertions.assertThatThrownBy(
-                            () -> coreEventQueue.takeResult(QUEUE_NAME))
-                    .isInstanceOf(JsonProcessingException.class)
-                    .hasMessageContaining("Illegal unquoted character");
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> coreEventQueue.takeResult(QUEUE_NAME))
+                .isInstanceOf(JsonProcessingException.class)
+                .hasMessageContaining("Illegal unquoted character");
     }
 
     @Test
-    void testMetricsOverflow() throws URISyntaxException {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class)) {
+    void testMetricsOverflow() {
+        when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(METRICS_OVERFLOW);
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ValkeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
-            when(mockJackey.take(DGS_QUEUE_NAME))
-                    .thenReturn(METRICS_OVERFLOW);
-
-            org.assertj.core.api.Assertions.assertThatThrownBy(
-                            () -> coreEventQueue.takeResult(QUEUE_NAME))
-                    .isInstanceOf(JsonProcessingException.class)
-                    .hasMessageContaining("Numeric value (12345678901234567890) out of range of long");
-        }
-    }
-
-    private String getActionEventsArray() {
-        return "[" + GOOD_BASIC + GOOD_BASIC + "]";
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> coreEventQueue.takeResult(QUEUE_NAME))
+                .isInstanceOf(JsonProcessingException.class)
+                .hasMessageContaining("Numeric value (12345678901234567890) out of range of long");
     }
 
     @Test
     @SneakyThrows
     void testGetLongRunningTasks() {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                -> when(mockJackey.getLongRunningTasks())
-                .thenReturn(Map.of("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(5))),
-                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e2", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1))),
-                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e3", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(1))))))) {
+        when(valkeyKeyedBlockingQueue.getLongRunningTasks())
+                .thenReturn(Map.of(
+                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1",
+                        OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(5))),
+                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e2",
+                        OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1))),
+                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e3",
+                        OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(1)))
+                ));
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            List<ActionExecution> result = coreEventQueue.getLongRunningTasks();
-            assertEquals(2, result.size());
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        List<ActionExecution> result = coreEventQueue.getLongRunningTasks();
+        assertEquals(2, result.size());
     }
-
-
 
     @Test
     @SneakyThrows
     void testLongRunningTaskExists() {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                -> when(mockJackey.getLongRunningTasks())
-                .thenReturn(Map.of("TestClass:testAction:" + DID, OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1))))))) {
+        when(valkeyKeyedBlockingQueue.getLongRunningTasks())
+                .thenReturn(Map.of("TestClass:testAction:" + DID,
+                        OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1)))));
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);
-            assertTrue(exists);
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);
+        assertTrue(exists);
     }
 
     @Test
     @SneakyThrows
     void testLongRunningTaskExistsExpired() {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                -> when(mockJackey.getLongRunningTasks())
-                .thenReturn(Map.of("TestClass:testAction:" + DID, OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(100))))))) {
+        when(valkeyKeyedBlockingQueue.getLongRunningTasks())
+                .thenReturn(Map.of("TestClass:testAction:" + DID,
+                        OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(100)))));
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);
-            assertFalse(exists);
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);
+        assertFalse(exists);
     }
 
     @Test
     @SneakyThrows
     void testRemoveExpiredLongRunningTasks() {
-        try (MockedConstruction<ValkeyKeyedBlockingQueue> mock = Mockito.mockConstruction(ValkeyKeyedBlockingQueue.class, (mockJackey, context)
-                -> when(mockJackey.getLongRunningTasks())
-                .thenReturn(Map.of("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(30), OffsetDateTime.now().minusMinutes(25))),
-                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e2", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1))))))) {
+        when(valkeyKeyedBlockingQueue.getLongRunningTasks())
+                .thenReturn(Map.of(
+                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1",
+                        OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(30), OffsetDateTime.now().minusMinutes(25))),
+                        "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e2",
+                        OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1)))
+                ));
 
-            CoreEventQueue coreEventQueue = new CoreEventQueue(new EventQueueProperties(), 2);
-            coreEventQueue.removeExpiredLongRunningTasks();
-            verify(mock.constructed().getFirst(), times(1)).removeLongRunningTask("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1");
-        }
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        coreEventQueue.removeExpiredLongRunningTasks();
+        verify(valkeyKeyedBlockingQueue, times(1)).removeLongRunningTask("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1");
+    }
+
+    private String getActionEventsArray() {
+        return "[\"not an object\"]";
     }
 }

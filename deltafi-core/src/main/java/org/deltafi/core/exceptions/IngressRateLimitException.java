@@ -15,23 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types.snapshot;
+package org.deltafi.core.exceptions;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.deltafi.core.generated.types.RateLimit;
-
-@Data
-@NoArgsConstructor
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-public abstract class DataSourceSnapshot extends FlowSnapshot {
-    private String topic;
-    private int maxErrors = -1;
-    private RateLimit rateLimit;
-    protected DataSourceSnapshot(String name) {
-        super(name);
+public class IngressRateLimitException extends Exception {
+    public IngressRateLimitException(String message) {
+        super(message);
     }
 }

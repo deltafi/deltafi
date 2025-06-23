@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.repo.DeltaFileFlowRepo;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -95,10 +95,10 @@ public class ErrorCountService {
         return null;
     }
 
-    public void checkErrorsExceeded(FlowType flowType, String flow) throws IngressUnavailableException {
+    public void checkErrorsExceeded(FlowType flowType, String flow) throws IngressRateLimitException {
         String errorMessage = exceededFlowErrors.get(new FlowKey(flowType, flow));
         if (errorMessage != null) {
-            throw new IngressUnavailableException(errorMessage);
+            throw new IngressRateLimitException(errorMessage);
         }
     }
 

@@ -46,6 +46,8 @@ import org.deltafi.core.types.IngressResult;
 import org.deltafi.core.types.RestDataSource;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,7 +64,7 @@ import static org.deltafi.common.nifi.ContentType.*;
 @RequiredArgsConstructor
 @Slf4j
 public class IngressService {
-    public static final String INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME = "Ingress error for dataSource={} filename={} contentType={} username={}: {}";
+    public static final String INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME = "Ingress error for dataSource={} filename={} contentType={} username={}: {}";
     private final MetricService metricService;
     private final DiskSpaceService diskSpaceService;
     private final ContentStorageService contentStorageService;
@@ -72,25 +74,26 @@ public class IngressService {
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
     private final AnalyticEventService analyticEventService;
+    private final RateLimitService rateLimitService;
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    public List<IngressResult> ingress(String flow, String filename, String contentType, String username,
+    public List<IngressResult> ingress(String dataSource, String filename, String contentType, String username,
             String headerMetadataString, InputStream dataStream, OffsetDateTime created) throws IngressMetadataException,
-            ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException {
+            ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException, IngressRateLimitException {
         if (!deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled()) {
-            log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename, contentType, username,
+            log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename, contentType, username,
                     "Ingress disabled for this instance of DeltaFi");
             throw new IngressUnavailableException("Ingress disabled for this instance of DeltaFi");
         }
 
         if (diskSpaceService.isContentStorageDepleted()) {
-            log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename,
+            log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename,
                     contentType, username, "Ingress temporarily disabled due to storage limits");
             throw new IngressStorageException("Ingress temporarily disabled due to storage limits");
         }
 
-        log.debug("Ingressing: dataSource={} filename={} contentType={} username={}", flow, filename, contentType, username);
+        log.debug("Ingressing: dataSource={} filename={} contentType={} username={}", dataSource, filename, contentType, username);
 
         List<IngressResult> ingressResults;
         try {
@@ -99,13 +102,13 @@ public class IngressService {
             ingressResults = switch (contentType) {
                 case APPLICATION_FLOWFILE, APPLICATION_FLOWFILE_V_1, APPLICATION_FLOWFILE_V_2,
                         APPLICATION_FLOWFILE_V_3 ->
-                        ingressFlowFile(flow, filename, contentType, headerMetadata, dataStream, created);
-                default -> List.of(ingressBinary(flow, filename, contentType, headerMetadata, dataStream, created));
+                        ingressFlowFile(dataSource, filename, contentType, headerMetadata, dataStream, created);
+                default -> List.of(ingressBinary(dataSource, filename, contentType, headerMetadata, dataStream, created));
             };
-        } catch (IngressMetadataException | ObjectStorageException | IngressException | IngressUnavailableException e) {
-            log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename,
+        } catch (IngressMetadataException | ObjectStorageException | IngressException | IngressUnavailableException | IngressRateLimitException e) {
+            log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename,
                     contentType, username, e.getMessage());
-            metricService.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(flow), 1);
+            metricService.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(dataSource), 1);
             throw e;
         }
 
@@ -135,9 +138,9 @@ public class IngressService {
         }
     }
 
-    private List<IngressResult> ingressFlowFile(String flow, String filename, String contentType,
+    private List<IngressResult> ingressFlowFile(String dataSource, String filename, String contentType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws ObjectStorageException, IngressException, IngressMetadataException, IngressUnavailableException {
+            throws ObjectStorageException, IngressException, IngressMetadataException, IngressUnavailableException, IngressRateLimitException {
         FlowFileTwoStepUnpackager flowFileTwoStepUnpackager = switch (contentType) {
             case APPLICATION_FLOWFILE, APPLICATION_FLOWFILE_V_1 -> new FlowFileTwoStepUnpackagerV1();
             case APPLICATION_FLOWFILE_V_2 -> new FlowFileTwoStepUnpackagerV2();
@@ -152,8 +155,8 @@ public class IngressService {
                 Map<String, String> combinedMetadata =
                         new HashMap<>(flowFileTwoStepUnpackager.unpackageAttributes(contentInputStream));
                 combinedMetadata.putAll(headerMetadata); // Metadata from header overrides attributes contained in FlowFile
-                if (flow == null) {
-                    flow = combinedMetadata.get("dataSource");
+                if (dataSource == null) {
+                    dataSource = combinedMetadata.get("dataSource");
                 }
                 if (filename == null) {
                     filename = combinedMetadata.get("filename");
@@ -164,7 +167,7 @@ public class IngressService {
 
                 Writer writer = outputStream -> flowFileTwoStepUnpackager.unpackageContent(contentInputStream, outputStream);
                 try (WriterPipedInputStream writerPipedInputStream = WriterPipedInputStream.create(writer, executorService)) {
-                    ingressResults.add(ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM,
+                    ingressResults.add(ingress(dataSource, filename, MediaType.APPLICATION_OCTET_STREAM,
                             writerPipedInputStream, combinedMetadata, created));
                 }
             }
@@ -175,35 +178,66 @@ public class IngressService {
         return ingressResults;
     }
 
-    private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
-            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException, IngressMetadataException, IngressUnavailableException {
+    private IngressResult ingress(String dataSource, String filename, String mediaType, InputStream contentInputStream,
+            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException, IngressMetadataException, IngressRateLimitException {
         RestDataSource restDataSource;
         try {
-            restDataSource = restDataSourceService.getActiveFlowByName(flow);
+            restDataSource = restDataSourceService.getActiveFlowByName(dataSource);
         } catch (MissingFlowException e) {
             throw new IngressMetadataException(e.getMessage());
         }
 
-        errorCountService.checkErrorsExceeded(FlowType.REST_DATA_SOURCE, flow);
+        if (restDataSource.getRateLimit() != null) {
+            var rateLimit = restDataSource.getRateLimit();
+            
+            if (rateLimit.getUnit() == org.deltafi.core.generated.types.RateLimitUnit.FILES) {
+                // FILES: try to consume 1 file token
+                if (!rateLimitService.tryConsume(dataSource, 1, rateLimit.getMaxAmount(), Duration.ofSeconds(rateLimit.getDurationSeconds()))) {
+                    log.warn("Rate limit exceeded for data source '{}' - rejecting ingress for filename={}", dataSource, filename);
+                    throw new IngressRateLimitException("Rate limit exceeded - " + dataSource + " allows " + 
+                        rateLimit.getMaxAmount() + " files per " + rateLimit.getDurationSeconds() + " seconds");
+                }
+            } else { // BYTES
+                // BYTES: check if there's room for at least 1 byte
+                if (!rateLimitService.tryConsume(dataSource, 1, rateLimit.getMaxAmount(), Duration.ofSeconds(rateLimit.getDurationSeconds()))) {
+                    log.warn("Rate limit exceeded for data source '{}' - rejecting ingress for filename={}", dataSource, filename);
+                    throw new IngressRateLimitException("Rate limit exceeded - " + dataSource + " allows " + 
+                        rateLimit.getMaxAmount() + " bytes per " + rateLimit.getDurationSeconds() + " seconds");
+                }
+            }
+        }
+
+        errorCountService.checkErrorsExceeded(FlowType.REST_DATA_SOURCE, dataSource);
 
         UUID did = uuidGenerator.generate();
 
         Content content = contentStorageService.save(did, contentInputStream, filename, mediaType);
 
+        // For BYTES rate limiting: consume the actual byte count (minus the 1 byte we already consumed)
+        if (restDataSource.getRateLimit() != null &&
+            restDataSource.getRateLimit().getUnit() == org.deltafi.core.generated.types.RateLimitUnit.BYTES) {
+            var rateLimit = restDataSource.getRateLimit();
+            long remainingBytes = content.getSize() - 1; // We already consumed 1 byte above
+            if (remainingBytes > 0) {
+                rateLimitService.consume(dataSource, remainingBytes, rateLimit.getMaxAmount(), Duration.ofSeconds(rateLimit.getDurationSeconds()));
+            }
+            log.debug("Consumed {} bytes total from rate limit bucket for data source '{}'", content.getSize(), dataSource);
+        }
+
         IngressEventItem ingressEventItem = IngressEventItem.builder()
                 .did(did)
                 .deltaFileName(filename)
-                .flowName(flow)
+                .flowName(dataSource)
                 .metadata(metadata)
                 .content(List.of(content))
                 .build();
 
         try {
             deltaFilesService.ingressRest(restDataSource, ingressEventItem, created, OffsetDateTime.now());
-            return new IngressResult(flow, did, content);
+            return new IngressResult(dataSource, did, content);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(flow, did, content);
+            return new IngressResult(dataSource, did, content);
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
             deltaFilesService.deleteContentAndMetadata(did, content);
@@ -211,16 +245,16 @@ public class IngressService {
         }
     }
 
-    private IngressResult ingressBinary(String flow, String filename, String mediaType,
+    private IngressResult ingressBinary(String dataSource, String filename, String mediaType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws IngressMetadataException, IngressException, IngressUnavailableException, ObjectStorageException {
+            throws IngressMetadataException, IngressException, IngressUnavailableException, IngressRateLimitException, ObjectStorageException {
         if (filename == null) {
             throw new IngressMetadataException("Filename must be passed in as a header");
         }
-        return ingress(flow, filename, mediaType, contentInputStream, headerMetadata, created);
+        return ingress(dataSource, filename, mediaType, contentInputStream, headerMetadata, created);
     }
 
-    private Map<String, String> tagsFor(String ingressFlow) {
-        return MetricsUtil.tagsFor(ActionType.INGRESS.name(), INGRESS_ACTION, ingressFlow, null);
+    private Map<String, String> tagsFor(String ingressDataSource) {
+        return MetricsUtil.tagsFor(ActionType.INGRESS.name(), INGRESS_ACTION, ingressDataSource, null);
     }
 }
