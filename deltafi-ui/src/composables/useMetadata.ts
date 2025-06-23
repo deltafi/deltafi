@@ -43,6 +43,7 @@ export default function useMetadata() {
           dids: dids,
         },
         flow: true,
+        flowType: true,
         action: true,
         keyVals: {
           key: true,

@@ -26,20 +26,39 @@
       <Menu ref="menu" :model="menuItems" :popup="true" />
       <Paginator v-if="errorsMessage.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
-    <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsMessage" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+    <DataTable id="errorsSummaryTable" v-model:expanded-rows="expandedErrorGroups" v-model:selection="selectedErrorGroups" data-key="message" responsive-layout="scroll" selection-mode="multiple" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="groupErrorMessageData" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onGroupContextMenu" @sort="onSort($event)" @row-select="onGroupRowSelect" @row-unselect="onGroupRowUnSelect">
       <template #empty> No results to display. </template>
       <template #loading> Loading. Please wait... </template>
-      <Column field="flow" header="Flow" sortable class="filename-column" />
-      <Column field="type" header="Flow Type" sortable />
-      <Column field="count" header="Count" sortable />
-      <Column field="message" header="Message" sortable>
+      <Column v-if="groupErrorMessageData.length > 0" expander class="expander-column">
         <template #body="{ data }">
-          <a class="monospace" @click="showErrors(data.message, data.flow, data.type)">{{ data.message }}</a>
+          <div @click.stop="onExpandClicked(data)">
+            <ChevronSwitch :expanded-rows="expandedErrorGroups" :row="data" class="text-muted" />
+          </div>
         </template>
       </Column>
+      <Column field="message" header="Message" sortable>
+        <template #body="{ data }">
+          <a class="monospace" @click="showErrors(data.message, null, null)">{{ data.message }}</a>
+        </template>
+      </Column>
+      <Column field="count" header="Count" sortable />
+      <template #expansion="slotProps">
+        <div class="errors-Subtable">
+          <DataTable :value="slotProps.data.flows" v-model:selection="selectedErrors" data-key="flow" selection-mode="multiple" class="p-datatable-sm p-datatable-gridlines" @row-select="onRowSelect" @row-unselect="onRowUnSelect" @row-contextmenu="onRowContextMenu">
+            <Column field="flow" header="Flow" sortable class="filename-column" />
+            <Column field="type" header="Flow Type" sortable />
+            <Column field="count" header="Count" sortable />
+            <Column field="message" header="Message" sortable>
+              <template #body="{ data }">
+                <a class="monospace" @click="showErrors(data.message, data.flow, data.type)">{{ data.message }}</a>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+      </template>
     </DataTable>
   </Panel>
-  <ResumeDialog ref="resumeDialog" :did="filterSelectedDids" @refresh-page="onRefresh" />
+  <ResumeBulkActionDialog ref="resumeBulkActionDialog" :flow-info="filterSelectedDidsBulkAction" bundle-request-type="resumeByErrorCause" :acknowledged="props.acknowledged" @refresh-page="onRefresh()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -51,7 +70,8 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import ResumeDialog from "@/components/errors/ResumeDialog.vue";
+import ResumeBulkActionDialog from "@/components/errors/ResumeBulkActionDialog.vue";
+import ChevronSwitch from "@/components/errors/ChevronSwitch.vue";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
@@ -79,15 +99,18 @@ const totalErrorsMessage = ref(0);
 const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
-const resumeDialog = ref();
+const resumeBulkActionDialog = ref();
 const sortField = ref("NAME");
 const sortDirection = ref("ASC");
+const expandedErrorGroups = ref({});
+const selectedErrorGroups = ref([]);
 const selectedErrors = ref([]);
 const emit = defineEmits(["refreshErrors", "changeTab:showErrors"]);
 const notify = useNotifications();
 const annotateDialog = ref();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
+
 const ackErrorsDialog = ref({
   dids: [],
   visible: false,
@@ -105,6 +128,7 @@ const props = defineProps({
 });
 
 const unSelectAllRows = async () => {
+  selectedErrorGroups.value = [];
   selectedErrors.value = [];
 };
 
@@ -120,6 +144,7 @@ const menuItems = ref([
     label: "Select All Visible",
     icon: "fas fa-check-double fa-fw",
     command: () => {
+      selectedErrorGroups.value = groupErrorMessageData.value;
       selectedErrors.value = errorsMessage.value;
     },
   },
@@ -148,7 +173,7 @@ const menuItems = ref([
     label: "Resume Selected",
     icon: "fas fa-redo fa-fw",
     command: () => {
-      resumeDialog.value.showConfirmDialog();
+      resumeBulkActionDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),
@@ -166,7 +191,7 @@ const menuItems = ref([
 
 onMounted(async () => {
   await getPersistedParams();
-  fetchErrorsMessages();
+  await fetchErrorsMessages();
   setupWatchers();
 });
 
@@ -189,6 +214,16 @@ const filterSelectedDids = computed(() => {
   return _.flatten([...new Set(dids)]);
 });
 
+const filterSelectedDidsBulkAction = computed(() => {
+  const flowInfo = selectedErrors.value.map((selectedError) => {
+    const foundObject = _.find(selectedErrorGroups.value, { message: selectedError.message });
+    const messageGrouping = foundObject ? "ALL" : "SINGLE";
+    return { messageGrouping: messageGrouping, flowType: selectedError.type, flowName: selectedError.flow, dids: selectedError.dids, message: selectedError.message };
+  });
+
+  return flowInfo;
+});
+
 const fetchErrorsMessages = async () => {
   getPersistedParams();
   const flowName = props.flow?.name != null ? props.flow?.name : null;
@@ -203,10 +238,34 @@ const toggleMenu = (event) => {
   menu.value.toggle(event);
 };
 
-const onRowContextMenu = (event) => {
-  if (selectedErrors.value.length <= 0) {
-    selectedErrors.value = [event.data];
+const onGroupContextMenu = (event) => {
+  const newSelectedGroupErrors = [];
+  const tmpSelectedErrorGroups = JSON.parse(JSON.stringify(selectedErrorGroups.value));
+  const foundGroupErrorMessages = _.find(tmpSelectedErrorGroups, { message: event.data.message });
+
+  if (!foundGroupErrorMessages) {
+    newSelectedGroupErrors.push(event.data);
   }
+  if (newSelectedGroupErrors.length > 0) {
+    selectedErrorGroups.value = [...selectedErrorGroups.value, ...newSelectedGroupErrors];
+  }
+
+  onGroupRowSelect(event);
+};
+
+const onRowContextMenu = (event) => {
+  const newSelectedErrors = [];
+  const tmpSelectedErrorArray = JSON.parse(JSON.stringify(selectedErrors.value));
+  const foundObject = _.find(tmpSelectedErrorArray, event.data);
+
+  if (!foundObject) {
+    newSelectedErrors.push(event.data);
+  }
+  if (newSelectedErrors.length > 0) {
+    selectedErrors.value = [...selectedErrors.value, ...newSelectedErrors];
+  }
+
+  onRowSelect(event);
 };
 
 const onPanelRightClick = (event) => {
@@ -251,6 +310,28 @@ const autoResumeSelected = computed(() => {
     return selectedErrors.value;
   }
 });
+
+const groupErrorMessageData = computed(() => {
+  const grouped = {};
+
+  for (const error of errorsMessage.value) {
+    const { message } = error;
+
+    if (!grouped[message]) {
+      grouped[message] = {
+        count: 0,
+        message,
+        flows: [],
+      };
+    }
+
+    grouped[message].count += error.count;
+    grouped[message].flows.push(error);
+  }
+
+  return Object.values(grouped);
+});
+
 const setupWatchers = () => {
   watch(
     () => props.flow,
@@ -268,6 +349,7 @@ const setupWatchers = () => {
     }
   );
 };
+
 const onPage = async (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
@@ -295,6 +377,87 @@ const setPersistedParams = () => {
     perPage: perPage.value,
     page: page.value,
   };
+};
+
+// When a group error row is selected, add all its errors to the list of selected errors.
+const onGroupRowSelect = (event) => {
+  const newSelectedErrors = [];
+  for (const flow of event.data.flows) {
+    const tmpSelectedErrorArray = JSON.parse(JSON.stringify(selectedErrors.value));
+    const foundObject = _.find(tmpSelectedErrorArray, flow);
+
+    if (!foundObject) {
+      newSelectedErrors.push(flow);
+    }
+  }
+  if (newSelectedErrors.length > 0) {
+    selectedErrors.value = [...selectedErrors.value, ...newSelectedErrors];
+  }
+};
+
+// When a group error row is unselected, remove all its errors from the list of selected errors.
+const onGroupRowUnSelect = (event) => {
+  for (const flow of event.data.flows) {
+    let tmpSelectedError = JSON.parse(JSON.stringify(selectedErrors.value));
+    tmpSelectedError = _.filter(tmpSelectedError, function (o) {
+      return !_.isEqual(JSON.stringify(o), JSON.stringify(flow));
+    });
+    selectedErrors.value = tmpSelectedError;
+  }
+};
+
+// When a row is selected and all other rows of that group are already selected, add its group to the list of selected groups.
+const onRowSelect = (event) => {
+  const filteredSelectedErrors = _.filter(selectedErrors.value, { message: event.data.message });
+  const foundGroupErrorMessages = _.find(groupErrorMessageData.value, { message: event.data.message });
+
+  const tmpSelectedErrorGroups = JSON.parse(JSON.stringify(selectedErrorGroups.value));
+  const foundObject = _.find(selectedErrorGroups.value, { message: event.data.message });
+  const countOfFilteredSelectedErrors = _.sumBy(filteredSelectedErrors, function (o) {
+    return o.count;
+  });
+  if (_.isEqual(foundGroupErrorMessages.count, countOfFilteredSelectedErrors)) {
+    if (_.isEmpty(foundObject)) {
+      tmpSelectedErrorGroups.push(foundGroupErrorMessages);
+      selectedErrorGroups.value = tmpSelectedErrorGroups;
+    }
+  }
+};
+
+// When a row is unselected remove the group from the list of selected groups.
+const onRowUnSelect = (event) => {
+  const filteredSelectedErrors = _.filter(selectedErrors.value, { message: event.data.message });
+  const foundGroupErrorMessages = _.find(groupErrorMessageData.value, { message: event.data.message });
+
+  let tmpSelectedErrorGroups = JSON.parse(JSON.stringify(selectedErrorGroups.value));
+  const foundObject = _.find(selectedErrorGroups.value, { message: event.data.message });
+  const countOfFilteredSelectedErrors = _.sumBy(filteredSelectedErrors, function (o) {
+    return o.count;
+  });
+  if (!_.isEqual(foundGroupErrorMessages.count, countOfFilteredSelectedErrors)) {
+    if (!_.isEmpty(foundObject)) {
+      tmpSelectedErrorGroups = _.filter(tmpSelectedErrorGroups, function (o) {
+        return !_.isEqual(JSON.stringify(o), JSON.stringify(foundGroupErrorMessages));
+      });
+      selectedErrorGroups.value = tmpSelectedErrorGroups;
+    }
+  }
+};
+
+const isExpanded = (data) => {
+  return _.has(expandedErrorGroups.value, data.message);
+};
+
+// Function to handle expander click
+const onExpandClicked = (data) => {
+  const tmpExpandedErrorGroups = JSON.parse(JSON.stringify(expandedErrorGroups.value));
+  if (isExpanded(data)) {
+    delete tmpExpandedErrorGroups[data.message.toString()];
+    expandedErrorGroups.value = tmpExpandedErrorGroups;
+  } else {
+    tmpExpandedErrorGroups[data.message.toString()] = true;
+    expandedErrorGroups.value = tmpExpandedErrorGroups;
+  }
 };
 </script>
 

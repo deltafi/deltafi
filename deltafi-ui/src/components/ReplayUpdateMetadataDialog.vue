@@ -44,7 +44,7 @@
     </div>
     <div v-else-if="displayBatchingMetadataDialog">
       <div>
-        <p>{{ errorRequestType }} in progress. Please do not refresh the page!</p>
+        <p>Replay in progress. Please do not refresh the page!</p>
         <ProgressBar :value="batchCompleteValue" />
       </div>
     </div>
@@ -52,7 +52,7 @@
       <div class="p-dialog-footer">
         <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addMetadataField" />
         <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeMetadataDialog" />
-        <Button :label="`${errorRequestType}`" icon="fas fa-play" @click="submitClick" />
+        <Button :label="`Replay`" icon="fas fa-play" @click="submitClick" />
       </div>
     </teleport>
   </div>
@@ -87,14 +87,9 @@ const props = defineProps({
     type: Array,
     required: true,
   },
-  errorRequestType: {
-    type: String,
-    required: true,
-  },
 });
 
 const { replay } = useReplay();
-const { errorRequestType } = reactive(props);
 const { fetch: meta, data: batchMetadata } = useMetadata();
 
 const modifiedMetadata = ref([]);
@@ -235,7 +230,7 @@ const submit = async () => {
             successfulBatch.push(responseStatus);
             newDids.push(responseStatus.did);
           } else {
-            notify.error(`${errorRequestType} request failed for ${responseStatus.did}`, responseStatus.error);
+            notify.error(`Replay request failed for ${responseStatus.did}`, responseStatus.error);
           }
         }
         if (successfulBatch.length > 0) {
@@ -250,7 +245,7 @@ const submit = async () => {
     if (success) {
       const pluralized = pluralize(newDids.length, "DeltaFile");
       const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
-      notify.success(`${errorRequestType} request sent successfully for ${pluralized}`, links.join(", "));
+      notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
       emit("refreshAndClose");
     }
   } catch (error) {

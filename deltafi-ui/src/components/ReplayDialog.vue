@@ -36,7 +36,7 @@
       </template>
     </Dialog>
   </div>
-  <DialogTemplate ref="modifyMetadataDialog" component-name="ReplayUpdateMetadataDialog" header="Modify Metadata" dialog-width="30vw" :did="props.did" error-request-type="Replay" @refresh-page="$emit('refreshPage')" />
+  <DialogTemplate ref="modifyMetadataDialog" component-name="ReplayUpdateMetadataDialog" header="Modify Metadata" dialog-width="30vw" :did="props.did" @refresh-page="$emit('refreshPage')" />
 </template>
 
 <script setup>

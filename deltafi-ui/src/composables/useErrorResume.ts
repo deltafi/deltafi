@@ -16,12 +16,14 @@
    limitations under the License.
 */
 
+import { EnumType } from "json-to-graphql-query";
 import useGraphQL from "./useGraphQL";
 
 export default function useErrorResume() {
   const { response, queryGraphQL } = useGraphQL();
-  const buildResumeQuery = (dids: Array<string>, metadata: Array<Object>) => {
-    return {
+
+  const resume = async (dids: Array<string>, metadata: Array<Object>) => {
+    const query = {
       resume: {
         __args: {
           dids: dids,
@@ -32,14 +34,80 @@ export default function useErrorResume() {
         error: true,
       },
     };
+    return sendGraphQLQuery(query, "errorsResume", "mutation");
   };
 
-  const resume = async (dids: Array<string>, metadata: Array<Object>) => {
-    await queryGraphQL(buildResumeQuery(dids, metadata), "errorsResume", "mutation");
-    return Promise.resolve(response);
+  const resumeByErrorCause = async (errorCause: string, metadata: Array<Object> = [], includeAcknowledged: boolean = false) => {
+    const query = {
+      resumeByErrorCause: {
+        __args: {
+          errorCause: errorCause,
+          resumeMetadata: metadata,
+          includeAcknowledged: includeAcknowledged,
+        },
+        did: true,
+        success: true,
+        error: true,
+      },
+    };
+    return sendGraphQLQuery(query, "resumeByErrorCause", "mutation");
+  };
+
+  const resumeByFlow = async (flowType: string, name: string, metadata: Array<Object> = [], includeAcknowledged: boolean = false) => {
+    const query = {
+      resumeByFlow: {
+        __args: {
+          flowType: new EnumType(flowType),
+          name: name,
+          resumeMetadata: metadata,
+          includeAcknowledged: includeAcknowledged,
+        },
+        did: true,
+        success: true,
+        error: true,
+      },
+    };
+    return sendGraphQLQuery(query, "resumeByFlow", "mutation");
+  };
+
+  interface queryParams {
+    dids?: Array<object>;
+    dataSources?: Array<string>;
+    dataSinks?: Array<string>;
+    transforms?: Array<string>;
+  }
+  const resumeMatching = async (queryParams: queryParams, metadata: Array<Object> = []) => {
+    const query = {
+      resumeMatching: {
+        __args: {
+          filter: {
+            ...queryParams,
+          },
+          resumeMetadata: metadata,
+        },
+        did: true,
+        success: true,
+        error: true,
+      },
+    };
+
+    return sendGraphQLQuery(query, "resumeMatching", "mutation");
+  };
+
+  const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
+    try {
+      await queryGraphQL(query, operationName, queryType);
+      return response.value;
+    } catch (e: any) {
+      return e.value;
+      // Continue regardless of error
+    }
   };
 
   return {
     resume,
+    resumeByErrorCause,
+    resumeByFlow,
+    resumeMatching,
   };
 }

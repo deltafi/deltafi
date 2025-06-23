@@ -63,6 +63,11 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  bundleRequestType: {
+    type: String,
+    required: false,
+    default: null,
+  },
 });
 
 const { resume } = useErrorResume();

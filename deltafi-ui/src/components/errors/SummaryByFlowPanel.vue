@@ -38,7 +38,7 @@
       <Column field="count" header="Count" sortable />
     </DataTable>
   </Panel>
-  <ResumeDialog ref="resumeDialog" :did="filterSelectedDids" @refresh-page="onRefresh" />
+  <ResumeBulkActionDialog ref="resumeBulkActionDialog" :flow-info="filterSelectedDidsBulkAction" bundle-request-type="resumeByFlow" :acknowledged="props.acknowledged" @refresh-page="onRefresh" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -50,7 +50,7 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import ResumeDialog from "@/components/errors/ResumeDialog.vue";
+import ResumeBulkActionDialog from "@/components/errors/ResumeBulkActionDialog.vue";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
@@ -78,7 +78,7 @@ const totalErrorsFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
-const resumeDialog = ref();
+const resumeBulkActionDialog = ref();
 const sortField = ref("NAME");
 const sortDirection = ref("ASC");
 const selectedErrors = ref([]);
@@ -147,7 +147,7 @@ const menuItems = ref([
     label: "Resume Selected",
     icon: "fas fa-redo fa-fw",
     command: () => {
-      resumeDialog.value.showConfirmDialog();
+      resumeBulkActionDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),
@@ -194,7 +194,16 @@ const filterSelectedDids = computed(() => {
   const dids = selectedErrors.value.map((selectedError) => {
     return selectedError.dids;
   });
+
   return _.flatten([...new Set(dids)]);
+});
+
+const filterSelectedDidsBulkAction = computed(() => {
+  const flowInfo = selectedErrors.value.map((selectedError) => {
+    return { flowType: selectedError.type, flowName: selectedError.flow, dids: selectedError.dids };
+  });
+
+  return flowInfo;
 });
 
 const acknowledgeClickConfirm = () => {

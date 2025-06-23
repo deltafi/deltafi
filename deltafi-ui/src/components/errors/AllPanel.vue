@@ -416,12 +416,13 @@ const setupWatchers = () => {
     }
   );
 };
+
 onMounted(async () => {
   await getPersistedParams();
   filters.value.last_error_cause.value = props.errorsMessageSelected ? { message: props.errorsMessageSelected } : null;
   await fetchErrors();
   setupWatchers();
-  getAllErrorsMessage(); // needed to get All the messages for
+  getAllErrorsMessage();
 });
 
 const getPersistedParams = async () => {

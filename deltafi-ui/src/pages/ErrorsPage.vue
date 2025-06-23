@@ -177,7 +177,9 @@ const refreshButtonIcon = computed(() => {
 });
 
 const showErrors = (errorMessage, flowName, flowType) => {
-  flowSelected.value = { name: flowName, type: flowTypeMap[flowType] };
+  if (flowName && flowType) {
+    flowSelected.value = { name: flowName, type: flowTypeMap[flowType] };
+  }
   errorMessageSelected.value = errorMessage;
   activeTab.value = 0;
 };
@@ -267,7 +269,6 @@ const formatFlowNames = () => {
 
 <style>
 .errors-page {
-
   .time-range .form-control:disabled,
   .time-range .form-control[readonly] {
     background-color: #ffffff;
@@ -301,7 +302,7 @@ const formatFlowNames = () => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
     color: #ffffff;
 
     a,
