@@ -26,7 +26,7 @@
           "type": "datasource",
           "uid": "grafana"
         },
-        "enable": true,
+        "enable": false,
         "hide": false,
         "iconColor": "orange",
         "name": "Global events",
@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 13,
+  "id": 15,
   "links": [],
   "panels": [
     {
@@ -117,8 +117,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -155,7 +154,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -165,7 +164,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time\nORDER BY time",
           "refId": "A",
           "sql": {
             "columns": [
@@ -203,7 +202,6 @@
         }
       ],
       "title": "Errored Files",
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -233,8 +231,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -277,7 +274,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -300,7 +297,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "stat"
     },
     {
@@ -356,8 +352,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -395,7 +390,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -405,7 +400,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, annotation_value\nORDER BY time, annotation_value;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time, annotation_value\nORDER BY time, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -452,7 +447,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -508,8 +502,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -547,7 +540,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -604,7 +597,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -698,7 +690,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -708,7 +700,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  cause,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, cause\nORDER BY time, cause;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  cause,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time, cause\nORDER BY time, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -755,7 +747,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -849,7 +840,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -859,7 +850,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  group_name AS event_group,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo() \nGROUP BY time, group_name\nORDER BY time, event_group;",
+          "rawSql": "SELECT\n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, bucket_time) AS time,\n  group_name AS event_group,\n  COALESCE(SUM(error_files), 0) AS error_files\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms'),\n  'ERRORS'\n)\nWHERE bucket_time >= $__timeFrom()\nAND bucket_time <= $__timeTo()\nAND ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY time, group_name\nORDER BY time, event_group;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -906,7 +897,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -978,7 +968,7 @@
           }
         ]
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -988,7 +978,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS data_source,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY datasource_name, cause\nORDER BY data_source, cause;",
+          "rawSql": "SELECT\n  datasource_name AS data_source,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY datasource_name, cause\nORDER BY data_source, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1109,7 +1099,7 @@
           }
         ]
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1119,7 +1109,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  group_name AS event_group,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY group_name, cause\nORDER BY event_group, cause;",
+          "rawSql": "SELECT\n  group_name AS event_group,\n  cause,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY group_name, cause\nORDER BY event_group, cause;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1241,7 +1231,7 @@
           }
         ]
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1251,7 +1241,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS data_source,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY datasource_name, annotation_value\nORDER BY data_source, annotation_value;",
+          "rawSql": "SELECT\n  datasource_name AS data_source,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY datasource_name, annotation_value\nORDER BY data_source, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1372,7 +1362,7 @@
           }
         ]
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1382,7 +1372,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  group_name AS event_group,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nGROUP BY group_name, annotation_value\nORDER BY event_group, annotation_value;",
+          "rawSql": "SELECT\n  group_name AS event_group,\n  annotation_value,\n  COALESCE(SUM(error_files), 0) AS frequency\nFROM get_errors_filters_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years',\n  'ERRORS'\n)\nWHERE ($includeMissingSubscribers = 'TRUE' OR cause != 'No matching subscribers were found')\nGROUP BY group_name, annotation_value\nORDER BY event_group, annotation_value;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1584,7 +1574,7 @@
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [
     "DeltaFi",
     "Data Flow",
@@ -1706,6 +1696,29 @@
         "refresh": 1,
         "regex": "",
         "type": "datasource"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "TRUE",
+          "value": "TRUE"
+        },
+        "label": "Include Missing Subscribers",
+        "name": "includeMissingSubscribers",
+        "options": [
+          {
+            "selected": true,
+            "text": "TRUE",
+            "value": "TRUE"
+          },
+          {
+            "selected": false,
+            "text": "FALSE",
+            "value": "FALSE"
+          }
+        ],
+        "query": "TRUE, FALSE",
+        "type": "custom"
       }
     ]
   },
@@ -1724,6 +1737,5 @@
   "timezone": "",
   "title": "Error Analysis",
   "uid": "error-analysis",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }
