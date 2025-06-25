@@ -104,14 +104,14 @@ class RestDataSourceServiceTest {
         String expectedJson = OBJECT_MAPPER.writeValueAsString(rateLimitInput);
 
         doReturn(restDataSource).when(restDataSourceService).getFlowOrThrow(flowName);
-        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(1);
+        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(restDataSource);
 
         boolean result = restDataSourceService.setRateLimit(flowName, rateLimitInput);
 
         assertTrue(result);
         verify(restDataSourceRepo).updateRateLimit(flowName, expectedJson);
         verify(rateLimitService).updateLimit(flowName, 100L, Duration.ofSeconds(60));
-        verify(flowCacheService).refreshCache();
+        verify(flowCacheService).updateCache(restDataSource);
     }
 
     @Test
@@ -137,7 +137,7 @@ class RestDataSourceServiceTest {
         assertFalse(result);
         verify(restDataSourceRepo, never()).updateRateLimit(any(), any());
         verify(rateLimitService, never()).updateLimit(any(), anyLong(), any());
-        verify(flowCacheService, never()).refreshCache();
+        verify(flowCacheService, never()).updateCache(any());
     }
 
     @Test
@@ -153,14 +153,14 @@ class RestDataSourceServiceTest {
         String expectedJson = OBJECT_MAPPER.writeValueAsString(rateLimitInput);
 
         doReturn(restDataSource).when(restDataSourceService).getFlowOrThrow(flowName);
-        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(0);
+        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(null);
 
         boolean result = restDataSourceService.setRateLimit(flowName, rateLimitInput);
 
         assertFalse(result);
         verify(restDataSourceRepo).updateRateLimit(flowName, expectedJson);
         verify(rateLimitService, never()).updateLimit(any(), anyLong(), any());
-        verify(flowCacheService, never()).refreshCache();
+        verify(flowCacheService, never()).updateCache(any());
     }
 
     @Test
@@ -178,7 +178,7 @@ class RestDataSourceServiceTest {
 
         verify(restDataSourceRepo, never()).updateRateLimit(any(), any());
         verify(rateLimitService, never()).updateLimit(any(), anyLong(), any());
-        verify(flowCacheService, never()).refreshCache();
+        verify(flowCacheService, never()).updateCache(any());
     }
 
     @Test
@@ -193,14 +193,14 @@ class RestDataSourceServiceTest {
                 .build());
 
         doReturn(restDataSource).when(restDataSourceService).getFlowOrThrow(flowName);
-        when(restDataSourceRepo.removeRateLimit(flowName)).thenReturn(1);
+        when(restDataSourceRepo.removeRateLimit(flowName)).thenReturn(restDataSource);
 
         boolean result = restDataSourceService.removeRateLimit(flowName);
 
         assertTrue(result);
         verify(restDataSourceRepo).removeRateLimit(flowName);
         verify(rateLimitService).removeBucket(flowName);
-        verify(flowCacheService).refreshCache();
+        verify(flowCacheService).updateCache(restDataSource);
     }
 
     @Test
@@ -216,7 +216,7 @@ class RestDataSourceServiceTest {
         assertFalse(result);
         verify(restDataSourceRepo, never()).removeRateLimit(any());
         verify(rateLimitService, never()).removeBucket(any());
-        verify(flowCacheService, never()).refreshCache();
+        verify(flowCacheService, never()).updateCache(any());
     }
 
     @Test
@@ -231,14 +231,14 @@ class RestDataSourceServiceTest {
                 .build());
 
         doReturn(restDataSource).when(restDataSourceService).getFlowOrThrow(flowName);
-        when(restDataSourceRepo.removeRateLimit(flowName)).thenReturn(0);
+        when(restDataSourceRepo.removeRateLimit(flowName)).thenReturn(null);
 
         boolean result = restDataSourceService.removeRateLimit(flowName);
 
         assertFalse(result);
         verify(restDataSourceRepo).removeRateLimit(flowName);
         verify(rateLimitService, never()).removeBucket(any());
-        verify(flowCacheService, never()).refreshCache();
+        verify(flowCacheService, never()).updateCache(any());
     }
 
     @Test
@@ -251,7 +251,7 @@ class RestDataSourceServiceTest {
 
         verify(restDataSourceRepo, never()).removeRateLimit(any());
         verify(rateLimitService, never()).removeBucket(any());
-        verify(flowCacheService, never()).refreshCache();
+        verify(flowCacheService, never()).updateCache(any());
     }
 
     @Test
@@ -273,14 +273,14 @@ class RestDataSourceServiceTest {
         String expectedJson = OBJECT_MAPPER.writeValueAsString(fileLimitInput);
 
         doReturn(restDataSource).when(restDataSourceService).getFlowOrThrow(flowName);
-        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(1);
+        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(restDataSource);
 
         boolean result = restDataSourceService.setRateLimit(flowName, fileLimitInput);
 
         assertTrue(result);
         verify(restDataSourceRepo).updateRateLimit(flowName, expectedJson);
         verify(rateLimitService).updateLimit(flowName, 10L, Duration.ofSeconds(60));
-        verify(flowCacheService).refreshCache();
+        verify(flowCacheService).updateCache(restDataSource);
     }
 
     @Test
@@ -302,14 +302,14 @@ class RestDataSourceServiceTest {
         String expectedJson = OBJECT_MAPPER.writeValueAsString(rateLimitInput);
 
         doReturn(restDataSource).when(restDataSourceService).getFlowOrThrow(flowName);
-        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(1);
+        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(restDataSource);
 
         boolean result = restDataSourceService.setRateLimit(flowName, rateLimitInput);
 
         assertTrue(result);
         verify(restDataSourceRepo).updateRateLimit(flowName, expectedJson);
         verify(rateLimitService).updateLimit(flowName, 200L, Duration.ofSeconds(60));
-        verify(flowCacheService).refreshCache();
+        verify(flowCacheService).updateCache(restDataSource);
     }
 
     @Test
@@ -331,14 +331,14 @@ class RestDataSourceServiceTest {
         String expectedJson = OBJECT_MAPPER.writeValueAsString(rateLimitInput);
 
         doReturn(restDataSource).when(restDataSourceService).getFlowOrThrow(flowName);
-        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(1);
+        when(restDataSourceRepo.updateRateLimit(flowName, expectedJson)).thenReturn(restDataSource);
 
         boolean result = restDataSourceService.setRateLimit(flowName, rateLimitInput);
 
         assertTrue(result);
         verify(restDataSourceRepo).updateRateLimit(flowName, expectedJson);
         verify(rateLimitService).updateLimit(flowName, 100L, Duration.ofSeconds(120));
-        verify(flowCacheService).refreshCache();
+        verify(flowCacheService).updateCache(restDataSource);
     }
 
     @Test

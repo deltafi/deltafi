@@ -19,7 +19,6 @@ package org.deltafi.core.types.snapshot;
 
 import lombok.Data;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.types.DeletePolicies;
@@ -37,6 +36,7 @@ public class Snapshot {
     private List<Link> links;
     private List<RestDataSourceSnapshot> restDataSources = new ArrayList<>();
     private List<TimedDataSourceSnapshot> timedDataSources = new ArrayList<>();
+    private List<OnErrorDataSourceSnapshot> onErrorDataSources = new ArrayList<>();
     private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
     private List<DataSinkSnapshot> dataSinks = new ArrayList<>();
     private List<PluginSnapshot> plugins;

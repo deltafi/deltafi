@@ -150,6 +150,7 @@ enum DeltaFileFlowState {
 enum FlowType {
   REST_DATA_SOURCE
   TIMED_DATA_SOURCE
+  ON_ERROR_DATA_SOURCE
   TRANSFORM
   DATA_SINK
 }
@@ -375,14 +376,17 @@ type Query {
   getDataSinkPlan(planName: String!): DataSinkPlan!
   getRestDataSourcePlan(planName: String!): RestDataSourcePlan!
   getTimedDataSourcePlan(planName: String!): TimedDataSourcePlan!
+  getOnErrorDataSourcePlan(planName: String!): OnErrorDataSourcePlan!
   getTransformFlowPlan(planName: String!): TransformFlowPlan!
   getDataSink(flowName: String!): DataSink!
   getRestDataSource(name: String!): RestDataSource!
   getTimedDataSource(name: String!): TimedDataSource!
+  getOnErrorDataSource(name: String!): OnErrorDataSource!
   getTransformFlow(flowName: String!): TransformFlow!
   validateDataSink(flowName: String!): DataSink!
   validateRestDataSource(name: String!): RestDataSource!
   validateTimedDataSource(name: String!): TimedDataSource!
+  validateOnErrorDataSource(name: String!): OnErrorDataSource!
   validateTransformFlow(flowName: String!): TransformFlow!
   getFlowNames(state: FlowState): FlowNames!
   getFlows: [Flows]!
@@ -432,10 +436,12 @@ type Mutation {
   saveDataSinkPlan(dataSinkPlan: DataSinkPlanInput!) : DataSink!
   saveTimedDataSourcePlan(dataSourcePlan: TimedDataSourcePlanInput!) : TimedDataSource!
   saveRestDataSourcePlan(dataSourcePlan: RestDataSourcePlanInput!) : RestDataSource!
+  saveOnErrorDataSourcePlan(dataSourcePlan: OnErrorDataSourcePlanInput!) : OnErrorDataSource!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
   removeDataSinkPlan(name: String!) : Boolean!
   removeRestDataSourcePlan(name: String!) : Boolean!
   removeTimedDataSourcePlan(name: String!) : Boolean!
+  removeOnErrorDataSourcePlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
   saveSystemFlowPlans(systemFlowPlansInput: SystemFlowPlansInput!) : Boolean!
 
@@ -443,6 +449,7 @@ type Mutation {
 
   setRestDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   setTimedDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
+  setOnErrorDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   setRestDataSourceRateLimit(name: String!, rateLimit: RateLimitInput!) : Boolean!
   removeRestDataSourceRateLimit(name: String!) : Boolean!
   enableDataSinkTestMode(flowName: String!) : Boolean!
@@ -451,8 +458,10 @@ type Mutation {
   setTimedDataSourceCronSchedule(name: String!, cronSchedule: String!) : Boolean!
   enableRestDataSourceTestMode(name: String!) : Boolean!
   enableTimedDataSourceTestMode(name: String!) : Boolean!
+  enableOnErrorDataSourceTestMode(name: String!) : Boolean!
   disableRestDataSourceTestMode(name: String!) : Boolean!
   disableTimedDataSourceTestMode(name: String!) : Boolean!
+  disableOnErrorDataSourceTestMode(name: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
   setDataSinkExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!

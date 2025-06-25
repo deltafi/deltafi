@@ -132,6 +132,36 @@ type RestDataSourcePlan implements DataSourcePlan {
   topic: String!
 }
 
+type ErrorSourceFilter {
+  flowType: FlowType
+  flowName: String
+  actionName: String
+  actionClass: String
+}
+
+input ErrorSourceFilterInput {
+  flowType: FlowType
+  flowName: String
+  actionName: String
+  actionClass: String
+}
+
+type OnErrorDataSourcePlan implements DataSourcePlan {
+  name: String!
+  type: String!
+  description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfig
+  sourcePlugin: PluginCoordinates!
+  topic: String!
+  errorMessageRegex: String
+  sourceFilters: [ErrorSourceFilter!]
+  metadataFilters: [KeyValue!]
+  annotationFilters: [KeyValue!]
+  includeSourceMetadataRegex: [String!]
+  includeSourceAnnotationsRegex: [String!]
+}
+
 input TimedDataSourcePlanInput {
   name: String!
   type: String!
@@ -150,6 +180,21 @@ input RestDataSourcePlanInput {
   metadata: Metadata
   annotationConfig: AnnotationConfigInput
   topic: String!
+}
+
+input OnErrorDataSourcePlanInput {
+  name: String!
+  type: String!
+  description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfigInput
+  topic: String!
+  errorMessageRegex: String
+  sourceFilters: [ErrorSourceFilterInput!]
+  metadataFilters: [KeyValueInput!]
+  annotationFilters: [KeyValueInput!]
+  includeSourceMetadataRegex: [String!]
+  includeSourceAnnotationsRegex: [String!]
 }
 
 type TransformFlowPlan {
@@ -204,6 +249,7 @@ type Flows {
   dataSinks: [DataSink]
   restDataSources: [RestDataSource]
   timedDataSources: [TimedDataSource]
+  onErrorDataSources: [OnErrorDataSource]
   transformFlows: [TransformFlow]
 }
 
@@ -211,6 +257,7 @@ type SystemFlows {
   dataSink: [DataSink]!
   restDataSource: [RestDataSource]!
   timedDataSource: [TimedDataSource]!
+  onErrorDataSource: [OnErrorDataSource]!
   transform: [TransformFlow]!
 }
 
@@ -218,6 +265,7 @@ type SystemFlowPlans {
   dataSinkPlans: [DataSinkPlan]
   restDataSources: [RestDataSourcePlan]
   timedDataSources: [TimedDataSourcePlan]
+  onErrorDataSources: [OnErrorDataSourcePlan]
   transformPlans: [TransformFlowPlan]
 }
 
@@ -225,6 +273,7 @@ input SystemFlowPlansInput {
   dataSinkPlans: [DataSinkPlanInput]
   restDataSources: [RestDataSourcePlanInput]
   timedDataSources: [TimedDataSourcePlanInput]
+  onErrorDataSources: [OnErrorDataSourcePlanInput]
   transformPlans: [TransformFlowPlanInput]
 }
 
@@ -290,6 +339,25 @@ type RestDataSource implements DataSource {
   topic: String!
 }
 
+type OnErrorDataSource implements DataSource {
+  name: String!
+  type: String!
+  description: String!
+  metadata: Metadata
+  annotationConfig: AnnotationConfig
+  sourcePlugin: PluginCoordinates!
+  maxErrors: Int!
+  flowStatus: FlowStatus!
+  topic: String!
+  errorMessageRegex: String
+  sourceFilters: [ErrorSourceFilter!]
+  metadataFilters: [KeyValue!]
+  annotationFilters: [KeyValue!]
+  includeSourceMetadataRegex: [String!]
+  includeSourceAnnotationsRegex: [String!]
+  variables: [Variable]!
+}
+
 type TransformFlow {
   name: String!
   type: String!
@@ -312,6 +380,7 @@ type FlowNames {
   transform: [String]!
   restDataSource: [String]!
   timedDataSource: [String]!
+  onErrorDataSource: [String]!
 }
 
 type DataSourceErrorState {

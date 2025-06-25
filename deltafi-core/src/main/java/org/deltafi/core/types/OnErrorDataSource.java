@@ -17,44 +17,58 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.common.types.AnnotationConfig;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.ErrorSourceFilter;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.KeyValue;
 import org.hibernate.annotations.Type;
 
-import java.util.Map;
+import java.util.List;
 
 @Entity
-@Data
+@DiscriminatorValue("ON_ERROR_DATA_SOURCE")
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = TimedDataSource.class, name = "TIMED_DATA_SOURCE"),
-        @JsonSubTypes.Type(value = RestDataSource.class, name = "REST_DATA_SOURCE"),
-        @JsonSubTypes.Type(value = OnErrorDataSource.class, name = "ON_ERROR_DATA_SOURCE")
-})
-public abstract class DataSource extends Flow {
-    private String topic;
-    private int maxErrors = -1;
-
+@Data
+public class OnErrorDataSource extends DataSource {
+    private String errorMessageRegex;
+    
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<String, String> metadata;
-
+    private List<ErrorSourceFilter> sourceFilters;
+    
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private AnnotationConfig annotationConfig;
+    private List<KeyValue> metadataFilters;
+    
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<KeyValue> annotationFilters;
+    
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<String> includeSourceMetadataRegex;
+    
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<String> includeSourceAnnotationsRegex;
 
-    protected DataSource() {
+    public OnErrorDataSource() {
+        super(FlowType.ON_ERROR_DATA_SOURCE);
     }
 
-    protected DataSource(FlowType type) {
-        super(null, type, null, null);
+    @Override
+    public ActionConfiguration findActionConfigByName(String actionName) {
+        return null;
+    }
+
+    @Override
+    public List<ActionConfiguration> allActionConfigurations() {
+        return List.of();
     }
 }

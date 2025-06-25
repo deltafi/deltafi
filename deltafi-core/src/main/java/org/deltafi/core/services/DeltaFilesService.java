@@ -28,7 +28,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.*;
 import org.deltafi.common.converters.KeyValueConverter;
@@ -109,6 +108,7 @@ public class DeltaFilesService {
     private final DeltaFileCacheService deltaFileCacheService;
     private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
+    private final OnErrorDataSourceService onErrorDataSourceService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final Environment environment;
@@ -637,7 +637,139 @@ public class DeltaFilesService {
         // false: we don't want action execution metrics, since they have already been recorded.
         generateMetrics(false, List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile, flow, action, actionConfiguration(flow.getName(), flow.getType(), action.getName()));
         logErrorAnalytics(deltaFile, flow, event);
+        dispatchOnErrorDataSources(deltaFile, flow, action, event);
     }
+
+    private void dispatchOnErrorDataSources(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event) {
+        try {
+            List<OnErrorDataSource> triggeredDataSources = onErrorDataSourceService.getTriggeredDataSources(
+                    flow.getName(),
+                    flow.getType(),
+                    action.getName(),
+                    action.getActionClass(),
+                    event.getError().getCause(),
+                    flow.getMetadata(),
+                    Annotation.toMap(deltaFile.getAnnotations())
+            );
+
+            for (OnErrorDataSource dataSource : triggeredDataSources) {
+                createOnErrorIngress(deltaFile, flow, action, event, dataSource);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to dispatch OnError data sources for DeltaFile {}: {}", deltaFile.getDid(), e.getMessage(), e);
+        }
+    }
+
+    private void createOnErrorIngress(DeltaFile sourceFile, DeltaFileFlow sourceFlow, Action sourceAction, ActionEvent event, OnErrorDataSource dataSource) {
+        try {
+            // Create metadata for the new DeltaFile
+            Map<String, String> ingressMetadata = new HashMap<>();
+            
+            // Add base metadata from the data source configuration
+            if (dataSource.getMetadata() != null) {
+                ingressMetadata.putAll(dataSource.getMetadata());
+            }
+            
+            // Add error context metadata
+            ingressMetadata.put("onError.sourceFlowName", sourceFlow.getName());
+            ingressMetadata.put("onError.sourceFlowType", sourceFlow.getType().name());
+            ingressMetadata.put("onError.sourceActionName", sourceAction.getName());
+            ingressMetadata.put("onError.sourceActionType", sourceAction.getType().name());
+            ingressMetadata.put("onError.errorCause", event.getError().getCause());
+            ingressMetadata.put("onError.errorContext", event.getError().getContext());
+            ingressMetadata.put("onError.sourceDid", sourceFile.getDid().toString());
+            ingressMetadata.put("onError.sourceName", sourceFile.getName());
+            ingressMetadata.put("onError.sourceDataSource", sourceFile.getDataSource());
+            ingressMetadata.put("onError.eventTimestamp", event.getStart().toString());
+            
+            // Include source metadata based on regex patterns
+            if (dataSource.getIncludeSourceMetadataRegex() != null && sourceFlow.getMetadata() != null) {
+                for (String regex : dataSource.getIncludeSourceMetadataRegex()) {
+                    sourceFlow.getMetadata().entrySet().stream()
+                            .filter(entry -> entry.getKey().matches(regex))
+                            .forEach(entry -> ingressMetadata.put("source." + entry.getKey(), entry.getValue()));
+                }
+            }
+
+            // Create annotations for the new DeltaFile
+            Map<String, String> ingressAnnotations = new HashMap<>();
+            
+            // Add base annotations from the data source configuration
+            if (dataSource.getAnnotationConfig() != null && dataSource.getAnnotationConfig().getAnnotations() != null) {
+                ingressAnnotations.putAll(dataSource.getAnnotationConfig().getAnnotations());
+            }
+            
+            // Include source annotations based on regex patterns
+            if (dataSource.getIncludeSourceAnnotationsRegex() != null && sourceFile.getAnnotations() != null) {
+                Map<String, String> sourceAnnotations = Annotation.toMap(sourceFile.getAnnotations());
+                for (String regex : dataSource.getIncludeSourceAnnotationsRegex()) {
+                    sourceAnnotations.entrySet().stream()
+                            .filter(entry -> entry.getKey().matches(regex))
+                            .forEach(entry -> ingressAnnotations.put("source." + entry.getKey(), entry.getValue()));
+                }
+            }
+
+            // Generate DID for the new DeltaFile
+            UUID did = uuidGenerator.generate();
+
+            // Create content list with tagged content from source
+            List<Content> allContent = new ArrayList<>();
+
+            // Add errored content with 'errored' tag
+            List<Content> erroredContent = sourceFlow.getImmutableContent();
+            if (erroredContent != null) {
+                for (Content content : erroredContent) {
+                    Content copiedContent = content.copy();
+                    copiedContent.getTags().add("errored");
+                    allContent.add(copiedContent);
+                }
+            }
+
+            // Add original content with 'original' tag
+            List<Content> originalContent = sourceFile.firstFlow().firstAction().getContent();
+            if (originalContent != null) {
+                for (Content content : originalContent) {
+                    Content copiedContent = content.copy();
+                    copiedContent.getTags().add("original");
+                    allContent.add(copiedContent);
+                }
+            }
+
+            // Create ingress event item with tagged content
+            IngressEventItem ingressEventItem = IngressEventItem.builder()
+                    .did(did)
+                    .deltaFileName("onError:" + sourceFile.getName())
+                    .flowName(dataSource.getName())
+                    .metadata(ingressMetadata)
+                    .content(allContent)
+                    .annotations(ingressAnnotations)
+                    .build();
+
+            DeltaFile deltaFile = buildIngressDeltaFile(dataSource, ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now(),
+                    INGRESS_ACTION, FlowType.ON_ERROR_DATA_SOURCE);
+
+            if (dataSource.isPaused()) {
+                deltaFile.firstFlow().setState(DeltaFileFlowState.PAUSED);
+                deltaFile.setPaused(true);
+            }
+
+            sourceFile.setChildDids(new ArrayList<>(sourceFile.getChildDids()));
+            sourceFile.getChildDids().add(did);
+            deltaFile.setParentDids(List.of(sourceFile.getDid()));
+            deltaFile.firstFlow().setDepth(sourceFlow.getDepth() + 1);
+
+            if (!dataSource.isPaused()) {
+                advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.firstFlow())), false);
+            }
+            
+            log.debug("Created OnError ingress for data source '{}' triggered by error in flow '{}' action '{}'",
+                    dataSource.getName(), sourceFlow.getName(), sourceAction.getName());
+                    
+        } catch (Exception e) {
+            log.error("Failed to create OnError ingress for data source '{}': {}", dataSource.getName(), e.getMessage(), e);
+        }
+    }
+
 
     private void logFilterAnalytics(DeltaFile deltaFile, DeltaFileFlow flow, ActionEvent event) {
         analyticEventService.recordFilter(deltaFile, flow.getName(), flow.getType(), flow.lastAction().getName(), flow.getErrorOrFilterCause(), flow.getModified());
@@ -819,6 +951,7 @@ public class DeltaFilesService {
         DeltaFileFlow childFlow = DeltaFileFlow.builder()
                 .flowDefinition(fromFlow.getFlowDefinition())
                 .number(0)
+                .depth(fromFlow.getDepth() + 1)
                 .state(DeltaFileFlowState.IN_FLIGHT)
                 .created(startTime)
                 .modified(now)
@@ -1743,6 +1876,7 @@ public class DeltaFilesService {
         return switch (deltaFileFlow.getType()) {
             case REST_DATA_SOURCE -> restDataSourceService.getFlowOrThrow(deltaFileFlow.getName());
             case TIMED_DATA_SOURCE -> timedDataSourceService.getFlowOrThrow(deltaFileFlow.getName());
+            case ON_ERROR_DATA_SOURCE ->  onErrorDataSourceService.getFlowOrThrow(deltaFileFlow.getName());
             case TRANSFORM -> transformFlowService.getFlowOrThrow(deltaFileFlow.getName());
             case DATA_SINK -> dataSinkService.getFlowOrThrow(deltaFileFlow.getName());
         };
@@ -1751,6 +1885,7 @@ public class DeltaFilesService {
     private ActionConfiguration actionConfiguration(String flow, FlowType flowType, String actionName) {
         return switch (flowType) {
             case TIMED_DATA_SOURCE -> timedDataSourceService.findRunningActionConfig(flow, actionName);
+            case ON_ERROR_DATA_SOURCE -> onErrorDataSourceService.findRunningActionConfig(flow, actionName);
             case TRANSFORM -> transformFlowService.findRunningActionConfig(flow, actionName);
             case DATA_SINK -> dataSinkService.findRunningActionConfig(flow, actionName);
             default -> null;

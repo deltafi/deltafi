@@ -23,6 +23,7 @@ import org.deltafi.core.generated.types.RateLimitInput;
 import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.services.*;
 import org.deltafi.core.validation.DataSinkPlanValidator;
+import org.deltafi.core.validation.OnErrorDataSourcePlanValidator;
 import org.deltafi.core.validation.RestDataSourcePlanValidator;
 import org.deltafi.core.validation.TimedDataSourcePlanValidator;
 import org.deltafi.core.validation.TransformFlowPlanValidator;
@@ -59,6 +60,9 @@ class FlowPlanDatafetcherTest {
     private TimedDataSourceService timedDataSourceService;
 
     @Mock
+    private OnErrorDataSourceService onErrorDataSourceService;
+
+    @Mock
     private CoreAuditLogger auditLogger;
 
     @Mock
@@ -77,6 +81,9 @@ class FlowPlanDatafetcherTest {
     private TimedDataSourcePlanValidator timedDataSourcePlanValidator;
 
     @Mock
+    private OnErrorDataSourcePlanValidator onErrorDataSourcePlanValidator;
+
+    @Mock
     private TransformFlowPlanValidator transformFlowPlanValidator;
 
     private FlowPlanDatafetcher flowPlanDatafetcher;
@@ -90,12 +97,14 @@ class FlowPlanDatafetcherTest {
                 annotationService,
                 pluginVariableService,
                 timedDataSourceService,
+                onErrorDataSourceService,
                 auditLogger,
                 flowCacheService,
                 pluginService,
                 dataSinkPlanValidator,
                 restDataSourcePlanValidator,
                 timedDataSourcePlanValidator,
+                onErrorDataSourcePlanValidator,
                 transformFlowPlanValidator
         );
         

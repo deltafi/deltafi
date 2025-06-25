@@ -43,6 +43,7 @@ public class StateMachine {
     private final Clock clock;
     private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
+    private final OnErrorDataSourceService onErrorDataSourceService;
     private final TransformFlowService transformFlowService;
     private final DataSinkService dataSinkService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -272,6 +273,7 @@ public class StateMachine {
         return switch (flow.getType()) {
             case REST_DATA_SOURCE -> restDataSourceService.getActiveFlowByName(flow.getName());
             case TIMED_DATA_SOURCE -> timedDataSourceService.getActiveFlowByName(flow.getName());
+            case ON_ERROR_DATA_SOURCE -> onErrorDataSourceService.getActiveFlowByName(flow.getName());
             case TRANSFORM -> transformFlowService.getActiveFlowByName(flow.getName());
             default -> throw new IllegalArgumentException("Unexpected value: " + flow.getType());
         };

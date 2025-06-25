@@ -91,6 +91,21 @@ public class FlowBuilders {
         return dataSource;
     }
 
+    public static OnErrorDataSource buildOnErrorDataSource(FlowState flowState) {
+        return buildOnErrorDataSource(ON_ERROR_DATA_SOURCE_NAME, flowState);
+    }
+
+    public static OnErrorDataSource buildOnErrorDataSource(String name, FlowState flowState) {
+        OnErrorDataSource dataSource = new OnErrorDataSource();
+        dataSource.setName(name);
+        dataSource.getFlowStatus().setState(flowState);
+        dataSource.setTestMode(false);
+        dataSource.setTopic(TRANSFORM_TOPIC);
+        dataSource.setSourcePlugin(PLUGIN_COORDINATES);
+        dataSource.setErrorMessageRegex(".*error.*");
+        return dataSource;
+    }
+
     public static PublishRules publishRules(String topic) {
         PublishRules publishRules = new PublishRules();
         publishRules.setRules(List.of(new Rule(topic)));
@@ -100,7 +115,7 @@ public class FlowBuilders {
     public static DataSink buildDataSink(FlowState flowState) {
         ActionConfiguration sampleEgress = new ActionConfiguration("SampleEgressAction", ActionType.EGRESS, "type");
 
-        return buildDataSink(EGRESS_FLOW_NAME, sampleEgress, flowState, false);
+        return buildDataSink(DATA_SINK_FLOW_NAME, sampleEgress, flowState, false);
     }
 
     public static DataSink buildDataSink(String name, ActionConfiguration egressAction, FlowState flowState, boolean testMode) {

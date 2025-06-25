@@ -65,7 +65,7 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
-                new GetFlowNamesProjectionRoot<>().transform().dataSink().timedDataSource().restDataSource(), FlowNames.class);
+                new GetFlowNamesProjectionRoot<>().transform().dataSink().timedDataSource().restDataSource().onErrorDataSource(), FlowNames.class);
     }
 
     public static DataSink validateDataSink(DgsQueryExecutor dgsQueryExecutor) {
@@ -74,7 +74,7 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<Flows>> typeRef = new TypeRef<>() {};
-        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot<>().sourcePlugin().artifactId().parent().transformFlows().name().parent().dataSinks().name().parent().restDataSources().name().type().parent().timedDataSources().name().type().root(), typeRef);
+        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot<>().sourcePlugin().artifactId().parent().transformFlows().name().parent().dataSinks().name().parent().restDataSources().name().type().parent().timedDataSources().name().type().root().onErrorDataSources().name().type().root(), typeRef);
     }
 
     public static SystemFlows getRunningFlows(DgsQueryExecutor dgsQueryExecutor) {
@@ -87,6 +87,7 @@ public class FlowPlanDatafetcherTestHelper {
                 new GetAllFlowPlansProjectionRoot<>()
                         .timedDataSources().type().name().description().topic().metadata().annotationConfig().annotations().metadataPatterns().discardPrefix().parent().timedIngressAction().name().type().actionType().parent().cronSchedule().parent()
                         .restDataSources().type().name().description().topic().metadata().annotationConfig().annotations().metadataPatterns().discardPrefix().parent().parent()
+                        .onErrorDataSources().type().name().description().topic().metadata().annotationConfig().annotations().metadataPatterns().discardPrefix().parent().parent()
                         .transformPlans().name().description().parent()
                         .dataSinkPlans().name().description().egressAction().name().type().actionType()
                         .root(), SystemFlowPlans.class);
@@ -94,11 +95,11 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
-                new GetAllFlowsProjectionRoot<>().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().dataSink().name().root(), SystemFlows.class);
+                new GetAllFlowsProjectionRoot<>().timedDataSource().type().name().parent().restDataSource().type().name().parent().onErrorDataSource().type().name().parent().transform().name().parent().dataSink().name().root(), SystemFlows.class);
     }
 
     public static SystemFlowPlans getAllSystemFlowPlans(DgsQueryExecutor dgsQueryExecutor) {
-        GetAllSystemFlowPlansProjectionRoot projection = new GetAllSystemFlowPlansProjectionRoot<>()
+        GetAllSystemFlowPlansProjectionRoot<?, ?> projection = new GetAllSystemFlowPlansProjectionRoot<>()
                 .dataSinkPlans()
                 .name()
                 .type()

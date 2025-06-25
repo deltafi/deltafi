@@ -97,4 +97,13 @@ public interface FlowRepo extends JpaRepository<Flow, UUID> {
             "AND f.type = :#{#type.name}",
             nativeQuery = true)
     List<String> findRunningBySourcePlugin(String groupId, String artifactId, String version, FlowType type);
+
+    /**
+     * Update the maximum errors for a flow and return the updated flow.
+     * This is a default method that individual repository interfaces can override
+     * with more specific return types.
+     */
+    default Flow updateMaxErrors(String flowName, int maxErrors) {
+        throw new UnsupportedOperationException("updateMaxErrors must be implemented by specific repository");
+    }
 }

@@ -9,9 +9,10 @@ processing pipeline:
 
 ## Data Sources
 
-Data Sources are the entry points for data into the DeltaFi system. There are two types of Data Sources:
+Data Sources are the entry points for data into the DeltaFi system. There are three types of Data Sources:
 1. [REST Data Sources](#rest-data-sources)
-1. [Timed Data Sources](#timed-data-sources) 
+1. [Timed Data Sources](#timed-data-sources)
+1. [On-Error Data Sources](#onerror-data-sources) 
 
 ### REST Data Sources
 
@@ -43,6 +44,175 @@ Timed Data Sources periodically generate or fetch data based on a defined schedu
   "cronSchedule": "0 0 * * * ?"
 }
 ```
+
+### On-Error Data Sources
+
+On-Error Data Sources automatically trigger when errors occur in other flows, creating new DeltaFiles from error events. They provide a mechanism for error handling and monitoring failed data. OnError Data Sources can be configured with various filters to control which errors they respond to:
+
+```json
+{
+  "name": "example-error-handler",
+  "type": "ON_ERROR_DATA_SOURCE",
+  "description": "Handle critical errors from processing flows",
+  "topic": "error-topic",
+  "errorMessageRegex": ".*critical.*",
+  "sourceFilters": [
+    {
+      "flowType": "TRANSFORM",
+      "flowName": "ImportantTransform",
+      "actionName": "SpecificAction"
+    },
+    {
+      "flowType": "DATA_SINK",
+      "flowName": "CriticalSink"
+    },
+    {
+      "actionClass": "com.example.ValidationAction"
+    }
+  ],
+  "metadataFilters": [
+    {"key": "environment", "value": "production"}
+  ],
+  "annotationFilters": [
+    {"key": "priority", "value": "high"}
+  ],
+  "includeSourceMetadataRegex": ["customer.*", "order.*"],
+  "includeSourceAnnotationsRegex": ["tracking.*"]
+}
+```
+
+#### Error Event Content and Metadata
+
+When an OnError Data Source is triggered, it creates a new DeltaFile containing both content and metadata with detailed information about the error.
+
+**Content**: The DeltaFile contains content from both the errored flow and the original source, differentiated by tags:
+
+- **Original Content**: Content from the original ingress tagged with "original"
+- **Errored Content**: Content from the flow that encountered the error tagged with "errored"
+
+This provides access to both the original data that was being processed and the state of the data when the error occurred.
+
+**Metadata**: Automatically attached metadata fields for easy filtering and processing:
+
+| Metadata Key | Description | Example Value |
+|--------------|-------------|---------------|
+| `onError.sourceFlowName` | Name of the flow where the error occurred | `"order-processing"` |
+| `onError.sourceFlowType` | Type of flow where the error occurred | `"TRANSFORM"` |
+| `onError.sourceActionName` | Name of the action that generated the error | `"ValidateOrderAction"` |
+| `onError.sourceActionType` | Type of the action that generated the error | `"org.example.ValidateOrderAction"` |
+| `onError.errorCause` | The error message/cause | `"Validation failed: missing required field"` |
+| `onError.errorContext` | Additional context about the error | `"Field validation in order processing pipeline"` |
+| `onError.sourceDid` | DID of the original DeltaFile that errored | `"550e8400-e29b-41d4-a716-446655440000"` |
+| `onError.sourceName` | Name of the original DeltaFile that errored | `"original-file.json"` |
+| `onError.sourceDataSource` | Data source of the original DeltaFile | `"rest-api-ingress"` |
+| `onError.eventTimestamp` | When the error occurred | `"2025-06-09T10:30:45.123Z"` |
+
+Additionally, any metadata and annotations from the source DeltaFile that match the `includeSourceMetadataRegex` and `includeSourceAnnotationsRegex` patterns will be included in the new DeltaFile.
+
+#### OnError Data Source Fields
+
+| Field | Description | Required | Example |
+|-------|-------------|----------|---------|
+| `errorMessageRegex` | Regular expression to match against error messages. Only errors with messages matching this pattern will trigger the data source. If null, all error messages match. | No | `".*timeout.*"` |
+| `sourceFilters` | List of ErrorSourceFilter objects that define which error sources can trigger this data source. All fields within a filter are optional, and filters are OR'd together. If the list is null or empty, errors from any source can trigger it. | No | See ErrorSourceFilter structure below |
+| `metadataFilters` | Key-value pairs that must match the source DeltaFile's metadata for the error to trigger this data source. All filters must match. | No | `[{"key": "customer_type", "value": "premium"}]` |
+| `annotationFilters` | Key-value pairs that must match the source DeltaFile's annotations for the error to trigger this data source. All filters must match. | No | `[{"key": "region", "value": "us-east"}]` |
+| `includeSourceMetadataRegex` | List of regex patterns specifying which metadata keys from the source DeltaFile to include in the new error DeltaFile. If null or empty, no source metadata is included. | No | `["customer.*", "order_id"]` |
+| `includeSourceAnnotationsRegex` | List of regex patterns specifying which annotation keys from the source DeltaFile to include in the new error DeltaFile. If null or empty, no source annotations are included. | No | `["tracking.*", "audit_trail"]` |
+
+#### ErrorSourceFilter Structure
+
+The `sourceFilters` field contains a list of ErrorSourceFilter objects. Each filter can specify any combination of the following optional fields:
+
+| Field | Description | Required | Example |
+|-------|-------------|----------|---------|
+| `flowType` | The type of flow that must match for the error to trigger this data source. | No | `"TRANSFORM"`, `"DATA_SINK"`, `"REST_DATA_SOURCE"`, `"TIMED_DATA_SOURCE"` |
+| `flowName` | The name of the specific flow that must match for the error to trigger this data source. | No | `"customer-processing"`, `"order-validation"` |
+| `actionName` | The name of the specific action that must match for the error to trigger this data source. Note that action names are not unique across flows. | No | `"ValidateAction"`, `"TransformAction"` |
+| `actionClass` | The class name of the action that must match for the error to trigger this data source. This provides a way to target all actions of a specific type regardless of their name or flow. | No | `"com.example.ValidationAction"`, `"org.deltafi.core.action.RestPostEgressAction"` |
+
+**Filter Matching Logic:**
+- Within a single ErrorSourceFilter, all specified fields must match (AND logic)
+- Multiple ErrorSourceFilter objects are OR'd together
+- If no sourceFilters are specified, errors from any source can trigger the data source
+
+#### Use Cases
+
+On-Error Data Sources are useful for:
+
+- **Error Monitoring**: Create DeltaFiles containing error details for external monitoring systems
+- **Error Analytics**: Aggregate error information for analysis and reporting
+- **Audit Trails**: Maintain records of processing failures with context from the original data
+
+#### Example Configurations
+
+**Catch All Critical Errors:**
+```json
+{
+  "name": "critical-error-monitor",
+  "type": "ON_ERROR_DATA_SOURCE",
+  "description": "Monitor all critical errors across the system",
+  "topic": "critical-errors",
+  "errorMessageRegex": ".*(critical|fatal|severe).*"
+}
+```
+
+**Production Environment Errors:**
+```json
+{
+  "name": "production-error-handler",
+  "type": "ON_ERROR_DATA_SOURCE", 
+  "description": "Handle errors in production environment",
+  "topic": "prod-errors",
+  "metadataFilters": [
+    {"key": "environment", "value": "production"}
+  ],
+  "includeSourceMetadataRegex": [".*"]
+}
+```
+
+**Specific Flow Error Recovery:**
+```json
+{
+  "name": "order-processing-recovery",
+  "type": "ON_ERROR_DATA_SOURCE",
+  "description": "Recover failed order processing attempts", 
+  "topic": "order-recovery",
+  "sourceFilters": [
+    {
+      "flowType": "TRANSFORM",
+      "flowName": "order-validation"
+    },
+    {
+      "flowType": "TRANSFORM",
+      "flowName": "payment-processing"
+    }
+  ],
+  "includeSourceMetadataRegex": ["order.*", "customer.*"],
+  "includeSourceAnnotationsRegex": [".*"]
+}
+```
+
+**Monitor Specific Action Types:**
+```json
+{
+  "name": "validation-error-monitor",
+  "type": "ON_ERROR_DATA_SOURCE",
+  "description": "Monitor all validation action errors across all flows",
+  "topic": "validation-errors",
+  "sourceFilters": [
+    {
+      "actionClass": "com.example.ValidationAction"
+    },
+    {
+      "actionClass": "org.company.validator.DataValidationAction"
+    }
+  ],
+  "includeSourceMetadataRegex": [".*"]
+}
+```
+
+**Note**: On-Error Data Sources only trigger for action processing errors. Configuration or wiring errors (such as missing subscribers to a topic or non-existent flows) do not generate OnError events.
 
 ## Transforms
 

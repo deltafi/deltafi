@@ -56,12 +56,14 @@ public class FlowPlanDatafetcher {
     private final AnnotationService annotationService;
     private final PluginVariableService pluginVariableService;
     private final TimedDataSourceService timedDataSourceService;
+    private final OnErrorDataSourceService onErrorDataSourceService;
     private final CoreAuditLogger auditLogger;
     private final FlowCacheService flowCacheService;
     private final PluginService pluginService;
     private final DataSinkPlanValidator dataSinkPlanValidator;
     private final RestDataSourcePlanValidator restDataSourcePlanValidator;
     private final TimedDataSourcePlanValidator timedDataSourcePlanValidator;
+    private final OnErrorDataSourcePlanValidator onErrorDataSourcePlanValidator;
     private final TransformFlowPlanValidator transformFlowPlanValidator;
 
     @DgsMutation
@@ -83,6 +85,17 @@ public class FlowPlanDatafetcher {
             return timedDataSourceService.setMaxErrors(name, maxErrors);
         } else {
             throw new DgsEntityNotFoundException("No TimedDataSource exists with the name: " + name);
+        }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean setOnErrorDataSourceMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
+        if (onErrorDataSourceService.hasFlow(name)) {
+            auditLogger.audit("set max errors to {} for data source {}", maxErrors, name);
+            return onErrorDataSourceService.setMaxErrors(name, maxErrors);
+        } else {
+            throw new DgsEntityNotFoundException("No OnErrorDataSource exists with the name: " + name);
         }
     }
 
@@ -112,7 +125,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowUpdate
     public boolean setDataSinkExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
         auditLogger.audit("set expected annotations for dataSource {} to {}", flowName, expectedAnnotations);
-        return annotationService.setExpectedAnnotations(flowName, expectedAnnotations);
+        return annotationService.setExpectedAnnotations(flowName, new HashSet<>(expectedAnnotations));
     }
 
     @DgsMutation
@@ -171,6 +184,7 @@ public class FlowPlanDatafetcher {
         FlowService<?, ?, ?, ?> flowService = switch(flowType) {
             case FlowType.REST_DATA_SOURCE -> restDataSourceService;
             case FlowType.TIMED_DATA_SOURCE -> timedDataSourceService;
+            case FlowType.ON_ERROR_DATA_SOURCE -> onErrorDataSourceService;
             case FlowType.TRANSFORM -> transformFlowService;
             case FlowType.DATA_SINK -> dataSinkService;
         };
@@ -201,10 +215,24 @@ public class FlowPlanDatafetcher {
     }
 
     @DgsMutation
+    @NeedsPermission.FlowPlanCreate
+    public DataSource saveOnErrorDataSourcePlan(@InputArgument OnErrorDataSourcePlanInput dataSourcePlan) {
+        auditLogger.audit("saved onError source plan {}", dataSourcePlan.getName());
+        return (DataSource) saveFlowPlanToSystemPlugin(dataSourcePlan, OnErrorDataSourcePlan.class, onErrorDataSourceService, onErrorDataSourcePlanValidator);
+    }
+
+    @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeRestDataSourcePlan(@InputArgument String name) {
         auditLogger.audit("removed restDataSource plan {}", name);
         return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.REST_DATA_SOURCE);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowPlanDelete
+    public boolean removeOnErrorDataSourcePlan(@InputArgument String name) {
+        auditLogger.audit("removed onErrorDataSource plan {}", name);
+        return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.ON_ERROR_DATA_SOURCE);
     }
 
     @DgsMutation
@@ -240,6 +268,20 @@ public class FlowPlanDatafetcher {
     public boolean disableTimedDataSourceTestMode(@InputArgument String name) {
         auditLogger.auditAndEvent("disabled test mode for timedDataSource {}", name);
         return timedDataSourceService.disableTestMode(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean enableOnErrorDataSourceTestMode(@InputArgument String name) {
+        auditLogger.auditAndEvent("enabled test mode for onErrorDataSource {}", name);
+        return onErrorDataSourceService.enableTestMode(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean disableOnErrorDataSourceTestMode(@InputArgument String name) {
+        auditLogger.auditAndEvent("disabled test mode for onErrorDataSource {}", name);
+        return onErrorDataSourceService.disableTestMode(name);
     }
 
     @DgsMutation
@@ -332,6 +374,12 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
+    public OnErrorDataSource getOnErrorDataSource(@InputArgument String name) {
+        return onErrorDataSourceService.getFlowOrThrow(name);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
     public TransformFlow getTransformFlow(@InputArgument String flowName) {
         return transformFlowService.getFlowOrThrow(flowName);
     }
@@ -352,6 +400,12 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowValidate
     public TimedDataSource validateTimedDataSource(@InputArgument String name) {
         return timedDataSourceService.validateAndSaveFlow(name);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowValidate
+    public OnErrorDataSource validateOnErrorDataSource(@InputArgument String name) {
+        return onErrorDataSourceService.validateAndSaveFlow(name);
     }
 
     @DgsQuery
@@ -380,6 +434,12 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
+    public OnErrorDataSourcePlan getOnErrorDataSourcePlan(@InputArgument String planName) {
+        return (OnErrorDataSourcePlan) pluginService.getPlanByName(planName, FlowType.ON_ERROR_DATA_SOURCE);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
     public TransformFlowPlan getTransformFlowPlan(@InputArgument String planName) {
         return (TransformFlowPlan) pluginService.getPlanByName(planName, FlowType.TRANSFORM);
     }
@@ -402,7 +462,8 @@ public class FlowPlanDatafetcher {
                 .dataSink(dataSinkService.getRunningFlows())
                 .transform(transformFlowService.getRunningFlows())
                 .restDataSource(restDataSourceService.getRunningFlows())
-                .timedDataSource(timedDataSourceService.getRunningFlows()).build();
+                .timedDataSource(timedDataSourceService.getRunningFlows())
+                .onErrorDataSource(onErrorDataSourceService.getRunningFlows()).build();
     }
 
     @DgsQuery
@@ -412,7 +473,8 @@ public class FlowPlanDatafetcher {
                 .dataSink(dataSinkService.getFlowNamesByState(state))
                 .transform(transformFlowService.getFlowNamesByState(state))
                 .restDataSource(restDataSourceService.getFlowNamesByState(state))
-                .timedDataSource(timedDataSourceService.getFlowNamesByState(state)).build();
+                .timedDataSource(timedDataSourceService.getFlowNamesByState(state))
+                .onErrorDataSource(onErrorDataSourceService.getFlowNamesByState(state)).build();
     }
 
     @DgsQuery
@@ -423,7 +485,8 @@ public class FlowPlanDatafetcher {
                 .dataSink(dataSinkService.getAll())
                 .transform(transformFlowService.getAll())
                 .restDataSource(restDataSourceService.getAll())
-                .timedDataSource(timedDataSourceService.getAll()).build();
+                .timedDataSource(timedDataSourceService.getAll())
+                .onErrorDataSource(onErrorDataSourceService.getAll()).build();
     }
 
     @DgsQuery
@@ -435,7 +498,7 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public List<Topic> getTopics(List<String> names) {
+    public List<Topic> getTopics(@InputArgument List<String> names) {
         flowCacheService.refreshCache();
         List<Topic> topics = flowCacheService.getTopics().stream().filter(t -> names.contains(t.getName())).toList();
         if (names.size() == topics.size()) {
@@ -448,7 +511,7 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public Topic getTopic(String name) {
+    public Topic getTopic(@InputArgument String name) {
         flowCacheService.refreshCache();
         Optional<Topic> topic = flowCacheService.getTopics().stream().filter(t -> name.equals(t.getName())).findFirst();
         return topic.orElseThrow(() -> new DgsEntityNotFoundException("No Topic exists with the name " + name));
@@ -462,6 +525,7 @@ public class FlowPlanDatafetcher {
                 .transformPlans(getFlowPlansByType(FlowType.TRANSFORM, TransformFlowPlan.class))
                 .restDataSources(getFlowPlansByType(FlowType.REST_DATA_SOURCE, RestDataSourcePlan.class))
                 .timedDataSources(getFlowPlansByType(FlowType.TIMED_DATA_SOURCE, TimedDataSourcePlan.class))
+                .onErrorDataSources(getFlowPlansByType(FlowType.ON_ERROR_DATA_SOURCE, OnErrorDataSourcePlan.class))
                 .build();
     }
 

@@ -19,8 +19,6 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.TimedDataSource;
 import org.springframework.transaction.annotation.Transactional;
-import org.deltafi.common.types.IngressStatus;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 

@@ -187,7 +187,7 @@ public class FullFlowExemplarService {
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setState(DeltaFileFlowState.COMPLETE);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(DATA_SINK_FLOW_NAME, FlowType.DATA_SINK), flow, now());
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
@@ -226,7 +226,7 @@ public class FullFlowExemplarService {
         DeltaFile deltaFile = withCompleteTransformFlow(did);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now());
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(DATA_SINK_FLOW_NAME, FlowType.DATA_SINK), flow, now());
         dataSink.setId(UUID_2);
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         dataSink.queueAction(SAMPLE_EGRESS_ACTION, null, ActionType.EGRESS, false, now());
@@ -286,7 +286,7 @@ public class FullFlowExemplarService {
         flow.setTestMode(true);
         flow.setTestModeReason(TRANSFORM_FLOW_NAME);
 
-        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(EGRESS_FLOW_NAME, FlowType.DATA_SINK), flow, now);
+        DeltaFileFlow dataSink = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(DATA_SINK_FLOW_NAME, FlowType.DATA_SINK), flow, now);
         dataSink.getInput().setTopics(Set.of(EGRESS_TOPIC));
         Action action = dataSink.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, null, ActionType.EGRESS, ActionState.FILTERED, now);
         action.setFilteredCause("Filtered by test mode");

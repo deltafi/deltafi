@@ -65,6 +65,7 @@ class DeltaFilesServiceTest {
     private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
     private final RestDataSourceService restDataSourceService;
+    private final OnErrorDataSourceService onErrorDataSourceService;
     private final DataSinkService dataSinkService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
@@ -104,13 +105,14 @@ class DeltaFilesServiceTest {
                           @Mock ResumePolicyService resumePolicyService, @Mock MetricService metricService,
                           @Mock AnalyticEventService analyticEventService,
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock RestDataSourceService restDataSourceService,
-                          @Mock TimedDataSourceService timedDataSourceService,
+                          @Mock TimedDataSourceService timedDataSourceService, @Mock OnErrorDataSourceService onErrorDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
                           @Mock Environment environment, @Mock IdentityService identityService,
                           @Mock ParameterResolver parameterResolver, @Mock LocalContentStorageService localContentStorageService) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.dataSinkService = dataSinkService;
+        this.onErrorDataSourceService = onErrorDataSourceService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
         this.deltaFileFlowRepo = deltaFileFlowRepo;
@@ -129,7 +131,7 @@ class DeltaFilesServiceTest {
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
-                queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
+                onErrorDataSourceService, queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
                 flowDefinitionService, parameterResolver, localContentStorageService);
     }
 
@@ -1075,5 +1077,23 @@ class DeltaFilesServiceTest {
 
     private boolean didMatches(QueuedAnnotation queuedAnnotation, UUID expectedDid) {
         return queuedAnnotation.getDid().equals(expectedDid);
+    }
+
+    @Test
+    void testOnErrorDataSourceTriggering() {
+        List<OnErrorDataSource> mockDataSources = List.of(new OnErrorDataSource());
+        when(onErrorDataSourceService.getTriggeredDataSources(
+                eq("testFlow"), eq(FlowType.TRANSFORM), eq("TestAction"), eq("com.example.TestAction"),
+                eq("Test error message"), any(), any()))
+                .thenReturn(mockDataSources);
+
+        List<OnErrorDataSource> result = onErrorDataSourceService.getTriggeredDataSources(
+                "testFlow", FlowType.TRANSFORM, "TestAction", "com.example.TestAction", "Test error message", 
+                Map.of(), Map.of());
+
+        assertThat(result).hasSize(1);
+        verify(onErrorDataSourceService).getTriggeredDataSources(
+                "testFlow", FlowType.TRANSFORM, "TestAction", "com.example.TestAction", "Test error message", 
+                Map.of(), Map.of());
     }
 }

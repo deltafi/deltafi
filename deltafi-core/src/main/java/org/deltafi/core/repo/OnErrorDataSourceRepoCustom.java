@@ -15,23 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.repo;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import org.deltafi.core.types.OnErrorDataSource;
 
-@Getter
-@RequiredArgsConstructor
-public enum FlowType {
-    REST_DATA_SOURCE("rest data source"),
-    TIMED_DATA_SOURCE("timed data source"),
-    ON_ERROR_DATA_SOURCE("on error data source"),
-    TRANSFORM("transform"),
-    DATA_SINK("data sink");
+import java.util.List;
 
-    private final String displayName;
-
-    public boolean isDataSource() {
-        return this == REST_DATA_SOURCE || this == TIMED_DATA_SOURCE || this == ON_ERROR_DATA_SOURCE;
-    }
+public interface OnErrorDataSourceRepoCustom {
+    void batchInsert(List<OnErrorDataSource> onErrorDataSources);
 }

@@ -164,9 +164,6 @@ class DeltaFiCoreApplicationTests {
 	public static final String SYSTEM_NAME = "systemName";
 	public static final TestClock TEST_CLOCK = new TestClock();
 
-    @Autowired
-    private ScheduledJoinService scheduledJoinService;
-
 	private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
 			.registerModule(new JavaTimeModule());
 
@@ -181,6 +178,12 @@ class DeltaFiCoreApplicationTests {
 		registry.add("schedule.propertySync", () -> false);
 		registry.add("cold.queue.refresh.duration", () -> "PT1M");
 	}
+
+	@Autowired
+	private ScheduledJoinService scheduledJoinService;
+
+	@Autowired
+	private DeltaFileCacheService deltaFileCacheService;
 
 	@Autowired
 	DgsQueryExecutor dgsQueryExecutor;
@@ -229,6 +232,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	TimedDataSourceRepo timedDataSourceRepo;
+
+	@Autowired
+	OnErrorDataSourceRepo onErrorDataSourceRepo;
 
 	@Autowired
 	DataSinkRepo dataSinkRepo;
@@ -407,7 +413,7 @@ class DeltaFiCoreApplicationTests {
 
 		Mockito.clearInvocations(coreEventQueue);
 
-		// Set the security context for the tests that DgsQueryExecutor
+		// Set the security context for the tests that use DgsQueryExecutor
 		SecurityContextHolder.clearContext();
 		SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
 		Authentication authentication = new PreAuthenticatedAuthenticationToken("name", "pass", List.of(new SimpleGrantedAuthority(DeltaFiConstants.ADMIN_PERMISSION)));
@@ -431,6 +437,7 @@ class DeltaFiCoreApplicationTests {
 		loadEgressConfig();
 		loadRestDataSources();
 		loadTimedDataSources();
+		loadOnErrorDataSources();
 		refreshFlowCaches();
 	}
 
@@ -451,7 +458,7 @@ class DeltaFiCoreApplicationTests {
 	static final DataSink SAMPLE_EGRESS_FLOW;
 	static final DataSink ERROR_EGRESS_FLOW;
 	static {
-		DataSink sampleDataSink = buildRunningDataSink(EGRESS_FLOW_NAME, EGRESS, false);
+		DataSink sampleDataSink = buildRunningDataSink(DATA_SINK_FLOW_NAME, EGRESS, false);
 		sampleDataSink.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
 		SAMPLE_EGRESS_FLOW = sampleDataSink;
 
@@ -475,6 +482,12 @@ class DeltaFiCoreApplicationTests {
 
 	void loadTimedDataSources() {
 		timedDataSourceRepo.batchInsert(List.of(TIMED_DATA_SOURCE, TIMED_DATA_SOURCE_WITH_ANNOT, TIMED_DATA_SOURCE_ERROR));
+	}
+
+	static final OnErrorDataSource ON_ERROR_DATA_SOURCE = buildOnErrorDataSource(FlowState.RUNNING);
+
+	void loadOnErrorDataSources() {
+		onErrorDataSourceRepo.batchInsert(List.of(ON_ERROR_DATA_SOURCE));
 	}
 
 	@Test
@@ -730,7 +743,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile postTransformColdQueued = fullFlowExemplarService.postTransformDeltaFile(did);
 		postTransformColdQueued.lastFlow().lastAction().setState(ActionState.COLD_QUEUED);
 		verifyActionEventResults(postTransformColdQueued,
-				ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
+				ActionContext.builder().flowName(DATA_SINK_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", REST_DATA_SOURCE_NAME, TRANSFORM_FLOW_NAME, null, "type");
 
@@ -749,7 +762,7 @@ class DeltaFiCoreApplicationTests {
 
 		queueManagementService.coldToWarm();
 
-		verifyActionEventResults(fullFlowExemplarService.postTransformDeltaFile(did), ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
+		verifyActionEventResults(fullFlowExemplarService.postTransformDeltaFile(did), ActionContext.builder().flowName(DATA_SINK_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 	}
 
 	@Test
@@ -772,7 +785,7 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFilesService.handleActionEvent(actionEvent("transformUnicode", did));
 
-		verifyActionEventResults(fullFlowExemplarService.postTransformDeltaFileWithUnicodeAnnotation(did), ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
+		verifyActionEventResults(fullFlowExemplarService.postTransformDeltaFileWithUnicodeAnnotation(did), ActionContext.builder().flowName(DATA_SINK_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", REST_DATA_SOURCE_NAME, TRANSFORM_FLOW_NAME, null, "type");
 	}
 
@@ -839,7 +852,7 @@ class DeltaFiCoreApplicationTests {
 		}
 		assertEqualsIgnoringDates(expected, actual);
 
-		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "SampleEgressAction", REST_DATA_SOURCE_NAME, EGRESS_FLOW_NAME);
+		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "SampleEgressAction", REST_DATA_SOURCE_NAME, DATA_SINK_FLOW_NAME);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
 
 		extendTagsForAction(tags, "type");
@@ -864,6 +877,106 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	@SneakyThrows
+	void testOnErrorDataSourceTriggering() {
+		clearForFlowTests();
+
+		// Set up a specific OnError data source that should catch errors from the egress action
+		OnErrorDataSource onErrorDataSource = new OnErrorDataSource();
+		onErrorDataSource.setName("test-error-catcher");
+		onErrorDataSource.getFlowStatus().setState(FlowState.RUNNING);
+		onErrorDataSource.setTestMode(false);
+		onErrorDataSource.setTopic("error-events");
+		onErrorDataSource.setSourcePlugin(PLUGIN_COORDINATES);
+		onErrorDataSource.setErrorMessageRegex(".*");
+		onErrorDataSource.setSourceFilters(List.of(
+			new org.deltafi.common.types.ErrorSourceFilter(null, null, "SampleEgressAction", null),
+			new org.deltafi.common.types.ErrorSourceFilter(org.deltafi.common.types.FlowType.DATA_SINK, DATA_SINK_FLOW_NAME, null, null)
+		));
+		onErrorDataSourceRepo.save(onErrorDataSource);
+		
+		// Set up the normal flow configuration needed for the error test
+		loadConfig();
+		refreshFlowCaches();
+		
+		// Create a DeltaFile and process it normally until it hits the egress stage
+		UUID did = UUID.randomUUID();
+		DeltaFile original = fullFlowExemplarService.postTransformDeltaFile(did);
+		deltaFileRepo.save(original);
+		
+		// Count DeltaFiles before error occurs
+		long initialCount = deltaFileRepo.count();
+		
+		// Trigger an error in the egress action - this should trigger our OnError data source
+		deltaFilesService.handleActionEvent(actionEvent("error", did, original.lastFlow().getId()));
+		deltaFileCacheService.flush();
+		
+		// Verify the original DeltaFile is in error state
+		DeltaFile erroredFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileFlowState.ERROR, erroredFile.lastFlow().getState());
+		assertNotNull(erroredFile.lastFlow().lastAction().getErrorCause());
+		assertEquals("Authority XYZ not recognized", erroredFile.lastFlow().lastAction().getErrorCause());
+		
+		// Verify that a new DeltaFile was created by the OnError data source
+		long finalCount = deltaFileRepo.count();
+		assertTrue(finalCount > initialCount, "OnError data source should have created a new DeltaFile, but count went from " + initialCount + " to " + finalCount);
+		
+		DeltaFile updatedOriginal = deltaFileRepo.findById(original.getDid()).orElse(null);
+		assertNotNull(updatedOriginal);
+
+		// Find the newly created error event DeltaFile by checking for child DID
+		assertNotNull(updatedOriginal.getChildDids());
+		assertFalse(updatedOriginal.getChildDids().isEmpty());
+		UUID errorEventDid = updatedOriginal.getChildDids().getFirst();
+		DeltaFile errorEventFile = deltaFileRepo.findById(errorEventDid).orElse(null);
+
+		assertNotNull(errorEventFile);
+		assertEquals(List.of(original.getDid()), errorEventFile.getParentDids());
+		assertNotNull(original.getChildDids());
+		assertEquals(List.of(errorEventFile.getDid()), updatedOriginal.getChildDids());
+		
+		assertNotNull(errorEventFile, "Should have created an error event DeltaFile with DID: " + errorEventDid);
+		assertEquals(errorEventDid, errorEventFile.getDid(), "DeltaFile DID should match the DID used in ContentStorageService.save");
+		assertEquals("test-error-catcher", errorEventFile.getDataSource());
+		assertEquals("test-error-catcher", errorEventFile.lastFlow().getName());
+		assertEquals(List.of("error-events"), errorEventFile.lastFlow().getPublishTopics());
+
+		// Verify metadata contains error context
+		Map<String, String> metadata = errorEventFile.lastFlow().getMetadata();
+		assertNotNull(metadata);
+		assertEquals(DATA_SINK_FLOW_NAME, metadata.get("onError.sourceFlowName"));
+		assertEquals("DATA_SINK", metadata.get("onError.sourceFlowType"));
+		assertEquals("SampleEgressAction", metadata.get("onError.sourceActionName"));
+		assertEquals("EGRESS", metadata.get("onError.sourceActionType"));
+		assertEquals("Authority XYZ not recognized", metadata.get("onError.errorCause"));
+		assertEquals(did.toString(), metadata.get("onError.sourceDid"));
+		assertEquals(original.getName(), metadata.get("onError.sourceName"));
+		assertEquals(original.getDataSource(), metadata.get("onError.sourceDataSource"));
+		assertNotNull(metadata.get("onError.eventTimestamp"));
+
+		// Verify the error event DeltaFile has the correct depth (original depth + 1)
+		assertEquals(original.lastFlow().getDepth() + 1, errorEventFile.lastFlow().getDepth(),
+			"Error event DeltaFile should have depth = original depth + 1");
+
+		// Verify content contains both original and errored content with proper tags
+		List<Content> errorEventContent = errorEventFile.lastFlow().firstAction().getContent();
+		assertNotNull(errorEventContent);
+		assertFalse(errorEventContent.isEmpty());
+
+		// Check for original content (tagged with "original")
+		List<Content> originalTaggedContent = errorEventContent.stream()
+			.filter(content -> content.getTags().contains("original"))
+			.toList();
+		assertFalse(originalTaggedContent.isEmpty(), "Should have content tagged with 'original'");
+
+		// Check for errored content (tagged with "errored")
+		List<Content> erroredTaggedContent = errorEventContent.stream()
+			.filter(content -> content.getTags().contains("errored"))
+			.toList();
+		assertFalse(erroredTaggedContent.isEmpty(), "Should have content tagged with 'errored'");
+	}
+
+	@Test
 	void testResume() throws IOException {
 		UUID did = UUID.randomUUID();
 		deltaFileRepo.save(fullFlowExemplarService.postErrorDeltaFile(did));
@@ -879,7 +992,7 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(retryResults.get(1).getSuccess());
 
 		verifyActionEventResults(fullFlowExemplarService.postResumeDeltaFile(did),
-				ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
+				ActionContext.builder().flowName(DATA_SINK_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 
 		Mockito.verifyNoInteractions(metricService);
 	}
@@ -1194,7 +1307,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterEgress() throws IOException {
 		UUID did = UUID.randomUUID();
-		verifyFiltered(fullFlowExemplarService.postTransformDeltaFile(did), EGRESS_FLOW_NAME, UUID_2,"SampleEgressAction");
+		verifyFiltered(fullFlowExemplarService.postTransformDeltaFile(did), DATA_SINK_FLOW_NAME, UUID_2,"SampleEgressAction");
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -1324,6 +1437,10 @@ class DeltaFiCoreApplicationTests {
 		timedDataSource.setName("timedDataSource");
 		timedDataSource.setSourcePlugin(pluginCoordinates);
 
+		OnErrorDataSource onErrorDataSource = new OnErrorDataSource();
+		onErrorDataSource.setName("onErrorDataSource");
+		onErrorDataSource.setSourcePlugin(pluginCoordinates);
+
 		PluginEntity plugin = new PluginEntity();
 		plugin.setPluginCoordinates(pluginCoordinates);
 		pluginRepository.save(plugin);
@@ -1332,6 +1449,7 @@ class DeltaFiCoreApplicationTests {
 		dataSinkRepo.save(dataSink);
 		restDataSourceRepo.save(restDataSource);
 		timedDataSourceRepo.save(timedDataSource);
+		onErrorDataSourceRepo.save(onErrorDataSource);
 		refreshFlowCaches();
 
 		List<Flows> flows = FlowPlanDatafetcherTestHelper.getFlows(dgsQueryExecutor);
@@ -1342,12 +1460,14 @@ class DeltaFiCoreApplicationTests {
 		assertThat(systemFlows.getDataSinks()).isEmpty();
 		assertThat(systemFlows.getRestDataSources()).isEmpty();
 		assertThat(systemFlows.getTimedDataSources()).isEmpty();
+		assertThat(systemFlows.getOnErrorDataSources()).isEmpty();
 		Flows pluginFlows = flows.getLast();
 		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
 		assertThat(pluginFlows.getTransformFlows().getFirst().getName()).isEqualTo("transform");
 		assertThat(pluginFlows.getDataSinks().getFirst().getName()).isEqualTo("dataSink");
 		assertThat(pluginFlows.getRestDataSources().getFirst().getName()).isEqualTo("restDataSource");
 		assertThat(pluginFlows.getTimedDataSources().getFirst().getName()).isEqualTo("timedDataSource");
+		assertThat(pluginFlows.getOnErrorDataSources().getFirst().getName()).isEqualTo("onErrorDataSource");
 	}
 
 	@Test
@@ -1372,18 +1492,20 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testGetFlowsQuery() {
+	void testGetFlowNamesQuery() {
 		clearForFlowTests();
 
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
+		onErrorDataSourceRepo.save(buildOnErrorDataSource(FlowState.STOPPED));
 		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
 		dataSinkRepo.save(buildDataSink(FlowState.STOPPED));
 		refreshFlowCaches();
 
 		FlowNames flows = FlowPlanDatafetcherTestHelper.getFlowNames(dgsQueryExecutor);
 		assertThat(flows.getTimedDataSource()).hasSize(1).contains(TIMED_DATA_SOURCE_NAME);
+		assertThat(flows.getOnErrorDataSource()).hasSize(1).contains(ON_ERROR_DATA_SOURCE_NAME);
 		assertThat(flows.getTransform()).hasSize(1).contains(TRANSFORM_FLOW_NAME);
-		assertThat(flows.getDataSink()).hasSize(1).contains(EGRESS_FLOW_NAME);
+		assertThat(flows.getDataSink()).hasSize(1).contains(DATA_SINK_FLOW_NAME);
 	}
 
 	@Test
@@ -1400,7 +1522,7 @@ class DeltaFiCoreApplicationTests {
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
 		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
-		assertThat(flows.getDataSink()).hasSize(1).matches(dataSinks -> EGRESS_FLOW_NAME.equals(dataSinks.getFirst().getName()));
+		assertThat(flows.getDataSink()).hasSize(1).matches(dataSinks -> DATA_SINK_FLOW_NAME.equals(dataSinks.getFirst().getName()));
 
 		assertTrue(FlowPlanDatafetcherTestHelper.stopDataSink(dgsQueryExecutor));
 		SystemFlows updatedFlows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
@@ -1415,15 +1537,17 @@ class DeltaFiCoreApplicationTests {
 		TransformFlowPlan transformFlow = new TransformFlowPlan(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, "desc");
 		TimedDataSourcePlan timedDataSource = new TimedDataSourcePlan(TIMED_DATA_SOURCE_NAME, FlowType.TIMED_DATA_SOURCE, "desc", "topic", new ActionConfiguration("timed", ActionType.TIMED_INGRESS, "type"), "1234");
 		RestDataSourcePlan restDataSource = new RestDataSourcePlan(REST_DATA_SOURCE_NAME, FlowType.REST_DATA_SOURCE, "desc", "topic");
-		DataSinkPlan dataSink = new DataSinkPlan(EGRESS_FLOW_NAME, FlowType.DATA_SINK, "desc", new ActionConfiguration("egress", ActionType.EGRESS, "type2"));
+		OnErrorDataSourcePlan onErrorDataSource = new OnErrorDataSourcePlan(ON_ERROR_DATA_SOURCE_NAME, FlowType.ON_ERROR_DATA_SOURCE, "desc", null, null, "topic", null, null, null, null, null, null);
+		DataSinkPlan dataSink = new DataSinkPlan(DATA_SINK_FLOW_NAME, FlowType.DATA_SINK, "desc", new ActionConfiguration("egress", ActionType.EGRESS, "type2"));
 
-		savePlugin(List.of(transformFlow, timedDataSource, restDataSource, dataSink));
+		savePlugin(List.of(transformFlow, timedDataSource, restDataSource, onErrorDataSource, dataSink));
 
 		SystemFlowPlans flowPlans = FlowPlanDatafetcherTestHelper.getAllFlowPlans(dgsQueryExecutor);
 		assertThat(flowPlans.getTransformPlans()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
 		assertThat(flowPlans.getTimedDataSources()).hasSize(1).matches(timedIngressFlows -> TIMED_DATA_SOURCE_NAME.equals(timedIngressFlows.getFirst().getName()));
 		assertThat(flowPlans.getRestDataSources()).hasSize(1).matches(restIngressFlows -> REST_DATA_SOURCE_NAME.equals(restIngressFlows.getFirst().getName()));
-		assertThat(flowPlans.getDataSinkPlans()).hasSize(1).matches(dataSinks -> EGRESS_FLOW_NAME.equals(dataSinks.getFirst().getName()));
+		assertThat(flowPlans.getOnErrorDataSources()).hasSize(1).matches(onErrorDataSources -> ON_ERROR_DATA_SOURCE_NAME.equals(onErrorDataSources.getFirst().getName()));
+		assertThat(flowPlans.getDataSinkPlans()).hasSize(1).matches(dataSinks -> DATA_SINK_FLOW_NAME.equals(dataSinks.getFirst().getName()));
 	}
 
 	@Test
@@ -1439,12 +1563,16 @@ class DeltaFiCoreApplicationTests {
 		RestDataSource restDataSource = new RestDataSource();
 		restDataSource.setName(REST_DATA_SOURCE_NAME);
 
+		OnErrorDataSource onErrorDataSource = new OnErrorDataSource();
+		onErrorDataSource.setName(ON_ERROR_DATA_SOURCE_NAME);
+
 		DataSink dataSink = new DataSink();
-		dataSink.setName(EGRESS_FLOW_NAME);
+		dataSink.setName(DATA_SINK_FLOW_NAME);
 
 		transformFlowRepo.save(transformFlow);
 		timedDataSourceRepo.save(timedDataSource);
 		restDataSourceRepo.save(restDataSource);
+		onErrorDataSourceRepo.save(onErrorDataSource);
 		dataSinkRepo.save(dataSink);
 		refreshFlowCaches();
 
@@ -1452,7 +1580,8 @@ class DeltaFiCoreApplicationTests {
 		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
 		assertThat(flows.getTimedDataSource()).hasSize(1).matches(timedIngressFlows -> TIMED_DATA_SOURCE_NAME.equals(timedIngressFlows.getFirst().getName()));
 		assertThat(flows.getRestDataSource()).hasSize(1).matches(restIngressFlows -> REST_DATA_SOURCE_NAME.equals(restIngressFlows.getFirst().getName()));
-		assertThat(flows.getDataSink()).hasSize(1).matches(dataSinks -> EGRESS_FLOW_NAME.equals(dataSinks.getFirst().getName()));
+		assertThat(flows.getOnErrorDataSource()).hasSize(1).matches(onErrorDataSources -> ON_ERROR_DATA_SOURCE_NAME.equals(onErrorDataSources.getFirst().getName()));
+		assertThat(flows.getDataSink()).hasSize(1).matches(dataSinks -> DATA_SINK_FLOW_NAME.equals(dataSinks.getFirst().getName()));
 	}
 
 	void setupTopicTest() {
@@ -1477,7 +1606,7 @@ class DeltaFiCoreApplicationTests {
 		restDataSource.getFlowStatus().setState(FlowState.RUNNING);
 
 		DataSink dataSink = new DataSink();
-		dataSink.setName(EGRESS_FLOW_NAME);
+		dataSink.setName(DATA_SINK_FLOW_NAME);
 		dataSink.setSubscribe(Set.of(new Rule("transformPublish1", null)));
 
 		transformFlowRepo.save(transformFlow);
@@ -1500,7 +1629,7 @@ class DeltaFiCoreApplicationTests {
 			.build();
 	private static final Topic TRANSFORM_1_TOPIC = Topic.newBuilder().name("transformPublish1")
 			.publishers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition("transformPublishCondition").build()))
-			.subscribers(List.of(TopicParticipant.newBuilder().name(EGRESS_FLOW_NAME).type(FlowType.DATA_SINK).state(FlowState.STOPPED).condition(null).build()))
+			.subscribers(List.of(TopicParticipant.newBuilder().name(DATA_SINK_FLOW_NAME).type(FlowType.DATA_SINK).state(FlowState.STOPPED).condition(null).build()))
 			.build();
 	private static final Topic TRANSFORM_2_TOPIC = Topic.newBuilder().name("transformPublish2")
 			.publishers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition(null).build()))
@@ -1555,12 +1684,12 @@ class DeltaFiCoreApplicationTests {
 	void getDataSink() {
 		clearForFlowTests();
 		DataSink dataSink = new DataSink();
-		dataSink.setName(EGRESS_FLOW_NAME);
+		dataSink.setName(DATA_SINK_FLOW_NAME);
 		dataSinkRepo.save(dataSink);
 		refreshFlowCaches();
 		DataSink foundFlow = FlowPlanDatafetcherTestHelper.getDataSink(dgsQueryExecutor);
 		assertThat(foundFlow).isNotNull();
-		assertThat(foundFlow.getName()).isEqualTo(EGRESS_FLOW_NAME);
+		assertThat(foundFlow.getName()).isEqualTo(DATA_SINK_FLOW_NAME);
 	}
 
 	@Test
@@ -3917,7 +4046,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(message0.getFlow()).isEqualTo(TIMED_DATA_SOURCE_NAME);
 		assertThat(message0.getDids()).isEqualTo(expectedDids);
 		CountPerFlow message1 = actual.countPerFlow().getLast();
-		assertThat(message1.getFlow()).isEqualTo(EGRESS_FLOW_NAME);
+		assertThat(message1.getFlow()).isEqualTo(DATA_SINK_FLOW_NAME);
 		assertThat(message1.getDids()).isEqualTo(expectedDids);
 	}
 
@@ -4363,6 +4492,7 @@ class DeltaFiCoreApplicationTests {
 		transformFlowRepo.deleteAllInBatch();
 		dataSinkRepo.deleteAllInBatch();
 		timedDataSourceRepo.deleteAllInBatch();
+		onErrorDataSourceRepo.deleteAllInBatch();
 		pluginVariableRepo.deleteAllInBatch();
 		pluginRepository.deleteAll();
 		pluginRepository.save(pluginService.createSystemPlugin());
@@ -4802,7 +4932,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFilesService.handleActionEvent(actionEvent("transform", did));
 
 		verifyActionEventResults(fullFlowExemplarService.postTransformDeltaFile(did),
-				ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
+				ActionContext.builder().flowName(DATA_SINK_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", REST_DATA_SOURCE_NAME, TRANSFORM_FLOW_NAME, null, "type");
 	}
@@ -4822,7 +4952,7 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(retryResults.getFirst().getSuccess());
 
 		DeltaFile expected = fullFlowExemplarService.postResumeNoSubscribersDeltaFile(did);
-		verifyActionEventResults(expected, ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
+		verifyActionEventResults(expected, ActionContext.builder().flowName(DATA_SINK_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 	}
 
 	@Test
@@ -4837,10 +4967,10 @@ class DeltaFiCoreApplicationTests {
 
 		Mockito.verify(coreEventQueue, never()).putActions(any(), anyBoolean());
 
-		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", REST_DATA_SOURCE_NAME, EGRESS_FLOW_NAME);
+		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", REST_DATA_SOURCE_NAME, DATA_SINK_FLOW_NAME);
 		Map<String, String> flowTags = Map.of(
 				"dataSource", REST_DATA_SOURCE_NAME,
-				"dataSink", EGRESS_FLOW_NAME);
+				"dataSink", DATA_SINK_FLOW_NAME);
 
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_TO_SINK, 1).addTags(flowTags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_TO_SINK, 500).addTags(flowTags));
@@ -4891,6 +5021,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Map.of("childIndex", "1"), child1.annotationMap());
 		assertNull(child1.firstFlow().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
+		assertEquals(deltaFile.lastFlow().getDepth() + 1, child1.lastFlow().getDepth(), "Split child should inherit parent depth + 1");
 		assertEquals(0, child1.firstFlow().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
 
 		DeltaFile child2 = children.stream().filter(d -> d.getName().equals("child2")).findFirst().orElseThrow();
@@ -4899,6 +5030,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Map.of("childIndex", "2"), child2.annotationMap());
 		assertNull(child2.firstFlow().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
+		assertEquals(deltaFile.lastFlow().getDepth() + 1, child2.lastFlow().getDepth(), "Split child should inherit parent depth + 1");
 		assertEquals(100, child2.firstFlow().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
 
 		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());

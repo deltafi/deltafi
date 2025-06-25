@@ -81,6 +81,12 @@ class PluginServiceTest {
     TimedDataSourcePlanService timedDataSourcePlanService;
 
     @Mock
+    OnErrorDataSourcePlanService onErrorDataSourcePlanService;
+
+    @Mock
+    OnErrorDataSourceService onErrorDataSourceService;
+
+    @Mock
     RestDataSourceService restDataSourceService;
 
     @Mock
@@ -110,9 +116,9 @@ class PluginServiceTest {
         List<PluginUninstallCheck> checkers = List.of(dataSinkService, transformFlowService, restDataSourceService);
 
         pluginService = new PluginService(pluginRepository, pluginVariableService, buildProperties,
-                dataSinkService, restDataSourceService, timedDataSourceService, transformFlowService,
+                dataSinkService, restDataSourceService, timedDataSourceService, onErrorDataSourceService, transformFlowService,
                 environment, pluginValidator, dataSinkPlanService, restDataSourcePlanService,
-                timedDataSourcePlanService, transformFlowPlanService, checkers, cleaners);
+                timedDataSourcePlanService, onErrorDataSourcePlanService, transformFlowPlanService, checkers, cleaners);
     }
 
     @Test
@@ -386,18 +392,42 @@ class PluginServiceTest {
     void testSystemPluginRestore() {
         TransformFlowPlan keep = new TransformFlowPlan("keep", "");
         TransformFlowPlan replace = new TransformFlowPlan("replace", "");
+        OnErrorDataSourcePlan onErrorKeep = new OnErrorDataSourcePlan("onErrorKeep", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "topic", ".*Error.*", null, null, null, null, null);
         PluginEntity systemPlugin = new PluginEntity();
-        systemPlugin.setFlowPlans(new ArrayList<>(List.of(keep, replace)));
+        systemPlugin.setFlowPlans(new ArrayList<>(List.of(keep, replace, onErrorKeep)));
 
         TransformFlowPlan snapshot = new TransformFlowPlan("snapshot", "");
         TransformFlowPlan replacement = new TransformFlowPlan("replace", "changed");
+        OnErrorDataSourcePlan onErrorSnapshot = new OnErrorDataSourcePlan("onErrorSnapshot", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "topic", ".*New.*", null, null, null, null, null);
         SystemFlowPlans systemFlowPlans = new SystemFlowPlans();
         systemFlowPlans.setTransformPlans(List.of(snapshot, replacement));
+        systemFlowPlans.setOnErrorDataSources(List.of(onErrorSnapshot));
 
         Mockito.when(pluginRepository.findById(SYSTEM_PLUGIN_ID)).thenReturn(Optional.of(systemPlugin));
         pluginService.restoreSystemPlugin(systemFlowPlans, false);
 
-        assertThat(systemPlugin.getFlowPlans()).hasSize(3).contains(keep, replacement, snapshot);
+        assertThat(systemPlugin.getFlowPlans()).hasSize(5).contains(keep, replacement, snapshot, onErrorKeep, onErrorSnapshot);
+    }
+
+    @Test
+    void testGetSystemFlowPlansWithAllTypes() {
+        RestDataSourcePlan restPlan = new RestDataSourcePlan("rest", FlowType.REST_DATA_SOURCE, "desc", "topic");
+        TimedDataSourcePlan timedPlan = new TimedDataSourcePlan("timed", FlowType.TIMED_DATA_SOURCE, "desc", "topic", new ActionConfiguration("action", ActionType.TIMED_INGRESS, "type"), "*/5 * * * * *");
+        OnErrorDataSourcePlan onErrorPlan = new OnErrorDataSourcePlan("onError", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "error-topic", ".*Error.*", List.of(new ErrorSourceFilter(null, null, "action1", null)), null, null, null, null);
+        TransformFlowPlan transformPlan = new TransformFlowPlan("transform", "desc");
+        DataSinkPlan dataSinkPlan = new DataSinkPlan("dataSink", FlowType.DATA_SINK, "desc", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
+
+        PluginEntity systemPlugin = new PluginEntity();
+        systemPlugin.setFlowPlans(List.of(restPlan, timedPlan, onErrorPlan, transformPlan, dataSinkPlan));
+
+        Mockito.when(pluginRepository.findById(SYSTEM_PLUGIN_ID)).thenReturn(Optional.of(systemPlugin));
+        SystemFlowPlans result = pluginService.getSystemFlowPlans();
+
+        assertThat(result.getRestDataSources()).hasSize(1).contains(restPlan);
+        assertThat(result.getTimedDataSources()).hasSize(1).contains(timedPlan);
+        assertThat(result.getOnErrorDataSources()).hasSize(1).contains(onErrorPlan);
+        assertThat(result.getTransformPlans()).hasSize(1).contains(transformPlan);
+        assertThat(result.getDataSinkPlans()).hasSize(1).contains(dataSinkPlan);
     }
 
     @Test

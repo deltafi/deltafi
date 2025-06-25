@@ -15,23 +15,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.repo;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import org.deltafi.core.types.OnErrorDataSource;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
-@Getter
-@RequiredArgsConstructor
-public enum FlowType {
-    REST_DATA_SOURCE("rest data source"),
-    TIMED_DATA_SOURCE("timed data source"),
-    ON_ERROR_DATA_SOURCE("on error data source"),
-    TRANSFORM("transform"),
-    DATA_SINK("data sink");
+public interface OnErrorDataSourceRepo extends FlowRepo, OnErrorDataSourceRepoCustom {
 
-    private final String displayName;
-
-    public boolean isDataSource() {
-        return this == REST_DATA_SOURCE || this == TIMED_DATA_SOURCE || this == ON_ERROR_DATA_SOURCE;
-    }
+    @Transactional
+    @Query(value = "UPDATE flows " +
+            "SET max_errors = :maxErrors " +
+            "WHERE name = :flowName AND type = 'ON_ERROR_DATA_SOURCE' " +
+            "RETURNING *", nativeQuery = true)
+    OnErrorDataSource updateMaxErrors(String flowName, int maxErrors);
 }

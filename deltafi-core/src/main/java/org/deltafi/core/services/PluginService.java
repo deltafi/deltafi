@@ -58,12 +58,14 @@ public class PluginService implements Snapshotter {
     private final DataSinkService dataSinkService;
     private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
+    private final OnErrorDataSourceService onErrorDataSourceService;
     private final TransformFlowService transformFlowService;
     private final Environment environment;
     private final PluginValidator pluginValidator;
     private final DataSinkPlanService dataSinkPlanService;
     private final RestDataSourcePlanService restDataSourcePlanService;
     private final TimedDataSourcePlanService timedDataSourcePlanService;
+    private final OnErrorDataSourcePlanService onErrorDataSourcePlanService;
     private final TransformFlowPlanService transformFlowPlanService;
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
@@ -81,7 +83,7 @@ public class PluginService implements Snapshotter {
 
     @PostConstruct
     public void updateSystemPlugin() {
-        if (Boolean.TRUE.equals(environment.getProperty("schedule.maintenance", Boolean.class, true))) {
+        if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
             doUpdateSystemPlugin();
         }
     }
@@ -204,6 +206,8 @@ public class PluginService implements Snapshotter {
             restDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
         } else if (flowPlan.getType() == FlowType.TIMED_DATA_SOURCE) {
             timedDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
+        } else if (flowPlan.getType() == FlowType.ON_ERROR_DATA_SOURCE) {
+            onErrorDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
         } else if (flowPlan.getType() == FlowType.TRANSFORM) {
             transformFlowService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
         }
@@ -245,6 +249,7 @@ public class PluginService implements Snapshotter {
             transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates);
             restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates);
             timedDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.TIMED_DATA_SOURCE), pluginCoordinates);
+            onErrorDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.ON_ERROR_DATA_SOURCE), pluginCoordinates);
         }
 
         return update.isUpdated();
@@ -327,6 +332,7 @@ public class PluginService implements Snapshotter {
         errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans, existingFlowPlans));
         errors.addAll(restDataSourcePlanService.validateFlowPlans(groupedFlowPlans.restDataSourcePlans, existingFlowPlans));
         errors.addAll(timedDataSourcePlanService.validateFlowPlans(groupedFlowPlans.timedDataSourcePlans, existingFlowPlans));
+        errors.addAll(onErrorDataSourcePlanService.validateFlowPlans(groupedFlowPlans.onErrorDataSourcePlans, existingFlowPlans));
         errors.addAll(dataSinkPlanService.validateFlowPlans(groupedFlowPlans.dataSinkPlans, existingFlowPlans));
         errors.addAll(pluginVariableService.validateVariables(variables));
 
@@ -342,6 +348,7 @@ public class PluginService implements Snapshotter {
         transformFlowService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.transformFlowPlans());
         restDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.restDataSourcePlans());
         timedDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.timedDataSourcePlans());
+        onErrorDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.onErrorDataSourcePlans());
         dataSinkService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.dataSinkPlans());
     }
 
@@ -355,6 +362,7 @@ public class PluginService implements Snapshotter {
         List<DataSinkPlan> dataSinkPlans = new ArrayList<>();
         List<RestDataSourcePlan> restDataSourcePlans = new ArrayList<>();
         List<TimedDataSourcePlan> timedDataSourcePlans = new ArrayList<>();
+        List<OnErrorDataSourcePlan> onErrorDataSourcePlans = new ArrayList<>();
 
         if (pluginRegistration.getFlowPlans() != null) {
             pluginRegistration.getFlowPlans().forEach(flowPlan -> {
@@ -364,12 +372,13 @@ public class PluginService implements Snapshotter {
                     case DataSinkPlan plan -> dataSinkPlans.add(plan);
                     case RestDataSourcePlan plan -> restDataSourcePlans.add(plan);
                     case TimedDataSourcePlan plan -> timedDataSourcePlans.add(plan);
+                    case OnErrorDataSourcePlan plan -> onErrorDataSourcePlans.add(plan);
                     default -> log.warn("Unknown flow plan type: {}", flowPlan.getClass());
                 }
             });
         }
 
-        return new GroupedFlowPlans(transformFlowPlans, dataSinkPlans, restDataSourcePlans, timedDataSourcePlans);
+        return new GroupedFlowPlans(transformFlowPlans, dataSinkPlans, restDataSourcePlans, timedDataSourcePlans, onErrorDataSourcePlans);
     }
 
     public Optional<PluginEntity> getPlugin(PluginCoordinates pluginCoordinates) {
@@ -401,9 +410,10 @@ public class PluginService implements Snapshotter {
         Map<PluginCoordinates, List<TransformFlow>> transformFlows = transformFlowService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<RestDataSource>> restDataSources = restDataSourceService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<TimedDataSource>> timedDataSources = timedDataSourceService.getFlowsGroupedByPlugin();
+        Map<PluginCoordinates, List<OnErrorDataSource>> onErrorDataSources = onErrorDataSourceService.getFlowsGroupedByPlugin();
 
         return getPluginsWithVariables().stream()
-                .map(plugin -> toPluginFlows(plugin, dataSinks, transformFlows, restDataSources, timedDataSources))
+                .map(plugin -> toPluginFlows(plugin, dataSinks, transformFlows, restDataSources, timedDataSources, onErrorDataSources))
                 .toList();
     }
 
@@ -411,7 +421,8 @@ public class PluginService implements Snapshotter {
                                 Map<PluginCoordinates, List<DataSink>> dataSinks,
                                 Map<PluginCoordinates, List<TransformFlow>> transformFlows,
                                 Map<PluginCoordinates, List<RestDataSource>> restDataSources,
-                                Map<PluginCoordinates, List<TimedDataSource>> timedDataSources) {
+                                Map<PluginCoordinates, List<TimedDataSource>> timedDataSources,
+                                Map<PluginCoordinates, List<OnErrorDataSource>> onErrorDataSources) {
 
         return Flows.newBuilder()
                 .sourcePlugin(plugin.getPluginCoordinates())
@@ -420,6 +431,7 @@ public class PluginService implements Snapshotter {
                 .transformFlows(transformFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .restDataSources(restDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .timedDataSources(timedDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
+                .onErrorDataSources(onErrorDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .build();
     }
 
@@ -428,7 +440,7 @@ public class PluginService implements Snapshotter {
     }
 
     public SystemFlowPlans getSystemFlowPlans() {
-        SystemFlowPlans systemFlowPlans = new SystemFlowPlans(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        SystemFlowPlans systemFlowPlans = new SystemFlowPlans(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
         PluginEntity pluginEntity = getSystemPlugin();
 
         if (pluginEntity != null && pluginEntity.getFlowPlans() != null) {
@@ -436,6 +448,7 @@ public class PluginService implements Snapshotter {
                 switch (flowPlan) {
                     case RestDataSourcePlan p -> systemFlowPlans.getRestDataSources().add(p);
                     case TimedDataSourcePlan p -> systemFlowPlans.getTimedDataSources().add(p);
+                    case OnErrorDataSourcePlan p -> systemFlowPlans.getOnErrorDataSources().add(p);
                     case TransformFlowPlan p -> systemFlowPlans.getTransformPlans().add(p);
                     case DataSinkPlan p -> systemFlowPlans.getDataSinkPlans().add(p);
                     default -> throw new IllegalStateException("Unexpected value: " + flowPlan);
@@ -466,6 +479,7 @@ public class PluginService implements Snapshotter {
         if (hardReset) {
             restDataSourceService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
             timedDataSourceService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
+            onErrorDataSourceService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
             transformFlowService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
             dataSinkService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
             pluginVariableService.removeVariables(systemPlugin.getPluginCoordinates());
@@ -474,12 +488,14 @@ public class PluginService implements Snapshotter {
 
         systemPlugin.addOrReplaceFlowPlans(flowPlans.getRestDataSources());
         systemPlugin.addOrReplaceFlowPlans(flowPlans.getTimedDataSources());
+        systemPlugin.addOrReplaceFlowPlans(flowPlans.getOnErrorDataSources());
         systemPlugin.addOrReplaceFlowPlans(flowPlans.getTransformPlans());
         systemPlugin.addOrReplaceFlowPlans(flowPlans.getDataSinkPlans());
 
         pluginRepo.save(systemPlugin);
         restDataSourcePlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
         timedDataSourcePlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
+        onErrorDataSourcePlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
         transformFlowPlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
         dataSinkPlanService.rebuildFlowsForPlugin(systemPlugin.getPluginCoordinates());
     }
@@ -544,13 +560,14 @@ public class PluginService implements Snapshotter {
         return actionsToPlugin.get(clazz);
     }
 
-    private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<DataSinkPlan> dataSinkPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans) {
+    private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<DataSinkPlan> dataSinkPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans, List<OnErrorDataSourcePlan> onErrorDataSourcePlans) {
         public List<FlowPlan> allPlans() {
             List<FlowPlan> flowPlans = new ArrayList<>();
             addIfNotNull(flowPlans, transformFlowPlans);
             addIfNotNull(flowPlans, dataSinkPlans);
             addIfNotNull(flowPlans, restDataSourcePlans);
             addIfNotNull(flowPlans, timedDataSourcePlans);
+            addIfNotNull(flowPlans, onErrorDataSourcePlans);
             return flowPlans;
         }
 
@@ -566,7 +583,8 @@ public class PluginService implements Snapshotter {
         Set<String> conflictingNames = new HashSet<>();
 
         // Check incoming plugin's data sources
-        Stream.concat(groupedFlowPlans.restDataSourcePlans.stream(), groupedFlowPlans.timedDataSourcePlans.stream())
+        Stream.of(groupedFlowPlans.restDataSourcePlans.stream(), groupedFlowPlans.timedDataSourcePlans.stream(), groupedFlowPlans.onErrorDataSourcePlans.stream())
+                .flatMap(stream -> stream)
                 .map(DataSourcePlan::getName)
                 .forEach(name -> {
                     if (!incomingNames.add(name)) {
@@ -575,7 +593,8 @@ public class PluginService implements Snapshotter {
                 });
 
         // Check against existing data sources, excluding those from the same plugin
-        Stream.concat(restDataSourceService.getAll().stream(), timedDataSourceService.getAll().stream())
+        Stream.of(restDataSourceService.getAll().stream(), timedDataSourceService.getAll().stream(), onErrorDataSourceService.getAll().stream())
+                .flatMap(stream -> stream)
                 .filter(existing -> !existing.getSourcePlugin().equalsIgnoreVersion(incomingPluginCoordinates))
                 .map(DataSource::getName)
                 .filter(incomingNames::contains)
@@ -598,11 +617,13 @@ public class PluginService implements Snapshotter {
         rebuildInvalidFlows(dataSinkService, FlowType.DATA_SINK);
         rebuildInvalidFlows(restDataSourceService, FlowType.REST_DATA_SOURCE);
         rebuildInvalidFlows(timedDataSourceService, FlowType.TIMED_DATA_SOURCE);
+        rebuildInvalidFlows(onErrorDataSourceService, FlowType.ON_ERROR_DATA_SOURCE);
         rebuildInvalidFlows(transformFlowService, FlowType.TRANSFORM);
 
         dataSinkService.validateAllFlows();
         restDataSourceService.validateAllFlows();
         timedDataSourceService.validateAllFlows();
+        onErrorDataSourceService.validateAllFlows();
         transformFlowService.validateAllFlows();
     }
 

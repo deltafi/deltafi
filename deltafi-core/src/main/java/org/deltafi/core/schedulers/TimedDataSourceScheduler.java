@@ -48,7 +48,7 @@ public class TimedDataSourceScheduler {
 
     @Scheduled(fixedDelay = 1000)
     public void triggerTimedDataSources() {
-        for (TimedDataSource dataSource : timedDataSourceService.getRunningTimedDataSources()) {
+        for (TimedDataSource dataSource : timedDataSourceService.getRunningFlows()) {
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled() &&
                     !diskSpaceService.isContentStorageDepleted()) {

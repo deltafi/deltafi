@@ -1,0 +1,31 @@
+{
+  "name": "on-error-test",
+  "type": "ON_ERROR_DATA_SOURCE",
+  "description": "Test OnError data source",
+  "topic": "error-topic",
+  "errorMessageRegex": "Error: .*",
+  "sourceFilters": [
+    {
+      "actionName": "action1"
+    },
+    {
+      "actionName": "action2"
+    },
+    {
+      "flowType": "TRANSFORM",
+      "flowName": "transform1"
+    },
+    {
+      "flowType": "DATA_SINK",
+      "flowName": "sink1"
+    }
+  ],
+  "metadataFilters": [
+    {"key": "env", "value": "prod"}
+  ],
+  "annotationFilters": [
+    {"key": "priority", "value": "high"}
+  ],
+  "includeSourceMetadataRegex": ["source-.*"],
+  "includeSourceAnnotationsRegex": ["annotation-.*"]
+}

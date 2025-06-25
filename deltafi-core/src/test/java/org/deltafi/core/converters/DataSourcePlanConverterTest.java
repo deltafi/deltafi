@@ -24,11 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.OnErrorDataSourcePlan;
 import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.types.OnErrorDataSource;
 import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.types.TimedDataSource;
 import org.junit.jupiter.api.Test;
@@ -46,6 +48,7 @@ class DataSourcePlanConverterTest {
             .registerModule(new JavaTimeModule());
     final RestDataSourcePlanConverter restDataSourcePlanConverter = new RestDataSourcePlanConverter();
     final TimedDataSourcePlanConverter timedDataSourcePlanConverter = new TimedDataSourcePlanConverter();
+    final OnErrorDataSourcePlanConverter onErrorDataSourcePlanConverter = new OnErrorDataSourcePlanConverter();
 
     @Test
     void testConverterRest() throws IOException {
@@ -121,6 +124,30 @@ class DataSourcePlanConverterTest {
                 .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not find a variable named 'smokeMetadataValue' used in value \"${smokeMetadataValue}\"").build();
 
         assertThat(dataSource.getFlowStatus().getErrors()).hasSize(1).contains(expected);
+    }
+
+    @Test
+    void testOnErrorConverter() throws IOException {
+        OnErrorDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-on-error.json"), OnErrorDataSourcePlan.class);
+        OnErrorDataSource onErrorDataSource = onErrorDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
+
+        assertThat(onErrorDataSource.getName()).isEqualTo("on-error-test");
+        assertThat(onErrorDataSource.getErrorMessageRegex()).isEqualTo("Error: .*");
+        assertThat(onErrorDataSource.getSourceFilters()).hasSize(4);
+        assertThat(onErrorDataSource.getSourceFilters().get(0).getActionName()).isEqualTo("action1");
+        assertThat(onErrorDataSource.getSourceFilters().get(1).getActionName()).isEqualTo("action2");
+        assertThat(onErrorDataSource.getSourceFilters().get(2).getFlowName()).isEqualTo("transform1");
+        assertThat(onErrorDataSource.getSourceFilters().get(3).getFlowName()).isEqualTo("sink1");
+        assertThat(onErrorDataSource.getMetadataFilters()).hasSize(1);
+        assertThat(onErrorDataSource.getMetadataFilters().getFirst().getKey()).isEqualTo("env");
+        assertThat(onErrorDataSource.getMetadataFilters().getFirst().getValue()).isEqualTo("prod");
+        assertThat(onErrorDataSource.getAnnotationFilters()).hasSize(1);
+        assertThat(onErrorDataSource.getAnnotationFilters().getFirst().getKey()).isEqualTo("priority");
+        assertThat(onErrorDataSource.getAnnotationFilters().getFirst().getValue()).isEqualTo("high");
+        assertThat(onErrorDataSource.getIncludeSourceMetadataRegex()).containsExactly("source-.*");
+        assertThat(onErrorDataSource.getIncludeSourceAnnotationsRegex()).containsExactly("annotation-.*");
+        assertThat(onErrorDataSource.getAnnotationConfig().nothingConfigured()).isTrue();
+        assertThat(onErrorDataSource.getMetadata()).isEmpty();
     }
 
     ActionConfiguration expectedTimedIngressAction() {

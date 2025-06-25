@@ -22,7 +22,6 @@ import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.IngressStatus;
 import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.converters.TimedDataSourcePlanConverter;
-import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.types.snapshot.Snapshot;
@@ -36,15 +35,14 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 @Slf4j
-public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
+public class TimedDataSourceService extends DataSourceService<TimedDataSourcePlan, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
 
     private static final TimedDataSourcePlanConverter TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER = new TimedDataSourcePlanConverter();
 
-    private final ErrorCountService errorCountService;
     private final Clock clock;
     private final TimedDataSourceRepo timedDataSourceRepo;
 
@@ -53,36 +51,16 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
                                   ErrorCountService errorCountService, Clock clock, FlowCacheService flowCacheService,
                                   EventService eventService) {
         super(FlowType.TIMED_DATA_SOURCE, timedDataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                flowValidator, buildProperties, flowCacheService, eventService, TimedDataSource.class, TimedDataSourcePlan.class);
+                flowValidator, buildProperties, flowCacheService, eventService, TimedDataSource.class, TimedDataSourcePlan.class,
+                errorCountService);
 
         this.timedDataSourceRepo = timedDataSourceRepo;
-        this.errorCountService = errorCountService;
         this.clock = clock;
-    }
-
-    public List<TimedDataSource> getRunningTimedDataSources() {
-        return getAll().stream()
-                .map(this::toTimedDataSource)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    // if this is running and a timed data source return it, otherwise return null
-    private TimedDataSource toTimedDataSource(DataSource dataSource) {
-        if (dataSource.isRunning() && dataSource instanceof TimedDataSource timedDataSource) {
-            return timedDataSource;
-        }
-
-        return null;
     }
 
     @Override
     public void updateSnapshot(Snapshot snapshot) {
-        List<TimedDataSourceSnapshot> timedDataSourceSnapshots = new ArrayList<>();
-        for (TimedDataSource timedDataSource : getAll()) {
-            timedDataSourceSnapshots.add(new TimedDataSourceSnapshot(timedDataSource));
-        }
-        snapshot.setTimedDataSources(timedDataSourceSnapshots);
+        snapshot.setTimedDataSources(getAll().stream().map(TimedDataSourceSnapshot::new).toList());
     }
 
     @Override
@@ -91,22 +69,11 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
     }
 
     @Override
-    public boolean flowSpecificUpdateFromSnapshot(TimedDataSource flow, TimedDataSourceSnapshot dataSourceSnapshot, Result result) {
-        boolean changed = false;
-        if (!Objects.equals(flow.getTopic(), dataSourceSnapshot.getTopic())) {
-            flow.setTopic(dataSourceSnapshot.getTopic());
-            changed = true;
-        }
-
-        if (flow.getMaxErrors() != dataSourceSnapshot.getMaxErrors()) {
-            flow.setMaxErrors(dataSourceSnapshot.getMaxErrors());
-            changed = true;
-        }
-
-        return flowSpecificUpdateFromSnapshot(flow, dataSourceSnapshot) || changed;
+    protected boolean updateSpecificDataSourceFields(TimedDataSource flow, TimedDataSourceSnapshot dataSourceSnapshot, Result result) {
+        return updateTimedDataSourceSpecificFields(flow, dataSourceSnapshot);
     }
 
-    private boolean flowSpecificUpdateFromSnapshot(TimedDataSource dataSource, TimedDataSourceSnapshot timedDataSourceSnapshot) {
+    private boolean updateTimedDataSourceSpecificFields(TimedDataSource dataSource, TimedDataSourceSnapshot timedDataSourceSnapshot) {
         if (Objects.equals(dataSource.getCronSchedule(), timedDataSourceSnapshot.getCronSchedule())) {
             return false;
         }
@@ -181,7 +148,6 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
         if (updated != null) {
             flowCacheService.updateCache(updated);
         }
-
     }
 
     public boolean completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate,
@@ -197,58 +163,5 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, Tim
         }
 
         return false;
-    }
-
-    /**
-     * Sets the maximum number of errors allowed for a given dataSource, identified by its name.
-     * If the maximum errors for the dataSource are already set to the specified value, the method
-     * logs a warning and returns false. If the update is successful, the method refreshes the
-     * cache and returns true.
-     *
-     * @param flowName  The name of the dataSource to update, represented as a {@code String}.
-     * @param maxErrors The new maximum number of errors to be set for the specified dataSource, as an {@code int}.
-     * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
-     */
-    public boolean setMaxErrors(String flowName, int maxErrors) {
-        TimedDataSource flow = getFlowOrThrow(flowName);
-
-        if (flow.getMaxErrors() == maxErrors) {
-            log.warn("Tried to set max errors on transform dataSource {} to {} when already set", flowName, maxErrors);
-            return false;
-        }
-
-        TimedDataSource updated = flowRepo.updateMaxErrors(flowName, maxErrors);
-        if (updated != null) {
-            flowCacheService.updateCache(flow);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Retrieves a map containing the maximum number of errors allowed per dataSource.
-     * This method filters out flows with a maximum error count of 0, only including
-     * those with a positive maximum error count.
-     *
-     * @return A {@code Map<String, Integer>} where each key represents a dataSource name,
-     * and the corresponding value is the maximum number of errors allowed for that dataSource.
-     */
-    public Map<String, Integer> maxErrorsPerFlow() {
-        return getRunningFlows().stream()
-                .filter(e -> e.getMaxErrors() >= 0)
-                .collect(Collectors.toMap(Flow::getName, DataSource::getMaxErrors));
-    }
-
-    /**
-     * Get a list of DataSourceErrorStates for data sources that have
-     * exceeded their max allowed errors
-     * @return list of IngressFlowErrorStates
-     */
-    public List<DataSourceErrorState> dataSourceErrorsExceeded() {
-        return getRunningFlows().stream()
-                .map(f -> new DataSourceErrorState(f.getName(), errorCountService.errorsForFlow(FlowType.TIMED_DATA_SOURCE, f.getName()), f.getMaxErrors()))
-                .filter(s -> s.getMaxErrors() >= 0 && s.getCurrErrors() > s.getMaxErrors())
-                .toList();
     }
 }
