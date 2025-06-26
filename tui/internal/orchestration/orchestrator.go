@@ -35,7 +35,7 @@ type Orchestrator interface {
 	Up([]string) error
 	Down([]string) error
 	Environment() []string
-	GetExecCmd(string, bool, []string) (exec.Cmd, error)
+	GetExecCmd(string, []string) (exec.Cmd, error)
 	GetValkeyName() string
 	GetMinioName() (string, error)
 	ExecuteMinioCommand([]string) error
@@ -86,7 +86,7 @@ func execMinioCommand(orchestrator Orchestrator, cmd []string) error {
 	if err != nil {
 		return err
 	}
-	c, err := orchestrator.GetExecCmd(minioName, true, append(minioCliArgs, cmd...))
+	c, err := orchestrator.GetExecCmd(minioName, append(minioCliArgs, cmd...))
 	if err != nil {
 		return err
 	}

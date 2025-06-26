@@ -105,6 +105,18 @@ func NewKubernetesHelper() *KubernetesHelper {
 	}
 }
 
+func getKubectlExecCmd(args []string) (exec.Cmd, error) {
+	cmdArgs := []string{"exec"}
+	if isTty() {
+		cmdArgs = append(cmdArgs, "-it")
+	} else {
+		cmdArgs = append(cmdArgs, "-i")
+	}
+	cmdArgs = append(cmdArgs, "-n", "deltafi")
+	cmdArgs = append(cmdArgs, args...)
+	return *exec.Command("kubectl", cmdArgs...), nil
+}
+
 func (o *KubernetesOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
 
 	podName, err := o.GetMasterPod("application=spilo,spilo-role=master")
@@ -113,8 +125,6 @@ func (o *KubernetesOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error)
 	}
 
 	cmdArgs := []string{
-		"exec", "-it",
-		"-n", "deltafi",
 		podName,
 		"-c", "postgres",
 		"--",
@@ -123,9 +133,7 @@ func (o *KubernetesOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error)
 
 	cmdArgs = append(cmdArgs, args...)
 	cmdArgs = append(cmdArgs, "-U", "deltafi", "deltafi")
-	cmd := exec.Command("kubectl", cmdArgs...)
-
-	return *cmd, nil
+	return getKubectlExecCmd(cmdArgs)
 }
 
 func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error) {
@@ -136,8 +144,6 @@ func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, er
 	}
 
 	cmdArgs := []string{
-		"exec", "-i",
-		"-n", "deltafi",
 		podName,
 		"-c", "postgres",
 		"--",
@@ -146,23 +152,16 @@ func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, er
 
 	cmdArgs = append(cmdArgs, args...)
 	cmdArgs = append(cmdArgs, "-U", "deltafi", "deltafi")
-	cmd := exec.Command("kubectl", cmdArgs...)
-
-	return *cmd, nil
+	return getKubectlExecCmd(cmdArgs)
 }
 
-func (o *KubernetesOrchestrator) GetExecCmd(name string, tty bool, args []string) (exec.Cmd, error) {
-	flags := "-i"
-	if tty {
-		flags += "t"
-	}
-
-	cmdArgs := []string{"exec", flags, "-n", "deltafi", name, "--", "sh", "-c"}
+func (o *KubernetesOrchestrator) GetExecCmd(name string, args []string) (exec.Cmd, error) {
+	cmdArgs := []string{name, "--", "sh", "-c"}
 
 	extraCmdArgs := fmt.Sprintf("%s", strings.Join(args, " "))
 	cmdArgs = append(cmdArgs, extraCmdArgs)
 
-	return *exec.Command("kubectl", cmdArgs...), nil
+	return getKubectlExecCmd(cmdArgs)
 }
 
 func (o *KubernetesOrchestrator) GetValkeyName() string {
@@ -176,6 +175,7 @@ func (o *KubernetesOrchestrator) Up(args []string) error {
 		return fmt.Errorf("Unable to findsite values file: %w", err)
 	}
 
+	// TODO: Implement CLI functionality here
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi", "-f", siteValues)
 
 	args = append([]string{"install"}, args...)
@@ -191,6 +191,7 @@ func (o *KubernetesOrchestrator) Up(args []string) error {
 
 func (o *KubernetesOrchestrator) Down(args []string) error {
 
+	// TODO: Implement CLI functionality here
 	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
 
 	args = append([]string{"uninstall"}, args...)

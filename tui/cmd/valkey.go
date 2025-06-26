@@ -85,7 +85,7 @@ func execCommand(cmd []string) error {
 	}
 
 	orchestrator := app.GetOrchestrator()
-	c, err := orchestrator.GetExecCmd(orchestrator.GetValkeyName(), true, append(valkeyCliArgs, cmd...))
+	c, err := orchestrator.GetExecCmd(orchestrator.GetValkeyName(), append(valkeyCliArgs, cmd...))
 	if err != nil {
 		return err
 	}

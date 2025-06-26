@@ -82,36 +82,43 @@ func (o *ComposeOrchestrator) GetServiceIP(service string) (string, error) {
 	return fmt.Sprintf("%s:8042", strings.TrimSpace(service)), nil
 }
 
-func (o *ComposeOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
-	cmdArgs := []string{"exec", "-it", "deltafi-postgres", "bash", "-c"}
+func getDockerExecCmd(args []string) (exec.Cmd, error) {
+	cmdArgs := []string{"exec"}
+	if isTty() {
+		cmdArgs = append(cmdArgs, "-it")
+	} else {
+		cmdArgs = append(cmdArgs, "-i")
+	}
+	cmdArgs = append(cmdArgs, args...)
+	return *exec.Command("docker", cmdArgs...), nil
+}
 
-	psqlCmd := fmt.Sprintf("psql $POSTGRES_DB %s", strings.Join(args, " "))
+func (o *ComposeOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
+
+	cmdArgs := []string{"deltafi-postgres", "bash", "-c"}
+
+	psqlCmd := fmt.Sprintf("psql -v HISTFILE=/tmp/psql_history $POSTGRES_DB %s", strings.Join(args, " "))
 	cmdArgs = append(cmdArgs, psqlCmd)
 
-	return *exec.Command("docker", cmdArgs...), nil
+	return getDockerExecCmd(cmdArgs)
 }
 
 func (o *ComposeOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error) {
-	cmdArgs := []string{"exec", "-i", "deltafi-postgres", "bash", "-c"}
+	cmdArgs := []string{"deltafi-postgres", "bash", "-c"}
 
-	psqlCmd := fmt.Sprintf("psql $POSTGRES_DB %s", strings.Join(args, " "))
+	psqlCmd := fmt.Sprintf("psql -v HISTFILE=/tmp/psql_history $POSTGRES_DB %s", strings.Join(args, " "))
 	cmdArgs = append(cmdArgs, psqlCmd)
 
-	return *exec.Command("docker", cmdArgs...), nil
+	return getDockerExecCmd(cmdArgs)
 }
 
-func (o *ComposeOrchestrator) GetExecCmd(name string, tty bool, args []string) (exec.Cmd, error) {
-	flags := "-i"
-	if tty {
-		flags += "t"
-	}
-
-	cmdArgs := []string{"exec", flags, name, "sh", "-c"}
+func (o *ComposeOrchestrator) GetExecCmd(name string, args []string) (exec.Cmd, error) {
+	cmdArgs := []string{name, "sh", "-c"}
 
 	extraCmdArgs := fmt.Sprintf("%s", strings.Join(args, " "))
 	cmdArgs = append(cmdArgs, extraCmdArgs)
 
-	return *exec.Command("docker", cmdArgs...), nil
+	return getDockerExecCmd(cmdArgs)
 }
 
 func (o *ComposeOrchestrator) GetValkeyName() string {
