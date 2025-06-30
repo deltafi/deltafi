@@ -53,7 +53,10 @@ public class LookupCleanupScheduler {
         log.info("Cleaned up unused error cause lookups");
         eventGroupRepo.deleteUnusedEventGroups();
         log.info("Cleaned up unused event group lookups");
-        eventAnnotationsRepo.deleteUnusedEventAnnotations();
+        Integer cleaned = 50;
+        while (cleaned != null && cleaned == 50) {
+            cleaned = eventAnnotationsRepo.deleteUnusedEventAnnotations(50);
+        }
         log.info("Cleaned up unused event annotation lookups");
         log.info("Analytic lookup tables cleanup complete");
     }

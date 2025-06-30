@@ -20,13 +20,9 @@ package org.deltafi.core.repo;
 import org.deltafi.core.types.EventAnnotationEntity;
 import org.deltafi.core.types.EventAnnotationId;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.query.Procedure;
 
 public interface EventAnnotationsRepo extends JpaRepository<EventAnnotationEntity, EventAnnotationId>, EventAnnotationsRepoCustom {
-    @Modifying
-    @Transactional
-    @Query(value = "CALL clean_unused_annotations()", nativeQuery = true)
-    void deleteUnusedEventAnnotations();
+    @Procedure(procedureName = "clean_unused_annotations")
+    Integer deleteUnusedEventAnnotations(Integer p_limit);
 }

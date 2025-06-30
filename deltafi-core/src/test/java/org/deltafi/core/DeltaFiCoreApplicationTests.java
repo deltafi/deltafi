@@ -203,6 +203,9 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	AnnotationRepo annotationRepo;
 
+	@Autowired
+	EventAnnotationsRepo eventAnnotationsRepo;
+
 	@MockBean
 	ContentStorageService contentStorageService;
 
@@ -5755,4 +5758,17 @@ class DeltaFiCoreApplicationTests {
 		assertThat(afterRemove.getRateLimit()).isNull();
 	}
 
+	@Test
+	void testCleanUnusedAnnotationsReturnsCorrectCounts() {
+		IntStream.range(0, 75).forEach(i -> {
+			UUID did = UUID.randomUUID();
+            eventAnnotationsRepo.save(new EventAnnotationEntity(new EventAnnotationId(did, i), i));
+		});
+
+		assertEquals(75, eventAnnotationsRepo.count());
+		assertEquals(50, eventAnnotationsRepo.deleteUnusedEventAnnotations(50));
+		assertEquals(25, eventAnnotationsRepo.count());
+		assertEquals(25, eventAnnotationsRepo.deleteUnusedEventAnnotations(50));
+		assertEquals(0, eventAnnotationsRepo.count());
+	}
 }
