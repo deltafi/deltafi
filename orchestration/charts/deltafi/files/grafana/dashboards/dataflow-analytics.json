@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1413,
+  "id": 5708,
   "links": [],
   "panels": [
     {
@@ -80,8 +80,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "green",
@@ -117,7 +116,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -148,7 +147,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "stat"
     },
     {
@@ -172,9 +170,8 @@
         "content": "<h1><center>Ingress</center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "title": "",
-      "transparent": false,
       "type": "text"
     },
     {
@@ -193,8 +190,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "green",
@@ -229,7 +225,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -260,7 +256,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "stat"
     },
     {
@@ -317,8 +312,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -437,7 +431,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -494,7 +488,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -550,7 +543,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -634,7 +627,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -719,8 +712,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -838,7 +830,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -860,7 +852,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -892,8 +883,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "green",
@@ -929,7 +919,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -960,7 +950,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "stat"
     },
     {
@@ -984,9 +973,8 @@
         "content": "<h1><center>Egress</center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "title": "",
-      "transparent": false,
       "type": "text"
     },
     {
@@ -1005,8 +993,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
+                "color": "red"
               },
               {
                 "color": "green",
@@ -1041,7 +1028,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1072,7 +1059,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "stat"
     },
     {
@@ -1128,8 +1114,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1248,7 +1233,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1269,7 +1254,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -1325,7 +1309,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1409,7 +1393,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1494,8 +1478,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1613,7 +1596,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1635,7 +1618,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -1678,8 +1660,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -1722,7 +1703,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1753,7 +1734,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "stat"
     },
     {
@@ -1808,7 +1788,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -1839,7 +1819,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -1895,8 +1874,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1996,6 +1974,13 @@
       },
       "id": 142,
       "interval": "5m",
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Error Analysis",
+          "url": "/visualization/d/error-analysis/error-analysis?${__url_time_range:queryparam}&${groups:queryparam}&${dataSources:queryparam}&${annotationKey:queryparam}&${annotationValues:queryparam}"
+        }
+      ],
       "maxDataPoints": 100,
       "options": {
         "legend": {
@@ -2014,7 +1999,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -2035,7 +2020,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2054,8 +2038,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "light-blue",
-                "value": null
+                "color": "light-blue"
               },
               {
                 "color": "blue",
@@ -2098,7 +2081,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -2129,7 +2112,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "stat"
     },
     {
@@ -2184,7 +2166,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -2214,7 +2196,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "piechart"
     },
     {
@@ -2270,8 +2251,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2371,6 +2351,13 @@
       },
       "id": 147,
       "interval": "5m",
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Filter Analysis",
+          "url": "/visualization/d/filter-analysis/filter-analysis?${__url_time_range:queryparam}&${groups:queryparam}&${dataSources:queryparam}&${annotationKey:queryparam}&${annotationValues:queryparam}"
+        }
+      ],
       "maxDataPoints": 100,
       "options": {
         "legend": {
@@ -2389,7 +2376,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -2410,7 +2397,6 @@
           }
         }
       ],
-      "transparent": false,
       "type": "timeseries"
     },
     {
@@ -2448,8 +2434,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2553,7 +2538,7 @@
           }
         ]
       },
-      "pluginVersion": "11.5.2",
+      "pluginVersion": "11.6.1",
       "targets": [
         {
           "datasource": {
@@ -2612,7 +2597,7 @@
     }
   ],
   "preload": false,
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [
     "DeltaFi",
     "Data Flow",
@@ -2789,6 +2774,5 @@
   "timezone": "",
   "title": "Dataflow Analytics",
   "uid": "dataflow-analytics",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }
