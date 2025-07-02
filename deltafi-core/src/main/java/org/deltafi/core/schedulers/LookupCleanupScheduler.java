@@ -32,12 +32,16 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class LookupCleanupScheduler {
 
+    private static final int HIGHER_STARTUP_LIMIT = 1000;
+    private static final int LOWER_RUN_LIMIT = 50;
+
     private final ActionNameRepo actionNameRepo;
     private final AnnotationKeyRepo annotationKeyRepo;
     private final AnnotationValueRepo annotationValueRepo;
     private final ErrorCauseRepo errorCauseRepo;
     private final EventGroupRepo eventGroupRepo;
     private final EventAnnotationsRepo eventAnnotationsRepo;
+    private int currentLimit = HIGHER_STARTUP_LIMIT;
 
     // run every 6 hours, which is half the frequency at which analytics chunks are dropped
     @Scheduled(fixedDelayString = "PT6H")
@@ -53,11 +57,12 @@ public class LookupCleanupScheduler {
         log.info("Cleaned up unused error cause lookups");
         eventGroupRepo.deleteUnusedEventGroups();
         log.info("Cleaned up unused event group lookups");
-        Integer cleaned = 50;
-        while (cleaned != null && cleaned == 50) {
-            cleaned = eventAnnotationsRepo.deleteUnusedEventAnnotations(50);
+        Integer cleaned = currentLimit;
+        while (cleaned != null && cleaned == currentLimit) {
+            cleaned = eventAnnotationsRepo.deleteUnusedEventAnnotations(currentLimit);
         }
-        log.info("Cleaned up unused event annotation lookups");
+        log.info("Cleaned up unused event annotation lookups, batch size: " + currentLimit);
+        currentLimit = LOWER_RUN_LIMIT;
         log.info("Analytic lookup tables cleanup complete");
     }
 }
