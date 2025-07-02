@@ -80,6 +80,7 @@ This document provides comprehensive documentation for all available commands, s
     - [data-source](#data-source)
       - [list](#data-source-list)
       - [get](#data-source-get)
+      - [load-on-error](#data-source-load-on-error)
       - [load-rest](#data-source-load-rest)
       - [load-timed](#data-source-load-timed)
       - [start](#data-source-start)
@@ -390,6 +391,10 @@ Manage data sources in DeltaFi.
 - `get [name]`: Get details of a specific data source
   ```bash
   deltafi data-source get <name> [--format|-o <json|yaml>]
+  ```
+- `load-on-error`: Create or update an on-error data source
+  ```bash
+  deltafi data-source load-on-error --file|-f <file>
   ```
 - `load-rest`: Create or update a REST data source
   ```bash

@@ -83,6 +83,9 @@ var flowGraphCmd = &cobra.Command{
 			for _, source := range flows.GetTimedDataSources() {
 				sources = append(sources, source.GetName())
 			}
+			for _, source := range flows.GetOnErrorDataSources() {
+				sources = append(sources, source.GetName())
+			}
 		}
 		return sources, cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp
 	},
@@ -126,6 +129,15 @@ func displayFlowGraph(flowName string) error {
 				}
 			}
 		}
+		if sourceFlow == nil {
+			for _, source := range flows.GetOnErrorDataSources() {
+				if source.GetName() == flowName {
+					sourceFlow = source
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
 	}
 
 	if sourceFlow == nil {
@@ -151,6 +163,15 @@ func displayFlowGraph(flowName string) error {
 			isLastSibling: true,
 		}
 	case *graphql.GetFlowGraphGetFlowsTimedDataSourcesTimedDataSource:
+		sourceNode = &flowNode{
+			name:          s.GetName(),
+			nodeType:      "source",
+			state:         flowStateToString(s.GetFlowStatus().State),
+			testMode:      s.GetFlowStatus().TestMode,
+			enabled:       isFlowEnabled(s.GetFlowStatus().State),
+			isLastSibling: true,
+		}
+	case *graphql.GetFlowGraphGetFlowsOnErrorDataSourcesOnErrorDataSource:
 		sourceNode = &flowNode{
 			name:          s.GetName(),
 			nodeType:      "source",

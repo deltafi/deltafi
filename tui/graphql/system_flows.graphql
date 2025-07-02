@@ -18,6 +18,35 @@ query GetSystemFlowPlans {
                 ...ActionFields
             }
         }
+        onErrorDataSources {
+            name
+            type
+            description
+            topic
+            metadata
+            annotationConfig {
+                annotations
+                discardPrefix
+                metadataPatterns
+            }
+            errorMessageRegex
+            sourceFilters {
+                flowType
+                flowName
+                actionName
+                actionClass
+            }
+            metadataFilters {
+                key
+                value
+            }
+            annotationFilters {
+                key
+                value
+            }
+            includeSourceMetadataRegex
+            includeSourceAnnotationsRegex
+        }
         restDataSources {
             name
             type

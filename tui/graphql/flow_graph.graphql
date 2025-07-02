@@ -19,6 +19,15 @@ query GetFlowGraph {
       }
       topic
     }
+    onErrorDataSources {
+      name
+      type
+      flowStatus {
+        state
+        testMode
+      }
+      topic
+    }
     transformFlows {
       name
       flowStatus {

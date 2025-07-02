@@ -23,10 +23,11 @@ import (
 )
 
 var flowDisplay = map[graphql.FlowType]string{
-	graphql.FlowTypeRestDataSource:  "rest data source",
-	graphql.FlowTypeTimedDataSource: "timed data source",
-	graphql.FlowTypeTransform:       "transform",
-	graphql.FlowTypeDataSink:        "data sink",
+	graphql.FlowTypeRestDataSource:    "rest data source",
+	graphql.FlowTypeTimedDataSource:   "timed data source",
+	graphql.FlowTypeOnErrorDataSource: "on-error data source",
+	graphql.FlowTypeTransform:         "transform",
+	graphql.FlowTypeDataSink:          "data sink",
 }
 
 func startFlow(flowType graphql.FlowType, flowName string) error {

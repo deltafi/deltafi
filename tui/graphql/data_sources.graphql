@@ -15,6 +15,94 @@ query ListDataSources {
         testMode
       }
     }
+    onErrorDataSource {
+      name
+      flowStatus {
+        state
+        testMode
+      }
+    }
+  }
+}
+
+# Get a specific On-Error data source flow
+query GetOnErrorDataSource($name: String!) {
+  getOnErrorDataSource(name: $name) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    maxErrors
+    flowStatus {
+      state
+      testMode
+    }
+    topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
+    errorMessageRegex
+    sourceFilters {
+      flowType
+      flowName
+      actionName
+      actionClass
+    }
+    metadataFilters {
+      key
+      value
+    }
+    annotationFilters {
+      key
+      value
+    }
+    includeSourceMetadataRegex
+    includeSourceAnnotationsRegex
+  }
+}
+
+# Get a specific On-Error data source plan
+query GetOnErrorDataSourcePlan($planName: String!) {
+  getOnErrorDataSourcePlan(planName: $planName) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
+    errorMessageRegex
+    sourceFilters {
+      flowType
+      flowName
+      actionName
+      actionClass
+    }
+    metadataFilters {
+      key
+      value
+    }
+    annotationFilters {
+      key
+      value
+    }
+    includeSourceMetadataRegex
+    includeSourceAnnotationsRegex
   }
 }
 
@@ -33,6 +121,27 @@ query GetRestDataSource($name: String!) {
     flowStatus {
       state
       testMode
+    }
+    topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
+  }
+}
+
+# Get a specific REST data source plan
+query GetRestDataSourcePlan($planName: String!) {
+  getRestDataSourcePlan(planName: $planName) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
     }
     topic
     metadata
@@ -88,6 +197,33 @@ query GetTimedDataSource($name: String!) {
       defaultValue
       value
       masked
+    }
+  }
+}
+
+# Get a specific timed data source plan
+query GetTimedDataSourcePlan($planName: String!) {
+  getTimedDataSourcePlan(planName: $planName) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
+    cronSchedule
+    timedIngressAction {
+      name
+      type
+      parameters
     }
   }
 }
@@ -150,6 +286,49 @@ mutation SaveTimedDataSource($dataSourcePlan: TimedDataSourcePlanInput!) {
   }
 }
 
+# Save an on-error data source flow
+mutation SaveOnErrorDataSource($dataSourcePlan: OnErrorDataSourcePlanInput!) {
+  saveOnErrorDataSourcePlan(dataSourcePlan: $dataSourcePlan) {
+    name
+    type
+    description
+    sourcePlugin {
+      groupId
+      artifactId
+      version
+    }
+    maxErrors
+    flowStatus {
+      state
+      testMode
+    }
+    topic
+    metadata
+    annotationConfig {
+      annotations
+      metadataPatterns
+      discardPrefix
+    }
+    errorMessageRegex
+    sourceFilters {
+      flowType
+      flowName
+      actionName
+      actionClass
+    }
+    metadataFilters {
+      key
+      value
+    }
+    annotationFilters {
+      key
+      value
+    }
+    includeSourceMetadataRegex
+    includeSourceAnnotationsRegex
+  }
+}
+
 # Enable test mode for a REST data source flow
 mutation EnableRestDataSourceTestMode($name: String!) {
   enableRestDataSourceTestMode(name: $name)
@@ -158,6 +337,11 @@ mutation EnableRestDataSourceTestMode($name: String!) {
 # Enable test mode for a timed data source flow
 mutation EnableTimedDataSourceTestMode($name: String!) {
   enableTimedDataSourceTestMode(name: $name)
+}
+
+# Enable test mode for an on-error data source flow
+mutation EnableOnErrorDataSourceTestMode($name: String!) {
+  enableOnErrorDataSourceTestMode(name: $name)
 }
 
 # Disable test mode for a REST data source flow
@@ -170,6 +354,11 @@ mutation DisableTimedDataSourceTestMode($name: String!) {
   disableTimedDataSourceTestMode(name: $name)
 }
 
+# Disable test mode for an on-error data source flow
+mutation DisableOnErrorDataSourceTestMode($name: String!) {
+  disableOnErrorDataSourceTestMode(name: $name)
+}
+
 # Delete a REST data source flow
 mutation DeleteRestDataSource($name: String!) {
   removeRestDataSourcePlan(name: $name)
@@ -178,4 +367,9 @@ mutation DeleteRestDataSource($name: String!) {
 # Delete a timed data source flow
 mutation DeleteTimedDataSource($name: String!) {
   removeTimedDataSourcePlan(name: $name)
+}
+
+# Delete an on-error data source flow
+mutation DeleteOnErrorDataSource($name: String!) {
+  removeOnErrorDataSourcePlan(name: $name)
 } 

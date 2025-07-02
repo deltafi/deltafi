@@ -97,20 +97,27 @@ func prettyPrint(cmd *cobra.Command, data interface{}) error {
 	format, _ := cmd.Flags().GetString("format")
 	switch format {
 	case "json":
-		return printJSON(data)
+		plain, _ := cmd.Flags().GetBool("plain")
+		return printJSON(data, plain)
 	case "yaml":
 		return printYAML(data)
 	default:
-		return printJSON(data)
+		plain, _ := cmd.Flags().GetBool("plain")
+		return printJSON(data, plain)
 	}
 }
 
-func printJSON(data interface{}) error {
+func printJSON(data interface{}, plain bool) error {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return wrapInError("Error reading Json", err)
 	}
-	fmt.Println(string(jsonData))
+
+	if plain {
+		fmt.Println(string(jsonData))
+	} else {
+		fmt.Println(styles.ColorizeJSON(string(jsonData)))
+	}
 	return nil
 }
 

@@ -18,7 +18,10 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,6 +30,7 @@ import (
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var dataSourceCmd = &cobra.Command{
@@ -64,7 +68,7 @@ var listDataSourceFlows = &cobra.Command{
 
 var getDataSourceFlow = &cobra.Command{
 	Use:               "get",
-	Short:             "Get data source details",
+	Short:             "Get data source configuration",
 	Long:              `Display detailed configuration and status information for a specific data source.`,
 	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: getDataSourceNames,
@@ -75,65 +79,128 @@ var getDataSourceFlow = &cobra.Command{
 	},
 }
 
-var loadRestDataSourceFlow = &cobra.Command{
-	Use:   "load-rest",
-	Short: "Load REST data source configuration",
-	Long: `Create or update a REST data source from a configuration file.
+var loadDataSourceFlow = &cobra.Command{
+	Use:   "load [files...]",
+	Short: "Load data source configuration",
+	Long: `Create or update data sources from configuration files.
 
-The configuration file should contain REST data source settings including
-endpoints, authentication, and processing parameters. If a data source
-with the same name already exists, it will be replaced.
+Each file should contain data source settings and will automatically
+detect the type (REST_DATA_SOURCE, TIMED_DATA_SOURCE, or ON_ERROR_DATA_SOURCE) 
+based on the 'type' field in the file. If a data source with the same name 
+already exists, it will be replaced.
 
 Examples:
-  deltafi data-source load-rest --file rest-source.yaml
-  deltafi data-source load-rest < rest-source.json`,
+  deltafi data-source load source-config.yaml
+  deltafi data-source load rest-source.json timed-source.yaml
+  deltafi data-source load *.yaml`,
+	Args:         cobra.MinimumNArgs(1),
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
-		var restDataSourcePlan graphql.RestDataSourcePlanInput
-		var err = parseFile(cmd, &restDataSourcePlan)
-		if err != nil {
-			return err
+
+		var lastErr error
+		for _, filename := range args {
+			content, err := os.ReadFile(filename)
+			if err != nil {
+				fmt.Println(styles.FAIL(fmt.Sprintf("Error reading file %s: %v\n", filename, err)))
+				lastErr = err
+				continue
+			}
+
+			// First, parse to get the type
+			var rawData map[string]interface{}
+			ext := strings.ToLower(filepath.Ext(filename))
+			switch ext {
+			case ".json":
+				if err := json.Unmarshal(content, &rawData); err != nil {
+					fmt.Println(styles.FAIL(fmt.Sprintf("Error reading JSON from %s: %v\n", filename, err)))
+					lastErr = err
+					continue
+				}
+			case ".yaml", ".yml":
+				if err := yaml.Unmarshal(content, &rawData); err != nil {
+					fmt.Println(styles.FAIL(fmt.Sprintf("Error reading YAML from %s: %v\n", filename, err)))
+					lastErr = err
+					continue
+				}
+			default:
+				fmt.Println(styles.FAIL(fmt.Sprintf("Unsupported file extension %s for file %s\n", ext, filename)))
+				lastErr = fmt.Errorf("unsupported file extension: %s", ext)
+				continue
+			}
+
+			// Extract the type field
+			dataSourceType, ok := rawData["type"].(string)
+			if !ok {
+				fmt.Println(styles.FAIL(fmt.Sprintf("Missing or invalid 'type' field in file %s\n", filename)))
+				lastErr = fmt.Errorf("missing or invalid 'type' field in %s", filename)
+				continue
+			}
+
+			// Load based on type
+			switch strings.ToUpper(dataSourceType) {
+			case "REST_DATA_SOURCE":
+				var restDataSourcePlan graphql.RestDataSourcePlanInput
+				if err := json.Unmarshal(content, &restDataSourcePlan); err != nil {
+					if err := yaml.Unmarshal(content, &restDataSourcePlan); err != nil {
+						fmt.Println(styles.FAIL(fmt.Sprintf("Error parsing REST data source configuration from %s: %v\n", filename, err)))
+						lastErr = err
+						continue
+					}
+				}
+				resp, err := graphql.SaveRestDataSource(restDataSourcePlan)
+				if err != nil {
+					fmt.Println(styles.FAIL(fmt.Sprintf("Error saving REST data source from %s: %v\n", filename, err)))
+					lastErr = err
+					continue
+				}
+				fmt.Println(styles.OK(fmt.Sprintf("Loaded %s", filename)))
+				prettyPrint(cmd, resp)
+
+			case "TIMED_DATA_SOURCE":
+				var timedDataSourcePlan graphql.TimedDataSourcePlanInput
+				if err := json.Unmarshal(content, &timedDataSourcePlan); err != nil {
+					if err := yaml.Unmarshal(content, &timedDataSourcePlan); err != nil {
+						fmt.Println(styles.FAIL(fmt.Sprintf("Error parsing timed data source configuration from %s: %v\n", filename, err)))
+						lastErr = err
+						continue
+					}
+				}
+				resp, err := graphql.SaveTimedDataSource(timedDataSourcePlan)
+				if err != nil {
+					fmt.Println(styles.FAIL(fmt.Sprintf("Error saving timed data source from %s: %v\n", filename, err)))
+					lastErr = err
+					continue
+				}
+				fmt.Println(styles.OK(fmt.Sprintf("Loaded %s", filename)))
+				prettyPrint(cmd, resp)
+
+			case "ON_ERROR_DATA_SOURCE":
+				var onErrorDataSourcePlan graphql.OnErrorDataSourcePlanInput
+				if err := json.Unmarshal(content, &onErrorDataSourcePlan); err != nil {
+					if err := yaml.Unmarshal(content, &onErrorDataSourcePlan); err != nil {
+						fmt.Println(styles.FAIL(fmt.Sprintf("Error parsing On-Error data source configuration from %s: %v\n", filename, err)))
+						lastErr = err
+						continue
+					}
+				}
+				resp, err := graphql.SaveOnErrorDataSource(onErrorDataSourcePlan)
+				if err != nil {
+					fmt.Println(styles.FAIL(fmt.Sprintf("Error saving On-Error data source from %s: %v\n", filename, err)))
+					lastErr = err
+					continue
+				}
+				fmt.Println(styles.OK(fmt.Sprintf("Loaded %s", filename)))
+				prettyPrint(cmd, resp)
+
+			default:
+				fmt.Println(styles.FAIL(fmt.Sprintf("Unsupported data source type %s in file %s\n", dataSourceType, filename)))
+				lastErr = fmt.Errorf("unsupported data source type: %s", dataSourceType)
+				continue
+			}
 		}
 
-		resp, err := graphql.SaveRestDataSource(restDataSourcePlan)
-
-		if err != nil {
-			return wrapInError("Error saving REST data source", err)
-		}
-
-		return prettyPrint(cmd, resp)
-	},
-}
-
-var loadTimedDataSourceFlow = &cobra.Command{
-	Use:   "load-timed",
-	Short: "Load timed data source configuration",
-	Long: `Create or update a timed data source from a configuration file.
-
-The configuration file should contain timed data source settings including
-scheduling parameters, data retrieval logic, and processing options.
-If a data source with the same name already exists, it will be replaced.
-
-Examples:
-  deltafi data-source load-timed --file timed-source.yaml
-  deltafi data-source load-timed < timed-source.json`,
-	SilenceUsage: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		RequireRunningDeltaFi()
-		var timedDataSourcePlan graphql.TimedDataSourcePlanInput
-		var err = parseFile(cmd, &timedDataSourcePlan)
-		if err != nil {
-			return err
-		}
-
-		resp, err := graphql.SaveTimedDataSource(timedDataSourcePlan)
-
-		if err != nil {
-			return wrapInError("Error saving timed data source", err)
-		}
-
-		return prettyPrint(cmd, resp)
+		return lastErr
 	},
 }
 
@@ -184,6 +251,19 @@ Examples:
 
 			// If REST fails, try timed data source
 			err = startFlow(graphql.FlowTypeTimedDataSource, flowName)
+			if err == nil {
+				if allActions {
+					err = startAllConnectedActions(flowName)
+					if err != nil {
+						fmt.Printf("Error starting connected actions for %s: %v\n", flowName, err)
+						lastErr = err
+					}
+				}
+				continue
+			}
+
+			// If timed fails, try on-error data source
+			err = startFlow(graphql.FlowTypeOnErrorDataSource, flowName)
 			if err != nil {
 				fmt.Printf("Error starting data source %s: %v\n", flowName, err)
 				lastErr = err
@@ -245,6 +325,19 @@ Examples:
 
 			// If REST fails, try timed data source
 			err = stopFlow(graphql.FlowTypeTimedDataSource, flowName)
+			if err == nil {
+				if allActions {
+					err = stopAllConnectedActions(flowName)
+					if err != nil {
+						fmt.Printf("Error stopping connected actions for %s: %v\n", flowName, err)
+						lastErr = err
+					}
+				}
+				continue
+			}
+
+			// If timed fails, try on-error data source
+			err = stopFlow(graphql.FlowTypeOnErrorDataSource, flowName)
 			if err != nil {
 				fmt.Printf("Error stopping data source %s: %v\n", flowName, err)
 				lastErr = err
@@ -285,6 +378,18 @@ var pauseDataSourceFlow = &cobra.Command{
 
 		// If REST fails, try timed data source
 		err = pauseFlow(graphql.FlowTypeTimedDataSource, args[0])
+		if err == nil {
+			if allActions {
+				err = pauseAllConnectedActions(args[0])
+				if err != nil {
+					return fmt.Errorf("Error pausing connected actions for %s: %v", args[0], err)
+				}
+			}
+			return nil
+		}
+
+		// If timed fails, try on-error data source
+		err = pauseFlow(graphql.FlowTypeOnErrorDataSource, args[0])
 		if err != nil {
 			return fmt.Errorf("Error pausing data source %s: %v", args[0], err)
 		}
@@ -352,16 +457,22 @@ func newDataSourceError(message string) *DataSourceError {
 }
 
 func getDataSource(cmd *cobra.Command, name string) error {
-	// Try REST data source first
-	restResp, err := graphql.GetRestDataSource(name)
+	// Try REST data source PLAN first
+	restPlanResp, err := graphql.GetRestDataSourcePlan(name)
 	if err == nil {
-		return prettyPrint(cmd, restResp)
+		return prettyPrint(cmd, restPlanResp.GetRestDataSourcePlan)
 	}
 
-	// Try timed data source
-	timedResp, err := graphql.GetTimedDataSource(name)
+	// Try timed data source PLAN
+	timedPlanResp, err := graphql.GetTimedDataSourcePlan(name)
 	if err == nil {
-		return prettyPrint(cmd, timedResp)
+		return prettyPrint(cmd, timedPlanResp.GetTimedDataSourcePlan)
+	}
+
+	// Try on-error data source PLAN
+	onErrorPlanResp, err := graphql.GetOnErrorDataSourcePlan(name)
+	if err == nil {
+		return prettyPrint(cmd, onErrorPlanResp.GetOnErrorDataSourcePlan)
 	}
 
 	return wrapInError("Error getting data source "+name, err)
@@ -412,6 +523,18 @@ func listAllDataSources(cmd *cobra.Command) error {
 		})
 	}
 
+	// Add on-error data sources
+	for _, dataSource := range resp.GetAllFlows.GetOnErrorDataSource() {
+		actionCounts, _ := countActionsInFlow(dataSource.GetName())
+		rows = append(rows, []string{
+			dataSource.GetName(),
+			"On-Error",
+			formatDataSourceState(string(dataSource.GetFlowStatus().State)),
+			strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
+			formatActionCounts(actionCounts),
+		})
+	}
+
 	sort.Slice(rows, func(i, j int) bool {
 		return rows[i][0] < rows[j][0]
 	})
@@ -441,6 +564,13 @@ func enableDataSourceTestMode(flowName string) error {
 		return nil
 	}
 
+	// Try on-error data source
+	_, err = graphql.EnableOnErrorDataSourceTestMode(flowName)
+	if err == nil {
+		fmt.Println("Successfully enabled test mode for on-error data source " + flowName)
+		return nil
+	}
+
 	return wrapInError("Could not enable test mode for data source "+flowName, err)
 }
 
@@ -456,6 +586,13 @@ func disableDataSourceTestMode(flowName string) error {
 	_, err = graphql.DisableTimedDataSourceTestMode(flowName)
 	if err == nil {
 		fmt.Println("Successfully disabled test mode for timed data source " + flowName)
+		return nil
+	}
+
+	// Try on-error data source
+	_, err = graphql.DisableOnErrorDataSourceTestMode(flowName)
+	if err == nil {
+		fmt.Println("Successfully disabled test mode for on-error data source " + flowName)
 		return nil
 	}
 
@@ -483,6 +620,10 @@ func fetchDataSourceNames() ([]string, error) {
 	}
 
 	for _, obj := range resp.GetAllFlows.GetTimedDataSource() {
+		names = append(names, obj.GetName())
+	}
+
+	for _, obj := range resp.GetAllFlows.GetOnErrorDataSource() {
 		names = append(names, obj.GetName())
 	}
 
@@ -554,6 +695,38 @@ func deleteDataSource(cmd *cobra.Command, name string) error {
 		return nil
 	}
 
+	// If not a Timed data source, try On-Error data source
+	onErrorResp, err := graphql.GetOnErrorDataSource(name)
+	if err == nil {
+		if onErrorResp.GetOnErrorDataSource.FlowStatus.State == graphql.FlowStateRunning {
+			fmt.Printf("Data source %s is currently running. Do you want to stop it? [y/N] ", name)
+			var response string
+			fmt.Scanln(&response)
+			if response != "y" && response != "Y" {
+				return newDataSourceError("Operation cancelled")
+			}
+		}
+
+		// Stop if running
+		if onErrorResp.GetOnErrorDataSource.FlowStatus.State == graphql.FlowStateRunning {
+			err := stopFlow(graphql.FlowTypeOnErrorDataSource, name)
+			if err != nil {
+				return newDataSourceError(fmt.Sprintf("Error stopping on-error data source %s: %v", name, err))
+			}
+		}
+
+		// Now try to delete it
+		deleteResp, err := graphql.DeleteOnErrorDataSource(name)
+		if err != nil {
+			return newDataSourceError(fmt.Sprintf("Error deleting on-error data source %s: %v", name, err))
+		}
+		if !deleteResp.RemoveOnErrorDataSourcePlan {
+			return newDataSourceError(fmt.Sprintf("Unable to delete on-error data source"))
+		}
+		fmt.Printf("Successfully deleted on-error data source %s\n", name)
+		return nil
+	}
+
 	return newDataSourceError(fmt.Sprintf("Error deleting data source %s: %v", name, err))
 }
 
@@ -585,6 +758,14 @@ func countActionsInFlow(flowName string) (*actionCounts, error) {
 		}
 		if sourceTopic == "" {
 			for _, source := range flows.GetTimedDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetOnErrorDataSources() {
 				if source.GetName() == flowName {
 					sourceTopic = source.GetTopic()
 					break
@@ -729,6 +910,14 @@ func startAllConnectedActions(flowName string) error {
 				}
 			}
 		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetOnErrorDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
 		if sourceTopic != "" {
 			break
 		}
@@ -768,6 +957,14 @@ func stopAllConnectedActions(flowName string) error {
 				}
 			}
 		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetOnErrorDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
 		if sourceTopic != "" {
 			break
 		}
@@ -801,6 +998,14 @@ func pauseAllConnectedActions(flowName string) error {
 		}
 		if sourceTopic == "" {
 			for _, source := range flows.GetTimedDataSources() {
+				if source.GetName() == flowName {
+					sourceTopic = source.GetTopic()
+					break
+				}
+			}
+		}
+		if sourceTopic == "" {
+			for _, source := range flows.GetOnErrorDataSources() {
 				if source.GetName() == flowName {
 					sourceTopic = source.GetTopic()
 					break
@@ -1056,8 +1261,7 @@ func init() {
 
 	dataSourceCmd.AddCommand(listDataSourceFlows)
 	dataSourceCmd.AddCommand(getDataSourceFlow)
-	dataSourceCmd.AddCommand(loadRestDataSourceFlow)
-	dataSourceCmd.AddCommand(loadTimedDataSourceFlow)
+	dataSourceCmd.AddCommand(loadDataSourceFlow)
 	dataSourceCmd.AddCommand(startDataSourceFlow)
 	dataSourceCmd.AddCommand(stopDataSourceFlow)
 	dataSourceCmd.AddCommand(pauseDataSourceFlow)
@@ -1072,4 +1276,6 @@ func init() {
 
 	setDataSourceTestMode.Flags().Bool("enable", false, "Enable test mode")
 	setDataSourceTestMode.Flags().Bool("disable", false, "Disable test mode")
+
+	loadDataSourceFlow.Flags().BoolP("plain", "p", false, "Plain output format")
 }
