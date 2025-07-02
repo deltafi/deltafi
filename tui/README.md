@@ -330,15 +330,15 @@ Manage DeltaFi system properties.
 #### `minio`
 Command line access to the running DeltaFi MinIO instance.
 
-- `cli`: Start an interactive MinIO CLI session
+- `cli`: Start an interactive MinIO TUI session
   ```bash
   deltafi minio cli
   ```
-- `exec`: Execute MinIO CLI commands
+- `exec`: Execute MinIO TUI commands
   ```bash
   deltafi minio exec <commands...>
   ```
-- `mc`: Execute a MinIO CLI command
+- `mc`: Execute a MinIO TUI command
   ```bash
   deltafi minio mc <command>
   ```
@@ -350,22 +350,60 @@ Command line access to the running DeltaFi MinIO instance.
 #### `valkey`
 Command line access to the running DeltaFi Valkey instance.
 
-- `cli`: Start an interactive Valkey CLI session
+- `cli`: Start an interactive Valkey TUI session
   ```bash
   deltafi valkey cli
   ```
-- `latency`: Start the Valkey CLI latency command
+- `latency`: Start the Valkey TUI latency command
   ```bash
   deltafi valkey latency
   ```
-- `stat`: Start the Valkey CLI stat command
+- `stat`: Start the Valkey TUI stat command
   ```bash
   deltafi valkey stat
   ```
-- `monitor`: Start the Valkey CLI monitor command
+- `monitor`: Start the Valkey TUI monitor command
   ```bash
   deltafi valkey monitor
   ```
+
+#### `graphql`
+Execute GraphQL queries against the DeltaFi GraphQL endpoint.
+
+```bash
+deltafi graphql [query] [--file|-f <file>] [--plain]
+```
+
+The query can be provided in several ways:
+- **Command line argument**: Direct query string
+- **Interactive mode**: No arguments - type or paste to stdin, then press Ctrl+D to submit
+- **From stdin**: Use `-` for the query argument
+- **From file**: Use `@filename` or `--file filename` for the query argument
+
+Flags:
+- `--file, -f <file>`: Read query from specified file
+- `--plain`: Output plain JSON without syntax coloring
+
+Examples:
+```bash
+# Execute a simple query
+deltafi graphql "query { version }"
+
+# Read query from stdin
+deltafi graphql - < query.graphql
+
+# Pipe query to command
+cat query.graphql | deltafi graphql -
+
+# Read query from file using @ prefix
+deltafi graphql @query.graphql
+
+# Read query from file using --file flag
+deltafi graphql --file query.graphql
+
+# Interactive mode - type query and press Ctrl+D
+deltafi graphql
+```
 
 ### DeltaFi Flow Management
 
@@ -618,7 +656,46 @@ Command line access to the running DeltaFi Postgres instance.
   ```bash
   cat query.sql | deltafi postgres eval
   deltafi postgres eval < query.sql
+  deltafi postgres eval  # Interactive input until Ctrl-D
   ```
+- `status`: Show Postgres instance status and administrative information
+  ```bash
+  deltafi postgres status [--plain|-p]
+  ```
+  - `--plain, -p`: Plain output, omitting table borders
+  
+  Displays comprehensive information including:
+  - **Version**: PostgreSQL version and compilation details
+  - **Database Size**: Current database size and storage usage
+  - **Cache Hit Ratio**: Database cache performance metrics
+  - **Active Connections**: Current connection states and counts
+  - **Table Sizes**: Top 10 tables by total size (including indexes)
+  - **Table Statistics**: Live/dead row counts for top tables
+  - **Top Index Usage**: Most frequently used indexes with scan counts
+  - **Active Queries**: Currently running queries (if any)
+  - **Current Locks**: Active lock types and counts
+  - **Flyway Migration Summary**: High-level migration statistics
+  - **Recent Flyway Migrations**: Last 5 migrations with details
+
+- `migrations`: Show detailed Flyway migration information
+  ```bash
+  deltafi postgres migrations [--plain|-p]
+  ```
+  - `--plain, -p`: Plain output, omitting table borders
+  
+  Displays a comprehensive table of all Flyway migrations including:
+  - **Version**: Migration version number
+  - **Description**: Human-readable description of what the migration does
+  - **Script**: Actual SQL script filename
+  - **Installed On**: When the migration was applied
+  - **Execution Time**: How long the migration took (in milliseconds)
+  - **Success**: Whether the migration succeeded
+  
+  Also shows a migration summary with:
+  - Total number of migrations
+  - Number of successful vs failed migrations
+  - Latest migration version
+  - Last migration timestamp
 
 #### `dashboard`
 Display system metrics dashboard with real-time updates.
