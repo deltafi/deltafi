@@ -5,6 +5,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.24.0] - 2025-07-08
+
+### Added
+- Added drill-down links from the Dataflow Analytics dashboard to the Error and Filter Analysis dashboard
+- Added On-Error Data Sources, a new type of data source that automatically triggers when errors occur in other flows
+- Added filtering options for On-Error data sources:
+  - `errorMessageRegex` - Filter by error message patterns
+  - `sourceFilters` - Unified filtering structure with optional fields:
+    - `flowType` - Filter by source flow type (REST_DATA_SOURCE, TIMED_DATA_SOURCE, TRANSFORM, DATA_SINK)
+    - `flowName` - Filter by specific flow name
+    - `actionName` - Filter by specific action name that generated the error
+    - `actionClass` - Filter by action class for cross-flow error monitoring
+  - `metadataFilters` - Filter by source DeltaFile metadata key-value pairs
+  - `annotationFilters` - Filter by source DeltaFile annotation key-value pairs
+  - `includeSourceMetadataRegex` - Include matching metadata from source DeltaFile in error DeltaFile
+  - `includeSourceAnnotationsRegex` - Include matching annotations from source DeltaFile in error DeltaFile
+- Added GraphQL mutations for creating and managing On-Error data sources
+- Added documentation explaining On-Error data source configuration and use cases with detailed filtering examples
+- TUI: Added command support for on-error data sources
+- TUI: `graphql` command to execute GraphQL queries against the DeltaFi GraphQL API.
+- TUI: `deltafi postgres status` - Renders status information on the primary Postgres database
+- TUI: `deltafi postgres migrations` - Lists flyway migrations for the primary Postgres database
+
+### Changed
+- Add filter to Error Analysis dashboard to hide items that were filtered due to Missing Subscribers
+- Add filter to Filter Analysis dashboard to hide items that were filtered due to Test Mode 
+- Child DeltaFiles now inherit the depth of their parent flow (parent depth + 1)
+  - The existing `maxDepth` configuration now prevents infinite recursion across spawned children, not just within a single DeltaFile
+- Revert raw analytic data storage to 3 days 
+- TUI: data-source load-timed and load-rest consolidated to single load command
+
+### Fixed
+- Boost the `event_annotation` clean-up batch size during start-up to 1000
+- Fix failing method used to clean up event annotations table
+- TUI: Fixed data source get and load commands to be symmetrical
+- TUI: Fixed extraneous output on `deltafi postgres cli` exit
+- TUI: Allow piping from `deltafi postgres eval` and `deltafi minio mc` commands
+
+### Upgrade and Migration
+- Database migration adds support for OnError data source configuration fields (negligible migration time)
+- Upgrade python dependencies to match new base image: deltafi/python:3.13.5-0
+  - pydantic 2.11.7
+  - requests 2.32.4
+  - urllib3 2.5.0
+  - pytest 8.4.1
+
 ## [2.23.0] - 2025-06-23
 
 ### Added
@@ -4349,7 +4395,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.23.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.24.0...main
+[2.24.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.23.0...2.24.0
 [2.23.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.1...2.23.0
 [2.22.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.0...2.22.1
 [2.22.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.21.0...2.22.0
