@@ -176,7 +176,7 @@ var deleteSnapshotCmd = &cobra.Command{
 
 		if !resp.DeleteSnapshot.Success {
 			if len(resp.DeleteSnapshot.Errors) > 0 {
-				return fmt.Errorf("failed to delete snapshot: %s", resp.DeleteSnapshot.Errors[0])
+				return fmt.Errorf("failed to delete snapshot: %s", *resp.DeleteSnapshot.Errors[0])
 			}
 			return fmt.Errorf("failed to delete snapshot")
 		}
@@ -286,7 +286,7 @@ func RestoreSnapshot(snapshotId uuid.UUID, hardReset bool) (*graphql.ResetFromSn
 
 	if !resp.ResetFromSnapshotWithId.Success {
 		if len(resp.ResetFromSnapshotWithId.Errors) > 0 {
-			return resp, fmt.Errorf("failed to restore snapshot: %s", resp.ResetFromSnapshotWithId.Errors[0])
+			return resp, fmt.Errorf("failed to restore snapshot: %s", *resp.ResetFromSnapshotWithId.Errors[0])
 		}
 		return resp, fmt.Errorf("failed to restore snapshot")
 	}

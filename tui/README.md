@@ -118,6 +118,14 @@ This document provides comprehensive documentation for all available commands, s
     - [deltafile](#deltafile)
     - [ingress](#ingress)
     - [search](#search)
+  - [Testing](#testing)
+    - [integration-test](#integration-test)
+      - [list](#integration-test-list)
+      - [load](#integration-test-load)
+      - [run](#integration-test-run)
+      - [summary](#integration-test-summary)
+      - [clear](#integration-test-clear)
+      - [remove](#integration-test-remove)
   - [Metrics](#metrics)
     - [postgres](#postgres)
       - [cli](#postgres-cli)
@@ -643,6 +651,225 @@ Example:
 deltafi search --data-source my-source --stage COMPLETE --from "2024-01-01" --to "2024-02-01"
 ```
 
+### Testing
+
+#### `integration-test`
+Manage integration tests for DeltaFi flows. Integration tests allow you to test complete data flows by providing test inputs and expected outputs, validating that data sources, transformation flows, and data sinks work together correctly.
+
+```bash
+deltafi integration-test [subcommand] [options] [arguments]
+```
+
+**Subcommands:**
+
+##### `list`
+Show integration tests with their details. If no test names are provided, all tests are shown.
+
+```bash
+deltafi integration-test list [test-names...] [--short|-s] [--plain|-p] [--json|-j]
+```
+- `test-names...`: Optional list of specific test names to display
+- `--short, -s`: Show only test names
+- `--plain, -p`: Plain output format
+- `--json, -j`: Output in JSON format
+
+Examples:
+```bash
+# List all integration tests
+deltafi integration-test list
+
+# List specific tests
+deltafi integration-test list smoke-test api-test
+
+# Show only test names
+deltafi integration-test list --short
+
+# Output in JSON format
+deltafi integration-test list --json
+```
+
+##### `load`
+Load an integration test from a configuration file. The file should contain integration test settings in JSON format. If an integration test with the same name already exists, it will be replaced.
+
+```bash
+deltafi integration-test load <file> [--plain|-p]
+```
+- `file`: Path to the integration test configuration file (JSON format)
+- `--plain, -p`: Plain output format
+
+Examples:
+```bash
+# Load a single test configuration
+deltafi integration-test load test-config.json
+
+# Load multiple test configurations
+deltafi integration-test load *.json
+```
+
+##### `run`
+Run integration tests and wait for results. Starts the specified integration tests and polls for completion with a progress bar showing real-time status updates.
+
+```bash
+deltafi integration-test run [test-names...] [--like|-l <pattern>] [--timeout|-t <duration>] [--json|-j] [--plain|-p]
+```
+- `test-names...`: Optional list of specific test names to run. If not provided, all available tests will be run.
+- `--like, -l`: Run tests whose names contain this string (case-insensitive, can be specified multiple times)
+- `--timeout, -t`: Timeout for test execution (default: 30m)
+
+**Features:**
+- **Two-Phase Progress Bar**: 
+  - **Startup Phase**: Shows progress as tests are being started (e.g., "3/5 tests started")
+  - **Execution Phase**: Shows progress as tests complete (e.g., "2/5 tests completed")
+- **Live Status Table**: Displays real-time status of each running test with color-coded results
+- **Pattern Matching**: Use `--like` to run tests matching specific patterns
+- **Multiple Patterns**: Combine multiple `--like` flags for OR logic matching
+- **Intersection Logic**: When both test names and `--like` patterns are specified, only tests that match both criteria are run
+- **Comprehensive Results**: Final summary shows success/failure counts and detailed results table
+- **Timeout Handling**: Graceful timeout handling with clear indication of incomplete tests
+
+**Filtering Logic:**
+- **No arguments + no `--like`**: Runs all tests
+- **Specific test names only**: Runs only the specified tests
+- **`--like` pattern only**: Runs all tests whose names contain the pattern (case-insensitive)
+- **Both test names + `--like`**: Runs the intersection - only tests that are both explicitly named AND match the pattern
+
+Examples:
+```bash
+# Run all tests
+deltafi integration-test run
+
+# Run specific tests
+deltafi integration-test run test1 test2
+
+# Run tests containing "smoke" in their name
+deltafi integration-test run --like "smoke"
+
+# Run tests containing "test" OR "integration" in their name
+deltafi integration-test run --like "test" --like "integration"
+
+# Run specific tests that also contain "api" in their name (intersection)
+deltafi integration-test run test1 test2 --like "api"
+
+# Set custom timeout
+deltafi integration-test run --timeout 5m
+
+# Output results in JSON format
+deltafi integration-test run --json
+
+# Run tests with pattern matching and custom timeout
+deltafi integration-test run --like "e2e" --timeout 10m
+```
+
+**Output Format:**
+The command provides rich terminal output including:
+- Real-time progress bar with spinner and percentage
+- Live status table during execution
+- Final summary with success/failure counts
+- Detailed results table with test names, status, duration, and errors
+- Color-coded status indicators (green for success, red for failure, yellow for invalid)
+
+##### `summary`
+Display a summary of all integration test results. Shows all test execution results with their status, duration, and any errors.
+
+```bash
+deltafi integration-test summary [--json|-j] [--plain|-p]
+```
+- `--json, -j`: Output in JSON format
+- `--plain, -p`: Plain text output
+
+Examples:
+```bash
+# Show all test results
+deltafi integration-test summary
+
+# Output in JSON format
+deltafi integration-test summary --json
+
+# Plain text output
+deltafi integration-test summary --plain
+```
+
+##### `clear`
+Remove all integration test results from the system.
+
+```bash
+deltafi integration-test clear
+```
+
+This command will:
+- Fetch all existing test results
+- Remove each test result individually
+- Report the number of results removed
+- Show any errors that occurred during removal
+
+Example:
+```bash
+deltafi integration-test clear
+```
+
+##### `remove`
+Remove one or more integration tests by name.
+
+```bash
+deltafi integration-test remove <test-names...>
+```
+- `test-names...`: One or more test names to remove (required)
+
+Examples:
+```bash
+# Remove a single test
+deltafi integration-test remove old-test
+
+# Remove multiple tests
+deltafi integration-test remove test1 test2 test3
+```
+
+**Integration Test Configuration Format**
+
+Integration tests are defined in YAML format with the following structure:
+
+```yaml
+name: "test-name"
+description: "Test description"
+timeout: "5m"
+plugins:
+  - groupId: "org.deltafi"
+    artifactId: "deltafi-core"
+    version: "1.0.0"
+dataSources:
+  - "my-data-source"
+transformationFlows:
+  - "my-transform"
+dataSinks:
+  - "my-data-sink"
+inputs:
+  - name: "input1"
+    contentType: "application/json"
+    data: |
+      {
+        "key": "value"
+      }
+expectedDeltaFiles:
+  - flow: "my-data-sink"
+    type: "COMPLETE"
+    state: "COMPLETE"
+    actions:
+      - "my-action"
+    metadata:
+      - key: "expected-key"
+        value: "expected-value"
+```
+
+**Key Features:**
+
+- **Complete Flow Testing**: Test entire data pipelines from source to sink
+- **Real-time Progress**: Visual progress bar with live status updates
+- **Pattern Matching**: Flexible test selection using `--like` patterns
+- **Comprehensive Results**: Detailed test results with timing and error information
+- **Batch Operations**: Run multiple tests simultaneously
+- **JSON Output**: Machine-readable output for automation
+- **Error Handling**: Clear error reporting and failure summaries
+
 ### Metrics
 
 #### `postgres`
@@ -755,4 +982,22 @@ deltafi snapshot create --reason "Pre-upgrade backup"
 ### Viewing Flow Graph
 ```bash
 deltafi graph my-data-source
+```
+
+### Running Integration Tests
+```bash
+# Run all integration tests
+deltafi integration-test run
+
+# Run smoke tests only
+deltafi integration-test run --like "smoke"
+
+# Run specific tests with custom timeout
+deltafi integration-test run test1 test2 --timeout 10m
+
+# View test results summary
+deltafi integration-test summary
+
+# Load a new test configuration
+deltafi integration-test load my-test.yaml
 ```

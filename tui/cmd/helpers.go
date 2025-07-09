@@ -43,6 +43,7 @@ var (
 )
 
 func renderAsSimpleTable(t api.Table, plain bool) {
+
 	table := components.NewSimpleTable(&t)
 
 	if plain {
@@ -50,6 +51,11 @@ func renderAsSimpleTable(t api.Table, plain bool) {
 	} else {
 		fmt.Println(table.Render())
 	}
+}
+
+func renderAsSimpleTableWithWidth(t api.Table, width int) {
+	table := components.NewSimpleTable(&t).Width(width)
+	fmt.Println(table.Render())
 }
 
 func runProgram(model tea.Model) bool {

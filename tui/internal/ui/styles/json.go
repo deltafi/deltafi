@@ -18,8 +18,6 @@
 package styles
 
 import (
-	"encoding/json"
-	"fmt"
 	"strings"
 )
 
@@ -36,94 +34,122 @@ var (
 
 // colorizeJSON adds syntax highlighting to JSON output
 func ColorizeJSON(jsonStr string) string {
-	// Parse the JSON to validate it and get a structured representation
-	var data interface{}
-	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
-		// If we can't parse it, return the original string
-		return jsonStr
-	}
-
-	// Use the existing styles from the codebase to colorize the JSON
-	return colorizeJSONValue(data, 0)
+	// Use a token-based approach to preserve escape sequences
+	return colorizeJSONTokens(jsonStr)
 }
 
-// colorizeJSONValue recursively colorizes JSON values with proper indentation
-func colorizeJSONValue(value interface{}, indent int) string {
-	indentStr := strings.Repeat("  ", indent)
+// colorizeJSONTokens applies syntax highlighting while preserving the original JSON structure
+func colorizeJSONTokens(jsonStr string) string {
+	var result strings.Builder
+	var i int
 
-	switch v := value.(type) {
-	case map[string]interface{}:
-		if len(v) == 0 {
-			return jsonBracketStyle.Render("{}")
-		}
+	for i < len(jsonStr) {
+		char := jsonStr[i]
 
-		lines := []string{jsonBracketStyle.Render("{")}
-		keys := make([]string, 0, len(v))
-		for k := range v {
-			keys = append(keys, k)
-		}
+		switch char {
+		case '{', '}':
+			result.WriteString(jsonBracketStyle.Render(string(char)))
+		case '[', ']':
+			result.WriteString(jsonBracketStyle.Render(string(char)))
+		case ',':
+			result.WriteString(jsonCommaStyle.Render(string(char)))
+		case ':':
+			result.WriteString(string(char))
+		case '"':
+			// Handle string literals (keys and values)
+			start := i
+			i++ // Skip opening quote
 
-		// Sort keys for consistent output
-		// Note: In a real implementation, you might want to preserve order
-		// but for display purposes, sorting is fine
-
-		for i, key := range keys {
-			val := v[key]
-			comma := ""
-			if i < len(keys)-1 {
-				comma = jsonCommaStyle.Render(",")
+			// Find the closing quote, handling escaped quotes
+			for i < len(jsonStr) {
+				if jsonStr[i] == '"' && jsonStr[i-1] != '\\' {
+					break
+				}
+				i++
 			}
 
-			keyStr := jsonKeyStyle.Render(fmt.Sprintf(`"%s"`, key))
-			valStr := colorizeJSONValue(val, indent+1)
+			if i < len(jsonStr) {
+				// Extract the complete string including quotes
+				quotedStr := jsonStr[start : i+1]
 
-			line := fmt.Sprintf("%s  %s: %s%s", indentStr, keyStr, valStr, comma)
-			lines = append(lines, line)
-		}
-
-		lines = append(lines, indentStr+jsonBracketStyle.Render("}"))
-		return strings.Join(lines, "\n")
-
-	case []interface{}:
-		if len(v) == 0 {
-			return jsonBracketStyle.Render("[]")
-		}
-
-		lines := []string{jsonBracketStyle.Render("[")}
-		for i, item := range v {
-			comma := ""
-			if i < len(v)-1 {
-				comma = jsonCommaStyle.Render(",")
+				// Determine if this is a key or value by looking at context
+				if isJSONKey(jsonStr, start) {
+					result.WriteString(jsonKeyStyle.Render(quotedStr))
+				} else {
+					result.WriteString(jsonStringStyle.Render(quotedStr))
+				}
+			} else {
+				// Unterminated string, just render as-is
+				result.WriteString(jsonStringStyle.Render(jsonStr[start:]))
 			}
-
-			itemStr := colorizeJSONValue(item, indent+1)
-			line := fmt.Sprintf("%s  %s%s", indentStr, itemStr, comma)
-			lines = append(lines, line)
+		case 't':
+			// Check for "true"
+			if i+3 < len(jsonStr) && jsonStr[i:i+4] == "true" {
+				result.WriteString(jsonBooleanStyle.Render("true"))
+				i += 3
+			} else {
+				result.WriteByte(char)
+			}
+		case 'f':
+			// Check for "false"
+			if i+4 < len(jsonStr) && jsonStr[i:i+5] == "false" {
+				result.WriteString(jsonBooleanStyle.Render("false"))
+				i += 4
+			} else {
+				result.WriteByte(char)
+			}
+		case 'n':
+			// Check for "null"
+			if i+3 < len(jsonStr) && jsonStr[i:i+4] == "null" {
+				result.WriteString(jsonNullStyle.Render("null"))
+				i += 3
+			} else {
+				result.WriteByte(char)
+			}
+		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			// Handle numbers
+			start := i
+			for i < len(jsonStr) {
+				c := jsonStr[i]
+				if !((c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-') {
+					break
+				}
+				i++
+			}
+			numberStr := jsonStr[start:i]
+			result.WriteString(jsonNumberStyle.Render(numberStr))
+			i-- // Adjust for the loop increment
+		case ' ', '\t', '\n', '\r':
+			// Preserve whitespace
+			result.WriteByte(char)
+		default:
+			result.WriteByte(char)
 		}
 
-		lines = append(lines, indentStr+jsonBracketStyle.Render("]"))
-		return strings.Join(lines, "\n")
-
-	case string:
-		return jsonStringStyle.Render(fmt.Sprintf(`"%s"`, v))
-
-	case float64:
-		// Check if it's an integer
-		if v == float64(int(v)) {
-			return jsonNumberStyle.Render(fmt.Sprintf("%.0f", v))
-		}
-		return jsonNumberStyle.Render(fmt.Sprintf("%g", v))
-
-	case bool:
-		if v {
-			return jsonBooleanStyle.Render("true")
-		}
-		return jsonBooleanStyle.Render("false")
-
-	case nil:
-		return jsonNullStyle.Render("null")
-
-	default:
-		return fmt.Sprintf("%v", v)
+		i++
 	}
+
+	return result.String()
+}
+
+// isJSONKey determines if a quoted string at the given position is a JSON key
+func isJSONKey(jsonStr string, quotePos int) bool {
+	// Look backwards to find the context
+	for i := quotePos - 1; i >= 0; i-- {
+		char := jsonStr[i]
+		switch char {
+		case ' ', '\t', '\n', '\r':
+			continue
+		case ':':
+			// If we find a colon before the quote, this is a value, not a key
+			return false
+		case '{', '[', ',':
+			// If we find these before the quote, this is likely a key
+			return true
+		default:
+			// Any other character suggests this might be part of a value
+			return false
+		}
+	}
+	return false
 }

@@ -380,7 +380,7 @@ Examples:
 
 			if targetAction.DocsMarkdown != nil {
 				fmt.Println()
-				fmt.Println(renderMarkdown(*targetAction.DocsMarkdown, getTerminalWidth()-4))
+				fmt.Println(renderMarkdown(*targetAction.DocsMarkdown, getTerminalWidth()-8))
 			}
 
 			return nil
@@ -411,7 +411,7 @@ Examples:
 					}
 				}
 				if verbose {
-					width := getTerminalWidth() - actionWidth - 2
+					width := getTerminalWidth() - 6 - actionWidth
 					if width < 10 {
 						width = 10
 					}
@@ -444,7 +444,7 @@ Examples:
 			actionColumns := []string{"Action Name", "Description"}
 			t := api.NewTable(actionColumns, actionRows)
 			st := components.NewSimpleTable(&t).Verbose(verbose)
-			st.Width(getTerminalWidth() + 4)
+			st.Width(getTerminalWidth())
 			if !verbose {
 				st.OddRowStyle = lipgloss.NewStyle().Background(styles.Base).Padding(0, 1)
 			}
@@ -476,7 +476,7 @@ Examples:
 			})
 			variableColumns := []string{"Variable", "Value", "Type", "Description"}
 			t := api.NewTable(variableColumns, variableRows)
-			st := components.NewSimpleTable(&t).Width(getTerminalWidth() + 4)
+			st := components.NewSimpleTable(&t).Width(getTerminalWidth())
 			st.OddRowStyle = lipgloss.NewStyle().Background(styles.Base).Padding(0, 1)
 			fmt.Println(st.Render())
 		}

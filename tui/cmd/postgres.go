@@ -232,8 +232,6 @@ func executePostgresQuery(query string) (string, error) {
 func displayPostgresStatus(cmd *cobra.Command, results map[string]string) error {
 	plain, _ := cmd.Flags().GetBool("plain")
 
-	fmt.Println("=== DeltaFi Postgres Status ===\n")
-
 	// Version
 	if version, ok := results["version"]; ok {
 		fmt.Println("📋 Version:")

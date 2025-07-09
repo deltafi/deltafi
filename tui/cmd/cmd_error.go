@@ -84,5 +84,5 @@ func getTerminalWidth() int {
 	if err != nil || width < 40 {
 		width = 80 // Default width if detection fails
 	}
-	return width - 4 // Add some padding
+	return width
 }
