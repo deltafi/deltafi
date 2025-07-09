@@ -114,6 +114,7 @@ This document provides comprehensive documentation for all available commands, s
       - [describe](#plugin-describe)
       - [generate](#plugin-generate)
     - [graph](#graph)
+    - [topic](#topic)
   - [DeltaFiles](#deltafiles)
     - [deltafile](#deltafile)
     - [ingress](#ingress)
@@ -579,6 +580,71 @@ deltafi graph [flowNames...] [--all]
 ```
 - `--all`: Show all flows
 
+#### `topic`
+Manage and inspect publish/subscribe topics in DeltaFi.
+
+Topics are used for communication between different components in the DeltaFi system. Publishers send data to topics, and subscribers receive data from topics.
+
+- `list`: List all topics with their participant counts
+  ```bash
+  deltafi topic list [--json|-j] [--plain|-p]
+  ```
+  - `--json, -j`: Output in JSON format
+  - `--plain, -p`: Plain output format
+
+- `flows [topic-name]`: Show all flows (both publishers and subscribers) that use a specific topic
+  ```bash
+  deltafi topic flows <topic-name> [--json|-j] [--plain|-p]
+  ```
+  - `--json, -j`: Output in JSON format
+  - `--plain, -p`: Plain output format
+
+- `downstream [topic-name]`: Show downstream flows for a topic in a tree format
+  ```bash
+  deltafi topic downstream <topic-name>
+  ```
+
+- `upstream [topic-name]`: Show all upstream flow paths to a topic (all possible data source paths that can reach the topic)
+  ```bash
+  deltafi topic upstream <topic-name>
+  ```
+
+- `graph [topic-name]`: Show both upstream and downstream flow graphs for a topic, with clear visual separation
+  ```bash
+  deltafi topic graph <topic-name>
+  ```
+  This command displays all possible paths from data sources to the specified topic (upstream), and all flows downstream of the topic. Each section is visually separated and uses a bordered frame for clarity.
+
+- `data-sources [topic-name]`: List all data sources that could send data to a topic
+  ```bash
+  deltafi topic data-sources <topic-name> [--json|-j] [--plain|-p]
+  ```
+  - `--json, -j`: Output in JSON format
+  - `--plain, -p`: Output just the data source names, one per line (no table, no header)
+
+**Examples:**
+```bash
+# List all topics
+deltafi topic list
+
+# Show flows using a specific topic
+deltafi topic flows my-topic
+
+# Show downstream flows for a topic
+deltafi topic downstream my-topic
+
+# Show all upstream flow paths to a topic
+deltafi topic upstream my-topic
+
+# Show both upstream and downstream graphs for a topic
+deltafi topic graph my-topic
+
+# List all data sources that could send data to a topic
+deltafi topic data-sources my-topic
+deltafi topic data-sources my-topic --plain
+deltafi topic data-sources my-topic --json
+```
+
 ### DeltaFiles
 
 #### `deltafile`
@@ -982,6 +1048,18 @@ deltafi snapshot create --reason "Pre-upgrade backup"
 ### Viewing Flow Graph
 ```bash
 deltafi graph my-data-source
+```
+
+### Managing Topics
+```bash
+# List all topics in the system
+deltafi topic list
+
+# Show all flows that use a specific topic
+deltafi topic flows my-topic
+
+# View the complete flow path to a topic
+deltafi topic graph my-topic
 ```
 
 ### Running Integration Tests
