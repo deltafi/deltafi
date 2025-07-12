@@ -18,9 +18,9 @@
 
 <template class="time-range btn-toolbar mb-2 mb-md-0">
   <div class="date-picker-container">
-    <input :value="formattedValue" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width" readonly @click="showCalendar">
-    <input v-show="showRefreshRange" type="text" :value="helperButtonText" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width refresh-range-input" readonly @click="showCalendar()">
-    <CalendarDialog v-if="showCalendarDialog" :key="computedKey" ref="calendarDialogRef" :date-input="calendarDateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[new Date(startTimeDate), new Date(endTimeDate)]" :show-helper-buttons="true" :helper-buttons="helperButtons" @on-apply="updateInputDateTime" @on-reset="resetDateTime" @select-date="dateSelected" />
+    <input :value="formattedValue" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width" readonly @click="showCalendar" />
+    <input v-show="showRefreshRange" type="text" :value="helperButtonText" placeholder="Select Date" class="p-inputtext p-component deltafi-input-field input-area-width refresh-range-input" readonly @click="showCalendar()" />
+    <CalendarDialog v-if="showCalendarDialog" :key="computedKey" ref="calendarDialogRef" :date-input="calendarDateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[new Date(startTimeDate), new Date(endTimeDate)]" :show-helper-buttons="true" :helper-buttons="helperButtons" class="test" @on-apply="updateInputDateTime" @on-reset="resetDateTime(true)" @select-date="dateSelected" />
   </div>
 </template>
 
@@ -99,7 +99,7 @@ const sameDateFormat = {
   to: timestampFormat,
 };
 
-const resetDateTime = async () => {
+const resetDateTime = async (value) => {
   tmpHelperButtonSelected.value = false;
   helperButtonSelected.value = false;
   helperButtonText.value = null;
@@ -111,7 +111,9 @@ const resetDateTime = async () => {
     emit("update:startTimeDate:endTimeDate", new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat)));
   }
   randomKey.value = Math.random();
-  showCalendar();
+  if (value) {
+    showCalendar();
+  }
 };
 
 const computedKey = computed(() => {
@@ -198,6 +200,7 @@ const refreshUpdateDateTime = () => {
 defineExpose({
   refreshUpdateDateTime,
   setDateTimeToday,
+  resetDateTime,
 });
 
 const calculateFromTime = (fromTime) => {
@@ -284,7 +287,7 @@ const helperButtons = ref([
 ]);
 </script>
 <style lang="scss">
-@use 'vue-time-date-range-picker/dist/style.css';
+@use "vue-time-date-range-picker/dist/style.css";
 
 .date-picker-container {
   position: relative;

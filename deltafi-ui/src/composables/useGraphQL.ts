@@ -17,7 +17,7 @@
 */
 
 import { ref, Ref } from "vue";
-import { jsonToGraphQLQuery, EnumType } from 'json-to-graphql-query';
+import { jsonToGraphQLQuery, EnumType } from "json-to-graphql-query";
 import useNotifications from "./useNotifications";
 
 export default function useGraphQL() {
@@ -42,7 +42,7 @@ export default function useGraphQL() {
       }
     });
     return newObj;
-  }
+  };
 
   const clearEmptyObjects = (queryObj: any) => {
     for (const objKey in queryObj) {
@@ -58,31 +58,31 @@ export default function useGraphQL() {
   };
 
   const queryGraphQL = async (query: string | object, queryName: string, queryType: string = "query", bypass: boolean = false) => {
-    if (typeof query === 'object' && !bypass) {
+    if (typeof query === "object" && !bypass) {
       const cleanedQuery = removeEmptyKeyValues(query);
       clearEmptyObjects(cleanedQuery);
       query = jsonToGraphQLQuery(cleanedQuery, { pretty: false });
     } else if (bypass) {
       query = jsonToGraphQLQuery(query, { pretty: false });
     }
-    query = JSON.stringify({ "query": `${queryType} ${queryName} { ${query} }`, "operationName": queryName });
+    query = JSON.stringify({ query: `${queryType} ${queryName} { ${query} }`, operationName: queryName });
     loading.value = true;
     errors.value = [];
     try {
       const res = await fetch(basePath, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        body: query
-      })
+        body: query,
+      });
       if (!res.ok) {
         if (res.status == 400) {
           const body = await res.json();
           for (const error of body.errors) {
             notify.error("Error Received from GraphQL", error.message);
-            errors.value.push(error.message)
+            errors.value.push(error.message);
           }
         } else {
           throw Error(res.statusText);
@@ -90,23 +90,23 @@ export default function useGraphQL() {
         return Promise.reject(res);
       }
       response.value = await res.json();
-      if ('errors' in response.value) {
+      if ("errors" in response.value) {
         for (const error of response.value.errors) {
           notify.error("Error Received from GraphQL", error.message);
-          errors.value.push(error.message)
+          errors.value.push(error.message);
         }
         return Promise.reject(response);
       }
       loaded.value = true;
       return Promise.resolve(res);
     } catch (error: any) {
-      errors.value.push(error)
+      errors.value.push(error);
       notify.error("Error Contacting GraphQL", error.message);
       return Promise.reject(error);
     } finally {
       loading.value = false;
     }
-  }
+  };
 
   return { response, loading, loaded, queryGraphQL, errors };
 }

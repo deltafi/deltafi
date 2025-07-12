@@ -19,25 +19,31 @@
 <template>
   <div class="filtered-page">
     <PageHeader heading="Filtered">
-      <div class="time-range btn-toolbar mb-2 mb-md-0 align-items-center">
-        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mx-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
-          <i class="pi pi-filter" style="font-size: 1rem" />
+      <div class="time-range btn-toolbar mb-2 mb-md-0">
+        <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
+          {{ shortTimezone() }}
         </Button>
-        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field mx-1 flow-dropdown" />
-        <Dropdown v-model="causeSelected" placeholder="Select an Filter Cause" show-clear :options="uniqueMessages" class="deltafi-input-field mx-1 flow-dropdown" />
-        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field mx-1 p-button-outlined" @click="onRefresh" />
+        <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
+        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-1 p-button-outlined" @click="onRefresh" />
       </div>
     </PageHeader>
+    <div class="border-bottom mb-3 pb-3">
+      <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
+        <i class="pi pi-filter" style="font-size: 1rem" />
+      </Button>
+      <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field mx-1 flow-dropdown" />
+      <Dropdown v-model="causeSelected" placeholder="Select an Filter Cause" show-clear :options="uniqueMessages" class="deltafi-input-field mx-1 flow-dropdown" />
+    </div>
     <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
     <TabView v-if="showTabs" v-model:active-index="activeTab">
       <TabPanel header="All">
-        <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" @refresh-filters="onRefresh()" />
+        <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Flow">
-        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
       </TabPanel>
       <TabPanel header="By Cause">
-        <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+        <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
       </TabPanel>
     </TabView>
   </div>
@@ -45,22 +51,32 @@
 
 <script setup>
 import AllFilteredPanel from "@/components/filtered/AllPanel.vue";
-import SummaryByFlowPanel from "@/components/filtered/SummaryByFlowPanel.vue";
+import CustomCalendar from "@/components/CustomCalendar.vue";
 import SummaryByCausePanel from "@/components/filtered/SummaryByCausePanel.vue";
+import SummaryByFlowPanel from "@/components/filtered/SummaryByFlowPanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import useFiltered from "@/composables/useFiltered";
 import useFlows from "@/composables/useFlows";
-import { ref, computed, onMounted, watch, onBeforeMount, nextTick } from "vue";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import { computed, inject, nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core";
-import Dropdown from "primevue/dropdown";
+
+import _ from "lodash";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
 import Button from "primevue/button";
+import Dropdown from "primevue/dropdown";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
-import useFiltered from "@/composables/useFiltered";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 
-import _ from "lodash";
+dayjs.extend(utc);
 
+const uiConfig = inject("uiConfig");
+
+const { shortTimezone } = useUtilFunctions();
 const filterSummaryMessagePanel = ref();
 const filterSummaryFlowPanel = ref();
 const filterSummaryPanel = ref();
@@ -84,6 +100,57 @@ const flowTypeMap = {
   TIMED_DATA_SOURCE: "timedDataSource",
   DATA_SINK: "dataSink",
 };
+
+const customCalendarRef = ref(null);
+
+const timestampFormat = "YYYY-MM-DD HH:mm:ss";
+const defaultStartTimeDate = computed(() => {
+  const date = dayjs().utc();
+  return (uiConfig.useUTC ? date : date.local()).startOf("day");
+});
+const defaultEndTimeDate = computed(() => {
+  const date = dayjs().utc();
+  return (uiConfig.useUTC ? date : date.local()).endOf("day");
+});
+
+const resetDefaultTimeDate = computed(() => {
+  return [new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat))];
+});
+
+const updateInputDateTime = async (startDate, endDate) => {
+  model.value.startTimeDate = startDate;
+  model.value.endTimeDate = endDate;
+  model.value.startTimeDateString = dateToISOString(startDate);
+  model.value.endTimeDateString = dateToISOString(endDate);
+};
+
+const dateToISOString = (dateData) => {
+  return dayjs(dateData).utc(uiConfig.useUTC).toISOString();
+};
+
+const defaultQueryParamsTemplate = {
+  startTimeDate: new Date(defaultStartTimeDate.value.format(timestampFormat)),
+  endTimeDate: new Date(defaultEndTimeDate.value.format(timestampFormat)),
+};
+
+const queryParamsModel = ref({});
+
+const model = computed({
+  get() {
+    return new Proxy(queryParamsModel.value, {
+      set(obj, key, value) {
+        model.value = { ...obj, [key]: value ?? defaultQueryParamsTemplate[key] };
+        return true;
+      },
+    });
+  },
+  set(newValue) {
+    Object.assign(
+      queryParamsModel.value,
+      _.mapValues(newValue, (v) => (v === "" ? null : v))
+    );
+  },
+});
 
 const setPersistedParams = () => {
   // Session Storage
@@ -124,6 +191,7 @@ const formatFlowNames = () => {
 const clearOptions = () => {
   causeSelected.value = null;
   flowSelected.value = null;
+  customCalendarRef.value.resetDateTime();
   setPersistedParams();
 };
 
@@ -153,6 +221,13 @@ const setupWatchers = () => {
   watch([activeTab, flowSelected, causeSelected], () => {
     setPersistedParams();
   });
+
+  watch(
+    () => [model.value.startTimeDate, model.value.endTimeDate],
+    () => {
+      onRefresh();
+    }
+  );
 };
 
 const refreshButtonIcon = computed(() => {
@@ -174,8 +249,9 @@ const showAllTab = (flowName, flowType, cause) => {
   activeTab.value = 0;
 };
 
-const onRefresh = () => {
+const onRefresh = async () => {
   loading.value = true;
+  await customCalendarRef.value.refreshUpdateDateTime();
   filterSummaryPanel.value.fetchFiltered();
   filterSummaryFlowPanel.value.fetchFilteredFlow();
   filterSummaryMessagePanel.value.fetchFilteredMessages();
@@ -187,6 +263,7 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
+  queryParamsModel.value = _.cloneDeep(defaultQueryParamsTemplate);
   allFlowNames.value = await fetchAllFlowNames();
   formatFlowNames();
   uniqueMessages.value = await fetchUniqueMessages();
@@ -208,7 +285,7 @@ onMounted(async () => {
   }
 
   .flow-dropdown {
-    width: 16rem;
+    width: 20rem;
   }
 
   .time-range .form-control:disabled,
@@ -240,7 +317,7 @@ onMounted(async () => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
     color: #ffffff;
 
     a,
@@ -261,6 +338,15 @@ onMounted(async () => {
       color: unset;
       border: unset;
     }
+  }
+
+  .vdpr-datepicker__calendar-dialog {
+    margin-left: -276px !important;
+    position: fixed !important;
+  }
+
+  .input-area-width {
+    width: 335px;
   }
 }
 </style>

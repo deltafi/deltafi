@@ -156,6 +156,10 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
+  queryParams: {
+    type: Object,
+    required: true,
+  },
 });
 
 const menuItems = ref([
@@ -207,7 +211,7 @@ const fetchFiltered = async () => {
   const flowName = props.flow?.name != null ? props.flow?.name : null;
   const flowType = props.flow?.type != null ? props.flow?.type : null;
   loading.value = true;
-  await getFiltered(offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, props.cause);
+  await getFiltered(props.queryParams, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, props.cause);
   filtered.value = response.value.deltaFiles.deltaFiles;
   totalFiltered.value = response.value.deltaFiles.totalCount;
   loading.value = false;

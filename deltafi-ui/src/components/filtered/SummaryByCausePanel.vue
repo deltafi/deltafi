@@ -78,6 +78,10 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
+  queryParams: {
+    type: Object,
+    required: true,
+  },
 });
 
 const menuItems = ref([
@@ -133,7 +137,7 @@ const filterSelectedDids = computed(() => {
 const fetchFilteredMessages = async () => {
   getPersistedParams();
   loading.value = true;
-  await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
+  await fetchFilteredSummaryByMessage(props.queryParams, offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
   filteredCause.value = response.value.countPerMessage;
   totalFilteredMessage.value = response.value.totalCount;
   loading.value = false;

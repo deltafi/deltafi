@@ -79,6 +79,10 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
+  queryParams: {
+    type: Object,
+    required: true,
+  },
 });
 
 const menuItems = ref([
@@ -120,7 +124,7 @@ onMounted(async () => {
 const fetchFilteredFlow = async () => {
   getPersistedParams();
   loading.value = true;
-  await fetchFilteredSummaryByFlow(offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
+  await fetchFilteredSummaryByFlow(props.queryParams, offset.value, perPage.value, sortField.value, sortDirection.value, props.flow?.name);
   filteredFlow.value = response.value.countPerFlow;
   totalFilteredFlow.value = response.value.totalCount;
   loading.value = false;

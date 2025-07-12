@@ -24,27 +24,31 @@ export default function useFiltered() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
 
-  const fetchAllFiltered = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, flowType?: string, filteredCause?: string) => {
+  interface queryParams {
+    startTimeDateString: string;
+    endTimeDateString: string;
+  }
 
+  const fetchAllFiltered = async (queryParams: queryParams, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, flowType?: string, filteredCause?: string) => {
     const flowFilters: Record<string, Array<string>> = {
       dataSources: [],
       dataSinks: [],
       transforms: [],
-    }
+    };
 
     if (flowName && flowType) {
       switch (flowType) {
         case "dataSink":
-          flowFilters.dataSinks.push(flowName)
+          flowFilters.dataSinks.push(flowName);
           break;
         case "transform":
-          flowFilters.transforms.push(flowName)
+          flowFilters.transforms.push(flowName);
           break;
         case "timedDataSource":
-          flowFilters.dataSources.push(flowName)
+          flowFilters.dataSources.push(flowName);
           break;
         case "restDataSource":
-          flowFilters.dataSources.push(flowName)
+          flowFilters.dataSources.push(flowName);
           break;
       }
     }
@@ -57,6 +61,8 @@ export default function useFiltered() {
             ...flowFilters,
             filtered: true,
             filteredCause: filteredCause,
+            modifiedAfter: queryParams.startTimeDateString,
+            modifiedBefore: queryParams.endTimeDateString,
           },
           orderBy: {
             direction: new EnumType(sortDirection),
@@ -93,7 +99,7 @@ export default function useFiltered() {
     data.value = response.value.data;
   };
 
-  const fetchFilteredSummaryByFlow = async (offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
+  const fetchFilteredSummaryByFlow = async (queryParams: queryParams, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       filteredSummaryByFlow: {
         __args: {
@@ -101,6 +107,8 @@ export default function useFiltered() {
           offset: offSet,
           filter: {
             flow: flow,
+            modifiedAfter: queryParams.startTimeDateString,
+            modifiedBefore: queryParams.endTimeDateString,
           },
           direction: new EnumType(sortDirection),
           sortField: new EnumType(sortField),
@@ -119,7 +127,7 @@ export default function useFiltered() {
     data.value = response.value.data.filteredSummaryByFlow;
   };
 
-  const fetchFilteredSummaryByMessage = async (offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
+  const fetchFilteredSummaryByMessage = async (queryParams: queryParams, offSet: Number, perPage: Number, sortField: string, sortDirection: string, flow: string) => {
     const searchParams = {
       filteredSummaryByMessage: {
         __args: {
@@ -127,6 +135,8 @@ export default function useFiltered() {
           offset: offSet,
           filter: {
             flow: flow,
+            modifiedAfter: queryParams.startTimeDateString,
+            modifiedBefore: queryParams.endTimeDateString,
           },
           direction: new EnumType(sortDirection),
           sortField: new EnumType(sortField),
@@ -159,7 +169,7 @@ export default function useFiltered() {
       .map((o) => o.message)
       .uniq()
       .sort()
-      .value()
+      .value();
   };
 
   return { data, loading, loaded, fetchAllFiltered, fetchFilteredSummaryByFlow, fetchFilteredSummaryByMessage, fetchUniqueMessages, errors };

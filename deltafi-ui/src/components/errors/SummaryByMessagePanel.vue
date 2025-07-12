@@ -125,6 +125,10 @@ const props = defineProps({
     type: [Boolean, null],
     required: true,
   },
+  queryParams: {
+    type: Object,
+    required: true,
+  },
 });
 
 const unSelectAllRows = async () => {
@@ -228,7 +232,7 @@ const fetchErrorsMessages = async () => {
   getPersistedParams();
   const flowName = props.flow?.name != null ? props.flow?.name : null;
   loading.value = true;
-  await fetchErrorSummaryByMessage(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
+  await fetchErrorSummaryByMessage(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
   errorsMessage.value = response.value.countPerMessage;
   totalErrorsMessage.value = response.value.totalCount;
   loading.value = false;

@@ -145,6 +145,7 @@ import { FilterMatchMode } from "primevue/api";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
+
 const resumeDialog = ref();
 const { fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 const { pluralize } = useUtilFunctions();
@@ -181,6 +182,10 @@ const props = defineProps({
     type: String,
     required: false,
     default: undefined,
+  },
+  queryParams: {
+    type: Object,
+    required: true,
   },
 });
 const errorViewer = ref({
@@ -259,7 +264,7 @@ const fetchErrors = async () => {
   const flowType = props.flow?.type != null ? props.flow?.type : null;
   const errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   loading.value = true;
-  await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, errorMessage);
+  await getErrors(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName, flowType, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;
