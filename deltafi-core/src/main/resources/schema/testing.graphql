@@ -26,19 +26,29 @@ enum TestStatus {
 input ExpectedContentDataInput {
   name: String
   mediaType: String
-  value: String
+  "Exactly one of 'value' or 'contains' is required"
   contains: [String]
+  "Fields below only used for 'value' comparison"
+  value: String
+  "Decode 'value' from base64"
+  base64Encoded: Boolean
+  "Removes all white-space before comparison"
   ignoreWhitespace: Boolean
+  "Substitute '{{DID}}' and '{{PARENT_DID}}' in the expected output with the actual values"
   macroSubstitutions: Boolean
+  "Substitute RegEx 'key' with plain-text 'value' in the action generated content"
+  extraSubstitutions: [KeyValueInput]
 }
 
 type ExpectedContentData {
   name: String
   mediaType: String
-  value: String
   contains: [String]
+  value: String
+  base64Encoded: Boolean
   ignoreWhitespace: Boolean
   macroSubstitutions: Boolean
+  extraSubstitutions: [KeyValue]
 }
 
 input ExpectedContentListInput {

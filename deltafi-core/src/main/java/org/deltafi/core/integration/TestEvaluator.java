@@ -356,33 +356,12 @@ public class TestEvaluator {
     private boolean contentIsEqual(DeltaFile deltaFile, Content actualContent, ExpectedContentData expectedData) {
         try {
             String loadedContent = loadContent(actualContent);
-            String expectedValue = expectedData.getValue();
-
-            // Compare either the expected 'value', or the 'contains' strings
-            if (StringUtils.isNotEmpty(expectedValue)) {
-                if (expectedData.getMacroSubstitutions()) {
-                    expectedValue = expectedValue.replace("{{DID}}", deltaFile.getDid().toString());
-                    if (!deltaFile.getParentDids().isEmpty()) {
-                        expectedValue = expectedValue.replace("{{PARENT_DID}}", deltaFile.getParentDids().getFirst().toString());
-                    }
-                }
-                if ((expectedData.getIgnoreWhitespace() &&
-                        StringUtils.deleteWhitespace(loadedContent)
-                                .equals(StringUtils.deleteWhitespace(expectedValue))) ||
-                        (loadedContent.equals(expectedValue))) {
-                    return true;
-                } else {
-                    fatalError(actualContent.getName(), "content", expectedValue, loadedContent);
-                }
+            String parentDid = deltaFile.getParentDids().isEmpty() ? null : deltaFile.getParentDids().getFirst().toString();
+            String error = expectedData.checkIfEquivalent(loadedContent, deltaFile.getDid().toString(), parentDid);
+            if (error != null) {
+                fatalError(error);
             } else {
-                List<String> missing = expectedData.getContains().stream()
-                        .filter(stringToContain -> !loadedContent.contains(stringToContain))
-                        .toList();
-                if (missing.isEmpty()) {
-                    return true;
-                } else {
-                    fatalError("Did not find expected content: " + String.join(",", missing));
-                }
+                return true;
             }
         } catch (Exception e) {
             fatalError("Failed to retrieve content for " + actualContent.getName());

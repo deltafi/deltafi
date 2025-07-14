@@ -123,10 +123,16 @@ query GetIntegrationTests {
                 data {
                   name
                   mediaType
-                  value
                   contains
+                  value
+                  base64Encoded
                   ignoreWhitespace
                   macroSubstitutions
+                  extraSubstitutions {
+                    key
+                    value
+                  }
+
                 }
               }
               annotations {
@@ -141,10 +147,15 @@ query GetIntegrationTests {
               data {
                 name
                 mediaType
-                value
                 contains
+                value
+                base64Encoded
                 ignoreWhitespace
                 macroSubstitutions
+                extraSubstitutions {
+                  key
+                  value
+                }
               }
             }
             annotations {
@@ -159,10 +170,15 @@ query GetIntegrationTests {
             data {
               name
               mediaType
-              value
               contains
+              value
+              base64Encoded
               ignoreWhitespace
               macroSubstitutions
+              extraSubstitutions {
+                key
+                value
+              }
             }
           }
           annotations {
@@ -177,10 +193,15 @@ query GetIntegrationTests {
           data {
             name
             mediaType
-            value
             contains
+            value
+            base64Encoded
             ignoreWhitespace
             macroSubstitutions
+            extraSubstitutions {
+              key
+              value
+            }
           }
         }
         annotations {
@@ -195,10 +216,15 @@ query GetIntegrationTests {
         data {
           name
           mediaType
-          value
           contains
+          value
+          base64Encoded
           ignoreWhitespace
           macroSubstitutions
+          extraSubstitutions {
+            key
+            value
+          }
         }
       }
       annotations {
@@ -316,10 +342,15 @@ query GetIntegrationTest($name: String!) {
                 data {
                   name
                   mediaType
-                  value
                   contains
+                  value
+                  base64Encoded
                   ignoreWhitespace
                   macroSubstitutions
+                  extraSubstitutions {
+                    key
+                    value
+                  }
                 }
               }
               annotations {
@@ -334,10 +365,15 @@ query GetIntegrationTest($name: String!) {
               data {
                 name
                 mediaType
-                value
                 contains
+                value
+                base64Encoded
                 ignoreWhitespace
                 macroSubstitutions
+                extraSubstitutions {
+                  key
+                  value
+                }
               }
             }
             annotations {
@@ -352,10 +388,15 @@ query GetIntegrationTest($name: String!) {
             data {
               name
               mediaType
-              value
               contains
+              value
+              base64Encoded
               ignoreWhitespace
               macroSubstitutions
+              extraSubstitutions {
+                key
+                value
+              }
             }
           }
           annotations {
@@ -370,10 +411,15 @@ query GetIntegrationTest($name: String!) {
           data {
             name
             mediaType
-            value
             contains
+            value
+            base64Encoded
             ignoreWhitespace
             macroSubstitutions
+            extraSubstitutions {
+              key
+              value
+            }
           }
         }
         annotations {
@@ -388,10 +434,15 @@ query GetIntegrationTest($name: String!) {
         data {
           name
           mediaType
-          value
           contains
+          value
+          base64Encoded
           ignoreWhitespace
           macroSubstitutions
+          extraSubstitutions {
+            key
+            value
+          }
         }
       }
       annotations {

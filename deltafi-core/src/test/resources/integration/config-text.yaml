@@ -62,6 +62,13 @@ expectedDeltaFiles:
           action: PassthroughEgress
           data:
             - name: test/c
+              mediaType: text
+              ignoreWhitespace: true
+              macroSubstitutions: true
+              base64Encoded: true
+              extraSubstitutions:
+                - key: input
+                  value: output
               value: >
                 Cccccccccccc.
 
