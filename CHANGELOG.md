@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.25.0] - 2025-07-14
+
+### Added
+- Added time search parameters to the Error and Filter Pages 
+- [integration test framework] When using `ExpectedContentData`, the expected value may now be base64 encoded, and also supports additional substitutions using RegEx in `extraSubstitutions`
+- TUI: `integration-test` command
+- TUI: topic command
+
+### Fixed
+- Fixed core actions docs not showing in public docs
+- Fixed issue in colorized TUI JSON output where escaped strings were unescaped
+
+### Upgrade and Migration
+- *NOTE: POTENTIAL METRICS LOSS!*
+  - A previous bug that was not maintaining the `event_annotations` analytics table correctly might leave the system with an excessively large table that cannot be pruned in a timely manner by the cleanup task. A migration was added to truncate the table, which could cause metrics to be lost for any In-flight DeltaFiles when upgrading. To avoid losing metrics for In-flight DeltaFiles, disable ingress when upgrading, and allow all DeltaFiles to complete before starting the upgrade. Be sure to re-enable ingress after the upgrade is finished.
+- Bump to the latest KinD patch release
+
 ## [2.24.0] - 2025-07-08
 
 ### Added
@@ -4395,7 +4412,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.24.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.0...main
+[2.25.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.24.0...2.25.0
 [2.24.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.23.0...2.24.0
 [2.23.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.1...2.23.0
 [2.22.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.0...2.22.1
