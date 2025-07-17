@@ -34,6 +34,104 @@ query DeltaFiles($offset: Int, $limit: Int, $filter: DeltaFilesFilter, $orderBy:
   }
 }
 
+query VerboseDeltaFiles($offset: Int, $limit: Int, $filter: DeltaFilesFilter, $orderBy: DeltaFileOrder) {
+  deltaFiles(offset: $offset, limit: $limit, filter: $filter, orderBy: $orderBy) {
+    offset
+    count
+    totalCount
+    deltaFiles {
+      did
+      name
+      dataSource
+      transforms
+      dataSinks
+      topics
+      parentDids
+      childDids
+      flows {
+        name
+        id
+        number
+        type
+        state
+        created
+        modified
+        input {
+          metadata
+          content {
+            name
+            segments {
+              uuid
+              offset
+              size
+              did
+            }
+            mediaType
+            size
+            tags
+          }
+          topics
+          ancestorIds
+        }
+        actions {
+          name
+          type
+          state
+          created
+          queued
+          start
+          stop
+          modified
+          errorCause
+          errorContext
+          nextAutoResume
+          nextAutoResumeReason
+          filteredCause
+          filteredContext
+          attempt
+          content {
+            name
+            segments {
+              uuid
+              offset
+              size
+              did
+            }
+            mediaType
+            size
+            tags
+          }
+          metadata
+          deleteMetadataKeys
+        }
+        publishTopics
+        depth
+        pendingAnnotations
+        testMode
+        testModeReason
+        errorAcknowledged
+        errorAcknowledgedReason
+      }
+      requeueCount
+      ingressBytes
+      referencedBytes
+      totalBytes
+      stage
+      annotations
+      created
+      modified
+      pinned
+      contentDeleted
+      contentDeletedReason
+      egressed
+      filtered
+      replayed
+      replayDid
+      paused
+    }
+  }
+}
+
 query GetAnnotationKeys {
   annotationKeys
 }

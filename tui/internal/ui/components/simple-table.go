@@ -173,7 +173,12 @@ func (t *SimpleTable) RenderPlain() string {
 	tab := table.New().
 		Headers(t.Table.Columns...).
 		Rows(rows...).
-		Border(lipgloss.HiddenBorder()).
+		Border(lipgloss.MarkdownBorder()).
+		BorderBottom(false).
+		BorderTop(false).
+		BorderHeader(false).
+		BorderLeft(false).
+		BorderRight(false).
 		BorderStyle(t.BorderStyle).
 		Wrap(false).
 		StyleFunc(func(row, col int) lipgloss.Style {

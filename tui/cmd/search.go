@@ -41,18 +41,20 @@ import (
 )
 
 type searchModel struct {
-	table      table.Model
-	height     int
-	width      int
-	deltaFiles []graphql.DeltaFilesDeltaFilesDeltaFilesDeltaFile
-	selected   int
-	modalData  *graphql.DeltaFilesDeltaFilesDeltaFilesDeltaFile
-	client     *api.Client
-	offset     int
-	goingUp    bool
-	filter     searchFilter
-	showHelp   bool
-	viewport   viewport.Model
+	table         table.Model
+	height        int
+	width         int
+	deltaFiles    []graphql.DeltaFilesDeltaFilesDeltaFilesDeltaFile
+	selected      int
+	modalData     *graphql.DeltaFilesDeltaFilesDeltaFilesDeltaFile
+	client        *api.Client
+	offset        int
+	goingUp       bool
+	filter        searchFilter
+	showHelp      bool
+	viewport      viewport.Model
+	isAutoRefresh bool
+	totalCount    int
 }
 type searchFilter struct {
 	startTimeStr       *string
@@ -95,12 +97,12 @@ func NewSearchFilter(start string, end string) searchFilter {
 		startTimeStr: &start,
 		endTimeStr:   &end,
 	}
-	if sortBy == "" {
-		sortBy = "modified"
+	if searchParams.sortBy == "" {
+		searchParams.sortBy = "modified"
 	}
 	retval.order = &graphql.DeltaFileOrder{
 		Direction: graphql.DeltaFileDirectionDesc,
-		Field:     getSortField(sortBy),
+		Field:     getSortField(searchParams.sortBy),
 	}
 	retval.refresh()
 	return retval
@@ -110,22 +112,22 @@ func (f *searchFilter) setOrderAscending() {
 	if f.order == nil {
 		f.order = &graphql.DeltaFileOrder{
 			Direction: graphql.DeltaFileDirectionAsc,
-			Field:     getSortField(sortBy),
+			Field:     getSortField(searchParams.sortBy),
 		}
 	}
 	f.order.Direction = graphql.DeltaFileDirectionAsc
-	f.order.Field = getSortField(sortBy)
+	f.order.Field = getSortField(searchParams.sortBy)
 }
 
 func (f *searchFilter) setOrderDescending() {
 	if f.order == nil {
 		f.order = &graphql.DeltaFileOrder{
 			Direction: graphql.DeltaFileDirectionDesc,
-			Field:     getSortField(sortBy),
+			Field:     getSortField(searchParams.sortBy),
 		}
 	}
 	f.order.Direction = graphql.DeltaFileDirectionDesc
-	f.order.Field = getSortField(sortBy)
+	f.order.Field = getSortField(searchParams.sortBy)
 }
 
 func (f *searchFilter) toGraphQLFilter() *graphql.DeltaFilesFilter {
@@ -141,14 +143,14 @@ func (f *searchFilter) toGraphQLFilter() *graphql.DeltaFilesFilter {
 		retval.Stage = f.stage
 	}
 	if f.startTime != nil {
-		if useCreationTime {
+		if searchParams.useCreationTime {
 			retval.CreatedAfter = f.startTime
 		} else {
 			retval.ModifiedAfter = f.startTime
 		}
 	}
 	if f.endTime != nil {
-		if useCreationTime {
+		if searchParams.useCreationTime {
 			retval.CreatedBefore = f.endTime
 		} else {
 			retval.ModifiedBefore = f.endTime
@@ -284,6 +286,11 @@ func (f *searchFilter) getTableColumns(width int) []table.Column {
 		columnPad = 0
 	}
 
+	// if stage is error, set stageWidth to 0
+	if f.stage != nil && *f.stage == graphql.DeltaFileStageError {
+		stageWidth = 0
+	}
+
 	dataSourceWidth := (width - sizeWidth - modifiedWidth - stageWidth - columnPad - borderPad) / 2
 	filenameWidth := width - sizeWidth - modifiedWidth - stageWidth - dataSourceWidth - columnPad - borderPad
 
@@ -331,6 +338,8 @@ type navigateToDeltaFileMsg struct {
 	did uuid.UUID
 }
 
+type autoRefreshMsg struct{}
+
 func initialSearchModel(filter searchFilter) searchModel {
 	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	columns := filter.getTableColumns(width)
@@ -362,14 +371,16 @@ func initialSearchModel(filter searchFilter) searchModel {
 	vp.MouseWheelEnabled = true
 
 	return searchModel{
-		table:    t,
-		selected: 0,
-		client:   app.GetInstance().GetAPIClient(),
-		offset:   0,
-		goingUp:  false,
-		filter:   filter,
-		showHelp: false,
-		viewport: vp,
+		table:         t,
+		selected:      0,
+		client:        app.GetInstance().GetAPIClient(),
+		offset:        0,
+		goingUp:       false,
+		filter:        filter,
+		showHelp:      false,
+		viewport:      vp,
+		isAutoRefresh: false,
+		totalCount:    0,
 	}
 }
 
@@ -380,7 +391,13 @@ func getColumnTitle(column string, order *graphql.DeltaFileOrder) string {
 	case "modified":
 		columnTitle = "Modified"
 	case "filename":
-		columnTitle = "Filename"
+		if searchParams.stage == string(graphql.DeltaFileStageError) {
+			columnTitle = "Errored DeltaFiles"
+		} else if searchParams.filtered.IsTrue() {
+			columnTitle = "Filtered DeltaFiles"
+		} else {
+			columnTitle = "Filename"
+		}
 	case "data-source":
 		columnTitle = "Data Source"
 	case "stage":
@@ -391,7 +408,7 @@ func getColumnTitle(column string, order *graphql.DeltaFileOrder) string {
 		columnTitle = column
 	}
 
-	if order != nil && getSortField(sortBy) == getSortField(column) {
+	if order != nil && getSortField(searchParams.sortBy) == getSortField(column) {
 		arrow := "↓"
 		if order.Direction == graphql.DeltaFileDirectionAsc {
 			arrow = "↑"
@@ -456,6 +473,12 @@ func (m searchModel) Init() tea.Cmd {
 
 	m.width = width
 	m.height = height
+
+	// Start auto-refresh timer if enabled
+	if searchParams.autoRefresh > 0 {
+		return tea.Batch(m.fetchDeltaFiles, m.autoRefreshTimer())
+	}
+
 	return m.fetchDeltaFiles
 }
 
@@ -474,6 +497,12 @@ func (m searchModel) fetchDeltaFiles() tea.Msg {
 		deltaFiles: response.DeltaFiles.DeltaFiles,
 		totalCount: *response.DeltaFiles.TotalCount,
 	}
+}
+
+func (m searchModel) autoRefreshTimer() tea.Cmd {
+	return tea.Tick(time.Duration(searchParams.autoRefresh)*time.Second, func(t time.Time) tea.Msg {
+		return autoRefreshMsg{}
+	})
 }
 
 func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -528,7 +557,7 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case "tab":
 				// Cycle to next sort column
-				sortBy = getNextSortColumn(sortBy)
+				searchParams.sortBy = getNextSortColumn(searchParams.sortBy)
 				// Create new order with current direction
 				direction := graphql.DeltaFileDirectionDesc
 				if m.filter.order != nil && m.filter.order.Direction == graphql.DeltaFileDirectionAsc {
@@ -536,13 +565,13 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.filter.order = &graphql.DeltaFileOrder{
 					Direction: direction,
-					Field:     getSortField(sortBy),
+					Field:     getSortField(searchParams.sortBy),
 				}
 				m.updateTableColumns()
 				return m, m.fetchDeltaFiles
 			case "shift+tab":
 				// Cycle to previous sort column
-				sortBy = getPreviousSortColumn(sortBy)
+				searchParams.sortBy = getPreviousSortColumn(searchParams.sortBy)
 				// Create new order with current direction
 				direction := graphql.DeltaFileDirectionDesc
 				if m.filter.order != nil && m.filter.order.Direction == graphql.DeltaFileDirectionAsc {
@@ -550,7 +579,7 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.filter.order = &graphql.DeltaFileOrder{
 					Direction: direction,
-					Field:     getSortField(sortBy),
+					Field:     getSortField(searchParams.sortBy),
 				}
 				m.updateTableColumns()
 				return m, m.fetchDeltaFiles
@@ -586,12 +615,14 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.selected < len(m.deltaFiles)-1 {
 					m.selected++
 					m.table.SetCursor(m.selected)
-				} else if len(m.deltaFiles) > 0 {
+				} else if len(m.deltaFiles) > 0 && m.offset+len(m.deltaFiles) < m.totalCount {
+					// Move to next page if there are more results available
 					m.offset += m.height - 5
 					m.selected = 0
 					m.goingUp = false
 					return m, m.fetchDeltaFiles
 				}
+				// If on last row of last page, stay there (no action needed)
 				return m, nil
 			case "pgup":
 				if m.offset > 0 {
@@ -601,10 +632,15 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case "pgdown":
-				if len(m.deltaFiles) > 0 {
+				if len(m.deltaFiles) > 0 && m.offset+len(m.deltaFiles) < m.totalCount {
+					// Move to next page if there are more results available
 					m.offset += m.height - 5
 					m.selected = 0
 					return m, m.fetchDeltaFiles
+				} else if len(m.deltaFiles) > 0 {
+					// On last page, move to last row
+					m.selected = len(m.deltaFiles) - 1
+					m.table.SetCursor(m.selected)
 				}
 				return m, nil
 			case "r":
@@ -669,25 +705,57 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.selected < len(m.deltaFiles)-1 {
 				m.selected++
 				m.table.SetCursor(m.selected)
-			} else if len(m.deltaFiles) > 0 {
+			} else if len(m.deltaFiles) > 0 && m.offset+len(m.deltaFiles) < m.totalCount {
+				// Move to next page if there are more results available
 				m.offset += m.height - 5
 				m.selected = 0
 				m.goingUp = false
 				return m, m.fetchDeltaFiles
 			}
+			// If on last row of last page, stay there (no action needed)
 			return m, nil
 		}
 	case searchDeltaFilesMsg:
 		m.deltaFiles = msg.deltaFiles
-		if m.goingUp && len(m.deltaFiles) > 0 {
-			m.selected = len(m.deltaFiles) - 1
-		} else {
-			m.selected = 0
+		m.totalCount = msg.totalCount
+
+		// If we got an empty page and we're not on the first page, go to the last page
+		if len(m.deltaFiles) == 0 && m.offset > 0 && m.totalCount > 0 {
+			// Calculate the last page offset
+			pageSize := m.height - 5
+			lastPageOffset := ((m.totalCount - 1) / pageSize) * pageSize
+			if lastPageOffset != m.offset {
+				m.offset = lastPageOffset
+				m.selected = m.totalCount - lastPageOffset // Will be set to last row when data is fetched
+				m.goingUp = true                           // This will position cursor on last row
+				return m, m.fetchDeltaFiles
+			}
 		}
+
+		// Preserve cursor position during auto-refresh, otherwise reset based on navigation
+		if !m.isAutoRefresh {
+			if m.goingUp && len(m.deltaFiles) > 0 {
+				m.selected = len(m.deltaFiles) - 1
+			} else {
+				m.selected = 0
+			}
+		}
+
+		// Ensure selected index is within bounds
+		if len(m.deltaFiles) > 0 && m.selected >= len(m.deltaFiles) {
+			m.selected = len(m.deltaFiles) - 1
+		}
+
 		m.goingUp = false
+		m.isAutoRefresh = false
 
 		m.updateTableRows()
 		return m, nil
+	case autoRefreshMsg:
+		// Auto-refresh triggered, refresh filter (updates end time to "now") and fetch new data
+		m.filter.refresh()
+		m.isAutoRefresh = true
+		return m, tea.Batch(m.fetchDeltaFiles, m.autoRefreshTimer())
 	case searchErrMsg:
 		fmt.Printf("Error: %v\n", msg.error)
 		return m, nil
@@ -759,19 +827,49 @@ func (m searchModel) View() string {
 		return helpText
 	}
 
+	// Check if there are no DeltaFiles to display
+	if len(m.deltaFiles) == 0 {
+		noResultsText := styles.BaseStyle.Foreground(styles.Red).Render("No DeltaFiles meet search criteria")
+
+		// Center the no results message both horizontally and vertically
+		centeredText := lipgloss.Place(
+			m.width,
+			m.height,
+			lipgloss.Center,
+			lipgloss.Center,
+			noResultsText,
+		)
+
+		// Add help text at the bottom
+		helpText := " r: Refresh • h: Help • Ctrl+C: Quit"
+		if searchParams.autoRefresh > 0 {
+			helpText = fmt.Sprintf("h: Help • ^C: Quit • Auto-refresh: %ds", searchParams.autoRefresh)
+		}
+		help := lipgloss.Place(m.width, 1, lipgloss.Center, lipgloss.Center, styles.AccentStyle.Render(helpText))
+
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			centeredText,
+			help,
+		)
+	}
+
 	// Calculate row range
 	startRow := m.offset + 1
 	endRow := m.offset + len(m.deltaFiles)
-	rowRange := fmt.Sprintf(" %d-%d", startRow, endRow)
+	rowRange := fmt.Sprintf(" %d-%d of %d", startRow, endRow, m.totalCount)
 
-	// Create the help text with row range
+	// Create the help text with row range and auto-refresh status
+	helpText := "    ↑/↓: Nav • Enter: View • h: Help • ^C: Quit"
+	if searchParams.autoRefresh > 0 {
+		helpText = fmt.Sprintf("%s • Refresh: %ds", helpText, searchParams.autoRefresh)
+	}
+
 	help := lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		styles.AccentStyle.Foreground(styles.Blue).Width(24).Render(rowRange),
-		styles.AccentStyle.Render(" ↑/↓: Nav • Enter: View • h: Help • Ctrl+C: Quit"),
+		styles.AccentStyle.Foreground(styles.Blue).Render(rowRange),
+		styles.AccentStyle.Render(helpText),
 	)
-
-	m.updateTableRows()
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -804,146 +902,20 @@ Examples:
 	GroupID: "deltafile",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Validate start time
-		if _, err := util.ParseHumanizedTime(startTime); err != nil {
-			return fmt.Errorf("invalid start time '%s': %w", startTime, err)
+		if _, err := util.ParseHumanizedTime(searchParams.startTime); err != nil {
+			return fmt.Errorf("invalid start time '%s': %w", searchParams.startTime, err)
 		}
 		// Validate end time
-		if _, err := util.ParseHumanizedTime(endTime); err != nil {
-			return fmt.Errorf("invalid end time '%s': %w", endTime, err)
+		if _, err := util.ParseHumanizedTime(searchParams.endTime); err != nil {
+			return fmt.Errorf("invalid end time '%s': %w", searchParams.endTime, err)
 		}
 		return nil
 	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 0 {
-			return fmt.Errorf("search command does not accept positional arguments: %v", args)
-		}
-
-		filter := NewSearchFilter(startTime, endTime)
-		if len(dataSources) > 0 {
-			filter.dataSources = &dataSources
-		}
-		if len(transforms) > 0 {
-			filter.transforms = &transforms
-		}
-		if len(dataSinks) > 0 {
-			filter.dataSinks = &dataSinks
-		}
-		if len(annotations) > 0 {
-			annotationFilters := make([]graphql.KeyValueInput, 0, len(annotations))
-			for _, annotation := range annotations {
-				key, value, err := parseAnnotation(annotation)
-				if err != nil {
-					return err
-				}
-				annotationFilters = append(annotationFilters, graphql.KeyValueInput{
-					Key:   key,
-					Value: value,
-				})
-			}
-			filter.annotations = &annotationFilters
-		}
-		if len(dids) > 0 {
-			uuidDids := make([]uuid.UUID, 0, len(dids))
-			for _, did := range dids {
-				uuidDid, err := uuid.Parse(did)
-				if err != nil {
-					return fmt.Errorf("invalid DID format: %s", did)
-				}
-				uuidDids = append(uuidDids, uuidDid)
-			}
-			filter.dids = &uuidDids
-		}
-		if stage != "" {
-			stageValue := graphql.DeltaFileStage(stage)
-			filter.stage = &stageValue
-		}
-		if len(topics) > 0 {
-			filter.topics = &topics
-		}
-		if name != "" {
-			filter.name = &name
-		}
-		if requeueCountMin > 0 {
-			filter.requeueCountMin = &requeueCountMin
-		}
-		if ingressBytesMin > 0 {
-			filter.ingressBytesMin = &ingressBytesMin
-		}
-		if ingressBytesMax > 0 {
-			filter.ingressBytesMax = &ingressBytesMax
-		}
-		if referencedBytesMin > 0 {
-			filter.referencedBytesMin = &referencedBytesMin
-		}
-		if referencedBytesMax > 0 {
-			filter.referencedBytesMax = &referencedBytesMax
-		}
-		if totalBytesMin > 0 {
-			filter.totalBytesMin = &totalBytesMin
-		}
-		if totalBytesMax > 0 {
-			filter.totalBytesMax = &totalBytesMax
-		}
-		if filteredCause != "" {
-			filter.filteredCause = &filteredCause
-		}
-		if errorCause != "" {
-			filter.errorCause = &errorCause
-		}
-		if egressed.IsSet() {
-			val := egressed.IsTrue()
-			filter.egressed = &val
-		}
-		if filtered.IsSet() {
-			val := filtered.IsTrue()
-			filter.filtered = &val
-		}
-		if pinned.IsSet() {
-			val := pinned.IsTrue()
-			filter.pinned = &val
-		}
-		if testMode.IsSet() {
-			val := testMode.IsTrue()
-			filter.testMode = &val
-		}
-		if replayable.IsSet() {
-			val := replayable.IsTrue()
-			filter.replayable = &val
-		}
-		if replayed.IsSet() {
-			val := replayed.IsTrue()
-			filter.replayed = &val
-		}
-		if errorAcknowledged.IsSet() {
-			val := errorAcknowledged.IsTrue()
-			filter.errorAcknowledged = &val
-		}
-		if terminalStage.IsSet() {
-			val := terminalStage.IsTrue()
-			filter.terminalStage = &val
-		}
-		if pendingAnnotations.IsSet() {
-			val := pendingAnnotations.IsTrue()
-			filter.pendingAnnotations = &val
-		}
-		if paused.IsSet() {
-			val := paused.IsTrue()
-			filter.paused = &val
-		}
-		if contentDeleted.IsSet() {
-			val := contentDeleted.IsTrue()
-			filter.contentDeleted = &val
-		}
-
-		p := tea.NewProgram(initialSearchModel(filter), tea.WithAltScreen(), tea.WithMouseCellMotion(), tea.WithMouseAllMotion())
-		if _, err := p.Run(); err != nil {
-			return fmt.Errorf("failed to run search: %v", err)
-		}
-		return nil
-	},
+	RunE: runSearch,
 }
 
-var (
+// SearchParameters holds all the search command parameters
+type SearchParameters struct {
 	startTime          string
 	endTime            string
 	useCreationTime    bool
@@ -981,63 +953,308 @@ var (
 	ascending          bool
 	descending         bool
 	sortBy             string
-)
+	autoRefresh        int
+}
 
-func init() {
-	rootCmd.AddCommand(searchCmd)
-	searchCmd.Flags().StringVar(&startTime, "from", "today", "Display DeltaFiles modified after this time (default: today)")
-	searchCmd.Flags().StringVar(&endTime, "to", "now", "Display DeltaFiles modified before this time (default: now)")
-	searchCmd.Flags().StringVar(&endTime, "until", "now", "Alias for --to")
-	searchCmd.Flags().BoolVarP(&useCreationTime, "creation-time", "C", false, "Filter by creation time instead of modification time")
-	searchCmd.Flags().BoolVar(&useLocal, "local", false, "Display times in local timezone")
-	searchCmd.Flags().BoolVar(&useZulu, "zulu", false, "Display times in UTC/Zulu timezone")
-	searchCmd.Flags().BoolVar(&ascending, "ascending", false, "Sort results in ascending order")
-	searchCmd.Flags().BoolVar(&descending, "descending", false, "Sort results in descending order")
-	searchCmd.Flags().StringVar(&sortBy, "sort-by", "modified", "Column to sort by (modified, filename, data-source, stage, size)")
+func (searchParams *SearchParameters) GetFilter() (searchFilter, error) {
+	filter := NewSearchFilter(searchParams.startTime, searchParams.endTime)
+	if len(searchParams.dataSources) > 0 {
+		filter.dataSources = &searchParams.dataSources
+	}
+	if len(searchParams.transforms) > 0 {
+		filter.transforms = &searchParams.transforms
+	}
+	if len(searchParams.dataSinks) > 0 {
+		filter.dataSinks = &searchParams.dataSinks
+	}
+	if len(searchParams.annotations) > 0 {
+		annotationFilters := make([]graphql.KeyValueInput, 0, len(searchParams.annotations))
+		for _, annotation := range searchParams.annotations {
+			key, value, err := parseAnnotation(annotation)
+			if err != nil {
+				return filter, err
+			}
+			annotationFilters = append(annotationFilters, graphql.KeyValueInput{
+				Key:   key,
+				Value: value,
+			})
+		}
+		filter.annotations = &annotationFilters
+	}
+	if len(searchParams.dids) > 0 {
+		uuidDids := make([]uuid.UUID, 0, len(searchParams.dids))
+		for _, did := range searchParams.dids {
+			uuidDid, err := uuid.Parse(did)
+			if err != nil {
+				return filter, fmt.Errorf("invalid DID format: %s", did)
+			}
+			uuidDids = append(uuidDids, uuidDid)
+		}
+		filter.dids = &uuidDids
+	}
+	if searchParams.stage != "" {
+		stageValue := graphql.DeltaFileStage(searchParams.stage)
+		filter.stage = &stageValue
+	}
+	if len(searchParams.topics) > 0 {
+		filter.topics = &searchParams.topics
+	}
+	if searchParams.name != "" {
+		filter.name = &searchParams.name
+	}
+	if searchParams.requeueCountMin > 0 {
+		filter.requeueCountMin = &searchParams.requeueCountMin
+	}
+	if searchParams.ingressBytesMin > 0 {
+		filter.ingressBytesMin = &searchParams.ingressBytesMin
+	}
+	if searchParams.ingressBytesMax > 0 {
+		filter.ingressBytesMax = &searchParams.ingressBytesMax
+	}
+	if searchParams.referencedBytesMin > 0 {
+		filter.referencedBytesMin = &searchParams.referencedBytesMin
+	}
+	if searchParams.referencedBytesMax > 0 {
+		filter.referencedBytesMax = &searchParams.referencedBytesMax
+	}
+	if searchParams.totalBytesMin > 0 {
+		filter.totalBytesMin = &searchParams.totalBytesMin
+	}
+	if searchParams.totalBytesMax > 0 {
+		filter.totalBytesMax = &searchParams.totalBytesMax
+	}
+	if searchParams.filteredCause != "" {
+		filter.filteredCause = &searchParams.filteredCause
+	}
+	if searchParams.errorCause != "" {
+		filter.errorCause = &searchParams.errorCause
+	}
+	if searchParams.egressed.IsSet() {
+		val := searchParams.egressed.IsTrue()
+		filter.egressed = &val
+	}
+	if searchParams.filtered.IsSet() {
+		val := searchParams.filtered.IsTrue()
+		filter.filtered = &val
+	}
+	if searchParams.pinned.IsSet() {
+		val := searchParams.pinned.IsTrue()
+		filter.pinned = &val
+	}
+	if searchParams.testMode.IsSet() {
+		val := searchParams.testMode.IsTrue()
+		filter.testMode = &val
+	}
+	if searchParams.replayable.IsSet() {
+		val := searchParams.replayable.IsTrue()
+		filter.replayable = &val
+	}
+	if searchParams.replayed.IsSet() {
+		val := searchParams.replayed.IsTrue()
+		filter.replayed = &val
+	}
+	if searchParams.errorAcknowledged.IsSet() {
+		val := searchParams.errorAcknowledged.IsTrue()
+		filter.errorAcknowledged = &val
+	}
+	if searchParams.terminalStage.IsSet() {
+		val := searchParams.terminalStage.IsTrue()
+		filter.terminalStage = &val
+	}
+	if searchParams.pendingAnnotations.IsSet() {
+		val := searchParams.pendingAnnotations.IsTrue()
+		filter.pendingAnnotations = &val
+	}
+	if searchParams.paused.IsSet() {
+		val := searchParams.paused.IsTrue()
+		filter.paused = &val
+	}
+	if searchParams.contentDeleted.IsSet() {
+		val := searchParams.contentDeleted.IsTrue()
+		filter.contentDeleted = &val
+	}
 
-	searchCmd.Flags().BoolVar(&useHumanize, "humanize", false, "Display timestamps in human-readable format")
+	return filter, nil
+}
 
-	searchCmd.Flags().StringSliceVarP(&dataSources, "data-source", "d", []string{}, "Filter by data source name (can be specified multiple times)")
-	searchCmd.Flags().StringSliceVarP(&transforms, "transform", "t", []string{}, "Filter by transform name (can be specified multiple times)")
-	searchCmd.Flags().StringSliceVarP(&dataSinks, "data-sink", "x", []string{}, "Filter by data sink name (can be specified multiple times)")
-	searchCmd.Flags().StringSliceVar(&annotations, "annotation", []string{}, "Filter by annotation (format: key=value, can be specified multiple times)")
-	searchCmd.Flags().StringVarP(&stage, "stage", "s", "", "Filter by stage (IN_FLIGHT, COMPLETE, ERROR, CANCELLED)")
-	searchCmd.Flags().StringSliceVar(&topics, "topics", []string{}, "Filter by topic name (can be specified multiple times)")
-	searchCmd.Flags().StringVarP(&name, "name", "n", "", "Filter by DeltaFile name")
-	searchCmd.Flags().StringVar(&filteredCause, "filtered-cause", "", "Filter by filtered cause")
-	searchCmd.Flags().StringVar(&errorCause, "error-cause", "", "Filter by error cause")
-	searchCmd.Flags().StringSliceVar(&dids, "did", []string{}, "Filter by DeltaFile ID (can be specified multiple times)")
+// Global instance of search parameters
+var searchParams SearchParameters
 
-	searchCmd.Flags().IntVar(&requeueCountMin, "requeue-count-min", 0, "Minimum requeue count")
+func runSearchViewer(filter searchFilter) error {
+	p := tea.NewProgram(initialSearchModel(filter), tea.WithAltScreen(), tea.WithMouseCellMotion(), tea.WithMouseAllMotion())
+	if _, err := p.Run(); err != nil {
+		return fmt.Errorf("failed to run search: %v", err)
+	}
+	return nil
+}
 
-	searchCmd.Flags().Int64Var(&ingressBytesMin, "ingress-bytes-min", 0, "Minimum ingress bytes")
-	searchCmd.Flags().Int64Var(&ingressBytesMax, "ingress-bytes-max", 0, "Maximum ingress bytes")
-	searchCmd.Flags().Int64Var(&referencedBytesMin, "referenced-bytes-min", 0, "Minimum referenced bytes")
-	searchCmd.Flags().Int64Var(&referencedBytesMax, "referenced-bytes-max", 0, "Maximum referenced bytes")
-	searchCmd.Flags().Int64Var(&totalBytesMin, "total-bytes-min", 0, "Minimum total bytes")
-	searchCmd.Flags().Int64Var(&totalBytesMax, "total-bytes-max", 0, "Maximum total bytes")
+// runSearch executes the search command functionality
+func runSearch(cmd *cobra.Command, args []string) error {
+	if len(args) > 0 {
+		return fmt.Errorf("search command does not accept positional arguments: %v", args)
+	}
 
-	contentDeleted.RegisterFlag(searchCmd, "content-deleted", "Filter by content deleted status", "yes", "no")
-	egressed.RegisterFlag(searchCmd, "egressed", "Filter by egressed status", "yes", "no")
-	errorAcknowledged.RegisterFlag(searchCmd, "error-acknowledged", "Filter by error acknowledged status", "yes", "no")
-	filtered.RegisterFlag(searchCmd, "filtered", "Filter by filtered status", "yes", "no")
-	paused.RegisterFlag(searchCmd, "paused", "Filter by paused status", "yes", "no")
-	pendingAnnotations.RegisterFlag(searchCmd, "pending-annotations", "Filter by pending annotations status", "yes", "no")
-	pinned.RegisterFlag(searchCmd, "pinned", "Filter by pinned status", "yes", "no")
-	replayable.RegisterFlag(searchCmd, "replayable", "Filter by replayable status", "yes", "no")
-	replayed.RegisterFlag(searchCmd, "replayed", "Filter by replayed status", "yes", "no")
-	terminalStage.RegisterFlag(searchCmd, "terminal-stage", "Filter by terminal stage status", "yes", "no")
-	testMode.RegisterFlag(searchCmd, "test-mode", "Filter by test mode status", "yes", "no")
+	filter, err := searchParams.GetFilter()
+	if err != nil {
+		return err
+	}
 
-	searchCmd.RegisterFlagCompletionFunc("data-source", getDataSourceNames)
-	searchCmd.RegisterFlagCompletionFunc("transform", getTransformNames)
-	searchCmd.RegisterFlagCompletionFunc("data-sink", getDataSinkNames)
-	searchCmd.RegisterFlagCompletionFunc("stage", getStageValues)
-	searchCmd.RegisterFlagCompletionFunc("topics", getTopicNames)
-	searchCmd.RegisterFlagCompletionFunc("annotation", getAnnotationKeys)
+	return runSearchViewer(filter)
+}
+
+func searchResultTable(filter searchFilter, limit int, offset int, plain bool, noHeader bool) error {
+	response, err := graphql.DeltaFiles(&offset, &limit, filter.toGraphQLFilter(), filter.order)
+	if err != nil {
+		return fmt.Errorf("failed to fetch errors: %v", err)
+	}
+
+	deltaFiles := response.DeltaFiles.DeltaFiles
+	total := *response.DeltaFiles.TotalCount
+
+	if len(deltaFiles) == 0 {
+		fmt.Println("No DeltaFiles match the search criteria.")
+		return nil
+	}
+
+	// Create table data
+	columns := []string{"DID", "Filename", "Data Source", "Stage", "Modified", "Size"}
+
+	if noHeader {
+		columns = []string{}
+	}
+
+	rows := make([][]string, len(deltaFiles))
+
+	for i, df := range deltaFiles {
+		rows[i] = []string{
+			df.Did.String(),
+			getStringValue(df.Name),
+			df.DataSource,
+			string(df.Stage),
+			formatTime(df.Modified),
+			formatSearchBytes(df.TotalBytes),
+		}
+	}
+
+	// Create and render the table
+	table := api.NewTable(columns, rows)
+	if plain {
+		renderAsSimpleTable(table, true)
+	} else {
+		renderAsSimpleTableWithWidth(table, getTerminalWidth())
+	}
+
+	if !noHeader {
+		fmt.Printf("\nTotal DeltaFiles: %d of %d\n", len(deltaFiles), total)
+	}
+	return nil
+}
+
+func searchResultJSON(filter searchFilter, limit int, offset int, plain bool, verbose bool) error {
+	result, err := getStructuredSearchResult(filter, limit, offset, verbose)
+	if err != nil {
+		return err
+	}
+
+	return printJSON(result, plain)
+}
+
+func getStructuredSearchResult(filter searchFilter, limit int, offset int, verbose bool) (interface{}, error) {
+	var err error
+	var deltaFiles interface{}
+	var totalCount int
+
+	if verbose {
+		var raw *graphql.VerboseDeltaFilesResponse
+		raw, err = graphql.VerboseDeltaFiles(&offset, &limit, filter.toGraphQLFilter(), filter.order)
+		deltaFiles = raw.DeltaFiles.DeltaFiles
+		totalCount = *raw.DeltaFiles.TotalCount
+	} else {
+		var raw *graphql.DeltaFilesResponse
+		raw, err = graphql.DeltaFiles(&offset, &limit, filter.toGraphQLFilter(), filter.order)
+		deltaFiles = raw.DeltaFiles.DeltaFiles
+		totalCount = *raw.DeltaFiles.TotalCount
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch errors: %v", err)
+	}
+
+	result := map[string]interface{}{
+		"totalCount": totalCount,
+		"offset":     offset,
+		"limit":      limit,
+		"deltaFiles": deltaFiles,
+	}
+
+	return result, nil
+}
+
+func searchResultYAML(filter searchFilter, limit int, offset int, verbose bool) error {
+	result, err := getStructuredSearchResult(filter, limit, offset, verbose)
+	if err != nil {
+		return err
+	}
+
+	err = printYAML(result)
+	return err
+}
+
+func (searchParams *SearchParameters) addSearchFlagsAndCompletions(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&searchParams.startTime, "from", "today", "Display DeltaFiles modified after this time (default: today)")
+	cmd.Flags().StringVar(&searchParams.endTime, "to", "now", "Display DeltaFiles modified before this time (default: now)")
+	cmd.Flags().StringVar(&searchParams.endTime, "until", "now", "Alias for --to")
+	cmd.Flags().BoolVarP(&searchParams.useCreationTime, "creation-time", "C", false, "Filter by creation time instead of modification time")
+	cmd.Flags().BoolVar(&searchParams.useLocal, "local", false, "Display times in local timezone")
+	cmd.Flags().BoolVar(&searchParams.useZulu, "zulu", false, "Display times in UTC/Zulu timezone")
+	cmd.Flags().BoolVar(&searchParams.ascending, "ascending", false, "Sort results in ascending order")
+	cmd.Flags().BoolVar(&searchParams.descending, "descending", false, "Sort results in descending order")
+	cmd.Flags().StringVar(&searchParams.sortBy, "sort-by", "modified", "Column to sort by (modified, filename, data-source, stage, size)")
+	cmd.Flags().IntVar(&searchParams.autoRefresh, "auto-refresh", 0, "Automatically refresh results every N seconds (0 to disable)")
+
+	cmd.Flags().BoolVar(&searchParams.useHumanize, "humanize", false, "Display timestamps in human-readable format")
+
+	cmd.Flags().StringSliceVarP(&searchParams.dataSources, "data-source", "d", []string{}, "Filter by data source name (can be specified multiple times)")
+	cmd.Flags().StringSliceVarP(&searchParams.transforms, "transform", "t", []string{}, "Filter by transform name (can be specified multiple times)")
+	cmd.Flags().StringSliceVarP(&searchParams.dataSinks, "data-sink", "x", []string{}, "Filter by data sink name (can be specified multiple times)")
+	cmd.Flags().StringSliceVar(&searchParams.annotations, "annotation", []string{}, "Filter by annotation (format: key=value, can be specified multiple times)")
+	cmd.Flags().StringVarP(&searchParams.stage, "stage", "s", "", "Filter by stage (IN_FLIGHT, COMPLETE, ERROR, CANCELLED)")
+	cmd.Flags().StringSliceVar(&searchParams.topics, "topics", []string{}, "Filter by topic name (can be specified multiple times)")
+	cmd.Flags().StringVarP(&searchParams.name, "name", "n", "", "Filter by DeltaFile name")
+	cmd.Flags().StringVar(&searchParams.filteredCause, "filtered-cause", "", "Filter by filtered cause")
+	cmd.Flags().StringVar(&searchParams.errorCause, "error-cause", "", "Filter by error cause")
+	cmd.Flags().StringSliceVar(&searchParams.dids, "did", []string{}, "Filter by DeltaFile ID (can be specified multiple times)")
+
+	cmd.Flags().IntVar(&searchParams.requeueCountMin, "requeue-count-min", 0, "Minimum requeue count")
+
+	cmd.Flags().Int64Var(&searchParams.ingressBytesMin, "ingress-bytes-min", 0, "Minimum ingress bytes")
+	cmd.Flags().Int64Var(&searchParams.ingressBytesMax, "ingress-bytes-max", 0, "Maximum ingress bytes")
+	cmd.Flags().Int64Var(&searchParams.referencedBytesMin, "referenced-bytes-min", 0, "Minimum referenced bytes")
+	cmd.Flags().Int64Var(&searchParams.referencedBytesMax, "referenced-bytes-max", 0, "Maximum referenced bytes")
+	cmd.Flags().Int64Var(&searchParams.totalBytesMin, "total-bytes-min", 0, "Minimum total bytes")
+	cmd.Flags().Int64Var(&searchParams.totalBytesMax, "total-bytes-max", 0, "Maximum total bytes")
+
+	searchParams.contentDeleted.RegisterFlag(cmd, "content-deleted", "Filter by content deleted status", "yes", "no")
+	searchParams.egressed.RegisterFlag(cmd, "egressed", "Filter by egressed status", "yes", "no")
+	searchParams.errorAcknowledged.RegisterFlag(cmd, "error-acknowledged", "Filter by error acknowledged status", "yes", "no")
+	searchParams.filtered.RegisterFlag(cmd, "filtered", "Filter by filtered status", "yes", "no")
+	searchParams.paused.RegisterFlag(cmd, "paused", "Filter by paused status", "yes", "no")
+	searchParams.pendingAnnotations.RegisterFlag(cmd, "pending-annotations", "Filter by pending annotations status", "yes", "no")
+	searchParams.pinned.RegisterFlag(cmd, "pinned", "Filter by pinned status", "yes", "no")
+	searchParams.replayable.RegisterFlag(cmd, "replayable", "Filter by replayable status", "yes", "no")
+	searchParams.replayed.RegisterFlag(cmd, "replayed", "Filter by replayed status", "yes", "no")
+	searchParams.terminalStage.RegisterFlag(cmd, "terminal-stage", "Filter by terminal stage status", "yes", "no")
+	searchParams.testMode.RegisterFlag(cmd, "test-mode", "Filter by test mode status", "yes", "no")
+
+	cmd.RegisterFlagCompletionFunc("data-source", getDataSourceNames)
+	cmd.RegisterFlagCompletionFunc("transform", getTransformNames)
+	cmd.RegisterFlagCompletionFunc("data-sink", getDataSinkNames)
+	cmd.RegisterFlagCompletionFunc("stage", getStageValues)
+	cmd.RegisterFlagCompletionFunc("topics", getTopicNames)
+	cmd.RegisterFlagCompletionFunc("annotation", getAnnotationKeys)
 
 	// Register completion for all flags to prevent filesystem completion
-	searchCmd.RegisterFlagCompletionFunc("from", cobra.FixedCompletions([]cobra.Completion{
+	cmd.RegisterFlagCompletionFunc("from", cobra.FixedCompletions([]cobra.Completion{
 		"today",
 		"yesterday",
 		"last week",
@@ -1046,7 +1263,7 @@ func init() {
 		"beginning",
 		"everbefore",
 	}, cobra.ShellCompDirectiveNoFileComp))
-	searchCmd.RegisterFlagCompletionFunc("to", cobra.FixedCompletions([]cobra.Completion{
+	cmd.RegisterFlagCompletionFunc("to", cobra.FixedCompletions([]cobra.Completion{
 		"now",
 		"today",
 		"yesterday",
@@ -1056,7 +1273,7 @@ func init() {
 		"end",
 		"forever",
 	}, cobra.ShellCompDirectiveNoFileComp))
-	searchCmd.RegisterFlagCompletionFunc("until", cobra.FixedCompletions([]cobra.Completion{
+	cmd.RegisterFlagCompletionFunc("until", cobra.FixedCompletions([]cobra.Completion{
 		"now",
 		"today",
 		"yesterday",
@@ -1066,13 +1283,18 @@ func init() {
 		"end",
 		"forever",
 	}, cobra.ShellCompDirectiveNoFileComp))
-	searchCmd.RegisterFlagCompletionFunc("did", cobra.NoFileCompletions)
-	searchCmd.RegisterFlagCompletionFunc("name", cobra.NoFileCompletions)
-	searchCmd.RegisterFlagCompletionFunc("filtered-cause", cobra.NoFileCompletions)
-	searchCmd.RegisterFlagCompletionFunc("error-cause", cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc("did", cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc("name", cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc("filtered-cause", cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc("error-cause", cobra.NoFileCompletions)
 
-	searchCmd.MarkFlagsMutuallyExclusive("local", "zulu")
-	searchCmd.MarkFlagsMutuallyExclusive("to", "until")
+	cmd.MarkFlagsMutuallyExclusive("local", "zulu")
+	cmd.MarkFlagsMutuallyExclusive("to", "until")
+}
+
+func init() {
+	rootCmd.AddCommand(searchCmd)
+	searchParams.addSearchFlagsAndCompletions(searchCmd)
 }
 
 // Helper function to safely get string value from pointer
@@ -1099,13 +1321,13 @@ func formatSearchBytes(bytes int64) string {
 
 // Helper function to format time based on timezone preference
 func formatTime(t time.Time) string {
-	if useHumanize {
+	if searchParams.useHumanize {
 		return humanize.Time(t)
 	}
-	if useZulu {
+	if searchParams.useZulu {
 		return t.UTC().Format(time.RFC3339)
 	}
-	if useLocal {
+	if searchParams.useLocal {
 		return t.Local().Format("2006-01-02T15:04:05")
 	}
 	return t.Format(time.RFC3339)

@@ -119,6 +119,15 @@ This document provides comprehensive documentation for all available commands, s
     - [deltafile](#deltafile)
     - [ingress](#ingress)
     - [search](#search)
+    - [deltafiles](#deltafiles)
+      - [view](#deltafiles-view)
+      - [list](#deltafiles-list)
+    - [errored](#errored)
+      - [view](#errored-view)
+      - [list](#errored-list)
+    - [filtered](#filtered)
+      - [view](#filtered-view)
+      - [list](#filtered-list)
   - [Testing](#testing)
     - [integration-test](#integration-test)
       - [list](#integration-test-list)
@@ -667,12 +676,20 @@ deltafi ingress <files...> --datasource|-d <source> [--content-type|-c <type>] [
 - `--watch, -w`: Wait for each deltafile to complete before showing results
 
 #### `search`
-Search and filter DeltaFiles with a rich set of criteria. Opens an interactive TUI for browsing results.
+Search and filter DeltaFiles with a rich set of criteria. Opens an interactive TUI for browsing results with real-time updates and advanced navigation.
 
 ```bash
 deltafi search [flags]
 ```
-Flags:
+
+**Interactive Features:**
+- **Real-time Navigation**: Use arrow keys, page up/down, or mouse wheel to navigate results
+- **Sorting**: Press Tab/Shift+Tab to cycle through sort columns, 'o' to toggle sort direction
+- **Auto-refresh**: Use `--auto-refresh` to automatically update results every N seconds
+- **Detailed View**: Press Enter to view full DeltaFile details in a modal
+- **Help**: Press 'h' to view keyboard shortcuts and navigation help
+
+**Search Flags:**
 - `--from <time>`: Display DeltaFiles modified after this time (default: today)
 - `--to <time>`: Display DeltaFiles modified before this time (default: now)
 - `--until <time>`: Alias for --to
@@ -682,6 +699,7 @@ Flags:
 - `--ascending`: Sort results in ascending order
 - `--descending`: Sort results in descending order
 - `--sort-by <column>`: Column to sort by (modified, filename, data-source, stage, size)
+- `--auto-refresh <seconds>`: Automatically refresh results every N seconds (0 to disable)
 - `--humanize`: Display timestamps in human-readable format
 - `--data-source, -d <name>`: Filter by data source name (can be specified multiple times)
 - `--transform, -t <name>`: Filter by transform name (can be specified multiple times)
@@ -712,9 +730,251 @@ Flags:
 - `--terminal-stage <yes|no>`: Filter by terminal stage status
 - `--test-mode <yes|no>`: Filter by test mode status
 
-Example:
+**Navigation Keys:**
+- `↑/k`: Move selection up
+- `↓/j`: Move selection down
+- `pgup`: Previous page
+- `pgdown`: Next page
+- `g`: Go to start
+- `tab`: Cycle to next sort column
+- `shift+tab`: Cycle to previous sort column
+- `o`: Toggle sort direction
+- `enter`: View DeltaFile details
+- `r`: Refresh results
+- `h`: Show help
+- `esc/q`: Quit
+
+**Examples:**
 ```bash
-deltafi search --data-source my-source --stage COMPLETE --from "2024-01-01" --to "2024-02-01"
+# Basic search with time range
+deltafi search --from "yesterday" --to "now"
+
+# Search with auto-refresh every 30 seconds
+deltafi search --data-source my-source --auto-refresh 30
+
+# Search with multiple filters
+deltafi search --stage COMPLETE --data-source my-source --from "2024-01-01" --to "2024-02-01"
+
+# Search with size filters
+deltafi search --total-bytes-min 1000 --total-bytes-max 10000
+
+# Search with annotations
+deltafi search --annotation "priority=high" --annotation "environment=production"
+```
+
+#### `deltafiles`
+Manage and search DeltaFiles with comprehensive filtering and output options.
+
+```bash
+deltafi deltafiles [subcommand] [options]
+```
+
+**Subcommands:**
+
+##### `view`
+Interactive viewer for DeltaFiles with real-time navigation and filtering.
+
+```bash
+deltafi deltafiles view [flags]
+```
+
+Provides the same interactive TUI experience as `search` with all filtering options available.
+
+**Examples:**
+```bash
+# View DeltaFiles with time filtering
+deltafi deltafiles view --from "today" --to "now"
+
+# View with auto-refresh
+deltafi deltafiles view --auto-refresh 60
+
+# View with specific filters
+deltafi deltafiles view --stage COMPLETE --data-source my-source
+```
+
+##### `list`
+List DeltaFiles in various output formats with comprehensive filtering options.
+
+```bash
+deltafi deltafiles list [flags]
+```
+
+**Output Format Flags:**
+- `--plain, -p`: Show plain table output
+- `--json`: Show JSON output
+- `--yaml`: Show YAML output
+- `--verbose, -v`: Show verbose output (JSON and YAML only)
+- `--terse`: Hide table header and footer
+
+**Pagination Flags:**
+- `--limit <int>`: Limit the number of results (default: 100)
+- `--offset <int>`: Offset the results (default: 0)
+
+**All search flags are available** (same as `search` command)
+
+**Examples:**
+```bash
+# List recent DeltaFiles
+deltafi deltafiles list --limit 10
+
+# List in JSON format
+deltafi deltafiles list --json --limit 5
+
+# List with specific filters
+deltafi deltafiles list --stage COMPLETE --data-source my-source --limit 20
+
+# List with size filtering
+deltafi deltafiles list --total-bytes-min 1000 --total-bytes-max 10000
+
+# List with time range and output format
+deltafi deltafiles list --from "yesterday" --to "now" --json --verbose
+```
+
+#### `errored`
+Manage and search DeltaFile errors with specialized filtering for error conditions.
+
+```bash
+deltafi errored [subcommand] [options]
+```
+
+**Subcommands:**
+
+##### `view`
+Interactive viewer for DeltaFile errors. By default shows only unacknowledged errors.
+
+```bash
+deltafi errored view [flags]
+```
+
+**Error-specific Flags:**
+- `--all`: Show all errors (acknowledged and unacknowledged)
+- `--acknowledged`: Show only acknowledged errors
+
+**All search flags are available** (same as `search` command, with stage automatically set to ERROR)
+
+**Examples:**
+```bash
+# View unacknowledged errors (default)
+deltafi errored view
+
+# View all errors including acknowledged
+deltafi errored view --all
+
+# View only acknowledged errors
+deltafi errored view --acknowledged
+
+# View errors with specific filters
+deltafi errored view --error-cause "timeout" --data-source my-source
+
+# View errors with auto-refresh
+deltafi errored view --auto-refresh 30
+```
+
+##### `list`
+List DeltaFile errors in various output formats.
+
+```bash
+deltafi errored list [flags]
+```
+
+**Output Format Flags:**
+- `--plain, -p`: Show plain table output
+- `--json`: Show JSON output
+- `--yaml`: Show YAML output
+- `--verbose, -v`: Show verbose output (JSON and YAML only)
+- `--terse`: Hide table header and footer
+
+**Pagination Flags:**
+- `--limit <int>`: Limit the number of results (default: 100)
+- `--offset <int>`: Offset the results (default: 0)
+
+**Error-specific Flags:**
+- `--all`: Show all errors (acknowledged and unacknowledged)
+- `--acknowledged`: Show only acknowledged errors
+
+**All search flags are available** (same as `search` command, with stage automatically set to ERROR)
+
+**Examples:**
+```bash
+# List recent errors
+deltafi errored list --limit 10
+
+# List all errors including acknowledged
+deltafi errored list --all --limit 20
+
+# List errors in JSON format
+deltafi errored list --json --verbose
+
+# List errors with specific filters
+deltafi errored list --error-cause "timeout" --data-source my-source
+
+# List errors with time range
+deltafi errored list --from "last week" --to "now" --json
+```
+
+#### `filtered`
+Manage and search filtered DeltaFiles with specialized filtering for filtered conditions.
+
+```bash
+deltafi filtered [subcommand] [options]
+```
+
+**Subcommands:**
+
+##### `view`
+Interactive viewer for filtered DeltaFiles.
+
+```bash
+deltafi filtered view [flags]
+```
+
+**All search flags are available** (same as `search` command, with filtered automatically set to yes)
+
+**Examples:**
+```bash
+# View filtered DeltaFiles
+deltafi filtered view
+
+# View with specific filters
+deltafi filtered view --filtered-cause "validation_failed" --data-source my-source
+
+# View with auto-refresh
+deltafi filtered view --auto-refresh 60
+```
+
+##### `list`
+List filtered DeltaFiles in various output formats.
+
+```bash
+deltafi filtered list [flags]
+```
+
+**Output Format Flags:**
+- `--plain, -p`: Show plain table output
+- `--json`: Show JSON output
+- `--yaml`: Show YAML output
+- `--verbose, -v`: Show verbose output (JSON and YAML only)
+- `--terse`: Hide table header and footer
+
+**Pagination Flags:**
+- `--limit <int>`: Limit the number of results (default: 100)
+- `--offset <int>`: Offset the results (default: 0)
+
+**All search flags are available** (same as `search` command, with filtered automatically set to yes)
+
+**Examples:**
+```bash
+# List filtered DeltaFiles
+deltafi filtered list --limit 10
+
+# List in JSON format
+deltafi filtered list --json --verbose
+
+# List with specific filters
+deltafi filtered list --filtered-cause "validation_failed" --data-source my-source
+
+# List with time range
+deltafi filtered list --from "yesterday" --to "now" --json
 ```
 
 ### Testing
@@ -1078,4 +1338,31 @@ deltafi integration-test summary
 
 # Load a new test configuration
 deltafi integration-test load my-test.yaml
+```
+
+### Managing DeltaFiles
+```bash
+# Search DeltaFiles with interactive TUI
+deltafi search --data-source my-source --stage COMPLETE
+
+# Search with auto-refresh every 30 seconds
+deltafi search --auto-refresh 30
+
+# List DeltaFiles in JSON format
+deltafi deltafiles list --json --limit 10
+
+# View DeltaFiles with specific filters
+deltafi deltafiles view --from "yesterday" --to "now"
+
+# List recent errors
+deltafi errored list --limit 5
+
+# View all errors including acknowledged
+deltafi errored view --all
+
+# List filtered DeltaFiles
+deltafi filtered list --filtered-cause "validation_failed"
+
+# View filtered DeltaFiles with auto-refresh
+deltafi filtered view --auto-refresh 60
 ```
