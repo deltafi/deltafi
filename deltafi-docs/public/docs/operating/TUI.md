@@ -53,6 +53,7 @@ This document provides comprehensive documentation for all available commands, s
     - [versions](#versions)
     - [upgrade](#upgrade)
       - [list](#upgrade-list)
+      - [changelog](#upgrade-changelog)
       - [upgrade](#upgrade-upgrade)
     - [set-admin-password](#set-admin-password)
     - [delete-policies](#delete-policies)
@@ -340,10 +341,48 @@ Upgrade DeltaFi system to a specific version.
   ```bash
   deltafi upgrade list
   ```
+- `changelog [version]`: Show changelog for a specific version or all newer versions
+  ```bash
+  # Show changelog for a specific version
+  deltafi upgrade changelog <version>
+  
+  # Show changelogs for all newer versions (newest to oldest)
+  deltafi upgrade changelog
+  ```
 - `upgrade [version]`: Upgrade to a specific version
   ```bash
   deltafi upgrade <version>
   ```
+
+**Changelog Command Details:**
+
+The `changelog` command retrieves and displays changelog information from the DeltaFi container registry. It fetches the changelog content from the `org.opencontainers.image.description` annotation in the container manifest and renders it as formatted markdown.
+
+**Features:**
+- **Single Version**: Display changelog for a specific version
+- **All Newer Versions**: When no version is specified, shows changelogs for all versions newer than the currently installed version
+- **Markdown Rendering**: Beautiful terminal formatting with headers, bullet points, and color coding
+- **Flexible Version Support**: Works with semantic versions (e.g., "2.25.0") and tags (e.g., "latest")
+- **Error Handling**: Graceful handling of missing versions or changelogs
+
+**Examples:**
+```bash
+# View changelog for a specific version
+deltafi upgrade changelog 2.25.0
+
+# View changelogs for all newer versions (newest first)
+deltafi upgrade changelog
+
+# View changelog for latest tag
+deltafi upgrade changelog latest
+```
+
+**Output Format:**
+The changelog is rendered with:
+- Color-coded headers and sections
+- Proper bullet point formatting
+- Terminal-optimized width and wrapping
+- Clear separation between multiple changelogs when viewing all versions
 
 #### `set-admin-password`
 Set the admin password for the DeltaFi system.

@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strings"
 	"syscall"
 	"time"
 
@@ -43,6 +44,19 @@ var listVersionsCmd = &cobra.Command{
 	Long:  `List available newer versions of DeltaFi`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return listUpgradeVersions()
+	},
+}
+
+var changelogCmd = &cobra.Command{
+	Use:   "changelog [version]",
+	Short: "Show changelog for a specific version or all newer versions",
+	Long:  `Show the changelog for a specific DeltaFi version. If no version is specified, shows changelogs for all newer versions.`,
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return showAllChangelogs()
+		}
+		return showChangelog(args[0])
 	},
 }
 
@@ -71,6 +85,91 @@ func listUpgradeVersions() error {
 	for _, v := range versions {
 		fmt.Printf("  %s\n", v.String())
 	}
+	return nil
+}
+
+func showChangelog(version string) error {
+	// Try to validate as semantic version, but don't fail if it's not
+	// This allows for tags like "latest", "main", etc.
+	_, err := semver.NewVersion(version)
+	if err != nil {
+		// Not a semantic version, but that's okay for tags like "latest"
+		fmt.Printf("Note: %s is not a semantic version, but will try to fetch changelog anyway\n", version)
+	}
+
+	// Get annotations for the specified version
+	annotations, err := containers.GetImageAnnotations(context.Background(), distroRepository, version)
+	if err != nil {
+		return fmt.Errorf("error getting image annotations: %w", err)
+	}
+
+	// Look for the changelog annotation
+	changelog, exists := annotations["org.opencontainers.image.description"]
+	if !exists || changelog == "" {
+		return fmt.Errorf("no changelog found for version %s", version)
+	}
+
+	// Render the changelog markdown
+	renderedChangelog := renderMarkdown(changelog, getTerminalWidth()-8)
+	fmt.Println(renderedChangelog)
+
+	return nil
+}
+
+func showAllChangelogs() error {
+	currentVersion := GetRunningVersion()
+	if currentVersion == nil {
+		return fmt.Errorf("could not determine current version")
+	}
+
+	// Get all newer versions
+	versions, err := containers.ListNewerVersions(context.Background(), distroRepository, currentVersion, 0) // 0 means no limit
+	if err != nil {
+		return fmt.Errorf("error listing newer versions: %w", err)
+	}
+
+	if len(versions) == 0 {
+		fmt.Println("No newer versions available")
+		return nil
+	}
+
+	// Sort versions in descending order (newest first)
+	sort.Slice(versions, func(i, j int) bool {
+		return versions[i].Compare(versions[j]) > 0
+	})
+
+	// Show changelog for each version
+	for i, version := range versions {
+		versionStr := version.String()
+
+		// Add separator between versions (except before the first one)
+		if i > 0 {
+			fmt.Println()
+			fmt.Println(strings.Repeat("─", getTerminalWidth()))
+			fmt.Println()
+		}
+
+		fmt.Printf("Changelog for version %s:\n", versionStr)
+		fmt.Println()
+
+		// Get and display changelog for this version
+		annotations, err := containers.GetImageAnnotations(context.Background(), distroRepository, versionStr)
+		if err != nil {
+			fmt.Printf("Error getting changelog for version %s: %v\n", versionStr, err)
+			continue
+		}
+
+		changelog, exists := annotations["org.opencontainers.image.description"]
+		if !exists || changelog == "" {
+			fmt.Printf("No changelog found for version %s\n", versionStr)
+			continue
+		}
+
+		// Render the changelog markdown
+		renderedChangelog := renderMarkdown(changelog, getTerminalWidth()-8)
+		fmt.Println(renderedChangelog)
+	}
+
 	return nil
 }
 
@@ -139,4 +238,5 @@ var upgradeCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.AddCommand(listVersionsCmd)
+	upgradeCmd.AddCommand(changelogCmd)
 }

@@ -19,11 +19,14 @@ package containers
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/registry/remote"
 )
 
@@ -82,4 +85,74 @@ func ListNewerVersions(context context.Context, imageRef string, version *semver
 	}
 
 	return versions, nil
+}
+
+func GetImageAnnotations(context context.Context, imageRef string, tag string) (map[string]string, error) {
+	repo, err := remote.NewRepository(imageRef)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the manifest for the specific tag
+	desc, err := repo.Resolve(context, tag)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the manifest
+	manifestReader, err := repo.Fetch(context, desc)
+	if err != nil {
+		return nil, err
+	}
+	defer manifestReader.Close()
+
+	// Read the manifest bytes
+	manifestBytes, err := io.ReadAll(manifestReader)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the manifest based on its media type
+	var annotations map[string]string
+
+	switch desc.MediaType {
+	case v1.MediaTypeImageManifest:
+		// Parse OCI Image Manifest
+		var manifest v1.Manifest
+		if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
+			return nil, err
+		}
+		annotations = manifest.Annotations
+
+	case v1.MediaTypeImageIndex:
+		// Parse OCI Image Index (multi-platform)
+		var index v1.Index
+		if err := json.Unmarshal(manifestBytes, &index); err != nil {
+			return nil, err
+		}
+		annotations = index.Annotations
+
+	default:
+		// For other media types, try to parse as generic JSON
+		var genericManifest map[string]interface{}
+		if err := json.Unmarshal(manifestBytes, &genericManifest); err != nil {
+			return nil, err
+		}
+
+		// Try to extract annotations from common fields
+		if ann, ok := genericManifest["annotations"].(map[string]interface{}); ok {
+			annotations = make(map[string]string)
+			for k, v := range ann {
+				if str, ok := v.(string); ok {
+					annotations[k] = str
+				}
+			}
+		}
+	}
+
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	return annotations, nil
 }
