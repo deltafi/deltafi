@@ -304,7 +304,6 @@ EOF
 _create_proxy() {
   local PROXY_NAME=$1
   local PROXY_REMOTE=$2
-  local PROXY_PORT=$3
   # Create volume if not present
   if ! docker volume inspect "$PROXY_NAME" > /dev/null 2>/dev/null; then
     docker volume create "$PROXY_NAME" > /dev/null
@@ -317,7 +316,6 @@ _create_proxy() {
             --restart=always --net=kind \
             --mount source="${PROXY_NAME}",destination=/var/lib/registry \
             -e REGISTRY_PROXY_REMOTEURL="${PROXY_REMOTE}" \
-            -p "127.0.0.1:${PROXY_PORT}:5000" \
             registry:2 > /dev/null
       _ok "Created registry proxy container: $PROXY_NAME"
   fi
@@ -470,11 +468,11 @@ up() {
   pushd "$BASE_PATH" > /dev/null
 
   _create_registry kind-registry 5000
-  _create_proxy dockerio-proxy "https://registry-1.docker.io" 5001
-  _create_proxy k8s-proxy "https://k8s.gcr.io" 5002
-  _create_proxy ghcr-proxy "https://ghcr.io" 5003
-  _create_proxy quay-proxy "https://quay.io" 5004
-  _create_proxy k8s-registry-proxy "https://registry.k8s.io" 5005
+  _create_proxy dockerio-proxy "https://registry-1.docker.io"
+  _create_proxy k8s-proxy "https://k8s.gcr.io"
+  _create_proxy ghcr-proxy "https://ghcr.io"
+  _create_proxy quay-proxy "https://quay.io"
+  _create_proxy k8s-registry-proxy "https://registry.k8s.io"
 
   if kind get clusters -q | grep "^${CLUSTER_NAME}$" > /dev/null; then
     _ok "KinD ${CLUSTER_NAME} cluster already instantiated"
