@@ -19,7 +19,12 @@ task tuiDist(type: Exec) {
 }
 
 task tui() {
-    dependsOn 'tuiBuild'
+    dependsOn tuiBuild
+}
+
+task tuiTest(type: Exec) {
+    dependsOn tuiBuild
+    commandLine 'make', 'test'
 }
 
 clean.dependsOn tuiClean
