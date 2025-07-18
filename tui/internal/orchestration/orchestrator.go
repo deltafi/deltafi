@@ -18,9 +18,6 @@
 package orchestration
 
 import (
-	"errors"
-	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -29,7 +26,6 @@ import (
 )
 
 type Orchestrator interface {
-	GetServiceIP(string) (string, error)
 	GetPostgresCmd([]string) (exec.Cmd, error)
 	GetPostgresExecCmd([]string) (exec.Cmd, error)
 	Up([]string) error
@@ -39,6 +35,7 @@ type Orchestrator interface {
 	GetValkeyName() string
 	GetMinioName() (string, error)
 	ExecuteMinioCommand([]string) error
+	GetAPIBaseURL() (string, error)
 }
 
 func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) Orchestrator {
@@ -46,67 +43,14 @@ func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string,
 	orchestrationPath := filepath.Join(distroPath, "orchestration")
 	switch mode {
 	case Kubernetes:
-		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
-	case Compose:
-		reposPath := filepath.Join(installDirectory, "repos")
-		configPath := filepath.Join(installDirectory, "config")
-		secretsPath := filepath.Join(configPath, "secrets")
-		return &ComposeOrchestrator{
-			distroPath:        distroPath,
-			dataPath:          dataPath,
-			reposPath:         reposPath,
-			configPath:        configPath,
-			secretsPath:       secretsPath,
-			sitePath:          sitePath,
-			orchestrationPath: orchestrationPath,
-			coreVersion:       coreVersion,
-			deploymentMode:    deploymentMode,
-		}
+		return NewKubernetesOrchestrator(distroPath, sitePath, dataPath)
 	case Kind:
-		return &KubernetesOrchestrator{distroPath: distroPath, dataPath: dataPath}
+		reposPath := filepath.Join(installDirectory, "repos")
+		return NewKindOrchestrator(distroPath, sitePath, dataPath, reposPath, installDirectory, deploymentMode)
 	default:
-		return &ComposeOrchestrator{distroPath: distroPath, dataPath: dataPath, orchestrationPath: orchestrationPath, coreVersion: coreVersion}
+		reposPath := filepath.Join(installDirectory, "repos")
+		configPath := filepath.Join(installDirectory, ".config")
+		secretsPath := filepath.Join(configPath, "secrets")
+		return NewComposeOrchestrator(distroPath, dataPath, reposPath, configPath, secretsPath, sitePath, orchestrationPath, coreVersion, deploymentMode)
 	}
-}
-
-func ShellExec(executable string, env []string, args []string) error {
-	c := *exec.Command(executable, args...)
-	c.Env = env
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	return c.Run()
-}
-
-// Generic implementation of the MinIO command execution.
-func execMinioCommand(orchestrator Orchestrator, cmd []string) error {
-	minioCliArgs := []string{"mc alias set deltafi http://deltafi-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD > /dev/null && "}
-
-	minioName, err := orchestrator.GetMinioName()
-	if err != nil {
-		return err
-	}
-	c, err := orchestrator.GetExecCmd(minioName, append(minioCliArgs, cmd...))
-	if err != nil {
-		return err
-	}
-
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-
-	err = c.Run()
-	if err == nil {
-		return nil
-	}
-
-	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		// Ignore common interrupt exit codes
-		if exitError.ExitCode() == 130 || exitError.ExitCode() == 2 {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("command execution failed: %w", err)
 }

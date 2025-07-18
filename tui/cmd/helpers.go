@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -293,4 +294,11 @@ func copyFileWithPerms(src, dst string) error {
 	}
 
 	return destFile.Sync()
+}
+
+func executeShellCommand(cmd exec.Cmd) error {
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }

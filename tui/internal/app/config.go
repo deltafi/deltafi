@@ -153,6 +153,10 @@ func loadFromFile(path string, config *Config) error {
 
 // Save saves the current configuration to file
 func (c *Config) Save() error {
+	// Ensure the config directory exists
+	if err := os.MkdirAll(ConfigPath(), 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
 
 	file, err := os.Create(configFile())
 	if err != nil {

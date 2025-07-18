@@ -99,6 +99,9 @@ var (
 			Foreground(Subtext0).
 			Italic(true)
 
+	MutedStyle = lipgloss.NewStyle().
+			Foreground(Surface2)
+
 	ItalicStyle = lipgloss.NewStyle().
 			Italic(true)
 	AccentStyle = lipgloss.NewStyle().

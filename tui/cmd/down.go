@@ -26,6 +26,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deltafi/tui/internal/app"
+	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
 )
@@ -70,6 +71,8 @@ Examples:
 		if err != nil {
 			return err
 		}
+
+		destroyData = destroyData || app.GetOrchestrationMode() == orchestration.Kind
 
 		if !force {
 			if destroyData {

@@ -24,6 +24,7 @@ import (
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/app"
+	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/ui/components"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
@@ -107,6 +108,15 @@ func Up(force bool, args []string) error {
 	config := app.GetInstance().GetConfig()
 
 	config.SetCoreVersion(tuiVersion)
+
+	if app.GetOrchestrationMode() == orchestration.Kind {
+		perr := app.SetAdminPassword("password")
+		if perr != nil {
+			fmt.Println(styles.FAIL("Failed to set admin password"))
+		} else {
+			fmt.Println(styles.INFO("Admin password set to 'password'"))
+		}
+	}
 
 	if upgrade {
 		fmt.Println(styles.OK(fmt.Sprintf("DeltaFi core upgraded from %s to %s", activeVersion, tuiVersion)))

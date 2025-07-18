@@ -35,20 +35,18 @@ type Client struct {
 	dnsMap     map[string]string
 }
 
-// NewClient creates a new instance of the DeltaFi API Client with the specified baseURL.
-// It initializes an HTTP client with a timeout of 30 seconds.
 func NewClient(baseURL string) *Client {
 	transport := &http.Transport{
 		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
+			Timeout:   60 * time.Second,
+			KeepAlive: 60 * time.Second,
 		}).DialContext,
 	}
 
 	client := &Client{
 		baseURL: baseURL,
 		httpClient: &http.Client{
-			Timeout:   30 * time.Second,
+			Timeout:   60 * time.Second,
 			Transport: transport,
 		},
 		dnsMap: make(map[string]string),
@@ -66,8 +64,8 @@ func (c *Client) AddCustomDNS(hostname string, ip string) {
 	transport := c.httpClient.Transport.(*http.Transport)
 	if transport.DialContext == nil {
 		transport.DialContext = (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
+			Timeout:   60 * time.Second,
+			KeepAlive: 60 * time.Second,
 		}).DialContext
 	}
 

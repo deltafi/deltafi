@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"math/rand"
 	"os"
 	"os/exec"
 	"os/user"
@@ -62,7 +61,7 @@ type valuesData struct {
 }
 
 type ComposeOrchestrator struct {
-	Orchestrator
+	BaseOrchestrator
 	distroPath        string
 	dataPath          string
 	reposPath         string
@@ -74,12 +73,24 @@ type ComposeOrchestrator struct {
 	deploymentMode    types.DeploymentMode
 }
 
-func NewComposeOrchestrator(distroPath string) *ComposeOrchestrator {
-	return &ComposeOrchestrator{distroPath: distroPath}
+func NewComposeOrchestrator(distroPath string, dataPath string, reposPath string, configPath string, secretsPath string, sitePath string, orchestrationPath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) *ComposeOrchestrator {
+	co := &ComposeOrchestrator{
+		distroPath:        distroPath,
+		dataPath:          dataPath,
+		reposPath:         reposPath,
+		configPath:        configPath,
+		secretsPath:       secretsPath,
+		sitePath:          sitePath,
+		orchestrationPath: orchestrationPath,
+		coreVersion:       coreVersion,
+		deploymentMode:    deploymentMode,
+	}
+	co.BaseOrchestrator.Orchestrator = co
+	return co
 }
 
-func (o *ComposeOrchestrator) GetServiceIP(service string) (string, error) {
-	return fmt.Sprintf("%s:8042", strings.TrimSpace(service)), nil
+func (o *ComposeOrchestrator) GetAPIBaseURL() (string, error) {
+	return "deltafi-core-service:8042", nil
 }
 
 func getDockerExecCmd(args []string) (exec.Cmd, error) {
@@ -295,7 +306,7 @@ func (o *ComposeOrchestrator) dockerCompose(args []string) error {
 		dockerArgs = append(dockerArgs, "-f", overridesFile)
 	}
 	dockerArgs = append(dockerArgs, args...)
-	return ShellExec("docker", o.Environment(), dockerArgs)
+	return executeShellCommand("docker", dockerArgs, o.Environment())
 }
 
 func (o *ComposeOrchestrator) Environment() []string {
@@ -774,15 +785,6 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	return nil
 }
 
-func randomPassword(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
-}
-
 func (o *ComposeOrchestrator) entityResolverConfig() error {
 	values, err := o.getMergedValues()
 	if err != nil {
@@ -842,8 +844,4 @@ func (o *ComposeOrchestrator) entityResolverConfig() error {
 	}
 
 	return nil
-}
-
-func (o *ComposeOrchestrator) ExecuteMinioCommand(cmd []string) error {
-	return execMinioCommand(o, cmd)
 }

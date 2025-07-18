@@ -4,8 +4,6 @@ fqdns:
   - metrics.local.deltafi.org
   - minio.local.deltafi.org
   - k8s.local.deltafi.org
-  - egress.local.deltafi.org
-  - local.plugin.registry
 persistent_volume:
   storage: '1G'
 plugins:

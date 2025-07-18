@@ -20,12 +20,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os/exec"
+
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/types"
 	"github.com/spf13/cobra"
-	"os"
-	"os/exec"
 )
 
 var valkeyCmd = &cobra.Command{
@@ -90,11 +90,8 @@ func execCommand(cmd []string) error {
 		return err
 	}
 
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
+	err = executeShellCommand(c)
 
-	err = c.Run()
 	if err == nil {
 		return nil
 	}

@@ -1,0 +1,23 @@
+# Dev values file for KinD installation
+# This is an auto-generated file.  Do not edit.
+# To override these values, modify the kind.values.yaml in the DeltaFi site directory.
+---
+# DeltaFi config
+deltafi:
+  core_actions:
+    image: localhost:5000/deltafi-core-actions:latest
+  core:
+    image: localhost:5000/deltafi-core:latest
+    propertyOverrides:
+      deltafi-common.yaml: |-
+        deltafi:
+          plugins:
+            imageRepositoryBase: "localhost:5000"
+  egress_sink:
+    image: localhost:5000/deltafi-egress-sink:latest
+    enabled: true
+  nodemonitor:
+    image: localhost:5000/deltafi-nodemonitor:latest
+  clustermonitor:
+    enabled: true
+    image: localhost:5000/deltafi-clustermonitor:latest

@@ -9,16 +9,23 @@ docker {
 }
 
 if (!deltafiConfig.isEmpty()) {
+
+    var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
+
     task installDockerImages {
         group = 'install'
-        var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
         if (orchestrationMode == 'compose') {
             dependsOn 'dockerTagDeltafi'
         } else if (orchestrationMode == 'kind') {
             dependsOn 'dockerPushLocal'
+            mustRunAfter rootProject.installPrerequisites
         } else {
             println ('WARNING: Cannot install docker images for orchestration mode:' + deltafiConfig['orchestrationMode'])
         }
+    }
+
+    if (orchestrationMode == 'kind') {
+        tasks.findByName('dockerPushLocal')?.dependsOn(rootProject.installPrerequisites)
     }
 
     install.dependsOn 'installDockerImages'

@@ -23,7 +23,7 @@ import (
 )
 
 func formatMoniker(moniker string, msg string) string {
-	return "[ " + moniker + " ] " + msg
+	return "[" + moniker + "]   " + msg
 }
 
 func OK(msg string) string {
@@ -38,6 +38,18 @@ func FAIL(msg string) string {
 		ErrorStyle.Bold(true).Render("FAIL"),
 		BaseStyle.Render(msg),
 	)
+}
+
+func INFO(msg string) string {
+	return WarningStyle.Render("       ‣ ") + BaseStyle.Render(msg)
+}
+
+func WAIT(msg string) string {
+	return InfoStyle.Render("       ⏱ ") + BaseStyle.Render(msg)
+}
+
+func HEADER(msg string) string {
+	return MutedStyle.Render("       ▶ ") + HeaderStyle.Bold(false).Render(msg)
 }
 
 func ComposeOK(msg string, status string) string {

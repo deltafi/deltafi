@@ -161,7 +161,7 @@ func NewConfigWizard() *ConfigWizard {
 		config:         config,
 		help:           help,
 		keys:           configWizardKeys,
-		selectedOption: 0,
+		selectedOption: 0, // Will be set properly when entering orchestration step
 		deploymentModes: []string{
 			"Deployment",
 			"PluginDevelopment",
@@ -217,6 +217,11 @@ func (c *ConfigWizard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.height = msg.Height
 		c.help.Width = msg.Width
 		c.ready = true
+
+		// Initialize selectedOption if starting at orchestration step
+		if c.step == orchestrationStep {
+			c.selectedOption = int(c.config.OrchestrationMode)
+		}
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd

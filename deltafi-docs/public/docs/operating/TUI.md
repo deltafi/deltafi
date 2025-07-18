@@ -32,6 +32,11 @@ This document provides comprehensive documentation for all available commands, s
     - [down](#down)
     - [status](#status)
     - [config](#config)
+    - [kind](#kind)
+      - [up](#kind-up)
+      - [down](#kind-down)
+      - [destroy](#kind-destroy)
+      - [shell](#kind-shell)
   - [DeltaFi System Management](#deltafi-system-management)
     - [event](#event)
       - [list](#event-list)
@@ -199,6 +204,61 @@ Interactive configuration editor for DeltaFi.
 ```bash
 deltafi config
 ```
+
+#### `kind`
+Manage the KinD (Kubernetes in Docker) cluster.
+
+**⚠️ Important**: This command is only available when the orchestration mode is set to KinD. It provides subcommands to start and stop the KinD cluster.
+
+```bash
+deltafi kind [subcommand]
+```
+
+**Subcommands:**
+
+- `up`: Start the KinD cluster
+  ```bash
+  deltafi kind up
+  ```
+  This command will:
+  - Create and start a new KinD cluster if none exists
+  - Configure the cluster for DeltaFi deployment
+  - Set up necessary prerequisites
+
+- `down`: Stop and destroy the KinD cluster
+  ```bash
+  deltafi kind down
+  ```
+  This is a destructive operation that will:
+  - Stop all services running in the KinD cluster
+  - Destroy the cluster and all its resources
+  - Remove all persistent data
+  
+  **WARNING**: This will permanently delete all data in the KinD cluster.
+
+- `destroy`: Destroy the KinD cluster
+  ```bash
+  deltafi kind destroy
+  ```
+  This is a destructive operation that does everything `down` does plus:
+  - Removes images
+  - Optionally removes all registries
+  - Stop all services running in the KinD cluster
+  - Destroy the cluster and all its resources
+  - Remove all persistent data
+  
+  **WARNING**: This will permanently delete all data in the KinD cluster.
+
+- `shell`: Open an interactive shell in the KinD control plane
+  ```bash
+  deltafi kind shell
+  ```
+  This command will:
+  - Connect to the KinD control plane container
+  - Open a tmux session in the `/usr/dev` directory
+  - Provide an interactive development environment
+  
+  Use `Ctrl+B` then `D` to detach from the tmux session.
 
 ### DeltaFi System Management
 

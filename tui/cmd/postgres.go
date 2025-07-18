@@ -20,7 +20,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -52,15 +51,7 @@ var cliCmd = &cobra.Command{
 			return error
 		}
 
-		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("command execution failed: %w", err)
-		}
-
-		return nil
+		return executeShellCommand(c)
 	},
 }
 
@@ -78,15 +69,7 @@ var execCmd = &cobra.Command{
 			return error
 		}
 
-		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("command execution failed: %w", err)
-		}
-
-		return nil
+		return executeShellCommand(c)
 	},
 }
 

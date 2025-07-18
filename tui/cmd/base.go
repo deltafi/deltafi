@@ -157,15 +157,10 @@ func RequireRunningDeltaFi() {
 	if !app.IsRunning() {
 		fmt.Println(newError("\nDeltaFi is not running",
 			fmt.Sprintf(`
-To configure a new DeltaFi instance, use the init wizard:
+To configure a new DeltaFi instance, use the init wizard:  %s
 
-    %s
-
-To start a DeltaFi with your current configuration:
-
-    %s
-
-		`, styles.AccentStyle.Render("deltafi init"), styles.AccentStyle.Render("deltafi up"))))
+To start a DeltaFi with your current configuration:        %s
+		`, styles.AccentStyle.Bold(true).Render("deltafi config"), styles.AccentStyle.Bold(true).Render("deltafi up"))))
 		os.Exit(1)
 	}
 }

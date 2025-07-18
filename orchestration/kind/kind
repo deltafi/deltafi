@@ -232,31 +232,12 @@ _require kubens
 _require kind
 _require yq
 
-___start=$(date +%s)
-
-# Duration trap
-_emit_duration() {
-
-  local duration
-  duration=$(echo "$(date +%s) - $___start" | bc)
-  local execution_time
-  execution_time=$(printf "%d seconds" "$duration")
-  echo
-  _info "Execution time: ${blue}$execution_time${normal}"
-  echo
-}
-
-trap _emit_duration EXIT
-
-
 # Load configuration from cluster.yaml
 CONFIG=${BASE_PATH}/cluster.yaml
 [[ -f "${CONFIG}" ]] || cp "${CONFIG}.template" "${CONFIG}"
 PV_STORAGE=$(yq '.persistent_volume.storage' "${CONFIG}")
 readarray -t FQDNS < <(yq '.fqdns[]' "${CONFIG}")
 readarray -t PLUGINS < <(yq '.plugins[].name' "${CONFIG}")
-
-echo $CONFIG
 
 _url_for_plugin() {
   local plugin=$1
@@ -284,28 +265,6 @@ _are_you_sure() {
 describe config "Edit cluster command configuration"
 config() {
   ${EDITOR:-vim} "$CONFIG"
-}
-
-_check_deltafi_cli() {
-  if ! which deltafi >/dev/null; then
-    _info "Installing DeltaFi CLI"
-    pushd "$DELTAFI_PATH/deltafi-cli" > /dev/null
-    ./install.sh
-    popd > /dev/null
-    _ok "Local CLI"
-  fi
-
-  local DELTAFI_PATH
-  DELTAFI_PATH=$(_readlink -e "$(which deltafi)")
-  local EXPECTED_DELTAFI_PATH="$BASE_PATH/cluster"
-
-  if [[ "$DELTAFI_PATH" != "$EXPECTED_DELTAFI_PATH" ]]; then
-    _warn "deltafi command is linked to an unexpected location:"
-    _warn "    Expected: " "$EXPECTED_DELTAFI_PATH"
-    _warn "    Actual:   " "$DELTAFI_PATH"
-    _warn "Run kind/install.sh to reinitialize the links"
-    echo
-  fi
 }
 
 _check_docker() {
@@ -502,7 +461,6 @@ up() {
   fi
 
   _attention "Initializing KinD cluster"
-  _check_deltafi_cli
   _check_docker
   if _is_linux; then
     ${SUDO} mkdir -p -m 2775 "$PV_DIR"
@@ -744,7 +702,6 @@ describe down "Shut down the KinD cluster"
 down() {
   _attention "Shutting down KinD cluster"
   if kind get clusters 2>/dev/null | grep "^${CLUSTER_NAME}$" > /dev/null; then
-    [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure
     _annotated_subshell kind delete cluster --name ${CLUSTER_NAME}
     _down "KinD Cluster"
   else
@@ -760,50 +717,14 @@ images() {
 describe destroy "Shut down the KinD cluster and remove persistent volume data"
 destroy() {
   down "$@"
-  [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure "Do you want to delete all local persistent volume data?"
-
-  _warn "Destroying persistent volume data"
-  if _is_linux; then
-    ${SUDO} rm -rf "$PV_DIR"
-  else
-    rm -rf "$PV_DIR"
-  fi
 
   destroy_registries "$@"
 
   local images=$(docker images | grep ^localhost:5000 | awk '{print $3}')
-  _annotated_subshell -h "Pruning localhost:5000 images" docker rmi ${images} || true
+  _annotated_subshell -h "Pruning localhost:5000 images" docker rmi -f ${images} || true
   _ok_annotated "Pruned localhost:5000 images"
 
   _down "KinD cluster destroyed"
-}
-
-describe help "Get additional details on commands"
-help() {
-  cat <<EOF
-DeltaFi KinD cluster CLI
-Version: $(cat "${DELTAFI_PATH}/VERSION")
-Data directory: ${PV_DIR}
-
-Usage:
-  cluster [flags] [command] [command arguments]
-
-Flags:
-  -h | --help   Get help on a particular command
-
-Commands:
-EOF
-  local cmds
-  IFS=' ' read -r -a cmds <<< "$(commands | xargs)"
-  local filtered=('Available' 'commands:' 'subcommands' 'tasks' 'commands')
-  for cmd in "${cmds[@]}"; do
-    local match=" ${cmd} "
-    # shellcheck disable=SC2199
-    if [[ " ${filtered[@]} " =~ $match ]]; then
-      continue
-    fi
-    printf "  %-18s %s\n" "$cmd" "$(describe --get "$cmd")"
-  done
 }
 
 describe shell "Open a tmux shell on the cluster control plane node"
@@ -841,156 +762,6 @@ _delete_pv_directory() {
   fi
 }
 
-describe uninstall "Uninstall the DeltaFi instance, leaving cluster intact"
-uninstall() {
-  _attention "Uninstalling DeltaFi"
-  _conditional "Uninstall DeltaFi" deltafi uninstall
-  _delete_pv_directory
-}
-
-describe loc "Control local builds and local installation to the cluster"
-_loc_help() {
-  cat <<EOF
-Command: cluster loc
-
-Usage:
-  cluster loc [ commands ]
-
-Options:
-  clean       Modifies build to do a clean build
-  build       Build all deltafi and plugin artifacts locally
-  install     Install deltafi and plugins on top of existing system (like a helm install)
-  reinstall   Uninstall and Install deltafi and plugins
-  uninstall   Uninstall deltafi and plugins
-  restart     Down a cluster, restart it, and install deltafi and plugins
-  bounce      Restart an application (deltafi-api, etc.).  App name must follow command
-  nocore      Skips building core DeltaFi and UI (build only)
-  noplugins   Skips building plugins
-  destroy     Destroys the cluster before proceeding
-  expose      Expose ports for deltafi-core, minio and valkey on localhost
-  -f | force  Skip "are you sure?"
-
-Examples:
-
-  cluster loc clean build restart -f
-    - Clean local build of deltafi/plugins and new cluster install, no questions
-
-  cluster loc build bounce deltafi-api
-    - Build all the things, then restart deltafi-api pod(s)
-
-  cluster loc install
-    - Install most recent local images
-
-  cluster loc build reinstall
-    - Build all the things, then uninstall/reinstall deltafi
-EOF
-  exit 0
-}
-loc() {
-
-  local CLEAN=
-  local BUILD=
-  local EXPOSE=
-  local INSTALL=
-  local REINSTALL=
-  local UNINSTALL=
-  local RESTART=
-  local BOUNCE=
-  local FORCE=
-  local NOCORE=
-  local NOUI=
-  local NOPLUGINS=
-  local DESTROY=
-
-  [[ -z "$1" ]] && _loc_help
-
-  while [[ $# -gt 0 ]]; do
-    local cmd=$1
-    shift
-    case "$cmd" in
-      destroy)
-        DESTROY=destroy
-        ;;
-      clean)
-        CLEAN=clean
-        ;;
-      build)
-        BUILD=build
-        ;;
-      expose)
-        EXPOSE=expose
-        ;;
-      nocore)
-        NOCORE=nocore
-        ;;
-      noplugins)
-        NOPLUGINS=noplugins
-        ;;
-      install)
-        INSTALL=install
-        ;;
-      reinstall)
-        REINSTALL=reinstall
-        ;;
-      uninstall)
-        UNINSTALL=uninstall
-        ;;
-      restart)
-        RESTART=restart
-        ;;
-      bounce)
-        BOUNCE=$1
-        shift
-        ;;
-      force|-f)
-        FORCE=-f
-        ;;
-      -h|*)
-        _loc_help
-      ;;
-    esac
-  done
-
-  _check_java
-
-  # Down the cluster for clean, uninstall DeltaFi for restart
-  if [[ -n "$DESTROY" ]]; then
-    destroy
-  elif [[ -n "$RESTART" ]]; then
-    down $FORCE
-  elif [[ -n "$REINSTALL" ]]; then
-    uninstall $FORCE
-  elif [[ -n "$UNINSTALL" ]]; then
-    uninstall $FORCE
-  fi
-
-  [[ -n "$BUILD" ]] && _conditional "Local build" _local_build $CLEAN
-
-  [[ -n "$RESTART" || -n "$REINSTALL" || -n "$INSTALL" ]] && up
-
-  [[ -n "$BUILD" || -n "$RESTART" || -n "$REINSTALL" || -n "$BOUNCE" || -n "$INSTALL" ]] && _local_push
-
-  if [[ -n "$INSTALL" || -n "$REINSTALL" || -n "$RESTART" ]]; then
-    _attention "Installing DeltaFi core"
-    install -f deltafi/orchestration/charts/deltafi/values-kind.yaml -f deltafi/orchestration/charts/deltafi/values-local.yaml -f deltafi/orchestration/charts/deltafi/values-alerting-test.yaml
-
-    _install_plugins
-  fi
-
-  if [[ -n "$BOUNCE" ]]; then
-    _attention "Bouncing $BOUNCE"
-    local pods
-    pods=$(${KUBECTL} get pods | cut -d' ' -f1 | grep "$BOUNCE")
-    _annotated_subshell -v "Warning" ${KUBECTL} delete pod --grace-period=0 --force $pods
-    _down "Bounced pods matching $BOUNCE"
-  fi
-
-  if [[ -n "$EXPOSE" ]]; then
-    _attention "Expose ports for deltafi-core, minio and valkey on localhost"
-    expose
-  fi
-}
-
 _has_gradle() {
   if [[ -f "build.gradle" ]]; then
     return 0
@@ -1005,285 +776,6 @@ _has_makefile() {
   else
     return 1
   fi
-}
-
-_plugin_clean() {
-  _attention "Cleaning $plugin build environment"
-  if _has_gradle; then
-    ./gradlew clean || _exit_1 echo "Command 'gradlew clean' failed"
-  elif _has_makefile; then
-    make clean
-  else
-    _fail "Unable to determine the build system"
-  fi
-}
-
-_do_plugin_build() {
-  _attention "Building $plugin"
-  if _has_gradle; then
-    ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal || _exit_1 echo "Command 'gradlew \"${BUILD_TARGETS[@]}\" -x test docker dockerPushLocal' failed"
-  elif _has_makefile; then
-    make dockerPushLocal
-  else
-    _fail "Unable to determine the build system"
-  fi
-}
-
-_local_build() {
-
-  _attention "Building local images"
-
-  _create_registry kind-registry 5000
-  local BUILD_TARGETS=( assemble )
-
-  cd "$ROOT/deltafi"
-  _annotated_subshell git pull || _warn "Cannot pull latest"
-  if [[ $# -gt 0 && $1 == "clean" ]]; then
-    _attention "Cleaning deltafi build environment"
-    ./gradlew clean || _exit_1 echo "Command 'gradlew clean' failed"
-  fi
-
-  if [[ -z "$NOCORE" ]]; then
-    _attention "Building deltafi"
-    ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal || _exit_1 echo "Command 'gradlew \"${BUILD_TARGETS[@]}\" -x test publishToMavenLocal docker dockerPushLocal' failed"
-  fi
-
-  export DELTAFI_PYTHON
-  DELTAFI_PYTHON="$ROOT/deltafi/deltafi-python/src"
-
-  if [[ -z "$NOPLUGINS" ]]; then
-    for plugin in "${PLUGINS[@]}"; do
-      if [[ ! -d $ROOT/$plugin ]]; then
-        git clone "$(_url_for_plugin "$plugin")" "$ROOT/$plugin"
-      fi
-      cd "$ROOT/$plugin"
-      _annotated_subshell git pull || _warn "Cannot pull latest"
-      if [[ $# -gt 0 && $1 == "clean" ]]; then
-        _plugin_clean
-      fi
-      _do_plugin_build
-    done
-  fi
-}
-
-_get_secret() {
-  deltafi secrets "${1}" | grep "${2}" | tail -1 | tr -s ' ' | cut -d ' ' -f 2 | tr -d '\r'
-}
-
-PLUGIN_ENV="${KIND_DIR}/env/.plugin.env"
-_setup_plugin_env() {
-  _attention "Setting up plugin env"
-  truncate -s 0 "${PLUGIN_ENV}"
-  MINIO_SECRETKEY=$(_get_secret "minio-keys" "rootPassword")
-  REDIS_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
-  VALKEY_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
-  cat <<EOF > "${PLUGIN_ENV}"
-CORE_URL=http://localhost:8888
-MINIO_URL=http://localhost:9000
-REDIS_URL=http://localhost:6379
-VALKEY_URL=http://localhost:6379
-MINIO_ACCESSKEY=deltafi
-MINIO_PARTSIZE=5242880
-MINIO_SECRETKEY=${MINIO_SECRETKEY}
-REDIS_PASSWORD=${REDIS_PASSWORD}
-VALKEY_PASSWORD=${VALKEY_PASSWORD}
-EOF
-
-  while read -r line; do
-    export "$line"
-  done <"${PLUGIN_ENV}"
-}
-
-_plugin_run() {
-  _attention "Starting plugin locally"
-  expose
-  _setup_plugin_env
-  if _has_gradle; then
-    ./gradlew bootRun || _exit_1 echo "Command 'gradlew bootRun' failed"
-  elif _has_makefile; then
-    make run
-  else
-    _fail "Unable to determine the build system"
-  fi
-}
-
-describe plugin "Control local plugin builds and installs"
-_plugin_help() {
-  cat <<EOF
-Command: cluster plugin
-
-Usage:
-  cluster plugin [ commands ]
-
-Options:
-  clean                          Modifies build to do a clean build
-  build                          Build all plugin artifacts locally
-  install                        Install plugins into an existing system
-  restart                        Restart all plugins running on system
-  run                            Run the plugin locally
-  add <name> <coordinates> <url> Add a plugin to the configuration
-  add-local <name> <group>       Add a local plugin to the configuration
-  -f | force                     Skip "are you sure?"
-
-Examples:
-
-  cluster plugin clean build install -f
-    - Clean local build of plugins and install the plugin, no questions
-
-EOF
-  exit 0
-}
-plugin() {
-
-  local RUN=
-  local CLEAN=
-  local BUILD=
-  local INSTALL=
-  local FORCE=
-  local RESTART=
-
-  [[ -z "$1" ]] && _plugin_help
-
-  while [[ $# -gt 0 ]]; do
-    local cmd=$1
-    shift
-    case "$cmd" in
-      config)
-        config
-        exit 0
-        ;;
-      add)
-        _plugin_add "$@"
-        exit 0
-        ;;
-      add-local)
-        _plugin_add_local "$@"
-        exit 0
-        ;;
-      clean)
-        CLEAN=clean
-        ;;
-      build)
-        BUILD=build
-        ;;
-      install)
-        INSTALL=install
-        ;;
-      restart)
-        RESTART=restart
-        ;;
-      run)
-        RUN=run
-        ;;
-      force|-f)
-        FORCE=-f
-        ;;
-      -h|*)
-        _plugin_help
-      ;;
-    esac
-  done
-
-  _check_java
-
-  [[ -n "$BUILD" ]] && _plugin_build $CLEAN
-
-  if [[ -n "$INSTALL" ]]; then
-    _install_plugins
-  fi
-
-  if [[ -n "$INSTALL" || -n "$RESTART" ]]; then
-    _restart_plugins
-  fi
-
-  if [[ -n "$RUN" ]]; then
-    _plugin_run
-  fi
-}
-
-_plugin_add() {
-  _attention "Adding plugin $1"
-  yq -i ".plugins += [{\"name\": \"$1\", \"plugin_coordinates\": \"$2\", \"url\": \"$3\"}]" "$CONFIG"
-}
-
-_plugin_add_local() {
-  _attention "Adding plugin $1"
-  yq -i ".plugins += [{\"name\": \"$1\", \"image\": \"localhost:5000/$1:latest\"}]" "$CONFIG"
-}
-
-_plugin_build() {
-
-  _attention "Building local plugins"
-
-  local BUILD_TARGETS=( assemble )
-
-  export DELTAFI_PYTHON
-  DELTAFI_PYTHON="$ROOT/deltafi/deltafi-python/src"
-
-  for plugin in "${PLUGINS[@]}"; do
-    if [[ ! -d $ROOT/$plugin ]]; then
-      local PLUGIN_URL
-      PLUGIN_URL=$(_url_for_plugin "$plugin")
-      if [[ "$PLUGIN_URL" != "" ]]; then
-        _annotated_subshell git clone "$PLUGIN_URL" "$ROOT/$plugin"
-      else
-        _attention "Cannot download source for $plugin"
-      fi
-    fi
-    if [[ -d $ROOT/$plugin ]]; then
-      cd "$ROOT/$plugin"
-      [[ -d "$ROOT/$plugin/.git" ]] && _annotated_subshell git pull || _warn "Cannot pull latest"
-      if [[ $# -gt 0 && $1 == "clean" ]]; then
-        _plugin_clean
-      fi
-      _do_plugin_build
-    else
-      _attention "Unable to build $plugin: Source not in $ROOT/$plugin"
-    fi
-  done
-
-  _local_push
-}
-
-_local_push_one() {
-  local image="$1"
-  local local_digest remote_manifest remote_digest
-
-  local_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image" 2>/dev/null | cut -d'@' -f2)
-  remote_manifest=$(run crictl inspecti "$image" 2>/dev/null || echo "")
-  remote_digest=$(echo "$remote_manifest" | jq -r '.status.repoDigests[0]' | sed 's/.*@//')
-  if [ -n "$local_digest" ] && [ "$local_digest" = "$remote_digest" ]; then
-    _info -a "Skipping $image: already up-to-date"
-  else
-    _info -a "Syncing $image"
-    docker push "$image" 1>/dev/null
-  fi
-
-  run crictl pull "$image" 1>/dev/null
-}
-
-_local_push() {
-  pids=()
-  _attention "Syncing docker images"
-  _info -s "Starting sync"
-  for img in $(docker images | grep "localhost.*latest" | cut -f1 -d' '); do
-    _local_push_one "$img" &
-    pids+=($!)
-  done
-
-  for pid in ${pids[*]}; do
-    wait "$pid"
-  done
-  _ok_annotated "Synced all docker images"
-}
-
-_local_cluster() {
-  local_build "$@"
-  up
-  install -f deltafi/orchestration/charts/deltafi/values-kind.yaml -f deltafi/orchestration/charts/deltafi/values-local.yaml -f deltafi/orchestration/charts/deltafi/values-alerting-test.yaml
-  for plugin in "${PLUGINS[@]}"; do
-    run deltafi install-plugin "$plugin" -f "$plugin/charts/values-local.yaml"
-  done
 }
 
 normal=$(tput sgr0)

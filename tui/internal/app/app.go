@@ -58,6 +58,14 @@ func GetInstance() *App {
 	return instance
 }
 
+func SetAdminPassword(password string) error {
+	req := api.PasswordUpdate{
+		Password: password,
+	}
+	_, err := instance.GetAPIClient().SetAdminPassword(req)
+	return err
+}
+
 // Recreate the singleton App instance based on the current configuration
 func ReloadInstance() *App {
 	build()
@@ -189,13 +197,13 @@ func (a *App) initializeAPI() error {
 }
 
 func (a *App) getAPIBaseURL() (string, error) {
-	serviceip, error := a.orchestrator.GetServiceIP("deltafi-core-service")
+	base, error := a.orchestrator.GetAPIBaseURL()
 
 	if error != nil {
 		return "", error
 	}
 
-	coreServiceURL := fmt.Sprintf("http://%s", serviceip)
+	coreServiceURL := fmt.Sprintf("http://%s", base)
 	return coreServiceURL, nil
 }
 

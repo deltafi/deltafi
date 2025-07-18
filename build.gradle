@@ -208,9 +208,28 @@ task tui {
     description = 'Build the TUI for the current architecture'
 }
 
+
+task installPrerequisites {
+    group = 'install'
+    description = 'Execute any prerequisites prior to install tasks for the current orchestration mode'
+}
+
 task install {
     group = 'install'
     description = 'Install DeltaFi images built from this repo into the current development environment'
+    dependsOn installPrerequisites
+}
+
+if (!deltafiConfig.isEmpty()) {
+    var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
+    if (orchestrationMode == 'kind') {
+        task configureKindCluster (type: Exec) {
+            group = 'install'
+            description = 'Configure KinD cluster to receive docker images'
+            commandLine "deltafi", "kind", "up"
+        }
+        installPrerequisites.dependsOn configureKindCluster
+    }
 }
 
 // Create tasks for each architecture
@@ -312,11 +331,19 @@ subprojects {
     ext.deltafiConfig = rootProject.deltafiConfig
     task install {
         group = 'install'
+        dependsOn rootProject.installPrerequisites
     }
 
     apply plugin: 'signing'
 
     afterEvaluate {
+        var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
+        if (orchestrationMode == 'kind') {
+            tasks.matching { it.name == 'dockerPushLocal' }.all {
+                dependsOn rootProject.installPrerequisites
+            }
+        }
+
         // Only apply to subprojects with maven-publish applied
         pluginManager.withPlugin('maven-publish') {
             task javadocJar(type: Jar) {
@@ -471,3 +498,4 @@ task cacheToMavenLocal(type: Copy) {
 }
 
 gradle.addListener new TimingsListener()
+

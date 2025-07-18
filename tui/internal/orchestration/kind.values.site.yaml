@@ -1,0 +1,25 @@
+# Site values file for KinD installation
+# To restore to defaults, remove this file and run 'deltafi up'
+---
+deltafi:
+  auth:
+    mode: disabled # basic, cert, or disabled
+    secret: auth-secret
+    entityResolver:
+      enabled: false
+      image: deltafi/deltafi-entity-resolver:2.22.1
+      url: http://127.0.0.1:8080/
+  ingress:
+    envVar:
+      HTTP_MAX_BODY_SIZE: 5G
+  egress_sink:
+    enabled: true
+  clustermonitor:
+    enabled: true
+ingress:
+  domain: local.deltafi.org
+  tls:
+    enabled: false
+    # ssl_ciphers: "ECDHE-RSA-AES256-GCM-SHA384"
+    secrets:
+      default: local-deltafi-org

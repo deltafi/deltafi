@@ -30,18 +30,22 @@ import (
 var kubernetesEmbeddedFiles embed.FS
 
 type KubernetesOrchestrator struct {
-	Orchestrator
+	BaseOrchestrator
 	distroPath string
 	sitePath   string
 	dataPath   string
 	namespace  string
 }
 
-func NewKubernetesOrchestrator(distroPath string) *KubernetesOrchestrator {
-	return &KubernetesOrchestrator{
+func NewKubernetesOrchestrator(distroPath string, sitePath string, dataPath string) *KubernetesOrchestrator {
+	ko := &KubernetesOrchestrator{
 		namespace:  "deltafi",
 		distroPath: distroPath,
+		sitePath:   sitePath,
+		dataPath:   dataPath,
 	}
+	ko.BaseOrchestrator.Orchestrator = ko
+	return ko
 }
 
 // Helper for Kubernetes
@@ -81,42 +85,9 @@ func (o *KubernetesOrchestrator) GetMinioName() (string, error) {
 	return podName, nil
 }
 
-func (o *KubernetesOrchestrator) GetServiceIP(service string) (string, error) {
-	cmd := exec.Command("kubectl",
-		"get", "service", service,
-		"-n", o.namespace,
-		"-o", "jsonpath={.spec.clusterIP}")
-
-	output, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to get service IP: %v", err)
-	}
-
-	return strings.TrimSpace(string(output)), nil
+func (o *KubernetesOrchestrator) GetAPIBaseURL() (string, error) {
+	return getKubernetesServiceIP("deltafi-core-service", o.namespace)
 }
-
-type KubernetesHelper struct {
-	namespace string
-}
-
-func NewKubernetesHelper() *KubernetesHelper {
-	return &KubernetesHelper{
-		namespace: "deltafi",
-	}
-}
-
-func getKubectlExecCmd(args []string) (exec.Cmd, error) {
-	cmdArgs := []string{"exec"}
-	if isTty() {
-		cmdArgs = append(cmdArgs, "-it")
-	} else {
-		cmdArgs = append(cmdArgs, "-i")
-	}
-	cmdArgs = append(cmdArgs, "-n", "deltafi")
-	cmdArgs = append(cmdArgs, args...)
-	return *exec.Command("kubectl", cmdArgs...), nil
-}
-
 func (o *KubernetesOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
 
 	podName, err := o.GetMasterPod("application=spilo,spilo-role=master")
@@ -210,12 +181,7 @@ func (o *KubernetesOrchestrator) Environment() []string {
 	env := os.Environ()
 	env = append(env, "DELTAFI_MODE="+mode)
 	env = append(env, "DELTAFI_DATA_DIR="+o.dataPath)
-	env = append(env, "DELTAFI_WRAPPER=true")
 	return env
-}
-
-func (o *KubernetesOrchestrator) ExecuteMinioCommand(cmd []string) error {
-	return execMinioCommand(o, cmd)
 }
 
 func (o *KubernetesOrchestrator) enforceSiteValuesDir() error {
@@ -232,7 +198,7 @@ func (o *KubernetesOrchestrator) SiteValuesFile() (string, error) {
 
 	siteValuesFile := filepath.Join(o.sitePath, "values.yaml")
 	if _, err := os.Stat(siteValuesFile); os.IsNotExist(err) {
-		defaultContent, err := composeEmbeddedFiles.ReadFile("kubernetes.values.site.yaml")
+		defaultContent, err := kubernetesEmbeddedFiles.ReadFile("kubernetes.values.site.yaml")
 		if err != nil {
 			return "", fmt.Errorf("error reading site values template: %w", err)
 		}

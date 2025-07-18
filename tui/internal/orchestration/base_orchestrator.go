@@ -18,46 +18,44 @@
 package orchestration
 
 import (
-	"math/rand"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
-
-	"golang.org/x/term"
 )
 
-func isTty() bool {
-	retval := term.IsTerminal(int(os.Stdout.Fd())) && term.IsTerminal(int(os.Stdin.Fd()))
-	return retval
+type BaseOrchestrator struct {
+	Orchestrator
 }
 
-func executeShellCommand(executable string, args []string, env []string) error {
+func (o BaseOrchestrator) ExecuteMinioCommand(cmd []string) error {
+	minioCliArgs := []string{"mc alias set deltafi http://deltafi-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD > /dev/null && "}
 
-	c := *exec.Command(executable, args...)
-	c.Env = env
+	minioName, err := o.GetMinioName()
+	if err != nil {
+		return err
+	}
+	c, err := o.GetExecCmd(minioName, append(minioCliArgs, cmd...))
+	if err != nil {
+		return err
+	}
+
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	return c.Run()
-}
-
-func executeShellCommandWithOutput(executable string, args []string, env []string) (string, error) {
-	c := *exec.Command(executable, args...)
-	c.Env = env
-
-	output, err := c.Output()
-	if err != nil {
-		return "", err
+	err = c.Run()
+	if err == nil {
+		return nil
 	}
 
-	return string(output), nil
-}
-
-func randomPassword(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
+		// Ignore common interrupt exit codes
+		if exitError.ExitCode() == 130 || exitError.ExitCode() == 2 {
+			return nil
+		}
 	}
-	return string(b)
+
+	return fmt.Errorf("command execution failed: %w", err)
 }
