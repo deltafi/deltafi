@@ -276,11 +276,29 @@ var getPropertyCmd = &cobra.Command{
 	},
 }
 
+var viewPropertiesCmd = &cobra.Command{
+	Use:   "view",
+	Short: "Interactive properties viewer and editor",
+	Long:  `Launch an interactive TUI for viewing and editing DeltaFi system properties`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
+		viewer := NewPropertiesViewer()
+		success := runProgram(viewer)
+
+		if !success {
+			return viewer.err
+		}
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(systemPropertiesCmd)
 	systemPropertiesCmd.AddCommand(listPropertiesCmd)
 	systemPropertiesCmd.AddCommand(setPropertyCmd)
 	systemPropertiesCmd.AddCommand(getPropertyCmd)
+	systemPropertiesCmd.AddCommand(viewPropertiesCmd)
 
 	// Add flags
 	listPropertiesCmd.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")

@@ -443,6 +443,10 @@ Manage DeltaFi system properties.
   ```bash
   deltafi properties set <key> <value>
   ```
+- `view`: Interactive properties viewer and editor
+  ```bash
+  deltafi properties view
+  ```
 
 #### `minio`
 Command line access to the running DeltaFi MinIO instance.
