@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.25.1] - 2025-07-18
+
+### Added
+- TUI: Full KinD support for deployment and core development modes
+- TUI: `view` subcommand for `deltafiles`, `filtered`, and `errored` commands
+  - Interactive browser for viewing files with search criteria similar to `deltafi search`
+- TUI: `list` subcommand for `deltafiles`, `filtered`, and `errored` commands
+  - List search results in table, JSON, or YAML format
+- TUI: `search` command flag `--auto-refresh` for continuous monitoring
+- TUI: `search` displays total files
+- TUI: `deltafi upgrade changelog` command will render changelogs for specific versions or for all versions newer than the current version that is installed
+
+### Changed
+- TUI: `search` command - Page-down on last page will advance to last row
+
+### Fixed
+- TUI: Search command page-down and arrow down on last page bug
+
 ## [2.25.0] - 2025-07-14
 
 ### Added
@@ -4412,7 +4430,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.1...main
+[2.25.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.0...2.25.1
 [2.25.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.24.0...2.25.0
 [2.24.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.23.0...2.24.0
 [2.23.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.22.1...2.23.0
