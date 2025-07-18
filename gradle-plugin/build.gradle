@@ -15,7 +15,7 @@ dependencies {
 
     implementation "org.deltafi.git-version:git-version:2.0.1"
     implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
-    implementation "com.palantir.gradle.docker:gradle-docker:0.36.0"
+    implementation "com.palantir.gradle.docker:gradle-docker:0.37.0"
 }
 
 group 'org.deltafi.gradle-plugin'
