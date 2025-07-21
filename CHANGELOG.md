@@ -5,6 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.25.2] - 2025-07-21
+
+### Added
+- TUI: Status command renders core version
+
+### Fixed
+- Config path fix for compose installations.  Note: 2.25.1 should not be installed for compose orchestrated systems.  Upgrades should skip to 2.25.2.
+- KinD: Remove unnecessary registry port mappings
+
+### Upgrade and Migration
+- Patched dependencies for CVE resolution
+- Upgrade to Go 1.24.5
+- Rolling back gradle-plugin gradle-docker plugin to 0.36.0 due to build compatibility issues
+- Update  Python `json-logging` module to 1.5.1 to match new base image `deltafi/python:3.13.5-1`
+
 ## [2.25.1] - 2025-07-18
 
 ### **NOTICE**
@@ -4433,7 +4448,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.2...main
+[2.25.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.1...2.25.2
 [2.25.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.0...2.25.1
 [2.25.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.24.0...2.25.0
 [2.24.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.23.0...2.24.0
