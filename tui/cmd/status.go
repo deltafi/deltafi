@@ -257,7 +257,13 @@ func RenderStatus(status api.StatusResponse, interactive bool, renderer *glamour
 	// Status state with color
 	stateStyle := getStatusStyle(status.Status.Color)
 	sb.WriteString(stateStyle.Render(status.Status.State))
-	sb.WriteString("\n\n")
+	sb.WriteString("\n")
+
+	sb.WriteString(titleStyle.Render("Core Version:          "))
+	versionStyle := lipgloss.NewStyle().Foreground(styles.Text).Bold(true)
+	sb.WriteString(versionStyle.Render(status.Status.Version) + "\n")
+
+	sb.WriteString("\n")
 
 	// Status checks
 	for _, check := range status.Status.Checks {
@@ -322,10 +328,15 @@ func (c *StatusCommand) View() string {
 		Width(contentWidth - 2).
 		Align(lipgloss.Center)
 
+	var versionLine string
+	versionStyle := styles.SubheaderStyle.Width(contentWidth - 2).Align(lipgloss.Center)
+	versionLine = versionStyle.Render(c.status.Status.Version)
+
 	header := lipgloss.JoinVertical(lipgloss.Center,
 		spinnerStyle.Render(c.points),
 		titleStyle.Render("DeltaFi System Status"),
 		stateStyle.Render(c.status.Status.State),
+		versionLine,
 		"",
 	)
 

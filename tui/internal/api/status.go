@@ -27,9 +27,10 @@ type statusCheck struct {
 // StatusResponse represents the full system status response
 type StatusResponse struct {
 	Status struct {
-		Code   int           `json:"code"`
-		Color  string        `json:"color"`
-		State  string        `json:"state"`
-		Checks []statusCheck `json:"checks"`
+		Code    int           `json:"code"`
+		Color   string        `json:"color"`
+		State   string        `json:"state"`
+		Checks  []statusCheck `json:"checks"`
+		Version string        `json:"version"`
 	} `json:"status"`
 }
