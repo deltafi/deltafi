@@ -7,6 +7,9 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ## [2.25.1] - 2025-07-18
 
+### **NOTICE**
+- A configuration bug was introduced in this release that will result in a compose orchestrated system being unable to read from the Postgres database.  Upgrade to 2.25.2 to avoid this issue.
+
 ### Added
 - TUI: Full KinD support for deployment and core development modes
 - TUI: `view` subcommand for `deltafiles`, `filtered`, and `errored` commands

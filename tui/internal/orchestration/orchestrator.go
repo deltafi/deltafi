@@ -49,7 +49,7 @@ func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string,
 		return NewKindOrchestrator(distroPath, sitePath, dataPath, reposPath, installDirectory, deploymentMode)
 	default:
 		reposPath := filepath.Join(installDirectory, "repos")
-		configPath := filepath.Join(installDirectory, ".config")
+		configPath := filepath.Join(installDirectory, "config")
 		secretsPath := filepath.Join(configPath, "secrets")
 		return NewComposeOrchestrator(distroPath, dataPath, reposPath, configPath, secretsPath, sitePath, orchestrationPath, coreVersion, deploymentMode)
 	}

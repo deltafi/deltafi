@@ -41,7 +41,7 @@ type KindOrchestrator struct {
 }
 
 func NewKindOrchestrator(distroPath string, sitePath string, dataPath string, reposPath string, installDirectory string, deploymentMode types.DeploymentMode) *KindOrchestrator {
-	configPath := filepath.Join(installDirectory, ".config")
+	configPath := filepath.Join(installDirectory, ".kind.config")
 	secretsPath := filepath.Join(configPath, "secrets")
 
 	ko := &KindOrchestrator{
