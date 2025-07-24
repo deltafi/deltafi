@@ -200,10 +200,36 @@ deltafi status [--watch|-w]
 - `--watch, -w`: Watch status updates continuously.
 
 #### `config`
-Interactive configuration editor for DeltaFi.
+Interactive configuration editor for DeltaFi, or set orchestration and deployment modes directly.
 
 ```bash
-deltafi config
+deltafi config [--compose|--kind|--kubernetes] [--deployment|--plugin-development|--core-development] [--force]
+```
+
+**Flags:**
+- `--compose`                Set orchestration mode to Compose
+- `--kind`                   Set orchestration mode to KinD
+- `--kubernetes`             Set orchestration mode to Kubernetes
+- `--deployment`             Set deployment mode to Deployment
+- `--plugin-development`     Set deployment mode to PluginDevelopment
+- `--core-development`       Set deployment mode to CoreDevelopment
+- `--force`                  Force configuration changes without confirmation
+
+If any of these flags are set, the configuration will be updated and saved immediately, and the wizard will not run. You can set both orchestration and deployment mode in a single invocation. If you change orchestration mode while DeltaFi is running, you will be prompted to confirm (unless --force is used), and the system will be stopped automatically.
+
+**Examples:**
+```bash
+# Set orchestration mode to Kubernetes and deployment mode to CoreDevelopment
+deltafi config --kubernetes --core-development
+
+# Set orchestration mode to Compose only
+deltafi config --compose
+
+# Set deployment mode to PluginDevelopment only
+deltafi config --plugin-development
+
+# Force orchestration mode change without confirmation
+deltafi config --kind --force
 ```
 
 #### `kind`

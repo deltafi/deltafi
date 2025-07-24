@@ -28,8 +28,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var splash bool
-var printVersion bool
+var (
+	splash       bool
+	printVersion bool
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -39,20 +41,41 @@ var rootCmd = &cobra.Command{
 	Long: art.Logo + `
 	Text User Interface (TUI) for DeltaFi`,
 	SilenceUsage: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if !app.ConfigExists() {
+			configCmd, _, err := cmd.Root().Find([]string{"config"})
+			if err != nil {
+				fmt.Println(styles.ErrorStyle.Render(err.Error()))
+				os.Exit(1)
+			}
+			if configCmd != nil {
+				return configCmd.RunE(configCmd, args)
+			} else {
+				fmt.Println(styles.ErrorStyle.Render("configuration wizard not found"))
+				os.Exit(1)
+			}
+		}
+		return cmd.Help()
+	},
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if cmd.Name() != "config" && !app.ConfigExists() {
+			configCmd, _, err := cmd.Root().Find([]string{"config"})
+			if err != nil {
+				return err
+			}
+			if configCmd != nil {
+				return configCmd.RunE(configCmd, args)
+			} else {
+				return fmt.Errorf("configuration wizard not found")
+			}
+		}
+		return nil
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if !app.ConfigExists() {
-		err := ExecuteConfigWizard()
-		if err != nil {
-			fmt.Println(styles.ErrorStyle.Render(err.Error()))
-			os.Exit(1)
-		}
-		return
-	}
-
 	rootCmd.Version = app.GetVersion()
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 

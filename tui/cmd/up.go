@@ -51,11 +51,11 @@ Examples:
 
 		force, _ := cmd.Flags().GetBool("force")
 
-		return Up(force, args)
+		return Up(force)
 	},
 }
 
-func Up(force bool, args []string) error {
+func Up(force bool) error {
 
 	// Get the TUI version
 	tuiVersion := app.GetSemanticVersion()
@@ -99,7 +99,7 @@ func Up(force bool, args []string) error {
 	}
 
 	orchestrator := app.GetOrchestrator()
-	err := orchestrator.Up(args)
+	err := orchestrator.Up([]string{})
 	if err != nil {
 		app.SendEvent(api.NewEvent().Error().WithSummary("Failed to complete orchestration update").WithContent(err.Error()))
 		return err

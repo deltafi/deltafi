@@ -336,3 +336,19 @@ func isKubernetesClusterRunning() bool {
 	err := cmd.Run()
 	return err == nil
 }
+
+// ConfirmPrompt displays a customizable y/n prompt and returns true for yes, false for no.
+func ConfirmPrompt(prompt string) bool {
+	var response string
+	fmt.Printf("%s [y/N]: ", prompt)
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(response)) {
+	case "y", "yes":
+		return true
+	default:
+		return false
+	}
+}

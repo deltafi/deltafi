@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -37,8 +38,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	composeFlag           bool
+	kindFlag              bool
+	kubernetesFlag        bool
+	noWizard              bool
+	deploymentFlag        bool
+	pluginDevelopmentFlag bool
+	coreDevelopmentFlag   bool
+	forceFlag             bool
+	jsonFlag              bool
+)
+
 func init() {
 	rootCmd.AddCommand(configCmd)
+
+	// Add orchestration mode flags to config command only
+	configCmd.Flags().BoolVar(&composeFlag, "compose", false, "Set orchestration mode to Compose")
+	configCmd.Flags().BoolVar(&kindFlag, "kind", false, "Set orchestration mode to KinD")
+	configCmd.Flags().BoolVar(&kubernetesFlag, "kubernetes", false, "Set orchestration mode to Kubernetes")
+
+	// Add deployment mode flags to config command only
+	configCmd.Flags().BoolVar(&deploymentFlag, "deployment", false, "Set deployment mode to Deployment")
+	configCmd.Flags().BoolVar(&pluginDevelopmentFlag, "plugin-development", false, "Set deployment mode to PluginDevelopment")
+	configCmd.Flags().BoolVar(&coreDevelopmentFlag, "core-development", false, "Set deployment mode to CoreDevelopment")
+	configCmd.Flags().BoolVar(&forceFlag, "force", false, "Force configuration changes without confirmation")
+
+	configCmd.Flags().BoolVar(&jsonFlag, "json", false, "Output configuration in JSON format and exit")
+
+	noWizard = false
 }
 
 var configCmd = &cobra.Command{
@@ -47,19 +75,118 @@ var configCmd = &cobra.Command{
 	Long:    `Interactive wizard to initialize DeltaFi system`,
 	GroupID: "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return ExecuteConfigWizard()
+
+		if jsonFlag {
+			config := app.LoadConfigOrDefault()
+			json, err := json.MarshalIndent(config, "", "  ")
+			if err != nil {
+				return fmt.Errorf("Error rendering configuration: %w", err)
+			}
+			fmt.Println(styles.ColorizeJSON(string(json)))
+			return nil
+		}
+
+		configExists := app.ConfigExists()
+		config := app.LoadConfigOrDefault()
+		currentOrchestrationMode := config.OrchestrationMode
+		currentDeploymentMode := config.DeploymentMode
+
+		// Handle orchestration and deployment mode flags
+		if composeFlag || kindFlag || kubernetesFlag || deploymentFlag || pluginDevelopmentFlag || coreDevelopmentFlag {
+			noWizard = true
+
+			if composeFlag {
+				config.OrchestrationMode = orchestration.Compose
+			} else if kindFlag {
+				config.OrchestrationMode = orchestration.Kind
+			} else if kubernetesFlag {
+				config.OrchestrationMode = orchestration.Kubernetes
+			}
+			if deploymentFlag {
+				config.DeploymentMode = types.Deployment
+			} else if pluginDevelopmentFlag {
+				config.DeploymentMode = types.PluginDevelopment
+			} else if coreDevelopmentFlag {
+				config.DeploymentMode = types.CoreDevelopment
+			}
+		} else {
+			var err error
+			config, err = ExecuteConfigWizard()
+			if err != nil {
+				return err
+			}
+		}
+
+		orchestrationModeChanged := currentOrchestrationMode != config.OrchestrationMode
+		deploymentModeChanged := currentDeploymentMode != config.DeploymentMode
+		configurationChanged := orchestrationModeChanged || deploymentModeChanged
+
+		if orchestrationModeChanged && configExists {
+			fmt.Printf("Orchestration mode will be set to %s\n", styles.WarningStyle.Render(config.OrchestrationMode.String()))
+			goForIt := true
+			if !forceFlag {
+				fmt.Println()
+				if app.IsRunning() {
+					goForIt = ConfirmPrompt(styles.WarningStyle.Render("DeltaFi is running. Would you like to destroy your current cluster?"))
+				} else {
+					goForIt = ConfirmPrompt(styles.WarningStyle.Render("Would you like to clean up persistent storage?"))
+				}
+			}
+			if goForIt {
+				down(true)
+			}
+		}
+
+		err := config.Save()
+		if err != nil {
+			return fmt.Errorf("Failed to save orchestration/deployment mode: %w", err)
+		}
+
+		// Configure shell if possible
+		shell := app.DetectShell()
+		if app.IsKnownShell(shell) {
+			if err := app.ConfigureShell(shell, app.TuiPath()); err != nil {
+				fmt.Printf(styles.WarningStyle.Render("Failed to configure shell: %s\n"), err)
+			}
+		}
+
+		if configurationChanged {
+			app.ReloadInstance()
+		}
+
+		fmt.Printf("\nOrchestration mode: %s\n", config.OrchestrationMode.String())
+		fmt.Printf("Deployment mode:    %s\n", config.DeploymentMode.String())
+
+		if configurationChanged || !configExists || !app.IsRunning() {
+			goForIt := true
+			if !forceFlag {
+				fmt.Println()
+				if app.IsRunning() {
+					goForIt = ConfirmPrompt("DeltaFi configuration has changed. Do you want to update now?")
+				} else if configExists {
+					goForIt = ConfirmPrompt("DeltaFi configuration has changed. Would you like to start DeltaFi?")
+				} else {
+					goForIt = ConfirmPrompt(styles.SuccessStyle.Render("Would you like to start DeltaFi?"))
+				}
+			}
+			if goForIt {
+				return Up(true)
+			}
+		}
+
+		return nil
 	},
 }
 
-func ExecuteConfigWizard() error {
+func ExecuteConfigWizard() (app.Config, error) {
 	wizard := NewConfigWizard()
 	success := runProgram(wizard)
 
 	if !success {
-		return wizard.err
+		return app.Config{}, wizard.err
 	}
 
-	return app.GetOrchestrator().Up([]string{})
+	return wizard.config, nil
 }
 
 type configWizardStep int
@@ -72,7 +199,6 @@ const (
 	cloneConfirmStep
 	cloningStep
 	confirmationStep
-	completeStep
 )
 
 type ConfigWizard struct {
@@ -385,23 +511,7 @@ func (c *ConfigWizard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case confirmationStep:
 			switch {
 			case key.Matches(msg, c.keys.Select):
-				if err := c.config.Save(); err != nil {
-					c.err = err
-					return c, nil
-				}
-
-				app.ReloadInstance() // Rebuild app config based on config changes
-
-				// Configure shell if possible
-				shell := app.DetectShell()
-				if app.IsKnownShell(shell) {
-					if err := app.ConfigureShell(shell, app.TuiPath()); err != nil {
-						c.err = err
-						return c, nil
-					}
-				}
-
-				c.step = completeStep
+				return c, tea.Quit
 			case key.Matches(msg, c.keys.Back):
 				if c.needsCoreSetup() {
 					c.step = cloneConfirmStep
@@ -422,11 +532,6 @@ func (c *ConfigWizard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						c.step = deploymentStep
 					}
 				}
-			}
-
-		case completeStep:
-			if key.Matches(msg, c.keys.Select) {
-				return c, tea.Quit
 			}
 		}
 
@@ -481,8 +586,6 @@ func (c *ConfigWizard) View() string {
 		content = c.renderCloning()
 	case confirmationStep:
 		content = c.renderConfirmation()
-	case completeStep:
-		content = c.renderComplete()
 	}
 
 	header := headerStyle.Render("DeltaFi System Initialization")
@@ -546,14 +649,13 @@ func (c *ConfigWizard) renderTwoPane(totalWidth, leftWidth int, left, right stri
 		rightWidth = 80
 	}
 	leftStyle := lipgloss.NewStyle().Width(leftWidth).Margin(0).PaddingRight(1)
-	rightStyle := lipgloss.NewStyle().Width(rightWidth).
-		Border(lipgloss.RoundedBorder()).
+	rightStyle := lipgloss.NewStyle().Width(rightWidth).Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.Surface2).
 		Margin(0).
 		Padding(0, 1)
 
 	if horizontal {
-		return lipgloss.JoinHorizontal(lipgloss.Top, leftStyle.Render(left), rightStyle.MarginTop(1).Render(right))
+		return lipgloss.JoinHorizontal(lipgloss.Top, leftStyle.Render(left), rightStyle.MarginTop(1).Width(rightWidth).Render(right))
 	} else {
 		return lipgloss.JoinVertical(lipgloss.Left, rightStyle.Render(right), "", leftStyle.Render(left))
 	}
@@ -604,7 +706,7 @@ func (c *ConfigWizard) renderMenu(items []string, header string, disabledOptions
 func (c *ConfigWizard) renderDeploymentMode() string {
 	menu := c.renderMenu(c.deploymentModes, "Select Operational Mode", c.disabledOptions)
 	description := types.DeploymentMode(c.selectedOption).Description()
-	return c.renderTwoPane(c.width, 40, menu, description)
+	return c.renderTwoPane(c.width-8, 40, menu, description)
 }
 
 // Update the core repo step to use the new layout
@@ -625,15 +727,6 @@ func (c *ConfigWizard) renderCloning() string {
 	return lipgloss.NewStyle().
 		PaddingLeft(1).
 		Render(c.spinner.View() + " Cloning repository...")
-}
-
-// Update the complete step to use the new layout
-func (c *ConfigWizard) renderComplete() string {
-	return lipgloss.NewStyle().
-		PaddingLeft(1).
-		PaddingRight(1).
-		Render("Configuration saved successfully!\n\n" +
-			"Press ENTER to exit...")
 }
 
 func (c *ConfigWizard) renderOrchestrationMode() string {

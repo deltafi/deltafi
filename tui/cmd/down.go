@@ -92,47 +92,51 @@ Examples:
 			}
 		}
 
-		if err := app.GetOrchestrator().Down(args); err != nil {
+		return down(destroyData)
+	},
+}
+
+func down(destroyData bool) error {
+	if err := app.GetOrchestrator().Down([]string{}); err != nil {
+		return err
+	}
+
+	if destroyData {
+		dataDir := app.GetDataDir()
+
+		// Create and run the spinner program
+		s := spinner.New()
+		s.Spinner = spinner.Dot
+		s.Style = lipgloss.NewStyle().Foreground(styles.Yellow)
+
+		downCmd := &downCommand{
+			BaseCommand: NewBaseCommand(),
+			spinner:     s,
+		}
+
+		p := tea.NewProgram(downCmd, tea.WithOutput(os.Stderr))
+
+		// Run the cleanup in a goroutine
+		go func() {
+			err := os.RemoveAll(dataDir)
+			p.Send(cleanupDoneMsg{err: err})
+		}()
+
+		// Run the program and wait for completion
+		if _, err := p.Run(); err != nil {
 			return err
 		}
 
-		if destroyData {
-			dataDir := app.GetDataDir()
-
-			// Create and run the spinner program
-			s := spinner.New()
-			s.Spinner = spinner.Dot
-			s.Style = lipgloss.NewStyle().Foreground(styles.Yellow)
-
-			downCmd := &downCommand{
-				BaseCommand: NewBaseCommand(),
-				spinner:     s,
-			}
-
-			p := tea.NewProgram(downCmd, tea.WithOutput(os.Stderr))
-
-			// Run the cleanup in a goroutine
-			go func() {
-				err := os.RemoveAll(dataDir)
-				p.Send(cleanupDoneMsg{err: err})
-			}()
-
-			// Run the program and wait for completion
-			if _, err := p.Run(); err != nil {
-				return err
-			}
-
-			// Check if there was an error during cleanup
-			if downCmd.err != nil {
-				fmt.Println(" " + styles.ErrorStyle.Render("✗") + " Data directory cleanup failed")
-				return fmt.Errorf("failed to clean up data directory: %w", downCmd.err)
-			}
-
-			fmt.Println(" " + styles.SuccessStyle.Bold(true).Render("✔") + " Data directory cleanup complete")
+		// Check if there was an error during cleanup
+		if downCmd.err != nil {
+			fmt.Println(" " + styles.ErrorStyle.Render("✗") + " Data directory cleanup failed")
+			return fmt.Errorf("failed to clean up data directory: %w", downCmd.err)
 		}
 
-		return nil
-	},
+		fmt.Println(" " + styles.SuccessStyle.Bold(true).Render("✔") + " Data directory cleanup complete")
+	}
+
+	return nil
 }
 
 func (c *downCommand) Init() tea.Cmd {
