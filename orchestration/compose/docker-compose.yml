@@ -449,9 +449,9 @@ services:
       - ${DATA_DIR}/certs:/certs
       - ${SETTINGS_DIR}/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
     ports:
-      - "80:80"
-      - "443:443"
-      - "8042:8042"
+      - "${UI_HTTP_PORT}:80"
+      - "${UI_HTTPS_PORT}:443"
+      - "127.0.0.1:8042:8042"
     healthcheck:
       test: ["CMD-SHELL", "curl -so /dev/null http://localhost/ || exit 1"]
       interval: 20s

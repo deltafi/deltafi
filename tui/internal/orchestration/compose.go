@@ -697,6 +697,8 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"REDIS":                     o.getValue(values, "dependencies.valkey"),
 		"DOCKER_WEB_GUI":            o.getValue(values, "dependencies.docker_web_gui"),
 		"ENTITY_RESOLVER_PORT":      o.getValue(values, "deltafi.auth.entityResolver.port"),
+		"UI_HTTP_PORT":              o.getValue(values, "ingress.ui.http_port"),
+		"UI_HTTPS_PORT":             o.getValue(values, "ingress.ui.https_port"),
 	}
 
 	// Add compose profiles based on enabled features
