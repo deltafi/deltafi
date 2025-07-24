@@ -1,4 +1,4 @@
-# Site values file
+# Site values file for Kubernetes installation
 # To restore to defaults, remove this file and run 'deltafi up'
 ---
 # DeltaFi config

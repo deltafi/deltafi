@@ -24,6 +24,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/deltafi/tui/internal/ui/styles"
 )
 
 //go:embed kubernetes.values.site.yaml
@@ -141,39 +143,34 @@ func (o *KubernetesOrchestrator) GetValkeyName() string {
 
 func (o *KubernetesOrchestrator) Up(args []string) error {
 
-	siteValues, err := o.SiteValuesFile()
-	if err != nil {
-		return fmt.Errorf("Unable to findsite values file: %w", err)
+	if err := kubernetesPrerequisites(o.namespace); err != nil {
+		return fmt.Errorf("Unable to configure Kubernetes for DeltaFi: %w", err)
 	}
 
-	// TODO: Implement CLI functionality here
-	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi", "-f", siteValues)
+	postgresOperatorPath := filepath.Join(o.distroPath, "orchestration", "charts", "postgres-operator")
 
-	args = append([]string{"install"}, args...)
+	if err := postgresOperatorInstall(o.namespace, postgresOperatorPath); err != nil {
+		fmt.Println(styles.FAIL("Postgres Operator installation failed"))
+		return fmt.Errorf("Unable to install Postgres Operator: %w", err)
+	}
 
-	c := *exec.Command(executable, args...)
-	c.Env = o.Environment()
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
+	deltafiChartPath := filepath.Join(o.distroPath, "orchestration", "charts", "deltafi")
 
-	return c.Run()
+	siteValuesFile, err := o.SiteValuesFile()
+	if err != nil {
+		return fmt.Errorf("Unable to get site values file: %w", err)
+	}
+
+	if err := deltafiHelmInstall(o.namespace, deltafiChartPath, siteValuesFile); err != nil {
+		fmt.Println(styles.FAIL("DeltaFi installation failed"))
+		return fmt.Errorf("Unable to install DeltaFi: %w", err)
+	}
+
+	return nil
 }
 
 func (o *KubernetesOrchestrator) Down(args []string) error {
-
-	// TODO: Implement CLI functionality here
-	executable := filepath.Join(o.distroPath, "deltafi-cli", "deltafi")
-
-	args = append([]string{"uninstall"}, args...)
-
-	c := *exec.Command(executable, args...)
-	c.Env = o.Environment()
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-
-	return c.Run()
+	return deltafiHelmUninstall(o.namespace)
 }
 
 func (o *KubernetesOrchestrator) Environment() []string {
