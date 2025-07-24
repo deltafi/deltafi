@@ -88,6 +88,7 @@ type ConfigWizard struct {
 	selectedOption     int
 	deploymentModes    []string
 	orchestrationModes []string
+	disabledOptions    map[int]bool
 	repoInput          textinput.Model
 	cloneError         error
 	err                error
@@ -154,6 +155,18 @@ func NewConfigWizard() *ConfigWizard {
 		initialStep = orchestrationStep
 	}
 
+	// Check availability of orchestration tools and disable options accordingly
+	disabledOptions := make(map[int]bool)
+	if !isDockerAvailable() {
+		disabledOptions[0] = true // Disable Compose option (index 0)
+	}
+	if !isKubernetesClusterRunning() {
+		disabledOptions[1] = true // Disable Kubernetes option (index 1)
+	}
+	if !isKindAvailable() {
+		disabledOptions[2] = true // Disable Kind option (index 2)
+	}
+
 	return &ConfigWizard{
 		BaseCommand:    NewBaseCommand(),
 		initialStep:    initialStep,
@@ -172,7 +185,8 @@ func NewConfigWizard() *ConfigWizard {
 			"Kubernetes",
 			"KinD",
 		},
-		repoInput: ti,
+		disabledOptions: disabledOptions,
+		repoInput:       ti,
 	}
 }
 
@@ -221,6 +235,15 @@ func (c *ConfigWizard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Initialize selectedOption if starting at orchestration step
 		if c.step == orchestrationStep {
 			c.selectedOption = int(c.config.OrchestrationMode)
+			// If the selected option is disabled, find the first enabled option
+			if c.disabledOptions[c.selectedOption] {
+				for i := 0; i < len(c.orchestrationModes); i++ {
+					if !c.disabledOptions[i] {
+						c.selectedOption = i
+						break
+					}
+				}
+			}
 		}
 
 	case spinner.TickMsg:
@@ -243,28 +266,47 @@ func (c *ConfigWizard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch c.step {
 		case welcomeStep:
 			if key.Matches(msg, c.keys.Select) {
-				c.selectedOption = int(c.config.OrchestrationMode)
+				// Find the first enabled orchestration mode
+				validOption := 0
+				for i := 0; i < len(c.orchestrationModes); i++ {
+					if !c.disabledOptions[i] {
+						validOption = i
+						break
+					}
+				}
+				c.selectedOption = validOption
 				c.step = orchestrationStep
 			}
 
 		case orchestrationStep:
 			switch {
 			case key.Matches(msg, c.keys.Up):
-				if c.selectedOption > 0 {
-					c.selectedOption--
+				// Find the previous enabled option
+				for i := c.selectedOption - 1; i >= 0; i-- {
+					if !c.disabledOptions[i] {
+						c.selectedOption = i
+						break
+					}
 				}
 			case key.Matches(msg, c.keys.Down):
-				if c.selectedOption < len(c.orchestrationModes)-1 {
-					c.selectedOption++
+				// Find the next enabled option
+				for i := c.selectedOption + 1; i < len(c.orchestrationModes); i++ {
+					if !c.disabledOptions[i] {
+						c.selectedOption = i
+						break
+					}
 				}
 			case key.Matches(msg, c.keys.Select):
-				c.config.OrchestrationMode = orchestration.OrchestrationMode(c.selectedOption)
-				c.selectedOption = int(c.config.DeploymentMode)
-				c.step = deploymentStep
-				if c.config.OrchestrationMode == orchestration.Kubernetes {
-					// Kubernetes skips the deployment step
-					c.config.DeploymentMode = types.Deployment
-					c.step = confirmationStep
+				// Only allow selection if the current option is not disabled
+				if !c.disabledOptions[c.selectedOption] {
+					c.config.OrchestrationMode = orchestration.OrchestrationMode(c.selectedOption)
+					c.selectedOption = int(c.config.DeploymentMode)
+					c.step = deploymentStep
+					if c.config.OrchestrationMode == orchestration.Kubernetes {
+						// Kubernetes skips the deployment step
+						c.config.DeploymentMode = types.Deployment
+						c.step = confirmationStep
+					}
 				}
 			case key.Matches(msg, c.keys.Back):
 				if c.initialStep != orchestrationStep {
@@ -297,7 +339,15 @@ func (c *ConfigWizard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					c.step = confirmationStep
 				}
 			case key.Matches(msg, c.keys.Back):
-				c.selectedOption = int(c.config.OrchestrationMode)
+				// Find the first enabled orchestration mode when going back
+				validOption := 0
+				for i := 0; i < len(c.orchestrationModes); i++ {
+					if !c.disabledOptions[i] {
+						validOption = i
+						break
+					}
+				}
+				c.selectedOption = validOption
 				c.step = orchestrationStep
 			}
 
@@ -357,7 +407,15 @@ func (c *ConfigWizard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					c.step = cloneConfirmStep
 				} else {
 					if c.config.OrchestrationMode == orchestration.Kubernetes {
-						c.selectedOption = int(c.config.OrchestrationMode)
+						// Find the first enabled orchestration mode when going back
+						validOption := 0
+						for i := 0; i < len(c.orchestrationModes); i++ {
+							if !c.disabledOptions[i] {
+								validOption = i
+								break
+							}
+						}
+						c.selectedOption = validOption
 						c.step = orchestrationStep
 					} else {
 						c.selectedOption = int(c.config.DeploymentMode)
@@ -501,14 +559,37 @@ func (c *ConfigWizard) renderTwoPane(totalWidth, leftWidth int, left, right stri
 	}
 }
 
-func (c *ConfigWizard) renderMenu(items []string, header string) string {
+func (c *ConfigWizard) getDisabledReason(index int) string {
+	switch index {
+	case 0: // Compose
+		return " (Docker not available)"
+	case 1: // Kubernetes
+		return " (No cluster)"
+	case 2: // Kind
+		return " (Kind not available)"
+	default:
+		return " (not available)"
+	}
+}
+
+func (c *ConfigWizard) renderMenu(items []string, header string, disabledOptions map[int]bool) string {
 	var menu []string
 	menu = append(menu, styles.SubheaderStyle.PaddingBottom(1).Render(header))
 	for i, item := range items {
 		if i == c.selectedOption {
-			item = styles.MenuMarkerStyle.PaddingRight(1).Render("▶") + styles.SelectedMenuItemStyle.Padding(0, 1).Render(item)
+			if disabledOptions[i] {
+				reason := c.getDisabledReason(i)
+				item = styles.MenuMarkerStyle.PaddingRight(1).Render("▶") + styles.DisabledMenuItemStyle.Padding(0, 1).Render(item+reason)
+			} else {
+				item = styles.MenuMarkerStyle.PaddingRight(1).Render("▶") + styles.SelectedMenuItemStyle.Padding(0, 1).Render(item)
+			}
 		} else {
-			item = styles.MenuItemStyle.PaddingLeft(3).Render(item)
+			if disabledOptions[i] {
+				reason := c.getDisabledReason(i)
+				item = styles.DisabledMenuItemStyle.PaddingLeft(3).Render(item + reason)
+			} else {
+				item = styles.MenuItemStyle.PaddingLeft(3).Render(item)
+			}
 		}
 		menu = append(menu, item)
 	}
@@ -521,7 +602,7 @@ func (c *ConfigWizard) renderMenu(items []string, header string) string {
 
 // Update the deployment mode selection to use the new layout
 func (c *ConfigWizard) renderDeploymentMode() string {
-	menu := c.renderMenu(c.deploymentModes, "Select Operational Mode")
+	menu := c.renderMenu(c.deploymentModes, "Select Operational Mode", c.disabledOptions)
 	description := types.DeploymentMode(c.selectedOption).Description()
 	return c.renderTwoPane(c.width, 40, menu, description)
 }
@@ -556,14 +637,14 @@ func (c *ConfigWizard) renderComplete() string {
 }
 
 func (c *ConfigWizard) renderOrchestrationMode() string {
-	menu := c.renderMenu(c.orchestrationModes, "Select Orchestration Mode")
+	menu := c.renderMenu(c.orchestrationModes, "Select Orchestration Mode", c.disabledOptions)
 	description := "Orchestration mode controls how containers for DeltaFi services and plugins are managed.\n\n" + orchestration.OrchestrationMode(c.selectedOption).Description()
 	return c.renderTwoPane(c.width-8, 40, menu, description)
 
 }
 
 func (c *ConfigWizard) renderCloneConfirm() string {
-	return c.renderMenu([]string{"Yes", "No"}, "Would you like to clone the core repository?")
+	return c.renderMenu([]string{"Yes", "No"}, "Would you like to clone the core repository?", c.disabledOptions)
 }
 
 func (c *ConfigWizard) GetError() error {

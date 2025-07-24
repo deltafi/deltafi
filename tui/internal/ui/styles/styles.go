@@ -138,6 +138,10 @@ var (
 				Background(Surface0).
 				Foreground(LightBlue).
 				Bold(true)
+
+	DisabledMenuItemStyle = lipgloss.NewStyle().
+				Foreground(Subtext0).
+				Italic(true)
 )
 
 // StyleBuilder provides a fluent interface for building styles

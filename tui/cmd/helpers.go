@@ -302,3 +302,37 @@ func executeShellCommand(cmd exec.Cmd) error {
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
+
+func isDockerAvailable() bool {
+	cmd := exec.Command("docker", "--version")
+	err := cmd.Run()
+	return err == nil
+}
+
+func isKubectlAvailable() bool {
+	cmd := exec.Command("kubectl", "version", "--client")
+	err := cmd.Run()
+	return err == nil
+}
+
+func isKindAvailable() bool {
+	if !isDockerAvailable() {
+		return false
+	}
+
+	cmd := exec.Command("kind", "version")
+	err := cmd.Run()
+	return err == nil
+}
+
+func isKubernetesClusterRunning() bool {
+	// First check if kubectl is available
+	if !isKubectlAvailable() {
+		return false
+	}
+
+	// Check if we can connect to a cluster by running kubectl cluster-info
+	cmd := exec.Command("kubectl", "cluster-info")
+	err := cmd.Run()
+	return err == nil
+}
