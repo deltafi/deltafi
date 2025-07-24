@@ -194,6 +194,30 @@ class ExtractXmlTest {
         TransformResultAssert.assertThat(result).annotationsIsEmpty();
     }
 
+    @Test
+    void testRetainExistingContent() {
+        ExtractXmlParameters params = new ExtractXmlParameters();
+        params.setXpathToKeysMap(Map.of("/root/value", "valuesMetadata"));
+        params.setContentIndexes(List.of(0, 2));
+
+        ActionContent content = saveXml("<root><value>firstValue</value></root>");
+        ActionContent content2 = saveXml("<root><value>ignoredValue</value></root>");
+        ActionContent content3 = saveXml("<root><value>lastValue</value></root>");
+
+        TransformInput input = TransformInput.builder().content(List.of(content, content2, content3)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(1) // Just the one that wasn't selected
+                .addedMetadata("valuesMetadata", "firstValue,lastValue");
+
+        params.setRetainExistingContent(true);
+        result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(3)
+                .addedMetadata("valuesMetadata", "firstValue,lastValue");
+    }
+
     private ActionContent saveXml(String xml) {
         return runner.saveContent(xml, "example.xml", "application/xml");
     }

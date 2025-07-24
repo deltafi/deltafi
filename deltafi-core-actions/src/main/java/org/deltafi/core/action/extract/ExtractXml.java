@@ -82,15 +82,20 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
     public TransformResultType transform(@NotNull ActionContext context, @NotNull ExtractXmlParameters params,
             @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
-        result.addContent(input.content());
 
         Map<String, List<String>> valuesMap = new HashMap<>();
         for (int i = 0; i < input.getContent().size(); i++) {
             ActionContent content = input.content(i);
 
             if (!params.contentSelected(i, content)) {
+                result.addContent(content);
                 continue;
             }
+
+            if (params.isRetainExistingContent()) {
+                result.addContent(content);
+            }
+
 
             Document document;
             try {

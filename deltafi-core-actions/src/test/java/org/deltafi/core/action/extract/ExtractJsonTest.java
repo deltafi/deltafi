@@ -181,6 +181,30 @@ class ExtractJsonTest {
         TransformResultAssert.assertThat(result).addedAnnotations(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
     }
 
+    @Test
+    void testRetainExistingContent() {
+        ExtractJsonParameters params = new ExtractJsonParameters();
+        params.setJsonPathToKeysMap(Map.of("$.value", "valuesMetadata"));
+        params.setContentIndexes(List.of(0, 2));
+
+        ActionContent content = saveJson("{\"value\":\"firstValue\"}");
+        ActionContent content2 = saveJson("{\"value\":\"ignoredValue\"}");
+        ActionContent content3 = saveJson("{\"value\":\"lastValue\"}");
+
+        TransformInput input = TransformInput.builder().content(List.of(content, content2, content3)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(1) // Just the one that wasn't selected
+                .addedMetadata("valuesMetadata", "firstValue,lastValue");
+
+        params.setRetainExistingContent(true);
+        result = action.transform(runner.actionContext(), params, input);
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(3)
+                .addedMetadata("valuesMetadata", "firstValue,lastValue");
+    }
+
     private ActionContent saveJson(String json) {
         return runner.saveContent(json, "example.json", "application/json");
     }

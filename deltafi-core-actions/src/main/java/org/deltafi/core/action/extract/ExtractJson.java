@@ -65,14 +65,18 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
     public TransformResultType transform(@NotNull ActionContext context, @NotNull ExtractJsonParameters params,
                                          @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
-        result.addContent(input.content());
 
         Map<String, List<String>> extractedValuesMap = new HashMap<>();
         for (int i = 0; i < input.getContent().size(); i++) {
             ActionContent content = input.content(i);
 
             if (!params.contentSelected(i, content)) {
+                result.addContent(content);
                 continue;
+            }
+
+            if (params.isRetainExistingContent()) {
+                result.addContent(content);
             }
 
             ReadContext ctx = JsonPath.using(CONFIGURATION).parse(content.loadString());
