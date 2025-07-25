@@ -984,6 +984,23 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void acknowledgeMatching() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.acknowledge(filter, "reason");
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
+        assertThat(filter.getErrorAcknowledged()).isFalse();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void acknowledgeMatching_skipInvalidAcknowledgeFilters() {
+        deltaFilesService.acknowledge(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.IN_FLIGHT).build(), "reason");
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
     void cancelMatching() {
         DeltaFilesFilter filter = new DeltaFilesFilter();
         deltaFilesService.cancel(filter);

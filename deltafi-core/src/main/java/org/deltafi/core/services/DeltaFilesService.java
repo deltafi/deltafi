@@ -1337,24 +1337,29 @@ public class DeltaFilesService {
     }
 
     public List<AcknowledgeResult> acknowledge(List<UUID> dids, String reason) {
-        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
+        return acknowledge(didsToDeltaFiles(dids, deltaFiles(dids)), reason);
+    }
 
+    public List<AcknowledgeResult> acknowledge(Map<UUID, DeltaFile> deltaFiles, String reason) {
         OffsetDateTime now = OffsetDateTime.now(clock);
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
 
-        List<AcknowledgeResult> results = dids.stream()
-                .map(did -> {
+        List<AcknowledgeResult> results = deltaFiles.entrySet().stream()
+                .map(entry -> {
+                    UUID did = entry.getKey();
+                    DeltaFile deltaFile = entry.getValue();
                     AcknowledgeResult result = AcknowledgeResult.newBuilder()
                             .did(did)
                             .success(true)
                             .build();
 
                     try {
-                        DeltaFile deltaFile = deltaFiles.get(did);
-
                         if (deltaFile == null) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
+                        } else if (!deltaFile.canBeAcknowledged()) {
+                            result.setSuccess(false);
+                            result.setError("DeltaFile with did " + did + " can no longer be acknowledged");
                         } else {
                             deltaFile.acknowledgeErrors(now, reason);
                             changedDeltaFiles.add(deltaFile);
@@ -1368,6 +1373,34 @@ public class DeltaFilesService {
                 .toList();
 
         deltaFileRepo.saveAll(changedDeltaFiles);
+        return results;
+    }
+
+    public List<AcknowledgeResult> acknowledge(DeltaFilesFilter filter, String reason) {
+        // if the stage is not null or ERROR there is nothing to acknowledge
+        if ((filter.getStage() != null && filter.getStage() != DeltaFileStage.ERROR)) {
+            return List.of();
+        }
+        if (filter.getErrorAcknowledged() != null && filter.getErrorAcknowledged()) {
+            return List.of();
+        }
+
+        // make sure only ERROR stage is set in the filter,
+        // and setErrorAcknowledged is FALSE
+        filter.setStage(DeltaFileStage.ERROR);
+        filter.setErrorAcknowledged(false);
+        ensureModifiedBeforeNow(filter);
+
+        List<AcknowledgeResult> results = new ArrayList<>();
+
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            Map<UUID, DeltaFile> toAck = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE)
+                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+            results.addAll(acknowledge(toAck, reason));
+            numFound = toAck.size();
+        }
+
         return results;
     }
 

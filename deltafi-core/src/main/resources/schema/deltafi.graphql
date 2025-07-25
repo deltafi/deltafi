@@ -473,7 +473,10 @@ type Mutation {
   resumeMatching(filter: DeltaFilesFilter!, resumeMetadata: [ResumeMetadata!]) : [RetryResult]!
   replay(dids: [UUID!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   replayMatching(filter: DeltaFilesFilter!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput]) : [RetryResult!]!
+
   acknowledge(dids: [UUID!]!, reason: String) : [AcknowledgeResult!]!
+  acknowledgeMatching(filter: DeltaFilesFilter!, reason: String) : [AcknowledgeResult]!
+
   cancel(dids: [UUID!]!) : [CancelResult!]!
   cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!
 

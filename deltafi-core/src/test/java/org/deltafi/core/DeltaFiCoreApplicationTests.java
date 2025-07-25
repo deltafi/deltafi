@@ -1036,6 +1036,38 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertNotNull(deltaFile.lastFlow().getErrorAcknowledged());
 		assertEquals("apathy", deltaFile.lastFlow().getErrorAcknowledgedReason());
+
+		// Verify once its been acknowledged, it fails on another acknowledge attempt
+		acknowledgeResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("acknowledge"), did),
+				"data." + DgsConstants.MUTATION.Acknowledge,
+				new TypeRef<>() {});
+
+		assertEquals(2, acknowledgeResults.size());
+		assertEquals(did, acknowledgeResults.getFirst().getDid());
+		assertFalse(acknowledgeResults.getFirst().getSuccess());
+		assertTrue(acknowledgeResults.getFirst().getError().contains("can no longer be acknowledged"));
+
+		Mockito.verifyNoInteractions(metricService);
+	}
+
+	@Test
+	void testAcknowledgeMatching() throws IOException {
+		UUID did = UUID.randomUUID();
+		deltaFileRepo.save(fullFlowExemplarService.postErrorDeltaFile(did));
+
+		List<AcknowledgeResult> acknowledgeResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("acknowledgeMatching"), did),
+				"data." + DgsConstants.MUTATION.AcknowledgeMatching,
+				new TypeRef<>() {});
+
+		assertEquals(1, acknowledgeResults.size());
+		assertEquals(did, acknowledgeResults.getFirst().getDid());
+		assertTrue(acknowledgeResults.getFirst().getSuccess());
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		assertNotNull(deltaFile.lastFlow().getErrorAcknowledged());
+		assertEquals("apathy", deltaFile.lastFlow().getErrorAcknowledgedReason());
 		Mockito.verifyNoInteractions(metricService);
 	}
 

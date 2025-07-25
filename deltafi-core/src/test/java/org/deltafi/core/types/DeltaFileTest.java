@@ -44,9 +44,12 @@ class DeltaFileTest {
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .flows(new LinkedHashSet<>(List.of(flow)))
+                .stage(DeltaFileStage.ERROR)
                 .build();
 
+        assertTrue(deltaFile.canBeAcknowledged());
         deltaFile.acknowledgeErrors(now2, "reason");
+        assertFalse(deltaFile.canBeAcknowledged());
 
         assertNull(action1.getNextAutoResumeReason());
         assertNull(action1.getNextAutoResume());

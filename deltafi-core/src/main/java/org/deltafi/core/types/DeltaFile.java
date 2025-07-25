@@ -485,6 +485,10 @@ public class DeltaFile {
     return !inactiveStage() || flows.stream().anyMatch(DeltaFileFlow::hasAutoResume);
   }
 
+  public boolean canBeAcknowledged() {
+    return getStage() == DeltaFileStage.ERROR && !unackErrorFlows().isEmpty();
+  }
+
   public boolean inactiveStage() {
     return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
   }

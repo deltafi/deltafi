@@ -222,6 +222,13 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileAcknowledge
+  public List<AcknowledgeResult> acknowledgeMatching(@InputArgument DeltaFilesFilter filter, @InputArgument String reason) {
+    auditLogger.audit("acknowledging deltaFiles by filter");
+    return deltaFilesService.acknowledge(filter, reason);
+  }
+
+  @DgsMutation
   @NeedsPermission.DeltaFileCancel
   public List<CancelResult> cancel(@InputArgument List<UUID> dids) {
     auditLogger.audit("canceled {} deltaFiles", dids.size());
