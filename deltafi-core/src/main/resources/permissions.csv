@@ -18,6 +18,7 @@ DeltaFiles,DeltaFileReplay,Grants the ability to replay DeltaFiles
 DeltaFiles,DeltaFileResume,Grants the ability to resume DeltaFiles in an ERROR stage
 DeltaFiles,DeltaFileAcknowledge,Grants the ability to acknowledge DeltaFiles in an ERROR stage
 DeltaFiles,DeltaFileCancel,Grants the ability to cancel processing a DeltaFile
+DeltaFiles,DeltaFilePinning,Grants the ability to pin or unpin a DeltaFile
 DeltaFiles,DeltaFileIngress,Grants the ability to ingress DeltaFiles
 Flows,FlowView,Grants the ability to view flows
 Flows,FlowValidate,Grants the ability to validate flows

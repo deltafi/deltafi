@@ -82,6 +82,12 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFilePinning'" + OR_ADMIN)
+    public @interface DeltaFilePinning {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('DeltaFileReplay'" + OR_ADMIN)
     public @interface DeltaFileReplay {}
 

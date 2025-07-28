@@ -75,6 +75,11 @@ const generateData = () => {
     },
     {
       category: "DeltaFiles",
+      name: "DeltaFilePinning",
+      description: "Grants the ability to pin or unpin a DeltaFile"
+    },
+    {
+      category: "DeltaFiles",
       name: "DeltaFileCancel",
       description: "Grants the ability to cancel processing a DeltaFile"
     },

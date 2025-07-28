@@ -236,28 +236,28 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
-  @NeedsPermission.DeletePolicyDelete
+  @NeedsPermission.DeltaFilePinning
   public List<Result> pin(@InputArgument List<UUID> dids) {
     auditLogger.audit("pinning deltafiles with dids {}", CoreAuditLogger.listToString(dids));
     return deltaFilesService.pin(dids);
   }
 
   @DgsMutation
-  @NeedsPermission.DeletePolicyDelete
+  @NeedsPermission.DeltaFilePinning
   public List<Result> unpin(@InputArgument List<UUID> dids) {
     auditLogger.audit("unpinning deltafiles with dids {}", CoreAuditLogger.listToString(dids));
     return deltaFilesService.unpin(dids);
   }
 
   @DgsMutation
-  @NeedsPermission.DeletePolicyDelete
+  @NeedsPermission.DeltaFilePinning
   public List<PinResult> pinMatching(@InputArgument DeltaFilesFilter filter) {
     auditLogger.audit("pinning deltaFiles by filter");
     return deltaFilesService.setPinned(filter, true);
   }
 
   @DgsMutation
-  @NeedsPermission.DeletePolicyDelete
+  @NeedsPermission.DeltaFilePinning
   public List<PinResult> unpinMatching(@InputArgument DeltaFilesFilter filter) {
     auditLogger.audit("unpinning deltaFiles by filter");
     return deltaFilesService.setPinned(filter, false);
