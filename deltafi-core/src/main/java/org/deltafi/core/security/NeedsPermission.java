@@ -163,30 +163,6 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('FlowValidate'" + OR_ADMIN)
     public @interface FlowValidate {}
 
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleCreate'" + OR_ADMIN)
-    public @interface IngressRoutingRuleCreate {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleDelete'" + OR_ADMIN)
-    public @interface IngressRoutingRuleDelete {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleRead'" + OR_ADMIN)
-    public @interface IngressRoutingRuleRead {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleUpdate'" + OR_ADMIN)
-    public @interface IngressRoutingRuleUpdate {}
-
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('MetricsView'" + OR_ADMIN)
@@ -215,11 +191,6 @@ public class NeedsPermission {
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('PluginVariableUpdate'" + OR_ADMIN)
     public @interface PluginVariableUpdate {}
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('PluginRegistration'" + OR_ADMIN)
-    public @interface PluginRegistration {}
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -344,26 +315,6 @@ public class NeedsPermission {
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('StatusView'" + OR_ADMIN)
     public @interface StatusView {}
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('TopicsDelete'" + OR_ADMIN)
-    public @interface TopicsDelete {}
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('TopicsRead'" + OR_ADMIN)
-    public @interface TopicsRead {}
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('TopicsWrite'" + OR_ADMIN)
-    public @interface TopicsWrite {}
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('ActionEvent'" + OR_ADMIN)
-    public @interface ActionEvent {}
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

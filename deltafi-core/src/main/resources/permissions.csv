@@ -4,9 +4,6 @@ General,UIAccess,Grants access to the UI
 General,StatusView,Grants the ability to view system status
 General,DashboardView,Grants the ability to view the UI dashboard
 General,VersionsView,Grants the ability to view running versions
-Registry,RegistryView,Grants the ability to view internal registry contents
-Registry,RegistryUpload,Grants the ability to upload to the internal registry
-Registry,RegistryDelete,Grants the ability to remove content from the internal registry
 Metrics,MetricsAdmin,Grants the Admin role in Grafana
 Metrics,MetricsView,Grants the Viewer role in Grafana
 Metrics,MetricsEdit,Grants the Editor role in Grafana
@@ -35,10 +32,6 @@ Delete Policies,DeletePolicyCreate,Grants the ability to create Delete Policies
 Delete Policies,DeletePolicyRead,Grants the ability to view Delete Policies
 Delete Policies,DeletePolicyUpdate,Grants the ability to edit Delete Policies
 Delete Policies,DeletePolicyDelete,Grants the ability to delete Delete Policies
-Ingress Routing,IngressRoutingRuleCreate,Grants the ability to created Ingress Routing Rules
-Ingress Routing,IngressRoutingRuleRead,Grants the ability to view Ingress Routing Rules
-Ingress Routing,IngressRoutingRuleUpdate,Grants the ability to edit Ingress Routing Rules
-Ingress Routing,IngressRoutingRuleDelete,Grants the ability to delete Ingress Routing Rules
 Snapshots,SnapshotCreate,Grants the ability to delete Snapshots
 Snapshots,SnapshotRead,Grants the ability to view Snapshots
 Snapshots,SnapshotDelete,Grants the ability to delete Snapshots
@@ -66,6 +59,3 @@ Resume Policies,ResumePolicyCreate,Grants the ability to create Resume Policies
 Resume Policies,ResumePolicyRead,Grants the ability to view Resume Policies
 Resume Policies,ResumePolicyUpdate,Grants the ability to edit Resume Policies
 Resume Policies,ResumePolicyDelete,Grants the ability to delete Resume Policies
-Topics,TopicsRead,Grants the ability to read Topics
-Topics,TopicsWrite,Grants the ability to create and update Topics
-Topics,TopicsDelete,Grants the ability to delete Topics

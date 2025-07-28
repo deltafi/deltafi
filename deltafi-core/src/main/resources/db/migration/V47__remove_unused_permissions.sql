@@ -1,0 +1,12 @@
+UPDATE roles  SET permissions = permissions - 'ActionEvent';
+UPDATE roles  SET permissions = permissions - 'IngressRoutingRuleCreate';
+UPDATE roles  SET permissions = permissions - 'IngressRoutingRuleDelete';
+UPDATE roles  SET permissions = permissions - 'IngressRoutingRuleRead';
+UPDATE roles  SET permissions = permissions - 'IngressRoutingRuleUpdate';
+UPDATE roles  SET permissions = permissions - 'PluginRegistration';
+UPDATE roles  SET permissions = permissions - 'RegistryDelete';
+UPDATE roles  SET permissions = permissions - 'RegistryUpload';
+UPDATE roles  SET permissions = permissions - 'RegistryView';
+UPDATE roles  SET permissions = permissions - 'TopicsDelete';
+UPDATE roles  SET permissions = permissions - 'TopicsRead';
+UPDATE roles  SET permissions = permissions - 'TopicsWrite';
