@@ -1,4 +1,4 @@
-module deltafi.org/deltafi-file-ingress
+module deltafi.org/deltafi-dirwatcher
 
 go 1.24.5
 

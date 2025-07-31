@@ -460,9 +460,9 @@ deltafi:
   api:
     image: ${repo}/deltafi-api:${tag}
     workers: 8
-  file_ingress:
+  dirwatcher:
     enabled: true
-    image: ${repo}/deltafi-file-ingress:${tag}
+    image: ${repo}/deltafi-dirwatcher:${tag}
   egress_sink:
     enabled: true
     image: ${repo}/deltafi-egress-sink:${tag}
@@ -532,12 +532,12 @@ _append_common_from_values() {
 _append_compose_profiles() {
   profiles=()
   egress_sink_enabled=$(_from_values ".deltafi.egress_sink.enabled")
-  file_ingress_enabled=$(_from_values ".deltafi.file_ingress.enabled")
+  dirwatcher_enabled=$(_from_values ".deltafi.dirwatcher.enabled")
   entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
   dev_container_enabled=$(_from_values ".deltafi.devContainer.enabled")
 
-  if [[ "${file_ingress_enabled}" = "true" ]]; then
-    profiles+=("file-ingress")
+  if [[ "${dirwatcher_enabled}" = "true" ]]; then
+    profiles+=("dirwatcher")
   fi
   if [[ "${egress_sink_enabled}" = "true" ]]; then
     profiles+=("egress-sink")
@@ -572,7 +572,7 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_DEV_CONTAINER" ".deltafi.devContainer.image"
   _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
   _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
-  _append_startup_from_values "DELTAFI_FILE_INGRESS" ".deltafi.file_ingress.image"
+  _append_startup_from_values "DELTAFI_DIRWATCHER" ".deltafi.dirwatcher.image"
   _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"

@@ -478,6 +478,12 @@ func (o *ComposeOrchestrator) ContainerEnvironments() error {
 		return fmt.Errorf("error writing nginx.env: %w", err)
 	}
 
+	// Create dirwatcher.env
+	dirwatcherEnv := filepath.Join(o.configPath, "dirwatcher.env")
+	if err := o.writeDirwatcherEnv(dirwatcherEnv); err != nil {
+		return fmt.Errorf("error writing dirwatcher.env: %w", err)
+	}
+
 	return nil
 }
 
@@ -609,6 +615,22 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 	return writeEnvFile(path, envVars)
 }
 
+func (o *ComposeOrchestrator) writeDirwatcherEnv(path string) error {
+	values, err := o.getMergedValues()
+	if err != nil {
+		return err
+	}
+
+	envVars := map[string]string{
+		"DIRWATCHER_WORKERS":       o.getValue(values, "deltafi.dirwatcher.workers"),
+		"DIRWATCHER_MAX_FILE_SIZE": o.getValue(values, "deltafi.dirwatcher.maxFileSize"),
+		"DIRWATCHER_RETRY_PERIOD":  o.getValue(values, "deltafi.dirwatcher.retryPeriod"),
+		"DIRWATCHER_SETTLING_TIME": o.getValue(values, "deltafi.dirwatcher.settlingTime"),
+	}
+
+	return writeEnvFile(path, envVars)
+}
+
 func (o *ComposeOrchestrator) writeNginxEnv(path string) error {
 	values, err := o.getMergedValues()
 	if err != nil {
@@ -684,7 +706,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"DELTAFI_JAVA_IDE":          o.getValue(values, "deltafi.java_ide.image"),
 		"DELTAFI_CORE":              o.getValue(values, "deltafi.core.image"),
 		"DELTAFI_CORE_ACTIONS":      o.getValue(values, "deltafi.core_actions.image"),
-		"DELTAFI_FILE_INGRESS":      o.getValue(values, "deltafi.file_ingress.image"),
+		"DELTAFI_DIRWATCHER":        o.getValue(values, "deltafi.dirwatcher.image"),
 		"DELTAFI_EGRESS_SINK":       o.getValue(values, "deltafi.egress_sink.image"),
 		"DELTAFI_NODEMONITOR":       o.getValue(values, "deltafi.nodemonitor.image"),
 		"GRAFANA":                   o.getValue(values, "dependencies.grafana"),
@@ -704,8 +726,8 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 
 	// Add compose profiles based on enabled features
 	profiles := []string{}
-	if o.getValue(values, "deltafi.file_ingress.enabled") == "true" {
-		profiles = append(profiles, "file-ingress")
+	if o.getValue(values, "deltafi.dirwatcher.enabled") == "true" {
+		profiles = append(profiles, "dirwatcher")
 	}
 	if o.getValue(values, "deltafi.egress_sink.enabled") == "true" {
 		profiles = append(profiles, "egress-sink")

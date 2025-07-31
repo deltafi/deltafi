@@ -181,32 +181,33 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
     volumes:
       - ${DATA_DIR}:/data/deltafi
-  file-ingress:
-    image: ${DELTAFI_FILE_INGRESS}
-    container_name: deltafi-file-ingress
+  dirwatcher:
+    image: ${DELTAFI_DIRWATCHER}
+    container_name: deltafi-dirwatcher
     depends_on:
       core-scheduler:
         condition: service_started
     environment:
-      DELTAFI_WATCH_DIR: /watched-dir
-      DELTAFI_WORKERS: 5
-      DELTAFI_RETRY_PERIOD: 60
-      DELTAFI_MAX_FILE_SIZE: 2147483648
+      DIRWATCHER_WATCH_DIR: /watched-dir
+      DIRWATCHER_WORKERS: 20
+      DIRWATCHER_RETRY_PERIOD: 300
+      DIRWATCHER_MAX_FILE_SIZE: 2147483648
       DELTAFI_URL: http://deltafi-core-scheduler:8080
     env_file:
       - ${CONFIG_DIR}/common.env
+      - ${CONFIG_DIR}/dirwatcher.env
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:
       deltafi:
         aliases:
-          - "deltafi-file-ingress-service"
-          - "file-ingress"
-    profiles: ["file-ingress"]
+          - "deltafi-dirwatcher-service"
+          - "dirwatcher"
+    profiles: ["dirwatcher"]
     restart: unless-stopped
     volumes:
-      - ${DATA_DIR}/file-ingress:/watched-dir
+      - ${DATA_DIR}/dirwatcher:/watched-dir
     user: "${USER_ID}:${GROUP_ID}"
   deltafi-egress-sink:
     image: ${DELTAFI_EGRESS_SINK}

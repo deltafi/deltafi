@@ -27,8 +27,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"deltafi.org/deltafi-file-ingress/internal/transport"
-	"deltafi.org/deltafi-file-ingress/internal/watcher"
+	"deltafi.org/deltafi-dirwatcher/internal/transport"
+	"deltafi.org/deltafi-dirwatcher/internal/watcher"
 )
 
 func main() {

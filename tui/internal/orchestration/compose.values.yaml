@@ -27,9 +27,9 @@ deltafi:
   api:
     image: {{.Repo}}/deltafi-api:{{.Tag}}
     workers: 8
-  file_ingress:
+  dirwatcher:
     enabled: true
-    image: {{.Repo}}/deltafi-file-ingress:{{.Tag}}
+    image: {{.Repo}}/deltafi-dirwatcher:{{.Tag}}
   egress_sink:
     enabled: true
     drop_metadata: false

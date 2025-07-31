@@ -21,18 +21,20 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 // Config holds all configuration for the file ingress service
 type Config struct {
-	WatchDir    string
-	URL         string
-	IngressAPI  string
-	Endpoint    string // Computed from URL and IngressAPI
-	Workers     int
-	BufferSize  int
-	MaxFileSize int64
-	RetryPeriod int // Retry period in seconds
+	WatchDir     string
+	URL          string
+	IngressAPI   string
+	Endpoint     string // Computed from URL and IngressAPI
+	Workers      int
+	BufferSize   int
+	MaxFileSize  int64
+	RetryPeriod  time.Duration // Retry period in seconds
+	SettlingTime time.Duration // Time in milliseconds to wait for file to settle before processing
 }
 
 // LoadConfig loads the configuration from environment variables
@@ -42,22 +44,51 @@ func LoadConfig() (*Config, error) {
 
 	config := &Config{
 		// Default values
-		WatchDir:    getEnvOrDefault("DELTAFI_WATCH_DIR", "watched-dir"),
-		URL:         url,
-		IngressAPI:  ingressAPI,
-		Endpoint:    url + ingressAPI,
-		Workers:     getEnvIntOrDefault("DELTAFI_WORKERS", 5),
-		BufferSize:  getEnvIntOrDefault("DELTAFI_BUFFER_SIZE", 32*1024*1024),         // 32MB
-		MaxFileSize: getEnvInt64OrDefault("DELTAFI_MAX_FILE_SIZE", 2*1024*1024*1024), // 2GB
-		RetryPeriod: getEnvIntOrDefault("DELTAFI_RETRY_PERIOD", 300),                 // 5 minutes default
+		WatchDir:     getEnvOrDefault("DIRWATCHER_WATCH_DIR", "watched-dir"),
+		URL:          url,
+		IngressAPI:   ingressAPI,
+		Endpoint:     url + ingressAPI,
+		Workers:      getEnvIntOrDefault("DIRWATCHER_WORKERS", 20),
+		MaxFileSize:  getEnvInt64OrDefault("DIRWATCHER_MAX_FILE_SIZE", 4*1024*1024*1024),                     // 4GB
+		RetryPeriod:  time.Duration(getEnvIntOrDefault("DIRWATCHER_RETRY_PERIOD", 300)) * time.Second,        // 5 minutes default
+		SettlingTime: time.Duration(getEnvIntOrDefault("DIRWATCHER_SETTLING_TIME", 1000)) * time.Millisecond, // 1 second default
 	}
 
-	// Validate required fields
-	if config.URL == "" {
-		return nil, fmt.Errorf("DELTAFI_URL environment variable is required")
+	// Validate configuration values
+	if err := config.validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
 	return config, nil
+}
+
+// validate checks that configuration values are reasonable
+func (c *Config) validate() error {
+	if c.URL == "" {
+		return fmt.Errorf("DELTAFI_URL environment variable is required")
+	}
+
+	if c.Workers <= 0 {
+		return fmt.Errorf("DIRWATCHER_WORKERS must be greater than 0, got %d", c.Workers)
+	}
+
+	if c.MaxFileSize <= 0 {
+		return fmt.Errorf("DIRWATCHER_MAX_FILE_SIZE must be greater than 0, got %d", c.MaxFileSize)
+	}
+
+	if c.RetryPeriod <= 0 {
+		return fmt.Errorf("DIRWATCHER_RETRY_PERIOD must be greater than 0, got %d", c.RetryPeriod)
+	}
+
+	if c.SettlingTime < 100 {
+		return fmt.Errorf("DIRWATCHER_SETTLING_TIME must be at least 100ms, got %d", c.SettlingTime)
+	}
+
+	if c.WatchDir == "" {
+		return fmt.Errorf("DIRWATCHER_WATCH_DIR cannot be empty")
+	}
+
+	return nil
 }
 
 func getEnvOrDefault(key, defaultValue string) string {

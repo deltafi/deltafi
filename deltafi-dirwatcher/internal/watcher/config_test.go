@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -34,100 +35,85 @@ func TestLoadConfig(t *testing.T) {
 		{
 			name: "default values",
 			want: &Config{
-				WatchDir:    "watched-dir",
-				URL:         "http://deltafi-core-service",
-				IngressAPI:  "/api/v2/deltafile/ingress",
-				Endpoint:    "http://deltafi-core-service/api/v2/deltafile/ingress",
-				Workers:     5,
-				BufferSize:  32 * 1024 * 1024,
-				MaxFileSize: 2 * 1024 * 1024 * 1024,
-				RetryPeriod: 300,
+				WatchDir:     "watched-dir",
+				URL:          "http://deltafi-core-service",
+				IngressAPI:   "/api/v2/deltafile/ingress",
+				Endpoint:     "http://deltafi-core-service/api/v2/deltafile/ingress",
+				Workers:      20,
+				MaxFileSize:  4 * 1024 * 1024 * 1024,  // 4GB
+				RetryPeriod:  300 * time.Second,       // 5 minutes
+				SettlingTime: 1000 * time.Millisecond, // 1 second
 			},
 		},
 		{
 			name: "custom values",
 			envVars: map[string]string{
-				"DELTAFI_WATCH_DIR":     "/custom/dir",
+				"DIRWATCHER_WATCH_DIR":     "/custom/dir",
 				"DELTAFI_URL":           "http://custom-core:8080",
 				"DELTAFI_INGRESS_API":   "/custom/ingress",
-				"DELTAFI_WORKERS":       "10",
-				"DELTAFI_BUFFER_SIZE":   "2097152",
-				"DELTAFI_MAX_FILE_SIZE": "209715200",
-				"DELTAFI_RETRY_PERIOD":  "60",
+				"DIRWATCHER_WORKERS":       "10",
+				"DIRWATCHER_MAX_FILE_SIZE": "209715200",
+				"DIRWATCHER_RETRY_PERIOD":  "60",
+				"DIRWATCHER_SETTLING_TIME": "500",
 			},
 			want: &Config{
-				WatchDir:    "/custom/dir",
-				URL:         "http://custom-core:8080",
-				IngressAPI:  "/custom/ingress",
-				Endpoint:    "http://custom-core:8080/custom/ingress",
-				Workers:     10,
-				BufferSize:  2097152,
-				MaxFileSize: 209715200,
-				RetryPeriod: 60,
+				WatchDir:     "/custom/dir",
+				URL:          "http://custom-core:8080",
+				IngressAPI:   "/custom/ingress",
+				Endpoint:     "http://custom-core:8080/custom/ingress",
+				Workers:      10,
+				MaxFileSize:  209715200,
+				RetryPeriod:  60 * time.Second,
+				SettlingTime: 500 * time.Millisecond,
 			},
 		},
 		{
 			name: "invalid worker count",
 			envVars: map[string]string{
-				"DELTAFI_WORKERS": "invalid",
+				"DIRWATCHER_WORKERS": "invalid",
 			},
 			want: &Config{
-				WatchDir:    "watched-dir",
-				URL:         "http://deltafi-core-service",
-				IngressAPI:  "/api/v2/deltafile/ingress",
-				Endpoint:    "http://deltafi-core-service/api/v2/deltafile/ingress",
-				Workers:     5, // Should use default
-				BufferSize:  32 * 1024 * 1024,
-				MaxFileSize: 2 * 1024 * 1024 * 1024,
-				RetryPeriod: 300,
+				WatchDir:     "watched-dir",
+				URL:          "http://deltafi-core-service",
+				IngressAPI:   "/api/v2/deltafile/ingress",
+				Endpoint:     "http://deltafi-core-service/api/v2/deltafile/ingress",
+				Workers:      20,                      // Should use default
+				MaxFileSize:  4 * 1024 * 1024 * 1024,  // 4GB
+				RetryPeriod:  300 * time.Second,       // 5 minutes
+				SettlingTime: 1000 * time.Millisecond, // 1 second
 			},
 		},
-		{
-			name: "invalid buffer size",
-			envVars: map[string]string{
-				"DELTAFI_BUFFER_SIZE": "invalid",
-			},
-			want: &Config{
-				WatchDir:    "watched-dir",
-				URL:         "http://deltafi-core-service",
-				IngressAPI:  "/api/v2/deltafile/ingress",
-				Endpoint:    "http://deltafi-core-service/api/v2/deltafile/ingress",
-				Workers:     5,
-				BufferSize:  32 * 1024 * 1024, // Should use default
-				MaxFileSize: 2 * 1024 * 1024 * 1024,
-				RetryPeriod: 300,
-			},
-		},
+
 		{
 			name: "invalid max file size",
 			envVars: map[string]string{
-				"DELTAFI_MAX_FILE_SIZE": "invalid",
+				"DIRWATCHER_MAX_FILE_SIZE": "invalid",
 			},
 			want: &Config{
-				WatchDir:    "watched-dir",
-				URL:         "http://deltafi-core-service",
-				IngressAPI:  "/api/v2/deltafile/ingress",
-				Endpoint:    "http://deltafi-core-service/api/v2/deltafile/ingress",
-				Workers:     5,
-				BufferSize:  32 * 1024 * 1024,
-				MaxFileSize: 2 * 1024 * 1024 * 1024, // Should use default
-				RetryPeriod: 300,
+				WatchDir:     "watched-dir",
+				URL:          "http://deltafi-core-service",
+				IngressAPI:   "/api/v2/deltafile/ingress",
+				Endpoint:     "http://deltafi-core-service/api/v2/deltafile/ingress",
+				Workers:      20,
+				MaxFileSize:  4 * 1024 * 1024 * 1024,  // Should use default (4GB)
+				RetryPeriod:  300 * time.Second,       // 5 minutes
+				SettlingTime: 1000 * time.Millisecond, // 1 second
 			},
 		},
 		{
 			name: "invalid retry period",
 			envVars: map[string]string{
-				"DELTAFI_RETRY_PERIOD": "invalid",
+				"DIRWATCHER_RETRY_PERIOD": "invalid",
 			},
 			want: &Config{
-				WatchDir:    "watched-dir",
-				URL:         "http://deltafi-core-service",
-				IngressAPI:  "/api/v2/deltafile/ingress",
-				Endpoint:    "http://deltafi-core-service/api/v2/deltafile/ingress",
-				Workers:     5,
-				BufferSize:  32 * 1024 * 1024,
-				MaxFileSize: 2 * 1024 * 1024 * 1024,
-				RetryPeriod: 300, // Should use default
+				WatchDir:     "watched-dir",
+				URL:          "http://deltafi-core-service",
+				IngressAPI:   "/api/v2/deltafile/ingress",
+				Endpoint:     "http://deltafi-core-service/api/v2/deltafile/ingress",
+				Workers:      20,
+				MaxFileSize:  4 * 1024 * 1024 * 1024,  // 4GB
+				RetryPeriod:  300 * time.Second,       // Should use default (5 minutes)
+				SettlingTime: 1000 * time.Millisecond, // 1 second
 			},
 		},
 		{
@@ -178,14 +164,14 @@ func TestLoadConfig(t *testing.T) {
 			if got.Workers != tt.want.Workers {
 				t.Errorf("Workers = %v, want %v", got.Workers, tt.want.Workers)
 			}
-			if got.BufferSize != tt.want.BufferSize {
-				t.Errorf("BufferSize = %v, want %v", got.BufferSize, tt.want.BufferSize)
-			}
 			if got.MaxFileSize != tt.want.MaxFileSize {
 				t.Errorf("MaxFileSize = %v, want %v", got.MaxFileSize, tt.want.MaxFileSize)
 			}
 			if got.RetryPeriod != tt.want.RetryPeriod {
 				t.Errorf("RetryPeriod = %v, want %v", got.RetryPeriod, tt.want.RetryPeriod)
+			}
+			if got.SettlingTime != tt.want.SettlingTime {
+				t.Errorf("SettlingTime = %v, want %v", got.SettlingTime, tt.want.SettlingTime)
 			}
 		})
 	}

@@ -1,0 +1,14 @@
+.dirwatcher:
+  needs: []
+  variables:
+    PROJECT_NAME: deltafi-dirwatcher
+
+dirwatcher:docker:
+  extends:
+    - .dirwatcher
+    - .docker
+
+dirwatcher:docker-multiarch:
+  extends:
+    - .dirwatcher
+    - .docker-multiarch

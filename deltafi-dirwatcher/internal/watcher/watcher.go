@@ -43,12 +43,43 @@ type FileHandler interface {
 
 // DirWatcher watches directories for new files and processes them
 type DirWatcher struct {
-	config      *Config
-	watcher     *fsnotify.Watcher
-	handler     FileHandler
-	logger      *zap.Logger
-	watchList   sync.Map
-	metadataMap sync.Map // map[string]map[string]string - directory path to metadata
+	config         *Config
+	watcher        *fsnotify.Watcher
+	handler        FileHandler
+	logger         *zap.Logger
+	watchList      sync.Map
+	metadataMap    sync.Map // map[string]map[string]string - directory path to metadata
+	settlingFiles  sync.Map // map[string]*SettlingFile - path to settling file info
+	workerGroup    *errgroup.Group
+	delayQueue     *DelayQueue[*SettlingFile]
+	egressQueue    chan SettlingFile // Channel for settled files ready to be written out
+	egressWorkers  int
+	periodicTicker *time.Ticker // Ticker for periodic processExistingFiles invocation
+}
+
+type SettlingFile struct {
+	path      string
+	lastSize  int64
+	sameCount int
+	startTime time.Time
+	lastCheck time.Time
+}
+
+func (sf *SettlingFile) checkForChange() error {
+	fi, err := os.Stat(sf.path)
+	if err != nil {
+		return err
+	}
+
+	if fi.Size() == sf.lastSize {
+		sf.sameCount++
+	} else {
+		sf.lastSize = fi.Size()
+		sf.sameCount = 0
+	}
+	sf.lastCheck = time.Now()
+
+	return nil
 }
 
 // loadDefaultMetadata attempts to load default metadata from a directory and its parents
@@ -109,29 +140,165 @@ func NewDirWatcher(config *Config, handler FileHandler, logger *zap.Logger) (*Di
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
 
-	return &DirWatcher{
-		config:    config,
-		watcher:   watcher,
-		handler:   handler,
-		logger:    logger,
-		watchList: sync.Map{},
-	}, nil
+	dw := &DirWatcher{
+		config:        config,
+		watcher:       watcher,
+		handler:       handler,
+		logger:        logger,
+		watchList:     sync.Map{},
+		workerGroup:   &errgroup.Group{},
+		egressQueue:   make(chan SettlingFile, 10000), // Buffer size for the egress queue
+		egressWorkers: config.Workers,
+	}
+
+	// Create the delay queue with the settling file processor
+	dw.delayQueue = NewDelayQueue(func(sf *SettlingFile) error {
+		return dw.processSettlingFile(context.Background(), *sf)
+	}, logger)
+
+	return dw, nil
+}
+
+// addFileToDelayQueue adds a new file to the delay queue for settling monitoring
+func (dw *DirWatcher) addFileToDelayQueue(_ context.Context, path string) error {
+	// Check if file already exists
+	if _, exists := dw.settlingFiles.Load(path); exists {
+		return nil // Already being monitored
+	}
+
+	// Get initial file info
+	fi, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("file disappeared: %w", err)
+		}
+		return fmt.Errorf("failed to stat file: %w", err)
+	}
+
+	// Create new settling file entry
+	sf := SettlingFile{
+		path:      path,
+		lastSize:  fi.Size(),
+		sameCount: 0,
+		startTime: time.Now(),
+		lastCheck: time.Now(),
+	}
+
+	// Store in map
+	dw.settlingFiles.Store(path, &sf)
+
+	// Add to delay queue for initial 100ms delay
+	dw.delayQueue.Add(&sf, 100*time.Millisecond)
+
+	return nil
+}
+
+// processSettlingFile processes a settling file from the delay queue
+func (dw *DirWatcher) processSettlingFile(ctx context.Context, sf SettlingFile) error {
+	settlingDuration := dw.config.SettlingTime
+
+	// Check if file still exists
+	_, err := os.Stat(sf.path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			dw.settlingFiles.Delete(sf.path)
+			return fmt.Errorf("file disappeared while waiting for it to settle: %w", err)
+		}
+		dw.settlingFiles.Delete(sf.path)
+		return fmt.Errorf("failed to stat file: %w", err)
+	}
+
+	// Check for changes
+	if err := sf.checkForChange(); err != nil {
+		dw.settlingFiles.Delete(sf.path)
+		return fmt.Errorf("failed to check file for changes: %w", err)
+	}
+
+	// Update the settling file in the map
+	dw.settlingFiles.Store(sf.path, &sf)
+
+	// Check if the file has settled (sameCount * 100ms >= settling duration)
+	settledTime := time.Duration(sf.sameCount) * 100 * time.Millisecond
+	dw.logger.Debug("Checking file settling", zap.String("path", sf.path), zap.Int("sameCount", sf.sameCount), zap.Duration("settledTime", settledTime), zap.Duration("settlingDuration", settlingDuration))
+
+	if settledTime >= settlingDuration {
+		// File has settled, send to egress queue
+		dw.logger.Debug("File has settled, sending to egress queue", zap.String("path", sf.path), zap.Int("sameCount", sf.sameCount))
+		dw.settlingFiles.Delete(sf.path)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case dw.egressQueue <- sf:
+			return nil
+		}
+	}
+
+	dw.logger.Debug("File not settled yet", zap.String("path", sf.path), zap.Int("sameCount", sf.sameCount), zap.Duration("settlingDuration", settlingDuration))
+
+	// File hasn't settled yet, re-add to delay queue for another 100ms
+	dw.delayQueue.Add(&sf, 100*time.Millisecond)
+	return nil
 }
 
 // Start begins watching for new files
 func (dw *DirWatcher) Start(ctx context.Context) error {
-	// Create a worker pool
+	// Create a worker pool for event handling
 	g, ctx := errgroup.WithContext(ctx)
+
+	// Create a worker pool for egress file processing
+	for i := 0; i < dw.egressWorkers; i++ {
+		g.Go(func() error {
+			for {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case settlingFile, ok := <-dw.egressQueue:
+					if !ok {
+						return nil
+					}
+					if err := dw.processFile(ctx, settlingFile); err != nil {
+						dw.logger.Error("Failed to process egress file",
+							zap.String("file", settlingFile.path),
+							zap.Int("sameCount", settlingFile.sameCount),
+							zap.Duration("settlingTime", time.Since(settlingFile.startTime)),
+							zap.Error(err))
+					}
+				}
+			}
+		})
+	}
+
+	// Start the delay queue
+	dw.delayQueue.Start()
 
 	// Process existing files
 	g.Go(func() error {
 		return dw.processExistingFiles(ctx)
 	})
 
-	// Watch for new files
+	// Start periodic processExistingFiles every 10 minutes
+	dw.periodicTicker = time.NewTicker(10 * time.Minute)
 	g.Go(func() error {
-		return dw.handleEvents(ctx)
+		defer dw.periodicTicker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-dw.periodicTicker.C:
+				dw.logger.Info("Running periodic processExistingFiles")
+				if err := dw.processExistingFiles(ctx); err != nil {
+					dw.logger.Error("Failed to process existing files periodically", zap.Error(err))
+				}
+			}
+		}
 	})
+
+	// Watch for new files
+	for range 2 {
+		g.Go(func() error {
+			return dw.handleEvents(ctx)
+		})
+	}
 
 	// Start watching the root directory
 	if err := dw.watcher.Add(dw.config.WatchDir); err != nil {
@@ -184,9 +351,9 @@ func (dw *DirWatcher) processExistingFiles(ctx context.Context) error {
 			return nil
 		}
 
-		// Process regular files
-		if err := dw.processFile(ctx, path); err != nil {
-			dw.logger.Error("Failed to process existing file",
+		// Add existing files to delay queue for settling monitoring
+		if err := dw.addFileToDelayQueue(ctx, path); err != nil {
+			dw.logger.Error("Failed to add existing file to delay queue",
 				zap.String("file", path),
 				zap.Error(err))
 		}
@@ -243,8 +410,9 @@ func (dw *DirWatcher) handleEvents(ctx context.Context) error {
 							zap.Any("metadata", metadata))
 					}
 				} else {
-					if err := dw.processFile(ctx, event.Name); err != nil {
-						dw.logger.Error("Failed to process new file",
+					// Start monitoring the file for settling using delay queue
+					if err := dw.addFileToDelayQueue(ctx, event.Name); err != nil {
+						dw.logger.Error("Failed to add file to delay queue",
 							zap.String("file", event.Name),
 							zap.Error(err))
 					}
@@ -265,9 +433,9 @@ func (dw *DirWatcher) handleEvents(ctx context.Context) error {
 	}
 }
 
-func (dw *DirWatcher) processFile(ctx context.Context, path string) error {
+func (dw *DirWatcher) processFile(ctx context.Context, sf SettlingFile) error {
 	// Get file info for size check
-	fi, err := os.Stat(path)
+	fi, err := os.Stat(sf.path)
 	if err != nil {
 		return fmt.Errorf("failed to stat file: %w", err)
 	}
@@ -277,7 +445,7 @@ func (dw *DirWatcher) processFile(ctx context.Context, path string) error {
 	}
 
 	// Find the data source directory (first directory under watch dir)
-	relPath, err := filepath.Rel(dw.config.WatchDir, path)
+	relPath, err := filepath.Rel(dw.config.WatchDir, sf.path)
 	if err != nil {
 		return fmt.Errorf("failed to get relative path: %w", err)
 	}
@@ -289,7 +457,7 @@ func (dw *DirWatcher) processFile(ctx context.Context, path string) error {
 	}
 
 	// Load default metadata from the file's directory or its parents
-	if defaultMetadata := dw.loadDefaultMetadata(filepath.Dir(path)); defaultMetadata != nil {
+	if defaultMetadata := dw.loadDefaultMetadata(filepath.Dir(sf.path)); defaultMetadata != nil {
 		metadataJSON, err := json.Marshal(defaultMetadata)
 		if err != nil {
 			return fmt.Errorf("failed to marshal metadata: %w", err)
@@ -300,7 +468,11 @@ func (dw *DirWatcher) processFile(ctx context.Context, path string) error {
 		result["metadata"] = "{}"
 	}
 
-	return dw.handler.HandleFile(ctx, path, result)
+	if err := dw.handler.HandleFile(ctx, sf.path, result); err != nil {
+		dw.delayQueue.Add(&sf, dw.config.RetryPeriod)
+	}
+
+	return nil
 }
 
 func (dw *DirWatcher) scanImmediateSubDirs() error {
@@ -383,5 +555,16 @@ func isMetadataFile(path string) bool {
 
 // Stop stops the watcher and cleans up resources
 func (dw *DirWatcher) Stop() error {
+	// Stop the delay queue
+	dw.delayQueue.Stop()
+
+	// Stop the periodic ticker
+	if dw.periodicTicker != nil {
+		dw.periodicTicker.Stop()
+	}
+
+	// Close egress queue
+	close(dw.egressQueue)
+
 	return dw.watcher.Close()
 }

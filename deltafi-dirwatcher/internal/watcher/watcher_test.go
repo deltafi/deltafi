@@ -94,11 +94,12 @@ func TestDirWatcher_ProcessExistingFiles(t *testing.T) {
 	}
 
 	config := &Config{
-		WatchDir:    tmpDir,
-		Endpoint:    "http://test",
-		Workers:     1,
-		BufferSize:  1024,
-		MaxFileSize: 1024 * 1024,
+		WatchDir:     tmpDir,
+		Endpoint:     "http://test",
+		Workers:      1,
+		BufferSize:   1024,
+		MaxFileSize:  1024 * 1024,
+		SettlingTime: 50, // Use a short settling time for testing
 	}
 
 	handler := NewMockFileHandler()
@@ -110,10 +111,24 @@ func TestDirWatcher_ProcessExistingFiles(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Process existing files
+	// Start the watcher to process settling files and egress queue
+	go func() {
+		if err := watcher.Start(ctx); err != nil && err != context.Canceled {
+			t.Errorf("Unexpected error from watcher.Start(): %v", err)
+		}
+	}()
+
+	// Wait for watcher to start
+	time.Sleep(100 * time.Millisecond)
+
+	// Process existing files (now adds them to delay queue)
 	if err := watcher.processExistingFiles(ctx); err != nil {
 		t.Fatalf("Failed to process existing files: %v", err)
 	}
+
+	// Wait for files to settle and be processed
+	// With 50ms settling time, we need to wait at least 100ms (2 * settling time)
+	time.Sleep(300 * time.Millisecond)
 
 	// Verify handled files
 	handledFiles := handler.GetHandledFiles()
@@ -144,11 +159,12 @@ func TestDirWatcher_HandleEvents(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	config := &Config{
-		WatchDir:    tmpDir,
-		Endpoint:    "http://test",
-		Workers:     1,
-		BufferSize:  1024,
-		MaxFileSize: 1024 * 1024,
+		WatchDir:     tmpDir,
+		Endpoint:     "http://test",
+		Workers:      1,
+		BufferSize:   1024,
+		MaxFileSize:  1024 * 1024,
+		SettlingTime: 50, // Use a short settling time for testing
 	}
 
 	handler := NewMockFileHandler()
@@ -190,8 +206,8 @@ func TestDirWatcher_HandleEvents(t *testing.T) {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
-	// Wait for file to be processed
-	time.Sleep(100 * time.Millisecond)
+	// Wait for file to be processed (needs time for settling and egress processing)
+	time.Sleep(500 * time.Millisecond)
 
 	// Cancel context and wait for watcher to stop
 	cancel()
@@ -246,7 +262,17 @@ func TestDirWatcher_FileSizeLimit(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	err = watcher.processFile(ctx, largeFile)
+
+	// Create SettlingFile for large file
+	largeSettlingFile := SettlingFile{
+		path:      largeFile,
+		lastSize:  0,
+		sameCount: 0,
+		startTime: time.Now(),
+		lastCheck: time.Now(),
+	}
+
+	err = watcher.processFile(ctx, largeSettlingFile)
 	if err == nil {
 		t.Error("Expected error for file size limit, got nil")
 	}
@@ -257,7 +283,16 @@ func TestDirWatcher_FileSizeLimit(t *testing.T) {
 		t.Fatalf("Failed to create small file: %v", err)
 	}
 
-	err = watcher.processFile(ctx, smallFile)
+	// Create SettlingFile for small file
+	smallSettlingFile := SettlingFile{
+		path:      smallFile,
+		lastSize:  0,
+		sameCount: 0,
+		startTime: time.Now(),
+		lastCheck: time.Now(),
+	}
+
+	err = watcher.processFile(ctx, smallSettlingFile)
 	if err != nil {
 		t.Errorf("Unexpected error for small file: %v", err)
 	}
@@ -335,8 +370,8 @@ priority: high
 		watcherErrCh <- watcher.Start(ctx)
 	}()
 
-	// Wait for initial processing
-	time.Sleep(100 * time.Millisecond)
+	// Wait for initial processing (files need time to settle)
+	time.Sleep(300 * time.Millisecond)
 
 	// Verify handled files and their metadata
 	handledFiles := handler.GetHandledFiles()
@@ -405,8 +440,8 @@ newfield: value
 		t.Fatalf("Failed to create new test file: %v", err)
 	}
 
-	// Wait for file processing
-	time.Sleep(100 * time.Millisecond)
+	// Wait for file processing (files need time to settle)
+	time.Sleep(300 * time.Millisecond)
 
 	// Verify the new file has updated metadata
 	handledFiles = handler.GetHandledFiles()

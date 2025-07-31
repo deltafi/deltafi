@@ -5,12 +5,12 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
-BINARY_NAME=deltafi-file-ingress
+BINARY_NAME=deltafi-dirwatcher
 
 all: test build
 
 build:
-	$(GOBUILD) -o $(BINARY_NAME) cmd/deltafi-file-ingress/main.go
+	$(GOBUILD) -o $(BINARY_NAME) cmd/deltafi-dirwatcher/main.go
 
 test:
 	$(GOTEST) -v ./...
@@ -20,7 +20,7 @@ clean:
 	rm -f $(BINARY_NAME)
 
 docker:
-	docker build -t deltafi-file-ingress .
+	docker build -t deltafi-dirwatcher .
 
 docker-test:
 	docker build --target test .

@@ -1,4 +1,4 @@
-# DeltaFi File Ingress Service
+# DeltaFi Directory Watcher Service
 
 A service that watches directories for new files and forwards them to a specified HTTP endpoint.
 
@@ -80,13 +80,13 @@ In this example:
 
 Configuration is provided via environment variables:
 
-- `DELTAFI_WATCH_DIR` - Directory to watch for new files (default: "/watched-dir")
+- `DIRWATCHER_WATCH_DIR` - Directory to watch for new files (default: "/watched-dir")
 - `DELTAFI_URL` - Base URL of the DeltaFi core service (default: "http://deltafi-core-service")
 - `DELTAFI_INGRESS_API` - API endpoint path for file ingress (default: "/api/v2/deltafile/ingress")
-- `DELTAFI_WORKERS` - Number of concurrent file processing workers (default: 5)
-- `DELTAFI_BUFFER_SIZE` - Buffer size for file streaming in bytes (default: 32MB)
-- `DELTAFI_MAX_FILE_SIZE` - Maximum allowed file size in bytes (default: 2GB)
-- `DELTAFI_RETRY_PERIOD` - Period in seconds between retry attempts for failed uploads (default: 300)
+- `DIRWATCHER_WORKERS` - Number of concurrent file processing workers (default: 5)
+- `DIRWATCHER_BUFFER_SIZE` - Buffer size for file streaming in bytes (default: 32MB)
+- `DIRWATCHER_MAX_FILE_SIZE` - Maximum allowed file size in bytes (default: 2GB)
+- `DIRWATCHER_RETRY_PERIOD` - Period in seconds between retry attempts for failed uploads (default: 300)
 
 ## Usage
 
@@ -97,7 +97,7 @@ Configuration is provided via environment variables:
 
 2. Start the service:
    ```bash
-   go run cmd/deltafi-file-ingress/main.go
+   go run cmd/deltafi-dirwatcher/main.go
    ```
 
 3. Create data source directories inside the watch directory:
@@ -111,14 +111,14 @@ Configuration is provided via environment variables:
 ## Building
 
 ```bash
-go build -o deltafi-file-ingress cmd/deltafi-file-ingress/main.go
+go build -o deltafi-dirwatcher cmd/deltafi-dirwatcher/main.go
 ```
 
 ## Docker
 
 Build the Docker image:
 ```bash
-docker build -t deltafi-file-ingress .
+docker build -t deltafi-dirwatcher .
 ```
 
 Run the container:
@@ -126,9 +126,9 @@ Run the container:
 docker run -v /path/to/watch:/watched-dir \
   -e DELTAFI_URL=http://deltafi-core-service \
   -e DELTAFI_INGRESS_API=/api/v2/deltafile/ingress \
-  -e DELTAFI_MAX_FILE_SIZE=2147483648 \
-  -e DELTAFI_RETRY_PERIOD=300 \
-  deltafi-file-ingress
+  -e DIRWATCHER_MAX_FILE_SIZE=2147483648 \
+  -e DIRWATCHER_RETRY_PERIOD=300 \
+  deltafi-dirwatcher
 ```
 
 ## Docker Compose
@@ -138,17 +138,17 @@ Example docker-compose.yml:
 version: '3.8'
 
 services:
-  file-ingress:
+  dirwatcher:
     build: .
     volumes:
       - ./watched-dir:/watched-dir
     environment:
       - DELTAFI_URL=http://deltafi-core-service
       - DELTAFI_INGRESS_API=/api/v2/deltafile/ingress
-      - DELTAFI_WORKERS=10
-      - DELTAFI_BUFFER_SIZE=33554432
-      - DELTAFI_MAX_FILE_SIZE=2147483648
-      - DELTAFI_RETRY_PERIOD=300
+      - DIRWATCHER_WORKERS=10
+      - DIRWATCHER_BUFFER_SIZE=33554432
+      - DIRWATCHER_MAX_FILE_SIZE=2147483648
+      - DIRWATCHER_RETRY_PERIOD=300
     restart: unless-stopped
 ```
 

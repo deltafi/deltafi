@@ -15,8 +15,12 @@ deltafi:
           Add files to the site/values.yaml at deltafi.auth.config to inject files here
   api:
     workers: 8
-  file_ingress:
+  dirwatcher:
     enabled: true
+    workers: 20             # Number of worker threads to process files
+    maxFileSize: 4294967296 # 4GB default
+    retryPeriod: 300        # Seconds to wait before retrying a failed file post
+    settlingTime: 1000      # Milliseconds to wait for file to stabilize before posting
   egress_sink:
     drop_metadata: false
     enabled: true
