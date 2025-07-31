@@ -14,6 +14,7 @@ deltafi:
       HTTP_MAX_BODY_SIZE: 5G
   egress_sink:
     enabled: true
+    drop_metadata: false
   clustermonitor:
     enabled: true
 ingress:

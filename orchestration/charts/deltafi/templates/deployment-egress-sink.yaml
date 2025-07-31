@@ -31,6 +31,8 @@ spec:
         env:
         - name: WORKERS
           value: {{ default "8" .Values.deltafi.egress_sink.workers | quote }}
+        - name: EGRESS_SINK_DROP_METADATA
+          value: {{ default "false" .Values.deltafi.egress_sink.drop_metadata | quote }}
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}

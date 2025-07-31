@@ -21,6 +21,7 @@ deltafi:
       url: http://127.0.0.1:8080/
   egress_sink:
     enabled: true
+    drop_metadata: false
     image: deltafi/deltafi-egress-sink:2.25.4
   nodemonitor:
     image: deltafi/deltafi-nodemonitor:2.25.4

@@ -19,7 +19,6 @@ package main
 
 import (
 	"bufio"
-	"deltafi.org/deltafi_egress_sink/logger"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,11 +26,15 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"deltafi.org/deltafi_egress_sink/logger"
 )
 
 const (
 	outputDir = "/data/deltafi/egress-sink"
 )
+
+var dropMetadata bool
 
 type Metadata struct {
 	Filename string `json:"filename"`
@@ -39,6 +42,12 @@ type Metadata struct {
 }
 
 func main() {
+	dropMetadataEnv := os.Getenv("EGRESS_SINK_DROP_METADATA")
+	dropMetadata = dropMetadataEnv == "true" || dropMetadataEnv == "yes"
+	if dropMetadata {
+		logger.Info("EGRESS_SINK_DROP_METADATA is enabled - metadata files will not be saved")
+	}
+
 	logger.Info("Starting server on :80")
 	http.HandleFunc("/probe", func(w http.ResponseWriter, r *http.Request) {})
 	http.HandleFunc("/blackhole", blackholeHandler)
@@ -95,22 +104,39 @@ func fileSinkHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := saveFile(metadata, r.Method, r.Body, metadataJSON); err != nil {
-		logger.Error("Error saving file: %v", err)
-		http.Error(w, fmt.Sprintf("Error saving file: %v", err), http.StatusInternalServerError)
+	flowPath := filepath.Join(outputDir, metadata.Flow)
+	if err := os.MkdirAll(flowPath, os.ModePerm); err != nil {
+		logger.Error("Error creating directory: %v", err)
+		http.Error(w, fmt.Sprintf("Error creating directory: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	filePath := filepath.Join(flowPath, filepath.Base(metadata.Filename))
+
+	// Save the content
+	if err := saveContent(filePath, r.Body); err != nil {
+		logger.Error("Error saving content: %v", err)
+		http.Error(w, fmt.Sprintf("Error saving content: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Save the metadata (unless dropMetadata global is true)
+	if !dropMetadata {
+		if err := saveMetadata(filePath, r.Method, metadataJSON); err != nil {
+			logger.Error("Error saving metadata: %v", err)
+			http.Error(w, fmt.Sprintf("Error saving metadata: %v", err), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		logger.Info("Skipping metadata save due to DROP_METADATA environment variable")
+	}
+
+	logger.Info("File %s saved", filePath)
 	w.Header().Set("Content-Length", "0")
 	w.WriteHeader(http.StatusOK)
 }
 
-func saveFile(metadata Metadata, method string, body io.ReadCloser, metadataJSON string) error {
-	flowPath := filepath.Join(outputDir, metadata.Flow)
-	if err := os.MkdirAll(flowPath, os.ModePerm); err != nil {
-		return fmt.Errorf("error creating directory: %w", err)
-	}
-
-	filePath := filepath.Join(flowPath, filepath.Base(metadata.Filename))
+func saveContent(filePath string, body io.ReadCloser) error {
 	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("error creating file: %w", err)
@@ -122,11 +148,6 @@ func saveFile(metadata Metadata, method string, body io.ReadCloser, metadataJSON
 		}
 	}(file)
 
-	metadataPath := filePath + "." + method + ".metadata.json"
-	if err := os.WriteFile(metadataPath, []byte(metadataJSON), os.ModePerm); err != nil {
-		return fmt.Errorf("error writing metadata file: %w", err)
-	}
-
 	writer := bufio.NewWriterSize(file, 128*1024)
 	if _, err := io.Copy(writer, body); err != nil {
 		return fmt.Errorf("error writing to file: %w", err)
@@ -136,6 +157,13 @@ func saveFile(metadata Metadata, method string, body io.ReadCloser, metadataJSON
 		return fmt.Errorf("error flushing buffer: %w", err)
 	}
 
-	logger.Info("File %s saved", filePath)
+	return nil
+}
+
+func saveMetadata(filePath, method, metadataJSON string) error {
+	metadataPath := filePath + "." + method + ".metadata.json"
+	if err := os.WriteFile(metadataPath, []byte(metadataJSON), os.ModePerm); err != nil {
+		return fmt.Errorf("error writing metadata file: %w", err)
+	}
 	return nil
 }

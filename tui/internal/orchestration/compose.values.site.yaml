@@ -18,6 +18,7 @@ deltafi:
   file_ingress:
     enabled: true
   egress_sink:
+    drop_metadata: false
     enabled: true
 ingress:
   domain: local.deltafi.org

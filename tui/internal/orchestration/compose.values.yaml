@@ -32,6 +32,7 @@ deltafi:
     image: {{.Repo}}/deltafi-file-ingress:{{.Tag}}
   egress_sink:
     enabled: true
+    drop_metadata: false
     image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
   nodemonitor:
     image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
