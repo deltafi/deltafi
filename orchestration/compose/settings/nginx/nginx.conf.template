@@ -169,9 +169,6 @@ http {
         location / {
             client_max_body_size 10G;
             proxy_pass           http://deltafi-core;
-            proxy_connect_timeout 5s;
-            proxy_send_timeout 5s;
-            proxy_read_timeout 5s;
             proxy_buffering off;
         }
     }
