@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.26.1] - 2025-08-01
+
+### Changed
+- System plugin variables now act as global values that apply across all flows. When both system and plugin variables exist, plugin variables take priority.
+
+### Fixed
+- Timeout issue that kept long running graphql calls from completing in the TUI
+
 ## [2.26.0] - 2025-08-01
 
 ### Added
@@ -4483,7 +4491,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.1...main
+[2.26.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.0...2.26.1
 [2.26.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.4...2.26.0
 [2.25.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.3...2.25.4
 [2.25.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.2...2.25.3
