@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.26.0] - 2025-08-01
+
+### Added
+- New bulk acknowledge `acknowledgeMatching` GraphQL endpoint allows acknowledge by `DeltaFilesFilter`
+- Egress sink can be configured to drop metadata instead of writing to disk as a separate JSON file
+- Dirwatcher will respond to DIRWATCHER_SETTLING_TIME environment variable to set the polling period for accepting a file
+- Created a new permission `DeltaFilePinning`
+
+### Changed
+- File ingress service renamed dirwatcher
+- Dirwatcher will periodically sweep watch dirs to pick up files that failed to generate os filesystem events
+- Updated the `pin` and `unpin` mutations to requrie the `DeltaFilePinning` permission (was `DeletePolicyDelete`)
+
+### Fixed
+- Fixed issue where dirwatcher would prematurely pick up a partial file and publish it
+
+### Upgrade and Migration
+- Installer should add the new permission `DeltaFilePinning` to the approprirate roles
+
 ## [2.25.4] - 2025-07-24
 
 ### Added
@@ -4464,7 +4483,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.4...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.0...main
+[2.26.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.4...2.26.0
 [2.25.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.3...2.25.4
 [2.25.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.2...2.25.3
 [2.25.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.1...2.25.2
