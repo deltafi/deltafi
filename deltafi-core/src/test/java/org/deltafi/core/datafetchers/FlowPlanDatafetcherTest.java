@@ -22,11 +22,7 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.generated.types.RateLimitInput;
 import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.services.*;
-import org.deltafi.core.validation.DataSinkPlanValidator;
-import org.deltafi.core.validation.OnErrorDataSourcePlanValidator;
-import org.deltafi.core.validation.RestDataSourcePlanValidator;
-import org.deltafi.core.validation.TimedDataSourcePlanValidator;
-import org.deltafi.core.validation.TransformFlowPlanValidator;
+import org.deltafi.core.validation.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,9 +48,6 @@ class FlowPlanDatafetcherTest {
 
     @Mock
     private AnnotationService annotationService;
-
-    @Mock
-    private PluginVariableService pluginVariableService;
 
     @Mock
     private TimedDataSourceService timedDataSourceService;
@@ -95,7 +88,6 @@ class FlowPlanDatafetcherTest {
                 restDataSourceService,
                 transformFlowService,
                 annotationService,
-                pluginVariableService,
                 timedDataSourceService,
                 onErrorDataSourceService,
                 auditLogger,

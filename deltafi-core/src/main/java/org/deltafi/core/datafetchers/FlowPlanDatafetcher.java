@@ -54,7 +54,6 @@ public class FlowPlanDatafetcher {
     private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
     private final AnnotationService annotationService;
-    private final PluginVariableService pluginVariableService;
     private final TimedDataSourceService timedDataSourceService;
     private final OnErrorDataSourceService onErrorDataSourceService;
     private final CoreAuditLogger auditLogger;
@@ -316,7 +315,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.PluginVariableUpdate
     public boolean savePluginVariables(@InputArgument List<Variable> variables) {
         auditLogger.audit("saved plugin variables {}", CoreAuditLogger.listToString(variables, Variable::getName));
-        pluginVariableService.validateAndSaveVariables(pluginService.getSystemPluginCoordinates(), variables);
+        pluginService.saveSystemVariables(variables);
         return true;
     }
 
@@ -324,7 +323,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.PluginVariableUpdate
     public boolean removePluginVariables() {
         auditLogger.audit("removed system plugin variables");
-        pluginVariableService.removeVariables(pluginService.getSystemPluginCoordinates());
+        pluginService.removeSystemVariables();
         return true;
     }
 

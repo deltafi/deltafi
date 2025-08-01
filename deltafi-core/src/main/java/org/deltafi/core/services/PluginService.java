@@ -244,15 +244,43 @@ public class PluginService implements Snapshotter {
     public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
         VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (update.isUpdated()) {
-            List<FlowPlan> flowPlans = getPlugin(pluginCoordinates).map(PluginEntity::getFlowPlans).orElse(List.of());
-            dataSinkService.rebuildFlows(filterByType(flowPlans, FlowType.DATA_SINK), pluginCoordinates);
-            transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates);
-            restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates);
-            timedDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.TIMED_DATA_SOURCE), pluginCoordinates);
-            onErrorDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.ON_ERROR_DATA_SOURCE), pluginCoordinates);
+            if (pluginCoordinates.equalsIgnoreVersion(PluginCoordinates.builder().groupId(SYSTEM_PLUGIN_GROUP_ID).artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).build())) {
+                rebuildAllFlows();
+            } else {
+                getPlugin(pluginCoordinates).ifPresent(this::rebuildFlows);
+            }
         }
 
         return update.isUpdated();
+    }
+
+    @Transactional
+    public void saveSystemVariables(List<Variable> variables) {
+        pluginVariableService.validateAndSaveVariables(getSystemPluginCoordinates(), variables);
+        rebuildAllFlows();
+    }
+
+    @Transactional
+    public void removeSystemVariables() {
+        pluginVariableService.removeVariables(getSystemPluginCoordinates());
+        rebuildAllFlows();
+    }
+
+    public void rebuildAllFlows() {
+        getPlugins().forEach(this::rebuildFlows);
+    }
+
+    private void rebuildFlows(PluginEntity plugin) {
+        if (plugin.getFlowPlans() == null || plugin.getFlowPlans().isEmpty()) {
+            return;
+        }
+        List<FlowPlan> flowPlans = plugin.getFlowPlans();
+        PluginCoordinates pluginCoordinates = plugin.getPluginCoordinates();
+        dataSinkService.rebuildFlows(filterByType(flowPlans, FlowType.DATA_SINK), pluginCoordinates);
+        transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates);
+        restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates);
+        timedDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.TIMED_DATA_SOURCE), pluginCoordinates);
+        onErrorDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.ON_ERROR_DATA_SOURCE), pluginCoordinates);
     }
 
     private List<FlowPlan> filterByType(List<FlowPlan> flowPlans, FlowType flowType) {
@@ -396,7 +424,7 @@ public class PluginService implements Snapshotter {
     }
 
     private void addVariables(PluginEntity plugin) {
-        List<Variable> variables = pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates());
+        List<Variable> variables = pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates(), false);
 
         if (!DeltaFiUserService.currentUserCanViewMasked()) {
             variables = variables.stream().map(Variable::maskIfSensitive).toList();

@@ -100,6 +100,42 @@ class PluginVariableServiceTest {
         assertThat(result.getErrors()).isEmpty();
     }
 
+    @Test
+    void combineVars_usePluginSpecific() {
+        Variable pluginVar = Variable.builder().name("var").value("pluginValue").build();
+        Variable globalVar = Variable.builder().name("var").value("globalValue").build();
+
+        assertThat(testCombine(pluginVar, globalVar)).hasSize(1).containsExactly(pluginVar);
+    }
+
+    @Test
+    void combineVars_useGlobal() {
+        Variable pluginVar = Variable.builder().name("var").defaultValue("defaultValue").build();
+        Variable globalVar = Variable.builder().name("var").value("globalValue").defaultValue("globalDefaultValue").build();
+
+        assertThat(testCombine(pluginVar, globalVar)).hasSize(1).containsExactly(globalVar);
+    }
+
+    @Test
+    void combineVars_usePluginDefault() {
+        Variable pluginVar = Variable.builder().name("var").defaultValue("pluginDefaultValue").build();
+        Variable globalVar = Variable.builder().name("var").defaultValue("globalDefaultValue").build();
+
+        assertThat(testCombine(pluginVar, globalVar)).hasSize(1).containsExactly(pluginVar);
+    }
+
+    @Test
+    void combineVars_useGlobalDefault() {
+        Variable pluginVar = Variable.builder().name("var").build();
+        Variable globalVar = Variable.builder().name("var").defaultValue("globalDefaultValue").build();
+
+        assertThat(testCombine(pluginVar, globalVar)).hasSize(1).containsExactly(globalVar);
+    }
+
+    private List<Variable> testCombine(Variable pluginVar, Variable globalVar) {
+        return pluginVariableService.getCombinedVariables(List.of(pluginVar), List.of(globalVar));
+    }
+
     PluginVariables pluginVariables(String artifact) {
         PluginVariables pluginVariablesToKeep = new PluginVariables();
         pluginVariablesToKeep.setVariables(new ArrayList<>());

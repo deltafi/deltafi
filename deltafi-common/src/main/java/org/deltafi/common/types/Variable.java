@@ -43,6 +43,10 @@ public class Variable {
     return null != value;
   }
 
+  public boolean hasDefaultValue() {
+    return null != defaultValue;
+  }
+
   public Variable maskIfSensitive() {
     return masked ? copyWithMaskedValue() : this;
   }

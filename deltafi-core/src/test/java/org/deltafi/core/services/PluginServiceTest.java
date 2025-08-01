@@ -196,8 +196,7 @@ class PluginServiceTest {
         String same = hashPlugin("description", Collections.emptyList());
         String different = hashPlugin("description!!", Collections.emptyList());
 
-        assertThat(orig).isEqualTo(same);
-        assertThat(orig).isNotEqualTo(different);
+        assertThat(orig).isEqualTo(same).isNotEqualTo(different);
     }
 
     private RestDataSourcePlan makeRestDataSourcePlan(Map<String, String> annotations) {
@@ -224,8 +223,7 @@ class PluginServiceTest {
         String different = hashPlugin("desc",
                 List.of(makeRestDataSourcePlan(Map.of("a", "Z"))));
 
-        assertThat(orig).isEqualTo(same);
-        assertThat(orig).isNotEqualTo(different);
+        assertThat(orig).isEqualTo(same).isNotEqualTo(different);
     }
 
     @Test
@@ -450,7 +448,7 @@ class PluginServiceTest {
         Variable variable = UtilService.buildNewVariable("setValue");
         one.setVariables(List.of(variable));
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
-        Mockito.when(pluginVariableService.getVariablesByPlugin(Mockito.any())).thenReturn(variableList());
+        Mockito.when(pluginVariableService.getVariablesByPlugin(Mockito.any(), Mockito.eq(false))).thenReturn(variableList());
 
         userDetailsServiceMockedStatic.when(DeltaFiUserService::currentUserCanViewMasked).thenReturn(isAdmin);
         List<PluginEntity> plugins = pluginService.getPluginsWithVariables();

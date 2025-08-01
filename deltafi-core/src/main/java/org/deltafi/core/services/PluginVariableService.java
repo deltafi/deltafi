@@ -25,18 +25,20 @@ import org.deltafi.core.types.*;
 import org.deltafi.core.repo.PluginVariableRepo;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ID;
+import static org.deltafi.core.services.PluginService.*;
 
 @Service
 @AllArgsConstructor
 public class PluginVariableService implements PluginCleaner, Snapshotter {
     private final PluginVariableRepo pluginVariableRepo;
+    private final BuildProperties buildProperties;
 
     /**
      * Find the variables with the given PluginCoordinates
@@ -44,9 +46,44 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
      * @return variables for the given plugin
      */
     public List<Variable> getVariablesByPlugin(PluginCoordinates pluginCoordinates) {
-        return pluginVariableRepo.findBySourcePlugin(pluginCoordinates)
-                .map(PluginVariables::getVariables)
-                .orElse(Collections.emptyList());
+        return getVariablesByPlugin(pluginCoordinates, true);
+    }
+
+    /**
+     * Find the variables with the given PluginCoordinates
+     * @param pluginCoordinates identifier of the plugin these variables belong too
+     * @param includeGlobal include the global parameters in the list
+     * @return variables for the given plugin
+     */
+    public List<Variable> getVariablesByPlugin(PluginCoordinates pluginCoordinates, boolean includeGlobal) {
+        List<Variable> pluginVariables = pluginVariableRepo.findBySourcePlugin(pluginCoordinates)
+                .map(PluginVariables::getVariables).orElse(Collections.emptyList());
+
+        return !includeGlobal ? pluginVariables : getCombinedVariables(pluginVariables, getGlobalVariables());
+    }
+
+    public List<Variable> getCombinedVariables(List<Variable> pluginSpecificVariables, List<Variable> globalVariables) {
+        Map<String, Variable> variableMap = pluginSpecificVariables.stream()
+                .collect(Collectors.toMap(Variable::getName, Function.identity(), (a,b) -> b, HashMap::new));
+
+        for (Variable variable : globalVariables) {
+            Variable pluginSpecificVariable = variableMap.get(variable.getName());
+            // plugin specific value is populated use it
+            if (pluginSpecificVariable != null && pluginSpecificVariable.hasValue()) {
+                continue;
+            }
+
+            if (pluginSpecificVariable == null || variable.hasValue() || (!pluginSpecificVariable.hasDefaultValue() && variable.hasDefaultValue())) {
+                variableMap.put(variable.getName(), variable);
+            }
+        }
+
+        return new ArrayList<>(variableMap.values());
+    }
+
+    List<Variable> getGlobalVariables() {
+        return pluginVariableRepo.findBySourcePlugin(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID, buildProperties.getVersion())
+                .map(PluginVariables::getVariables).orElse(List.of());
     }
 
     public void validateAndSaveVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
