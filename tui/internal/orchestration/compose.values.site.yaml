@@ -2,6 +2,9 @@
 # To restore to defaults, remove this file and run 'deltafi up'
 ---
 deltafi:
+  core:
+    ssl:
+      secret: ssl-secret
   core_worker:
     enabled: true
     replicas: 0
@@ -9,10 +12,13 @@ deltafi:
     replicas: 1
   auth:
     mode: disabled # basic, cert, or disabled
+    secret: auth-secret
     entityResolver:
       config:
         README: |-
           Add files to the site/values.yaml at deltafi.auth.config to inject files here
+      ssl:
+        secret: ssl-secret
   api:
     workers: 8
   dirwatcher:
@@ -24,10 +30,15 @@ deltafi:
   egress_sink:
     drop_metadata: false
     enabled: true
+  plugins:
+    ssl:
+      secret: ssl-secret
 ingress:
   domain: local.deltafi.org
   tls:
     enabled: false
+    secrets:
+      default: ssl-secret
   ui:
     http_port: 80
     https_port: 443

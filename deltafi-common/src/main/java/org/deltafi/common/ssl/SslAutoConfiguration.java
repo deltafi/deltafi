@@ -41,8 +41,8 @@ public class SslAutoConfiguration {
             @Value("${KEY_PASSWORD:null}") String keyPass) {
 
         PemSslBundleProperties properties = new PemSslBundleProperties();
-        if (filesExist(keyPath, certPath, caChainPath)) {
-            log.info("Configuring the SSLContextProvider from key: '{}', certificate: '{}' and ca chain: '{}' with a protocol of '{}'", keyPath, certPath, caChainPath, protocol);
+        if (filesExist(keyPath, certPath)) {
+            log.info("Configuring the SSLContextProvider from key: '{}' and certificate: '{}' with a protocol of '{}'", keyPath, certPath, protocol);
             properties.setProtocol(protocol);
             properties.getKey().setAlias("ssl");
 
@@ -51,7 +51,10 @@ public class SslAutoConfiguration {
             keyStore.setCertificate(certPath);
             keyStore.setPrivateKeyPassword(keyPass);
 
-            properties.getTruststore().setCertificate(caChainPath);
+            if (filesExist(caChainPath)) {
+                log.info("Configuring the SSLContextProvider truststore from ca chain: '{}'", caChainPath);
+                properties.getTruststore().setCertificate(caChainPath);
+            }
         } else {
             log.info("Skipping SSL Setup - key and cert files were not found");
         }

@@ -25,10 +25,7 @@ import org.deltafi.core.plugin.deployer.K8sDeployerService;
 import org.deltafi.core.plugin.deployer.PodService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.credential.SecretCredentialProvider;
-import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.services.EventService;
-import org.deltafi.core.services.PluginService;
-import org.deltafi.core.services.SystemSnapshotService;
+import org.deltafi.core.services.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
 import org.springframework.boot.cloud.CloudPlatform;
 import org.springframework.context.annotation.Bean;
@@ -48,8 +45,13 @@ public class K8sConfiguration {
     }
 
     @Bean
-    public CredentialProvider credentialProvider(KubernetesClient kubernetesClient) {
-        return new SecretCredentialProvider(kubernetesClient);
+    public CredentialProvider credentialProvider(KubernetesClient kubernetesClient, CertificateInfoService certificateInfoService, SslSecretNames sslSecretNames) {
+        return new SecretCredentialProvider(kubernetesClient, certificateInfoService, sslSecretNames);
+    }
+
+    @Bean
+    public SslConfigService sslConfigService(KubernetesClient kubernetesClient, CertificateInfoService certificateInfoService, SslSecretNames sslSecretNames) {
+        return (SslConfigService) credentialProvider(kubernetesClient, certificateInfoService, sslSecretNames);
     }
 
     @Bean

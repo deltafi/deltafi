@@ -45,7 +45,8 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
-      - ${SECRETS_DIR}/ssl.env
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_CORE_SSL:-ssl-secret}/.env
+        required: false
     <<: *relaxed-health-probe
     labels:
       deltafi-group: deltafi-core
@@ -58,7 +59,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${DATA_DIR}/certs:/certs
+      - ${DATA_DIR}/certs:/certs:rw
   core-worker:
     image: ${DELTAFI_CORE}
     profiles: ["worker"]
@@ -82,7 +83,8 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
-      - ${SECRETS_DIR}/ssl.env
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_CORE_SSL:-ssl-secret}/.env
+        required: false
     <<: *relaxed-health-probe
     labels:
       deltafi-group: deltafi-core
@@ -94,12 +96,13 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${DATA_DIR}/certs:/certs
+      - ${DATA_DIR}/certs:/certs:rw
   deltafi-entity-resolver:
     image: ${DELTAFI_ENTITY_RESOLVER}
     container_name: deltafi-entity-resolver
     env_file:
-      - ${SECRETS_DIR}/ssl.env
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}/.env
+        required: false
     expose:
       - "${ENTITY_RESOLVER_PORT}"
     labels:
@@ -111,7 +114,7 @@ services:
     profiles: ["entity-resolver"]
     volumes:
       - ${DATA_DIR}/entityResolver:/config
-      - ${DATA_DIR}/certs:/certs
+      - ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}:/certs
   core-actions:
     image: ${DELTAFI_CORE_ACTIONS}
     # container_name: deltafi-core-actions
@@ -122,7 +125,8 @@ services:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
-      - ${SECRETS_DIR}/ssl.env
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_PLUGINS_SSL:-ssl-secret}/.env
+        required: false
     healthcheck:
       test: cat /tmp/running
       interval: 30s
@@ -138,7 +142,7 @@ services:
     restart: unless-stopped
     user: "${USER_ID}:${GROUP_ID}"
     volumes:
-      - ${DATA_DIR}/certs:/certs
+      - ${DATA_DIR}/certs/${DELTAFI_SECRET_PLUGINS_SSL:-ssl-secret}:/certs
   deltafi-nodemonitor:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
@@ -447,7 +451,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/nginx/conf:/opt/nginx
-      - ${DATA_DIR}/certs:/certs
+      - ${DATA_DIR}/certs/${DELTAFI_SECRET_INGRESS_SSL:-ssl-secret}:/certs
       - ${SETTINGS_DIR}/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
     ports:
       - "${UI_HTTP_PORT}:80"

@@ -23,4 +23,4 @@ data:
           - name: placeholder
             {{- include "actionContainerSpec" . | nindent 12 }}
           volumes:
-          {{- include "sslVolume" . | nindent 10 }}
+          {{- include "pluginSslVolume" . | nindent 10 }}

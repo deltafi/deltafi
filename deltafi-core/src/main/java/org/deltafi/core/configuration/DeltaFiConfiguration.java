@@ -38,7 +38,7 @@ import org.springframework.security.authorization.SpringAuthorizationEventPublis
 import java.net.URISyntaxException;
 
 @Configuration
-@EnableConfigurationProperties({EventQueueProperties.class})
+@EnableConfigurationProperties({EventQueueProperties.class, SslSecretNames.class})
 public class DeltaFiConfiguration {
 
     @Bean

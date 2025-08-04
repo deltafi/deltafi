@@ -4,11 +4,14 @@ deltafi:
     enabled: false
     path: /data/deltafi/local
   ssl:
-    secret: ssl-secret
+    # deprecated - set the deployment specific values instead
+    secret: ~
   core_actions:
     image: deltafi/deltafi-core-actions:2.26.1
   core:
     image: deltafi/deltafi-core:2.26.1
+    ssl:
+      secret: ssl-secret
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
@@ -19,6 +22,8 @@ deltafi:
       enabled: false
       image: deltafi/deltafi-entity-resolver:2.26.1
       url: http://127.0.0.1:8080/
+      ssl:
+        secret: ssl-secret
   egress_sink:
     enabled: true
     drop_metadata: false
@@ -30,6 +35,9 @@ deltafi:
     enabled: true
     image: deltafi/deltafi-clustermonitor:2.26.1
     period: 9
+  plugins:
+    ssl:
+      secret: ssl-secret
 
 # Kubernetes ingress config
 ingress:

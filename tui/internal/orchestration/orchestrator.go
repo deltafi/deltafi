@@ -36,6 +36,8 @@ type Orchestrator interface {
 	GetMinioName() (string, error)
 	ExecuteMinioCommand([]string) error
 	GetAPIBaseURL() (string, error)
+	Migrate(activeVersion *semver.Version) error
+	SslManagement
 }
 
 func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string, installDirectory string, sitePath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) Orchestrator {

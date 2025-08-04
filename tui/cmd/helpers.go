@@ -352,3 +352,32 @@ func ConfirmPrompt(prompt string) bool {
 		return false
 	}
 }
+
+func isFileReadable(path string) (bool, string) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return fileErrorMsg(path, err)
+	}
+
+	if fileInfo.IsDir() {
+		return false, fmt.Sprintf("%s is a directory", path)
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return fileErrorMsg(path, err)
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+	return true, ""
+}
+
+func fileErrorMsg(path string, err error) (bool, string) {
+	if os.IsNotExist(err) {
+		return false, fmt.Sprintf("File %s does not exist", path)
+	} else if os.IsPermission(err) {
+		return false, fmt.Sprintf("Permission denied for %s", path)
+	}
+	return false, err.Error()
+}

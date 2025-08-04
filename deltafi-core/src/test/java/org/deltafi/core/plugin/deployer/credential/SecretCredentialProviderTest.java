@@ -18,19 +18,36 @@
 package org.deltafi.core.plugin.deployer.credential;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretList;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.util.Map;
 
 
 class SecretCredentialProviderTest {
 
-    final SecretCredentialProvider secretCredentialProvider = new SecretCredentialProvider(null);
+    final KubernetesClient k8sClient;
+    final SecretCredentialProvider secretCredentialProvider;
+
+    @Mock @SuppressWarnings("unchecked")
+    MixedOperation<Secret, SecretList, Resource<Secret>> secretsOperation = Mockito.mock(MixedOperation.class);
+    @Mock @SuppressWarnings("unchecked")
+    Resource<Secret> secretResource = Mockito.mock(Resource.class);
+
+    private SecretCredentialProviderTest() {
+        k8sClient = Mockito.mock(KubernetesClient.class);
+        secretCredentialProvider = new SecretCredentialProvider(k8sClient, null, null);
+    }
 
     @Test
     void getCredentials() {
-        Secret secret = buildSecret(Map.of("username", "dXNlcm5hbWU=", "password", "cGFzc3dvcmQ="));
+        Map<String, String> secret = Map.of("username", "dXNlcm5hbWU=", "password", "cGFzc3dvcmQ=");
         BasicCredentials basicCredentials = secretCredentialProvider.extractBasicCredentials(secret, "my-secret");
         Assertions.assertThat(basicCredentials.getUsername()).isEqualTo("username");
         Assertions.assertThat(basicCredentials.getPassword()).isEqualTo("password");
@@ -38,31 +55,28 @@ class SecretCredentialProviderTest {
 
     @Test
     void getCredentials_nullSecret() {
-        Assertions.assertThatThrownBy(() -> secretCredentialProvider.extractBasicCredentials(null, "my-secret"))
+        Mockito.when(k8sClient.secrets()).thenReturn(secretsOperation);
+        Mockito.when(secretsOperation.withName("my-secret")).thenReturn(secretResource);
+        Mockito.when(secretResource.get()).thenReturn(null);
+        Assertions.assertThatThrownBy(() -> secretCredentialProvider.getCredentials( "my-secret"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Secret named: my-secret could not be found");
     }
 
     @Test
     void getCredentials_noUsername() {
-        Secret secret = buildSecret(Map.of("name", "name", "password", "password"));
+        Map<String, String> secret = Map.of("name", "name", "password", "password");
         Assertions.assertThatThrownBy(() -> secretCredentialProvider.extractBasicCredentials(secret, "my-secret"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Secret named: my-secret did not contain a username");
     }
 
     @Test
-    void getCredentials_noPassworc() {
-        Secret secret = buildSecret(Map.of("username", "name"));
+    void getCredentials_noPassword() {
+        Map<String, String> secret = Map.of("username", "name");
         Assertions.assertThatThrownBy(() -> secretCredentialProvider.extractBasicCredentials(secret, "my-secret"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Secret named: my-secret did not contain a password");
-    }
-
-    Secret buildSecret(Map<String, String> data) {
-        Secret secret = new Secret();
-        secret.setData(data);
-        return secret;
     }
 
 }

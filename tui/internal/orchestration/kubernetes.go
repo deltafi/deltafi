@@ -20,12 +20,21 @@ package orchestration
 import (
 	"embed"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/deltafi/tui/internal/ui/styles"
+)
+
+const (
+	DELTAFI    = "deltafi"
+	SSL_SECRET = "ssl-secret"
 )
 
 //go:embed kubernetes.values.site.yaml
@@ -188,6 +197,10 @@ func (o *KubernetesOrchestrator) enforceSiteValuesDir() error {
 	return nil
 }
 
+func (o *KubernetesOrchestrator) Migrate(_ *semver.Version) error {
+	return nil
+}
+
 func (o *KubernetesOrchestrator) SiteValuesFile() (string, error) {
 	if err := o.enforceSiteValuesDir(); err != nil {
 		return "", err
@@ -205,4 +218,196 @@ func (o *KubernetesOrchestrator) SiteValuesFile() (string, error) {
 		}
 	}
 	return siteValuesFile, nil
+}
+
+func (o *KubernetesOrchestrator) GetKeyCert(secretName string) (*SslOutput, error) {
+	existing, err := o.getSecret(secretName)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, fmt.Errorf("secret %s not found", secretName)
+		}
+		return nil, fmt.Errorf("error getting the secret named %s: %w", secretName, err)
+	}
+
+	return secretToOutput(existing)
+}
+
+func (o *KubernetesOrchestrator) SaveKeyCert(input SslInput) (*SslOutput, error) {
+	key, err := os.ReadFile(input.KeyFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+	cert, err := os.ReadFile(input.CertFile)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string][]byte{
+		corev1.TLSPrivateKeyKey: key,
+		corev1.TLSCertKey:       cert,
+	}
+
+	if input.KeyPassphrase != "" {
+		data["keyPassphrase"] = []byte(input.KeyPassphrase)
+	}
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      input.SecretName,
+			Namespace: o.namespace,
+			Labels: map[string]string{
+				DELTAFI: SSL_SECRET,
+			},
+		},
+		Type: corev1.SecretTypeTLS,
+		Data: data,
+	}
+
+	err = upsertKubernetesSecret(secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return secretToOutput(secret)
+}
+
+func (o *KubernetesOrchestrator) DeleteKeyCert(secretName string) (*SslOutput, error) {
+	k8sClient, ctx, err := getK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
+	existing, err := o.getSecret(secretName)
+
+	if err != nil {
+		return nil, fmt.Errorf("error checking if the %s secret exists: %w", secretName, err)
+	}
+
+	if existing == nil {
+		return nil, fmt.Errorf("secret %s not found", secretName)
+	}
+
+	label := existing.ObjectMeta.Labels["deltafi"]
+
+	if label != SSL_SECRET {
+		return nil, fmt.Errorf("secret %s was not created by DeltaFi, it must be manually deleted", secretName)
+	}
+
+	err = k8sClient.CoreV1().Secrets(o.namespace).Delete(ctx, secretName, metav1.DeleteOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error encountered while deleting %s: %w", secretName, err)
+	}
+
+	return secretToOutput(existing)
+}
+
+func (o *KubernetesOrchestrator) AppendToCaChain(certs string) (string, error) {
+	currentChain, err := o.GetCaChain()
+	if err != nil {
+		return "", err
+	}
+
+	caChain := ""
+	if currentChain != "" {
+		caChain = currentChain + "\n" + certs
+	} else {
+		caChain = certs
+	}
+
+	return o.SaveCaChain(caChain)
+}
+
+func (o *KubernetesOrchestrator) GetCaChain() (string, error) {
+	secretName := o.caChainSecretName()
+	caChainSecret, err := o.getSecret(secretName)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return "", nil
+		}
+		return "", fmt.Errorf("error getting the current ca chain in secret - %s: %w", secretName, err)
+	}
+
+	return string(caChainSecret.Data["ca.crt"]), nil
+}
+
+func (o *KubernetesOrchestrator) SaveCaChain(caChain string) (string, error) {
+	secretName := o.caChainSecretName()
+	data := map[string][]byte{
+		"ca.crt": []byte(caChain),
+	}
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: o.namespace,
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: data,
+	}
+
+	err := upsertKubernetesSecret(secret)
+	return caChain, err
+}
+
+func (o *KubernetesOrchestrator) caChainSecretName() string {
+	siteValues, err := o.SiteValuesFile()
+
+	if err != nil {
+		return "auth-secret"
+	}
+
+	config, err := parseConfigFromYAML(siteValues)
+
+	if err != nil {
+		return "auth-secret"
+	}
+
+	return config.GetDeltafiAuthSecret()
+}
+
+func (o *KubernetesOrchestrator) getSecret(secretName string) (*corev1.Secret, error) {
+	k8sClient, ctx, err := getK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
+	return k8sClient.CoreV1().Secrets(o.namespace).Get(ctx, secretName, metav1.GetOptions{})
+}
+
+func (o *KubernetesOrchestrator) GetSecretNames() ([]string, error) {
+	k8sClient, ctx, err := getK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
+	labelSelector := DELTAFI + "=" + SSL_SECRET
+
+	// List secrets with label selector
+	secrets, err := k8sClient.CoreV1().Secrets(o.namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var secretNames []string
+	for _, secret := range secrets.Items {
+		secretNames = append(secretNames, secret.Name)
+	}
+
+	return secretNames, nil
+}
+
+func secretToOutput(secret *corev1.Secret) (*SslOutput, error) {
+	sslOutput := &SslOutput{
+		SecretName: secret.Name,
+		Key:        string(secret.Data[corev1.TLSPrivateKeyKey]),
+		Cert:       string(secret.Data[corev1.TLSCertKey]),
+	}
+
+	return sslOutput, nil
 }

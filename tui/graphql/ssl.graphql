@@ -1,0 +1,53 @@
+fragment CertFields on SslInfo {
+    secretName
+    cert {
+        commonName
+        subjectAlternativeNames
+        issuer
+        validFrom
+        validTo
+        isExpired
+        isValid
+        daysUntilExpiration
+        fingerprints {
+            certificate
+            publicKey
+        }
+        raw
+    }
+    usedBy
+}
+query GetSslInfo {
+    sslSettings {
+        keys {
+            ...CertFields
+        }
+        caChain
+    }
+}
+
+query GetKeyCert($secretName: String!) {
+    getKeyCert(secretName: $secretName) {
+        ...CertFields
+    }
+}
+
+mutation SaveCaChain($certs: String!) {
+    saveCaChain(certs: $certs)
+}
+
+mutation AppendCaChain($certs: String!) {
+    appendToCaChain(certs: $certs)
+}
+
+mutation SaveKeyCert($secretName: String!, $keyCert: KeyCertPairInput!) {
+    saveKeyCert(secretName: $secretName, keyCertPair: $keyCert) {
+        ...CertFields
+    }
+}
+
+mutation DeleteKeyCert($secretName: String!) {
+    deleteKeyCert(secretName: $secretName) {
+        ...CertFields
+    }
+}

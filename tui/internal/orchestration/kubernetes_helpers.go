@@ -90,6 +90,31 @@ func createKubernetesSecret(ctx context.Context, clientset *kubernetes.Clientset
 	return nil
 }
 
+func upsertKubernetesSecret(secret *corev1.Secret) error {
+	clientset, ctx, err := getK8sClient()
+
+	if err != nil {
+		return err
+	}
+
+	existing, err := clientset.CoreV1().Secrets(secret.Namespace).Get(ctx, secret.Name, metav1.GetOptions{})
+	if err == nil && existing != nil {
+		existing.Data = secret.Data
+		_, err = clientset.CoreV1().Secrets(secret.Namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update existing secret %s: %w", secret.Name, err)
+		}
+		return nil
+	}
+
+	// Create if not found
+	_, err = clientset.CoreV1().Secrets(secret.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create secret %s: %w", secret.Name, err)
+	}
+	return nil
+}
+
 func deltafiHelmUninstall(namespace string) error {
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
@@ -421,4 +446,19 @@ func kubernetesPrerequisites(namespace string) error {
 	fmt.Println()
 
 	return nil
+}
+
+func getK8sClient() (*kubernetes.Clientset, context.Context, error) {
+	ctx := context.Background()
+
+	config, err := clientcmd.BuildConfigFromFlags("", clientcmd.RecommendedHomeFile)
+	if err != nil {
+		return nil, ctx, fmt.Errorf("failed to get Kubernetes config: %w", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, ctx, fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
+
+	return clientset, ctx, nil
 }

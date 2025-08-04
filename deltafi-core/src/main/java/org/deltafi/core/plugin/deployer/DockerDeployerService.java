@@ -23,12 +23,15 @@ import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.core.configuration.SslSecretNames;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
-import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -52,15 +55,17 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .withTimeout(1_000_000_000L);
 
     private final DockerClient dockerClient;
+    private final SslSecretNames sslSecretNames;
 
     private final List<String> environmentVariables;
     private final String dataDir;
 
-    public DockerDeployerService(DockerClient dockerClient,PluginService pluginService,
+    public DockerDeployerService(DockerClient dockerClient, PluginService pluginService, SslSecretNames sslSecretNames,
                                  EventService eventService, EnvironmentVariableHelper environmentVariableHelper,
                                  DeltaFiPropertiesService deltaFiPropertiesService) {
         super(pluginService, eventService, deltaFiPropertiesService);
         this.dockerClient = dockerClient;
+        this.sslSecretNames = sslSecretNames;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
         this.dataDir = environmentVariableHelper.getDataDir();
     }
@@ -223,8 +228,9 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .withNetworkMode("deltafi")
                 .withRestartPolicy(RestartPolicy.unlessStoppedRestart());
 
-        if (StringUtils.isNotBlank(dataDir)) {
-            hostConfig.withBinds(new Bind(dataDir + "/certs", new Volume("/certs")));
+        if (StringUtils.isNotBlank(dataDir) && ensureSecretDirExists()) {
+            String bindDir = Path.of(dataDir, "certs", sslSecretNames.pluginsSsl()).toString();
+            hostConfig.withBinds(new Bind(bindDir, new Volume("/certs")));
         }
 
         return hostConfig;
@@ -317,6 +323,19 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
             }
         }
         return null;
+    }
+
+    private boolean ensureSecretDirExists() {
+        Path pluginSecret = Path.of("/certs", sslSecretNames.pluginsSsl());
+        try {
+            if (!Files.exists(pluginSecret)) {
+                Files.createDirectory(pluginSecret);
+            }
+            return true;
+        } catch (IOException e) {
+            log.error("Cannot create directory for plugin secrets", e);
+            return false;
+        }
     }
 
     private static class UnhealthyContainer extends RuntimeException {

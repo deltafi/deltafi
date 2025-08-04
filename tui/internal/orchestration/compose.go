@@ -21,18 +21,17 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
+	"github.com/deltafi/tui/internal/types"
+	"github.com/deltafi/tui/internal/ui/styles"
+	"github.com/mcuadros/go-defaults"
+	"gopkg.in/yaml.v3"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/Masterminds/semver/v3"
-	"github.com/deltafi/tui/internal/types"
-	"github.com/deltafi/tui/internal/ui/styles"
-	"github.com/mcuadros/go-defaults"
-	"gopkg.in/yaml.v3"
 )
 
 //go:embed compose.plugin-dev.yaml compose.core-dev.yaml compose.site.yaml compose.values.yaml compose.values.site.yaml
@@ -538,6 +537,10 @@ func mergeMaps(base, override map[string]interface{}) map[string]interface{} {
 }
 
 func (o *ComposeOrchestrator) getValue(values map[string]interface{}, path string) string {
+	return o.getValueOr(values, path, "")
+}
+
+func (o *ComposeOrchestrator) getValueOr(values map[string]interface{}, path string, defaultValue string) string {
 	parts := strings.Split(path, ".")
 	current := values
 
@@ -546,17 +549,17 @@ func (o *ComposeOrchestrator) getValue(values map[string]interface{}, path strin
 			if val, ok := current[part]; ok {
 				return fmt.Sprintf("%v", val)
 			}
-			return ""
+			return defaultValue
 		}
 
 		if next, ok := current[part].(map[string]interface{}); ok {
 			current = next
 		} else {
-			return ""
+			return defaultValue
 		}
 	}
 
-	return ""
+	return defaultValue
 }
 
 func (o *ComposeOrchestrator) inDevelopment() bool {
@@ -575,41 +578,46 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 	}
 
 	envVars := map[string]string{
-		"AUTH_MODE":                 o.getValue(values, "deltafi.auth.mode"),
-		"CONFIG_DIR":                o.configPath,
-		"CORE_URL":                  "http://deltafi-core:8080",
-		"DATA_DIR":                  o.dataPath,
-		"DELTAFI_GRAFANA_URL":       "http://deltafi-grafana:3000",
-		"DELTAFI_MODE":              "STANDALONE",
-		"DELTAFI_UI_DOMAIN":         o.getValue(values, "ingress.domain"),
-		"DISTRO_DIR":                o.distroPath,
-		"DOMAIN":                    o.getValue(values, "ingress.domain"),
-		"EGRESS_SINK_DROP_METADATA": o.getValue(values, "deltafi.egress_sink.drop_metadata"),
-		"ENTITY_RESOLVER_ENABLED":   o.getValue(values, "deltafi.auth.entityResolver.enabled"),
-		"ENTITY_RESOLVER_URL":       fmt.Sprintf("http://deltafi-entity-resolver:%s", o.getValue(values, "deltafi.auth.entityResolver.port")),
-		"GRAPHITE_HOST":             "deltafi-graphite",
-		"GRAPHITE_PORT":             "2003",
-		"HOSTNAME":                  hostname,
-		"INGRESS_URL":               "http://deltafi-core:8080",
-		"METRICS_PERIOD_SECONDS":    "10",
-		"MINIO_PARTSIZE":            "5242880",
-		"MINIO_URL":                 "http://deltafi-minio:9000",
-		"NODE_NAME":                 hostname,
-		"ORCHESTRATION_DIR":         o.orchestrationPath,
-		"PERIOD":                    "5",
-		"RACK_ENV":                  "production",
-		"REDIS_HOST":                "deltafi-valkey",
-		"REDIS_PORT":                "6379",
-		"REDIS_URL":                 "http://deltafi-valkey:6379",
-		"REPOS_DIR":                 o.reposPath,
-		"RUNNING_IN_CLUSTER":        "false",
-		"SECRETS_DIR":               o.secretsPath,
-		"SITE_DIR":                  o.sitePath,
-		"STATSD_HOSTNAME":           "deltafi-graphite",
-		"STATSD_PORT":               "8125",
-		"VALKEY_HOST":               "deltafi-valkey",
-		"VALKEY_PORT":               "6379",
-		"VALKEY_URL":                "http://deltafi-valkey:6379",
+		"AUTH_MODE":                          o.getValue(values, "deltafi.auth.mode"),
+		"CONFIG_DIR":                         o.configPath,
+		"CORE_URL":                           "http://deltafi-core:8080",
+		"DATA_DIR":                           o.dataPath,
+		"DELTAFI_GRAFANA_URL":                "http://deltafi-grafana:3000",
+		"DELTAFI_MODE":                       "STANDALONE",
+		"DELTAFI_SECRET_CA_CHAIN":            "certs",
+		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL": o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),
+		"DELTAFI_SECRET_INGRESS_SSL":         o.getValueOr(values, "ingress.tls.secrets.default", "ssl-secret"),
+		"DELTAFI_SECRET_CORE_SSL":            o.getValueOr(values, "deltafi.core.ssl.secret", "ssl-secret"),
+		"DELTAFI_SECRET_PLUGINS_SSL":         o.getValueOr(values, "deltafi.plugins.ssl.secret", "ssl-secret"),
+		"DELTAFI_UI_DOMAIN":                  o.getValue(values, "ingress.domain"),
+		"DISTRO_DIR":                         o.distroPath,
+		"DOMAIN":                             o.getValue(values, "ingress.domain"),
+		"EGRESS_SINK_DROP_METADATA":          o.getValue(values, "deltafi.egress_sink.drop_metadata"),
+		"ENTITY_RESOLVER_ENABLED":            o.getValue(values, "deltafi.auth.entityResolver.enabled"),
+		"ENTITY_RESOLVER_URL":                fmt.Sprintf("http://deltafi-entity-resolver:%s", o.getValue(values, "deltafi.auth.entityResolver.port")),
+		"GRAPHITE_HOST":                      "deltafi-graphite",
+		"GRAPHITE_PORT":                      "2003",
+		"HOSTNAME":                           hostname,
+		"INGRESS_URL":                        "http://deltafi-core:8080",
+		"METRICS_PERIOD_SECONDS":             "10",
+		"MINIO_PARTSIZE":                     "5242880",
+		"MINIO_URL":                          "http://deltafi-minio:9000",
+		"NODE_NAME":                          hostname,
+		"ORCHESTRATION_DIR":                  o.orchestrationPath,
+		"PERIOD":                             "5",
+		"RACK_ENV":                           "production",
+		"REDIS_HOST":                         "deltafi-valkey",
+		"REDIS_PORT":                         "6379",
+		"REDIS_URL":                          "http://deltafi-valkey:6379",
+		"REPOS_DIR":                          o.reposPath,
+		"RUNNING_IN_CLUSTER":                 "false",
+		"SECRETS_DIR":                        o.secretsPath,
+		"SITE_DIR":                           o.sitePath,
+		"STATSD_HOSTNAME":                    "deltafi-graphite",
+		"STATSD_PORT":                        "8125",
+		"VALKEY_HOST":                        "deltafi-valkey",
+		"VALKEY_PORT":                        "6379",
+		"VALKEY_URL":                         "http://deltafi-valkey:6379",
 	}
 
 	return writeEnvFile(path, envVars)
@@ -692,36 +700,41 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	}
 
 	envVars := map[string]string{
-		"SETTINGS_DIR":              filepath.Join(o.orchestrationPath, "compose", "settings"),
-		"SECRETS_DIR":               o.secretsPath,
-		"ENV_DIR":                   o.configPath,
-		"CONFIG_DIR":                o.configPath,
-		"DATA_DIR":                  o.dataPath,
-		"SITE_DIR":                  o.sitePath,
-		"REPOS_DIR":                 o.reposPath,
-		"COMPOSE_PROJECT_NAME":      "deltafi",
-		"DELTAFI_API":               o.getValue(values, "deltafi.api.image"),
-		"DELTAFI_ENTITY_RESOLVER":   o.getValue(values, "deltafi.auth.entityResolver.image"),
-		"DELTAFI_JAVA_DEVCONTAINER": o.getValue(values, "deltafi.java_devcontainer.image"),
-		"DELTAFI_JAVA_IDE":          o.getValue(values, "deltafi.java_ide.image"),
-		"DELTAFI_CORE":              o.getValue(values, "deltafi.core.image"),
-		"DELTAFI_CORE_ACTIONS":      o.getValue(values, "deltafi.core_actions.image"),
-		"DELTAFI_DIRWATCHER":        o.getValue(values, "deltafi.dirwatcher.image"),
-		"DELTAFI_EGRESS_SINK":       o.getValue(values, "deltafi.egress_sink.image"),
-		"DELTAFI_NODEMONITOR":       o.getValue(values, "deltafi.nodemonitor.image"),
-		"GRAFANA":                   o.getValue(values, "dependencies.grafana"),
-		"GRAPHITE":                  o.getValue(values, "dependencies.graphite"),
-		"LOKI":                      o.getValue(values, "dependencies.loki"),
-		"MINIO":                     o.getValue(values, "dependencies.minio"),
-		"POSTGRES":                  o.getValue(values, "dependencies.postgres"),
-		"NGINX":                     o.getValue(values, "dependencies.nginx"),
-		"PROMTAIL":                  o.getValue(values, "dependencies.promtail"),
-		"VALKEY":                    o.getValue(values, "dependencies.valkey"),
-		"REDIS":                     o.getValue(values, "dependencies.valkey"),
-		"DOCKER_WEB_GUI":            o.getValue(values, "dependencies.docker_web_gui"),
-		"ENTITY_RESOLVER_PORT":      o.getValue(values, "deltafi.auth.entityResolver.port"),
-		"UI_HTTP_PORT":              o.getValue(values, "ingress.ui.http_port"),
-		"UI_HTTPS_PORT":             o.getValue(values, "ingress.ui.https_port"),
+		"SETTINGS_DIR":                       filepath.Join(o.orchestrationPath, "compose", "settings"),
+		"SECRETS_DIR":                        o.secretsPath,
+		"ENV_DIR":                            o.configPath,
+		"CONFIG_DIR":                         o.configPath,
+		"DATA_DIR":                           o.dataPath,
+		"SITE_DIR":                           o.sitePath,
+		"REPOS_DIR":                          o.reposPath,
+		"COMPOSE_PROJECT_NAME":               "deltafi",
+		"DELTAFI_API":                        o.getValue(values, "deltafi.api.image"),
+		"DELTAFI_ENTITY_RESOLVER":            o.getValue(values, "deltafi.auth.entityResolver.image"),
+		"DELTAFI_JAVA_DEVCONTAINER":          o.getValue(values, "deltafi.java_devcontainer.image"),
+		"DELTAFI_JAVA_IDE":                   o.getValue(values, "deltafi.java_ide.image"),
+		"DELTAFI_CORE":                       o.getValue(values, "deltafi.core.image"),
+		"DELTAFI_CORE_ACTIONS":               o.getValue(values, "deltafi.core_actions.image"),
+		"DELTAFI_DIRWATCHER":                 o.getValue(values, "deltafi.dirwatcher.image"),
+		"DELTAFI_EGRESS_SINK":                o.getValue(values, "deltafi.egress_sink.image"),
+		"DELTAFI_NODEMONITOR":                o.getValue(values, "deltafi.nodemonitor.image"),
+		"DELTAFI_SECRET_CA_CHAIN":            "certs",
+		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL": o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),
+		"DELTAFI_SECRET_INGRESS_SSL":         o.getValueOr(values, "ingress.tls.secrets.default", "ssl-secret"),
+		"DELTAFI_SECRET_CORE_SSL":            o.getValueOr(values, "deltafi.core.ssl.secret", "ssl-secret"),
+		"DELTAFI_SECRET_PLUGINS_SSL":         o.getValueOr(values, "deltafi.plugins.ssl.secret", "ssl-secret"),
+		"GRAFANA":                            o.getValue(values, "dependencies.grafana"),
+		"GRAPHITE":                           o.getValue(values, "dependencies.graphite"),
+		"LOKI":                               o.getValue(values, "dependencies.loki"),
+		"MINIO":                              o.getValue(values, "dependencies.minio"),
+		"POSTGRES":                           o.getValue(values, "dependencies.postgres"),
+		"NGINX":                              o.getValue(values, "dependencies.nginx"),
+		"PROMTAIL":                           o.getValue(values, "dependencies.promtail"),
+		"VALKEY":                             o.getValue(values, "dependencies.valkey"),
+		"REDIS":                              o.getValue(values, "dependencies.valkey"),
+		"DOCKER_WEB_GUI":                     o.getValue(values, "dependencies.docker_web_gui"),
+		"ENTITY_RESOLVER_PORT":               o.getValue(values, "deltafi.auth.entityResolver.port"),
+		"UI_HTTP_PORT":                       o.getValue(values, "ingress.ui.http_port"),
+		"UI_HTTPS_PORT":                      o.getValue(values, "ingress.ui.https_port"),
 	}
 
 	// Add compose profiles based on enabled features
@@ -866,6 +879,327 @@ func (o *ComposeOrchestrator) entityResolverConfig() error {
 		if err := os.WriteFile(filePath, contentBytes, 0644); err != nil {
 			return fmt.Errorf("error writing entity resolver config file %s: %w", filename, err)
 		}
+	}
+
+	return nil
+}
+
+const (
+	caCrt       = "ca.crt"
+	tlsKey      = "tls.key"
+	tlsCrt      = "tls.crt"
+	envFile     = ".env"
+	keyPassword = "KEY_PASSWORD"
+)
+
+func (o *ComposeOrchestrator) GetKeyCert(secretName string) (*SslOutput, error) {
+	secretDir, err := o.secretDir(secretName)
+
+	if _, err := os.Stat(secretDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("secret named '%s' does not exist", secretName)
+	}
+
+	tlsKeyContent, err := o.readFile(filepath.Join(secretDir, tlsKey))
+	if err != nil {
+		return nil, err
+	}
+
+	tlsCertContent, err := o.readFile(filepath.Join(secretDir, tlsCrt))
+	if err != nil {
+		return nil, err
+	}
+
+	if tlsKeyContent == "" || tlsCertContent == "" {
+		return nil, fmt.Errorf("secret named '%s' does not contain TLS key and certificate", secretName)
+	}
+
+	sslOutput := &SslOutput{
+		SecretName: secretName,
+		Key:        tlsKeyContent,
+		Cert:       tlsCertContent,
+	}
+
+	return sslOutput, nil
+}
+
+func (o *ComposeOrchestrator) SaveKeyCert(input SslInput) (*SslOutput, error) {
+	if err := o.validateName(input.SecretName); err != nil {
+		return nil, err
+	}
+	secretDir := filepath.Join(o.dataPath, "certs", input.SecretName)
+
+	keyPath := filepath.Join(secretDir, tlsKey)
+	certPath := filepath.Join(secretDir, tlsCrt)
+
+	key, err := o.copyFile(input.KeyFile, keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	cert, err := o.copyFile(input.CertFile, certPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var builder strings.Builder
+	builder.WriteString(o.envPair("KEY_PATH", keyPath))
+	builder.WriteString(o.envPair("CERT_PATH", certPath))
+	builder.WriteString(o.envPair("CA_CHAIN_PATH", "/certs/"+caCrt))
+
+	if strings.TrimSpace(input.KeyPassphrase) != "" {
+		builder.WriteString(o.envPair(keyPassword, input.KeyPassphrase))
+	}
+
+	if err := o.writeFile(filepath.Join(secretDir, envFile), builder.String()); err != nil {
+		return nil, err
+	}
+
+	if err := o.copyCaChainToDir(secretDir); err != nil {
+		return nil, err
+	}
+
+	sslOutput := &SslOutput{
+		SecretName: input.SecretName,
+		Key:        key,
+		Cert:       cert,
+	}
+
+	return sslOutput, nil
+}
+
+func (o *ComposeOrchestrator) DeleteKeyCert(secretName string) (*SslOutput, error) {
+	sslOutput, err := o.GetKeyCert(secretName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// ignore error here, path was already verified in GetKeyCert
+	secretDir, _ := o.secretDir(secretName)
+	if err := os.RemoveAll(secretDir); err != nil {
+		return nil, err
+	}
+
+	return sslOutput, nil
+}
+
+func (o *ComposeOrchestrator) GetCaChain() (string, error) {
+	return o.readFile(o.caChainPath())
+}
+
+func (o *ComposeOrchestrator) AppendToCaChain(certs string) (string, error) {
+	existingChain, _ := o.GetCaChain()
+
+	caChain := certs
+	if existingChain != "" {
+		caChain = existingChain + "\n" + certs
+	}
+
+	return o.SaveCaChain(caChain)
+}
+
+func (o *ComposeOrchestrator) SaveCaChain(caChain string) (string, error) {
+	err := o.writeFile(o.caChainPath(), caChain)
+	if err != nil {
+		return "", err
+	}
+
+	err = o.copyCaChain(caChain)
+	if err != nil {
+		warning := fmt.Sprintf("%s Unable to copy ca chain to the secret directories", styles.WarningStyle.Render("WARNING:"))
+		fmt.Println(warning)
+	}
+	return caChain, nil
+}
+
+func (o *ComposeOrchestrator) caChainPath() string {
+	return filepath.Join(o.dataPath, "certs", caCrt)
+}
+
+func (o *ComposeOrchestrator) Migrate(activeVersion *semver.Version) error {
+	certMigrationVersion, _ := semver.NewVersion("2.27.0")
+	if activeVersion.LessThan(certMigrationVersion) {
+		return o.migrateCerts()
+	}
+	return nil
+}
+
+func (o *ComposeOrchestrator) migrateCerts() error {
+	certsDir := filepath.Join(o.dataPath, "certs")
+
+	entries, err := os.ReadDir(certsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// nothing to do if the certs dir does not exist
+			return nil
+		}
+		return fmt.Errorf("failed to read certs directory: %w", err)
+	}
+
+	var filesToMove []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			filesToMove = append(filesToMove, entry.Name())
+		}
+	}
+
+	// If no files exist, nothing to migrate
+	if len(filesToMove) == 0 {
+		return nil
+	}
+
+	fmt.Println(styles.InfoStyle.Render(fmt.Sprintf("Moving the existing certs to the new default location, ssl-secret")))
+
+	// Create the default secret, ssl-secret, subdirectory
+	sslSecretDir := filepath.Join(certsDir, "ssl-secret")
+	if err := os.MkdirAll(sslSecretDir, 0755); err != nil {
+		return fmt.Errorf("failed to create ssl-secret directory: %w", err)
+	}
+
+	// Move each file to the ssl-secret subdirectory
+	for _, filename := range filesToMove {
+		oldPath := filepath.Join(certsDir, filename)
+		newPath := filepath.Join(sslSecretDir, filename)
+		if filename == "ca.crt" {
+			if _, err := o.copyFile(oldPath, newPath); err != nil {
+				return err
+			}
+		} else {
+			if err := os.Rename(oldPath, newPath); err != nil {
+				return fmt.Errorf("failed to move %s to ssl-secret: %w", filename, err)
+			}
+		}
+	}
+
+	// Create .env file in ssl-secret directory
+	envContent := `KEY_PATH=/certs/ssl-secret/tls.key
+CERT_PATH=/certs/ssl-secret/tls.crt
+CA_CHAIN_PATH=/certs/ssl-secret/ca.crt
+`
+	envPath := filepath.Join(sslSecretDir, ".env")
+	if err := os.WriteFile(envPath, []byte(envContent), 0644); err != nil {
+		return fmt.Errorf("failed to create .env file: %w", err)
+	}
+
+	fmt.Println(styles.InfoStyle.Render(fmt.Sprintf("Completed moving migrating existing certs")))
+
+	return nil
+}
+
+func (o *ComposeOrchestrator) copyCaChain(caChain string) error {
+	if caChain == "" {
+		return nil
+	}
+
+	certsDir := filepath.Join(o.dataPath, "certs")
+	entries, err := os.ReadDir(certsDir)
+	if err != nil {
+		return fmt.Errorf("failed to read certs directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			_ = o.writeFile(filepath.Join(certsDir, entry.Name(), caCrt), caChain)
+		}
+	}
+
+	return nil
+}
+
+func (o *ComposeOrchestrator) copyCaChainToDir(dir string) error {
+	caChain, err := o.GetCaChain()
+
+	if err != nil {
+		return err
+	}
+
+	return o.writeFile(filepath.Join(dir, caCrt), caChain)
+}
+
+func (o *ComposeOrchestrator) GetSecretNames() ([]string, error) {
+	certsDir := filepath.Join(o.dataPath, "certs")
+
+	entries, err := os.ReadDir(certsDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read certs directory: %w", err)
+	}
+
+	var secretName []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			secretName = append(secretName, entry.Name())
+		}
+	}
+	return secretName, nil
+}
+
+func (o *ComposeOrchestrator) readFile(path string) (string, error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return "", nil
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("could not read the file at %s: %w", path, err)
+	}
+
+	return string(content), nil
+}
+
+func (o *ComposeOrchestrator) writeFile(path string, content string) error {
+	if content == "" {
+		return nil
+	}
+
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("could not create directories for %s: %w", path, err)
+	}
+
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		return fmt.Errorf("could not write the file at %s: %w", path, err)
+	}
+
+	return nil
+}
+
+func (o *ComposeOrchestrator) copyFile(srcPath, targetPath string) (string, error) {
+	data, err := os.ReadFile(srcPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read '%s' to copy: %w", srcPath, err)
+	}
+
+	dataStr := string(data)
+	if err := o.writeFile(targetPath, dataStr); err != nil {
+		return "", fmt.Errorf("failed to write to '%s': %w", targetPath, err)
+	}
+
+	return dataStr, nil
+}
+
+// envPair creates an environment variable pair string
+func (o *ComposeOrchestrator) envPair(key, value string) string {
+	return key + "=" + value + "\n"
+}
+
+func (o *ComposeOrchestrator) secretDir(secretName string) (string, error) {
+	err := o.validateName(secretName)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(o.dataPath, "certs", secretName), nil
+}
+
+func (o *ComposeOrchestrator) validateName(secretName string) error {
+	if strings.TrimSpace(secretName) == "" {
+		return fmt.Errorf("secret name is empty")
+	}
+
+	// reject relative paths and path separators
+	if strings.Contains(secretName, "/") || strings.Contains(secretName, "\\") ||
+		strings.Contains(secretName, "..") || strings.HasPrefix(secretName, ".") {
+		return fmt.Errorf("secret name '%s' is invalid", secretName)
 	}
 
 	return nil

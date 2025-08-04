@@ -26,12 +26,10 @@ import com.github.dockerjava.transport.DockerHttpClient;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.DockerDeployerService;
 import org.deltafi.core.plugin.deployer.EnvironmentVariableHelper;
+import org.deltafi.core.plugin.deployer.credential.ComposeSslConfigService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.credential.EnvVarCredentialProvider;
-import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.services.EventService;
-import org.deltafi.core.services.PluginService;
-import org.deltafi.core.services.SystemSnapshotService;
+import org.deltafi.core.services.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -53,8 +51,13 @@ public class DockerConfiguration {
     }
 
     @Bean
-    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginService pluginService, EventService eventService,
+    public SslConfigService sslConfigService(CertificateInfoService certificateInfoService, SslSecretNames sslSecretNames) {
+        return new ComposeSslConfigService(certificateInfoService, sslSecretNames);
+    }
+
+    @Bean
+    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginService pluginService, SslSecretNames sslSecretNames, EventService eventService,
                                                  EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
-        return new DockerDeployerService(dockerClient, pluginService, eventService, environmentVariableHelper, deltaFiPropertiesService);
+        return new DockerDeployerService(dockerClient, pluginService, sslSecretNames, eventService, environmentVariableHelper, deltaFiPropertiesService);
     }
 }

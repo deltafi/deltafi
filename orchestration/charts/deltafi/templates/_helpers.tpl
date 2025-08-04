@@ -202,38 +202,48 @@ initContainers:
 {{- end -}}
 
 {{- define "sslEnvVars" -}}
+{{- $secretName := .secretName | default .Values.deltafi.core.ssl.secret -}}
 - name: KEY_PASSWORD
   valueFrom:
     secretKeyRef:
-      name:  {{ .Values.deltafi.ssl.secret }}
+      name:  {{ $secretName }}
       key: keyPassword
       optional: true
 - name: SSL_PROTOCOL
   valueFrom:
     secretKeyRef:
-      name:  {{ .Values.deltafi.ssl.secret }}
+      name:  {{ $secretName }}
       key: sslProtocol
       optional: true
 {{- end -}}
 
 {{- define "sslVolumeMount" -}}
-- name: ssl-volume
+{{- $volumeName := .volumeName | default "ssl-volume" -}}
+- name: {{ $volumeName }}
   mountPath: /certs
   readOnly: true
 {{- end -}}
 
+{{- define "entityResolverSslVolume" -}}
+{{- include "sslVolume" (merge (dict "secretName" (coalesce .Values.deltafi.ssl.secret .Values.deltafi.auth.entityResolver.ssl.secret) "volumeName" "entity-resolver-ssl-volume") .) -}}
+{{- end -}}
+
+{{- define "pluginSslVolume" -}}
+{{- include "sslVolume" (merge (dict "secretName" (coalesce .Values.deltafi.ssl.secret .Values.deltafi.plugins.ssl.secret "ssl-secret")) .) -}}
+{{- end -}}
+
 {{- define "sslVolume" -}}
-- name: ssl-volume
-  secret:
-    secretName: {{ .Values.deltafi.ssl.secret }}
-    optional: true
-    items:
-      - key: tls.key
-        path: tls.key
-      - key: tls.crt
-        path: tls.crt
-      - key: ca.crt
-        path: ca.crt
+{{ $volumeName := .volumeName | default "ssl-volume" -}}
+{{ $secretName := .secretName | default .Values.deltafi.core.ssl.secret -}}
+- name: {{ $volumeName }}
+  projected:
+    sources:
+      - secret:
+          name: {{ .Values.deltafi.auth.secret | default "auth-secret"}}
+          optional: true
+      - secret:
+          name: {{ $secretName }}
+          optional: true
 {{- end -}}
 
 {{- define "actionContainerSpec" -}}
@@ -251,7 +261,7 @@ env:
 {{- include "commonEnvVars" . | nindent 2 }}
 {{- include "valkeyEnvVars" . | nindent 2 }}
 {{- include "minioEnvVars" . | nindent 2 }}
-{{- include "sslEnvVars" . | nindent 2 }}
+{{- include "sslEnvVars" (merge (dict "secretName" .Values.deltafi.plugins.ssl.secret) .) | nindent 2 }}
 {{ include "actionStartupProbe" . }}
 volumeMounts:
 {{- include "sslVolumeMount" . | nindent 2 }}
@@ -271,6 +281,16 @@ volumeMounts:
 {{ include "minioEnvVars" . }}
 {{ include "valkeyEnvVars" . }}
 {{ include "sslEnvVars" . }}
+- name: DELTAFI_SECRET_CA_CHAIN
+  value:  {{ coalesce .Values.deltafi.ssl.secret .Values.deltafi.auth.secret "auth-secret" }}
+- name: DELTAFI_SECRET_ENTITY_RESOLVER_SSL
+  value: {{ coalesce .Values.deltafi.ssl.secret .Values.deltafi.auth.entityResolver.ssl.secret "ssl-secret" }}
+- name: DELTAFI_SECRET_INGRESS_SSL
+  value: {{ coalesce .Values.deltafi.ssl.secret .Values.ingress.tls.secrets.default "ssl-secret" }}
+- name: DELTAFI_SECRET_CORE_SSL
+  value: {{ coalesce .Values.deltafi.ssl.secret .Values.deltafi.core.ssl.secret "ssl-secret" }}
+- name: DELTAFI_SECRET_PLUGINS_SSL
+  value: {{ coalesce .Values.deltafi.ssl.secret .Values.deltafi.plugins.ssl.secret "ssl-secret" }}
 {{ if .Values.deltafi.auth.entityResolver.enabled }}
 - name: ENTITY_RESOLVER_ENABLED
   value: "true"
@@ -288,6 +308,7 @@ volumeMounts:
 
 {{- define "coreVolumes" -}}
 {{- include "sslVolume" . }}
+{{ include "entityResolverSslVolume" . }}
 - name: action-deployment-template
   configMap:
     name: deltafi-action-deployment
@@ -301,12 +322,12 @@ volumeMounts:
 - name: deltafi-entity-resolver
   image: {{ .Values.deltafi.auth.entityResolver.image }}
   volumeMounts:
-  {{- include "sslVolumeMount" . | nindent 2 }}
+  {{- include "sslVolumeMount" (dict "volumeName" "entity-resolver-ssl-volume") | nindent 2 }}
   - name: entity-resolver-config
     mountPath: /config
     readOnly: true
   env:
-  {{- include "sslEnvVars" . | nindent 2 }}
+  {{- include "sslEnvVars" (merge (dict "secretName" .Values.deltafi.auth.entityResolver.ssl.secret) .) | nindent 2 }}
   - name: DATA_DIR
     value: /config
 {{- end -}}

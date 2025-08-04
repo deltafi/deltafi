@@ -12,11 +12,14 @@ deltafi:
     image: {{.Repo}}/deltafi-core:{{.Tag}}
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
+    ssl:
+      secret: ssl-secret
   core_worker:
     enabled: false
     replicas: 1
   auth:
     mode: disabled # basic, cert, or disabled
+    secret: auth-secret
     entityResolver:
       enabled: false
       image: {{.Repo}}/deltafi-entity-resolver:{{.Tag}}
@@ -24,6 +27,8 @@ deltafi:
       config:
         README: |-
           Add files to the site/values.yaml at deltafi.auth.config to inject files here
+      ssl:
+        secret: ssl-secret
   api:
     image: {{.Repo}}/deltafi-api:{{.Tag}}
     workers: 8
@@ -36,11 +41,16 @@ deltafi:
     image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
   nodemonitor:
     image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
+  plugins:
+    ssl:
+      secret: ssl-secret
 # nginx domain
 ingress:
   domain: local.deltafi.org
   tls:
     enabled: false
+    secrets:
+      default: ssl-secret
   ui:
     http_port: 80
     https_port: 443

@@ -94,6 +94,10 @@ func Up(force bool) error {
 				}
 			}
 		}
+		err = app.GetOrchestrator().Migrate(activeVersion)
+		if err != nil {
+			return fmt.Errorf(styles.ErrorStyle.Render(fmt.Sprintf("System migration failed: %s", err)))
+		}
 	} else {
 		app.SendEvent(api.NewEvent().Info().WithSummary("Initiating orchestration update"))
 	}
