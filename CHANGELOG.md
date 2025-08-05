@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.27.0] - 2025-08-05
+
+### Added
+- Added help icon to search page advanced search options annotation field 
+- Added tooltips to the topic conditions on Transform Builder
+- Added graphql endpoints for managing SSL keys
+
+### Changed
+- Use a single ca-chain that can be used for keys
+
+### Fixed
+- Fixed Resume Dialogs to close the dialog after a resume request has been submitted and then reload the errors datatable.
+- Fixed Filter Page to use time range on the inital loading of data, where before it was only using the time range when refreshing.
+- Added the time range params to the "cause message" query.   
+- Fixed bug of passing in the wrong flow type to the resumeMatching query in the ResumeBulkActionDialog 
+
+### Tech-Debt/Refactor
+- Removed unused permissions: ActionEvent, IngressRoutingRuleCreate, IngressRoutingRuleDelete, IngressRoutingRuleRead, IngressRoutingRuleUpdate, PluginRegistration, TopicsDelete, TopicsRead, TopicsWrite, RegistryDelete, RegistryUpload, RegistryView
+
+### Upgrade and Migration
+- Added migration to remove old permissions from `roles` table
+- The compose `cert` folder has new structure, `deltafi up` looks for the old setup and automatically migrates any existing key files
+
 ## [2.26.1] - 2025-08-01
 
 ### Changed
@@ -4491,7 +4514,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.27.0...main
+[2.27.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.1...2.27.0
 [2.26.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.0...2.26.1
 [2.26.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.4...2.26.0
 [2.25.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.3...2.25.4
