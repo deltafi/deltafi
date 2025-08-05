@@ -147,10 +147,12 @@ const requestResumeByErrorCause = async () => {
         response = await resumeByErrorCause(flow.message, [], includeAcknowledged.value);
         response = response.data.resumeByErrorCause;
       } else {
+        const keyVal = _.isEqual(flow.flowType, "REST_DATA_SOURCE") || _.isEqual(flow.flowType, "TIMED_DATA_SOURCE") ? "dataSources" : _.camelCase(flow.flowType) + "s";
+
         const filterParams = {
           dids: flow.dids,
           errorCause: flow.message,
-          [`${_.camelCase(flow.flowType)}s`]: flow.flowName,
+          [`${keyVal}`]: flow.flowName,
         };
         response = await resumeMatching(JSON.parse(JSON.stringify(filterParams)), []);
         response = response.data.resumeMatching;
