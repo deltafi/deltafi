@@ -48,7 +48,12 @@
             <div class="flex-row">
               <div v-for="columnNumber in 3" :key="columnNumber" :class="`flex-column ${_.isEqual(columnNumber, 2) ? 'flex-column-small' : ''}`">
                 <template v-for="[i, formInfo] of _.orderBy(_.filter(advanceOptionsPanelInfo, ['column', columnNumber]), ['order'], ['asc']).entries()" :key="formInfo">
-                  <label :for="`${formInfo.field}` + 'Id'" :class="!_.isEqual(i, 0) ? 'mt-2' : ''">{{ formInfo.label }}</label>
+                  <span class="dflex btn-group align-items-center">
+                    <label :for="`${formInfo.field}` + 'Id'" :class="!_.isEqual(i, 0) ? 'mt-2' : ''">{{ formInfo.label }}</label>
+                    <span @click="toggle">
+                      <i v-if="_.get(formInfo, 'description', false)" class="fas fa-info-circle fa-fw ml-1" />
+                    </span>
+                  </span>
                   <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" v-model.trim="model[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" />
                   <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" />
                   <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
@@ -151,6 +156,9 @@
   </Dialog>
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
+  <OverlayPanel ref="op">
+    <div class="panel-info-font-size" v-html="markdownIt.render(annotationSearchOptions)" />
+  </OverlayPanel>
 </template>
 
 <script setup>
@@ -197,6 +205,13 @@ import Panel from "primevue/panel";
 import ScrollTop from "primevue/scrolltop";
 import { useConfirm } from "primevue/useconfirm";
 
+import MarkdownIt from "markdown-it";
+
+const markdownIt = new MarkdownIt({
+  html: true,
+});
+
+const op = ref();
 const { getAnnotationKeys } = useAnnotate();
 const { pluralize } = useUtilFunctions();
 const notify = useNotifications();
@@ -496,7 +511,7 @@ const advanceOptionsPanelInfo = computed(() => {
     { field: "stage", column: 3, order: 3, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, showClear: true, class: "deltafi-input-field min-width" },
     { field: "pinned", column: 3, order: 4, componentType: "Dropdown", label: "Pinned:", placeholder: "Select if DeltaFile is pinned", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
     { field: "pendingAnnotations", column: 3, order: 5, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
-    { field: "annotations", column: 3, order: 6, componentType: "Annotations", label: "Annotations:" },
+    { field: "annotations", column: 3, order: 6, componentType: "Annotations", label: "Annotations:", description: "Annotations" },
   ];
 });
 
@@ -821,7 +836,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -875,6 +890,24 @@ const onAcknowledged = (dids, reason) => {
   notify.success(`Successfully acknowledged ${pluralized}`, reason);
   fetchDeltaFilesData();
 };
+
+const toggle = (event) => {
+  op.value.toggle(event);
+};
+
+const annotationSearchOptions = `
+When performing a search using annotations, the following options are now
+supported in the annotation search:
+- If the value is *, the query will only check that the key exists (matches any value)
+  - E.g., * will match null, """ (empty string), or abcd
+- If the value contains *, the query will match if the value is LIKE the provided value,
+ treating * as a wildcard
+  - E.g., abc*3 will match abc123, but not abcdef
+- If the value starts with !, the query will add a NOT to the comparison
+  - E.g., !abc*3 will match abcdef, but not abc123
+- When an ! or * is not present, the default behavior remains an exact match
+  - E.g., abc will only match abc.
+`;
 </script>
 
 <style>
@@ -978,7 +1011,7 @@ const onAcknowledged = (dids, reason) => {
   }
 
   .size-container {
-    >* {
+    > * {
       vertical-align: middle !important;
     }
   }
@@ -1038,7 +1071,7 @@ const onAcknowledged = (dids, reason) => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
     color: #ffffff;
 
     a,
@@ -1075,5 +1108,13 @@ const onAcknowledged = (dids, reason) => {
       max-width: 44rem;
     }
   }
+}
+
+.panel-info-font-size {
+  font-size: 12px !important;
+}
+
+.p-overlaypanel-content {
+  max-width: 30rem !important;
 }
 </style>
