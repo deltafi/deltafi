@@ -19,7 +19,10 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl>
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
+      <span class="d-flex btn-group align-items-center">
+        <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
+        <i v-if="!_.isEmpty(schemaData.computedLabel) && _.isEqual(schemaData.computedLabel, 'Condition (Optional)')" class="fas fa-info-circle fa-fw ml-1" @click="toggle" />
+      </span>
       <dd>
         <template v-if="_.isEqual(schemaData.control.i18nKeyPrefix.split('.').pop(), 'topic')">
           <AutoComplete :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' auto-complete-input-width'" dropdown :suggestions="topicList" @complete="search" @change="schemaData.onChange(schemaData.control.data)" />
@@ -39,6 +42,9 @@
       </dd>
     </dl>
   </control-wrapper>
+  <OverlayPanel ref="op" appendTo="body">
+    <div v-html="markdownIt.render(ruleConditionDoc)" />
+  </OverlayPanel>
 </template>
 
 <script setup lang="ts">
@@ -53,7 +59,16 @@ import _ from "lodash";
 import AutoComplete from "primevue/autocomplete";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
+import OverlayPanel from "primevue/overlaypanel";
 import Textarea from "primevue/textarea";
+
+import MarkdownIt from "markdown-it";
+
+const markdownIt = new MarkdownIt({
+  html: true,
+});
+
+const op = ref();
 
 const { useControl } = useSchemaComposition();
 
@@ -94,9 +109,9 @@ const undefinedStringCheck = (value: any) => {
 };
 
 const computedLabel = computed(() => {
-  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
+  let label = schemaData.control.config.defaultLabels ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 
-  label = (schemaData.control.required) ? label + "*" : label;
+  label = schemaData.control.required ? label + "*" : label;
 
   return label;
 });
@@ -116,13 +131,38 @@ const optionsDisplay = computed(() => {
 
   return (option: any) => option;
 });
+
+const toggle = (event: any) => {
+  op.value.toggle(event);
+};
+
+const ruleConditionDoc = `
+### Rule Conditions
+Conditions are SpEL expressions that evaluate to true or false. They can reference DeltaFile metadata and content information.
+
+Example conditions:
+
+\`\`\`spel 
+// check for the existence of a metadata key
+\metadata.containsKey("required-key")'
+
+// check if a key has a specific value
+\metadata["required-key"] == "required-value"'
+
+// check for content with a specific media type
+hasMediaType('application/json')
+
+// check for content with a specific name
+!content.?[name == 'required.name'].isEmpty()
+\`\`\`
+`;
 </script>
 
 <style>
 .auto-complete-input-width {
   width: 100% !important;
 
-  >.p-inputtext {
+  > .p-inputtext {
     width: 100% !important;
   }
 }
