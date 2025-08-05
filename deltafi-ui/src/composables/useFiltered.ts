@@ -156,14 +156,21 @@ export default function useFiltered() {
     data.value = response.value.data.filteredSummaryByMessage;
   };
 
-  const fetchUniqueMessages = async () => {
+  const fetchUniqueMessages = async (queryParams: queryParams) => {
     const searchParams = {
       filteredSummaryByMessage: {
+        __args: {
+          filter: {
+            modifiedAfter: queryParams.startTimeDateString,
+            modifiedBefore: queryParams.endTimeDateString,
+          },
+        },
         countPerMessage: {
           message: true,
         },
       },
     };
+
     await queryGraphQL(searchParams, "getFilteredByMessage");
     return _.chain(response.value.data.filteredSummaryByMessage.countPerMessage)
       .map((o) => o.message)

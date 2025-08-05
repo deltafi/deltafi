@@ -106,9 +106,9 @@ const requestResume = async () => {
     batchCompleteValue.value = 0;
     for (const dids of batchedDids) {
       response = await resume(dids, []);
-      if (response.value.data !== undefined && response.value.data !== null) {
+      if (response.data !== undefined && response.data !== null) {
         const successResume = [];
-        for (const resumeStatus of response.value.data.resume) {
+        for (const resumeStatus of response.data.resume) {
           if (resumeStatus.success) {
             successResume.push(resumeStatus);
           } else {

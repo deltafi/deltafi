@@ -68,7 +68,7 @@ import useErrorResume from "@/composables/useErrorResume";
 import useMetadata from "@/composables/useMetadata";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, onBeforeMount, reactive, ref } from "vue";
+import { computed, onBeforeMount, ref } from "vue";
 import { useMounted } from "@vueuse/core";
 
 import _ from "lodash";
@@ -221,9 +221,9 @@ const submit = async () => {
     batchCompleteValue.value = 0;
     for (const dids of batchedDids) {
       response = await resume(dids, getModifiedMetadata());
-      if (response.value.data !== undefined && response.value.data !== null) {
+      if (response.data !== undefined && response.data !== null) {
         const successfulBatch = [];
-        for (const responseStatus of response.value.data.resume) {
+        for (const responseStatus of response.data.resume) {
           if (responseStatus.success) {
             successfulBatch.push(responseStatus);
           } else {

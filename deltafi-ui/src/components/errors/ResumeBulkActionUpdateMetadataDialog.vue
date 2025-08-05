@@ -68,7 +68,7 @@ import useErrorResume from "@/composables/useErrorResume";
 import useMetadata from "@/composables/useMetadata";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, onBeforeMount, reactive, ref } from "vue";
+import { computed, onBeforeMount, ref } from "vue";
 import { useMounted } from "@vueuse/core";
 
 import _ from "lodash";

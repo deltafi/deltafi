@@ -131,6 +131,8 @@ const dateToISOString = (dateData) => {
 const defaultQueryParamsTemplate = {
   startTimeDate: new Date(defaultStartTimeDate.value.format(timestampFormat)),
   endTimeDate: new Date(defaultEndTimeDate.value.format(timestampFormat)),
+  startTimeDateString: dateToISOString(defaultStartTimeDate.value.format(timestampFormat)),
+  endTimeDateString: dateToISOString(defaultEndTimeDate.value.format(timestampFormat)),
 };
 
 const queryParamsModel = ref({});
@@ -266,7 +268,7 @@ onMounted(async () => {
   queryParamsModel.value = _.cloneDeep(defaultQueryParamsTemplate);
   allFlowNames.value = await fetchAllFlowNames();
   formatFlowNames();
-  uniqueMessages.value = await fetchUniqueMessages();
+  uniqueMessages.value = await fetchUniqueMessages(model.value);
   await getPersistedParams();
   await nextTick();
   showTabs.value = true;
