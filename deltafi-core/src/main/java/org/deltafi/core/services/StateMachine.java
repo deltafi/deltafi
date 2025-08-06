@@ -192,6 +192,10 @@ public class StateMachine {
         Set<DeltaFileFlow> subscriberFlows;
         try {
             subscriberFlows = publisherService.subscribers(getFlow(input.flow()), input.deltaFile(), input.flow());
+            // make sure the flow is properly terminated, this can happen when the last action was retried publish
+            if (!input.flow().terminal()) {
+                input.flow().updateState(DeltaFileFlowState.COMPLETE);
+            }
         } catch (MissingFlowException e) {
             markMissingFlow(input.flow(), e);
             return Collections.emptyList();

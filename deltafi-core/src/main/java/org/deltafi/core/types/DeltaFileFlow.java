@@ -25,6 +25,7 @@ import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedActionException;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.hibernate.StringArrayType;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -349,6 +350,10 @@ public class DeltaFileFlow {
     }
 
     public void updateState() {
+        updateState(null);
+    }
+
+    public void updateState(DeltaFileFlowState flowState) {
         Action action = lastAction();
         if (action == null) {
             state = DeltaFileFlowState.COMPLETE;
@@ -359,15 +364,7 @@ public class DeltaFileFlow {
 
         modified = action.getModified();
         ActionState lastState = action.getState();
-        state = switch (lastState) {
-            case null -> DeltaFileFlowState.COMPLETE;
-            case ERROR -> DeltaFileFlowState.ERROR;
-            case CANCELLED -> DeltaFileFlowState.CANCELLED;
-            case COMPLETE -> hasPendingAnnotations() ? DeltaFileFlowState.PENDING_ANNOTATIONS : DeltaFileFlowState.COMPLETE;
-            case JOINED, SPLIT -> DeltaFileFlowState.COMPLETE;
-            case FILTERED -> DeltaFileFlowState.FILTERED;
-            default -> DeltaFileFlowState.IN_FLIGHT;
-        };
+        state = flowState != null ? flowState : calculateFlowState(lastState);
         coldQueued = lastState == ActionState.COLD_QUEUED;
         if (lastState == ActionState.ERROR) {
             errorOrFilterCause = action.getErrorCause();
@@ -380,6 +377,18 @@ public class DeltaFileFlow {
                 errorOrFilterCause = null;
             }
         }
+    }
+
+    private DeltaFileFlowState calculateFlowState(ActionState lastState) {
+        return switch (lastState) {
+            case null -> DeltaFileFlowState.COMPLETE;
+            case ERROR -> DeltaFileFlowState.ERROR;
+            case CANCELLED -> DeltaFileFlowState.CANCELLED;
+            case COMPLETE -> hasPendingAnnotations() ? DeltaFileFlowState.PENDING_ANNOTATIONS : DeltaFileFlowState.COMPLETE;
+            case JOINED, SPLIT -> DeltaFileFlowState.COMPLETE;
+            case FILTERED -> DeltaFileFlowState.FILTERED;
+            default -> DeltaFileFlowState.IN_FLIGHT;
+        };
     }
 
     public void removePendingAnnotations(Set<String> receivedAnnotations) {
