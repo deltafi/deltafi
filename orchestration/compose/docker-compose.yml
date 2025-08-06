@@ -40,6 +40,8 @@ services:
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
       SPRING_PROFILES_ACTIVE: monitor,localContentStorage
+      APP_ID: core-scheduler
+      UNIQUE_ID: core-scheduler
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
