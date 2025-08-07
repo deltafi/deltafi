@@ -1,4 +1,4 @@
-DROP INDEX idx_delta_files_stage_in_flight;
+DROP INDEX IF EXISTS idx_delta_files_stage_in_flight;
 CREATE INDEX idx_delta_files_stage_in_flight
     ON delta_files (stage)
     INCLUDE (referenced_bytes)
