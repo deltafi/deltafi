@@ -219,7 +219,7 @@ type DeltaFile {
   paused: Boolean
   warnings: Boolean
   userNotes: Boolean
-  messages: [LogMessage!]!
+  messages: [LogMessage!]
 }
 
 type DeltaFiles {
