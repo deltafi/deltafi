@@ -65,6 +65,21 @@ type Segment {
   did: UUID!
 }
 
+enum LogSeverity {
+  TRACE
+  INFO
+  WARNING
+  ERROR
+  USER
+}
+
+type LogMessage {
+  severity: LogSeverity!
+  created: DateTime!
+  source: String!
+  message: String!
+}
+
 enum DeltaFileStage {
   IN_FLIGHT
   COMPLETE
@@ -202,6 +217,9 @@ type DeltaFile {
   replayed: DateTime
   replayDid: UUID
   paused: Boolean
+  warnings: Boolean
+  userNotes: Boolean
+  messages: [LogMessage!]!
 }
 
 type DeltaFiles {
@@ -314,6 +332,8 @@ input DeltaFilesFilter {
   pendingAnnotations: Boolean
   paused: Boolean
   pinned: Boolean
+  warnings: Boolean
+  userNotes: Boolean
 }
 
 type RetryResult {
@@ -479,6 +499,8 @@ type Mutation {
 
   cancel(dids: [UUID!]!) : [CancelResult!]!
   cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!
+
+  userNote(dids: [UUID!]!, message: String!) : [Result!]!
 
   pin(dids: [UUID!]!) : [Result!]!
   unpin(dids: [UUID!]!) : [Result!]!

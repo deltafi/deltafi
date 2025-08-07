@@ -128,6 +128,8 @@ generateJava {
             "Link": "org.deltafi.core.configuration.ui.Link",
             "LinkInput": "org.deltafi.core.configuration.ui.Link",
             "LinkType": "org.deltafi.core.configuration.ui.Link.LinkType",
+            "LogMessage": "org.deltafi.common.types.LogMessage",
+            "LogSeverity": "org.deltafi.common.types.LogSeverity",
             "PerActionUniqueKeyValues": "org.deltafi.core.types.PerActionUniqueKeyValues",
             "Plugin": "org.deltafi.common.types.Plugin",
             "PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",

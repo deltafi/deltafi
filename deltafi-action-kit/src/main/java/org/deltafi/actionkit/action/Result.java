@@ -20,10 +20,7 @@ package org.deltafi.actionkit.action;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEvent;
-import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.Metric;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
@@ -41,6 +38,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
     protected final ActionEventType actionEventType;
 
     protected final ArrayList<Metric> metrics = new ArrayList<>();
+    protected final List<LogMessage> messages = new ArrayList<>();
 
     /**
      * @return action event summary object based on the action context
@@ -55,11 +53,13 @@ public abstract class Result<T extends Result<T>> implements ResultType {
                 .start(context.getStartTime())
                 .stop(OffsetDateTime.now())
                 .metrics(getCustomMetrics())
+                .messages(messages)
                 .build();
     }
 
     /**
      * Return a list of custom metrics
+     *
      * @return collection of Metric objects
      */
     public List<Metric> getCustomMetrics() {
@@ -68,6 +68,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
 
     /**
      * Add a custom metric to the result
+     *
      * @param metric Metric object to add to the list of custom metrics in the result
      * @return this instance of Result base class
      */
@@ -77,4 +78,36 @@ public abstract class Result<T extends Result<T>> implements ResultType {
         return (T) this;
     }
 
+    /**
+     * Add an informational message to the result
+     *
+     * @param message the informational message to be added
+     * @return this instance of Result base class
+     */
+    public T logInfo(@NotNull String message) {
+        messages.add(LogMessage.createInfo(context.getActionName(), message));
+        return (T) this;
+    }
+
+    /**
+     * Add a warning message to the result
+     *
+     * @param message the warning message to be added
+     * @return this instance of Result base class
+     */
+    public T logWarning(@NotNull String message) {
+        messages.add(LogMessage.createWarning(context.getActionName(), message));
+        return (T) this;
+    }
+
+    /**
+     * Add an error message to the result
+     *
+     * @param message the error message to be added
+     * @return this instance of Result base class
+     */
+    protected T logError(@NotNull String message) {
+        messages.add(LogMessage.createError(context.getActionName(), message));
+        return (T) this;
+    }
 }

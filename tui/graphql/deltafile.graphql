@@ -106,5 +106,13 @@ query DeltaFile($did: UUID!) {
     replayed
     replayDid
     paused
+    warnings
+    userNotes
+    messages {
+      severity
+      created
+      source
+      message
+    }
   }
 } 

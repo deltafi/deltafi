@@ -288,7 +288,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.terminalStage, model.value.pendingAnnotations, model.value.paused, model.value.pinned],
+    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.terminalStage, model.value.pendingAnnotations, model.value.paused, model.value.warnings, model.value.pinned],
     () => {
       fetchDeltaFilesData();
     }
@@ -459,6 +459,7 @@ const defaultQueryParamsTemplate = {
   ingressBytesMax: null,
   totalBytesMin: null,
   totalBytesMax: null,
+  warnings: null,
   pinned: null,
 };
 
@@ -504,7 +505,8 @@ const advanceOptionsPanelInfo = computed(() => {
     { field: "terminalStage", column: 2, order: 3, componentType: "Dropdown", label: "Terminal Stage:", placeholder: "Select if Terminal Stage", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
     { field: "egressed", column: 2, order: 4, componentType: "Dropdown", label: "Egressed:", placeholder: "Select if Egressed", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
     { field: "paused", column: 2, order: 5, componentType: "Dropdown", label: "Paused:", placeholder: "Select if Paused", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
-    { field: "filtered", column: 2, order: 5, componentType: "Dropdown", label: "Filtered:", placeholder: "Select if Filtered", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "filtered", column: 2, order: 6, componentType: "Dropdown", label: "Filtered:", placeholder: "Select if Filtered", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
+    { field: "warnings", column: 2, order: 7, componentType: "Dropdown", label: "Warnings:", placeholder: "Select if has warnings", options: booleanOptions.value, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
     // 3nd Column fields
     { field: "filteredCause", column: 3, order: 1, componentType: "InputText", label: "Filtered Cause:", placeholder: "Filtered Cause", class: "deltafi-input-field min-width" },
     { field: "requeueMin", column: 3, order: 2, componentType: "InputNumber", label: "Requeue Count:", placeholder: "Min", class: "p-inputnumber input-area-height" },
@@ -633,13 +635,13 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType", "paused", "pinned", "queryDateTypeOptions"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "dataSinks", "transforms", "topics", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType", "paused", "warnings", "pinned", "queryDateTypeOptions"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = isoStringToDate(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "pinned"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "warnings", "pinned"].includes(k)) {
       r[k] = JSON.parse(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
@@ -672,7 +674,7 @@ const encodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = dateToISOString(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "pinned"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations", "paused", "warnings", "pinned"].includes(k)) {
       r[k] = Boolean(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);

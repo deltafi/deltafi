@@ -128,6 +128,14 @@ query VerboseDeltaFiles($offset: Int, $limit: Int, $filter: DeltaFilesFilter, $o
       replayed
       replayDid
       paused
+      warnings
+      userNotes
+      messages {
+        severity
+        created
+        source
+        message
+      }
     }
   }
 }

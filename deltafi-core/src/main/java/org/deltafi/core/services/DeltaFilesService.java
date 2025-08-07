@@ -74,6 +74,7 @@ public class DeltaFilesService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final LogSeverity MIN_ACTION_LOG_SEVERITY = LogSeverity.INFO;
     public static final String REPLAY_ACTION_NAME = "Replay";
     public static final int REQUEUE_BATCH_SIZE = 5000;
 
@@ -374,6 +375,7 @@ public class DeltaFilesService {
                 return;
             }
 
+            checkSeverityAndAddMessages(deltaFile, event.getMessages());
             List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
 
             switch (event.getType()) {
@@ -405,6 +407,13 @@ public class DeltaFilesService {
 
             completeJoin(event, deltaFile, action, actionConfiguration);
         });
+    }
+
+    void checkSeverityAndAddMessages(DeltaFile deltaFile, List<LogMessage> actionMessages) {
+        if (actionMessages != null) {
+            deltaFile.addActionMessages(actionMessages.stream()
+                    .filter(m -> m.getSeverity().toInt() >= MIN_ACTION_LOG_SEVERITY.toInt()).toList());
+        }
     }
 
     private void generateMetrics(List<Metric> metrics, ActionEvent event, DeltaFile deltaFile, DeltaFileFlow flow,
@@ -1504,6 +1513,27 @@ public class DeltaFilesService {
         }
 
         return pinResults;
+    }
+
+    public List<Result> userNote(List<UUID> dids, String message, String user) {
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        return dids.stream().map(did -> userNote(did, now, message, user)).toList();
+    }
+
+    private Result userNote(UUID did, OffsetDateTime time, String message, String user) {
+        DeltaFile deltaFile = getDeltaFile(did);
+        if (deltaFile == null) {
+            return Result.builder().success(false).errors(List.of(String.format("DeltaFile with did %s doesn't exist", did))).build();
+        }
+
+        // must not be in cache
+        if (deltaFile.getStage().equals(DeltaFileStage.IN_FLIGHT)) {
+            return Result.builder().success(false).errors(List.of(String.format("DeltaFile with did %s is still IN_FLIGHT", did))).build();
+        }
+
+        deltaFile.addUserNote(time, message, user);
+        deltaFileRepo.save(deltaFile);
+        return Result.successResult();
     }
 
     public List<Result> pin(List<UUID> dids) {

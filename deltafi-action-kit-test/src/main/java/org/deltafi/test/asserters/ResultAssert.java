@@ -20,6 +20,7 @@ package org.deltafi.test.asserters;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.common.types.LogSeverity;
 import org.deltafi.common.types.Metric;
 
 import java.util.Map;
@@ -100,6 +101,76 @@ public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>> 
         return myself;
     }
 
+    /**
+     * Verify that the result contains the specified amount of log messages
+     * @param size of the expected log message list
+     * @return myself
+     */
+    public A hasMessageSize(int size) {
+        return hasMessageSize(size, "Has messages size");
+    }
+
+    /**
+     * Verify that the result contains the specified amount of log messages
+     * @param size of the expected log message list
+     * @param description a description to include with the assertion
+     * @return myself
+     */
+    public A hasMessageSize(int size, String description) {
+        Assertions.assertThat(actual.getMessages()).describedAs(description).hasSize(size);
+        return myself;
+    }
+
+    /**
+     * Verify that the result contains the specified warning
+     * @param text of the expected WARNING message
+     * @return myself
+     */
+    public A hasWarning(String text) {
+        return hasWarning(text, "Has warning");
+    }
+
+    /**
+     * Verify that the result contains the specified warning
+     * @param text of the expected WARNING message
+     * @param description a description to include with the assertion
+     * @return myself
+     */
+    public A hasWarning(String text, String description) {
+        Assertions.assertThat(actual.getMessages()).describedAs(description)
+                .anyMatch(m ->
+                        Objects.equals(LogSeverity.WARNING, m.getSeverity()) &&
+                                Objects.equals(text, m.getMessage()));
+        return myself;
+    }
+
+    /**
+     * Verify that the result contains a log message matching the specified criteria
+     * @param severity of the expected log message
+     * @param source of the expected log message
+     * @param text of the expected log message
+     * @return myself
+     */
+    public A hasMessage(LogSeverity severity, String source, String text) {
+        return hasMessage(severity, source, text, "Has message");
+    }
+
+    /**
+     * Verify that the result contains a log message matching the specified criteria
+     * @param severity of the expected log message
+     * @param source of the expected log message
+     * @param text of the expected log message
+     * @param description a description to include with the assertion
+     * @return myself
+     */
+    public A hasMessage(LogSeverity severity, String source, String text, String description) {
+        Assertions.assertThat(actual.getMessages()).describedAs(description)
+                .anyMatch(m ->
+                        Objects.equals(severity, m.getSeverity()) &&
+                                Objects.equals(source, m.getSource()) &&
+                                Objects.equals(text, m.getMessage()));
+        return myself;
+    }
 
     /**
      * Get the result that is being verified

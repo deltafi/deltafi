@@ -192,6 +192,14 @@ func displayStructuredView(resp *graphql.DeltaFileResponse) (string, error) {
 		statusFlagsTable.Rows = append(statusFlagsTable.Rows, []string{"Pinned"})
 	}
 
+	if df.Warnings != nil && *df.Warnings {
+		statusFlagsTable.Rows = append(statusFlagsTable.Rows, []string{"Warnings"})
+	}
+
+	if df.UserNotes != nil && *df.UserNotes {
+		statusFlagsTable.Rows = append(statusFlagsTable.Rows, []string{"UserNotes"})
+	}
+
 	if df.Egressed != nil && *df.Egressed {
 		statusFlagsTable.Rows = append(statusFlagsTable.Rows, []string{"Egressed"})
 	}

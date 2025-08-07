@@ -805,10 +805,20 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             criteria.append("AND df.paused = :paused ");
             parameters.put("paused", filter.getPaused());
         }
-
+        
         if (filter.getPinned() != null) {
             criteria.append("AND df.pinned = :pinned ");
             parameters.put("pinned", filter.getPinned());
+        }
+
+        if (filter.getWarnings() != null) {
+            criteria.append("AND df.warnings = :warnings ");
+            parameters.put("warnings", filter.getWarnings());
+        }
+
+        if (filter.getUserNotes() != null) {
+            criteria.append("AND df.user_notes = :userNotes ");
+            parameters.put("userNotes", filter.getUserNotes());
         }
 
         return criteria.toString();
@@ -833,8 +843,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                      created, modified, content_deleted, content_deleted_reason,
                                      egressed, filtered, replayed, replay_did, terminal,
                                      content_deletable, content_object_ids, topics, transforms, data_sinks, paused,
-                                     waiting_for_children, version, pinned)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                     waiting_for_children, version, pinned, warnings, user_notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS df_stage_enum), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+            ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_DELTA_FILE_FLOWS = """
             INSERT INTO delta_file_flows (id, flow_definition_id, number, state, created, modified, input,
@@ -971,6 +982,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setBoolean(27, deltaFile.getWaitingForChildren());
         ps.setLong(28, deltaFile.getVersion());
         ps.setBoolean(29, deltaFile.isPinned());
+        ps.setBoolean(30, deltaFile.isWarnings());
+        ps.setBoolean(31, deltaFile.isUserNotes());
     }
 
     private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {

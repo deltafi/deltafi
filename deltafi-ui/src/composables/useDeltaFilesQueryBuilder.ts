@@ -48,6 +48,8 @@ export default function useDeltaFilesQueryBuilder() {
     replayable?: string | null;
     paused?: string | null;
     pinned?: string | null;
+    warnings?: string | null;
+    userNotes?: string | null;
     sizeMin?: string | null;
     sizeMax?: string | null;
     sizeType?: object;
@@ -96,6 +98,8 @@ export default function useDeltaFilesQueryBuilder() {
             pendingAnnotations: queryParams.pendingAnnotations,
             paused: queryParams.paused,
             pinned: queryParams.pinned,
+            warnings: queryParams.warnings,
+            userNotes: queryParams.userNotes,
           },
           orderBy: {
             direction: queryParams.sortDirection ? new EnumType(queryParams.sortDirection) : null,

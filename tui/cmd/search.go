@@ -65,6 +65,8 @@ type searchFilter struct {
 	filtered           *bool
 	dataSources        *[]string
 	pinned             *bool
+	warnings           *bool
+	userNotes          *bool
 	testMode           *bool
 	replayable         *bool
 	replayed           *bool
@@ -209,6 +211,12 @@ func (f *searchFilter) toGraphQLFilter() *graphql.DeltaFilesFilter {
 	}
 	if f.pinned != nil {
 		retval.Pinned = f.pinned
+	}
+	if f.warnings != nil {
+		retval.Warnings = f.warnings
+	}
+	if f.userNotes != nil {
+		retval.UserNotes = f.userNotes
 	}
 	if f.testMode != nil {
 		retval.TestMode = f.testMode
@@ -940,6 +948,8 @@ type SearchParameters struct {
 	egressed           util.TristateFlag
 	filtered           util.TristateFlag
 	pinned             util.TristateFlag
+	warnings           util.TristateFlag
+	userNotes          util.TristateFlag
 	testMode           util.TristateFlag
 	replayable         util.TristateFlag
 	replayed           util.TristateFlag
@@ -1040,6 +1050,14 @@ func (searchParams *SearchParameters) GetFilter() (searchFilter, error) {
 	if searchParams.pinned.IsSet() {
 		val := searchParams.pinned.IsTrue()
 		filter.pinned = &val
+	}
+	if searchParams.warnings.IsSet() {
+		val := searchParams.warnings.IsTrue()
+		filter.warnings = &val
+	}
+	if searchParams.userNotes.IsSet() {
+		val := searchParams.userNotes.IsTrue()
+		filter.userNotes = &val
 	}
 	if searchParams.testMode.IsSet() {
 		val := searchParams.testMode.IsTrue()
@@ -1245,6 +1263,8 @@ func (searchParams *SearchParameters) addSearchFlagsAndCompletions(cmd *cobra.Co
 	searchParams.replayed.RegisterFlag(cmd, "replayed", "Filter by replayed status", "yes", "no")
 	searchParams.terminalStage.RegisterFlag(cmd, "terminal-stage", "Filter by terminal stage status", "yes", "no")
 	searchParams.testMode.RegisterFlag(cmd, "test-mode", "Filter by test mode status", "yes", "no")
+	searchParams.userNotes.RegisterFlag(cmd, "user-notes", "Filter by user notes status", "yes", "no")
+	searchParams.warnings.RegisterFlag(cmd, "warnings", "Filter by warnings status", "yes", "no")
 
 	cmd.RegisterFlagCompletionFunc("data-source", getDataSourceNames)
 	cmd.RegisterFlagCompletionFunc("transform", getTransformNames)

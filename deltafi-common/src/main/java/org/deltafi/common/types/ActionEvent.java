@@ -54,6 +54,7 @@ public class ActionEvent {
     private ErrorEvent error;
     private FilterEvent filter;
     private List<Metric> metrics;
+    private List<LogMessage> messages;
     private IngressEvent ingress;
 
     public String validateHeader() {

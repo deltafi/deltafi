@@ -858,6 +858,8 @@ deltafi search [flags]
 - `--replayed <yes|no>`: Filter by replayed status
 - `--terminal-stage <yes|no>`: Filter by terminal stage status
 - `--test-mode <yes|no>`: Filter by test mode status
+- `--user-notes <yes|no>`: Filter by user notes status
+- `--warnings <yes|no>`: Filter by warnings status
 
 **Navigation Keys:**
 - `↑/k`: Move selection up

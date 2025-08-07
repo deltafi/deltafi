@@ -1,0 +1,33 @@
+{
+  "did": "%1$s",
+  "flowName": "sampleEgress",
+  "flowId": "22222222-2222-2222-2222-222222222222",
+  "actionName": "SampleEgressAction",
+  "start": "2021-07-11T13:44:22.183Z",
+  "stop": "2021-07-11T13:44:22.184Z",
+  "type": "ERROR",
+  "messages": [
+    {
+      "severity": "TRACE",
+      "created": "2024-10-31T12:30:00.000Z",
+      "source": "SampleEgressAction",
+      "message": "This message is going nowhere"
+    },
+    {
+      "severity": "WARNING",
+      "created": "2024-10-31T12:30:00.000Z",
+      "source": "SampleEgressAction",
+      "message": "We had an issue, but it didn't stop us"
+    },
+    {
+      "severity": "ERROR",
+      "created": "2024-10-31T12:30:00.000Z",
+      "source": "SampleEgressAction",
+      "message": "Action failed"
+    }
+  ],
+  "error": {
+    "cause": "Authority XYZ not recognized",
+    "context": "Dead beef feed face cafe"
+  }
+}

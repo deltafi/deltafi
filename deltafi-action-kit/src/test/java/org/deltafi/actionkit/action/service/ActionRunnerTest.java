@@ -18,8 +18,10 @@
 package org.deltafi.actionkit.action.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
+import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.content.ContentStorageService;
@@ -66,7 +68,7 @@ public class ActionRunnerTest {
     }
 
     @Test
-    public void testOrphanError() throws JsonProcessingException, ObjectStorageException {
+    public void testOrphanAndLogging_Error() throws JsonProcessingException, ObjectStorageException {
         List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
 
         ErrorTestAction action = new ErrorTestAction();
@@ -84,6 +86,7 @@ public class ActionRunnerTest {
 
         actionInput.getActionContext().setActionVersion("1");
         actionInput.getActionContext().setHostname("host");
+        actionInput.getActionContext().setActionName("actionName");
         actionInput.getActionContext().setStartTime(OffsetDateTime.now());
         actionInput.getActionContext().setContentStorageService(actionContentStorageService);
         actionRunner.executeAction(action, actionInput, actionInput.getReturnAddress());
@@ -104,10 +107,15 @@ public class ActionRunnerTest {
         String prefix = DID.toString().substring(0, 3) + "/"
                 + DID + "/";
         assertTrue(segments.getFirst().startsWith(prefix));
+
+        Assertions.assertThat(actionEvent.getMessages()).hasSize(1);
+        Assertions.assertThat(actionEvent.getMessages().getFirst().getSeverity()).isEqualTo(LogSeverity.ERROR);
+        Assertions.assertThat(actionEvent.getMessages().getFirst().getMessage()).contains("message");
+        Assertions.assertThat(actionEvent.getMessages().getFirst().getSource()).isEqualTo("actionName");
     }
 
     @Test
-    public void testOrphanTransform() throws JsonProcessingException, ObjectStorageException {
+    public void testOrphanAndLogging_Transform() throws JsonProcessingException, ObjectStorageException {
         List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
 
         TransformTestAction action = new TransformTestAction();
@@ -127,6 +135,7 @@ public class ActionRunnerTest {
 
         actionInput.getActionContext().setActionVersion("1");
         actionInput.getActionContext().setHostname("host");
+        actionInput.getActionContext().setActionName("actionName");
         actionInput.getActionContext().setStartTime(OffsetDateTime.now());
         actionInput.getActionContext().setContentStorageService(actionContentStorageService);
         actionRunner.executeAction(action, actionInput, actionInput.getReturnAddress());
@@ -148,6 +157,11 @@ public class ActionRunnerTest {
                 + DID + "/";
         assertTrue(segments.getFirst().startsWith(prefix));
         assertTrue(segments.get(1).startsWith(prefix));
+
+        Assertions.assertThat(actionEvent.getMessages()).hasSize(1);
+        Assertions.assertThat(actionEvent.getMessages().getFirst().getSeverity()).isEqualTo(LogSeverity.WARNING);
+        Assertions.assertThat(actionEvent.getMessages().getFirst().getMessage()).contains("this is a warning");
+        Assertions.assertThat(actionEvent.getMessages().getFirst().getSource()).isEqualTo("actionName");
     }
 
     private Content content() {

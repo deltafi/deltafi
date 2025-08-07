@@ -36,6 +36,7 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.DeltaFiUserService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.services.RestDataSourceService;
@@ -240,6 +241,13 @@ public class DeltaFilesDatafetcher {
   public List<CancelResult> cancelMatching(@InputArgument DeltaFilesFilter filter) {
     auditLogger.audit("canceling deltaFiles by filter");
     return deltaFilesService.cancel(filter);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileUserNote
+  public List<Result> userNote(@InputArgument List<UUID> dids, @InputArgument String message) {
+    auditLogger.audit("adding user note to deltafiles with dids {}", CoreAuditLogger.listToString(dids));
+    return deltaFilesService.userNote(dids, message, DeltaFiUserService.currentUsername());
   }
 
   @DgsMutation

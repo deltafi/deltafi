@@ -73,6 +73,11 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('DeltaFileCancel'" + OR_ADMIN)
     public @interface DeltaFileCancel {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileUserNote'" + OR_ADMIN)
+    public @interface DeltaFileUserNote {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

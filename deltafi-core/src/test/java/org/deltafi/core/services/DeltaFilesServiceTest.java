@@ -887,6 +887,73 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void testCheckSeverityAndAddMessages() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+                OffsetDateTime.now(), OffsetDateTime.now());
+
+        deltaFilesService.checkSeverityAndAddMessages(deltaFile, List.of(
+                LogMessage.createTrace("source", "nope1"),
+                LogMessage.createInfo("source", "yes"),
+                LogMessage.createTrace("source", "nope2"),
+                LogMessage.createWarning("source", "yes")));
+
+        assertEquals(2, deltaFile.getMessages().size());
+
+        assertEquals("yes", deltaFile.getMessages().getFirst().getMessage());
+        assertEquals(LogSeverity.INFO, deltaFile.getMessages().getFirst().getSeverity());
+        assertEquals("source", deltaFile.getMessages().getFirst().getSource());
+
+        assertEquals("yes", deltaFile.getMessages().getLast().getMessage());
+        assertEquals(LogSeverity.WARNING, deltaFile.getMessages().getLast().getSeverity());
+        assertEquals("source", deltaFile.getMessages().getLast().getSource());
+    }
+
+    @Test
+    void userNotesDeltaFiles() {
+        DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.ERROR,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFile2.addActionMessages(List.of(LogMessage.createError("source", "text")));
+        DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID()); // IN_FLIGHT
+        UUID nonExistentDid = UUID.randomUUID();
+
+        when(deltaFileRepo.findById(eq(deltaFile1.getDid()))).thenReturn(Optional.of(deltaFile1));
+        when(deltaFileRepo.findById(eq(deltaFile2.getDid()))).thenReturn(Optional.of(deltaFile2));
+        when(deltaFileRepo.findById(eq(deltaFile3.getDid()))).thenReturn(Optional.of(deltaFile3));
+
+        List<Result> results = deltaFilesService.userNote(List.of(deltaFile1.getDid(), deltaFile2.getDid(),
+                deltaFile3.getDid(), nonExistentDid), "message", "userName");
+
+        assertEquals(4, results.size());
+        assertTrue(results.get(0).isSuccess());
+        assertTrue(results.get(1).isSuccess());
+        assertFalse(results.get(2).isSuccess());
+        assertFalse(results.get(3).isSuccess());
+
+        assertTrue(deltaFile1.isUserNotes());
+        assertEquals(1, deltaFile1.getMessages().size());
+        assertEquals("message", deltaFile1.getMessages().getFirst().getMessage());
+        assertEquals(LogSeverity.USER, deltaFile1.getMessages().getFirst().getSeverity());
+        assertEquals("userName", deltaFile1.getMessages().getFirst().getSource());
+
+        assertTrue(deltaFile2.isUserNotes());
+        assertEquals(2, deltaFile2.getMessages().size());
+        assertEquals("message", deltaFile2.getMessages().getLast().getMessage());
+        assertEquals(LogSeverity.USER, deltaFile2.getMessages().getLast().getSeverity());
+        assertEquals("userName", deltaFile2.getMessages().getLast().getSource());
+
+        assertFalse(deltaFile3.isUserNotes());
+        assertNull(deltaFile3.getMessages());
+        verify(deltaFileRepo, times(2)).save(any());
+        assertEquals(1, results.get(2).getErrors().size());
+        assertEquals("DeltaFile with did " + deltaFile3.getDid() + " is still IN_FLIGHT",
+                results.get(2).getErrors().getFirst());
+        assertEquals("DeltaFile with did " + nonExistentDid + " doesn't exist",
+                results.get(3).getErrors().getFirst());
+    }
+
+    @Test
     void pinsDeltaFiles() {
         DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
                 OffsetDateTime.now(), OffsetDateTime.now());

@@ -114,6 +114,7 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
 
     @Override
     public final ActionEvent toEvent() {
+        logError(errorSummary);
         ActionEvent event = super.toEvent();
         event.setError(ErrorEvent.builder()
                 .cause(errorCause)

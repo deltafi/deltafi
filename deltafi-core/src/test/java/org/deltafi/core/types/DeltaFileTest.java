@@ -211,4 +211,47 @@ class DeltaFileTest {
         deltaFile.addAnnotations(Map.of("b", "2", "c", ""));
         Assertions.assertThat(deltaFile.pendingAnnotations(expected)).isEmpty();
     }
+
+    @Test
+    void testMessages() {
+        Action action1 = Action.builder()
+                .name("action1")
+                .state(ActionState.COMPLETE)
+                .build();
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .actions(List.of(action1))
+                .build();
+
+        DeltaFile deltaFile = DeltaFile.builder()
+                .flows(new LinkedHashSet<>(List.of(flow)))
+                .stage(DeltaFileStage.COMPLETE)
+                .build();
+
+        Assertions.assertThat(deltaFile.isWarnings()).isFalse();
+        Assertions.assertThat(deltaFile.isUserNotes()).isFalse();
+        Assertions.assertThat(deltaFile.getMessages()).isNull();
+
+        deltaFile.addActionMessages(List.of(
+                LogMessage.createError("source", "text"),
+                LogMessage.createInfo("source", "text")));
+
+        Assertions.assertThat(deltaFile.isWarnings()).isFalse();
+        Assertions.assertThat(deltaFile.isUserNotes()).isFalse();
+        Assertions.assertThat(deltaFile.getMessages()).hasSize(2);
+
+        deltaFile.addActionMessages(List.of(
+                LogMessage.createWarning("source", "text"),
+                LogMessage.createInfo("source", "text"),
+                LogMessage.createWarning("source", "text")));
+
+        Assertions.assertThat(deltaFile.isWarnings()).isTrue();
+        Assertions.assertThat(deltaFile.isUserNotes()).isFalse();
+        Assertions.assertThat(deltaFile.getMessages()).hasSize(5);
+
+        deltaFile.addUserNote(OffsetDateTime.now(), "message", "user");
+
+        Assertions.assertThat(deltaFile.isWarnings()).isTrue();
+        Assertions.assertThat(deltaFile.isUserNotes()).isTrue();
+        Assertions.assertThat(deltaFile.getMessages()).hasSize(6);
+    }
 }

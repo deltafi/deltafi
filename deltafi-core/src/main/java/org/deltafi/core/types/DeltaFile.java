@@ -19,6 +19,7 @@ package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.uuid.Generators;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.OrderBy;
@@ -100,7 +101,16 @@ public class DeltaFile {
   private boolean terminal = false;
 
   @Builder.Default
+  private boolean warnings = false;
+
+  @Builder.Default
+  private boolean userNotes = false;
+  @Builder.Default
   private boolean pinned = false;
+
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
+  private List<LogMessage> messages;
 
   @Builder.Default
   private boolean contentDeletable = false;
@@ -174,6 +184,9 @@ public class DeltaFile {
     this.transforms = new ArrayList<>(other.transforms);
     this.dataSinks = new ArrayList<>(other.dataSinks);
     this.paused = other.paused;
+    this.warnings = other.warnings;
+    this.userNotes = other.userNotes;
+    this.messages = other.messages == null ? null : new ArrayList<>(other.messages);
     this.waitingForChildren = other.waitingForChildren;
   }
 
@@ -653,5 +666,28 @@ public class DeltaFile {
               a.getDeleteMetadataKeys().forEach(metadata::remove);
             }));
     return metadata;
+  }
+
+  public void addActionMessages(List<LogMessage> actionMessages) {
+    if (actionMessages != null) {
+      if (!warnings) {
+        warnings = actionMessages.stream()
+                .anyMatch(m -> m.getSeverity().equals(LogSeverity.WARNING));
+      }
+      addMessages(actionMessages);
+    }
+  }
+
+  public void addUserNote(OffsetDateTime time, String message, String user) {
+    addMessages(List.of(new LogMessage(LogSeverity.USER, time, user, message)));
+    userNotes = true;
+  }
+
+  private void addMessages(List<LogMessage> logMessages) {
+    if (messages == null) {
+      messages = new ArrayList<>(logMessages);
+    } else {
+      messages.addAll(logMessages);
+    }
   }
 }

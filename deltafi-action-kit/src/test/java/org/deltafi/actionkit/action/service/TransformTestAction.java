@@ -44,6 +44,8 @@ public class TransformTestAction extends TransformAction<ActionParameters> {
         TransformResult transformResult = new TransformResult(context, input.getContent());
         transformResult.saveContent("abcde", "name3", "text/plain");
 
+        transformResult.logWarning("this is a warning");
+
         return transformResult;
     }
 }

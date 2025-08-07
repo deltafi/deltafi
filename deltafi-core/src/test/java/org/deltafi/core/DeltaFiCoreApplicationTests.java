@@ -821,11 +821,13 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(fullFlowExemplarService.postTransformInvalidDeltaFile(did), afterMutation);
 	}
 
-	void runErrorWithAutoResume(Integer autoResumeDelay, boolean withAnnotation) throws IOException {
+	void runErrorWithAutoResume(Integer autoResumeDelay, String mode) throws IOException {
 		UUID did = UUID.randomUUID();
 		String policyName = null;
 		DeltaFile original = fullFlowExemplarService.postTransformDeltaFile(did);
 		deltaFileRepo.save(original);
+		boolean withAnnotation = "ANNOTATIONS".equals(mode);
+		boolean withMessages = "MESSAGES".equals(mode);
 
 		if (autoResumeDelay != null) {
 			BackOff backOff = BackOff.newBuilder()
@@ -844,6 +846,8 @@ class DeltaFiCoreApplicationTests {
 
 		if (withAnnotation) {
 			deltaFilesService.handleActionEvent(actionEvent("errorWithAnnotation", did));
+		} else if (withMessages) {
+			deltaFilesService.handleActionEvent(actionEvent("errorWithMessages", did));
 		} else {
 			deltaFilesService.handleActionEvent(actionEvent("error", did, original.lastFlow().getId()));
 		}
@@ -852,6 +856,13 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile expected = fullFlowExemplarService.postErrorDeltaFile(did, policyName, autoResumeDelay);
 		if (withAnnotation) {
 			expected.addAnnotations(Map.of("errorKey", "error metadata"));
+		}
+		if (withMessages) {
+			OffsetDateTime testTime = OffsetDateTime.of(2024, 10, 31, 12, 30, 00, 0, ZoneOffset.UTC);
+			expected.setMessages(List.of(
+					new LogMessage(LogSeverity.WARNING, testTime, "SampleEgressAction", "We had an issue, but it didn't stop us"),
+					new LogMessage(LogSeverity.ERROR, testTime, "SampleEgressAction", "Action failed")));
+			expected.setWarnings(true);
 		}
 		assertEqualsIgnoringDates(expected, actual);
 
@@ -866,17 +877,22 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testError() throws IOException {
-		runErrorWithAutoResume(null, false);
+		runErrorWithAutoResume(null, null);
 	}
 
 	@Test
 	void testErrorWithAnnotation() throws IOException {
-			runErrorWithAutoResume(null, true);
+			runErrorWithAutoResume(null, "ANNOTATIONS");
+	}
+
+	@Test
+	void testErrorWithMessages() throws IOException {
+		runErrorWithAutoResume(null, "MESSAGES");
 	}
 
 	@Test
 	void testAutoResume() throws IOException {
-		runErrorWithAutoResume(100, false);
+		runErrorWithAutoResume(100, null);
 	}
 
 	@Test
@@ -3094,6 +3110,7 @@ class DeltaFiCoreApplicationTests {
 		flow1.setTestMode(true);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.updateFlowArrays();
+		deltaFile1.setWarnings(true);
 
 		DeltaFile deltaFile2 = utilService.buildDeltaFile(UUID.randomUUID(), "dataSource", DeltaFileStage.ERROR, NOW.plusSeconds(2), NOW.minusSeconds(2));
 		deltaFile2.setIngressBytes(200L);
@@ -3118,6 +3135,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setEgressed(true);
 		deltaFile2.setFiltered(true);
 		deltaFile2.updateFlowArrays();
+		deltaFile2.setUserNotes(true);
 
 		DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID(), "dataSource", DeltaFileStage.COMPLETE, NOW.plusSeconds(3), NOW.minusSeconds(3));
 		deltaFile3.setIngressBytes(300L);
@@ -3212,6 +3230,10 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().topics(List.of("fake")).build());
 		testFilter(DeltaFilesFilter.newBuilder().pinned(true).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().pinned(false).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().warnings(true).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().warnings(false).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().userNotes(true).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().userNotes(false).build(), deltaFile1, deltaFile3);
 	}
 
 	@Test
