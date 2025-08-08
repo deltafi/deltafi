@@ -5,6 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.28.0] - 2025-08-08
+
+### Added
+- Actions may now log messages which are saved into the DeltaFile and available for view on the TUI and UI (Raw DeltaFile)
+  - Log messages with a severity of `WARNING` are flagged and searchable by the UI/TUI
+  - An `ErrorResult` automatically generates a log message with a severity of `ERROR`
+  - Limited to the Java action kit initially
+- A user may now add a note to a DeltaFile. This is accomplished using a log message with a severity of `USER`, and the new GraphQL endpoint `userNote`. This new endpoint requires the new permission `DeltaFileUserNote`
+  - Adding a user note is supported through GraphQL initially
+  - Searching for DeltaFiles with a user note is supported through the TUI initially
+- New core action, `Warning` allows for logging of messages with the `WARNING` severity
+
+### Changed
+- Changed the core-scheduler service to set the UNIQUE_ID and APP_ID environment values directly in the compose file instead of relying on the entrypoint which is overridden in `CoreDevelopment` mode
+
+### Fixed
+- Allow DeltaFile `messages` to be null
+- Fixed the name of the migration file for updating the index `idx_delta_files_stage_in_flight`, which was silently being ignored, and  fix the same migration to check for the index before attempting to drop it
+- Fixed a bug where retrying publish errors left the previously errored flow in an in-flight state
+
+### Upgrade and Migration
+- New user permission, `DeltaFileUserNote`
+- Added migration to add new fields  to `delta_files` table: `warnings`, `user_notes`, and `messages`
+
 ## [2.27.0] - 2025-08-05
 
 ### Added
@@ -4514,7 +4538,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.27.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.0...main
+[2.28.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.27.0...2.28.0
 [2.27.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.1...2.27.0
 [2.26.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.0...2.26.1
 [2.26.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.25.4...2.26.0
