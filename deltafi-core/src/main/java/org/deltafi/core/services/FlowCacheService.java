@@ -123,6 +123,7 @@ public class FlowCacheService {
                 .name(flow.getName())
                 .type(flow.getType())
                 .state(flow.getFlowStatus().getState())
+                .valid(flow.getFlowStatus().getValid())
                 .condition(condition)
                 .build();
     }

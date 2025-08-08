@@ -146,7 +146,7 @@ class IngressServiceTest {
         if (flowRunning) {
             Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(REST_DATA_SOURCE);
         } else {
-            Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenThrow(new MissingFlowException("dataSource", FlowType.REST_DATA_SOURCE, FlowState.STOPPED));
+            Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenThrow(MissingFlowException.stopped("dataSource", FlowType.REST_DATA_SOURCE));
         }
         DeltaFileFlow flow = DeltaFileFlow.builder().flowDefinition(FlowDefinition.builder().name("dataSource").type(FlowType.REST_DATA_SOURCE).build()).build();
         DeltaFile deltaFile = DeltaFile.builder().flows(Set.of(flow)).build();
@@ -380,7 +380,7 @@ class IngressServiceTest {
                         "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
-        assertEquals("The rest data source named dataSource is not running (flow state is STOPPED)", ingressMetadataException.getMessage());
+        assertEquals("The rest data source named dataSource is not running", ingressMetadataException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "dataSource");

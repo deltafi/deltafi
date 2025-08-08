@@ -103,6 +103,24 @@ type flowNode struct {
 	willRepeat    bool
 }
 
+type FlowStatus interface {
+	GetValid() bool
+	GetState() graphql.FlowState
+	GetTestMode() bool
+}
+
+func newFlowNode(flowName, nodeType string, flowStatus FlowStatus, lastSibling bool) *flowNode {
+	state, enabled := flowState(flowStatus)
+	return &flowNode{
+		name:          flowName,
+		nodeType:      nodeType,
+		state:         state,
+		testMode:      flowStatus.GetTestMode(),
+		enabled:       enabled,
+		isLastSibling: lastSibling,
+	}
+}
+
 func displayFlowGraph(flowName string) error {
 	flowGraph, err := graphql.GetFlowGraph()
 	if err != nil {
@@ -110,7 +128,7 @@ func displayFlowGraph(flowName string) error {
 	}
 
 	// Find the source node
-	var sourceFlow interface{} // Can be either RestDataSource or TimedDataSource
+	var sourceFlow graphql.DataSourceFields // Can be any implementation of DataSource
 	var sourceTopic string
 	for _, flows := range flowGraph.GetFlows {
 		for _, source := range flows.GetRestDataSources() {
@@ -150,37 +168,8 @@ func displayFlowGraph(flowName string) error {
 		nodeType: "root",
 	}
 
-	// Create source node
-	var sourceNode *flowNode
-	switch s := sourceFlow.(type) {
-	case *graphql.GetFlowGraphGetFlowsRestDataSourcesRestDataSource:
-		sourceNode = &flowNode{
-			name:          s.GetName(),
-			nodeType:      "source",
-			state:         flowStateToString(s.GetFlowStatus().State),
-			testMode:      s.GetFlowStatus().TestMode,
-			enabled:       isFlowEnabled(s.GetFlowStatus().State),
-			isLastSibling: true,
-		}
-	case *graphql.GetFlowGraphGetFlowsTimedDataSourcesTimedDataSource:
-		sourceNode = &flowNode{
-			name:          s.GetName(),
-			nodeType:      "source",
-			state:         flowStateToString(s.GetFlowStatus().State),
-			testMode:      s.GetFlowStatus().TestMode,
-			enabled:       isFlowEnabled(s.GetFlowStatus().State),
-			isLastSibling: true,
-		}
-	case *graphql.GetFlowGraphGetFlowsOnErrorDataSourcesOnErrorDataSource:
-		sourceNode = &flowNode{
-			name:          s.GetName(),
-			nodeType:      "source",
-			state:         flowStateToString(s.GetFlowStatus().State),
-			testMode:      s.GetFlowStatus().TestMode,
-			enabled:       isFlowEnabled(s.GetFlowStatus().State),
-			isLastSibling: true,
-		}
-	}
+	flowStatus := sourceFlow.GetFlowStatus()
+	sourceNode := newFlowNode(sourceFlow.GetName(), "source", &flowStatus, true)
 
 	root.children = append(root.children, sourceNode)
 
@@ -284,13 +273,8 @@ func buildGraphFromTopic(
 			}
 
 			if subscribesToTopic {
-				transformNode := &flowNode{
-					name:     transform.GetName(),
-					nodeType: "transform",
-					state:    flowStateToString(transform.GetFlowStatus().State),
-					testMode: transform.GetFlowStatus().TestMode,
-					enabled:  isFlowEnabled(transform.GetFlowStatus().State),
-				}
+				flowStatus := transform.GetFlowStatus()
+				transformNode := newFlowNode(transform.GetName(), "transform", &flowStatus, false)
 				visitedTransforms[transform.GetName()] = transformNode
 				transformNodes = append(transformNodes, transformNode)
 
@@ -321,13 +305,8 @@ func buildGraphFromTopic(
 			}
 
 			if subscribesToTopic {
-				sinkNode := &flowNode{
-					name:     sink.GetName(),
-					nodeType: "sink",
-					state:    flowStateToString(sink.GetFlowStatus().State),
-					testMode: sink.GetFlowStatus().TestMode,
-					enabled:  isFlowEnabled(sink.GetFlowStatus().State),
-				}
+				flowStatus := sink.GetFlowStatus()
+				sinkNode := newFlowNode(sink.GetName(), "sink", &flowStatus, false)
 				visitedSinks[sink.GetName()] = sinkNode
 				sinkNodes = append(sinkNodes, sinkNode)
 			}
@@ -463,12 +442,12 @@ func formatNode(node *flowNode) string {
 	return fmt.Sprintf("%s %s %s %s", icon, stateIcon, nodeName, testModeIcon)
 }
 
-func flowStateToString(state graphql.FlowState) string {
-	return string(state)
-}
+func flowState(flowStatus FlowStatus) (string, bool) {
+	if !flowStatus.GetValid() {
+		return string(graphql.FlowStateStopped), false
+	}
 
-func isFlowEnabled(state graphql.FlowState) bool {
-	return state == graphql.FlowStateRunning
+	return string(flowStatus.GetState()), flowStatus.GetState() == graphql.FlowStateRunning
 }
 
 func init() {

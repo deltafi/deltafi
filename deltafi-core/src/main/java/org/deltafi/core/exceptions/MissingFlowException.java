@@ -19,23 +19,30 @@ package org.deltafi.core.exceptions;
 
 import lombok.Getter;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.generated.types.FlowState;
 
 @Getter
 public class MissingFlowException extends RuntimeException {
     private static final String MISSING_FLOW_CONTEXT = "The %s named %s is not %s";
     private static final String MISSING_FLOW_CAUSE = "The %s is no longer installed";
-    private static final String NOT_RUNNING_CAUSE = "The %s is not running";
+    private static final String NOT_RUNNING_CAUSE = "The %s is stopped";
+    private static final String INVALID_CAUSE = "The %s is invalid";
 
     private final String missingCause;
 
-    public MissingFlowException(String flowName, FlowType flowType) {
-        super(MISSING_FLOW_CONTEXT.formatted(flowType.getDisplayName(), flowName, "installed"));
-        this.missingCause = MISSING_FLOW_CAUSE.formatted(flowType.getDisplayName());
+    public MissingFlowException(FlowType flowType, String flowName, String context, String missingCause) {
+        super(MISSING_FLOW_CONTEXT.formatted(flowType.getDisplayName(), flowName, context));
+        this.missingCause = missingCause.formatted(flowType.getDisplayName());
     }
 
-    public MissingFlowException(String flowName, FlowType flowType, FlowState flowState) {
-        super(MISSING_FLOW_CONTEXT.formatted(flowType.getDisplayName(), flowName, "running (flow state is " + flowState + ")"));
-        this.missingCause = NOT_RUNNING_CAUSE.formatted(flowType.getDisplayName());
+    public static MissingFlowException notFound(String flowName, FlowType flowType) {
+        return new MissingFlowException(flowType, flowName, "installed", MISSING_FLOW_CAUSE);
+    }
+
+    public static MissingFlowException stopped(String flowName, FlowType flowType) {
+        return new MissingFlowException(flowType, flowName, "running", NOT_RUNNING_CAUSE);
+    }
+
+    public static MissingFlowException invalid(String flowName, FlowType flowType) {
+        return new MissingFlowException(flowType, flowName, "valid", INVALID_CAUSE);
     }
 }

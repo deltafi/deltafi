@@ -218,9 +218,13 @@ func listAllDataSinks(cmd *cobra.Command) error {
 	var rows [][]string
 
 	for _, dataSink := range resp.GetAllFlows.GetDataSink() {
+		state := string(dataSink.GetFlowStatus().State)
+		if !dataSink.GetFlowStatus().Valid {
+			state = "INVALID"
+		}
 		rows = append(rows, []string{
 			dataSink.GetName(),
-			string(dataSink.GetFlowStatus().State),
+			state,
 			strconv.FormatBool(dataSink.GetFlowStatus().TestMode),
 		})
 		sort.Slice(rows, func(i, j int) bool {

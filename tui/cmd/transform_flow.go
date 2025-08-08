@@ -241,9 +241,13 @@ func listAll(cmd *cobra.Command) error {
 	var rows [][]string
 
 	for _, transform := range resp.GetAllFlows.GetTransform() {
+		state := string(transform.GetFlowStatus().State)
+		if !transform.GetFlowStatus().Valid {
+			state = "INVALID"
+		}
 		rows = append(rows, []string{
 			transform.GetName(),
-			string(transform.GetFlowStatus().State),
+			state,
 			strconv.FormatBool(transform.GetFlowStatus().TestMode),
 		})
 		sort.Slice(rows, func(i, j int) bool {

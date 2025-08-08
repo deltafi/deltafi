@@ -79,7 +79,7 @@
         </Column>
         <Column class="flow-state-column">
           <template #body="{ data }">
-            <template v-if="_.isEqual(data.flowStatus.state, 'INVALID')">
+            <template v-if="_.isEqual(data.flowStatus.valid, false)">
               <FlowStateValidationButton :row-data-prop="data" @reload-transforms="refresh" />
             </template>
             <template v-else>

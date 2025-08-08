@@ -478,7 +478,11 @@ func getDataSource(cmd *cobra.Command, name string) error {
 	return wrapInError("Error getting data source "+name, err)
 }
 
-func formatDataSourceState(state string) string {
+func formatDataSourceState(flowStatus graphql.DataSourceFieldsFlowStatus) string {
+	if !flowStatus.GetValid() {
+		return styles.ErrorStyle.Render("INVALID")
+	}
+	state := string(flowStatus.GetState())
 	switch strings.ToUpper(state) {
 	case "RUNNING":
 		return styles.SuccessStyle.Render(state)
@@ -501,38 +505,17 @@ func listAllDataSources(cmd *cobra.Command) error {
 
 	// Add REST data sources
 	for _, dataSource := range resp.GetAllFlows.GetRestDataSource() {
-		actionCounts, _ := countActionsInFlow(dataSource.GetName())
-		rows = append(rows, []string{
-			dataSource.GetName(),
-			"REST",
-			formatDataSourceState(string(dataSource.GetFlowStatus().State)),
-			strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
-			formatActionCounts(actionCounts),
-		})
+		rows = addDataSourceRow(&dataSource.DataSourceFieldsRestDataSource, "Rest", rows)
 	}
 
 	// Add timed data sources
 	for _, dataSource := range resp.GetAllFlows.GetTimedDataSource() {
-		actionCounts, _ := countActionsInFlow(dataSource.GetName())
-		rows = append(rows, []string{
-			dataSource.GetName(),
-			"Timed",
-			formatDataSourceState(string(dataSource.GetFlowStatus().State)),
-			strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
-			formatActionCounts(actionCounts),
-		})
+		rows = addDataSourceRow(&dataSource.DataSourceFieldsTimedDataSource, "Timed", rows)
 	}
 
 	// Add on-error data sources
 	for _, dataSource := range resp.GetAllFlows.GetOnErrorDataSource() {
-		actionCounts, _ := countActionsInFlow(dataSource.GetName())
-		rows = append(rows, []string{
-			dataSource.GetName(),
-			"On-Error",
-			formatDataSourceState(string(dataSource.GetFlowStatus().State)),
-			strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
-			formatActionCounts(actionCounts),
-		})
+		rows = addDataSourceRow(&dataSource.DataSourceFieldsOnErrorDataSource, "On-Error", rows)
 	}
 
 	sort.Slice(rows, func(i, j int) bool {
@@ -547,6 +530,18 @@ func listAllDataSources(cmd *cobra.Command) error {
 
 	renderAsSimpleTable(t, plain)
 	return nil
+}
+
+func addDataSourceRow(dataSource graphql.DataSourceFields, dataSourceType string, rows [][]string) [][]string {
+	actionCounts, _ := countActionsInFlow(dataSource.GetName())
+	rows = append(rows, []string{
+		dataSource.GetName(),
+		dataSourceType,
+		formatDataSourceState(dataSource.GetFlowStatus()),
+		strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
+		formatActionCounts(actionCounts),
+	})
+	return rows
 }
 
 func enableDataSourceTestMode(flowName string) error {
@@ -819,14 +814,19 @@ func countActionsFromTopic(
 
 			if subscribesToTopic {
 				visitedTransforms[transform.GetName()] = true
-				state := transform.GetFlowStatus().State
-				switch state {
-				case graphql.FlowStateRunning:
-					counts.running++
-				case graphql.FlowStateStopped:
+				if transform.GetFlowStatus().Valid {
+					state := transform.GetFlowStatus().State
+					switch state {
+					case graphql.FlowStateRunning:
+						counts.running++
+					case graphql.FlowStateStopped:
+						counts.stopped++
+					case graphql.FlowStatePaused:
+						counts.paused++
+					}
+				} else {
+					// treat invalid as stopped for the counts
 					counts.stopped++
-				case graphql.FlowStatePaused:
-					counts.paused++
 				}
 
 				// Process transform's published topics
@@ -857,14 +857,19 @@ func countActionsFromTopic(
 
 			if subscribesToTopic {
 				visitedSinks[sink.GetName()] = true
-				state := sink.GetFlowStatus().State
-				switch state {
-				case graphql.FlowStateRunning:
-					counts.running++
-				case graphql.FlowStateStopped:
+				if sink.GetFlowStatus().Valid {
+					state := sink.GetFlowStatus().State
+					switch state {
+					case graphql.FlowStateRunning:
+						counts.running++
+					case graphql.FlowStateStopped:
+						counts.stopped++
+					case graphql.FlowStatePaused:
+						counts.paused++
+					}
+				} else {
+					// treat invalid as stopped for the counts
 					counts.stopped++
-				case graphql.FlowStatePaused:
-					counts.paused++
 				}
 			}
 		}

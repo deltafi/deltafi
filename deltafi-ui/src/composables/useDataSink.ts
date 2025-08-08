@@ -36,6 +36,7 @@ export default function useDataSink() {
           },
           flowStatus: {
             state: true,
+            valid: true,
             testMode: true,
             errors: {
               configName: true,

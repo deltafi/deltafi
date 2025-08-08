@@ -34,7 +34,7 @@ class RestDataSourceSnapshotTest {
     @Test
     void testCreateSnapshotWithoutRateLimit() {
         RestDataSource restDataSource = FlowBuilders.buildDataSource("test-source");
-        restDataSource.setFlowStatus(new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false));
+        restDataSource.setFlowStatus(running());
         restDataSource.setTestMode(false);
         restDataSource.setMaxErrors(10);
 
@@ -51,7 +51,7 @@ class RestDataSourceSnapshotTest {
     @Test
     void testCreateSnapshotWithFilesRateLimit() {
         RestDataSource restDataSource = FlowBuilders.buildDataSource("test-source-files");
-        restDataSource.setFlowStatus(new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false));
+        restDataSource.setFlowStatus(new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false, true));
         restDataSource.setTestMode(true);
         restDataSource.setMaxErrors(5);
 
@@ -78,7 +78,7 @@ class RestDataSourceSnapshotTest {
     @Test
     void testCreateSnapshotWithBytesRateLimit() {
         RestDataSource restDataSource = FlowBuilders.buildDataSource("test-source-bytes");
-        restDataSource.setFlowStatus(new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false));
+        restDataSource.setFlowStatus(running());
         restDataSource.setTestMode(false);
         restDataSource.setMaxErrors(15);
 
@@ -105,14 +105,14 @@ class RestDataSourceSnapshotTest {
     @Test
     void testSnapshotEqualityWithNullRateLimit() {
         RestDataSource restDataSource1 = FlowBuilders.buildDataSource("test-source");
-        restDataSource1.setFlowStatus(new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false));
+        restDataSource1.setFlowStatus(running());
         restDataSource1.setTestMode(false);
         restDataSource1.setTopic("test-topic");
         restDataSource1.setMaxErrors(10);
         restDataSource1.setRateLimit(null);
 
         RestDataSource restDataSource2 = FlowBuilders.buildDataSource("test-source");
-        restDataSource2.setFlowStatus(new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false));
+        restDataSource2.setFlowStatus(running());
         restDataSource2.setTestMode(false);
         restDataSource2.setTopic("test-topic");
         restDataSource2.setMaxErrors(10);
@@ -128,7 +128,7 @@ class RestDataSourceSnapshotTest {
     @Test
     void testSnapshotEqualityWithSameRateLimit() {
         RestDataSource restDataSource1 = FlowBuilders.buildDataSource("test-source");
-        restDataSource1.setFlowStatus(new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false));
+        restDataSource1.setFlowStatus(running());
         restDataSource1.setTestMode(false);
         restDataSource1.setTopic("test-topic");
         restDataSource1.setMaxErrors(10);
@@ -141,7 +141,7 @@ class RestDataSourceSnapshotTest {
         restDataSource1.setRateLimit(rateLimit);
 
         RestDataSource restDataSource2 = FlowBuilders.buildDataSource("test-source");
-        restDataSource2.setFlowStatus(new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false));
+        restDataSource2.setFlowStatus(running());
         restDataSource2.setTestMode(false);
         restDataSource2.setTopic("test-topic");
         restDataSource2.setMaxErrors(10);
@@ -202,5 +202,9 @@ class RestDataSourceSnapshotTest {
         RestDataSourceSnapshot snapshot2 = new RestDataSourceSnapshot(restDataSource2);
 
         assertNotEquals(snapshot1, snapshot2);
+    }
+
+    private FlowStatus running() {
+        return new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false, true);
     }
 }

@@ -94,7 +94,7 @@ class DataSinkServiceTest {
     void testResetFromSnapshot() {
         DataSink running = dataSink("running", FlowState.RUNNING, true, Set.of());
         DataSink stopped = dataSink("stopped", FlowState.STOPPED, false, Set.of());
-        DataSink invalid = dataSink("invalid", FlowState.INVALID, false, Set.of());
+        DataSink invalid = dataSink("invalid", FlowState.RUNNING, false, Set.of(), false);
 
         Snapshot snapshot = new Snapshot();
         snapshot.setDataSinks(List.of(
@@ -112,7 +112,7 @@ class DataSinkServiceTest {
         Map<String, DataSink> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
-        assertThat(updatedFlows).hasSize(2);
+        assertThat(updatedFlows).hasSize(3);
 
         // running is set back to running after state was reset
         assertThat(updatedFlows.get("running").isRunning()).isTrue();
@@ -122,18 +122,27 @@ class DataSinkServiceTest {
         assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
         assertThat(updatedFlows.get("stopped").isTestMode()).isTrue();
 
+        // flow named invalid is set back to a running state after the state was reset in hard reset
+        assertThat(updatedFlows.get("invalid").isRunning()).isTrue();
+        assertThat(updatedFlows.get("invalid").isInvalid()).isTrue();
+        assertThat(updatedFlows.get("invalid").isTestMode()).isFalse();
+
         assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getInfo()).hasSize(2)
-                .contains("Flow missing is no longer installed")
-                .contains("Flow: invalid is invalid and cannot be started");
+        assertThat(result.getInfo()).hasSize(1)
+                .contains("Flow missing is no longer installed");
     }
 
     DataSink dataSink(String name, FlowState flowState, boolean testMode, Set<String> expectedAnnotations) {
+        return dataSink(name, flowState, testMode, expectedAnnotations, true);
+    }
+
+    DataSink dataSink(String name, FlowState flowState, boolean testMode, Set<String> expectedAnnotations, boolean valid) {
         DataSink dataSink = new DataSink();
         dataSink.setName(name);
         FlowStatus flowStatus = new FlowStatus();
         flowStatus.setState(flowState);
         flowStatus.setTestMode(testMode);
+        flowStatus.setValid(valid);
         dataSink.setFlowStatus(flowStatus);
         dataSink.setExpectedAnnotations(expectedAnnotations);
         return dataSink;

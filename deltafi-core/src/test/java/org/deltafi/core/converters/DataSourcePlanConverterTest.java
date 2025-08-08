@@ -118,7 +118,8 @@ class DataSourcePlanConverterTest {
         TimedDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-unresolved-test.json"), TimedDataSourcePlan.class);
         TimedDataSource dataSource = timedDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
 
-        assertThat(dataSource.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
+        assertThat(dataSource.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
+        assertThat(dataSource.getFlowStatus().getValid()).isFalse();
         FlowConfigError expected = FlowConfigError.newBuilder()
                 .configName("SmokeTestIngressAction")
                 .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not find a variable named 'smokeMetadataValue' used in value \"${smokeMetadataValue}\"").build();

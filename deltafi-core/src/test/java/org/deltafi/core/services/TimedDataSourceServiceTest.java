@@ -109,7 +109,7 @@ class TimedDataSourceServiceTest {
         List<Flow> flows = new ArrayList<>();
         flows.add(timedDataSource("a", FlowState.RUNNING, false, "0 */1 * * * *", -1));
         flows.add(timedDataSource("b", FlowState.STOPPED, false, "0 */2 * * * *", 1));
-        flows.add(timedDataSource("c", FlowState.INVALID, true, "0 */3 * * * *", 1));
+        flows.add(timedDataSource("c", FlowState.STOPPED, true, "0 */3 * * * *", 1, false));
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(flows);
 
@@ -144,7 +144,7 @@ class TimedDataSourceServiceTest {
     void testResetFromSnapshot() {
         TimedDataSource running = timedDataSource("running", FlowState.RUNNING, true, "0 */1 * * * *", -1);
         TimedDataSource stopped = timedDataSource("stopped", FlowState.STOPPED, false, "0 */2 * * * *", 1);
-        TimedDataSource invalid = timedDataSource("invalid", FlowState.INVALID, false, "0 */3 * * * *", 1);
+        TimedDataSource invalid = timedDataSource("invalid", FlowState.RUNNING, false, "0 */3 * * * *", 1, false);
         TimedDataSource changed = timedDataSource("changed", FlowState.STOPPED, false, "0 0 0 */7 * *", 2);
 
         Snapshot snapshot = new Snapshot();
@@ -191,16 +191,15 @@ class TimedDataSourceServiceTest {
         assertThat(updatedRunning.getMaxErrors()).isEqualTo(-1);
 
         assertThat(updatedInvalid).isNotNull();
-        assertThat(updatedInvalid.isRunning()).isFalse();
+        assertThat(updatedInvalid.isRunning()).isTrue();
         assertThat(updatedInvalid.isInvalid()).isTrue();
         assertThat(updatedInvalid.isTestMode()).isFalse();
         assertThat(updatedInvalid.getCronSchedule()).isEqualTo("0 */3 * * * *");
         assertThat(updatedInvalid.getMaxErrors()).isEqualTo(1);
 
         assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getInfo()).hasSize(2)
-                .contains("Flow missing is no longer installed")
-                .contains("Flow: invalid is invalid and cannot be started");
+        assertThat(result.getInfo()).hasSize(1)
+                .contains("Flow missing is no longer installed");
     }
 
     @Test
@@ -238,11 +237,16 @@ class TimedDataSourceServiceTest {
     }
 
     TimedDataSource timedDataSource(String name, FlowState flowState, boolean testMode, String cronSchedule, int maxErrors) {
+        return timedDataSource(name, flowState, testMode, cronSchedule, maxErrors, true);
+    }
+
+    TimedDataSource timedDataSource(String name, FlowState flowState, boolean testMode, String cronSchedule, int maxErrors, boolean valid) {
         TimedDataSource dataSource = new TimedDataSource();
         dataSource.setName(name);
         dataSource.setMaxErrors(maxErrors);
         FlowStatus flowStatus = new FlowStatus();
         flowStatus.setState(flowState);
+        flowStatus.setValid(valid);
         flowStatus.setTestMode(testMode);
         dataSource.setFlowStatus(flowStatus);
         dataSource.setCronSchedule(cronSchedule);

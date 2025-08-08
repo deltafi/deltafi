@@ -1527,18 +1527,18 @@ class DeltaFiCoreApplicationTests {
 		TransformFlow stoppedFlow = buildTransformFlow(FlowState.STOPPED);
 		stoppedFlow.setName("stopped");
 
-		TransformFlow invalidFlow = buildTransformFlow(FlowState.INVALID);
-		invalidFlow.setName("invalid");
+		TransformFlow pausedFlow = buildTransformFlow(FlowState.PAUSED);
+		pausedFlow.setName("paused");
 
 		TransformFlow runningFlow = buildTransformFlow(FlowState.RUNNING);
 		runningFlow.setName("running");
 
-		transformFlowRepo.saveAll(List.of(stoppedFlow, invalidFlow, runningFlow));
+		transformFlowRepo.saveAll(List.of(stoppedFlow, pausedFlow, runningFlow));
 		refreshFlowCaches();
 
-		assertThat(transformFlowService.getFlowNamesByState(null)).hasSize(3).contains("stopped", "invalid", "running");
+		assertThat(transformFlowService.getFlowNamesByState(null)).hasSize(3).contains("stopped", "paused", "running");
 		assertThat(transformFlowService.getFlowNamesByState(FlowState.STOPPED)).hasSize(1).contains("stopped");
-		assertThat(transformFlowService.getFlowNamesByState(FlowState.INVALID)).hasSize(1).contains("invalid");
+		assertThat(transformFlowService.getFlowNamesByState(FlowState.PAUSED)).hasSize(1).contains("paused");
 		assertThat(transformFlowService.getFlowNamesByState(FlowState.RUNNING)).hasSize(1).contains("running");
 	}
 
@@ -5540,7 +5540,7 @@ class DeltaFiCoreApplicationTests {
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName("abc");
 		transformFlow.setSourcePlugin(pluginService.getSystemPluginCoordinates());
-		transformFlow.setFlowStatus(FlowStatus.newBuilder().state(FlowState.INVALID).build());
+		transformFlow.setFlowStatus(FlowStatus.newBuilder().state(FlowState.PAUSED).build());
 		transformFlowRepo.save(transformFlow);
 		transformFlowRepo.updateFlowStatusState("abc", FlowState.RUNNING, FlowType.TRANSFORM);
 
@@ -5554,7 +5554,7 @@ class DeltaFiCoreApplicationTests {
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName("abc");
 		transformFlow.setSourcePlugin(pluginService.getSystemPluginCoordinates());
-		transformFlow.setFlowStatus(FlowStatus.newBuilder().state(FlowState.INVALID).testMode(false).build());
+		transformFlow.setFlowStatus(FlowStatus.newBuilder().state(FlowState.PAUSED).testMode(false).build());
 		transformFlowRepo.save(transformFlow);
 		transformFlowRepo.updateFlowStatusTestMode("abc", true, FlowType.TRANSFORM);
 

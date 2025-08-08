@@ -56,7 +56,7 @@ public abstract class Flow {
 
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false);
+    protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false, true);
 
     // list of variables that are applicable to this dataSource
     @Type(JsonBinaryType.class)
@@ -123,7 +123,7 @@ public abstract class Flow {
     }
 
     public boolean isInvalid() {
-        return FlowState.INVALID.equals(getFlowStatus().getState());
+        return !getFlowStatus().getValid();
     }
 
     public boolean isTestMode() {

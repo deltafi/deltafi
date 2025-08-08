@@ -1,26 +1,25 @@
+fragment DataSourceFields on DataSource {
+  name
+  type
+  flowStatus {
+    state
+    valid
+    testMode
+  }
+  topic
+}
+
 # Get all flows
 query ListDataSources {
   getAllFlows {
     restDataSource {
-      name
-      flowStatus {
-        state
-        testMode
-      }
+      ...DataSourceFields
     }
     timedDataSource {
-      name
-      flowStatus {
-        state
-        testMode
-      }
+      ...DataSourceFields
     }
     onErrorDataSource {
-      name
-      flowStatus {
-        state
-        testMode
-      }
+      ...DataSourceFields
     }
   }
 }
@@ -39,6 +38,7 @@ query GetOnErrorDataSource($name: String!) {
     maxErrors
     flowStatus {
       state
+      valid
       testMode
     }
     topic
@@ -120,6 +120,7 @@ query GetRestDataSource($name: String!) {
     maxErrors
     flowStatus {
       state
+      valid
       testMode
     }
     topic
@@ -167,6 +168,7 @@ query GetTimedDataSource($name: String!) {
     maxErrors
     flowStatus {
       state
+      valid
       testMode
     }
     topic
@@ -242,6 +244,7 @@ mutation SaveRestDataSource($dataSourcePlan: RestDataSourcePlanInput!) {
     maxErrors
     flowStatus {
       state
+      valid
       testMode
     }
     topic
@@ -268,6 +271,7 @@ mutation SaveTimedDataSource($dataSourcePlan: TimedDataSourcePlanInput!) {
     maxErrors
     flowStatus {
       state
+      valid
       testMode
     }
     topic
@@ -300,6 +304,7 @@ mutation SaveOnErrorDataSource($dataSourcePlan: OnErrorDataSourcePlanInput!) {
     maxErrors
     flowStatus {
       state
+      valid
       testMode
     }
     topic

@@ -302,7 +302,7 @@ func renderTopicParticipants(participants interface{}, plain bool) {
 			rows = append(rows, []string{
 				participant.GetName(),
 				string(participant.GetType()),
-				formatFlowState(participant.GetState()),
+				formatFlowState(participant.GetState(), participant.GetValid()),
 				condition,
 			})
 		}
@@ -315,7 +315,7 @@ func renderTopicParticipants(participants interface{}, plain bool) {
 			rows = append(rows, []string{
 				participant.GetName(),
 				string(participant.GetType()),
-				formatFlowState(participant.GetState()),
+				formatFlowState(participant.GetState(), participant.GetValid()),
 				condition,
 			})
 		}
@@ -341,7 +341,11 @@ func renderTopicParticipants(participants interface{}, plain bool) {
 }
 
 // formatFlowState formats a flow state with appropriate styling
-func formatFlowState(state graphql.FlowState) string {
+func formatFlowState(state graphql.FlowState, valid bool) string {
+	if !valid {
+		return styles.ErrorStyle.Render("INVALID")
+	}
+
 	switch state {
 	case graphql.FlowStateRunning:
 		return styles.SuccessStyle.Render("RUNNING")
@@ -349,8 +353,6 @@ func formatFlowState(state graphql.FlowState) string {
 		return styles.ErrorStyle.Render("STOPPED")
 	case graphql.FlowStatePaused:
 		return styles.WarningStyle.Render("PAUSED")
-	case graphql.FlowStateInvalid:
-		return styles.ErrorStyle.Render("INVALID")
 	default:
 		return styles.InfoStyle.Render(string(state))
 	}
@@ -399,7 +401,7 @@ func displayFilteredFlowGraph(flowName, targetTopic string) error {
 	}
 
 	// Find the source node
-	var sourceFlow interface{} // Can be either RestDataSource or TimedDataSource
+	var sourceFlow graphql.DataSourceFields // Can be any implementation of DataSource
 	var sourceTopic string
 	for _, flows := range flowGraph.GetFlows {
 		for _, source := range flows.GetRestDataSources() {
@@ -439,37 +441,8 @@ func displayFilteredFlowGraph(flowName, targetTopic string) error {
 		nodeType: "root",
 	}
 
-	// Create source node
-	var sourceNode *flowNode
-	switch s := sourceFlow.(type) {
-	case *graphql.GetFlowGraphGetFlowsRestDataSourcesRestDataSource:
-		sourceNode = &flowNode{
-			name:          s.GetName(),
-			nodeType:      "source",
-			state:         flowStateToString(s.GetFlowStatus().State),
-			testMode:      s.GetFlowStatus().TestMode,
-			enabled:       isFlowEnabled(s.GetFlowStatus().State),
-			isLastSibling: true,
-		}
-	case *graphql.GetFlowGraphGetFlowsTimedDataSourcesTimedDataSource:
-		sourceNode = &flowNode{
-			name:          s.GetName(),
-			nodeType:      "source",
-			state:         flowStateToString(s.GetFlowStatus().State),
-			testMode:      s.GetFlowStatus().TestMode,
-			enabled:       isFlowEnabled(s.GetFlowStatus().State),
-			isLastSibling: true,
-		}
-	case *graphql.GetFlowGraphGetFlowsOnErrorDataSourcesOnErrorDataSource:
-		sourceNode = &flowNode{
-			name:          s.GetName(),
-			nodeType:      "source",
-			state:         flowStateToString(s.GetFlowStatus().State),
-			testMode:      s.GetFlowStatus().TestMode,
-			enabled:       isFlowEnabled(s.GetFlowStatus().State),
-			isLastSibling: true,
-		}
-	}
+	flowStatus := sourceFlow.GetFlowStatus()
+	sourceNode := newFlowNode(sourceFlow.GetName(), "source", &flowStatus, true)
 
 	root.children = append(root.children, sourceNode)
 
@@ -559,13 +532,9 @@ func buildFilteredGraphFromTopic(
 
 				// Only include transforms that can reach the target topic
 				if canReachTarget {
-					transformNode := &flowNode{
-						name:     transform.GetName(),
-						nodeType: "transform",
-						state:    flowStateToString(transform.GetFlowStatus().State),
-						testMode: transform.GetFlowStatus().TestMode,
-						enabled:  isFlowEnabled(transform.GetFlowStatus().State),
-					}
+					flowStatus := transform.GetFlowStatus()
+					transformNode := newFlowNode(transform.GetName(), "transform", &flowStatus, false)
+
 					visitedTransforms[transform.GetName()] = transformNode
 					transformNodes = append(transformNodes, transformNode)
 

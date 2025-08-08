@@ -829,7 +829,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = utilService.buildDeltaFile(did);
         DeltaFileFlow flow = deltaFile.firstFlow();
 
-        deltaFilesService.handleMissingFlow(deltaFile, flow, new MissingFlowException("flowName", FlowType.TRANSFORM, FlowState.INVALID));
+        deltaFilesService.handleMissingFlow(deltaFile, flow, MissingFlowException.notFound("flowName", FlowType.TRANSFORM));
 
         assertEquals(DeltaFileStage.ERROR, deltaFile.getStage());
         Action errorAction = flow.lastAction();

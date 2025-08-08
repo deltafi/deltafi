@@ -59,7 +59,8 @@ class DataSinkPlanConverterTest {
         DataSinkPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-data-sink-plan-unresolved-test.json"), DataSinkPlan.class);
         DataSink dataSink = DataSinkPlanConverter.convert(flowPlan, variables());
 
-        assertThat(dataSink.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
+        assertThat(dataSink.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
+        assertThat(dataSink.getFlowStatus().getValid()).isFalse();
         FlowConfigError expected = FlowConfigError.newBuilder()
                 .configName("${missing.placeholder:defaultignored}")
                 .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not find a variable named 'missing.placeholder:defaultignored' used in value \"${missing.placeholder:defaultignored}\"").build();

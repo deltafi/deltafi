@@ -84,7 +84,7 @@ class TransformFlowServiceTest {
         List<Flow> flows = new ArrayList<>();
         flows.add(transformFlow("a", FlowState.RUNNING, false));
         flows.add(transformFlow("b", FlowState.STOPPED, false));
-        flows.add(transformFlow("c", FlowState.INVALID, true));
+        flows.add(transformFlow("c", FlowState.STOPPED, true, false));
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(flows);
 
@@ -113,7 +113,7 @@ class TransformFlowServiceTest {
     void testResetFromSnapshot() {
         TransformFlow running = transformFlow("running", FlowState.RUNNING, true);
         TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false);
-        TransformFlow invalid = transformFlow("invalid", FlowState.INVALID, false);
+        TransformFlow invalid = transformFlow("invalid", FlowState.STOPPED, false);
 
         Snapshot snapshot = new Snapshot();
         snapshot.setTransformFlows(List.of(
@@ -131,7 +131,7 @@ class TransformFlowServiceTest {
         Map<String, TransformFlow> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
-        assertThat(updatedFlows).hasSize(2);
+        assertThat(updatedFlows).hasSize(3);
 
         // running is set back to running after state was reset
         assertThat(updatedFlows.get("running").isRunning()).isTrue();
@@ -141,10 +141,14 @@ class TransformFlowServiceTest {
         assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
         assertThat(updatedFlows.get("stopped").isTestMode()).isTrue();
 
+        // flow named invalid is set back to a running state
+        assertThat(updatedFlows.get("running").isRunning()).isTrue();
+        assertThat(updatedFlows.get("running").isInvalid()).isTrue();
+        assertThat(updatedFlows.get("running").isTestMode()).isFalse();
+
         assertThat(result.isSuccess()).isTrue();
-        assertThat(result.getInfo()).hasSize(2)
-                .contains("Flow missing is no longer installed")
-                .contains("Flow: invalid is invalid and cannot be started");
+        assertThat(result.getInfo()).hasSize(1)
+                .contains("Flow missing is no longer installed");
     }
 
     @Test
@@ -185,10 +189,15 @@ class TransformFlowServiceTest {
     }
 
     TransformFlow transformFlow(String name, FlowState flowState, boolean testMode) {
+        return transformFlow(name, flowState, testMode, true);
+    }
+
+    TransformFlow transformFlow(String name, FlowState flowState, boolean testMode, boolean valid) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(name);
         FlowStatus flowStatus = new FlowStatus();
         flowStatus.setState(flowState);
+        flowStatus.setTestMode(valid);
         flowStatus.setTestMode(testMode);
         transformFlow.setFlowStatus(flowStatus);
         return transformFlow;

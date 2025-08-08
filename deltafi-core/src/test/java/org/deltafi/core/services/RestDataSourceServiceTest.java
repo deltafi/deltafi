@@ -172,7 +172,7 @@ class RestDataSourceServiceTest {
                 .durationSeconds(120)
                 .build();
 
-        doThrow(new MissingFlowException("flow not found", FlowType.REST_DATA_SOURCE)).when(restDataSourceService).getFlowOrThrow(flowName);
+        doThrow(MissingFlowException.notFound("flow not found", FlowType.REST_DATA_SOURCE)).when(restDataSourceService).getFlowOrThrow(flowName);
 
         assertThrows(MissingFlowException.class, () -> restDataSourceService.setRateLimit(flowName, rateLimitInput));
 
@@ -245,7 +245,7 @@ class RestDataSourceServiceTest {
     void testRemoveRateLimitFlowNotFound() {
         String flowName = "non-existent-flow";
 
-        doThrow(new MissingFlowException("flow not found", FlowType.REST_DATA_SOURCE)).when(restDataSourceService).getFlowOrThrow(flowName);
+        doThrow(MissingFlowException.notFound("flow not found", FlowType.REST_DATA_SOURCE)).when(restDataSourceService).getFlowOrThrow(flowName);
 
         assertThrows(MissingFlowException.class, () -> restDataSourceService.removeRateLimit(flowName));
 

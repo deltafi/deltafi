@@ -2,36 +2,19 @@
 query GetFlowGraph {
   getFlows {
     restDataSources {
-      name
-      type
-      flowStatus {
-        state
-        testMode
-      }
-      topic
+      ...DataSourceFields
     }
     timedDataSources {
-      name
-      type
-      flowStatus {
-        state
-        testMode
-      }
-      topic
+        ...DataSourceFields
     }
     onErrorDataSources {
-      name
-      type
-      flowStatus {
-        state
-        testMode
-      }
-      topic
+        ...DataSourceFields
     }
     transformFlows {
       name
       flowStatus {
         state
+        valid
         testMode
       }
       subscribe {
@@ -48,6 +31,7 @@ query GetFlowGraph {
       name
       flowStatus {
         state
+        valid
         testMode
       }
       subscribe {
@@ -65,12 +49,14 @@ query GetAllTopics {
       name
       type
       state
+      valid
       condition
     }
     subscribers {
       name
       type
       state
+      valid
       condition
     }
   }

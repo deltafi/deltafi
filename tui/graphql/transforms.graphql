@@ -26,6 +26,7 @@ fragment TransformFlowFields on TransformFlow {
     }
     flowStatus {
         state
+        valid
         errors {
             configName
             errorType
@@ -81,6 +82,7 @@ query ListTransforms {
             name
             flowStatus {
                 state
+                valid
                 testMode
             }
         }

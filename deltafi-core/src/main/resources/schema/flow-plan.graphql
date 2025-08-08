@@ -220,7 +220,6 @@ enum FlowState {
   STOPPED
   RUNNING
   PAUSED
-  INVALID
 }
 
 enum FlowErrorType {
@@ -241,6 +240,7 @@ type FlowStatus {
   state: FlowState!
   errors: [FlowConfigError]
   testMode: Boolean!
+  valid: Boolean!
 }
 
 type Flows {

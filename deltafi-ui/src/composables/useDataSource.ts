@@ -29,6 +29,7 @@ export default function useDataSource() {
     maxErrors: true,
     flowStatus: {
       state: true,
+      valid: true,
       errors: {
         configName: true,
         errorType: true,

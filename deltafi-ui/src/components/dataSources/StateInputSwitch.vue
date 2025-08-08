@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span v-if="states.includes(rowData.flowStatus.state) && $hasPermission('FlowUpdate')">
+  <span v-if="states.includes(rowData.flowStatus.state) && rowData.flowStatus.valid && $hasPermission('FlowUpdate')">
     <ConfirmDialog :group="dataSourceType + '_' + rowData.name">
       <template #message="slotProps">
         <span class="p-confirm-dialog-icon pi pi-exclamation-triangle" />
@@ -27,7 +27,7 @@
     <FlowControlButtons v-model="rowData.flowStatus.state" class="control-buttons" @start="start()" @pause="pause()" @stop="stop()" />
   </span>
   <span v-else class="pt-1">
-    <Tag v-tooltip.left="tooltip" class="ml-2" :value="rowData.flowStatus.state" severity="info" icon="pi pi-info-circle" :rounded="true" />
+    <Tag v-tooltip.left="tooltip" class="ml-2" value="INVALID" severity="info" icon="pi pi-info-circle" :rounded="true" />
   </span>
 </template>
 

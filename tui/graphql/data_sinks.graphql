@@ -6,6 +6,7 @@ query ListDataSinks {
       flowStatus {
         state
         testMode
+        valid
       }
     }
   }
@@ -29,6 +30,7 @@ query GetDataSink($flowName: String!) {
     flowStatus {
       state
       testMode
+      valid
     }
     subscribe {
       topic
@@ -65,6 +67,7 @@ query ValidateDataSink($flowName: String!) {
     flowStatus {
       state
       testMode
+      valid
     }
     subscribe {
       topic
@@ -101,6 +104,7 @@ mutation SaveDataSink($dataSinkPlan: DataSinkPlanInput!) {
     flowStatus {
       state
       testMode
+      valid
     }
     subscribe {
       topic

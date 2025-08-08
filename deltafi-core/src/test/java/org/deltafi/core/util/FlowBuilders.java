@@ -75,7 +75,7 @@ public class FlowBuilders {
         restDataSource.setName("RestDataSource");
         restDataSource.setTopic(topic);
         restDataSource.setSourcePlugin(PLUGIN_COORDINATES);
-        restDataSource.setFlowStatus(FlowStatus.newBuilder().state(FlowState.RUNNING).build());
+        restDataSource.setFlowStatus(FlowStatus.newBuilder().state(FlowState.RUNNING).valid(true).build());
         return restDataSource;
     }
 

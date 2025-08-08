@@ -39,8 +39,9 @@ public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extend
 
         List<FlowConfigError> configErrors = new ArrayList<>(flowPlanPropertyHelper.getErrors());
 
-        FlowState state = configErrors.isEmpty() ? FlowState.STOPPED : FlowState.INVALID;
+        FlowState state = FlowState.STOPPED;
         flow.getFlowStatus().setState(state);
+        flow.getFlowStatus().setValid(configErrors.isEmpty());
         flow.getFlowStatus().getErrors().addAll(configErrors);
 
         flow.setVariables(flowPlanPropertyHelper.getAppliedVariables());

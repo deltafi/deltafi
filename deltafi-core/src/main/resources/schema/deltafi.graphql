@@ -389,6 +389,7 @@ type TopicParticipant {
   name: String!
   type: FlowType!
   state: FlowState!
+  valid: Boolean!
   condition: String
 }
 

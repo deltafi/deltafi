@@ -259,12 +259,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         flow.getFlowStatus().setErrors(errors);
 
         if (!errors.isEmpty()) {
-            flow.getFlowStatus().setState(FlowState.INVALID);
-            if (!FlowState.INVALID.equals(originalState)) {
+            if (flow.getFlowStatus().getValid()) {
                 invalidFlowEvent(flow, originalState);
             }
-        } else if(FlowState.INVALID.equals(flow.getFlowStatus().getState())) {
-            flow.getFlowStatus().setState(FlowState.STOPPED);
+            flow.getFlowStatus().setValid(false);
         }
 
         return save(flow);
@@ -298,9 +296,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public FlowT getActiveFlowByName(String flowName) {
         Flow flow = flowCacheService.getFlow(flowType, flowName);
         if (flow == null) {
-            throw new MissingFlowException(flowName, flowType);
-        } else if (!flow.isRunning() && !flow.isPaused()){
-            throw new MissingFlowException(flowName, flowType, flow.getFlowStatus().getState());
+            throw MissingFlowException.notFound(flowName, flowType);
+        } else if (flow.isInvalid()) {
+            throw MissingFlowException.invalid(flowName, flowType);
+        } else if (flow.isStopped()){
+            throw MissingFlowException.stopped(flowName, flowType);
         }
 
         return flowClass.cast(flow);
@@ -424,13 +424,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     public boolean updateFromSnapshot(FlowT flow, FlowSnapshotT flowSnapshot, Result result) {
         boolean changed = false;
-        if (flowSnapshot.isRunning()) {
-            if (flow.isStopped()) {
-                flow.getFlowStatus().setState(FlowState.RUNNING);
-                changed = true;
-            } else if (flow.isInvalid()) {
-                result.getInfo().add("Flow: " + flow.getName() + " is invalid and cannot be started");
-            }
+        if (flowSnapshot.isRunning() && flow.isStopped()) {
+            flow.getFlowStatus().setState(FlowState.RUNNING);
+            changed = true;
         }
 
         if (flowSnapshot.isTestMode() && !flow.isTestMode()) {
@@ -528,10 +524,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         FlowT flow = flowPlanConverter.convert(typedFlowPlan, variables);
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
-
-        if (flow.hasErrors()) {
-            flow.getFlowStatus().setState(FlowState.INVALID);
-        }
+        flow.getFlowStatus().setValid(!flow.hasErrors());
 
         existing.ifPresent(existingFlow -> copyFlowState(flow, existingFlow));
 
@@ -546,21 +539,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     private void copyFlowState(FlowT targetFlow, FlowT sourceFlow) {
         targetFlow.setId(sourceFlow.getId());
 
-        if (!sourceFlow.getFlowStatus().getState().equals(targetFlow.getFlowStatus().getState())) {
-            if (targetFlow.isInvalid()) {
-                // flow was not invalid before; fire an event
-                invalidFlowEvent(targetFlow, sourceFlow.getFlowStatus().getState());
-            } else {
-                if (sourceFlow.isInvalid()) {
-                    // previously was invalid, but not anymore
-                    targetFlow.getFlowStatus().setState(FlowState.STOPPED);
-                } else {
-                    // carry forward the old state (running/paused)
-                    targetFlow.getFlowStatus().setState(sourceFlow.getFlowStatus().getState());
-                }
-            }
+        // flow was not invalid before; fire an event
+        if (targetFlow.isInvalid() && !sourceFlow.isInvalid()) {
+            invalidFlowEvent(targetFlow, sourceFlow.getFlowStatus().getState());
         }
 
+        targetFlow.getFlowStatus().setState(sourceFlow.getFlowStatus().getState());
         targetFlow.getFlowStatus().setTestMode(sourceFlow.getFlowStatus().getTestMode());
         targetFlow.copyFlowSpecificState(sourceFlow);
     }
