@@ -11,7 +11,7 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build:jdk21.0.8-python3.13-0
+image: deltafi/deltafi-build-uv:jdk21.0.8-python3.13-0
 
 .gradle:
   variables:
@@ -178,18 +178,17 @@ publish:docs:
 .publish-python:
   extends:
     - .publish
+  variables:
+    GITLAB_PYPI_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi"
   only:
     refs:
       - tags
       - dev
       - main
-      - "2.0"
   script:
     - ./gradlew $PROJECT_NAME:build
-    - export TWINE_PASSWORD=${CI_JOB_TOKEN}
-    - export TWINE_USERNAME=gitlab-ci-token
-    - $PROJECT_NAME/src/venv/bin/pip install twine
-    - $PROJECT_NAME/src/venv/bin/python -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi $PROJECT_NAME/src/dist/*
+    - cd $PROJECT_NAME/src
+    - uv publish --publish-url ${GITLAB_PYPI_URL} --username gitlab-ci-token --password ${CI_JOB_TOKEN}
 
 .publish-python-pypi:
   extends:
@@ -198,10 +197,8 @@ publish:docs:
     - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
   script:
     - ./gradlew $PROJECT_NAME:build
-    - export TWINE_PASSWORD=${PYTHON_PYPI_PUBLISH_PASSWORD}
-    - export TWINE_USERNAME="__token__"
-    - $PROJECT_NAME/src/venv/bin/pip install twine
-    - $PROJECT_NAME/src/venv/bin/python -m twine upload $PROJECT_NAME/src/dist/*
+    - cd $PROJECT_NAME/src
+    - uv publish --username __token__ --password ${PYTHON_PYPI_PUBLISH_PASSWORD}
 
 hub_docker_quota_check:
   stage: build

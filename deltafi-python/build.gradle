@@ -6,17 +6,6 @@ license {
     includes(["**/*.py"])
 }
 
-task setupVirtualEnvironment(type: Exec) {
-    workingDir 'src'
-    commandLine '../bin/native_python', '-m', 'venv', 'venv'
-}
-
-task setupPoetry(type: Exec) {
-    dependsOn setupVirtualEnvironment
-    workingDir 'src'
-    commandLine 'venv/bin/pip', '-q', 'install', 'poetry'
-}
-
 task copyTemplate(type: Copy) {
     from file('src/pyproject.toml.template')
     into 'src'
@@ -24,47 +13,136 @@ task copyTemplate(type: Copy) {
 }
 licenseLocal.dependsOn copyTemplate
 
-task poetryVersion(type: Exec) {
-    dependsOn copyTemplate, setupPoetry
+task checkUvInstallation {
+    description = 'Checks if uv is installed, prompts for installation if missing'
+    group = 'verification'
+
+    doLast {
+        def uvInstalled = isUvInstalled()
+
+        if (uvInstalled) {
+            println "✓ uv is already installed and available"
+            return
+        }
+
+        println "✗ uv is not installed or not in PATH"
+        printInstallationInstructions()
+        throw new GradleException("uv is required but not installed")
+    }
+}
+
+task uvVirtualEnvironment(type: Exec) {
+    dependsOn checkUvInstallation
     workingDir 'src'
-    String pythonVersion = version.replaceAll('-.*', "rc${new Date().getTime()}")
-    commandLine 'venv/bin/poetry', 'version', "${pythonVersion}"
+    def venvDir = file('src/.venv')
+    onlyIf {
+        !venvDir.exists()
+    }
+    commandLine 'uv', 'venv', '--system-site-packages'
+}
+
+task uvVersion(type: Exec) {
+    dependsOn copyTemplate, uvVirtualEnvironment
+    workingDir 'src'
+    String pythonVersion = version.replaceAll('-.*', "rc${new Date().format('yyyyMMddHHmmss')}")
+    commandLine 'uv', 'version', '--frozen', "${pythonVersion}"
 }
 
 task cleanDist(type: Delete) {
     delete 'src/dist'
-    delete 'src/poetry.lock'
 }
 
 task cleanVirtualEnvironment(type: Delete) {
-    delete 'src/venv'
+    delete 'src/.venv', '.venv', 'src/venv', 'venv'
 }
 
-task poetryInstall(type: Exec) {
-    dependsOn poetryVersion
+task uvDependencies(type: Exec) {
+    dependsOn uvVersion
     workingDir 'src'
-    commandLine 'venv/bin/poetry', 'install', '--with', 'test'
+    commandLine 'uv', 'pip', 'install', '-e', '.[test]'
 }
 
-task poetryBuild(type: Exec) {
-    dependsOn cleanDist, poetryInstall
+task verifyDependencies(type: Exec) {
+    dependsOn uvDependencies
     workingDir 'src'
-    commandLine 'venv/bin/poetry', 'build'
+    commandLine 'uv', 'run', '--frozen', 'python', '-c', 'import redis, minio, pydantic; print("Dependencies installed successfully")'
+}
+
+task uvBuild(type: Exec) {
+    dependsOn cleanDist, uvVersion
+    workingDir 'src'
+    commandLine 'uv', 'build'
 }
 
 task test(type: Exec) {
-    dependsOn poetryBuild
+    dependsOn verifyDependencies
     workingDir 'src'
-    commandLine 'venv/bin/poetry', 'run', 'pytest', '--junit-xml=../build/test-results/test/TEST-results.xml'
+    commandLine 'uv', 'run', '--frozen', 'pytest', '--junit-xml=../build/test-results/test/TEST-results.xml'
 }
 
-task publishToMavenLocal(type: Exec) {
-    dependsOn poetryBuild
-    workingDir 'src'
-    commandLine 'venv/bin/pip', 'install', '.'
-}
+task publishToMavenLocal {}
+publishToMavenLocal.dependsOn uvBuild
 
 clean.dependsOn cleanDist
 clean.dependsOn cleanVirtualEnvironment
 
-assemble.dependsOn poetryBuild
+assemble.dependsOn uvBuild
+
+// uv installation support
+
+def isUvInstalled() {
+    try {
+        def result = exec {
+            commandLine 'uv', '--version'
+            ignoreExitValue = true
+            standardOutput = new ByteArrayOutputStream()
+            errorOutput = new ByteArrayOutputStream()
+        }
+        return result.exitValue == 0
+    } catch (Exception e) {
+        return false
+    }
+}
+
+def printInstallationInstructions() {
+    def os = System.getProperty('os.name').toLowerCase()
+
+    println "\n" + "=".repeat(60)
+    println "UV INSTALLATION REQUIRED"
+    println "=".repeat(60)
+
+    if (os.contains('windows')) {
+        println "For Windows, run this in PowerShell:"
+        println "  irm https://astral.sh/uv/install.ps1 | iex"
+    } else {
+        if (isHomebrewAvailable()) {
+            println "You have Homebrew installed. Run:"
+            println "  brew install uv"
+        } else {
+            println "Install via curl (recommended):"
+            println "  curl -LsSf https://astral.sh/uv/install.sh | sh"
+            println ""
+            println "Or install Homebrew first, then use:"
+            println "  brew install uv"
+        }
+    }
+
+    println ""
+    println "After installation, run this task again:"
+    println "  ./gradlew checkUvInstallation"
+    println "=".repeat(60)
+}
+
+def isHomebrewAvailable() {
+    try {
+        def result = exec {
+            commandLine 'brew', '--version'
+            ignoreExitValue = true
+            standardOutput = new ByteArrayOutputStream()
+            errorOutput = new ByteArrayOutputStream()
+        }
+        return result.exitValue == 0
+    } catch (Exception e) {
+        return false
+    }
+}

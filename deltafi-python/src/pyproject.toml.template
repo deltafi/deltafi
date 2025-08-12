@@ -1,9 +1,11 @@
-[tool.poetry]
+[project]
 name = "deltafi"
 version = "0.0.0"
 description = "SDK for DeltaFi plugins and actions"
-authors = ["DeltaFi <deltafi@systolic.com>"]
-license = "Apache License, Version 2.0"
+authors = [
+    {name = "DeltaFi", email = "deltafi@systolic.com"}
+]
+license = {text = "Apache License, Version 2.0"}
 readme = "README.md"
 keywords = ["deltafi"]
 classifiers = [
@@ -13,36 +15,36 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12"
+    "Programming Language :: Python :: 3.13"
+]
+requires-python = ">=3.13"
+dependencies = [
+    "deepdiff==6.7.1",
+    "json-logging==1.5.1",
+    "minio==7.2.15",
+    "PyYAML==6.0.2",
+    "pydantic==2.11.7",
+    "redis==6.2.0",
+    "requests==2.32.4",
+    "urllib3==2.5.0",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.9"
-deepdiff = "==6.7.1"
-json-logging = "==1.5.1"
-minio = "==7.2.15"
-PyYAML = "==6.0.2"
-pydantic = "==2.11.7"
-redis = "==6.2.0"
-requests = "==2.32.4"
-urllib3 = "==2.5.0"
+[project.optional-dependencies]
+test = [
+    "pytest==8.4.1",
+    "pytest-mock==3.14.1",
+    "mockito==1.5.4",
+]
+dev = [
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]
 
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "==8.4.1"
-pytest-mock = "==3.14.1"
-mockito = "==1.5.4"
-
-[tool.poetry.urls]
-'Source Code' = "https://gitlab.com/deltafi/deltafi"
+[project.urls]
+"Source Code" = "https://gitlab.com/deltafi/deltafi"
 Documentation = "https://docs.deltafi.org/#/"
-'Bug Reports' = "https://chat.deltafi.org/deltafi/channels/bug-reports"
+"Bug Reports" = "https://chat.deltafi.org/deltafi/channels/bug-reports"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
