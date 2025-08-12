@@ -11,7 +11,7 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build:jdk21.0.7-python3.13-0
+image: deltafi/deltafi-build:jdk21.0.8-python3.13-0
 
 .gradle:
   variables:
@@ -20,7 +20,7 @@ image: deltafi/deltafi-build:jdk21.0.7-python3.13-0
     GRADLE: "./gradlew -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
 .golang:
-  image: deltafi/deltafi-build:jdk21.0.7_6-golang1.24.3-alpine-0
+  image: deltafi/deltafi-build:jdk21.0.8_9-golang1.24.5-alpine-0
   variables:
     GOPATH: /cache/go.${CI_CONCURRENT_ID}
 
