@@ -47,6 +47,9 @@ public class TransformEvent {
     @Builder.Default
     private List<String> deleteMetadataKeys = new ArrayList<>();
 
+    @Builder.Default
+    private List<LogMessage> messages = new ArrayList<>();
+
     public Set<String> segmentObjectNames() {
         Set<String> objectNames = new HashSet<>();
         for (Content c : content) {

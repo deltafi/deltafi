@@ -989,6 +989,7 @@ public class DeltaFilesService {
                 .filtered(false)
                 .build();
         child.addAnnotations(transformEvent.getAnnotations());
+        checkSeverityAndAddMessages(child, transformEvent.getMessages());
 
         child.setName(transformEvent.getName());
         child.recalculateBytes();

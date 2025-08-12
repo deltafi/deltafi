@@ -76,6 +76,7 @@ public class ChildTransformResult extends TransformResult {
 
     public final TransformEvent toChildTransformEvent() {
         TransformEvent event = toTransformEvent();
+        event.setMessages(getMessages());
         event.setName(this.deltaFileName);
         return event;
     }
