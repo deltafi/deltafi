@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.28.1] - 2025-08-13
+
+### Changed
+- Replaced the `INVALID` flow state with a valid flag to prevent losing the last flow state when a flow becomes invalid
+
+### Fixed
+- Fixed an issue where the `deltafi up` command tries to use clients that are not initialized because the API base URL cannot be detected
+
+### Upgrade and Migration
+- Upgrade to Java 21.0.8 for all base images
+
 ## [2.28.0] - 2025-08-08
 
 ### Added
@@ -4538,7 +4549,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.1...main
+[2.28.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.0...2.28.1
 [2.28.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.27.0...2.28.0
 [2.27.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.1...2.27.0
 [2.26.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.0...2.26.1
