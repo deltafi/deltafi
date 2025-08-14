@@ -133,7 +133,11 @@ func runSetAdminPassword(cmd *cobra.Command, args []string) error {
 		request = model.formData
 	}
 
-	response, err := app.GetInstance().GetAPIClient().SetAdminPassword(*request)
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+	response, err := client.SetAdminPassword(*request)
 
 	verbose, _ := cmd.Flags().GetBool("verbose")
 	if verbose {

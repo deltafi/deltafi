@@ -18,10 +18,13 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"golang.org/x/term"
 )
@@ -31,7 +34,29 @@ type Error struct {
 	Context string
 }
 
+func clientError(err error) *Error {
+	if errors.Is(err, app.NotRunning) {
+		return notRunningError()
+	} else {
+		return wrapInError("Unexpected client error", err)
+	}
+}
+
+func notRunningError() *Error {
+	return newError("\nDeltaFi is not running",
+		fmt.Sprintf(`
+To configure a new DeltaFi instance, use the init wizard:  %s
+
+To start a DeltaFi with your current configuration:        %s
+		`, styles.AccentStyle.Bold(true).Render("deltafi config"), styles.AccentStyle.Bold(true).Render("deltafi up")))
+}
+
 func wrapInError(summary string, err error) *Error {
+	// catch any wrapped graphql errors
+	if errors.Is(err, app.NotRunning) {
+		return notRunningError()
+	}
+
 	return &Error{
 		Message: summary,
 		Context: err.Error(),

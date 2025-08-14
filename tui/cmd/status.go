@@ -48,22 +48,25 @@ Examples:
   deltafi status               # Show current status once
   deltafi status --watch       # Continuously monitor status`,
 	GroupID: "orchestration",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		watch, _ := cmd.Flags().GetBool("watch")
 		status := NewStatusCommand(watch)
 
 		if watch {
 			runProgram(status)
 		} else {
-			client := app.GetInstance().GetAPIClient()
-			var result api.StatusResponse
-			err := client.Get("/api/v2/status", &result, nil)
+			client, err := app.GetInstance().GetAPIClient()
 			if err != nil {
-				cmd.PrintErrf("Error fetching status: %v\n", err)
-				return
+				return clientError(err)
+			}
+			var result api.StatusResponse
+			err = client.Get("/api/v2/status", &result, nil)
+			if err != nil {
+				return wrapInError("Error fetching status", err)
 			}
 			cmd.Print(RenderStatus(result, false, nil))
 		}
+		return nil
 	},
 }
 
@@ -365,9 +368,12 @@ func (c *StatusCommand) View() string {
 }
 
 func (c *StatusCommand) fetchStatus() tea.Msg {
-	client := app.GetInstance().GetAPIClient()
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return err
+	}
 	var result api.StatusResponse
-	err := client.Get("/api/v2/status", &result, nil)
+	err = client.Get("/api/v2/status", &result, nil)
 	if err != nil {
 		return err
 	}

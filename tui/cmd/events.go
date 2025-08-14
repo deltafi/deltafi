@@ -137,7 +137,11 @@ Examples:
 			Acknowledged: false,
 		}
 
-		newEvent, err := app.GetInstance().GetAPIClient().CreatEvent(event)
+		client, err := app.GetInstance().GetAPIClient()
+		if err != nil {
+			return clientError(err)
+		}
+		newEvent, err := client.CreatEvent(event)
 
 		if err != nil {
 			return wrapInError("Error posting the new event", err)
@@ -152,8 +156,12 @@ Examples:
 }
 
 func doGetEvent(cmd *cobra.Command, uuid string) error {
-	client := app.GetInstance().GetAPIClient()
-	var resp, err = client.Event(uuid)
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+
+	resp, err := client.Event(uuid)
 
 	if err != nil {
 		return wrapInError("Error getting event with id "+uuid, err)
@@ -163,8 +171,11 @@ func doGetEvent(cmd *cobra.Command, uuid string) error {
 }
 
 func listAllEvents(cmd *cobra.Command) error {
-	client := app.GetInstance().GetAPIClient()
-	var events, err = client.Events()
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+	events, err := client.Events()
 
 	if err != nil {
 		return wrapInError("Error getting list of events", err)

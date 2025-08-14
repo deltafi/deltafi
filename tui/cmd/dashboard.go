@@ -67,7 +67,7 @@ func tick(interval time.Duration) tea.Cmd {
 	})
 }
 
-func initialModel(interval time.Duration) model {
+func initialModel(client *api.Client, interval time.Duration) model {
 	if interval < 1 {
 		interval = 1
 	}
@@ -101,7 +101,7 @@ func initialModel(interval time.Duration) model {
 	return model{
 		progress: progress.New(progress.WithGradient("#40a02b", "#f38ba8")),
 		spinner:  s,
-		client:   app.GetInstance().GetAPIClient(),
+		client:   client,
 		interval: interval,
 		title:    "DeltaFi System Dashboard",
 		width:    defaultWidth,
@@ -253,7 +253,11 @@ var dashboardCmd = &cobra.Command{
 	GroupID: "metrics",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		interval, _ := cmd.Flags().GetInt("interval")
-		p := tea.NewProgram(initialModel(time.Duration(interval)*time.Second), tea.WithAltScreen())
+		client, err := app.GetInstance().GetAPIClient()
+		if err != nil {
+			return clientError(err)
+		}
+		p := tea.NewProgram(initialModel(client, time.Duration(interval)*time.Second), tea.WithAltScreen())
 		if _, err := p.Run(); err != nil {
 			return fmt.Errorf("failed to run dashboard: %v", err)
 		}

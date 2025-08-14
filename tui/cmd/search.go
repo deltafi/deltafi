@@ -348,7 +348,7 @@ type navigateToDeltaFileMsg struct {
 
 type autoRefreshMsg struct{}
 
-func initialSearchModel(filter searchFilter) searchModel {
+func initialSearchModel(client *api.Client, filter searchFilter) searchModel {
 	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	columns := filter.getTableColumns(width)
 
@@ -381,7 +381,7 @@ func initialSearchModel(filter searchFilter) searchModel {
 	return searchModel{
 		table:         t,
 		selected:      0,
-		client:        app.GetInstance().GetAPIClient(),
+		client:        client,
 		offset:        0,
 		goingUp:       false,
 		filter:        filter,
@@ -1099,7 +1099,11 @@ func (searchParams *SearchParameters) GetFilter() (searchFilter, error) {
 var searchParams SearchParameters
 
 func runSearchViewer(filter searchFilter) error {
-	p := tea.NewProgram(initialSearchModel(filter), tea.WithAltScreen(), tea.WithMouseCellMotion(), tea.WithMouseAllMotion())
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+	p := tea.NewProgram(initialSearchModel(client, filter), tea.WithAltScreen(), tea.WithMouseCellMotion(), tea.WithMouseAllMotion())
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("failed to run search: %v", err)
 	}

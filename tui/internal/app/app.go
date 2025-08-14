@@ -18,6 +18,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,6 +51,7 @@ var (
 	instance        *App
 	once            sync.Once
 	SemanticVersion *semver.Version
+	NotRunning      = errors.New("not running")
 )
 
 // GetInstance returns the singleton App instance
@@ -62,7 +64,11 @@ func SetAdminPassword(password string) error {
 	req := api.PasswordUpdate{
 		Password: password,
 	}
-	_, err := instance.GetAPIClient().SetAdminPassword(req)
+	client, err := instance.GetAPIClient()
+	if err != nil {
+		return err
+	}
+	_, err = client.SetAdminPassword(req)
 	return err
 }
 
@@ -73,6 +79,10 @@ func ReloadInstance() *App {
 }
 
 func GetGraphqlClient() (graphql.Client, error) {
+	client := GetInstance().graphqlClient
+	if client == nil || !GetInstance().running {
+		return nil, NotRunning
+	}
 	return GetInstance().graphqlClient, nil
 }
 
@@ -208,16 +218,15 @@ func (a *App) getAPIBaseURL() (string, error) {
 }
 
 // GetAPIClient returns the initialized API client
-func (a *App) GetAPIClient() *api.Client {
+func (a *App) GetAPIClient() (*api.Client, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	return a.apiClient
-}
 
-func (a *App) GetGraphqlClient() graphql.Client {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.graphqlClient
+	if a.apiClient == nil || !a.running {
+		return nil, NotRunning
+	}
+
+	return a.apiClient, nil
 }
 
 func (a *App) GetConfig() *Config {
@@ -227,6 +236,11 @@ func (a *App) GetConfig() *Config {
 }
 
 func SendEvent(event *api.Event) error {
-	_, err := GetInstance().GetAPIClient().CreatEvent(*event)
+	client, err := GetInstance().GetAPIClient()
+	if err != nil {
+		return err
+	}
+
+	_, err = client.CreatEvent(*event)
 	return err
 }

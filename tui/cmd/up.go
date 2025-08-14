@@ -83,18 +83,25 @@ func Up(force bool) error {
 
 	if upgrade {
 		reason := fmt.Sprintf("Initiating upgrade from %s to %s", activeVersion, tuiVersion)
-		app.SendEvent(api.NewEvent().Info().WithSummary(reason))
+		if app.IsRunning() {
+			app.SendEvent(api.NewEvent().Info().WithSummary(reason))
 
-		err := writeSnapshot(activeVersion.String(), reason)
-		if err != nil {
-			fmt.Println(styles.WarningStyle.Render(fmt.Sprintf("System snapshot cannot be created: %s", err)))
-			if !force {
-				if !components.SimpleContinuePrompt("Continue with this upgrade?") {
-					return fmt.Errorf("upgrade cancelled")
+			err := writeSnapshot(activeVersion.String(), reason)
+			if err != nil {
+				fmt.Println(styles.WarningStyle.Render(fmt.Sprintf("System snapshot cannot be created: %s", err)))
+				if !force {
+					if !components.SimpleContinuePrompt("Continue with this upgrade?") {
+						return fmt.Errorf("upgrade cancelled")
+					}
 				}
 			}
+		} else {
+			fmt.Println(styles.WarningStyle.Render("DeltaFi is not running - cannot create pre-upgrade event or snapshot"))
+			if !components.SimpleContinuePrompt("Continue with this upgrade?") {
+				return fmt.Errorf("upgrade cancelled")
+			}
 		}
-		err = app.GetOrchestrator().Migrate(activeVersion)
+		err := app.GetOrchestrator().Migrate(activeVersion)
 		if err != nil {
 			return fmt.Errorf(styles.ErrorStyle.Render(fmt.Sprintf("System migration failed: %s", err)))
 		}

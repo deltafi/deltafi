@@ -231,7 +231,11 @@ var ingressCmd = &cobra.Command{
 			return fmt.Errorf("at least one file must be specified")
 		}
 
-		client := app.GetInstance().GetAPIClient()
+		client, err := app.GetInstance().GetAPIClient()
+		if err != nil {
+			return clientError(err)
+		}
+
 		var rows [][]string
 		var uuids []string
 

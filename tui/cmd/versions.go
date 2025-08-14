@@ -18,8 +18,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/deltafi/tui/internal/app"
@@ -31,18 +29,19 @@ var versionsCmd = &cobra.Command{
 	Short:   "List version information for all running containers",
 	Long:    `List version information for all running containers`,
 	GroupID: "orchestration",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		RequireRunningDeltaFi()
 
-		app := app.GetInstance()
-		client := app.GetAPIClient()
+		client, err := app.GetInstance().GetAPIClient()
+		if err != nil {
+			return clientError(err)
+		}
 
 		versions, err := client.Versions()
 
 		if err != nil {
-			fmt.Println(err)
-			return
+			return wrapInError("Failed to get the version", err)
 		}
 
 		plain := cmd.Flags().Lookup("plain").Value.String() == "true"
@@ -52,6 +51,7 @@ var versionsCmd = &cobra.Command{
 		} else {
 			renderAsSimpleTable(versions.ToTable(), plain)
 		}
+		return nil
 	},
 }
 

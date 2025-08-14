@@ -48,7 +48,12 @@ func runPluginGenerate(cmd *cobra.Command, args []string) error {
 	zipFile, _ := cmd.Flags().GetString("zip")
 
 	// Run the Tea app to get the plugin configuration
-	p := tea.NewProgram(initialPluginModel())
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+
+	p := tea.NewProgram(initialPluginModel(client))
 	m, err := p.Run()
 	if err != nil {
 		return fmt.Errorf("error running plugin generator: %v", err)
@@ -118,7 +123,7 @@ type pluginModel struct {
 	state         *state
 }
 
-func initialPluginModel() pluginModel {
+func initialPluginModel(client *api.Client) pluginModel {
 	model := pluginModel{
 		plugin: &plugin{
 			PluginLanguage: "JAVA",
@@ -130,7 +135,7 @@ func initialPluginModel() pluginModel {
 			viewState:        pluginGenerateViewStateInitial,
 			AddAnotherAction: false,
 		},
-		client: app.GetInstance().GetAPIClient(),
+		client: client,
 	}
 	model.form = model.newForm()
 
@@ -216,8 +221,12 @@ func generatePlugin(plugin plugin, zipFile string) (string, error) {
 	}
 
 	// Download the plugin zip file
-	client := app.GetInstance().GetAPIClient()
-	err := client.PostToFile("/api/v2/generate/plugin?message=true", plugin, zipPath, nil)
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return "", err
+	}
+
+	err = client.PostToFile("/api/v2/generate/plugin?message=true", plugin, zipPath, nil)
 	if err != nil {
 		return "", fmt.Errorf("error generating plugin: %v", err)
 	}
