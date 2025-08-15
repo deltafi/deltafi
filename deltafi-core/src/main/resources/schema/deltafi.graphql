@@ -502,6 +502,7 @@ type Mutation {
   cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!
 
   userNote(dids: [UUID!]!, message: String!) : [Result!]!
+  userNoteMatching(filter: DeltaFilesFilter!, message: String!) : [Result!]!
 
   pin(dids: [UUID!]!) : [Result!]!
   unpin(dids: [UUID!]!) : [Result!]!

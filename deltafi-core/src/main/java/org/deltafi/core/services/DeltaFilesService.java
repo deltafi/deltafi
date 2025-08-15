@@ -1482,6 +1482,69 @@ public class DeltaFilesService {
         return results;
     }
 
+    public List<Result> userNote(DeltaFilesFilter filter, String message, String user) {
+        // user notes cannot be added to DeltaFiles IN_FLIGHT
+        if ((filter.getStage() != null && filter.getStage() == DeltaFileStage.IN_FLIGHT)) {
+            return List.of();
+        }
+
+        // Although DeltaFiles are permitted to have more than one user note, this
+        // bulk operation is only valid for DeltaFiles without any user notes.
+        if (filter.getUserNotes() != null && filter.getUserNotes()) {
+            return List.of();
+        }
+
+        filter.setUserNotes(false);
+        ensureModifiedBeforeNow(filter);
+
+        List<Result> userNoteResults = new ArrayList<>();
+
+        int numFound = REQUEUE_BATCH_SIZE;
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            Map<UUID, DeltaFile> toUserNote = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE)
+                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+            userNoteResults.addAll(userNote(toUserNote, now, message, user));
+            numFound = userNoteResults.size();
+        }
+
+        return userNoteResults;
+    }
+
+    public List<Result> userNote(List<UUID> dids, String message, String user) {
+        return userNote(didsToDeltaFiles(dids, deltaFiles(dids)), OffsetDateTime.now(clock), message, user);
+    }
+
+    public List<Result> userNote(Map<UUID, DeltaFile> deltaFiles, OffsetDateTime time, String message, String user) {
+        List<DeltaFile> changedDeltaFiles = new ArrayList<>();
+
+        List<Result> results = deltaFiles.entrySet().stream()
+                .map(entry -> {
+                    UUID did = entry.getKey();
+                    DeltaFile deltaFile = entry.getValue();
+                    String error = null;
+
+                    try {
+                        if (deltaFile == null) {
+                            error = "DeltaFile with did " + did + " not found";
+                        } else if (deltaFile.getStage().equals(DeltaFileStage.IN_FLIGHT)) {
+                            error = String.format("DeltaFile with did %s is still IN_FLIGHT", did);
+                        } else {
+                            deltaFile.addUserNote(time, message, user);
+                            changedDeltaFiles.add(deltaFile);
+                        }
+                    } catch (Exception e) {
+                        error = e.getMessage();
+                    }
+                    return error == null ? Result.successResult() :
+                            Result.builder().success(false).errors(List.of(error)).build();
+                })
+                .toList();
+
+        deltaFileRepo.saveAll(changedDeltaFiles);
+        return results;
+    }
+
     public List<PinResult> setPinned(DeltaFilesFilter filter, boolean pinned) {
         // if the stage is not null or COMPLETE there is nothing to pin or unpin
         // if the filter includes pinned and the new value is the same there is nothing to do
@@ -1513,27 +1576,6 @@ public class DeltaFilesService {
         }
 
         return pinResults;
-    }
-
-    public List<Result> userNote(List<UUID> dids, String message, String user) {
-        OffsetDateTime now = OffsetDateTime.now(clock);
-        return dids.stream().map(did -> userNote(did, now, message, user)).toList();
-    }
-
-    private Result userNote(UUID did, OffsetDateTime time, String message, String user) {
-        DeltaFile deltaFile = getDeltaFile(did);
-        if (deltaFile == null) {
-            return Result.builder().success(false).errors(List.of(String.format("DeltaFile with did %s doesn't exist", did))).build();
-        }
-
-        // must not be in cache
-        if (deltaFile.getStage().equals(DeltaFileStage.IN_FLIGHT)) {
-            return Result.builder().success(false).errors(List.of(String.format("DeltaFile with did %s is still IN_FLIGHT", did))).build();
-        }
-
-        deltaFile.addUserNote(time, message, user);
-        deltaFileRepo.save(deltaFile);
-        return Result.successResult();
     }
 
     public List<Result> pin(List<UUID> dids) {

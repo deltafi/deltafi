@@ -214,6 +214,7 @@ class DeltaFileTest {
 
     @Test
     void testMessages() {
+        OffsetDateTime startTime = OffsetDateTime.now();
         Action action1 = Action.builder()
                 .name("action1")
                 .state(ActionState.COMPLETE)
@@ -223,6 +224,8 @@ class DeltaFileTest {
                 .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
+                .created(startTime)
+                .modified(startTime)
                 .flows(new LinkedHashSet<>(List.of(flow)))
                 .stage(DeltaFileStage.COMPLETE)
                 .build();
@@ -253,5 +256,7 @@ class DeltaFileTest {
         Assertions.assertThat(deltaFile.isWarnings()).isTrue();
         Assertions.assertThat(deltaFile.isUserNotes()).isTrue();
         Assertions.assertThat(deltaFile.getMessages()).hasSize(6);
+        // adding user notes does not change the DeltaFile's modified time
+        Assertions.assertThat(deltaFile.getModified()).isEqualTo(startTime);
     }
 }

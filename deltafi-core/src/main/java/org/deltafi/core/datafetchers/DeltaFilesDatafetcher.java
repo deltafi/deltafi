@@ -251,6 +251,13 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileUserNote
+  public List<Result> userNoteMatching(@InputArgument DeltaFilesFilter filter, @InputArgument String message) {
+    auditLogger.audit("adding user note to deltafiles by filter");
+    return deltaFilesService.userNote(filter, message, DeltaFiUserService.currentUsername());
+  }
+
+  @DgsMutation
   @NeedsPermission.DeltaFilePinning
   public List<Result> pin(@InputArgument List<UUID> dids) {
     auditLogger.audit("pinning deltafiles with dids {}", CoreAuditLogger.listToString(dids));

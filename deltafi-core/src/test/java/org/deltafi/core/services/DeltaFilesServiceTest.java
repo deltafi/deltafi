@@ -29,7 +29,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
-import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -91,11 +90,11 @@ class DeltaFilesServiceTest {
     @Captor
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
     @Captor
+    ArgumentCaptor<List<QueuedAnnotation>> queuedAnnotationListCaptor;
+    @Captor
     private ArgumentCaptor<List<UUID>> uuidListCaptor;
     @Captor
     private ArgumentCaptor<List<String>> stringListCaptor;
-    @Captor
-    ArgumentCaptor<List<QueuedAnnotation>> queuedAnnotationListCaptor;
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock DataSinkService dataSinkService, @Mock StateMachine stateMachine,
@@ -909,6 +908,28 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void userNoteMatching() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.userNote(filter, "message", "user");
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        assertThat(filter.getModifiedBefore()).isNotNull();
+        assertThat(filter.getUserNotes()).isFalse();
+    }
+
+    @Test
+    void userNoteatching_skipHasUserNotes() {
+        deltaFilesService.userNote(DeltaFilesFilter.newBuilder().userNotes(true).build(), "message", "user");
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void userNoteatching_skipInFlightFilters() {
+        deltaFilesService.userNote(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.IN_FLIGHT).build(), "message", "user");
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
     void userNotesDeltaFiles() {
         DeltaFile deltaFile1 = utilService.buildDeltaFile(UUID.randomUUID(), "unusedDataSource", DeltaFileStage.COMPLETE,
                 OffsetDateTime.now(), OffsetDateTime.now());
@@ -918,12 +939,14 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile3 = utilService.buildDeltaFile(UUID.randomUUID()); // IN_FLIGHT
         UUID nonExistentDid = UUID.randomUUID();
 
-        when(deltaFileRepo.findById(eq(deltaFile1.getDid()))).thenReturn(Optional.of(deltaFile1));
-        when(deltaFileRepo.findById(eq(deltaFile2.getDid()))).thenReturn(Optional.of(deltaFile2));
-        when(deltaFileRepo.findById(eq(deltaFile3.getDid()))).thenReturn(Optional.of(deltaFile3));
+        List<UUID> dids = List.of(
+                deltaFile1.getDid(),
+                deltaFile2.getDid(),
+                deltaFile3.getDid(),
+                nonExistentDid);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile1, deltaFile2, deltaFile3));
 
-        List<Result> results = deltaFilesService.userNote(List.of(deltaFile1.getDid(), deltaFile2.getDid(),
-                deltaFile3.getDid(), nonExistentDid), "message", "userName");
+        List<Result> results = deltaFilesService.userNote(dids, "message", "userName");
 
         assertEquals(4, results.size());
         assertTrue(results.get(0).isSuccess());
@@ -945,11 +968,11 @@ class DeltaFilesServiceTest {
 
         assertFalse(deltaFile3.isUserNotes());
         assertNull(deltaFile3.getMessages());
-        verify(deltaFileRepo, times(2)).save(any());
+        verify(deltaFileRepo, times(1)).saveAll(any());
         assertEquals(1, results.get(2).getErrors().size());
         assertEquals("DeltaFile with did " + deltaFile3.getDid() + " is still IN_FLIGHT",
                 results.get(2).getErrors().getFirst());
-        assertEquals("DeltaFile with did " + nonExistentDid + " doesn't exist",
+        assertEquals("DeltaFile with did " + nonExistentDid + " not found",
                 results.get(3).getErrors().getFirst());
     }
 
@@ -1172,12 +1195,12 @@ class DeltaFilesServiceTest {
                 .thenReturn(mockDataSources);
 
         List<OnErrorDataSource> result = onErrorDataSourceService.getTriggeredDataSources(
-                "testFlow", FlowType.TRANSFORM, "TestAction", "com.example.TestAction", "Test error message", 
+                "testFlow", FlowType.TRANSFORM, "TestAction", "com.example.TestAction", "Test error message",
                 Map.of(), Map.of());
 
         assertThat(result).hasSize(1);
         verify(onErrorDataSourceService).getTriggeredDataSources(
-                "testFlow", FlowType.TRANSFORM, "TestAction", "com.example.TestAction", "Test error message", 
+                "testFlow", FlowType.TRANSFORM, "TestAction", "com.example.TestAction", "Test error message",
                 Map.of(), Map.of());
     }
 }
