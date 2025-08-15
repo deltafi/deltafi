@@ -18,13 +18,13 @@
 
 
 import pytest
-from pydantic import BaseModel
-
 from deltafi.action import TimedIngressAction
 from deltafi.domain import Context
 from deltafi.result import IngressResult, IngressResultItem
+from deltafi.resultmessage import LogMessage, LogSeverity
 from deltafi.test_kit.framework import IOContent
 from deltafi.test_kit.timed_ingress import TimedIngressTestCase, TimedIngressActionTest
+from pydantic import BaseModel
 
 
 class SampleTimedIngressAction(TimedIngressAction):
@@ -57,6 +57,7 @@ class SampleTimedIngressAction(TimedIngressAction):
         ingress_result.memo = str(index)
         ingress_result.execute_immediate = False
         ingress_result.status_message = "success"
+        ingress_result.log_info("my info message")
         return ingress_result
 
 
@@ -113,6 +114,7 @@ class SampleTimedIngressActionTest(TimedIngressActionTest):
             content=even_outputs,
             metadata={"index": expected_meta_val},
             annotations={"a": "b"})
+        test_case.add_message(LogMessage.info('source', 'my info message'))
         if two_results and not skip_odd:
             test_case.add_ingress_result_item(
                 name="odd",

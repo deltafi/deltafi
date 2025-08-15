@@ -18,14 +18,14 @@
 
 
 import pytest
-from pydantic import BaseModel, Field
-
 from deltafi.action import TransformAction
 from deltafi.domain import Context
 from deltafi.input import TransformInput
 from deltafi.result import TransformResult, TransformResults, ChildTransformResult, ErrorResult, FilterResult
+from deltafi.resultmessage import LogMessage, LogSeverity
 from deltafi.test_kit.framework import IOContent
 from deltafi.test_kit.transform import TransformTestCase, TransformActionTest
+from pydantic import BaseModel, Field
 
 
 class SampleTransformParams(BaseModel):
@@ -74,6 +74,10 @@ class SampleTransformAction(TransformAction):
                 transform_many_result.add_result(this_child)
                 transform_many_result.add_result(that_child)
                 return transform_many_result
+            elif "warning" in params.mode:
+                return (TransformResult(context)
+                        .save_string_content(data, "output.txt", "text/plain")
+                        .log_warning("my warning message"))
             else:
                 return (TransformResult(context)
                         .save_string_content(data, "output.txt", "text/plain"))
@@ -125,6 +129,8 @@ class SampleTransformActionTest(TransformActionTest):
             annotations=annotations_out,
             metadata=meta_out,
             delete_metadata_keys=del_meta_keys)
+        if param_mode == 'warning':
+            test_case.add_message(LogMessage.warning('source', 'my warning message'))
         self.transform(test_case)
         self.has_saved_content__size(2)
 
@@ -229,6 +235,11 @@ def test_transform_many_result_missing_child():
 def test_good_transform_result():
     action_test = SampleTransformActionTest()
     action_test.transform_result()
+
+
+def test_good_transform_result_with_warning():
+    action_test = SampleTransformActionTest()
+    action_test.transform_result(param_mode='warning')
 
 
 def test_not_a_transform_result():

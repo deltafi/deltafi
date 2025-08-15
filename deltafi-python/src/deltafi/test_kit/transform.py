@@ -19,6 +19,7 @@
 from typing import List
 
 from deltafi.result import TransformResult, TransformResults
+
 from .assertions import *
 from .framework import TestCaseBase, ActionTest, IOContent
 
@@ -81,8 +82,8 @@ class TransformActionTest(ActionTest):
                 assert_equal_with_label(expected["name"], child_result.delta_file_name, f"name[{index}]")
 
     def assert_transform_result(self, test_case: TransformTestCase, result: TransformResult):
-        # Check metrics
         self.compare_metrics(test_case.expected_metrics, result.metrics)
+        self.compare_log_messages(test_case.expected_messages, result.messages)
         self.compare_one_transform_result(test_case, result, 0)
 
     def compare_one_transform_result(self, test_case: TransformTestCase, result: TransformResult, index: int):

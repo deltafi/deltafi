@@ -43,7 +43,7 @@ def test_egress_result():
 
 
 def test_error_result():
-    result = ErrorResult(None, "errorCause", "errorContext")
+    result = ErrorResult(make_context(), "errorCause", "errorContext")
     result.annotate('a', 'b')
     assert result.result_key == "error"
     assert result.result_type == "ERROR"

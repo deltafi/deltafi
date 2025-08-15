@@ -50,5 +50,5 @@ class EgressActionTest(ActionTest):
         self.assert_egress_result(test_case, result)
 
     def assert_egress_result(self, test_case: EgressTestCase, result: EgressResult):
-        # Check metrics
         self.compare_metrics(test_case.expected_metrics, result.metrics)
+        self.compare_log_messages(test_case.expected_messages, result.messages)

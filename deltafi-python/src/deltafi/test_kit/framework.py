@@ -16,6 +16,7 @@
 #    limitations under the License.
 #
 
+import re
 import uuid
 from abc import ABC
 from importlib.resources import files
@@ -25,7 +26,9 @@ from deltafi.domain import DeltaFileMessage, Event, Content, Context
 from deltafi.logger import get_logger
 from deltafi.metric import Metric
 from deltafi.result import ErrorResult, FilterResult
+from deltafi.resultmessage import LogMessage
 from deltafi.storage import Segment
+
 from .assertions import *
 from .compare_helpers import GenericCompareHelper, CompareHelper
 from .constants import *
@@ -170,9 +173,13 @@ class TestCaseBase(ABC):
         self.err_or_filt_annotations = None
         self.join_meta = data["join_meta"] if "join_meta" in data else None
         self.expected_metrics = []
+        self.expected_messages = []
 
     def add_metric(self, metric: Metric):
         self.expected_metrics.append(metric)
+
+    def add_message(self, message: LogMessage):
+        self.expected_messages.append(message)
 
     def expect_error_result(self, cause: str, context: str, annotations: Dict = None):
         """
@@ -359,6 +366,24 @@ class ActionTest(ABC):
             assert_equal_len_with_label(expected_metrics, results, "invalid metrics count")
             for index, expected in enumerate(expected_metrics):
                 self.compare_one_metric(expected, results[index])
+
+    @staticmethod
+    def compare_one_message(expected: LogMessage, result: LogMessage):
+        assert_equal_short(expected.severity, result.severity, "message severity does not match")
+        # Look for regex characters:
+        if '*' in expected.message or '{' in expected.message or '^' in expected.message \
+                or '$' in expected.message:
+            match = re.search(expected.message, result.message)
+            assert match is not None, "message does not match regex"
+
+        else:
+            assert_equal_short(expected.message, result.message, "message value does not match")
+
+    def compare_log_messages(self, expected_messages: List[LogMessage], results: List[LogMessage]):
+        if len(expected_messages) > 0:
+            assert_equal_len_with_label(expected_messages, results, "invalid messages count")
+            for index, expected in enumerate(expected_messages):
+                self.compare_one_message(expected, results[index])
 
     def has_saved_content__size(self, count: int):
         assert_equal_with_label(

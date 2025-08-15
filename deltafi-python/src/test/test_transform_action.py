@@ -16,10 +16,9 @@
 #    limitations under the License.
 #
 
-import pytest
-from mockito import when, mock, unstub
-from pydantic import BaseModel, Field
+from unittest.mock import patch
 
+import pytest
 from deltafi.action import TransformAction
 from deltafi.actiontype import ActionType
 from deltafi.input import TransformInput
@@ -27,6 +26,9 @@ from deltafi.logger import get_logger
 from deltafi.plugin import Plugin
 from deltafi.result import TransformResult, EgressResult, ErrorResult
 from deltafi.storage import ContentService
+from mockito import when, mock, unstub
+from pydantic import BaseModel, Field
+
 from .helperutils import *
 
 
@@ -49,7 +51,7 @@ class SampleTransformAction(TransformAction):
         return TransformResult(context) \
             .add_metadata('transformKey', 'transformValue') \
             .annotate('transformAnnotate', 'transformAnnotateValue') \
-            .save_string_content("Abcde12345", "ten.txt", "text.plain", { "tag" })
+            .save_string_content("Abcde12345", "ten.txt", "text.plain", {"tag"})
 
 
 class InvalidResult(TransformAction):
@@ -68,12 +70,14 @@ class SampleErrorAction(TransformAction):
         # Creates orphaned content:
         TransformResult(context).save_string_content("123", "temp1.txt", "text/plain")
 
-        return ErrorResult(context, 'Something bad happened', '')
+        return ErrorResult(context, 'Something bad happened', 'details')
 
 
-def test_action_returns_error():
+@patch('time.time')
+def test_action_returns_error(mock_time):
     unstub()
     mock_content_service = mock(ContentService)
+    mock_time.return_value = 1754999744
 
     when(mock_content_service).put_str(...).thenReturn(make_segment('000'))
     when(mock_content_service).delete_all(...).thenReturn([])
@@ -86,7 +90,7 @@ def test_action_returns_error():
     expected_response = {
         'annotations': {},
         'cause': 'Something bad happened',
-        'context': ''
+        'context': 'details'
     }
     assert result.response() == expected_response
 
@@ -98,10 +102,18 @@ def test_action_returns_error():
         'error': {
             'annotations': {},
             'cause': 'Something bad happened',
-            'context': ''
+            'context': 'details'
         },
         'flowId': 'FLOW_ID',
         'flowName': 'FLOW_NAME',
+        'messages': [
+            {
+                'severity': 'ERROR',
+                'created': 1754999744,
+                'source': 'ACTION_NAME',
+                'message': "Something bad happened\ndetails"
+            }
+        ],
         'metrics': [],
         'start': '12:00',
         'stop': '12:01',
@@ -146,7 +158,7 @@ def test_action_returns_transform():
                         'uuid': '333'
                     }
                 ],
-                'tags': [ 'tag' ]
+                'tags': ['tag']
             }
         ],
         'metadata': {

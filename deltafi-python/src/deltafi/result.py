@@ -19,10 +19,10 @@
 import abc
 import uuid
 from enum import Enum
-from typing import NamedTuple
 
 from deltafi.domain import Content, Context
 from deltafi.metric import Metric
+from deltafi.resultmessage import LogMessage
 
 
 class Result:
@@ -31,6 +31,7 @@ class Result:
     def __init__(self, result_key, result_type, context):
         self.result_key = result_key
         self.result_type = result_type
+        self.messages = []
         self.metrics = []
         self.context = context
 
@@ -40,6 +41,18 @@ class Result:
 
     def add_metric(self, metric: Metric):
         self.metrics.append(metric)
+        return self
+
+    def log_info(self, message: str):
+        self.messages.append(LogMessage.info(self.context.action_name, message))
+        return self
+
+    def log_warning(self, message: str):
+        self.messages.append(LogMessage.warning(self.context.action_name, message))
+        return self
+
+    def log_error(self, message: str):
+        self.messages.append(LogMessage.error(self.context.action_name, message))
         return self
 
 
@@ -63,6 +76,7 @@ class ErrorResult(Result):
         return self
 
     def response(self):
+        self.log_error(self.error_cause + '\n' + self.error_context)
         return {
             'cause': self.error_cause,
             'context': self.error_context,
@@ -145,8 +159,8 @@ class IngressResultItem:
         return segment_names
 
     def annotate(self, key: str, value: str):
-                    self.annotations[key] = value
-                    return self
+        self.annotations[key] = value
+        return self
 
     def response(self):
         return {

@@ -19,6 +19,7 @@
 from typing import List
 
 from deltafi.result import IngressResult, IngressResultItem, IngressStatusEnum
+
 from .assertions import *
 from .framework import TestCaseBase, ActionTest, IOContent
 
@@ -43,7 +44,8 @@ class TimedIngressTestCase(TestCaseBase):
         self.status = status
         self.status_message = status_message
 
-    def add_ingress_result_item(self, content: List[IOContent], metadata: Dict, name: str = None, annotations: Dict = None):
+    def add_ingress_result_item(self, content: List[IOContent], metadata: Dict, name: str = None,
+                                annotations: Dict = None):
         if annotations is None:
             annotations = {}
         self.results.append(
@@ -80,6 +82,7 @@ class TimedIngressActionTest(ActionTest):
         assert_equal_short(test_case.execute_immediate, result.execute_immediate, "invalid execute_immediate")
         assert_equal_short(test_case.status, result.status, "invalid status")
         assert_equal_with_label(test_case.status_message, result.status_message, "invalid status_message")
+        self.compare_log_messages(test_case.expected_messages, result.messages)
 
         assert_equal_len_with_label(test_case.results, result.ingress_result_items, "item count mismatch")
         for index, ingress_item in enumerate(result.ingress_result_items):

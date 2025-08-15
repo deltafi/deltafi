@@ -18,15 +18,15 @@
 
 
 import pytest
-from pydantic import BaseModel
-
 from deltafi.action import EgressAction
 from deltafi.domain import Context
 from deltafi.input import EgressInput
 from deltafi.metric import Metric
 from deltafi.result import EgressResult, ErrorResult, FilterResult
+from deltafi.resultmessage import LogMessage, LogSeverity
 from deltafi.test_kit.egress import EgressActionTest, EgressTestCase
 from deltafi.test_kit.framework import IOContent
+from pydantic import BaseModel
 
 
 class SampleEgressAction(EgressAction):
@@ -41,7 +41,9 @@ class SampleEgressAction(EgressAction):
             return FilterResult(context, "Filtered")
 
         return (EgressResult(context)
-                .add_metric(Metric(name="mKey", value=100)))
+                .add_metric(Metric(name="mKey", value=100))
+                .log_info("my random message")
+                .log_warning("my warning message"))
 
 
 class SampleEgressActionTest(EgressActionTest):
@@ -53,6 +55,8 @@ class SampleEgressActionTest(EgressActionTest):
         test_case = EgressTestCase(self.get_fields(data))
         test_case.expect_egress_result()
         test_case.add_metric(Metric(name=metric_key, value=metric_val))
+        test_case.add_message(LogMessage.info('source', 'my .* message'))
+        test_case.add_message(LogMessage.warning('source', 'my warning message'))
         if metric_key == "add_bogus":
             test_case.add_metric(Metric(name="bogus", value=1))
         self.egress(test_case)

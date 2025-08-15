@@ -392,6 +392,7 @@ class Plugin(object):
             'start': start_time,
             'stop': stop_time,
             'type': result.result_type,
+            'messages': [message.json() for message in result.messages],
             'metrics': [metric.json() for metric in result.metrics]
         }
         if result.result_key is not None:
