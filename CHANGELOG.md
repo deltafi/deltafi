@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.29.0] - 2025-08-15
+
+### Added
+- Added DeltaFile log message support to the DeltaFi Python action kit
+- New `userNoteMatching` GraphQL endpoint allow setting user notes using `DeltaFilesFilter` to DeltaFiles without an existing user note
+- Added support for extending the DeltaFi Helm chart by adding templates to the `site/templates` directory 
+
+### Fixed
+- Log messages recorded in `ChildTransformResult` are now saved in the new child DeltaFile
+
 ## [2.28.1] - 2025-08-13
 
 ### Changed
@@ -4549,7 +4559,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.29.0...main
+[2.29.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.1...2.29.0
 [2.28.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.0...2.28.1
 [2.28.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.27.0...2.28.0
 [2.27.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.26.1...2.27.0
