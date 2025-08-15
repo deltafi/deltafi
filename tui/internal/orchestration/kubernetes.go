@@ -20,14 +20,15 @@ package orchestration
 import (
 	"embed"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/Masterminds/semver/v3"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/deltafi/tui/internal/ui/styles"
 )
@@ -37,7 +38,7 @@ const (
 	SSL_SECRET = "ssl-secret"
 )
 
-//go:embed kubernetes.values.site.yaml
+//go:embed kubernetes.values.site.yaml templates_readme.md
 var kubernetesEmbeddedFiles embed.FS
 
 type KubernetesOrchestrator struct {
@@ -170,7 +171,12 @@ func (o *KubernetesOrchestrator) Up(args []string) error {
 		return fmt.Errorf("Unable to get site values file: %w", err)
 	}
 
-	if err := deltafiHelmInstall(o.namespace, deltafiChartPath, siteValuesFile); err != nil {
+	siteTemplatesPath, err := o.TemplatesDir()
+	if err != nil {
+		return fmt.Errorf("Unable to get site templates directory: %w", err)
+	}
+
+	if err := deltafiHelmInstall(o.namespace, deltafiChartPath, siteValuesFile, siteTemplatesPath); err != nil {
 		fmt.Println(styles.FAIL("DeltaFi installation failed"))
 		return fmt.Errorf("Unable to install DeltaFi: %w", err)
 	}
@@ -195,6 +201,34 @@ func (o *KubernetesOrchestrator) enforceSiteValuesDir() error {
 		return fmt.Errorf("error creating site values directory: %w", err)
 	}
 	return nil
+}
+
+func (o *KubernetesOrchestrator) TemplatesDir() (string, error) {
+	siteTemplatesDir := filepath.Join(o.sitePath, "templates")
+
+	// make the templates dir if it doesn't exist, drop in the readme and .helmignore files on creation
+	if _, err := os.Stat(siteTemplatesDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(siteTemplatesDir, 0755); err != nil {
+			return "", fmt.Errorf("error creating site templates directory: %w", err)
+		}
+
+		readmeContent, err := kubernetesEmbeddedFiles.ReadFile("templates_readme.md")
+		if err != nil {
+			return "", fmt.Errorf("error reading templates_readme.md: %w", err)
+		}
+
+		readmeFile := filepath.Join(siteTemplatesDir, "README.md")
+		if err := os.WriteFile(readmeFile, readmeContent, 0644); err != nil {
+			return "", fmt.Errorf("error creating templates/README.md file: %w", err)
+		}
+
+		helmIgnore := filepath.Join(siteTemplatesDir, ".helmignore")
+		if err := os.WriteFile(helmIgnore, []byte("*.md"), 0644); err != nil {
+			return "", fmt.Errorf("error creating templats/.helmignore file: %w", err)
+		}
+	}
+
+	return siteTemplatesDir, nil
 }
 
 func (o *KubernetesOrchestrator) Migrate(_ *semver.Version) error {

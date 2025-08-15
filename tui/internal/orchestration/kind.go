@@ -126,7 +126,12 @@ func (o *KindOrchestrator) Up(args []string) error {
 		additionalValuesFiles = append(additionalValuesFiles, devValuesFile)
 	}
 
-	if err := deltafiHelmInstall(o.namespace, deltafiChartPath, siteValuesFile, additionalValuesFiles...); err != nil {
+	siteTemplatesPath, err := o.TemplatesDir()
+	if err != nil {
+		return fmt.Errorf("Unable to get site templates directory: %w", err)
+	}
+
+	if err := deltafiHelmInstall(o.namespace, deltafiChartPath, siteValuesFile, siteTemplatesPath, additionalValuesFiles...); err != nil {
 		fmt.Println(styles.FAIL("DeltaFi installation failed"))
 		return fmt.Errorf("Unable to install DeltaFi: %w", err)
 	}

@@ -18,6 +18,7 @@
 package orchestration
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -27,10 +28,13 @@ import (
 	"time"
 
 	"github.com/deltafi/tui/internal/ui/styles"
+	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/ignore"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -155,7 +159,7 @@ func deleteNamespace(namespace string) error {
 	return nil
 }
 
-func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFile string, additionalValuesFiles ...string) error {
+func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFile string, siteTemplatesPath string, additionalValuesFiles ...string) error {
 
 	fmt.Println(styles.HEADER("Installing DeltaFi helm chart"))
 	// Check the path to the DeltaFi chart
@@ -189,10 +193,19 @@ func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFil
 	releaseExists := err == nil
 
 	// Load the chart
-	chart, err := loader.Load(deltafiChartPath)
+	deltaFiChart, err := loader.Load(deltafiChartPath)
 	if err != nil {
 		return fmt.Errorf("failed to load chart: %w", err)
 	}
+
+	additionalFiles, err := loadSiteTemplates(siteTemplatesPath)
+
+	if err != nil {
+		return fmt.Errorf("failed to load site templates: %w", err)
+	}
+
+	// extend the deltaFiChart with the site specific templates
+	deltaFiChart.Templates = append(deltaFiChart.Templates, additionalFiles...)
 
 	// Load default values from values.yaml
 	valuesPath := filepath.Join(deltafiChartPath, "values.yaml")
@@ -248,7 +261,7 @@ func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFil
 		upgrade.Timeout = 10 * time.Minute
 
 		// Upgrade the chart
-		_, err = upgrade.Run("deltafi", chart, mergedVals)
+		_, err = upgrade.Run("deltafi", deltaFiChart, mergedVals)
 		if err != nil {
 			fmt.Println(styles.FAIL(fmt.Sprintf("Failed to upgrade deltafi: %s", err)))
 			return fmt.Errorf("failed to upgrade deltafi: %w", err)
@@ -263,7 +276,7 @@ func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFil
 		install.ReleaseName = "deltafi"
 
 		// Install the chart
-		_, err = install.Run(chart, mergedVals)
+		_, err = install.Run(deltaFiChart, mergedVals)
 		if err != nil {
 			fmt.Println(styles.FAIL(fmt.Sprintf("Failed to install deltafi: %s", err)))
 			return fmt.Errorf("failed to install deltafi: %w", err)
@@ -318,13 +331,13 @@ func postgresOperatorInstall(namespace string, postgresOperatorPath string) erro
 		upgrade.Timeout = 10 * time.Minute
 
 		// Load the chart
-		chart, err := loader.Load(postgresOperatorPath)
+		postgresOperatorChart, err := loader.Load(postgresOperatorPath)
 		if err != nil {
 			return fmt.Errorf("failed to load chart: %w", err)
 		}
 
 		// Upgrade the chart
-		_, err = upgrade.Run("postgres-operator", chart, nil)
+		_, err = upgrade.Run("postgres-operator", postgresOperatorChart, nil)
 		if err != nil {
 			fmt.Println(styles.FAIL(fmt.Sprintf("Failed to upgrade postgres-operator: %s", err)))
 			return fmt.Errorf("failed to upgrade postgres-operator: %w", err)
@@ -339,13 +352,13 @@ func postgresOperatorInstall(namespace string, postgresOperatorPath string) erro
 		install.ReleaseName = "postgres-operator"
 
 		// Load the chart
-		chart, err := loader.Load(postgresOperatorPath)
+		postgresOperatorChart, err := loader.Load(postgresOperatorPath)
 		if err != nil {
 			return fmt.Errorf("failed to load chart: %w", err)
 		}
 
 		// Install the chart
-		_, err = install.Run(chart, nil)
+		_, err = install.Run(postgresOperatorChart, nil)
 		if err != nil {
 			fmt.Println(styles.FAIL(fmt.Sprintf("Failed to install postgres-operator: %s", err)))
 			return fmt.Errorf("failed to install postgres-operator: %w", err)
@@ -461,4 +474,85 @@ func getK8sClient() (*kubernetes.Clientset, context.Context, error) {
 	}
 
 	return clientset, ctx, nil
+}
+
+var utf8bom = []byte{0xEF, 0xBB, 0xBF}
+
+// this is a modified version of the helm loader.LoadDir method that returns the list of files, not a full chart struct
+func loadSiteTemplates(dir string) ([]*chart.File, error) {
+	topdir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var files []*chart.File
+	rules := ignore.Empty()
+	ifile := filepath.Join(topdir, ignore.HelmIgnore)
+	if _, err := os.Stat(ifile); err == nil {
+		r, err := ignore.ParseFile(ifile)
+		if err != nil {
+			return files, err
+		}
+		rules = r
+	}
+	rules.AddDefaults()
+
+	topdir += string(filepath.Separator)
+
+	walk := func(name string, fi os.FileInfo, err error) error {
+		n := strings.TrimPrefix(name, topdir)
+		if n == "" {
+			// No need to process top level. Avoid bug with helmignore .* matching
+			// empty names. See issue 1779.
+			return nil
+		}
+
+		// Normalize to / since it will also work on Windows
+		n = filepath.ToSlash(n)
+
+		if err != nil {
+			return err
+		}
+		if fi.IsDir() {
+			// Directory-based ignore rules should involve skipping the entire
+			// contents of that directory.
+			if rules.Ignore(n, fi) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if fi.Name() == ".helmignore" {
+			return nil
+		}
+
+		// If a .helmignore file matches, skip this file.
+		if rules.Ignore(n, fi) {
+			return nil
+		}
+
+		// Irregular files include devices, sockets, and other uses of files that
+		// are not regular files. In Go they have a file mode type bit set.
+		// See https://golang.org/pkg/os/#FileMode for examples.
+		if !fi.Mode().IsRegular() {
+			return fmt.Errorf("cannot load irregular file %s as it has file mode type bits set", name)
+		}
+
+		if fi.Size() > loader.MaxDecompressedFileSize {
+			return fmt.Errorf("chart file %q is larger than the maximum file size %d", fi.Name(), loader.MaxDecompressedFileSize)
+		}
+
+		data, err := os.ReadFile(name)
+		if err != nil {
+			return errors.Wrapf(err, "error reading %s", n)
+		}
+
+		data = bytes.TrimPrefix(data, utf8bom)
+
+		files = append(files, &chart.File{Name: n, Data: data})
+		return nil
+	}
+
+	err = filepath.Walk(dir, walk)
+	return files, err
 }
