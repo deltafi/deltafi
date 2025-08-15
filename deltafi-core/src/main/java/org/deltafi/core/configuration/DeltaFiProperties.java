@@ -110,6 +110,12 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
     private int checkContentStoragePercentThreshold = 90;
 
+    @PropertyInfo(description = "Certificate expiration error threshold (days). System status becomes unhealthy when any certificate expires within this timeframe.", defaultValue = "4", dataType = VariableDataType.NUMBER)
+    private int checkSslExpirationErrorThreshold = 4;
+
+    @PropertyInfo(description = "Certificate expiration warning threshold (days). System status becomes degraded when any certificate expires within this timeframe.", defaultValue = "14", dataType = VariableDataType.NUMBER)
+    private int checkSslExpirationWarningThreshold = 14;
+
     @PropertyInfo(description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean uiUseUTC = true;
 
@@ -288,6 +294,16 @@ public class DeltaFiProperties {
     public void setJoinLockCheckInterval(Duration joinLockCheckInterval) {
         positiveDurationCheck(joinLockCheckInterval, "joinLockCheckInterval");
         this.joinLockCheckInterval = joinLockCheckInterval;
+    }
+
+    public void setCheckSslExpirationErrorThreshold(int checkSslExpirationErrorThreshold) {
+        minCheck(checkSslExpirationErrorThreshold, 0, "checkSslExpirationErrorThreshold");
+        this.checkSslExpirationErrorThreshold = checkSslExpirationErrorThreshold;
+    }
+
+    public void setCheckSslExpirationWarningThreshold(int checkSslExpirationWarningThreshold) {
+        minCheck(checkSslExpirationWarningThreshold, 0, "checkSslExpirationWarningThreshold");
+        this.checkSslExpirationWarningThreshold = checkSslExpirationWarningThreshold;
     }
 
     /**

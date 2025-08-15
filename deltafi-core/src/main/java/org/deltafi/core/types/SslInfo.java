@@ -22,4 +22,11 @@ import lombok.Builder;
 import java.util.Set;
 
 @Builder
-public record SslInfo(String secretName, CertificateInfo cert, String key, String keyPassphrase, Set<String> usedBy) {}
+public record SslInfo(String secretName, CertificateInfo cert, String key, String keyPassphrase, Set<String> usedBy) {
+    public long daysToExpired() {
+        if (cert == null) {
+            return Integer.MAX_VALUE;
+        }
+        return cert.daysUntilExpiration();
+    }
+}
