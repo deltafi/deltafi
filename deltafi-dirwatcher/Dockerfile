@@ -1,11 +1,11 @@
-FROM golang:1.24.5-alpine AS test
+FROM golang:1.24.6-alpine AS test
 WORKDIR /app
 # Install git for tests (some Go tools require it)
 # RUN apk add --no-cache git gcc musl-dev
 COPY . .
 RUN go test -v ./...
 
-FROM golang:1.24.5-alpine AS builder
+FROM golang:1.24.6-alpine AS builder
 WORKDIR /app
 COPY . .
 RUN go mod download
