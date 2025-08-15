@@ -89,8 +89,8 @@
                 </template>
               </div>
               <OverlayPanel ref="annotationsOverlay">
-                <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" /> :
-                <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" />
+                <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" /> :
+                <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" />
               </OverlayPanel>
             </div>
           </div>
