@@ -239,6 +239,7 @@ public class PublisherService {
         action.setErrorContext(context);
         action.setContent(toCopy);
         flow.updateState();
+        deltaFile.logInternalError(OffsetDateTime.now(clock), action.getErrorCause(), action.getErrorContext());
         deltaFile.updateState(OffsetDateTime.now(clock));
         analyticEventService.recordError(deltaFile, flow.getName(), flow.getType(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
     }

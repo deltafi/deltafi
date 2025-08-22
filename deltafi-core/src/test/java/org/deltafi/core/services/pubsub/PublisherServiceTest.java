@@ -185,6 +185,12 @@ class PublisherServiceTest {
         Assertions.assertThat(action.getErrorCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
         Assertions.assertThat(action.getFilteredCause()).isNull();
+
+        // Additionally verify the error is logged
+        Assertions.assertThat(deltaFile.getMessages()).hasSize(1);
+        Assertions.assertThat(deltaFile.getMessages().getFirst().getSeverity()).isEqualTo(LogSeverity.ERROR);
+        Assertions.assertThat(deltaFile.getMessages().getFirst().getSource()).isEqualTo("internal");
+        Assertions.assertThat(deltaFile.getMessages().getFirst().getMessage()).contains(NO_SUBSCRIBER_CAUSE);
     }
 
     @Test

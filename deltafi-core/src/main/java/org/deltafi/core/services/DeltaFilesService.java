@@ -641,6 +641,10 @@ public class DeltaFilesService {
             action.setNextAutoResumeReason(resumeDetails.get().name());
         }
         flow.updateState();
+        if (event.getType() == ActionEventType.UNKNOWN) {
+            // Internally generated error events have the 'UNKNOWN' type
+            deltaFile.logInternalError(now, event.getError().getCause(), event.getError().getContext());
+        }
         deltaFile.updateState(now);
 
         // false: we don't want action execution metrics, since they have already been recorded.

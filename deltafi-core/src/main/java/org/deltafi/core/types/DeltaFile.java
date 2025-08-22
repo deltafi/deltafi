@@ -321,6 +321,7 @@ public class DeltaFile {
 
   public void errorJoinAction(UUID joinId, String actionName, OffsetDateTime now, String reason) {
     joiningFlows(joinId).forEach(f -> errorJoinAction(f, actionName, now, reason));
+    logInternalError(now, "Failed join", reason);
     updateState(now);
   }
 
@@ -681,6 +682,10 @@ public class DeltaFile {
   public void addUserNote(OffsetDateTime time, String message, String user) {
     addMessages(List.of(new LogMessage(LogSeverity.USER, time, user, message)));
     userNotes = true;
+  }
+
+  public void logInternalError(OffsetDateTime now, String cause, String context) {
+    addMessages(List.of(new LogMessage(LogSeverity.ERROR, now, "internal", cause + "\n" + context)));
   }
 
   private void addMessages(List<LogMessage> logMessages) {
