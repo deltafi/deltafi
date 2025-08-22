@@ -287,6 +287,7 @@ class ChildTransformResult(TransformResult):
 
     def json(self):
         j = super().json()
+        j['messages'] = [message.json() for message in self.messages]
         if self.delta_file_name is not None:
             j['name'] = self.delta_file_name
         return j

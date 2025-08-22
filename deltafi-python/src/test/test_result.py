@@ -103,7 +103,8 @@ def test_transform_result():
     assert "123/123did/id1" in result.get_segment_names();
     assert "123/123did/id2" in result.get_segment_names();
 
-def make_child(context, name = None):
+
+def make_child(context, name=None):
     child1 = ChildTransformResult(context, name)
     add_canned_metadata(child1)
     child1.add_content(make_content(None, "content1", "id1"))
@@ -111,7 +112,10 @@ def make_child(context, name = None):
     child1.annotate('a', 'b')
     child1.delete_metadata_key('delete1')
     child1.delete_metadata_key('delete2')
+    if name is not None:
+        child1.log_info(f"My name is {name}")
     return child1
+
 
 def test_transform_many_result():
     context = make_context()
@@ -132,9 +136,15 @@ def test_transform_many_result():
     assert len(response) == 3
 
     first = response[0]
-    assert len(first) == 6
+    assert len(first) == 7
     assert "name" in first
     assert first.get("name") == "name1"
+    assert "messages" in first
+    messages = first['messages']
+    assert len(messages) == 1
+    first_message = messages[0]
+    assert "severity" in first_message;
+    assert first_message["severity"] == "INFO"
 
     verify_all_metadata(first)
     content = first.get("content")
@@ -145,11 +155,14 @@ def test_transform_many_result():
     assert first.get('deleteMetadataKeys') == ['delete1', 'delete2']
 
     second = response[1]
-    assert len(second) == 5
+    assert len(second) == 6
     assert "name" not in second
+    assert "messages" in second
+    messages = second['messages']
+    assert len(messages) == 0
 
     third = response[2]
-    assert len(third) == 6
+    assert len(third) == 7
     assert "name" in third
     assert third.get("name") == "name3"
 
