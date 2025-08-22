@@ -7,6 +7,6 @@ build:TUI:
   script:
     - |
       pushd tui
-      make
+      make debug-make build
       popd
       ./deltafi || echo "Oopsie..."

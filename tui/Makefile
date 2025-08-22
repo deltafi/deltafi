@@ -164,12 +164,12 @@ $(GENERATED_GO): $(GENQLIENT_YAML) $(GRAPHQL_SCHEMAS) $(GRAPHQL_QUERIES)
 	@echo "Generating GraphQL client ($@)"
 	@$(GOGEN) $(GENQLIENT_YAML)
 
-dist: $(GENERATED_FILES)
+dist: $(GENERATED_FILES) debug-make
 	@$(foreach p,$(PLATFORMS), \
 			$(eval GOOS=$(word 1,$(subst /, ,$p))) \
 			$(eval GOARCH=$(word 2,$(subst /, ,$p))) \
 			$(shell mkdir -p $(DIST_DIR)/$(GOOS)/$(GOARCH)) \
-			GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBUILD) $(LDFLAGS) \
+			GOOS=$(GOOS) GOARCH=$(GOARCH) time $(GOBUILD) $(LDFLAGS) \
 				-o $(DIST_DIR)/$(GOOS)/$(GOARCH)/deltafi ./main.go; \
 	)
 
