@@ -37,6 +37,7 @@ services:
       - "8080"
     group_add:
       - ${DOCKER_GID}
+    user: "${USER_ID}:${GROUP_ID}"
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
       SPRING_PROFILES_ACTIVE: monitor,localContentStorage
@@ -76,6 +77,7 @@ services:
         condition: service_started
     group_add:
       - ${DOCKER_GID}
+    user: "${USER_ID}:${GROUP_ID}"
     expose:
       - "8080"
     environment:
@@ -105,6 +107,7 @@ services:
     env_file:
       - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}/.env
         required: false
+    user: "${USER_ID}:${GROUP_ID}"
     expose:
       - "${ENTITY_RESOLVER_PORT}"
     labels:
@@ -156,13 +159,13 @@ services:
       - ${SECRETS_DIR}/valkey.env
     group_add:
       - ${DOCKER_GID}
+    user: "${USER_ID}:${GROUP_ID}"
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:
       - deltafi
     restart: unless-stopped
-    user: "${USER_ID}:${GROUP_ID}"
     volumes:
       - ${DATA_DIR}:/data/deltafi
       - /var/run/docker.sock:/var/run/docker.sock
@@ -178,13 +181,13 @@ services:
       - ${SECRETS_DIR}/postgres.env
     group_add:
       - ${DOCKER_GID}
+    user: "${USER_ID}:${GROUP_ID}"
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:
       - deltafi
     restart: unless-stopped
-    user: "${USER_ID}:${GROUP_ID}"
     volumes:
       - ${DATA_DIR}:/data/deltafi
   dirwatcher:
