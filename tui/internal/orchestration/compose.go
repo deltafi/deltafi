@@ -404,6 +404,7 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 
 	subdirs := []string{
 		"postgres",
+		"dirwatcher",
 		"egress-sink",
 		"entityResolver",
 		"graphite",
