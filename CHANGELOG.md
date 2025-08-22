@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.30.1] - 2025-08-22
+
+### Changed
+- Internally generated action errors (e.g., `Failed join`) are now recorded in the DeltaFile log messages
+- Python action-kit migrated from `poetry`, etc. to `uv` based build
+
+### Fixed
+- Fixed styling bug with notifications popover
+- Issue in compose where some services would not have access to mounted directories for certs
+- Fix log messages for `ChildTransformResult` in the python action kit
+
+### Tech-Debt/Refactor
+- Refactored popover help CSS
+
 ## [2.30.0] - 2025-08-21
 
 ### Added
@@ -4572,7 +4586,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.1...main
+[2.30.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.0...2.30.1
 [2.30.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.29.0...2.30.0
 [2.29.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.1...2.29.0
 [2.28.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.0...2.28.1
