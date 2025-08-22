@@ -156,8 +156,8 @@
   </Dialog>
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
-  <OverlayPanel ref="op">
-    <div class="panel-info-font-size" v-html="markdownIt.render(annotationSearchOptions)" />
+  <OverlayPanel ref="op" class="annotations-help">
+    <div v-html="markdownIt.render(annotationSearchOptions)" />
   </OverlayPanel>
 </template>
 
@@ -1112,11 +1112,10 @@ supported in the annotation search:
   }
 }
 
-.panel-info-font-size {
-  font-size: 12px !important;
-}
-
-.p-overlaypanel-content {
-  max-width: 30rem !important;
+.annotations-help {
+  .p-overlaypanel-content {
+    max-width: 30rem !important;
+    font-size: 12px !important;
+  }
 }
 </style>
