@@ -28,9 +28,9 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-@Data
 @Entity
 @Table(name = "queued_annotations")
+@Data
 @NoArgsConstructor
 public class QueuedAnnotation {
     @Id
@@ -51,7 +51,6 @@ public class QueuedAnnotation {
     OffsetDateTime time;
 
     public QueuedAnnotation(UUID did, Map<String, String> annotations, boolean allowOverwrites) {
-        this.id = Generators.timeBasedEpochGenerator().generate();
         this.did = did;
         this.annotations = annotations;
         this.allowOverwrites = allowOverwrites;

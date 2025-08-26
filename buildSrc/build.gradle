@@ -13,7 +13,7 @@ dependencies {
     constraints {
         implementation('org.springframework:spring-core') {
             version {
-                require '6.1.5'
+                require '6.2.10'
             }
         }
     }

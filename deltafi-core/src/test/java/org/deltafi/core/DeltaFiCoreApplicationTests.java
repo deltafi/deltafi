@@ -3582,28 +3582,25 @@ class DeltaFiCoreApplicationTests {
 		assertThat(updatedSetValue.getValue()).isNull();
 	}
 
-	@Test
-	void testConcurrentPluginVariableRegistration() {
-		IntStream.range(0, 10).forEach(this::testConcurrentPluginVariableRegistration);
-	}
-
 	static final PluginCoordinates OLD_VERSION = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("1").build();
 	static final PluginCoordinates NEW_VERSION = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
-	static final PluginVariables ORIGINAL_PLUGIN_VARIABLES;
-	static {
-		PluginVariables originalPluginVariables = new PluginVariables();
-		List<Variable> variableList = Stream.of("var1", "var2", "var3", "var4").map(UtilService::buildOriginalVariable).toList();
-		originalPluginVariables.setVariables(variableList);
-		originalPluginVariables.setSourcePlugin(OLD_VERSION);
-		ORIGINAL_PLUGIN_VARIABLES = originalPluginVariables;
 
+	@Test
+	void testConcurrentPluginVariableRegistration() {
+		IntStream.range(0, 10).forEach(ignore -> {
+			PluginVariables pluginVariables = new PluginVariables();
+			List<Variable> variableList = Stream.of("var1", "var2", "var3", "var4").map(UtilService::buildOriginalVariable).toList();
+			pluginVariables.setVariables(variableList);
+			pluginVariables.setSourcePlugin(OLD_VERSION);
+			testConcurrentPluginVariableRegistration(pluginVariables);
+		});
 	}
 
-	void testConcurrentPluginVariableRegistration(int ignoreI) {
+	void testConcurrentPluginVariableRegistration(PluginVariables pluginVariables) {
 		pluginVariableRepo.truncate();
 
 		// Save the original set of variables with values set
-		pluginVariableRepo.save(ORIGINAL_PLUGIN_VARIABLES);
+		pluginVariableRepo.save(pluginVariables);
 
 		// new set of variables that need to get the set value added in
 		List<Variable> newVariables = Stream.of("var2", "var3", "var4", "var5").map(UtilService::buildNewVariable).toList();
@@ -3633,7 +3630,6 @@ class DeltaFiCoreApplicationTests {
 				assertThat(variable.getValue()).isEqualTo("set value");
 			}
 		}
-
 	}
 
 	private CompletableFuture<Void> submitNewVariables(Executor executor, List<Variable> variables) {

@@ -36,7 +36,7 @@ import java.util.UUID;
 public class PluginVariables {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
     private String groupId;
     private String artifactId;

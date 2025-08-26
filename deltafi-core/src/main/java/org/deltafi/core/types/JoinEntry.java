@@ -37,7 +37,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class JoinEntry {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
 
     @Type(JsonBinaryType.class)

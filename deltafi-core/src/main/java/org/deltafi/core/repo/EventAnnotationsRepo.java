@@ -23,6 +23,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.query.Procedure;
 
 public interface EventAnnotationsRepo extends JpaRepository<EventAnnotationEntity, EventAnnotationId>, EventAnnotationsRepoCustom {
-    @Procedure(procedureName = "clean_unused_annotations")
+    @Procedure(procedureName = "clean_unused_annotations", outputParameterName = "p_deleted_rows")
     Integer deleteUnusedEventAnnotations(Integer p_limit);
 }

@@ -1822,7 +1822,7 @@ public class DeltaFilesService {
             });
 
             if (!actionInputs.isEmpty()) {
-                log.warn("{} actions exceeded requeue threshold of {} seconds, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
+                log.warn("{} actions exceeded requeue duration of {}, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
                 deltaFileRepo.saveAll(filesToRequeue);
                 enqueueActions(actionInputs, true);
             }

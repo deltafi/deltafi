@@ -20,17 +20,12 @@ package org.deltafi.core.types;
 import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.generated.types.BackOff;
 import org.hibernate.annotations.Type;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "resume_policies", uniqueConstraints = {
@@ -52,7 +47,6 @@ public class ResumePolicy {
     public static final String MISSING_BACKOFF = "missing backOff";
     public static final String MISSING_MAX_DELAY = "Must set maxDelay when random is true";
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     @lombok.Builder.Default
     private UUID id = Generators.timeBasedEpochGenerator().generate();
     @Column(nullable = false, unique = true)

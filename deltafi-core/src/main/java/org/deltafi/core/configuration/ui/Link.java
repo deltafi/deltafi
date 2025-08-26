@@ -29,7 +29,7 @@ import java.util.UUID;
 })
 public class Link {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
     private String name;
     private String url;
