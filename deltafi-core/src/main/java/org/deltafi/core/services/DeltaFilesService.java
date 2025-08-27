@@ -74,7 +74,6 @@ public class DeltaFilesService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    private static final LogSeverity MIN_ACTION_LOG_SEVERITY = LogSeverity.INFO;
     public static final String REPLAY_ACTION_NAME = "Replay";
     public static final int REQUEUE_BATCH_SIZE = 5000;
 
@@ -411,8 +410,9 @@ public class DeltaFilesService {
 
     void checkSeverityAndAddMessages(DeltaFile deltaFile, List<LogMessage> actionMessages) {
         if (actionMessages != null) {
+            int minSeverity = getProperties().getMinimumActionLogSeverity().toInt();
             deltaFile.addActionMessages(actionMessages.stream()
-                    .filter(m -> m.getSeverity().toInt() >= MIN_ACTION_LOG_SEVERITY.toInt()).toList());
+                    .filter(m -> m.getSeverity().toInt() >= minSeverity).toList());
         }
     }
 

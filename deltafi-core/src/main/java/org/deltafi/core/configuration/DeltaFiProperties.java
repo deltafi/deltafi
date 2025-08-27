@@ -19,6 +19,7 @@ package org.deltafi.core.configuration;
 
 import com.networknt.schema.utils.StringUtils;
 import lombok.Data;
+import org.deltafi.common.types.LogSeverity;
 import org.deltafi.common.types.VariableDataType;
 
 import java.time.Duration;
@@ -159,6 +160,10 @@ public class DeltaFiProperties {
 
     @PropertyInfo(description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean autoCleanPostgres = false;
+
+    @PropertyInfo(description = "Minimum severity for action log messages. "
+            + "Choose: TRACE, INFO, WARNING, ERROR, or USER", defaultValue = "INFO")
+    private LogSeverity minimumActionLogSeverity = LogSeverity.INFO;
 
     public long getIngressDiskSpaceRequirementInBytes() {
         return ingressDiskSpaceRequirementInMb * 1000000;
