@@ -245,11 +245,10 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     @Override
     public List<String> distinctColdQueuedActions() {
         String queryStr = """
-            SELECT
-                DISTINCT (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'ac' as actionName
+            SELECT DISTINCT dff.cold_queued_action
             FROM delta_file_flows dff
             WHERE dff.state = 'IN_FLIGHT'
-            AND dff.cold_queued = TRUE
+            AND dff.cold_queued_action IS NOT NULL
         """;
 
         @SuppressWarnings("unchecked")
@@ -262,8 +261,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         String queryStr = """
             SELECT 1 FROM delta_file_flows dff
             WHERE dff.state = 'IN_FLIGHT'
-            AND dff.cold_queued = TRUE
-            AND dff.actions->(jsonb_array_length(dff.actions) - 1)->>'ac' = :actionClass
+            AND dff.cold_queued_action = :actionClass
             LIMIT 1
         """;
 

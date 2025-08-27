@@ -124,17 +124,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         String nativeQueryStr = """
-            SELECT DISTINCT delta_file_id
-            FROM delta_file_flows dff
-            WHERE dff.state = 'IN_FLIGHT'
-            AND dff.cold_queued = TRUE
-            AND EXISTS (
-                SELECT 1
-                FROM jsonb_array_elements(dff.actions) AS action
-                WHERE action->>'s' = 'COLD_QUEUED'
-                AND action->>'ac' = :actionClass
-            )
-            LIMIT :limit
+            SELECT DISTINCT dffi.delta_file_id FROM (
+                SELECT delta_file_id
+                FROM delta_file_flows dff
+                WHERE dff.state = 'IN_FLIGHT'
+                AND dff.cold_queued_action = :actionClass
+                LIMIT :limit
+            ) as dffi
         """;
 
         Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
@@ -851,9 +847,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             INSERT INTO delta_file_flows (id, flow_definition_id, number, state, created, modified, input,
                                           publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
                                           join_id, pending_actions, delta_file_id, version, actions,
-                                          error_acknowledged, error_acknowledged_reason, cold_queued, error_or_filter_cause,
-                                          next_auto_resume)
-            VALUES (?, ?, ?, CAST(? AS dff_state_enum), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)""";
+                                          error_acknowledged, error_acknowledged_reason, cold_queued, cold_queued_action,
+                                          error_or_filter_cause, next_auto_resume)
+            VALUES (?, ?, ?, CAST(? AS dff_state_enum), ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?)""";
 
     private static final String INSERT_ANNOTATIONS = """
             INSERT INTO annotations (id, key, value, delta_file_id)
@@ -1009,8 +1005,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         ps.setTimestamp(18, toTimestamp(flow.getErrorAcknowledged()));
         ps.setString(19, flow.getErrorAcknowledgedReason());
         ps.setBoolean(20, flow.isColdQueued());
-        ps.setString(21, flow.getErrorOrFilterCause());
-        ps.setTimestamp(22, toTimestamp(flow.getNextAutoResume()));
+        ps.setString(21, flow.getColdQueuedAction());
+        ps.setString(22, flow.getErrorOrFilterCause());
+        ps.setTimestamp(23, toTimestamp(flow.getNextAutoResume()));
     }
 
     private void setAnnotationParameters(PreparedStatement ps, Annotation annotation, DeltaFile deltaFile) throws SQLException {

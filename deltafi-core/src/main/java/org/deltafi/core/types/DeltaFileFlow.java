@@ -90,6 +90,7 @@ public class DeltaFileFlow {
     private OffsetDateTime errorAcknowledged;
     private String errorAcknowledgedReason;
     private boolean coldQueued;
+    private String coldQueuedAction;
     private String errorOrFilterCause;
     private OffsetDateTime nextAutoResume;
 
@@ -122,6 +123,7 @@ public class DeltaFileFlow {
         this.errorAcknowledged = other.errorAcknowledged;
         this.errorAcknowledgedReason = other.errorAcknowledgedReason;
         this.coldQueued = other.coldQueued;
+        this.coldQueuedAction = other.coldQueuedAction;
         this.errorOrFilterCause = other.errorOrFilterCause;
         this.nextAutoResume = other.nextAutoResume;
         this.owner = other.owner;
@@ -173,6 +175,8 @@ public class DeltaFileFlow {
         }
         actions.forEach(a -> a.cancel(time));
         state = DeltaFileFlowState.CANCELLED;
+        coldQueued = false;
+        coldQueuedAction = null;
         modified = time;
     }
 
@@ -366,6 +370,8 @@ public class DeltaFileFlow {
         ActionState lastState = action.getState();
         state = flowState != null ? flowState : calculateFlowState(lastState);
         coldQueued = lastState == ActionState.COLD_QUEUED;
+        coldQueuedAction = lastState == ActionState.COLD_QUEUED ? action.getActionClass() : null;
+
         if (lastState == ActionState.ERROR) {
             errorOrFilterCause = action.getErrorCause();
             nextAutoResume = action.getNextAutoResume();

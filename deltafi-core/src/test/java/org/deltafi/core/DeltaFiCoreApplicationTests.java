@@ -5734,6 +5734,7 @@ class DeltaFiCoreApplicationTests {
 		coldQueued.lastFlow().lastAction().setActionClass(actionClass);
 		coldQueued.lastFlow().lastAction().setState(ActionState.COLD_QUEUED);
 		coldQueued.lastFlow().setColdQueued(true);
+        coldQueued.lastFlow().setColdQueuedAction(actionClass);
 
 		DeltaFile paused = fullFlowExemplarService.postIngressDeltaFile(UUID.randomUUID());
 		paused.lastFlow().lastAction().setActionClass(actionClass);
