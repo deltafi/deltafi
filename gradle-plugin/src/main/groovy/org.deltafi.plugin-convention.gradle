@@ -154,7 +154,9 @@ task install {
     description = 'Install plugin in local DeltaFi instance (plugin image will be built first)'
 }
 
-
+// Pretty print maps
+import groovy.json.JsonBuilder
+java.util.LinkedHashMap.metaClass.pprint = { -> new JsonBuilder(delegate).toPrettyString() }
 
 import org.yaml.snakeyaml.Yaml
 def loadDeltafiConfig() {
