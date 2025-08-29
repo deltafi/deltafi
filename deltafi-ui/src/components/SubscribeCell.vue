@@ -1,30 +1,28 @@
 <template>
   <div>
-    <div v-if="!_.isEmpty(subscribeData)" @mouseover="showOverlayPanel($event)" @mouseleave="hideOverlayPanel($event)">
+    <div v-if="!_.isEmpty(subscribeData)">
       <div v-for="(topic, index) in _.uniq(_.map(subscribeData, 'topic'))" :key="index">
         <div v-if="!_.isEmpty(topic)">
           <span v-if="_.uniq(_.map(subscribeData, 'topic')) > 1">&bull;</span>
+          <TopicPublishers :topic-name="topic" />
           {{ topic }} {{ counts[topic] > 1 ? `(x${counts[topic]})` : "" }}
+          <i v-if="conditionsByTopic[topic]?.length" class="fa-solid fa-circle-info text-muted ml-1 cursor-pointer" @click="showOverlayPanel($event, topic)"></i>
         </div>
       </div>
     </div>
     <OverlayPanel ref="subscribeOverlayPanel">
       <div class="mb-2 text-muted">
-        <strong>Subscriptions</strong>
+        <strong>Condition</strong>
       </div>
-      <div v-for="(subscribe, index) in subscribeData" :key="index" class="ml-2">
-        <div v-if="!_.isEmpty(subscribe.topic)">Topic Name: {{ subscribe.topic }}</div>
-        <div v-if="!_.isEmpty(subscribe.condition)">Condition: {{ subscribe.condition }}</div>
-        <Divider v-if="subscribeData.length > index + 1" class="mt-1 mb-3" />
-      </div>
+      {{ conditionsByTopic[activeTopic][0] }}
     </OverlayPanel>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from "vue";
-import Divider from "primevue/divider";
+import { computed, nextTick, reactive, ref } from "vue";
 import OverlayPanel from "primevue/overlaypanel";
+import TopicPublishers from "@/components/topics/TopicPublishers.vue";
 import _ from "lodash";
 
 const props = defineProps({
@@ -34,15 +32,29 @@ const props = defineProps({
   },
 });
 
+const activeTopic = ref(null);
 const { subscribeData } = reactive(props);
 
 const subscribeOverlayPanel = ref();
-const showOverlayPanel = (event) => {
+const showOverlayPanel = async (event, topic) => {
+  subscribeOverlayPanel.value.hide(event);
+  await nextTick()
+  activeTopic.value = topic;
   subscribeOverlayPanel.value.show(event);
 };
-const hideOverlayPanel = (event) => {
-  subscribeOverlayPanel.value.hide(event);
-};
+
+const conditionsByTopic = computed(() => {
+  const conditions = {};
+  subscribeData.forEach(function (x) {
+    if (!conditions[x.topic]) {
+      conditions[x.topic] = [];
+    }
+    if (x.condition) {
+      conditions[x.topic].push(x.condition);
+    }
+  });
+  return conditions;
+});
 
 const counts = computed(() => {
   const counts = {};

@@ -35,7 +35,12 @@
           </template>
         </Column>
         <Column header="Description" field="description" :sortable="true" />
-        <Column header="Publish" field="topic" :sortable="true" />
+        <Column header="Publish" field="topic" :sortable="true">
+          <template #body="{ data }">
+            {{ data.topic }}:
+            <TopicSubscribers :topic-name="data.topic" />
+          </template>
+        </Column>
         <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
           <template #body="{ data, field }">
             <template v-if="$hasPermission('FlowUpdate')">
@@ -116,6 +121,7 @@ import StatusBadge from "@/components/dataSources/StatusBadge.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import TimedDataSourceTestModeInputSwitch from "@/components/dataSources/TimedDataSourceTestModeInputSwitch.vue";
 import Timestamp from "@/components/Timestamp.vue";
+import TopicSubscribers from "@/components/topics/TopicSubscribers.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
 import { computed, onMounted, inject, ref, watch } from "vue";

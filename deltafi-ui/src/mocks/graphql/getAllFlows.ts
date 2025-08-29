@@ -25,11 +25,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "mockFlow4",
+        name: "devFlow4",
         subscribe: [
           {
             condition: null,
-            topic: "mockFlow4"
+            topic: "devFlow4"
           }
         ],
         publish: {
@@ -69,11 +69,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "mockFlow3",
+        name: "devFlow3",
         subscribe: [
           {
             condition: null,
-            topic: "mockFlow3"
+            topic: "devFlow3"
           }
         ],
         publish: {
@@ -113,11 +113,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "mockFlow2",
+        name: "devFlow2",
         subscribe: [
           {
             condition: null,
-            topic: "mockFlow2"
+            topic: "devFlow2"
           }
         ],
         publish: {
@@ -157,11 +157,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "mockFlow1",
+        name: "devFlow1",
         subscribe: [
           {
             condition: null,
-            topic: "mockFlow1"
+            topic: "devFlow1"
           }
         ],
         publish: {

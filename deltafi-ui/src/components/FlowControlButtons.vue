@@ -70,7 +70,7 @@ const config = computed(() => {
     },
     stop: {
       outlined: model.value !== 'STOPPED',
-      severity: model.value === 'STOPPED' ? "danger" : "outline-secondary"
+      severity: model.value === 'STOPPED' ? "secondary" : "outline-secondary"
     }
   }
 });
@@ -81,6 +81,7 @@ const config = computed(() => {
 .flow-control-buttons {
   .btn {
     border: 1px solid #b1b4b8 !important;
+
     .pi {
       padding: 0.3rem 0.1rem 0.3rem 0.1rem;
     }

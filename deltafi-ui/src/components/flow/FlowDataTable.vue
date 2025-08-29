@@ -54,7 +54,7 @@
             <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
-        <Column header="Subscribe" field="subscribe" :style="{ width: '15%' }">
+        <Column header="Subscribe" field="subscribe" :style="{ width: '20%' }">
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
               <div>
@@ -63,7 +63,7 @@
             </template>
           </template>
         </Column>
-        <Column header="Publish" field="publish" :style="{ width: '15%' }">
+        <Column header="Publish" field="publish" :style="{ width: '20%' }">
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
               <div>
@@ -251,7 +251,7 @@ const onPanelRightClick = (event, curentPlugin) => {
   menu.value.show(event);
 };
 
-const maxDescriptionLength = ref(80);
+const maxDescriptionLength = ref(60);
 const displayDescription = (data) => {
   return _.truncate(data, {
     length: maxDescriptionLength.value,

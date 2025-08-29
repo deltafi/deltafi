@@ -1,14 +1,18 @@
 <template>
   <div>
-    <div v-if="!_.isEmpty(publishData.rules)" @mouseover="showOverlayPanel($event)" @mouseleave="hideOverlayPanel($event)">
+    <div v-if="!_.isEmpty(publishData.rules)">
       <div v-if="!_.isEmpty(publishData.defaultRule.topic)">
         <span v-if="publishData.rules.length > 1">&bull;</span>
-        {{ publishData.defaultRule.topic }}
+        <span class="cursor-pointer" @click="showOverlayPanel($event)">{{ publishData.defaultRule.topic }}</span>
+        <TopicSubscribers :topic-name="publishData.defaultRule.topic" class="ml-1" />
       </div>
       <div v-for="(topic, index) in _.uniq(_.map(publishData.rules, 'topic'))" :key="index">
         <div v-if="!_.isEmpty(topic)">
           <span v-if="publishData.rules.length > 1">&bull;</span>
-          {{ topic }} {{ counts[topic] > 1 ? `(x${counts[topic]})` : '' }}
+          <span class="cursor-pointer" @click="showOverlayPanel($event)">
+            {{ topic }} {{ counts[topic] > 1 ? `(x${counts[topic]})` : '' }}
+          </span>
+          <TopicSubscribers :topic-name="topic" />
         </div>
       </div>
     </div>
@@ -55,6 +59,7 @@
 import { computed, reactive, ref } from "vue";
 import Divider from "primevue/divider";
 import OverlayPanel from "primevue/overlaypanel";
+import TopicSubscribers from "@/components/topics/TopicSubscribers.vue";
 import _ from "lodash";
 
 const props = defineProps({
@@ -69,9 +74,6 @@ const { publishData } = reactive(props);
 const publishOverlayPanel = ref();
 const showOverlayPanel = (event) => {
   publishOverlayPanel.value.show(event);
-};
-const hideOverlayPanel = (event) => {
-  publishOverlayPanel.value.hide(event);
 };
 
 const counts = computed(() => {

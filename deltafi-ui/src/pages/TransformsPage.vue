@@ -41,7 +41,8 @@ import FlowPageHeaderButtonGroup from "@/components/flow/FlowPageHeaderButtonGro
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { onBeforeMount, ref, computed } from "vue";
+import useTopics from "@/composables/useTopics";
+import { onMounted, ref, computed } from "vue";
 import _ from "lodash";
 
 import Dropdown from "primevue/dropdown";
@@ -50,6 +51,7 @@ import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
 const { getAllFlows, loaded, loading } = useFlowQueryBuilder();
+const { getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
 
 const transformsFlowData = ref([]);
 const flowData = ref([]);
@@ -57,10 +59,13 @@ const flowDataByPlugin = ref({});
 const filterFlowsText = ref("");
 const pluginNames = ref([]);
 const pluginNameSelected = ref(null);
-const showLoading = computed(() => !loaded.value && loading.value);
+const showLoading = computed(() => (!loaded.value && loading.value) || (!topicsLoaded.value && topicsLoading.value));
 
-onBeforeMount(async () => {
-  await fetchFlows();
+onMounted(async () => {
+  await Promise.all([
+    getAllTopics(),
+    fetchFlows(),
+  ]);
 });
 
 const fetchFlows = async () => {

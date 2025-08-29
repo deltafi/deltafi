@@ -35,7 +35,12 @@
           </template>
         </Column>
         <Column header="Description" field="description" :sortable="true" />
-        <Column header="Publish" field="topic" :sortable="true" />
+        <Column header="Publish" field="topic" :sortable="true">
+          <template #body="{ data }">
+            {{ data.topic }}
+            <TopicSubscribers :topic-name="data.topic" />
+          </template>
+        </Column>
         <Column header="Max Errors" field="maxErrors" class="max-error-column">
           <template #body="{ data, field }">
             <span v-if="data[field] === null">-</span>
@@ -85,6 +90,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DataSourceNameColumnButtonGroup from "@/components/dataSources/DataSourceNameColumnButtonGroup.vue";
 import RestDataSourceTestModeInputSwitch from "@/components/dataSources/RestDataSourceTestModeInputSwitch.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
+import TopicSubscribers from "@/components/topics/TopicSubscribers.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";

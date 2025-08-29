@@ -27,7 +27,10 @@
         <DataSinkPageHeaderButtonGroup :export-data-sinks="dataSinkExport" @reload-data-sinks="refresh" />
       </div>
     </PageHeader>
-    <DataSinksPanel ref="dataSinksPanel" :filter-flows-text-prop="filterFlowsText" @data-sinks-list="exportableRestDataSource" />
+    <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
+    <div v-else>
+      <DataSinksPanel ref="dataSinksPanel" :filter-flows-text-prop="filterFlowsText" @data-sinks-list="exportableRestDataSource" />
+    </div>
   </div>
 </template>
 
@@ -35,6 +38,8 @@
 import DataSinkPageHeaderButtonGroup from "@/components/dataSinks/DataSinkPageHeaderButtonGroup.vue";
 import DataSinksPanel from "@/components/dataSinks/DataSinksPanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import useTopics from "@/composables/useTopics";
 import { computed, inject, onMounted, onUnmounted, provide, ref } from "vue";
 
 import _ from "lodash";
@@ -43,6 +48,7 @@ import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
+const { getAllTopics, loaded, loading } = useTopics();
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
 const dataSinksPanel = ref(null);
@@ -55,7 +61,11 @@ const refresh = async () => {
   dataSinksPanel.value.refresh();
 };
 
-onMounted(() => {
+const showLoading = computed(() => !loaded.value && loading.value);
+
+onMounted(async () => {
+  await getAllTopics();
+
   autoRefresh = setInterval(() => {
     if (!isIdle.value) {
       refresh();

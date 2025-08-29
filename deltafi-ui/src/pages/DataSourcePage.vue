@@ -29,18 +29,22 @@
         </div>
       </div>
     </PageHeader>
-    <RestDataSourcesPanel ref="restDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableRestDataSource" />
-    <TimedDataSourcesPanel ref="timedDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableTimedDataSource" />
+    <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
+    <div v-else>
+      <RestDataSourcesPanel ref="restDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableRestDataSource" />
+      <TimedDataSourcesPanel ref="timedDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableTimedDataSource" />
+    </div>
   </div>
 </template>
 
 <script setup>
 import DataSourcePageHeaderButtonGroup from "@/components/dataSources/DataSourcePageHeaderButtonGroup.vue";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import RestDataSourcesPanel from "@/components/dataSources/RestDataSourcesPanel.vue";
 import TimedDataSourcesPanel from "@/components/dataSources/TimedDataSourcesPanel.vue";
 import useTopics from "@/composables/useTopics";
-import { computed, inject, onBeforeMount, onMounted, onUnmounted, provide, ref } from "vue";
+import { computed, inject, onMounted, onUnmounted, provide, ref } from "vue";
 
 import _ from "lodash";
 
@@ -48,7 +52,7 @@ import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
-const { getAllTopics } = useTopics();
+const { getAllTopics, loaded, loading } = useTopics();
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
 const restDataSourcesPanel = ref(null);
@@ -63,17 +67,18 @@ const refresh = async () => {
   timedDataSourcesPanel.value.refresh();
 };
 
-onBeforeMount(async () => {
-  await getAllTopics();
-});
+const showLoading = computed(() => !loaded.value && loading.value);
 
-onMounted(() => {
+onMounted(async () => {
+  await getAllTopics();
+
   autoRefresh = setInterval(() => {
     if (!isIdle.value) {
       refresh();
     }
   }, refreshInterval);
 });
+
 
 onUnmounted(() => {
   clearInterval(autoRefresh);

@@ -729,6 +729,43 @@ const generateData = () => {
           "condition": null
         }
       ]
+    },
+    {
+      "name": "decompress-rest",
+      "publishers": [
+        {
+          "name": "decompress-rest",
+          "type": "TRANSFORM",
+          "state": "RUNNING",
+          "condition": null
+        }
+      ],
+      "subscribers": []
+    },
+    {
+      "name": "detect-media-type",
+      "publishers": [
+        {
+          "name": "gen-data-route-or-detect",
+          "type": "TRANSFORM",
+          "state": "RUNNING",
+          "condition": null
+        }
+      ],
+      "subscribers": []
+    },
+    // modify-metadata
+    {
+      "name": "modify-metadata",
+      "publishers": [
+        {
+          "name": "modify-metadata",
+          "type": "TRANSFORM",
+          "state": "RUNNING",
+          "condition": null
+        }
+      ],
+      "subscribers": []
     }
   ];
 };

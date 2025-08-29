@@ -83,5 +83,17 @@ export default function useTopics() {
     return topicNames.value;
   };
 
-  return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getAllTopics, getAllTopicNames, loading, loaded, errors };
+  const getTopic = async (topicName: string) => {
+    if (topics.value.length === 0) await getAllTopics();
+
+    const topic = _.find(topics.value, (topic) => topic.name === topicName);
+
+    if (!topic) {
+      throw new Error(`Topic ${topicName} not found`);
+    }
+
+    return topic;
+  }
+
+  return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getTopic, getAllTopics, getAllTopicNames, loading, loaded, errors };
 }
