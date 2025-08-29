@@ -169,6 +169,7 @@ func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFil
 
 	// Set up Helm client
 	settings := cli.New()
+	settings.SetNamespace(namespace)
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
 		// Helm logging callback - we can ignore this for now
