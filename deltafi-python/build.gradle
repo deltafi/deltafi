@@ -49,7 +49,7 @@ task uvVersion(type: Exec) {
 }
 
 task cleanDist(type: Delete) {
-    delete 'src/dist'
+    delete 'src/dist', 'dist', 'build'
 }
 
 task cleanVirtualEnvironment(type: Delete) {
