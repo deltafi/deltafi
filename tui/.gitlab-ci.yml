@@ -9,4 +9,4 @@ build:TUI:
       pushd tui
       make debug-make build
       popd
-      ./deltafi || echo "Oopsie..."
+      ls -la ../../deltafi

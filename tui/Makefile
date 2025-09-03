@@ -42,7 +42,7 @@ ifneq ($(NATIVE_OS),darwin)
 endif
 
 HAS_DOCKER := $(shell command -v docker 2> /dev/null)
-MIN_GO_VERSION := 1.24
+MIN_GO_VERSION := 1.25
 GO_VERSION_CHECK := $(shell go version 2>/dev/null | grep -q "go$(MIN_GO_VERSION)" && echo 1 || echo 0)
 
 GOPATH ?= $(CURDIR)/.go
@@ -51,7 +51,7 @@ export GOPATH
 GOBINPATH = $(GOPATH)/bin
 
 # Docker settings
-DOCKER_IMAGE := golang:1.24.6
+DOCKER_IMAGE := golang:1.25.0
 DOCKER_SOURCE := /go/src/deltafi
 DOCKER_BIN := /go/bin
 DOCKER_WORKDIR := $(DOCKER_SOURCE)/tui
