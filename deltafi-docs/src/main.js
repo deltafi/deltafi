@@ -17,7 +17,7 @@
  */
 import Docute from 'docute';
 
-new Docute({
+const config = {
   target: '#docs',
   title: '',
   highlight: ['java', 'yaml'],
@@ -293,4 +293,17 @@ new Docute({
       link: '/CHANGELOG'
     }
   ]
-})
+}
+
+if (process.env.VUE_APP_SHOW_VERSIONS === 'true') {
+  config.versions = {
+    'v2 (Latest)': {
+      link: '/'
+    },
+    'v1': {
+      link: 'https://v1.docs.deltafi.org'
+    }
+  }
+}
+
+new Docute(config);

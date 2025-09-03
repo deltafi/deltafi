@@ -25,3 +25,8 @@ npm run build
 ```
 
 This will produce a static, compressed, and offline version of the docs that is ready for deployment. Files will be be placed in the `dist` directory.
+
+The following environment variables can be set to change the way the docs are built:
+
+  - `VUE_APP_SHOW_VERSIONS=true` - This will cause the versions drop down to be displayed. Used for https://docs.deltafi.org/.
+  - `VUE_APP_EMBEDDED=true` - This must be set when embedding the docs into the DeltaFi application. It is set automatically in the DeltaFi Core Dockerfile.

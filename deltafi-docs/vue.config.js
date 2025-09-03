@@ -17,5 +17,5 @@
  */
 module.exports = {
   runtimeCompiler: true,
-  publicPath: '/docs/'
+  publicPath: process.env.VUE_APP_EMBEDDED === 'true' ? '/docs/' : '/'
 }

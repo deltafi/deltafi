@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "serve": "vue-cli-service serve",
+    "prebuild": "[ \"$VUE_APP_EMBEDDED\" = \"true\" ] || (cp ../CHANGELOG.md ./public/docs/ && mkdir -p ./public/docs/core-actions/ && cp ../deltafi-core-actions/src/main/resources/docs/org.deltafi.core.action.*.md ./public/docs/core-actions/)",
     "build": "vue-cli-service build"
   },
   "dependencies": {

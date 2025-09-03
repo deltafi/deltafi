@@ -1,1 +1,4 @@
 node_modules/
+dist
+public/docs/CHANGELOG.md
+public/docs/core-actions/
