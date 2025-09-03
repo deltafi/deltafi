@@ -5,6 +5,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.31.0] - 2025-09-03
+
+### Added
+- New system property `minimumActionLogSeverity` limits saving of log messages to a DeltaFile. Default is INFO
+- Added a column, `cold_queued_action` to the delta_file_flows to track that action that is cold_queued.
+- TUI: `upgrade` command has `--safe` flag that will automatically disable and re-enable ingress and provide dashboard monitoring for status and in-flight DeltaFiles during the upgrade process.
+
+### Changed
+- Changed the `cold_queue` index to include the `delta_file_id` to improve the cold queue query performance.
+- Switch core web server from tomcat to undertow for improved startup time
+
+### Fixed
+- Missing `pprint` declaration in plugin-convention Gradle plugin
+- Improved clean task for `deltafi-python`
+- Fixed ObjectOptimisticLockingFailureExceptions occurring with upgrade to Spring Boot 3.5.5 
+- TUI: fixed dirwatcher permission issue
+- Fixed an issue where Kubernetes installations were not receiving the correct namespace assignment
+
+### Tech-Debt/Refactor
+- Improved TUI makefile output for distros
+
+### Upgrade and Migration
+- Note - if you upgrade your system while it has a large number of cold queued DeltaFiles, the migration may take several minutes to complete
+- Java dependency upgrades working around kubernetes-client/Jackson issue:
+  - Upgrade Jackson to 2.19.2
+  - Upgrade kubernetes-client to 6.14.0
+- Upgrade Java test dependencies
+- Java dependency updates:
+  - Spring Boot 3.5.5
+  - Flyway 11.11.5
+  - Apache commons libraries
+- If you have a data/dirwatcher directory created with root user/group, you should do one of the following:
+  - chown -R the directory to make it match your user privs
+  - remove the directory prior to upgrade (and DeltaFi will recreate it correctly)
+  - remove the directory after upgrade and run `deltafi up` to recreate it correctly
+
 ## [2.30.1] - 2025-08-22
 
 ### Changed
@@ -4586,7 +4622,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.31.0...main
+[2.31.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.1...2.31.0
 [2.30.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.0...2.30.1
 [2.30.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.29.0...2.30.0
 [2.29.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.28.1...2.29.0
