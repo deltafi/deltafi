@@ -296,14 +296,9 @@ const config = {
 }
 
 if (process.env.VUE_APP_SHOW_VERSIONS === 'true') {
-  config.versions = {
-    'v2 (Latest)': {
-      link: '/'
-    },
-    'v1': {
-      link: 'https://v1.docs.deltafi.org'
-    }
-  }
+  config.versions = {}
+  config.versions[`v${process.env.VUE_APP_VERSION} (Latest)`] = { link: '/' }
+  config.versions['v1.2.20'] = { link: 'https://v1.docs.deltafi.org' }
 }
 
 new Docute(config);

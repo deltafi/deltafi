@@ -236,6 +236,8 @@ dockerPrepare {
         include 'src/'
         include 'package*.json'
         include 'vue.config.js'
+        exclude 'public/docs/core-actions'
+        exclude 'public/docs/CHANGELOG.md'
     }
     from(configurations.docs) {
         into 'docs/public/docs/core-actions'
@@ -250,4 +252,3 @@ dockerPrepare {
 }
 
 // Add a task to run trivy on the docker image
-

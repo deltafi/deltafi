@@ -15,7 +15,66 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
+const fs = require("fs");
+const path = require("path");
+const glob = require('glob');
+
+function getLatestVersion(changelogPath) {
+  const content = fs.readFileSync(changelogPath, "utf8");
+
+  // Match the first occurrence of a version line like: ## [2.31.0] - 2025-09-03
+  const match = content.match(/^## \[(\d+\.\d+\.\d+)\]/m);
+  if (!match) {
+    throw new Error("No version found in CHANGELOG.md");
+  }
+
+  return JSON.stringify(match[1]); // just the version number
+}
+
 module.exports = {
   runtimeCompiler: true,
-  publicPath: process.env.VUE_APP_EMBEDDED === 'true' ? '/docs/' : '/'
+  publicPath: process.env.VUE_APP_EMBEDDED === 'true' ? '/docs/' : '/',
+  configureWebpack: {
+    plugins: [
+      // Plugin to extract version from CHANGELOG
+      new (require('webpack')).DefinePlugin({
+        'process.env': {
+          VUE_APP_VERSION: process.env.VUE_APP_EMBEDDED === 'true' ? null : getLatestVersion(path.resolve(__dirname, '../CHANGELOG.md'))
+        }
+      }),
+      // Plugin to copy core action docs and CHANGELOG
+      {
+        apply: (compiler) => {
+          compiler.hooks.beforeRun.tap('CopyDocsPlugin', () => {
+            if (process.env.VUE_APP_EMBEDDED === 'true') {
+              console.log('Skipping doc copy because VUE_APP_EMBEDDED=true');
+              return;
+            }
+
+            const targetDir = path.resolve(__dirname, 'public/docs/core-actions');
+            fs.mkdirSync(targetDir, { recursive: true });
+
+            fs.copyFileSync(
+              path.resolve(__dirname, '../CHANGELOG.md'),
+              path.resolve(__dirname, 'public/docs/CHANGELOG.md')
+            );
+
+            // copy all org.deltafi.core.action.*.md files
+            const srcPattern = path.resolve(
+              __dirname,
+              '../deltafi-core-actions/src/main/resources/docs/org.deltafi.core.action.*.md'
+            );
+            const files = glob.sync(srcPattern);
+            files.forEach((file) => {
+              const destFile = path.resolve(targetDir, path.basename(file));
+              fs.copyFileSync(file, destFile);
+            });
+
+            console.log('Copied docs successfully');
+          });
+        },
+      }
+    ]
+  }
 }
