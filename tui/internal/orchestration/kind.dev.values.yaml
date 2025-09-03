@@ -5,19 +5,17 @@
 # DeltaFi config
 deltafi:
   core_actions:
-    image: localhost:5000/deltafi-core-actions:latest
+    image: {{.Repo}}/deltafi-core-actions:{{.Tag}}
   core:
-    image: localhost:5000/deltafi-core:latest
-    propertyOverrides:
-      deltafi-common.yaml: |-
-        deltafi:
-          plugins:
-            imageRepositoryBase: "localhost:5000"
+    image: {{.Repo}}/deltafi-core:{{.Tag}}
   egress_sink:
-    image: localhost:5000/deltafi-egress-sink:latest
     enabled: true
+    drop_metadata: false
+    image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
   nodemonitor:
-    image: localhost:5000/deltafi-nodemonitor:latest
+    image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
+    period: 9
   clustermonitor:
     enabled: true
-    image: localhost:5000/deltafi-clustermonitor:latest
+    image: {{.Repo}}/deltafi-clustermonitor:{{.Tag}}
+    period: 9

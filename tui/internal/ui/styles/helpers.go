@@ -44,12 +44,20 @@ func INFO(msg string) string {
 	return WarningStyle.Render("       ‣ ") + BaseStyle.Render(msg)
 }
 
+func WARN(msg string) string {
+	return WarningStyle.Render("       ⚠ ") + WarningStyle.Render(msg)
+}
+
 func WAIT(msg string) string {
 	return InfoStyle.Render("       ⏱ ") + BaseStyle.Render(msg)
 }
 
 func HEADER(msg string) string {
-	return MutedStyle.Render("       ▶ ") + HeaderStyle.Bold(false).Render(msg)
+	return MutedStyle.Render("\n       ▶ ") + HeaderStyle.Bold(false).Render(msg) + "\n"
+}
+
+func CHECK(msg string) string {
+	return SuccessStyle.Render("       ✓ ") + BaseStyle.Render(msg)
 }
 
 func ComposeOK(msg string, status string) string {

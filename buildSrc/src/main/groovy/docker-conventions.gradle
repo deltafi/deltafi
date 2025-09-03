@@ -4,7 +4,6 @@ plugins {
 
 docker {
     name "${project.name}:${project.version}"
-    tag "local", "${localDockerRegistry}/${project.name}:latest"
     tag "deltafi", "deltafi/${project.name}:${project.version}"
 }
 
@@ -17,17 +16,33 @@ if (!deltafiConfig.isEmpty()) {
         if (orchestrationMode == 'compose') {
             dependsOn 'dockerTagDeltafi'
         } else if (orchestrationMode == 'kind') {
-            dependsOn 'dockerPushLocal'
+            dependsOn 'pushToKind'
             mustRunAfter rootProject.installPrerequisites
         } else {
             println ('WARNING: Cannot install docker images for orchestration mode:' + deltafiConfig['orchestrationMode'])
         }
     }
 
+    if (orchestrationMode == 'compose') {
+        installDockerImages.finalizedBy rootProject.syncComposeServices
+    }
+
     if (orchestrationMode == 'kind') {
-        tasks.findByName('dockerPushLocal')?.dependsOn(rootProject.installPrerequisites)
+        tasks.findByName('dockerTagDeltafi')?.dependsOn(rootProject.installPrerequisites)
+        installDockerImages.finalizedBy rootProject.syncKindPods
     }
 
     install.dependsOn 'installDockerImages'
+
+    if (orchestrationMode == 'kind') {
+        task pushToKind(type: Exec) {
+
+            group = 'install'
+            description = 'Load the docker image into KinD'
+            commandLine "kind", "load", "docker-image", "-n", "deltafi", "deltafi/${project.name}:${project.version}"
+            dependsOn 'dockerTagDeltafi'
+        }
+    }
+
 }
 

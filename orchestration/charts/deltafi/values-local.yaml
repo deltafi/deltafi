@@ -1,20 +1,4 @@
 # DeltaFi config
 deltafi:
-  core_actions:
-    image: localhost:5000/deltafi-core-actions:latest
-  core:
-    image: localhost:5000/deltafi-core:latest
-    propertyOverrides:
-      deltafi-common.yaml: |-
-        deltafi:
-          plugins:
-            imageRepositoryBase: "localhost:5000"
-  api:
-    image: localhost:5000/deltafi-api:latest
-  egress_sink:
-    image: localhost:5000/deltafi-egress-sink:latest
-  nodemonitor:
-    image: localhost:5000/deltafi-nodemonitor:latest
   clustermonitor:
     enabled: true
-    image: localhost:5000/deltafi-clustermonitor:latest

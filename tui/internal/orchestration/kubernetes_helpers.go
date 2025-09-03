@@ -285,7 +285,6 @@ func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFil
 	}
 
 	fmt.Println(styles.OK("Helmchart upgrade complete"))
-	fmt.Println()
 	return nil
 }
 
@@ -392,7 +391,6 @@ func postgresOperatorInstall(namespace string, postgresOperatorPath string) erro
 				}
 				if allReady {
 					fmt.Println(styles.OK("Postgres Operator is ready"))
-					fmt.Println()
 
 					return nil
 				}
@@ -457,7 +455,6 @@ func kubernetesPrerequisites(namespace string) error {
 	}
 
 	fmt.Println(styles.OK("Kubernetes prerequisites completed"))
-	fmt.Println()
 
 	return nil
 }

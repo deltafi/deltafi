@@ -43,22 +43,6 @@ const (
 	composePluginDevFile = "compose.plugin-dev.yaml"
 )
 
-type valuesData struct {
-	Tag                   string
-	Repo                  string `default:"deltafi"`
-	GrafanaContainer      string `default:"deltafi/grafana:11.6.1-0"`
-	GraphiteContainer     string `default:"graphiteapp/graphite-statsd:1.1.10-5"`
-	LokiContainer         string `default:"grafana/loki:2.9.14"`
-	MinioContainer        string `default:"minio/minio:RELEASE.2025-04-22T22-12-26Z"`
-	NginxContainer        string `default:"nginx:1.28.0-alpine3.21"`
-	PromtailContainer     string `default:"grafana/promtail:2.9.14"`
-	ValkeyContainer       string `default:"bitnami/valkey:8.1.1"`
-	DockerWebGuiContainer string `default:"deltafi/docker-web-gui:1.0.2-1"`
-	PostgresContainer     string `default:"deltafi/timescaledb:2.19.3-pg16-0"`
-	JavaIDEContainer      string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-1"`
-	JavaDevContainer      string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`
-}
-
 type ComposeOrchestrator struct {
 	BaseOrchestrator
 	distroPath        string

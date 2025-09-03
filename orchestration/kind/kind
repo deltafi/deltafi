@@ -286,13 +286,6 @@ _check_java() {
   _ok "Java JDK: $javaversion"
 }
 
-_install_node_cli() {
-  docker exec -i ${CLUSTER_NAME}-control-plane bash > /dev/null <<"EOF"
-cd /usr/dev/deltafi/deltafi-cli
-./install.sh
-EOF
-  _ok "CLI enabled in cluster node"
-}
 
 _update_k8s_config_permissions() {
   docker exec -i ${CLUSTER_NAME}-control-plane bash > /dev/null <<"EOF"
@@ -301,94 +294,22 @@ EOF
   _ok "Updated k8s configuration file permissions"
 }
 
-_create_proxy() {
-  local PROXY_NAME=$1
-  local PROXY_REMOTE=$2
+_create_volume() {
+  local VOLUME_NAME=$1
   # Create volume if not present
-  if ! docker volume inspect "$PROXY_NAME" > /dev/null 2>/dev/null; then
-    docker volume create "$PROXY_NAME" > /dev/null
-    _ok "Created docker volume for $PROXY_NAME"
-  fi
-  running="$(docker container inspect -f '{{.State.Running}}' "${PROXY_NAME}" 2>/dev/null || true > /dev/null)"
-  if [ "${running}" != 'true' ]; then
-      docker run \
-            -d --name "${PROXY_NAME}" \
-            --restart=always --net=kind \
-            --mount source="${PROXY_NAME}",destination=/var/lib/registry \
-            -e REGISTRY_PROXY_REMOTEURL="${PROXY_REMOTE}" \
-            registry:2 > /dev/null
-      _ok "Created registry proxy container: $PROXY_NAME"
+  if ! docker volume inspect "VOLUME_NAME" > /dev/null 2>/dev/null; then
+    docker volume create "$VOLUME_NAME" > /dev/null
+    _ok "Created docker volume for $VOLUME_NAME"
   fi
 }
 
-_destroy_proxy() {
-  local PROXY_NAME=$1
-  _attention "Destroying $PROXY_NAME proxy"
-  if docker container inspect "$PROXY_NAME" > /dev/null 2>/dev/null; then
-    if [ "$(docker container inspect -f '{{.State.Running}}' ${PROXY_NAME})" == 'true' ]; then
-
-      _info "Stopping $PROXY_NAME"
-      docker stop "$PROXY_NAME" > /dev/null
-    fi
-    _info "Removing $PROXY_NAME container"
-    docker rm "$PROXY_NAME" > /dev/null
-  fi
-  if docker volume inspect "$PROXY_NAME" > /dev/null 2>/dev/null; then
-    _info "Removing $PROXY_NAME volume"
-    docker volume rm "$PROXY_NAME" > /dev/null
-  fi
-}
-
-_create_registry() {
-  local REGISTRY_NAME=$1
-  local REGISTRY_PORT=$2
+_destroy_volume() {
+  local VOLUME_NAME=$1
   # Create volume if not present
-  if ! docker volume inspect "$REGISTRY_NAME" 2>/dev/null > /dev/null; then
-    docker volume create "$REGISTRY_NAME" > /dev/null
-    _ok "Created volume for KinD docker registry: $REGISTRY_NAME"
+  if docker volume inspect "VOLUME_NAME" > /dev/null 2>/dev/null; then
+    docker volume rm "$VOLUME_NAME" > /dev/null
+    _ok "Removed docker volume for $VOLUME_NAME"
   fi
-  running="$(docker inspect -f '{{.State.Running}}' "${REGISTRY_NAME}" 2>/dev/null || true)"
-  if [ "${running}" != 'true' ]; then
-      docker run \
-            -d --name "${REGISTRY_NAME}" \
-            --restart=always --net=kind \
-            --mount source="${REGISTRY_NAME}",destination=/var/lib/registry \
-            -p "127.0.0.1:${REGISTRY_PORT}:5000" \
-            registry:2 > /dev/null
-      _ok "Created KinD docker registry: $REGISTRY_NAME"
-  fi
-}
-
-_install_plugins() {
-  for plugin in "${PLUGINS[@]}"; do
-    local image
-    image=$(_plugin_field "$plugin" "image")
-
-    if [[ $image == null ]]; then
-      image="localhost:5000/$plugin"
-    fi
-
-    local imagePullSecret
-    imagePullSecret=$(_plugin_field "$plugin" "pull_secret")
-
-    local options=()
-
-    if [[ $imagePullSecret != null ]]; then
-      options=("${options[@]}" "--pull-secret $imagePullSecret")
-    fi
-
-    _attention "Installing $plugin"
-    _info -s "Plugin $plugin"
-    _info -a "Image: $image"
-    _info -a "Options:     \"${options[*]}\""
-
-    _conditional "$plugin plugin" _annotated_subshell _kind_deltafi install-plugin "$image" "${options[@]}"
-  done
-}
-
-_restart_plugins() {
-  _attention "Restarting all plugins"
-  _conditional "Plugin restart" _annotated_subshell -h "Restarting deltafi-plugin group" ${KUBECTL} delete pods --grace-period=0 -l group=deltafi-plugins
 }
 
 describe expose "Expose ports for deltafi-core, minio and valkey on localhost"
@@ -440,14 +361,9 @@ prerequisites() {
 
 describe destroy_registries "Scorched earth clean up of all KinD registries"
 destroy_registries() {
-  [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure "Do you want to delete all KinD docker registry proxies?"
-  _warn "Destroying KinD docker registry proxies"
-  _destroy_proxy kind-registry
-  _destroy_proxy dockerio-proxy
-  _destroy_proxy k8s-proxy
-  _destroy_proxy ghcr-proxy
-  _destroy_proxy quay-proxy
-  _destroy_proxy k8s-registry-proxy
+  [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure "Do you want to delete all KinD docker registry cache?"
+  _warn "Destroying KinD docker registry cache"
+  _destroy_volume "deltafi-kind-cache"
 }
 
 describe up "Turn up a KinD cluster (or re-apply cluster settings)"
@@ -467,12 +383,7 @@ up() {
   fi
   pushd "$BASE_PATH" > /dev/null
 
-  _create_registry kind-registry 5000
-  _create_proxy dockerio-proxy "https://registry-1.docker.io"
-  _create_proxy k8s-proxy "https://k8s.gcr.io"
-  _create_proxy ghcr-proxy "https://ghcr.io"
-  _create_proxy quay-proxy "https://quay.io"
-  _create_proxy k8s-registry-proxy "https://registry.k8s.io"
+  _create_volume deltafi-kind-cache
 
   if kind get clusters -q | grep "^${CLUSTER_NAME}$" > /dev/null; then
     _ok "KinD ${CLUSTER_NAME} cluster already instantiated"
@@ -501,23 +412,11 @@ nodes:
     containerPath: /usr/dev
   - hostPath: "${PV_DIR}"
     containerPath: /data/deltafi
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
-    endpoint = ["http://dockerio-proxy:5000"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."k8s.gcr.io"]
-    endpoint = ["http://k8s-proxy:5000"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."ghcr.io"]
-    endpoint = ["http://ghcr-proxy:5000"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."quay.io"]
-    endpoint = ["http://quay-proxy:5000"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]
-    endpoint = ["http://kind-registry:5000"]
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."local.plugin.registry"]
-    endpoint = ["http://local.plugin.registry"]
-  [plugins."io.containerd.grpc.v1.cri".registry.configs."local.plugin.registry".auth]
-    username = "deltafi"
-    password = "password"
+  - hostPath: "/var/lib/docker/volumes/deltafi-kind-cache/_data"
+    containerPath: /var/lib/containerd
+    readOnly: false
+    selinuxRelabel: false
+    propagation: None
 EOF
     _ok "${CLUSTER_NAME} cluster instantiated"
   fi
@@ -528,7 +427,7 @@ EOF
 
   _conditional "Metrics server" _annotated_subshell -v "unchanged" -h "Deploy metrics server" kubectl apply -f "$METRICS_SERVER_DEPLOYMENT"
   _conditional "Default namespace is deltafi" _annotated_subshell -h "Set DeltaFi namespace" kubens deltafi || _annotated_subshell kubens deltafi # Repeated because kubens fails on first execution in Debian
-  _install_node_cli
+  # _install_node_cli
   _enable_ui
   _update_k8s_config_permissions
   _k8s_init
@@ -717,10 +616,6 @@ destroy() {
   down "$@"
 
   destroy_registries "$@"
-
-  local images=$(docker images | grep ^localhost:5000 | awk '{print $3}')
-  _annotated_subshell -h "Pruning localhost:5000 images" docker rmi -f ${images} || true
-  _ok_annotated "Pruned localhost:5000 images"
 
   _down "KinD cluster destroyed"
 }

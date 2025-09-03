@@ -223,12 +223,25 @@ task install {
 if (!deltafiConfig.isEmpty()) {
     var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
     if (orchestrationMode == 'kind') {
-        task configureKindCluster (type: Exec) {
+        task startKindCluster (type: Exec) {
             group = 'install'
             description = 'Configure KinD cluster to receive docker images'
             commandLine "deltafi", "kind", "up"
         }
-        installPrerequisites.dependsOn configureKindCluster
+        installPrerequisites.dependsOn startKindCluster
+
+        task syncKindPods (type: Exec) {
+            group = 'install'
+            description = 'Synchronize KinD orchestration so latest container images are running'
+            commandLine "deltafi", "up", "--force"
+        }
+    }
+    if (orchestrationMode == 'compose') {
+        task syncComposeServices (type: Exec) {
+            group = 'install'
+            description = 'Synchronize Compose orchestration so latest container images are running'
+            commandLine "deltafi", "up", "--force"
+        }
     }
 }
 
@@ -339,7 +352,7 @@ subprojects {
     afterEvaluate {
         var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
         if (orchestrationMode == 'kind') {
-            tasks.matching { it.name == 'dockerPushLocal' }.all {
+            tasks.matching { it.name == 'pushToKind' }.all {
                 dependsOn rootProject.installPrerequisites
             }
         }

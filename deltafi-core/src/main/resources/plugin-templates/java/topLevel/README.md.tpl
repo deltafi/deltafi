@@ -8,7 +8,7 @@ Install Steps:
 2. Run the following (pass the image created above as the argument for the install)
 
 ```bash
-deltafi install-plugin localhost:5000/{{artifactId}}:latest
+deltafi install-plugin deltafi/{{artifactId}}:latest
 ```
 
 Local KinD Setup

@@ -23,9 +23,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/deltafi/tui/internal/types"
 	"github.com/deltafi/tui/internal/ui/styles"
+	"github.com/mcuadros/go-defaults"
 )
 
 //go:embed kind.values.site.yaml
@@ -38,9 +41,10 @@ type KindOrchestrator struct {
 	deploymentMode types.DeploymentMode
 	configPath     string
 	secretsPath    string
+	coreVersion    *semver.Version
 }
 
-func NewKindOrchestrator(distroPath string, sitePath string, dataPath string, reposPath string, installDirectory string, deploymentMode types.DeploymentMode) *KindOrchestrator {
+func NewKindOrchestrator(distroPath string, sitePath string, dataPath string, reposPath string, installDirectory string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) *KindOrchestrator {
 	configPath := filepath.Join(installDirectory, ".kind.config")
 	secretsPath := filepath.Join(configPath, "secrets")
 
@@ -50,6 +54,7 @@ func NewKindOrchestrator(distroPath string, sitePath string, dataPath string, re
 		deploymentMode:         deploymentMode,
 		configPath:             configPath,
 		secretsPath:            secretsPath,
+		coreVersion:            coreVersion,
 	}
 	ko.BaseOrchestrator.Orchestrator = ko
 	return ko
@@ -117,10 +122,30 @@ func (o *KindOrchestrator) Up(args []string) error {
 			return fmt.Errorf("Unable to read kind.dev.values.yaml: %w", err)
 		}
 
-		// Write the dev values to a file in configPath (overwrites if exists)
+		tmpl, err := template.New("values").Parse(string(devValuesContent))
+		if err != nil {
+			return fmt.Errorf("error parsing values template: %w", err)
+		}
+
+		data := valuesData{
+			Tag: o.coreVersion.String(),
+		}
+		defaults.SetDefaults(&data)
+
+		// Create values.yaml file
+		if err := os.MkdirAll(o.configPath, 0755); err != nil {
+			return fmt.Errorf("error creating config directory: %w", err)
+		}
 		devValuesFile := filepath.Join(o.configPath, "kind.dev.values.yaml")
-		if err := os.WriteFile(devValuesFile, devValuesContent, 0644); err != nil {
-			return fmt.Errorf("Unable to write dev values file: %w", err)
+		file, err := os.Create(devValuesFile)
+		if err != nil {
+			return fmt.Errorf("error creating values.yaml file: %w", err)
+		}
+		defer file.Close()
+
+		// Execute template
+		if err := tmpl.Execute(file, data); err != nil {
+			return fmt.Errorf("error executing values template: %w", err)
 		}
 
 		additionalValuesFiles = append(additionalValuesFiles, devValuesFile)
@@ -136,6 +161,13 @@ func (o *KindOrchestrator) Up(args []string) error {
 		return fmt.Errorf("Unable to install DeltaFi: %w", err)
 	}
 
+	fmt.Println(styles.HEADER("Checking for out-of-date pods"))
+
+	if err := o.executeClusterShellCommand("/usr/dev/deltafi/orchestration/kind/sync", []string{"--namespace", o.namespace}, o.Environment()); err != nil {
+		return fmt.Errorf("error listing files in cluster: %w", err)
+	}
+	fmt.Println(styles.OK("All pods are current"))
+
 	return nil
 }
 
@@ -143,7 +175,7 @@ func (o *KindOrchestrator) Down(args []string) error {
 
 	isRunning, err := o.isClusterRunning()
 	if err != nil {
-		return fmt.Errorf("error checking KinDcluster status: %w", err)
+		return fmt.Errorf("error checking KinD cluster status: %w", err)
 	}
 
 	if !isRunning {
@@ -155,6 +187,7 @@ func (o *KindOrchestrator) Down(args []string) error {
 
 func (o *KindOrchestrator) Environment() []string {
 	env := o.KubernetesOrchestrator.Environment()
+	env = append(env, "DELTAFI_CONFIG_DIR="+o.configPath)
 	env = append(env, "DELTAFI_KIND=true")
 	return env
 }
@@ -190,4 +223,11 @@ func (o *KindOrchestrator) isClusterRunning() (bool, error) {
 	// Check if the output contains exactly "deltafi" (trimmed of whitespace)
 	output = strings.TrimSpace(output)
 	return output == "deltafi", nil
+}
+
+func (o *KindOrchestrator) executeClusterShellCommand(executable string, args []string, env []string) error {
+
+	dockerArgs := []string{"exec", "-i", "deltafi-control-plane", executable}
+	dockerArgs = append(dockerArgs, args...)
+	return executeShellCommand("docker", dockerArgs, env)
 }

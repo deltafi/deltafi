@@ -6,4 +6,4 @@ systemProp.org.gradle.internal.http.connectionTimeout=120000
 deltafiVersion={{deltafiVersion}}
 projectMavenRepo=
 
-localDockerRegistry=localhost:5000
+localDockerRegistry=deltafi

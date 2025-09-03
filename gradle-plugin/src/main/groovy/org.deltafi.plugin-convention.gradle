@@ -144,7 +144,6 @@ allprojects {
 
 docker {
     name "deltafi/${project.name}:${project.version}"
-    tag "local", "${localDockerRegistry}/${project.name}:latest"
     copySpec.from(bootJar.archiveFile).into("build/libs/")
     dockerfile file("${buildDir}/Dockerfile")
 }
@@ -180,8 +179,18 @@ def loadDeltafiConfig() {
 ext.deltafiConfig = loadDeltafiConfig();
 
 if (!deltafiConfig.isEmpty()) {
+    var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
+
+    if (orchestrationMode == 'kind') {
+        task pushToKind(type: Exec) {
+            group = 'install'
+            description = 'Push docker image to KinD cluster'
+            dependsOn "dockerTag${project.version}"
+            commandLine "kind", "load", "docker-image", "-n", "deltafi", "deltafi/${project.name}:${project.version}"
+        }
+    }
+
     task deployPluginImage {
-        var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
         if (orchestrationMode != null) {
             group = 'install'
             description = 'build and push docker images for ' + orchestrationMode + ' deployment'
@@ -189,7 +198,7 @@ if (!deltafiConfig.isEmpty()) {
         if (orchestrationMode == 'compose') {
             dependsOn "dockerTag${project.version}"
         } else if (orchestrationMode == 'kind') {
-            dependsOn 'dockerPushLocal'
+            dependsOn "pushToKind"
         } else {
             println ('WARNING: Cannot install docker images for orchestration mode:' + deltafiConfig['orchestrationMode'])
         }
@@ -197,7 +206,7 @@ if (!deltafiConfig.isEmpty()) {
 
     install.dependsOn 'deployPluginImage'
 
-    if (deltafiConfig['orchestrationMode'].toLowerCase() == 'compose') {
+    if (orchestrationMode == 'compose' || orchestrationMode == 'kind') {
         task installPlugin(type: Exec) {
             workingDir deltafiConfig['installDirectory']
             commandLine 'deltafi', 'plugin', 'install', "deltafi/${project.name}:${project.version}"
