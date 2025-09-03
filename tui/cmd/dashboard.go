@@ -34,19 +34,20 @@ import (
 )
 
 type model struct {
-	progress progress.Model
-	spinner  spinner.Model
-	nodes    []api.NodeMetrics
-	err      error
-	client   *api.Client
-	width    int
-	interval time.Duration
-	title    string
-	stats    *graphql.GetDeltaFileStatsResponse
-	ticks    int
-	status   api.StatusResponse
-	renderer *glamour.TermRenderer
-	styles   struct {
+	progress   progress.Model
+	spinner    spinner.Model
+	nodes      []api.NodeMetrics
+	err        error
+	client     *api.Client
+	width      int
+	interval   time.Duration
+	title      string
+	quitResult string
+	stats      *graphql.GetDeltaFileStatsResponse
+	ticks      int
+	status     api.StatusResponse
+	renderer   *glamour.TermRenderer
+	styles     struct {
 		panelStyle      lipgloss.Style
 		metricNameStyle lipgloss.Style
 		nodeNameStyle   lipgloss.Style
@@ -67,7 +68,7 @@ func tick(interval time.Duration) tea.Cmd {
 	})
 }
 
-func initialModel(client *api.Client, interval time.Duration) model {
+func initialModel(client *api.Client, interval time.Duration, quitResult string) model {
 	if interval < 1 {
 		interval = 1
 	}
@@ -99,13 +100,14 @@ func initialModel(client *api.Client, interval time.Duration) model {
 	)
 
 	return model{
-		progress: progress.New(progress.WithGradient("#40a02b", "#f38ba8")),
-		spinner:  s,
-		client:   client,
-		interval: interval,
-		title:    "DeltaFi System Dashboard",
-		width:    defaultWidth,
-		renderer: r,
+		progress:   progress.New(progress.WithGradient("#40a02b", "#f38ba8")),
+		spinner:    s,
+		client:     client,
+		interval:   interval,
+		title:      "DeltaFi System Dashboard",
+		width:      defaultWidth,
+		quitResult: quitResult,
+		renderer:   r,
 		styles: struct {
 			panelStyle      lipgloss.Style
 			metricNameStyle lipgloss.Style
@@ -242,7 +244,7 @@ func (m model) View() string {
 
 	helpStyle := lipgloss.NewStyle().
 		Foreground(styles.Surface2)
-	s += helpStyle.Width(m.width).Align(lipgloss.Center).Render("\nPress q to exit")
+	s += helpStyle.Width(m.width).Align(lipgloss.Center).Render("\nPress q to " + m.quitResult)
 
 	return s
 }
@@ -257,7 +259,7 @@ var dashboardCmd = &cobra.Command{
 		if err != nil {
 			return clientError(err)
 		}
-		p := tea.NewProgram(initialModel(client, time.Duration(interval)*time.Second), tea.WithAltScreen())
+		p := tea.NewProgram(initialModel(client, time.Duration(interval)*time.Second, "exit"), tea.WithAltScreen())
 		if _, err := p.Run(); err != nil {
 			return fmt.Errorf("failed to run dashboard: %v", err)
 		}

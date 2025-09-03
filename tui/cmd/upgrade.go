@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/containers"
 	"github.com/deltafi/tui/internal/ui/styles"
@@ -173,14 +174,54 @@ func showAllChangelogs() error {
 	return nil
 }
 
+// Simple prompt model for upgrade confirmation
+type upgradePromptModel struct {
+	upgradeVersion string
+	confirmed      bool
+}
+
+func initialUpgradePromptModel(version string) upgradePromptModel {
+	return upgradePromptModel{
+		upgradeVersion: version,
+		confirmed:      false,
+	}
+}
+
+func (m upgradePromptModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m upgradePromptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "y", "Y":
+			m.confirmed = true
+			return m, tea.Quit
+		case "n", "N", "ctrl+c", "q", "Q", "esc":
+			m.confirmed = false
+			return m, tea.Quit
+		}
+	}
+	return m, nil
+}
+
+func (m upgradePromptModel) View() string {
+	return fmt.Sprintf("\nProceed with upgrade to version %s? (Y/n): ", styles.SuccessStyle.Render(m.upgradeVersion))
+}
+
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade [version]",
 	Short: "Upgrade DeltaFi system to a specific version",
 	Long: `Upgrade DeltaFi system to the latest version.
 	
-	Use upgrade list command to see available versions.`,
+	Use upgrade list command to see available versions.
+	
+	Use --safe flag to perform a safe upgrade that temporarily disables ingress
+	and shows a dashboard for monitoring before proceeding.`,
 	GroupID: "orchestration",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		safeMode, _ := cmd.Flags().GetBool("safe")
 
 		if len(args) == 0 {
 			return fmt.Errorf("please specify a version to upgrade to")
@@ -189,7 +230,13 @@ var upgradeCmd = &cobra.Command{
 		if len(args) == 1 {
 			copyFileWithPerms(app.GetInstallDir()+"/deltafi", app.GetInstallDir()+"/.deltafi.old")
 			execPath := app.GetInstallDir() + "/.deltafi.old"
-			err := syscall.Exec(execPath, []string{".deltafi.old", "upgrade", args[0], "shadow"}, os.Environ())
+
+			command := []string{".deltafi.old", "upgrade", args[0], "shadow"}
+			if safeMode {
+				command = append(command, "--safe")
+			}
+
+			err := syscall.Exec(execPath, command, os.Environ())
 			if err != nil {
 				return fmt.Errorf("error executing upgrade: %w", err)
 			}
@@ -200,43 +247,159 @@ var upgradeCmd = &cobra.Command{
 			return fmt.Errorf("please specify only one version to upgrade to")
 		}
 
-		time.Sleep(1 * time.Second)
-
 		version := args[0]
-		semVersion, err := semver.NewVersion(version)
-		if err != nil {
-			return fmt.Errorf("invalid version (%s): %w", version, err)
+
+		// Handle safe upgrade mode
+		if safeMode {
+			return performSafeUpgrade(version)
 		}
 
-		platform := fmt.Sprintf("%s/%s", app.GetOS(), app.GetArch())
-		extractor := containers.NewImageExtractor(app.GetInstallDir())
-
-		err = extractor.ExtractImage(context.Background(), distroRepository, semVersion.String(), platform)
-		if err != nil {
-			return fmt.Errorf("error extracting image: %w", err)
-		}
-
-		fmt.Println(styles.OK("Upgrade downloaded and staged"))
-
-		upper := exec.Command("deltafi", "up")
-		upper.Dir = app.GetInstallDir()
-		upper.Path = app.GetInstallDir() + "/deltafi"
-		upper.Stdout = os.Stdout
-		upper.Stderr = os.Stderr
-		upper.Stdin = os.Stdin
-
-		err = upper.Run()
-		if err != nil {
-			return fmt.Errorf("error running upgrade: %w", err)
-		}
-
-		fmt.Println(styles.OK("Upgrade complete"))
-		return nil
+		return performUpgrade(version)
 	},
+}
+
+func performSafeUpgrade(version string) error {
+	// Check if DeltaFi is running
+	if !IsDeltafiRunning() {
+		fmt.Println("DeltaFi is not running. Safe mode has no effect.")
+		return performUpgrade(version)
+	}
+
+	// Get current ingressEnabled value
+	originalIngressEnabled, err := getIngressEnabled()
+	if err != nil {
+		return fmt.Errorf("error getting ingressEnabled property: %w", err)
+	}
+
+	// If ingress is enabled, disable it
+	if originalIngressEnabled {
+		err = setIngressEnabled(false)
+		if err != nil {
+			fmt.Println(styles.FAIL("Error disabling ingress"))
+			return fmt.Errorf("error disabling ingress: %w", err)
+		}
+		fmt.Println(styles.OK("Ingress disabled for safe upgrade"))
+	} else {
+		fmt.Println(styles.OK("Ingress is already disabled for safe upgrade"))
+	}
+
+	// Show dashboard for monitoring
+	fmt.Println("Starting dashboard for pre-upgrade monitoring...")
+	time.Sleep(3 * time.Second)
+
+	// Run the dashboard programmatically
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		// Restore ingress if we disabled it
+		if originalIngressEnabled {
+			setIngressEnabled(true)
+		}
+		return clientError(err)
+	}
+
+	p := tea.NewProgram(initialModel(client, 1*time.Second, "continue upgrade"), tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		// Restore ingress if we disabled it
+		if originalIngressEnabled {
+			setIngressEnabled(true)
+		}
+		return fmt.Errorf("dashboard exited with error: %w", err)
+	}
+
+	// Show confirmation prompt
+	prompt := tea.NewProgram(initialUpgradePromptModel(version))
+	finalModel, err := prompt.Run()
+	if err != nil {
+		// Restore ingress if we disabled it
+		if originalIngressEnabled {
+			setIngressEnabled(true)
+		}
+		return fmt.Errorf("error showing upgrade prompt: %w", err)
+	}
+
+	// Check if user confirmed the upgrade
+	promptModel, ok := finalModel.(upgradePromptModel)
+	if !ok || !promptModel.confirmed {
+		// Restore ingress if we disabled it
+		if originalIngressEnabled {
+			setIngressEnabled(true)
+		}
+		return fmt.Errorf("upgrade aborted by user")
+	}
+
+	// Perform the actual upgrade
+	fmt.Println("Proceeding with upgrade...")
+	err = performUpgrade(version)
+	if err != nil {
+		// Restore ingress if we disabled it
+		if originalIngressEnabled {
+			setIngressEnabled(true)
+		}
+		return err
+	}
+
+	// Restore ingress to original value
+	if originalIngressEnabled {
+		fmt.Println("Restoring ingress to original state...")
+		err = setIngressEnabled(true)
+		if err != nil {
+			return fmt.Errorf("error restoring ingress: %w", err)
+		}
+		fmt.Println(styles.OK("Ingress restored to original state"))
+	}
+
+	fmt.Println(styles.OK("Safe upgrade completed successfully"))
+	return nil
+}
+
+func performUpgrade(version string) error {
+	platform := fmt.Sprintf("%s/%s", app.GetOS(), app.GetArch())
+	extractor := containers.NewImageExtractor(app.GetInstallDir())
+
+	err := extractor.ExtractImage(context.Background(), distroRepository, version, platform)
+	if err != nil {
+		return fmt.Errorf("error extracting image: %w", err)
+	}
+
+	fmt.Println(styles.OK("Upgrade downloaded and staged"))
+
+	upper := exec.Command("deltafi", "up")
+	upper.Dir = app.GetInstallDir()
+	upper.Path = app.GetInstallDir() + "/deltafi"
+	upper.Stdout = os.Stdout
+	upper.Stderr = os.Stderr
+	upper.Stdin = os.Stdin
+
+	err = upper.Run()
+	if err != nil {
+		return fmt.Errorf("error running upgrade: %w", err)
+	}
+
+	fmt.Println(styles.OK("Upgrade complete"))
+	return nil
+}
+
+func getIngressEnabled() (bool, error) {
+	value, err := getProperty("ingressEnabled")
+	if err != nil {
+		return false, err
+	}
+	return value == "true", nil
+}
+
+func setIngressEnabled(enabled bool) error {
+	value := "false"
+	if enabled {
+		value = "true"
+	}
+	return setProperty("ingressEnabled", value)
 }
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.AddCommand(listVersionsCmd)
 	upgradeCmd.AddCommand(changelogCmd)
+
+	// Add the safe flag
+	upgradeCmd.Flags().BoolP("safe", "s", false, "Perform safe upgrade with ingress management and dashboard monitoring")
 }

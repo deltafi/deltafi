@@ -165,6 +165,14 @@ To start a DeltaFi with your current configuration:        %s
 	}
 }
 
+func IsDeltafiRunning() bool {
+	return app.IsRunning()
+}
+
+func WaitForDeltaFi() {
+	app.WaitForRunning()
+}
+
 func GetRunningVersion() *semver.Version {
 	version := &semver.Version{}
 

@@ -195,20 +195,12 @@ var setPropertyCmd = &cobra.Command{
 		key := args[0]
 		value := args[1]
 
-		updates := []graphql.KeyValueInput{{
-			Key:   key,
-			Value: &value,
-		}}
-
-		resp, err := graphql.UpdateProperties(updates)
+		err := setProperty(key, value)
 		if err != nil {
-			return wrapInError("Error updating property", err)
+			return wrapInError("Error setting property", err)
 		}
-		if resp.UpdateProperties {
-			fmt.Printf("Successfully set property %s to %s\n", key, value)
-		} else {
-			return fmt.Errorf("failed to set property %s", key)
-		}
+
+		fmt.Printf("Successfully set property %s to %s\n", key, value)
 		return nil
 	},
 }
@@ -253,26 +245,12 @@ var getPropertyCmd = &cobra.Command{
 
 		key := args[0]
 
-		resp, err := graphql.GetPropertySets()
-		if err != nil {
-			return wrapInError("Error fetching property sets", err)
+		value, error := getProperty(key)
+		if error != nil {
+			return wrapInError("Error fetching property", error)
 		}
-
-		// Search for the property across all sets
-		for _, set := range resp.GetPropertySets {
-			for _, prop := range set.Properties {
-				if prop.Key == key {
-					if prop.Value != nil {
-						fmt.Println(*prop.Value)
-					} else {
-						fmt.Println("")
-					}
-					return nil
-				}
-			}
-		}
-
-		return fmt.Errorf("property %s not found", key)
+		fmt.Println(value)
+		return nil
 	},
 }
 
@@ -303,4 +281,38 @@ func init() {
 	// Add flags
 	listPropertiesCmd.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 	listPropertiesCmd.Flags().BoolP("verbose", "v", false, "Include default and description columns")
+}
+
+func getProperty(key string) (string, error) {
+	resp, err := graphql.GetPropertySets()
+	if err != nil {
+		return "", wrapInError("Error fetching property sets", err)
+	}
+
+	for _, set := range resp.GetPropertySets {
+		for _, prop := range set.Properties {
+			if prop.Key == key {
+				return *prop.Value, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("property %s not found", key)
+}
+
+func setProperty(key string, value string) error {
+	RequireRunningDeltaFi()
+
+	updates := []graphql.KeyValueInput{{
+		Key:   key,
+		Value: &value,
+	}}
+
+	resp, err := graphql.UpdateProperties(updates)
+	if err != nil {
+		return wrapInError("Error updating property", err)
+	}
+	if !resp.UpdateProperties {
+		return fmt.Errorf("failed to set property %s", key)
+	}
+	return nil
 }

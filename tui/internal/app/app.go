@@ -25,6 +25,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/Masterminds/semver/v3"
@@ -152,6 +153,20 @@ func build() {
 			instance.running = false
 		}
 	}
+}
+
+func WaitForRunning() {
+	_, err := instance.apiClient.Me()
+	if err == nil {
+		return
+	}
+	fmt.Print("Waiting for DeltaFi to start")
+	for err != nil {
+		time.Sleep(1 * time.Second)
+		fmt.Print(".")
+		_, err = instance.apiClient.Me()
+	}
+	fmt.Println()
 }
 
 func ConfigPath() string {

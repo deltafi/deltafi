@@ -377,8 +377,45 @@ Upgrade DeltaFi system to a specific version.
   ```
 - `upgrade [version]`: Upgrade to a specific version
   ```bash
-  deltafi upgrade <version>
+  deltafi upgrade <version> [--safe|-s]
   ```
+  - `--safe, -s`: Perform safe upgrade with ingress management and dashboard monitoring
+
+**Safe Upgrade Mode:**
+
+The `--safe` flag enables a safer upgrade process that minimizes downtime and provides monitoring capabilities:
+
+**Features:**
+- **Ingress Management**: Automatically disables ingress before upgrade and restores it afterward
+- **Dashboard Monitoring**: Shows the system dashboard during upgrade for real-time monitoring
+- **Confirmation Prompt**: Requires user confirmation before proceeding with the upgrade
+- **Error Recovery**: Automatically restores ingress settings if upgrade fails or is aborted
+
+**Safe Upgrade Workflow:**
+1. **DeltaFi Status Check**: If DeltaFi is not running, safe mode has no effect and normal upgrade proceeds
+2. **Ingress Assessment**: Checks if `ingressEnabled` property is set to `true`
+3. **Ingress Disable**: If enabled, temporarily sets `ingressEnabled` to `false` and logs the action
+4. **Dashboard Launch**: Starts the system dashboard for monitoring (user can exit with 'q')
+5. **Confirmation**: Shows a Y/n prompt to confirm the upgrade
+6. **Upgrade Execution**: Performs the upgrade if confirmed
+7. **Ingress Restoration**: Restores `ingressEnabled` to its original value after completion
+
+**Examples:**
+```bash
+# Normal upgrade
+deltafi upgrade 2.25.0
+
+# Safe upgrade with ingress management and monitoring
+deltafi upgrade 2.25.0 --safe
+
+# Safe upgrade using short flag
+deltafi upgrade 2.25.0 -s
+```
+
+**Error Handling:**
+- If the upgrade is aborted (N, ctrl+c, q, esc), ingress settings are automatically restored
+- If the upgrade fails, ingress settings are automatically restored
+- Clear error messages indicate what went wrong and what was restored
 
 **Changelog Command Details:**
 
@@ -1434,6 +1471,21 @@ deltafi transform get my-transform --format yaml
 ### Creating a System Snapshot
 ```bash
 deltafi snapshot create --reason "Pre-upgrade backup"
+```
+
+### Performing System Upgrades
+```bash
+# Normal upgrade
+deltafi upgrade 2.25.0
+
+# Safe upgrade with ingress management and monitoring
+deltafi upgrade 2.25.0 --safe
+
+# List available upgrade versions
+deltafi upgrade list
+
+# View changelog for a specific version
+deltafi upgrade changelog 2.25.0
 ```
 
 ### Viewing Flow Graph
