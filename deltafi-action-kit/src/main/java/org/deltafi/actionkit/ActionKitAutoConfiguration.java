@@ -60,6 +60,11 @@ public class ActionKitAutoConfiguration {
     private ActionsProperties actionsProperties;
 
     @Bean
+    public StartupFailureHandler startupFailureHandler() {
+        return new StartupFailureHandler();
+    }
+
+    @Bean
     public ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue(EventQueueProperties eventQueueProperties, List<Action<?, ?, ?>> actions)
             throws URISyntaxException {
         // Calculate the total number of threads for all actions

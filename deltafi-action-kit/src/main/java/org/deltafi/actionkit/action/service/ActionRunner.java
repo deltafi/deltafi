@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.service;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
@@ -37,12 +38,15 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextClosedEvent;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -52,9 +56,10 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ActionRunner {
+public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
     @Autowired
     private ActionEventQueue actionEventQueue;
 
@@ -200,6 +205,48 @@ public class ActionRunner {
             log.warn("Using existing running file");
         } catch (IOException e) {
             throw new StartupException("Failed to write running file: " + e.getMessage());
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        shutdownExecutor();
+    }
+
+    @Override
+    public void onApplicationEvent(@NotNull ContextClosedEvent event) {
+        log.info("Shutting down action executor event for event: {}", event);
+        shutdownExecutor();
+    }
+
+    private void shutdownExecutor() {
+        if (!executor.isShutdown()) {
+            log.info("Shutting down action executor...");
+
+            // Stop accepting new tasks
+            executor.shutdown();
+
+            try {
+                // Wait for existing tasks to complete
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    log.warn("Action executor didn't terminate gracefully, forcing shutdown");
+                    executor.shutdownNow();
+
+                    // Wait again for forced shutdown
+                    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                        log.error("Action executor didn't terminate after forced shutdown");
+                    }
+                }
+                if (executor.isTerminated()) {
+                    log.info("Action executor shut down successfully");
+                } else {
+                    log.error("Action executor didn't terminate");
+                }
+            } catch (InterruptedException e) {
+                log.warn("Interrupted while waiting for action executor shutdown");
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
