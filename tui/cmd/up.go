@@ -56,7 +56,6 @@ Examples:
 }
 
 func Up(force bool) error {
-
 	// Get the TUI version
 	tuiVersion := app.GetSemanticVersion()
 
@@ -95,7 +94,7 @@ func Up(force bool) error {
 					}
 				}
 			}
-		} else {
+		} else if !force {
 			fmt.Println(styles.WarningStyle.Render("DeltaFi is not running - cannot create pre-upgrade event or snapshot"))
 			if !components.SimpleContinuePrompt("Continue with this upgrade?") {
 				return fmt.Errorf("upgrade cancelled")
