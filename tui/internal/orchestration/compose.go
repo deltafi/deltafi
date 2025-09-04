@@ -580,6 +580,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"EGRESS_SINK_DROP_METADATA":          o.getValue(values, "deltafi.egress_sink.drop_metadata"),
 		"ENTITY_RESOLVER_ENABLED":            o.getValue(values, "deltafi.auth.entityResolver.enabled"),
 		"ENTITY_RESOLVER_URL":                fmt.Sprintf("http://deltafi-entity-resolver:%s", o.getValue(values, "deltafi.auth.entityResolver.port")),
+		"FASTDELETE_WORKERS":                 o.getValueOr(values, "deltafi.fastdelete.workersPerNode", "1"),
 		"GRAPHITE_HOST":                      "deltafi-graphite",
 		"GRAPHITE_PORT":                      "2003",
 		"HOSTNAME":                           hostname,

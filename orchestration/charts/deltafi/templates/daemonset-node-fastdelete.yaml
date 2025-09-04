@@ -32,12 +32,14 @@ spec:
         image: {{ .Values.deltafi.nodemonitor.image }}
         command: ["/bin/bash", "-c", "/app/deleteit.sh"]
         env:
-        {{- include "defaultEnvVars" . | nindent 12 }}
-        {{- include "commonEnvVars" . | nindent 12 }}
-        {{- include "postgresEnvVars" . | nindent 12 }}
+        {{- include "defaultEnvVars" . | nindent 8 }}
+        {{- include "commonEnvVars" . | nindent 8 }}
+        {{- include "postgresEnvVars" . | nindent 8 }}
+        - name: FASTDELETE_WORKERS
+          value: "{{ .Values.deltafi.fastdelete.workersPerNode | default 1 }}"
         resources:
           limits:
-            memory: 200Mi
+            memory: {{ mul (.Values.deltafi.fastdelete.workersPerNode | default 1) 200 }}Mi
         volumeMounts:
         - name: pvdata
           mountPath: /data

@@ -31,6 +31,8 @@ deltafi:
   nodemonitor:
     image: deltafi/deltafi-nodemonitor:2.31.0
     period: 9
+  fastdelete:
+    workersPerNode: 1
   clustermonitor:
     enabled: true
     image: deltafi/deltafi-clustermonitor:2.31.0
