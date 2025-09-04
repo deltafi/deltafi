@@ -208,10 +208,52 @@ task tui {
     description = 'Build the TUI for the current architecture'
 }
 
+task checkDockerInstallation {
+    doLast {
+        description = 'Checks if docker is installed'
+        group = 'verification'
+        def command = "command -v docker"
+        def result = exec {
+            ignoreExitValue = true
+            executable "bash"
+            args "-l", "-c", command
+            standardOutput = new ByteArrayOutputStream()
+            errorOutput = new ByteArrayOutputStream()
+        }
+
+        if (result.exitValue != 0) {
+            println "✗ docker is not installed or not in PATH"
+            throw new GradleException("docker is required but not installed")
+        }
+    }
+}
+
+task checkKindInstallation {
+    doLast {
+        description = 'Checks if KinD is installed'
+        group = 'verification'
+        def command = "command -v kind"
+        def result = exec {
+            ignoreExitValue = true
+            executable "bash"
+            args "-l", "-c", command
+            standardOutput = new ByteArrayOutputStream()
+            errorOutput = new ByteArrayOutputStream()
+        }
+
+        if (result.exitValue != 0) {
+            println "✗ kind is not installed or not in PATH"
+            throw new GradleException("kind is required but not installed")
+        }
+    }
+    dependsOn checkDockerInstallation
+}
 
 task installPrerequisites {
     group = 'install'
     description = 'Execute any prerequisites prior to install tasks for the current orchestration mode'
+    dependsOn tui
+    dependsOn checkDockerInstallation
 }
 
 task install {
@@ -227,6 +269,8 @@ if (!deltafiConfig.isEmpty()) {
             group = 'install'
             description = 'Configure KinD cluster to receive docker images'
             commandLine "deltafi", "kind", "up"
+            dependsOn tui
+            dependsOn checkKindInstallation
         }
         installPrerequisites.dependsOn startKindCluster
 
@@ -234,6 +278,8 @@ if (!deltafiConfig.isEmpty()) {
             group = 'install'
             description = 'Synchronize KinD orchestration so latest container images are running'
             commandLine "deltafi", "up", "--force"
+            dependsOn tui
+            dependsOn checkKindInstallation
         }
     }
     if (orchestrationMode == 'compose') {
@@ -241,6 +287,7 @@ if (!deltafiConfig.isEmpty()) {
             group = 'install'
             description = 'Synchronize Compose orchestration so latest container images are running'
             commandLine "deltafi", "up", "--force"
+            dependsOn tui
         }
     }
 }
@@ -345,6 +392,7 @@ subprojects {
     task install {
         group = 'install'
         dependsOn rootProject.installPrerequisites
+        dependsOn rootProject.tui
     }
 
     apply plugin: 'signing'
@@ -509,6 +557,7 @@ task cacheToMavenLocal(type: Copy) {
     subprojects.each { dependsOn("${it.name}:resolveDeps") }
     dependsOn tasks.resolveDeps
 }
+
 
 gradle.addListener new TimingsListener()
 
