@@ -26,6 +26,7 @@ import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.*;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
@@ -57,7 +58,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
 
     public Decompress() {
         super(ActionOptions.builder()
-                .description("Decompresses content from .ar, .gz, .7z, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip.")
+                .description("Decompresses content from .ar, .bz2, .gz, .7z, .tar, .tar.bz2, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip.")
                 .outputSpec(ActionOptions.OutputSpec.builder()
                         .contentSummary("""
                                 Content extracted from each input content will be added sequentially.
@@ -65,7 +66,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
                                 If an input content is an archive file, it will add multiple content, each with its name
                                 from the archive.
 
-                                If an input content is a non-archive compressed file (.gz, .xz, or .Z), it will add a
+                                If an input content is a non-archive compressed file (.bz2, .gz, .xz, or .Z), it will add a
                                 single content with the same name minus the compressed file suffix.
 
                                 If retainExistingContent is true, all input content is written first, in the original
@@ -89,7 +90,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 .errors(List.of(new ActionOptions.DescriptionWithConditions("On content that cannot be decompressed", List.of("""
                         Occurs when a format is provided and all content is not in the format.""", """
                         Occurs when content is detected as being a compressed archive but the format of the archive is
-                        not tar. Only tar archives are permitted within compressed content (.tar.gz, .tar.xz, .tar.Z)."""))))
+                        not tar. Only tar archives are permitted within compressed content (.tar.bz2, .tar.gz, .tar.xz, .tar.Z)."""))))
                 .notes(List.of("""
                         Compressed content in tar format will use an in-place decompression. This will result in much
                         quicker decompression than other formats since no additional writes will be made to the content
@@ -320,7 +321,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         try {
             CompressorInputStream compressorInputStream =
                     CompressorStreamFactory.getSingleton().createCompressorInputStream(bufferedContentInputStream,
-                            Set.of(CompressorStreamFactory.GZIP, CompressorStreamFactory.XZ, CompressorStreamFactory.Z));
+                            Set.of(CompressorStreamFactory.BZIP2, CompressorStreamFactory.GZIP, CompressorStreamFactory.XZ, CompressorStreamFactory.Z));
             return detectCompressedArchiveType(compressorInputStream);
         } catch (CompressorException e) {
             return detectNoncompressedArchiveType(bufferedContentInputStream);
@@ -338,6 +339,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         } catch (ArchiveException e) {
             // Not a compressed archive stream, just a compressed stream
             Format format = switch (compressorInputStream) {
+                case BZip2CompressorInputStream ignored -> Format.BZIP2;
                 case GzipCompressorInputStream ignored -> Format.GZIP;
                 case XZCompressorInputStream ignored -> Format.XZ;
                 default -> Format.Z;
@@ -347,6 +349,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
 
         if (archiveInputStream instanceof TarArchiveInputStream) {
             Format format = switch (compressorInputStream) {
+                case BZip2CompressorInputStream ignored -> Format.TAR_BZIP2;
                 case GzipCompressorInputStream ignored -> Format.TAR_GZIP;
                 case XZCompressorInputStream ignored -> Format.TAR_XZ;
                 default -> Format.TAR_Z;
@@ -400,6 +403,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     private CompressorInputStream createCompressorInputStream(Format format, InputStream contentInputStream)
             throws IOException {
         return switch (format) {
+            case BZIP2 -> new BZip2CompressorInputStream(contentInputStream);
             case GZIP -> new GzipCompressorInputStream(contentInputStream);
             case XZ -> new XZCompressorInputStream(contentInputStream);
             case Z -> new ZCompressorInputStream(contentInputStream);
@@ -412,6 +416,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         return switch (format) {
             case AR -> new ArArchiveInputStream(contentInputStream);
             case TAR -> new TarArchiveInputStream(contentInputStream);
+            case TAR_BZIP2 -> new TarArchiveInputStream(new BZip2CompressorInputStream(contentInputStream));
             case TAR_GZIP -> new TarArchiveInputStream(new GzipCompressorInputStream(contentInputStream));
             case TAR_XZ -> new TarArchiveInputStream(new XZCompressorInputStream(contentInputStream));
             case TAR_Z -> new TarArchiveInputStream(new ZCompressorInputStream(contentInputStream));

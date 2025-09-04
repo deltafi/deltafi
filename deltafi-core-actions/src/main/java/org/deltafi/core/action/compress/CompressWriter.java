@@ -19,6 +19,7 @@ package org.deltafi.core.action.compress;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipParameters;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
@@ -42,6 +43,7 @@ public class CompressWriter extends ActionContentWriter {
     @Override
     public void write(OutputStream outputStream) throws IOException {
         CompressorOutputStream compressorOutputStream = switch (format) {
+            case BZIP2 -> new BZip2CompressorOutputStream(outputStream);
             case GZIP -> new GzipCompressorOutputStream(outputStream, GZIP_PARAMETERS);
             case XZ -> new XZCompressorOutputStream(outputStream);
             default -> throw new UnsupportedOperationException("Compress format not supported: " + format);

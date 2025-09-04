@@ -64,6 +64,11 @@ public class CompressTest {
     }
 
     @Test
+    public void archivesTarBzip2() {
+        runTest(Format.TAR_BZIP2);
+    }
+
+    @Test
     public void archivesTarXz() {
         runTest(Format.TAR_XZ);
     }
@@ -128,6 +133,16 @@ public class CompressTest {
     }
 
     @Test
+    public void compressesSingleBzip2() {
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.BZIP2);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA"));
+
+        verifySingleResult(result, Format.BZIP2, "fileA.bz2", Format.BZIP2.getMediaType());
+    }
+
+    @Test
     public void compressesSingleXz() {
         CompressParameters compressParameters = new CompressParameters();
         compressParameters.setFormat(Format.XZ);
@@ -163,6 +178,16 @@ public class CompressTest {
         ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA", "fileB"));
 
         verifyMultipleResults(result, Format.GZIP, "fileA.gz", "fileB.gz");
+    }
+
+    @Test
+    public void compressesMultipleBzip2() {
+        CompressParameters compressParameters = new CompressParameters();
+        compressParameters.setFormat(Format.BZIP2);
+
+        ResultType result = action.transform(runner.actionContext(), compressParameters, input("fileA", "fileB"));
+
+        verifyMultipleResults(result, Format.BZIP2, "fileA.bz2", "fileB.bz2");
     }
 
     @Test

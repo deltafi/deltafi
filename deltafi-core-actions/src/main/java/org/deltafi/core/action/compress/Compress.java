@@ -40,11 +40,11 @@ public class Compress extends TransformAction<CompressParameters> {
                 .description("Compresses content using ar, gz, tar, tar.gz, tar.xz, xz, or zip.")
                 .outputSpec(ActionOptions.OutputSpec.builder()
                         .contentSummary("""
-                                If the format is ar, tar, tar.gz, tar.xz, or zip, all content is
+                                If the format is ar, tar, tar.bz2, tar.gz, tar.xz, or zip, all content is
                                 compressed to a single content. The name of the content will be set from
                                 the name parameter and include the appropriate suffix.
                                 
-                                If the format is gz or xz, all content is compressed individually. Each
+                                If the format is bz2, gz or xz, all content is compressed individually. Each
                                 content will keep its name but will include the appropriate suffix.""")
                         .metadataDescriptions(List.of(ActionOptions.KeyedDescription.builder()
                                 .key("compressFormat")
@@ -65,8 +65,8 @@ public class Compress extends TransformAction<CompressParameters> {
         }
 
         return switch (params.getFormat()) {
-            case AR, TAR, TAR_GZIP, TAR_XZ, ZIP -> archive(context, params, input);
-            case GZIP, XZ -> compress(context, params, input);
+            case AR, TAR, TAR_BZIP2, TAR_GZIP, TAR_XZ, ZIP -> archive(context, params, input);
+            case BZIP2, GZIP, XZ -> compress(context, params, input);
             default -> throw new UnsupportedOperationException("Format not supported: " + params.getFormat());
         };
     }

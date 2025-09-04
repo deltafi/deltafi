@@ -229,6 +229,11 @@ public class DecompressTest {
     }
 
     @Test
+    public void unarchivesTarBzip2() {
+        runTest(Format.TAR_BZIP2, false);
+    }
+
+    @Test
     public void unarchivesTarXz() {
         runTest(Format.TAR_XZ, false);
     }
@@ -261,6 +266,11 @@ public class DecompressTest {
     @Test
     public void unarchivesTarGzipDetected() {
         runTest(Format.TAR_GZIP, true);
+    }
+
+    @Test
+    public void unarchivesTarBzip2Detected() {
+        runTest(Format.TAR_BZIP2, true);
     }
 
     @Test
@@ -404,6 +414,11 @@ public class DecompressTest {
     }
 
     @Test
+    public void decompressesSingleBz2() {
+        runTest(Format.BZIP2, input("fileA.bz2"), "fileA");
+    }
+
+    @Test
     public void decompressesSingleXz() {
         runTest(Format.XZ, input("fileA.xz"), "fileA");
     }
@@ -416,6 +431,11 @@ public class DecompressTest {
     @Test
     public void decompressesSingleGzipDetected() {
         runTest(new DecompressParameters(), Format.GZIP, input("fileA.gz"), "fileA");
+    }
+
+    @Test
+    public void decompressesSingleBzip2Detected() {
+        runTest(new DecompressParameters(), Format.BZIP2, input("fileA.bz2"), "fileA");
     }
 
     @Test

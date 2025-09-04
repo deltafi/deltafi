@@ -25,6 +25,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipParameters;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
@@ -62,6 +63,7 @@ public class ArchiveWriter extends ActionContentListWriter {
             case ZIP -> archiveZip(outputStream);
             case AR -> archiveAr(outputStream);
             case TAR_XZ -> archiveTar(new XZCompressorOutputStream(outputStream));
+            case TAR_BZIP2 -> archiveTar(new BZip2CompressorOutputStream(outputStream));
             case TAR_GZIP -> archiveTar(new GzipCompressorOutputStream(outputStream, GZIP_PARAMETERS));
             default -> throw new UnsupportedOperationException("Archive format not supported: " + format);
         }
