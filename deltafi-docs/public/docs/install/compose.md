@@ -17,7 +17,7 @@ To run DeltaFi with Docker Compose orchestration, you will need Docker or Docker
 Create a directory where you want your DeltaFi system to be installed and download the DeltaFi bundle.  Then run the Deltafi application.
 
 ```bash
-VERSION=2.22.1 # Or whatever version you want to install
+VERSION=__VERSION__ # Or whatever version you want to install
 DELTAFI_INSTALL_DIR=~/deltafi # Or where you want it
 OS=darwin # Or linux
 ARCH=arm64 # Or amd64
@@ -37,7 +37,7 @@ There are several key configuration files that allow additional configuration of
 ```yaml
 orchestrationMode: Compose
 deploymentMode: Deployment
-coreVersion: 2.22.1
+coreVersion: __VERSION__
 installDirectory: /Users/myuser/deltafi
 dataDirectory: /Users/myuser/deltafi/data
 siteDirectory: /Users/myuser/deltafi/site
@@ -49,7 +49,7 @@ development:
 Of particular note are the following configuration parameters:
 - `installDirectory` - used to relocate the base deltafi install location.
 - `dataDirectory` - the location used for content, database and metric storage.  If an alternate storage partition is desired for data, that path can be configured here.
-- `siteDirectory` - the location for various DeltaFi parameter configuration files.  
+- `siteDirectory` - the location for various DeltaFi parameter configuration files.
 
 ### `site/values.yaml`
 The `values.yaml` file located in the site directory is used for various DeltaFi system configuration settings and orchestration parameter overrides.  A default file is generated that will give you hints to orchestration and system configuration options.

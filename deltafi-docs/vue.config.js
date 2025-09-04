@@ -29,7 +29,7 @@ function getLatestVersion(changelogPath) {
     throw new Error("No version found in CHANGELOG.md");
   }
 
-  return JSON.stringify(match[1]); // just the version number
+  return match[1]; // just the version number
 }
 
 module.exports = {
@@ -40,7 +40,7 @@ module.exports = {
       // Plugin to extract version from CHANGELOG
       new (require('webpack')).DefinePlugin({
         'process.env': {
-          VUE_APP_VERSION: process.env.VUE_APP_EMBEDDED === 'true' ? null : getLatestVersion(path.resolve(__dirname, '../CHANGELOG.md'))
+          VUE_APP_VERSION: process.env.VUE_APP_EMBEDDED === 'true' ? null : JSON.stringify(getLatestVersion(path.resolve(__dirname, '../CHANGELOG.md')))
         }
       }),
       // Plugin to copy core action docs and CHANGELOG
@@ -72,6 +72,22 @@ module.exports = {
             });
 
             console.log('Copied docs successfully');
+          });
+        },
+      },
+      // Plugin to replace __VERSION__ placeholders in Markdown files
+      {
+        apply: (compiler) => {
+          compiler.hooks.done.tap('ReplaceVersion', () => {
+            const version = getLatestVersion(path.resolve(__dirname, 'dist/docs/CHANGELOG.md'));
+            const files = glob.sync(path.resolve(__dirname, 'dist/docs/**/*.md'));
+            files.forEach((file) => {
+              let content = fs.readFileSync(file, 'utf8');
+              content = content.replace(/__VERSION__/g, version);
+              fs.writeFileSync(file, content);
+            });
+
+            console.log('Replaced __VERSION__ placeholders successfully');
           });
         },
       }

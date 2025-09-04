@@ -5,7 +5,7 @@
 Set some environment variables for your configuration:
 
 ```bash
-VERSION=2.22.1 # Or whatever version you want to install
+VERSION=__VERSION__ # Or whatever version you want to install
 DELTAFI_INSTALL_DIR=~/deltafi # Or where you want it
 ```
 

@@ -17,7 +17,7 @@ A plugin is published as a docker container and can be installed from the DeltaF
 The following TUI command will install the deltafi-xml plugin that is available on Docker Hub:
 
 ```bash
-deltafi plugin install docker.io/deltafi/deltafi-xml:2.22.1
+deltafi plugin install docker.io/deltafi/deltafi-xml:__VERSION__
 ```
 
 Additional commands that are useful in managing plugins:
@@ -27,4 +27,3 @@ deltafi plugin list # List all installed plugins
 deltafi plugin describe <plugin-name> # Describe the plugin including actions, variables
 deltafi plugin uninstall <plugin-name> # Remove a plugin
 ```
-
