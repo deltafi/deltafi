@@ -48,6 +48,7 @@ var (
 	coreDevelopmentFlag   bool
 	forceFlag             bool
 	jsonFlag              bool
+	noStartFlag           bool
 )
 
 func init() {
@@ -65,6 +66,7 @@ func init() {
 	configCmd.Flags().BoolVar(&forceFlag, "force", false, "Force configuration changes without confirmation")
 
 	configCmd.Flags().BoolVar(&jsonFlag, "json", false, "Output configuration in JSON format and exit")
+	configCmd.Flags().BoolVar(&noStartFlag, "no-start", false, "Do not automatically start DeltaFi if it is not running")
 
 	noWizard = false
 }
@@ -159,7 +161,12 @@ var configCmd = &cobra.Command{
 
 		if configurationChanged || !configExists || !app.IsRunning() {
 			goForIt := true
-			if !forceFlag {
+
+			if !app.IsRunning() && noStartFlag {
+				goForIt = false
+			}
+
+			if !forceFlag && goForIt {
 				fmt.Println()
 				if app.IsRunning() {
 					goForIt = ConfirmPrompt("DeltaFi configuration has changed. Do you want to update now?")

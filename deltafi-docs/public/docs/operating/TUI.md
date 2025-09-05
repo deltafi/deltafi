@@ -203,7 +203,7 @@ deltafi status [--watch|-w]
 Interactive configuration editor for DeltaFi, or set orchestration and deployment modes directly.
 
 ```bash
-deltafi config [--compose|--kind|--kubernetes] [--deployment|--plugin-development|--core-development] [--force]
+deltafi config [--compose|--kind|--kubernetes] [--deployment|--plugin-development|--core-development] [--force] [--no-start]
 ```
 
 **Flags:**
@@ -214,8 +214,11 @@ deltafi config [--compose|--kind|--kubernetes] [--deployment|--plugin-developmen
 - `--plugin-development`     Set deployment mode to PluginDevelopment
 - `--core-development`       Set deployment mode to CoreDevelopment
 - `--force`                  Force configuration changes without confirmation
+- `--no-start`               Do not automatically start DeltaFi if it is not running
 
 If any of these flags are set, the configuration will be updated and saved immediately, and the wizard will not run. You can set both orchestration and deployment mode in a single invocation. If you change orchestration mode while DeltaFi is running, you will be prompted to confirm (unless --force is used), and the system will be stopped automatically.
+
+By default, the config command will automatically start DeltaFi if it is not running after configuration changes. Use the `--no-start` flag to skip this automatic startup behavior.
 
 **Examples:**
 ```bash
@@ -230,6 +233,9 @@ deltafi config --plugin-development
 
 # Force orchestration mode change without confirmation
 deltafi config --kind --force
+
+# Configure without automatically starting DeltaFi
+deltafi config --compose --no-start
 ```
 
 #### `kind`
