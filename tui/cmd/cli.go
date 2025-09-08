@@ -42,30 +42,10 @@ var deprecatedCliCmd = &cobra.Command{
 		env := app.GetOrchestrator().Environment()
 		if app.GetOrchestrationMode() == orchestration.Kind {
 			os.Setenv("DELTAFI_WRAPPER", "true")
-			executable = filepath.Join(app.GetDistroPath(), "orchestration", "kind", "cluster")
+			executable = filepath.Join(app.GetDistroPath(), "orchestration", "kind", "kind")
 		}
 
 		return ShellExec(executable, env, args)
-	},
-}
-
-var deprecatedClusterCmd = &cobra.Command{
-	Use:                "cluster",
-	Short:              styles.WarningStyle.Render("[DEPRECATED]") + " Invoke the original DeltaFi KinD cluster controls",
-	Long:               "[DEPRECATED] Invoke the original DeltaFi KinD cluster controls",
-	SilenceUsage:       true,
-	SilenceErrors:      true,
-	DisableFlagParsing: true,
-	GroupID:            "legacy",
-	RunE: func(cmd *cobra.Command, args []string) error {
-
-		if app.GetOrchestrationMode() != orchestration.Kind {
-			return fmt.Errorf("This command is only available in Kind orchestration mode")
-		}
-
-		executable := filepath.Join(app.GetDistroPath(), "orchestration", "kind", "cluster")
-
-		return ShellExec(executable, app.GetOrchestrator().Environment(), args)
 	},
 }
 
@@ -91,6 +71,5 @@ var deprecatedComposeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deprecatedCliCmd)
-	rootCmd.AddCommand(deprecatedClusterCmd)
 	rootCmd.AddCommand(deprecatedComposeCmd)
 }

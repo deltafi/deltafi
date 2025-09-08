@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/Masterminds/semver/v3"
@@ -173,15 +172,6 @@ func (o *KindOrchestrator) Up(args []string) error {
 
 func (o *KindOrchestrator) Down(args []string) error {
 
-	isRunning, err := o.isClusterRunning()
-	if err != nil {
-		return fmt.Errorf("error checking KinD cluster status: %w", err)
-	}
-
-	if !isRunning {
-		return fmt.Errorf("KinD cluster is not running")
-	}
-
 	return o.StopKind()
 }
 
@@ -209,20 +199,6 @@ func (o *KindOrchestrator) SiteValuesFile() (string, error) {
 		}
 	}
 	return siteValuesFile, nil
-}
-
-func (o *KindOrchestrator) isClusterRunning() (bool, error) {
-	executable := filepath.Join("kind")
-	args := []string{"get", "clusters", "-q"}
-
-	output, err := executeShellCommandWithOutput(executable, args, o.Environment())
-	if err != nil {
-		return false, fmt.Errorf("error checking cluster status: %w", err)
-	}
-
-	// Check if the output contains exactly "deltafi" (trimmed of whitespace)
-	output = strings.TrimSpace(output)
-	return output == "deltafi", nil
 }
 
 func (o *KindOrchestrator) executeClusterShellCommand(executable string, args []string, env []string) error {
