@@ -119,6 +119,8 @@ func Up(force bool) error {
 
 	config.SetCoreVersion(tuiVersion)
 
+	app.ReloadInstance()
+
 	if app.GetOrchestrationMode() == orchestration.Kind {
 		perr := app.SetAdminPassword("password")
 		if perr != nil {
