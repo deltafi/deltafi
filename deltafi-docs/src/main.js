@@ -33,32 +33,24 @@ function collectPaths(items, acc = []) {
 
 // fetch markdown for each link and build a search index
 async function buildSearchIndex(sidebar) {
-  const paths = collectPaths(sidebar);
-  const docs = [];
-
-  for (const path of paths) {
-    try {
+  return await Promise.all(
+    collectPaths(sidebar).map(async (path) => {
       let file;
       if (path.link === "/") {
         file = "/README.md";
       } else {
         file = path.link.endsWith(".md") ? path.link : `${path.link}.md`;
       }
-
       const res = await fetch(`docs${file}`);
       const text = await res.text();
 
-      docs.push({
+      return Promise.resolve({
         title: path.title,
         link: path.link,
         body: RemoveMd(text),
       });
-    } catch (err) {
-      console.warn(`Could not fetch ${path.link}`, err);
-    }
-  }
-
-  return docs;
+    })
+  );
 }
 
 const sidebar = [
@@ -311,10 +303,14 @@ const sidebar = [
   },
 ];
 
-const searchBar = (entries) => {
+const searchBar = () => {
   return {
     name: "searchBar",
     extend(api) {
+      let entries = [];
+      buildSearchIndex(sidebar).then((result) => {
+        entries = result;
+      });
       api.enableSearch({
         handler: (keyword) => {
           if (!keyword) return [];
@@ -353,7 +349,6 @@ const searchBar = (entries) => {
 };
 
 (async () => {
-  const searchIndex = await buildSearchIndex(sidebar);
   const config = {
     target: "#docs",
     title: "",
@@ -368,7 +363,7 @@ const searchBar = (entries) => {
       return theme === "dark" ? { headerHeight: "66px", accentColor: "rgb(12,123,192)", logo: "url('./logo-dark.png')" } : { headerHeight: "66px", accentColor: "rgb(12,123,192)", logo: "url('./logo.png')" };
     },
 
-    plugins: [searchBar(searchIndex)],
+    plugins: [searchBar()],
     nav: [
       {
         title: "Home",
