@@ -316,13 +316,7 @@ func isKubectlAvailable() bool {
 }
 
 func isKindAvailable() bool {
-	if !isDockerAvailable() {
-		return false
-	}
-
-	cmd := exec.Command("kind", "version")
-	err := cmd.Run()
-	return err == nil
+	return isDockerAvailable()
 }
 
 func isKubernetesClusterRunning() bool {
