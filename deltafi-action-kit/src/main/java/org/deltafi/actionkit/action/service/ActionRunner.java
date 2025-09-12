@@ -180,7 +180,8 @@ public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
         } catch (Throwable e) {
             result = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
         }
-        ActionEvent event = result.toEvent();
+
+        ActionEvent event = fromResult(result, context);
         orphanContentCheck(context, event);
         action.clearActionExecution();
 
@@ -188,6 +189,16 @@ public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
             actionEventQueue.putResult(event, returnAddress);
         } catch (Throwable e) {
             log.error("Error sending result to valkey for did {}", context.getDid(), e);
+        }
+    }
+
+    // protect against malformed ResultTypes that result in unexpected exceptions
+    private ActionEvent fromResult(ResultType result, ActionContext context) {
+        try {
+            return result.toEvent();
+        } catch (Exception e) {
+            ErrorResult errorResult = new ErrorResult(context, "Invalid action result could not be converted to an ActionEvent", e).logErrorTo(log);
+            return errorResult.toEvent();
         }
     }
 

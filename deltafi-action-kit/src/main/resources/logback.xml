@@ -3,6 +3,7 @@
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
+                <mdc/>
                 <pattern>
                     <pattern>
                         {
@@ -10,8 +11,7 @@
                             "loggerName": "%logger{40}",
                             "level": "%level",
                             "message": "%message",
-                            "threadName": "%thread",
-                            "action": "%X{action}"
+                            "threadName": "%thread"
                         }
                     </pattern>
                 </pattern>

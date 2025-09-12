@@ -22,14 +22,22 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.Content;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ContentConverter {
+
+    private ContentConverter() {}
+
     public static List<ActionContent> convert(List<Content> contentList, ContentStorageService contentStorageService) {
         return contentList.stream().map(content -> new ActionContent(content, contentStorageService)).toList();
     }
 
     public static List<Content> convert(List<ActionContent> actionContentList) {
-        return actionContentList.stream().map(ContentConverter::convert).toList();
+        return actionContentList != null ?
+                actionContentList.stream()
+                        .filter(Objects::nonNull)
+                        .map(ContentConverter::convert)
+                        .toList() : List.of();
     }
 
     public static Content convert(ActionContent actionContent) {

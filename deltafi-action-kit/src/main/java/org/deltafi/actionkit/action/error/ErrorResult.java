@@ -29,6 +29,7 @@ import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.ErrorEvent;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -108,7 +109,10 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
      * @return this ErrorResult for continued operations
      */
     public ErrorResult logErrorTo(Logger logger) {
-        logger.error(errorSummary);
+        try (MDC.MDCCloseable ignoredAction = MDC.putCloseable("action", context.getActionName());
+             MDC.MDCCloseable ignoredDid = MDC.putCloseable("did", context.getDid().toString())) {
+            logger.error(errorSummary);
+        }
         return this;
     }
 
