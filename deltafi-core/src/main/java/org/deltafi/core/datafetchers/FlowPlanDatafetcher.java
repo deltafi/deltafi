@@ -330,8 +330,9 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
-        auditLogger.audit("updated plugin variables: {}", CoreAuditLogger.listToString(variables));
-        return pluginService.setPluginVariableValues(pluginCoordinates, variables);
+        VariableUpdate variableUpdate = pluginService.setPluginVariableValues(pluginCoordinates, variables);
+        auditLogger.audit("updated plugin variables: {}", CoreAuditLogger.listToString(variableUpdate.getUpdatedVariables(), VariableUpdate.Result::nameAndValue));
+        return variableUpdate.isUpdated();
     }
 
     @DgsQuery

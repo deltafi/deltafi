@@ -17,12 +17,16 @@
  */
 package org.deltafi.core.services;
 
+import org.assertj.core.api.Assertions;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
+import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.repo.PluginVariableRepo;
-import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.types.VariableUpdate;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PluginVariableServiceTest {
 
     private static final Variable KEEP_VARIABLE = Variable.builder().name("keep").value("value").build();
+    private static final String UPDATE_VARIABLE = "update";
     private static final Variable SKIP_VARIABLE = Variable.builder().name("skip").build();
 
     @InjectMocks
@@ -130,6 +136,54 @@ class PluginVariableServiceTest {
         Variable globalVar = Variable.builder().name("var").defaultValue("globalDefaultValue").build();
 
         assertThat(testCombine(pluginVar, globalVar)).hasSize(1).containsExactly(globalVar);
+    }
+
+    @Test
+    void testSetVariables() {
+        PluginCoordinates coords = setupSetVariableTest();
+
+        VariableUpdate updates = pluginVariableService.setVariableValues(coords, List.of(new KeyValue(UPDATE_VARIABLE, "new-value")));
+        assertThat(updates.isUpdated()).isTrue();
+        assertThat(updates.getVariables()).hasSize(3);
+        assertThat(updates.getUpdatedVariables()).hasSize(1);
+        VariableUpdate.Result result = updates.getUpdatedVariables().getFirst();
+        assertThat(result.changed()).isTrue();
+        assertThat(result.variable().getName()).isEqualTo(UPDATE_VARIABLE);
+        assertThat(result.variable().getValue()).isEqualTo("new-value");
+    }
+
+    @Test
+    void testSetVariables_noChanges() {
+        PluginCoordinates coords = setupSetVariableTest();
+
+        VariableUpdate updates = pluginVariableService.setVariableValues(coords, List.of(new KeyValue(UPDATE_VARIABLE, UPDATE_VARIABLE)));
+        assertThat(updates.isUpdated()).isFalse();
+        assertThat(updates.getVariables()).hasSize(3);
+        assertThat(updates.getUpdatedVariables()).hasSize(1);
+        VariableUpdate.Result result = updates.getUpdatedVariables().getFirst();
+        assertThat(result.changed()).isFalse();
+        assertThat(result.variable().getName()).isEqualTo(UPDATE_VARIABLE);
+        assertThat(result.variable().getValue()).isEqualTo(UPDATE_VARIABLE);
+    }
+
+    @Test
+    void testSetVariable_missingKey() {
+        PluginCoordinates coords = setupSetVariableTest();
+
+        List<KeyValue> updates = List.of(new KeyValue("missing", "value"));
+        Assertions.assertThatThrownBy(() -> pluginVariableService.setVariableValues(coords, updates))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Variable named 'missing' was not found in the variables for plugin 'a:a:1'");
+    }
+
+    private PluginCoordinates setupSetVariableTest() {
+        PluginCoordinates coords = new PluginCoordinates();
+        PluginVariables pluginVariables = pluginVariables("a");
+
+        pluginVariables.setVariables(List.of(KEEP_VARIABLE, Variable.builder().name(UPDATE_VARIABLE).value(UPDATE_VARIABLE).dataType(VariableDataType.STRING).build(), SKIP_VARIABLE));
+
+        Mockito.when(pluginVariableRepo.findBySourcePlugin(coords)).thenReturn(Optional.of(pluginVariables));
+        return coords;
     }
 
     private List<Variable> testCombine(Variable pluginVar, Variable globalVar) {

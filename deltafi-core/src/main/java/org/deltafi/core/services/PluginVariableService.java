@@ -204,7 +204,9 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
 
         VariableUpdate variableUpdate = new VariableUpdate(pluginVariables.getVariables());
         for (KeyValue value : values) {
-            if (setVariable(pluginVariables, value)) {
+            VariableUpdate.Result updateResult = setVariable(pluginVariables, value);
+            variableUpdate.addUpdatedVariables(updateResult);
+            if (updateResult.changed()) {
                 variableUpdate.setUpdated(true);
             }
         }
@@ -216,10 +218,10 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         return variableUpdate;
     }
 
-    private boolean setVariable(PluginVariables pluginVariables, KeyValue keyValue) {
+    private VariableUpdate.Result setVariable(PluginVariables pluginVariables, KeyValue keyValue) {
         Variable variable = pluginVariables.getVariables().stream()
                 .filter(v1 -> nameMatches(v1, keyValue.getKey()))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Variable name: " + keyValue.getKey() + " was not found in the variables for plugin: " + pluginVariables.getSourcePlugin()));
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Variable named '" + keyValue.getKey() + "' was not found in the variables for plugin '" + pluginVariables.getSourcePlugin() + "'"));
 
         String errorMsg = variable.getDataType().validateValue(keyValue.getValue());
 
@@ -228,11 +230,11 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         }
 
         if (Objects.equals(variable.getValue(), keyValue.getValue())) {
-            return false;
+            return new VariableUpdate.Result(false, variable);
         }
 
         variable.setValue(keyValue.getValue());
-        return true;
+        return new VariableUpdate.Result(true, variable);
     }
 
     private boolean nameMatches(Variable variable, String key) {

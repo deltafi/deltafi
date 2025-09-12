@@ -616,7 +616,6 @@ public class DeltaFile {
    */
   public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, List<UUID> joinedDids, Action action, String systemName,
                                              String returnAddress, String memo) {
-    Map<String, Object> actionParameters = actionConfiguration.getParameters() == null ? Collections.emptyMap() : actionConfiguration.getParameters();
     return WrappedActionInput.builder()
             .queueName(actionConfiguration.getType())
             .actionContext(ActionContext.builder()
@@ -632,7 +631,7 @@ public class DeltaFile {
                     .memo(memo)
                     .build())
             .deltaFile(this)
-            .actionParams(actionParameters)
+            .actionParams(actionConfiguration.getInternalParameters())
             .returnAddress(returnAddress)
             .actionCreated(action.getCreated())
             .coldQueued(action.getState() == ActionState.COLD_QUEUED)

@@ -20,14 +20,30 @@ package org.deltafi.core.types;
 import lombok.Data;
 import org.deltafi.common.types.Variable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 public class VariableUpdate {
     boolean updated = false;
     List<Variable> variables;
+    List<Result> updatedVariables;
 
     public VariableUpdate(List<Variable> variables) {
         this.variables = variables;
+    }
+
+    public void addUpdatedVariables(Result updatedVariable) {
+        if (this.updatedVariables == null) {
+            this.updatedVariables = new ArrayList<>();
+        }
+        this.updatedVariables.add(updatedVariable);
+    }
+
+    public record Result(boolean changed, Variable variable) {
+        public String nameAndValue() {
+            String value = variable.isMasked() ? Variable.MASK_STRING : variable.getValue();
+            return variable.getName() + "=" + value;
+        }
     }
 }

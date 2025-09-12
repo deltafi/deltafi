@@ -241,7 +241,7 @@ public class PluginService implements Snapshotter {
     }
 
     @Transactional
-    public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
+    public VariableUpdate setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
         VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (update.isUpdated()) {
             if (pluginCoordinates.equalsIgnoreVersion(PluginCoordinates.builder().groupId(SYSTEM_PLUGIN_GROUP_ID).artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).build())) {
@@ -251,7 +251,7 @@ public class PluginService implements Snapshotter {
             }
         }
 
-        return update.isUpdated();
+        return update;
     }
 
     @Transactional
