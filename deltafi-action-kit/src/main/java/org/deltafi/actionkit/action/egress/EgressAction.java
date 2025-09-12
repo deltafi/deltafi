@@ -38,6 +38,9 @@ public abstract class EgressAction<P extends ActionParameters> extends Action<Eg
 
     @Override
     protected EgressInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
+        if (deltaFileMessage.getContentList() == null || deltaFileMessage.getContentList().isEmpty()) {
+            throw new IllegalArgumentException("DeltaFileMessage must contain at least one content object to egress");
+        }
         return EgressInput.builder()
                 .content(new ActionContent(deltaFileMessage.getContentList().getFirst(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
