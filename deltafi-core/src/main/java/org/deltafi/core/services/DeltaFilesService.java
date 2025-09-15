@@ -534,7 +534,7 @@ public class DeltaFilesService {
         try {
             transformFlowService.getActiveFlowByName(event.getFlowName());
         } catch (MissingFlowException missingFlowException) {
-            handleMissingFlow(deltaFile, flow, missingFlowException);
+            handleMissingFlow(deltaFile, flow, missingFlowException, action.getName());
             return;
         }
 
@@ -933,11 +933,11 @@ public class DeltaFilesService {
         }
     }
 
-    public static ActionEvent buildMissingFlowErrorEvent(DeltaFile deltaFile, OffsetDateTime time, MissingFlowException missingFlowException) {
+    public static ActionEvent buildMissingFlowErrorEvent(DeltaFile deltaFile, String actionName, OffsetDateTime time, MissingFlowException missingFlowException) {
         return ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .flowName("MISSING")
-                .actionName(MISSING_FLOW_ACTION)
+                .actionName(actionName)
                 .start(time)
                 .stop(time)
                 .error(ErrorEvent.builder()
@@ -1660,10 +1660,10 @@ public class DeltaFilesService {
         enqueueActions(actionInputs);
     }
 
-    void handleMissingFlow(DeltaFile deltaFile, DeltaFileFlow flow, MissingFlowException missingFlowException) {
+    void handleMissingFlow(DeltaFile deltaFile, DeltaFileFlow flow, MissingFlowException missingFlowException, String actionName) {
         OffsetDateTime now = OffsetDateTime.now(clock);
-        Action action = flow.queueNewAction(MISSING_FLOW_ACTION, null, ActionType.UNKNOWN, false, now);
-        processErrorEvent(deltaFile, flow, action, buildMissingFlowErrorEvent(deltaFile, now, missingFlowException));
+        flow.restorePendingAction(actionName);
+        processErrorEvent(deltaFile, flow, flow.lastAction(), buildMissingFlowErrorEvent(deltaFile, actionName, now, missingFlowException));
         deltaFileCacheService.save(deltaFile);
     }
 

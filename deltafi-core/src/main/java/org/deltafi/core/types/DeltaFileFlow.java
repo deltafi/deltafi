@@ -415,6 +415,16 @@ public class DeltaFileFlow {
         return !pendingActions.isEmpty() ? pendingActions.getFirst() : null;
     }
 
+    public void restorePendingAction(String actionName) {
+        if (actionName != null) {
+            if (!(pendingActions instanceof ArrayList<String>)) {
+                pendingActions = new ArrayList<>(pendingActions);
+            } else {
+                pendingActions.addFirst(actionName);
+            }
+        }
+    }
+
     public ActionType lastActionType() {
         return !actions.isEmpty() ? lastAction().getType() : null;
     }

@@ -828,14 +828,15 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = utilService.buildDeltaFile(did);
         DeltaFileFlow flow = deltaFile.firstFlow();
 
-        deltaFilesService.handleMissingFlow(deltaFile, flow, MissingFlowException.notFound("flowName", FlowType.TRANSFORM));
+        deltaFilesService.handleMissingFlow(deltaFile, flow, MissingFlowException.notFound("flowName", FlowType.TRANSFORM), "IngressAction");
 
         assertEquals(DeltaFileStage.ERROR, deltaFile.getStage());
         Action errorAction = flow.lastAction();
-        assertEquals("MissingRunningFlow", errorAction.getName());
-        assertEquals(ActionType.UNKNOWN, errorAction.getType());
+        assertEquals("IngressAction", errorAction.getName());
+        assertEquals(ActionType.INGRESS, errorAction.getType());
         assertEquals(ActionState.ERROR, errorAction.getState());
-        verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(Map.of("action", "unknown", "source", "MissingRunningFlow", "dataSource", "myFlow")));
+        assertEquals("IngressAction", flow.getNextPendingAction());
+        verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(Map.of("action", "unknown", "source", "IngressAction", "dataSource", "myFlow")));
     }
 
     @Test
