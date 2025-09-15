@@ -151,6 +151,10 @@ const formatFlowData = () => {
     exportableData = _.pick(exportableData, ["name", "type", "description", "metadata", "topic", "cronSchedule", "timedIngressAction.name", "timedIngressAction.type", "timedIngressAction.parameters", "timedIngressAction.apiVersion", "timedIngressAction.join", "annotationConfig.annotations", "annotationConfig.metadataPatterns", "annotationConfig.discardPrefix"]);
   }
 
+  if (_.isEqual(exportableData.type, "ON_ERROR_DATA_SOURCE")) {
+    exportableData = _.pick(exportableData, ["name", "type", "description", "metadata", "annotationConfig", "topic", "errorMessageRegex"]);
+  }
+
   return exportableData;
 };
 

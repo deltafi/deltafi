@@ -52,7 +52,7 @@ import Ripple from "primevue/ripple";
 
 const emit = defineEmits(["reloadDataSources"]);
 const hasPermission = inject("hasPermission");
-const { saveTimedDataSourcePlan, saveRestDataSourcePlan } = useDataSource();
+const { saveTimedDataSourcePlan, saveRestDataSourcePlan, saveOnErrorDataSourcePlan } = useDataSource();
 const notify = useNotifications();
 const vRipple = Ripple;
 const menu = ref();

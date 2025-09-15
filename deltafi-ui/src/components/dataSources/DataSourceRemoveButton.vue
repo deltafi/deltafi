@@ -67,6 +67,8 @@ const confirmedRemoveDataSource = async () => {
 
   if (_.isEqual(rowData.type, "REST_DATA_SOURCE")) {
     response = response.data.removeRestDataSourcePlan;
+  } else if (_.isEqual(rowData.type, "ON_ERROR_DATA_SOURCE")) {
+    response = response.data.removeOnErrorDataSourcePlan;
   } else {
     response = response.data.removeTimedDataSourcePlan;
   }

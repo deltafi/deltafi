@@ -52,6 +52,10 @@ export default function useDataSource() {
     topic: true,
   };
 
+  const onErrorDataSourceFields = {
+    errorMessageRegex: true,
+  };
+
   const timeDataSourceFields = {
     cronSchedule: true,
     lastRun: true,
@@ -103,6 +107,18 @@ export default function useDataSource() {
       },
     };
     return sendGraphQLQuery(query, "getRestDataSources");
+  };
+
+  const getOnErrorDataSources = () => {
+    const query = {
+      getAllFlows: {
+        onErrorDataSource: {
+          ...defaultDataSourceFields,
+          ...onErrorDataSourceFields,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "getOnErrorDataSources");
   };
 
   const getTimedDataSources = () => {
@@ -215,6 +231,21 @@ export default function useDataSource() {
     return sendGraphQLQuery(query, "saveRestDataSourcePlan", "mutation");
   };
 
+  const saveOnErrorDataSourcePlan = (onErrorDataSourceFlowPlan: Object) => {
+    const query = {
+      saveOnErrorDataSourcePlan: {
+        __args: {
+          dataSourcePlan: {
+            type: "ON_ERROR_DATA_SOURCE",
+            ...onErrorDataSourceFlowPlan,
+          },
+        },
+        name: true,
+      },
+    };
+    return sendGraphQLQuery(query, "saveOnErrorDataSourcePlan", "mutation");
+  };
+
   const removeDataSourcePlan = (name: string, dataSourceType: string) => {
     let query = {};
     if (dataSourceType === "REST_DATA_SOURCE") {
@@ -233,6 +264,16 @@ export default function useDataSource() {
           },
         },
       };
+    } else if (dataSourceType === "ON_ERROR_DATA_SOURCE") {
+      query = {
+        removeOnErrorDataSourcePlan: {
+          __args: {
+            name: name,
+          },
+        },
+      };
+    } else {
+      throw new Error(`Unsupported data source type: ${dataSourceType}`);
     }
     return sendGraphQLQuery(query, "removeDataSourcePlan", "mutation");
   };
@@ -261,6 +302,17 @@ export default function useDataSource() {
     return sendGraphQLQuery(query, "disableTestRestDataSourceFlowByName", "mutation");
   };
 
+  const disableTestOnErrorDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      disableOnErrorDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableTestOnErrorDataSourceFlowByName", "mutation");
+  };
+
   // Sets a Time Data Source flow to test mode
   const enableTestTimedDataSourceFlowByName = (flowName: string) => {
     const query = {
@@ -271,6 +323,17 @@ export default function useDataSource() {
       },
     };
     return sendGraphQLQuery(query, "enableTestTimedDataSourceFlowByName", "mutation");
+  };
+
+  const enableTestOnErrorDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      enableOnErrorDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableTestOnErrorDataSourceFlowByName", "mutation");
   };
 
   // Sets a Time Data Source flow to test mode
@@ -296,6 +359,18 @@ export default function useDataSource() {
       },
     };
     return sendGraphQLQuery(query, "setRestDataSourceMaxErrors", "mutation");
+  };
+
+  const setOnErrorDataSourceMaxErrors = (name: string, maxErrors: number) => {
+    const query = {
+      setOnErrorDataSourceMaxErrors: {
+        __args: {
+          name: name,
+          maxErrors: maxErrors,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "setOnErrorDataSourceMaxErrors", "mutation");
   };
 
   // sets max errors for a DataSource
@@ -325,6 +400,7 @@ export default function useDataSource() {
     getAllDataSources,
     getRestDataSources,
     getTimedDataSources,
+    getOnErrorDataSources,
     startRestDataSourceByName,
     startTimedDataSourceByName,
     stopRestDataSourceByName,
@@ -332,13 +408,17 @@ export default function useDataSource() {
     setTimedDataSourceCronSchedule,
     saveTimedDataSourcePlan,
     saveRestDataSourcePlan,
+    saveOnErrorDataSourcePlan,
     enableTestRestDataSourceFlowByName,
     disableTestRestDataSourceFlowByName,
     enableTestTimedDataSourceFlowByName,
     disableTestTimedDataSourceFlowByName,
+    enableTestOnErrorDataSourceFlowByName,
+    disableTestOnErrorDataSourceFlowByName,
     removeDataSourcePlan,
     setRestDataSourceMaxErrors,
     setTimedDataSourceMaxErrors,
+    setOnErrorDataSourceMaxErrors,
     loaded,
     loading,
     errors,

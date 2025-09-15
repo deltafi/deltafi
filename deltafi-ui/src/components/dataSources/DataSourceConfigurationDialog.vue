@@ -44,6 +44,12 @@
           <dd>
             <Dropdown v-model="model['dataSourceType']" :options="dataSourceTypeOptions" placeholder="Select a Data Source Type" show-clear class="inputWidth" />
           </dd>
+          <template v-if="_.isEqual(model['dataSourceType'], 'On-Error Data Source')">
+            <dt>Error Message Regex</dt>
+            <dd>
+              <InputText v-model="model['errorMessageRegex']" placeholder="Error Message Regex" class="inputWidth" />
+            </dd>
+          </template>
           <template v-if="_.isEqual(model['dataSourceType'], 'Timed Data Source')">
             <dt>Cron Schedule*</dt>
             <dd>
@@ -154,7 +160,7 @@ const { getAllTopicNames } = useTopics();
 const { editDataSource } = reactive(props);
 const emit = defineEmits(["refreshAndClose"]);
 const { getPluginActionSchema } = useFlowActions();
-const { saveTimedDataSourcePlan, saveRestDataSourcePlan } = useDataSource();
+const { saveTimedDataSourcePlan, saveRestDataSourcePlan, saveOnErrorDataSourcePlan } = useDataSource();
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 
 const errors = ref([]);
@@ -163,7 +169,12 @@ const allActionsData = ref({});
 
 const dataSourceNames = ref([]);
 
-const dataSourceTypeOptions = ref(["Rest Data Source", "Timed Data Source"]);
+const dataSourceTypeMap = {
+  REST_DATA_SOURCE: "Rest Data Source",
+  TIMED_DATA_SOURCE: "Timed Data Source",
+  ON_ERROR_DATA_SOURCE: "On-Error Data Source",
+};
+const dataSourceTypeOptions = ref(Object.values(dataSourceTypeMap));
 
 const dataSourceTemplate = {
   name: null,
@@ -186,6 +197,7 @@ const dataSourceTemplate = {
   topic: null,
   annotationConfig: null,
   metadata: null,
+  errorMessageRegex: null,
 };
 
 const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rowDataProp) ? dataSourceTemplate : props.rowDataProp));
@@ -243,13 +255,7 @@ onBeforeMount(async () => {
 
   flattenedActionsTypes.value = await getTimedIngressActions();
 
-  if (!_.isEmpty(model.value["description"])) {
-    if (!_.isEmpty(model.value["cronSchedule"])) {
-      model.value["dataSourceType"] = "Timed Data Source";
-    } else {
-      model.value["dataSourceType"] = "Rest Data Source";
-    }
-  }
+  model.value['dataSourceType'] = dataSourceTypeMap[model.value['type']];
 
   if (_.has(model.value["timedIngressAction"], "name")) {
     if (!_.isEmpty(model.value["timedIngressAction"]["name"])) {
@@ -422,6 +428,8 @@ const submit = async () => {
 
   if (_.isEqual(model.value["dataSourceType"], "Timed Data Source")) {
     response = await saveTimedDataSourcePlan(dataSourceObject);
+  } else if (_.isEqual(model.value["dataSourceType"], "On-Error Data Source")) {
+    response = await saveOnErrorDataSourcePlan(dataSourceObject);
   } else {
     response = await saveRestDataSourcePlan(dataSourceObject);
   }

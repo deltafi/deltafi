@@ -33,6 +33,7 @@
     <div v-else>
       <RestDataSourcesPanel ref="restDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableRestDataSource" />
       <TimedDataSourcesPanel ref="timedDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableTimedDataSource" />
+      <OnErrorDataSourcesPanel ref="onErrorDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableOnErrorDataSource" />
     </div>
   </div>
 </template>
@@ -42,6 +43,7 @@ import DataSourcePageHeaderButtonGroup from "@/components/dataSources/DataSource
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import RestDataSourcesPanel from "@/components/dataSources/RestDataSourcesPanel.vue";
+import OnErrorDataSourcesPanel from "@/components/dataSources/OnErrorDataSourcePanel.vue";
 import TimedDataSourcesPanel from "@/components/dataSources/TimedDataSourcesPanel.vue";
 import useTopics from "@/composables/useTopics";
 import { computed, inject, onMounted, onUnmounted, provide, ref } from "vue";
@@ -56,6 +58,7 @@ const { getAllTopics, loaded, loading } = useTopics();
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
 const restDataSourcesPanel = ref(null);
+const onErrorDataSourcesPanel = ref(null);
 const timedDataSourcesPanel = ref(null);
 const editing = ref(false);
 const filterFlowsText = ref("");
@@ -64,6 +67,7 @@ let autoRefresh;
 
 const refresh = async () => {
   restDataSourcesPanel.value.refresh();
+  onErrorDataSourcesPanel.value.refresh();
   timedDataSourcesPanel.value.refresh();
 };
 
@@ -85,11 +89,13 @@ onUnmounted(() => {
 });
 
 const restDataSourceList = ref([]);
+const onErrorDataSourceList = ref([]);
 const timedDataSourceList = ref([]);
 
 const dataSourceExport = computed(() => {
   const dataSourceObject = {};
   dataSourceObject["restDataSources"] = restDataSourceList.value;
+  dataSourceObject["onErrorDataSources"] = onErrorDataSourceList.value;
   dataSourceObject["timedDataSources"] = timedDataSourceList.value;
   return dataSourceObject;
 });
@@ -99,6 +105,13 @@ const exportableRestDataSource = (value) => {
   formatRestDataSourcesList.forEach((e, index) => (formatRestDataSourcesList[index] = _.pick(e, ["name", "type", "description", "metadata", "annotationConfig", "topic"])));
 
   restDataSourceList.value = formatRestDataSourcesList;
+};
+
+const exportableOnErrorDataSource = (value) => {
+  const formatOnErrorDataSourcesList = JSON.parse(JSON.stringify(value));
+  formatOnErrorDataSourcesList.forEach((e, index) => (formatOnErrorDataSourcesList[index] = _.pick(e, ["name", "type", "description", "metadata", "annotationConfig", "topic"])));
+
+  onErrorDataSourceList.value = formatOnErrorDataSourcesList;
 };
 
 const exportableTimedDataSource = (value) => {

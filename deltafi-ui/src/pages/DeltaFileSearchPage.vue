@@ -385,6 +385,9 @@ const formatDataSourceNames = () => {
   if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
     formattedDataSourceNames.value.push({ group: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource.map((s) => ({ label: s })) });
   }
+  if (!_.isEmpty(allDataSourceFlowNames.value.onErrorDataSource)) {
+    formattedDataSourceNames.value.push({ group: "On-Error Data Sources", sources: allDataSourceFlowNames.value.onErrorDataSource.map((s) => ({ label: s })) });
+  }
 };
 
 const fetchStages = async () => {

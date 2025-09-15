@@ -186,6 +186,8 @@ const formatGraphData = async () => {
       data.typeFormatted = "Rest Data Source";
     } else if (data.typeFormatted === "TIMED_DATA_SOURCE") {
       data.typeFormatted = "Timed Data Source";
+    } else if (data.typeFormatted === "ON_ERROR_DATA_SOURCE") {
+      data.typeFormatted = "On-Error Data Source";
     } else if (data.typeFormatted === "TOPIC") {
       data.typeFormatted = "Topic";
     } else if (data.typeFormatted === "TRANSFORM") {

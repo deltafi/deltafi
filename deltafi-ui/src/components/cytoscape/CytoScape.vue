@@ -75,7 +75,7 @@ onMounted(async () => {
         }
 
         const nodeData = tappedNode.data();
-        if (nodeData.type == "REST_DATA_SOURCE" || nodeData.type == "TIMED_DATA_SOURCE") {
+        if (nodeData.type.includes("DATA_SOURCE")) {
           clearChanges();
           controller.value.showPathFromDataSource(nodeData);
         } else if (nodeData.type == "DATA_SINK") {

@@ -21,6 +21,7 @@ const generateData = () => {
     getFlowNames: {
       restDataSource: ["devFlow1", "devFlow2"],
       timedDataSource: ["devFlow4", "devFlow3"],
+      onErrorDataSource: ["devFlow5", "devFlow6"],
     },
   };
 

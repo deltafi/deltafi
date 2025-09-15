@@ -30,6 +30,7 @@ export default function useFlows() {
   interface getFlowNames {
     restDataSource: Array<string>;
     timedDataSource: Array<string>;
+    onErrorDataSource?: Array<string>;
   }
 
   const allDataSourceFlowNames = ref<getFlowNames>({
@@ -47,6 +48,7 @@ export default function useFlows() {
         transform: transform,
         restDataSource: restDataSource,
         timedDataSource: timedDataSource,
+        onErrorDataSource: true,
       },
     };
   };
@@ -56,6 +58,7 @@ export default function useFlows() {
     allDataSourceFlowNames.value = response.value.data.getFlowNames;
     allDataSourceFlowNames.value["restDataSource"] = response.value.data.getFlowNames.restDataSource.sort();
     allDataSourceFlowNames.value["timedDataSource"] = response.value.data.getFlowNames.timedDataSource.sort();
+    allDataSourceFlowNames.value["onErrorDataSource"] = response.value.data.getFlowNames.onErrorDataSource.sort();
   };
 
   const fetchRestDataSourceFlowNames = async (state?: string) => {

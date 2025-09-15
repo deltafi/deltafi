@@ -110,6 +110,8 @@ const pubsubIcon = (type) => {
       return "fas fas fa-file-import fa-fw";
     case "REST_DATA_SOURCE":
       return "fas fas fa-file-import fa-fw";
+    case "ON_ERROR_DATA_SOURCE":
+      return "fas fas fa-file-import fa-fw";
     case "TRANSFORM":
       return "fas fa-project-diagram fa-fw";
     case "DATA_SINK":
@@ -153,6 +155,10 @@ onUnmounted(() => {
 
   .p-tag.running {
     background-color: #c7def0;
+  }
+
+  .p-tag.paused {
+    background-color: #ffc107;
   }
 
   .p-tag.stopped {

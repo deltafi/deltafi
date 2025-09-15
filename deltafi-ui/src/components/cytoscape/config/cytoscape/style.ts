@@ -67,6 +67,22 @@ const style: any = [
     },
   },
   {
+    selector: 'node[type="ON_ERROR_DATA_SOURCE"]',
+    style: {
+      shape: "round-rectangle",
+      "background-color": "#c7def0",
+      "text-outline-color": "#c7def0",
+    },
+  },
+  {
+    selector: 'node[type="ON_ERROR_DATA_SOURCE"][state="STOPPED"]',
+    style: {
+      shape: "round-octagon",
+      "background-color": "LightCoral",
+      "text-outline-color": "LightCoral",
+    },
+  },
+  {
     selector: 'node[type="TOPIC"]',
     style: {
       shape: "round-rectangle",

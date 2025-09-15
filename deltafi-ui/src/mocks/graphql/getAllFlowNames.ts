@@ -32,6 +32,9 @@ const generateFlows = () => {
     ],
     timedDataSource: [
       "smoke-timed-data-source"
+    ],
+    onErrorDataSource: [
+      "smoke-on-error-data-source"
     ]
   };
 };

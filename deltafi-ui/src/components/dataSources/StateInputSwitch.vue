@@ -53,6 +53,7 @@ const states = ['RUNNING', 'STOPPED', 'PAUSED'];
 const flowTypeMap = {
   restDataSource: "REST_DATA_SOURCE",
   timedDataSource: "TIMED_DATA_SOURCE",
+  onErrorDataSource: "ON_ERROR_DATA_SOURCE",
 }
 
 const props = defineProps({

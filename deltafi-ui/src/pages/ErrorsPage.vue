@@ -165,6 +165,7 @@ const flowTypeMap = {
   TRANSFORM: "transform",
   REST_DATA_SOURCE: "restDataSource",
   TIMED_DATA_SOURCE: "timedDataSource",
+  ON_ERROR_DATA_SOURCE: "onErrorDataSource",
   DATA_SINK: "dataSink",
 };
 

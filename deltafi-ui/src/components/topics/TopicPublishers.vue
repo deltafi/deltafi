@@ -92,6 +92,7 @@ const stateBadgeClass = {
 const typeIcons = {
   REST_DATA_SOURCE: "fas fa-file-import fa-fw text-muted mr-1",
   TIMED_DATA_SOURCE: "fas fa-file-import fa-fw text-muted mr-1",
+  ON_ERROR_DATA_SOURCE: "fas fa-file-import fa-fw text-muted mr-1",
   TRANSFORM: "fas fa-project-diagram fa-fw text-muted mr-1",
   DATA_SINK: "fas fa-file-export fa-fw text-muted mr-1",
 }
