@@ -180,5 +180,8 @@ const filterLogsBySeverity = (severity) => {
   .p-panel.p-panel-toggleable .p-panel-header {
     padding: 5px 1.25rem;
   }
+  pre {
+    margin: 0;
+  }
 }
 </style>
