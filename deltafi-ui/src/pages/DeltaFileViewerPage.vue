@@ -43,7 +43,7 @@
       <Message v-if="testMode" severity="info" :closable="false"> This DeltaFile was processed in test mode. </Message>
       <div class="row mb-3">
         <div class="col-12">
-          <DeltaFileInfoPanel :delta-file-data="deltaFile" />
+          <DeltaFileInfoPanel :delta-file-data="deltaFile" @filter-logs-by-severity="filterLogsBySeverity" />
         </div>
       </div>
       <div class="row mb-3">
@@ -69,6 +69,11 @@
       </div>
       <div class="row mb-3">
         <div class="col-12">
+          <LogViewerPanel id="logViewerPanelId" :delta-file-data="deltaFile" :filter-log-severity="selectedLogSeverity" @refresh-page="loadDeltaFileData" />
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-12">
           <DeltaFileTracePanel :delta-file-data="deltaFile" />
         </div>
       </div>
@@ -86,6 +91,7 @@
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
     </DialogTemplate>
+    <DialogTemplate ref="addUserNote" component-name="DeltaFileViewer/AddUserNoteDialog" header="Add User Note" dialog-width="30vw" :did="deltaFile.did" @refresh-page="loadDeltaFileData" />
   </div>
 </template>
 
@@ -97,6 +103,7 @@ import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vu
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileViewer/DeltaFileParentChildPanel.vue";
 import ContentTagsPanel from "@/components/DeltaFileViewer/ContentTagsPanel.vue";
+import LogViewerPanel from "@/components/DeltaFileViewer/LogViewerPanel.vue";
 import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
@@ -137,6 +144,7 @@ const notify = useNotifications();
 const { pendingAnnotations } = useDeltaFilesQueryBuilder();
 const showForm = ref(true);
 const did = ref(null);
+const addUserNote = ref(null);
 const ackErrorsDialog = reactive({
   visible: false,
 });
@@ -148,12 +156,20 @@ const rawJSONDialog = reactive({
 const replayDialog = ref();
 const resumeDialog = ref();
 const menu = ref();
+const selectedLogSeverity = ref(null);
 const staticMenuItems = reactive([
   {
     label: "View Raw DeltaFile",
     icon: "fas fa-file-code fa-fw",
     command: () => {
       viewRawJSON();
+    },
+  },
+  {
+    label: "Add User Note",
+    icon: "fas fa-pen-to-square fa-fw",
+    command: () => {
+      addUserNote.value.showDialog();
     },
   },
   {
@@ -463,6 +479,14 @@ const autoResumeSelected = computed(() => {
     return {};
   }
 });
+
+const filterLogsBySeverity = (logSeverity) => {
+  selectedLogSeverity.value = logSeverity;
+  const element = document.getElementById("logViewerPanelId");
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth" });
+  }
+};
 </script>
 
 <style>

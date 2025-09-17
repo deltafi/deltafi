@@ -30,12 +30,19 @@
               <span v-else-if="key.includes('Size') || key.includes('Bytes')">
                 <FormattedBytes :bytes="value" />
               </span>
-              <span v-else>{{ value }}</span>
-              <span v-if="key === 'Stage'">
+              <span v-else-if="key === 'Stage'">
+                {{ value }}
                 <ErrorAcknowledgedBadge v-if="latestErrorFlow && latestErrorFlow.errorAcknowledged" :reason="latestErrorFlow.errorAcknowledgedReason" :timestamp="latestErrorFlow.errorAcknowledged" class="ml-2" />
                 <AutoResumeBadge v-if="deltaFile.stage === 'ERROR' && nextActionWithAutoResume" :timestamp="nextActionWithAutoResume.nextAutoResume" :reason="nextActionWithAutoResume.nextAutoResumeReason" class="ml-2" />
                 <PendingAnnotationsBadge v-if="!_.isEmpty(deltaFile.pendingAnnotationsForFlows)" :pending-annotations="deltaFile.pendingAnnotations" class="ml-2" />
               </span>
+              <span v-else-if="key === 'Log Messages'">
+                <div class="d-flex justify-content-left align-items-end gap-2 btn-group">
+                  <LogBadges :errorCount="hasErrors" :warningCount="hasWarnings" :userCount="hasUserNotes" @click="filterLogsBySeverity"/>
+                  <span v-if="!hasErrors && !hasWarnings && !hasUserNotes">—</span>
+                </div>
+              </span>
+              <span v-else>{{ value }}</span>
             </dd>
           </dl>
         </div>
@@ -49,10 +56,14 @@ import { computed, reactive } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
-import AutoResumeBadge from "./errors/AutoResumeBadge.vue";
+import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 import PendingAnnotationsBadge from "@/components/PendingAnnotationsBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
+import LogBadges from "@/components/DeltaFileViewer/LogBadges.vue";
 import _ from "lodash";
+
+const emit = defineEmits(["filterLogsBySeverity"]);
+const filterLogsBySeverity = (severity) => emit("filterLogsBySeverity", severity);
 
 const props = defineProps({
   deltaFileData: {
@@ -74,6 +85,7 @@ const infoFields = computed(() => {
   fields["Stage"] = deltaFile.stage;
   fields["Created"] = deltaFile.created;
   fields["Modified"] = deltaFile.modified;
+  fields["Log Messages"] = true;
   return fields;
 });
 
@@ -93,6 +105,18 @@ const nextActionWithAutoResume = computed(() => {
     .sortBy(["nextAutoResume"])
     .value()[0];
 });
+
+const hasErrors = computed(() => {
+  return _.filter(deltaFile.messages, { severity: "ERROR" }).length;
+});
+
+const hasWarnings = computed(() => {
+  return _.filter(deltaFile.messages, { severity: "WARNING" }).length;
+});
+
+const hasUserNotes = computed(() => {
+  return _.filter(deltaFile.messages, { severity: "USER" }).length;
+});
 </script>
 
 <style>
@@ -108,6 +132,16 @@ const nextActionWithAutoResume = computed(() => {
 
   .p-panel-content {
     padding-bottom: 0.25rem !important;
+  }
+
+  .resize-icons {
+    margin-right: 2px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    width: 14px !important;
+    line-height: 1rem !important;
+    display: block;
+    text-align: center;
   }
 }
 </style>
