@@ -177,14 +177,6 @@ func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFil
 		return fmt.Errorf("failed to initialize Helm configuration: %w", err)
 	}
 
-	// Check if Chart.lock exists, if not build dependencies
-	chartLockPath := filepath.Join(deltafiChartPath, "Chart.lock")
-	if _, err := os.Stat(chartLockPath); os.IsNotExist(err) {
-		fmt.Println("Chart.lock not found - please run 'helm dependencies build' in the chart directory manually")
-		// Note: Helm dependency building via Go client is complex,
-		// so we'll rely on manual dependency building for now
-	}
-
 	fmt.Println(styles.WAIT("Starting helmchart upgrade"))
 
 	// Check if the release already exists
