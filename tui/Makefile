@@ -51,7 +51,7 @@ export GOPATH
 GOBINPATH = $(GOPATH)/bin
 
 # Docker settings
-DOCKER_IMAGE := golang:1.25.0
+DOCKER_IMAGE := golang:1.25.1
 DOCKER_SOURCE := /go/src/deltafi
 DOCKER_BIN := /go/bin
 DOCKER_WORKDIR := $(DOCKER_SOURCE)/tui
@@ -68,22 +68,38 @@ DOCKER_CMD := docker run --rm \
               -e GOCACHE=/tmp/.cache \
               -w $(DOCKER_WORKDIR)
 
+DOCKER_TOOLING_CMD := docker run --rm --platform linux/arm64 \
+              -v $(BUILD_DIR):$(DOCKER_SOURCE) \
+              -v $(BIN_DIR):$(DOCKER_BIN) \
+              -v $(GOPATH):$(DOCKER_GOPATH) \
+              -e GOPATH=$(DOCKER_GOPATH) \
+              -e CGO_ENABLED=0 \
+              -e GOOS=linux \
+              -e GOARCH=$(NATIVE_ARCH) \
+              -e GOCACHE=/tmp/.cache \
+              -w $(DOCKER_WORKDIR)
+
 GENERATED_GO := graphql/generated.go
 GENERATED_FILES := $(GENERATED_GO)
 
 # Conditionally prefix commands with docker
 ifeq ($(USE_DOCKER),true)
   ifeq ($(HAS_DOCKER),)
-    $(error Docker is required but not installed)
+    $(error Docker or golang installation is required)
   endif
   CMD_PREFIX := $(DOCKER_CMD) $(DOCKER_IMAGE)
+  TOOLING_CMD_PREFIX := $(DOCKER_TOOLING_CMD) $(DOCKER_IMAGE)
   GOBINPATH := $(DOCKER_GOPATH)/bin
   BIN_DIR := $(DOCKER_BIN)
 else
+  ifeq ($(HAS_GO),false)
+    $(error Go installation or docker is required)
+  endif
   ifeq ($(GO_VERSION_CHECK), 0)
     $(warning Go $(MIN_GO_VERSION) or higher is required. Consider using USE_DOCKER=true)
   endif
   CMD_PREFIX :=
+  TOOLING_CMD_PREFIX :=
   GOBINPATH := $(GOPATH)/bin
 endif
 
@@ -92,6 +108,7 @@ BUILD_TAGS ?=
 
 # Go commands
 GOCMD     = $(CMD_PREFIX) go
+GOTOOLCMD = $(TOOLING_CMD_PREFIX) go
 GOBUILD   = $(GOCMD) build -modcacherw $(if $(BUILD_TAGS),-tags $(BUILD_TAGS),)
 GOCLEAN   = $(GOCMD) clean
 GOTEST    = $(GOCMD) test -modcacherw $(if $(BUILD_TAGS),-tags $(BUILD_TAGS),)
@@ -101,11 +118,11 @@ GOFMT     = $(CMD_PREFIX) gofmt
 GOTIDY    = $(GOCMD) mod tidy -modcacherw
 GOLINT    = $(CMD_PREFIX) $(GOBINPATH)/golangci-lint
 GOINSTALL = $(GOCMD) install -modcacherw
-GOGEN     = $(GOCMD) run github.com/Khan/genqlient
+GOGEN     = $(GOTOOLCMD) run github.com/Khan/genqlient
 
 # Extra modules
 LINT_MODULE = github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-GENQLIENT_MODULE = github.com/Khan/genqlient@v0.7.0
+GENQLIENT_MODULE = github.com/Khan/genqlient@latest
 
 # Directories
 DIST_DIR  = $(CURDIR)/dist
@@ -178,7 +195,7 @@ test: check-env build
 	@$(GOTEST) -v ./...
 
 clean:
-	# $(GOCLEAN)
+	$(GOCLEAN)
 	rm -rf $(GENERATED_FILES) $(DIST_DIR)
 
 very-clean: clean
