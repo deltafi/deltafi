@@ -294,7 +294,6 @@ services:
     image: ${VALKEY}
     container_name: deltafi-valkey
     environment:
-      BITNAMI_DEBUG: false
       VALKEY_REPLICATION_MODE: primary
     env_file:
       - ${SECRETS_DIR}/valkey.env
@@ -312,7 +311,9 @@ services:
       - "6379"
     restart: unless-stopped
     volumes:
-      - ${SETTINGS_DIR}/redis/:/opt/bitnami/redis/mounted-etc/:ro
+      - ${SETTINGS_DIR}/valkey/:/usr/local/etc/valkey/:ro
+    command: ["valkey-server", "--include", "/usr/local/etc/valkey/overrides.conf"]
+
   deltafi-grafana:
     image: ${GRAFANA}
     container_name: deltafi-grafana
