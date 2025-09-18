@@ -480,7 +480,7 @@ dependencies:
   minio: minio/minio:RELEASE.2025-04-22T22-12-26Z
   nginx: nginx:1.28.0-alpine3.21
   promtail: grafana/promtail:2.9.14
-  valkey: bitnami/valkey:8.1.1
+  valkey: valkey/valkey:8.1.3-alpine
   docker_web_gui: deltafi/docker-web-gui:1.0.2-1
   postgres: deltafi/timescaledb:2.19.3-pg16-0
 EOF
