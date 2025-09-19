@@ -37,6 +37,7 @@ public class OnErrorDataSourcePlan extends DataSourcePlan {
     private List<KeyValue> metadataFilters;
     private List<KeyValue> annotationFilters;
     private List<String> includeSourceMetadataRegex;
+    private String sourceMetadataPrefix;
     private List<String> includeSourceAnnotationsRegex;
 
     @JsonCreator
@@ -53,6 +54,7 @@ public class OnErrorDataSourcePlan extends DataSourcePlan {
             @JsonProperty(value = "metadataFilters") List<KeyValue> metadataFilters,
             @JsonProperty(value = "annotationFilters") List<KeyValue> annotationFilters,
             @JsonProperty(value = "includeSourceMetadataRegex") List<String> includeSourceMetadataRegex,
+            @JsonProperty(value = "sourceMetadataPrefix") String sourceMetadataPrefix,
             @JsonProperty(value = "includeSourceAnnotationsRegex") List<String> includeSourceAnnotationsRegex) {
         super(name, FlowType.ON_ERROR_DATA_SOURCE, description, metadata, annotationConfig, topic);
         this.errorMessageRegex = errorMessageRegex;
@@ -60,6 +62,7 @@ public class OnErrorDataSourcePlan extends DataSourcePlan {
         this.metadataFilters = metadataFilters;
         this.annotationFilters = annotationFilters;
         this.includeSourceMetadataRegex = includeSourceMetadataRegex;
+        this.sourceMetadataPrefix = sourceMetadataPrefix;
         this.includeSourceAnnotationsRegex = includeSourceAnnotationsRegex;
     }
 

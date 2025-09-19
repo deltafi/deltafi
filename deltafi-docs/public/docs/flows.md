@@ -12,7 +12,7 @@ processing pipeline:
 Data Sources are the entry points for data into the DeltaFi system. There are three types of Data Sources:
 1. [REST Data Sources](#rest-data-sources)
 1. [Timed Data Sources](#timed-data-sources)
-1. [On-Error Data Sources](#onerror-data-sources) 
+1. [On-Error Data Sources](#on-error-data-sources)
 
 ### REST Data Sources
 
@@ -77,6 +77,7 @@ On-Error Data Sources automatically trigger when errors occur in other flows, cr
     {"key": "priority", "value": "high"}
   ],
   "includeSourceMetadataRegex": ["customer.*", "order.*"],
+  "sourceMetadataPrefix": "prefix.",
   "includeSourceAnnotationsRegex": ["tracking.*"]
 }
 ```
@@ -107,7 +108,7 @@ This provides access to both the original data that was being processed and the 
 | `onError.sourceDataSource` | Data source of the original DeltaFile | `"rest-api-ingress"` |
 | `onError.eventTimestamp` | When the error occurred | `"2025-06-09T10:30:45.123Z"` |
 
-Additionally, any metadata and annotations from the source DeltaFile that match the `includeSourceMetadataRegex` and `includeSourceAnnotationsRegex` patterns will be included in the new DeltaFile.
+Additionally, any metadata and annotations from the source DeltaFile that match the `includeSourceMetadataRegex` and `includeSourceAnnotationsRegex` patterns will be included in the new DeltaFile. Metadata keys can be optionally prefixed by setting `sourceMetadataPrefix`.
 
 #### OnError Data Source Fields
 
@@ -118,6 +119,7 @@ Additionally, any metadata and annotations from the source DeltaFile that match 
 | `metadataFilters` | Key-value pairs that must match the source DeltaFile's metadata for the error to trigger this data source. All filters must match. | No | `[{"key": "customer_type", "value": "premium"}]` |
 | `annotationFilters` | Key-value pairs that must match the source DeltaFile's annotations for the error to trigger this data source. All filters must match. | No | `[{"key": "region", "value": "us-east"}]` |
 | `includeSourceMetadataRegex` | List of regex patterns specifying which metadata keys from the source DeltaFile to include in the new error DeltaFile. If null or empty, no source metadata is included. | No | `["customer.*", "order_id"]` |
+| `sourceMetadataPrefix` | Prefix to use for metadata keys from the source DeltaFile to include in the new error DeltaFile. If null or empty, no prefix is added. | No | `"myprefix."` |
 | `includeSourceAnnotationsRegex` | List of regex patterns specifying which annotation keys from the source DeltaFile to include in the new error DeltaFile. If null or empty, no source annotations are included. | No | `["tracking.*", "audit_trail"]` |
 
 #### ErrorSourceFilter Structure

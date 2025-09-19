@@ -1588,7 +1588,7 @@ class DeltaFiCoreApplicationTests {
 		TransformFlowPlan transformFlow = new TransformFlowPlan(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, "desc");
 		TimedDataSourcePlan timedDataSource = new TimedDataSourcePlan(TIMED_DATA_SOURCE_NAME, FlowType.TIMED_DATA_SOURCE, "desc", "topic", new ActionConfiguration("timed", ActionType.TIMED_INGRESS, "type"), "1234");
 		RestDataSourcePlan restDataSource = new RestDataSourcePlan(REST_DATA_SOURCE_NAME, FlowType.REST_DATA_SOURCE, "desc", "topic");
-		OnErrorDataSourcePlan onErrorDataSource = new OnErrorDataSourcePlan(ON_ERROR_DATA_SOURCE_NAME, FlowType.ON_ERROR_DATA_SOURCE, "desc", null, null, "topic", null, null, null, null, null, null);
+		OnErrorDataSourcePlan onErrorDataSource = new OnErrorDataSourcePlan(ON_ERROR_DATA_SOURCE_NAME, FlowType.ON_ERROR_DATA_SOURCE, "desc", null, null, "topic", null, null, null, null, null, null, null);
 		DataSinkPlan dataSink = new DataSinkPlan(DATA_SINK_FLOW_NAME, FlowType.DATA_SINK, "desc", new ActionConfiguration("egress", ActionType.EGRESS, "type2"));
 
 		savePlugin(List.of(transformFlow, timedDataSource, restDataSource, onErrorDataSource, dataSink));

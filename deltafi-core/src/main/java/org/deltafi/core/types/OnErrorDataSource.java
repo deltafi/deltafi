@@ -54,6 +54,8 @@ public class OnErrorDataSource extends DataSource {
     @Column(columnDefinition = "jsonb")
     private List<String> includeSourceMetadataRegex;
     
+    private String sourceMetadataPrefix;
+
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private List<String> includeSourceAnnotationsRegex;

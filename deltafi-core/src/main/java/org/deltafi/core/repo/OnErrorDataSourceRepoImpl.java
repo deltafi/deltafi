@@ -44,9 +44,10 @@ public class OnErrorDataSourceRepoImpl implements OnErrorDataSourceRepoCustom {
             INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
                                topic, discriminator, id, max_errors,
                                metadata, annotation_config, error_message_regex, source_filters,
-                               metadata_filters, annotation_filters, include_source_metadata_regex, include_source_annotations_regex)
+                               metadata_filters, annotation_filters, include_source_metadata_regex,
+                               source_metadata_prefix, include_source_annotations_regex)
             VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
-                    ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb)
+                    ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb)
         """;
 
         jdbcTemplate.batchUpdate(sql, onErrorDataSources, 1000, (ps, onErrorDataSource) -> {
@@ -67,7 +68,8 @@ public class OnErrorDataSourceRepoImpl implements OnErrorDataSourceRepoCustom {
             ps.setString(15, toJson(onErrorDataSource.getMetadataFilters()));
             ps.setString(16, toJson(onErrorDataSource.getAnnotationFilters()));
             ps.setString(17, toJson(onErrorDataSource.getIncludeSourceMetadataRegex()));
-            ps.setString(18, toJson(onErrorDataSource.getIncludeSourceAnnotationsRegex()));
+            ps.setString(18, onErrorDataSource.getSourceMetadataPrefix());
+            ps.setString(19, toJson(onErrorDataSource.getIncludeSourceAnnotationsRegex()));
         });
     }
 

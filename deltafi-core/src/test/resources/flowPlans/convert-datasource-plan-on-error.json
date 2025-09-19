@@ -27,5 +27,6 @@
     {"key": "priority", "value": "high"}
   ],
   "includeSourceMetadataRegex": ["source-.*"],
+  "sourceMetadataPrefix": "prefix.",
   "includeSourceAnnotationsRegex": ["annotation-.*"]
 }

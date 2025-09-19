@@ -152,7 +152,7 @@ const formatFlowData = () => {
   }
 
   if (_.isEqual(exportableData.type, "ON_ERROR_DATA_SOURCE")) {
-    exportableData = _.pick(exportableData, ["name", "type", "description", "metadata", "annotationConfig", "topic", "errorMessageRegex"]);
+    exportableData = _.pick(exportableData, ["name", "type", "description", "metadata", "annotationConfig", "topic", "errorMessageRegex", "sourceMetadataPrefix", "includeSourceMetadataRegex"]);
   }
 
   return exportableData;

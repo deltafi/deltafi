@@ -697,10 +697,12 @@ public class DeltaFilesService {
             
             // Include source metadata based on regex patterns
             if (dataSource.getIncludeSourceMetadataRegex() != null && sourceFlow.getMetadata() != null) {
+                String prefix = dataSource.getSourceMetadataPrefix() != null ?
+			dataSource.getSourceMetadataPrefix() : "";
                 for (String regex : dataSource.getIncludeSourceMetadataRegex()) {
                     sourceFlow.getMetadata().entrySet().stream()
                             .filter(entry -> entry.getKey().matches(regex))
-                            .forEach(entry -> ingressMetadata.put("source." + entry.getKey(), entry.getValue()));
+                            .forEach(entry -> ingressMetadata.put(prefix + entry.getKey(), entry.getValue()));
                 }
             }
 

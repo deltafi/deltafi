@@ -25,6 +25,8 @@ const generateData = () => {
         description: "Receive test flow files on dev",
         maxErrors: -1,
         errorMessageRegex: ".*ERROR.*",
+        sourceMetadataPrefix: "source.",
+        includeSourceMetadataRegex: ["key1.*", "key2.*"],
         flowStatus: {
           state: "RUNNING",
           valid: true,

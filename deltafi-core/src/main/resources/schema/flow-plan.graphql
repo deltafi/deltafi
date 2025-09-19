@@ -159,6 +159,7 @@ type OnErrorDataSourcePlan implements DataSourcePlan {
   metadataFilters: [KeyValue!]
   annotationFilters: [KeyValue!]
   includeSourceMetadataRegex: [String!]
+  sourceMetadataPrefix: String
   includeSourceAnnotationsRegex: [String!]
 }
 
@@ -194,6 +195,7 @@ input OnErrorDataSourcePlanInput {
   metadataFilters: [KeyValueInput!]
   annotationFilters: [KeyValueInput!]
   includeSourceMetadataRegex: [String!]
+  sourceMetadataPrefix: String
   includeSourceAnnotationsRegex: [String!]
 }
 
@@ -354,6 +356,7 @@ type OnErrorDataSource implements DataSource {
   metadataFilters: [KeyValue!]
   annotationFilters: [KeyValue!]
   includeSourceMetadataRegex: [String!]
+  sourceMetadataPrefix: String
   includeSourceAnnotationsRegex: [String!]
   variables: [Variable]!
 }

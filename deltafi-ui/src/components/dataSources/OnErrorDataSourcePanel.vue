@@ -88,6 +88,16 @@
         <span v-else-if="fieldName == 'nextRun'">
           <Timestamp :timestamp="activeAction.nextRun" />
         </span>
+        <span v-else-if="fieldName == 'includeSourceMetadataRegex'">
+          <span v-if="_.isEmpty(activeAction.includeSourceMetadataRegex)">-</span>
+          <div v-else>
+            <ul>
+              <li v-for="(item, index) in activeAction.includeSourceMetadataRegex" :key="index">
+                {{ item }}
+              </li>
+            </ul>
+          </div>
+        </span>
         <span v-else-if="fieldName == 'memo'">
           <pre>{{ activeAction.memo || "-" }}</pre>
         </span>
@@ -194,6 +204,8 @@ const fields = {
   topic: "Topic",
   maxErrors: "Max Errors",
   errorMessageRegex: "Error Message Regex",
+  sourceMetadataPrefix: "Source Metadata Prefix",
+  includeSourceMetadataRegex: "Include Source Metadata Regex",
 };
 
 const showAction = (actionName) => {

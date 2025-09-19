@@ -109,7 +109,7 @@ const exportableRestDataSource = (value) => {
 
 const exportableOnErrorDataSource = (value) => {
   const formatOnErrorDataSourcesList = JSON.parse(JSON.stringify(value));
-  formatOnErrorDataSourcesList.forEach((e, index) => (formatOnErrorDataSourcesList[index] = _.pick(e, ["name", "type", "description", "metadata", "annotationConfig", "topic"])));
+  formatOnErrorDataSourcesList.forEach((e, index) => (formatOnErrorDataSourcesList[index] = _.pick(e, ["name", "type", "description", "metadata", "annotationConfig", "topic", "errorMessageRegex", "sourceMetadataPrefix", "includeSourceMetadataRegex"])));
 
   onErrorDataSourceList.value = formatOnErrorDataSourcesList;
 };

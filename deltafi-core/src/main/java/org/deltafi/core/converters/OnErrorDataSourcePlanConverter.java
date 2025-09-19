@@ -33,6 +33,7 @@ public class OnErrorDataSourcePlanConverter extends FlowPlanConverter<OnErrorDat
         onErrorDataSource.setMetadataFilters(dataSourcePlan.getMetadataFilters());
         onErrorDataSource.setAnnotationFilters(dataSourcePlan.getAnnotationFilters());
         onErrorDataSource.setIncludeSourceMetadataRegex(dataSourcePlan.getIncludeSourceMetadataRegex());
+        onErrorDataSource.setSourceMetadataPrefix(dataSourcePlan.getSourceMetadataPrefix());
         onErrorDataSource.setIncludeSourceAnnotationsRegex(dataSourcePlan.getIncludeSourceAnnotationsRegex());
         return onErrorDataSource;
     }

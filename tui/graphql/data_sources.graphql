@@ -64,6 +64,7 @@ query GetOnErrorDataSource($name: String!) {
       value
     }
     includeSourceMetadataRegex
+    sourceMetadataPrefix
     includeSourceAnnotationsRegex
   }
 }
@@ -102,6 +103,7 @@ query GetOnErrorDataSourcePlan($planName: String!) {
       value
     }
     includeSourceMetadataRegex
+    sourceMetadataPrefix
     includeSourceAnnotationsRegex
   }
 }
@@ -330,6 +332,7 @@ mutation SaveOnErrorDataSource($dataSourcePlan: OnErrorDataSourcePlanInput!) {
       value
     }
     includeSourceMetadataRegex
+    sourceMetadataPrefix
     includeSourceAnnotationsRegex
   }
 }

@@ -45,6 +45,7 @@ query GetSystemFlowPlans {
                 value
             }
             includeSourceMetadataRegex
+            sourceMetadataPrefix
             includeSourceAnnotationsRegex
         }
         restDataSources {

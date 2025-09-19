@@ -54,6 +54,8 @@ export default function useDataSource() {
 
   const onErrorDataSourceFields = {
     errorMessageRegex: true,
+    sourceMetadataPrefix: true,
+    includeSourceMetadataRegex: true,
   };
 
   const timeDataSourceFields = {

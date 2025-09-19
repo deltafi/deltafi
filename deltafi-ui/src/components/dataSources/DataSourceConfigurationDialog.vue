@@ -49,6 +49,14 @@
             <dd>
               <InputText v-model="model['errorMessageRegex']" placeholder="Error Message Regex" class="inputWidth" />
             </dd>
+            <dt>Source Metadata Prefix</dt>
+            <dd>
+              <InputText v-model="model['sourceMetadataPrefix']" placeholder="Source Metadata Prefix" class="inputWidth" />
+            </dd>
+            <dt>Include Source Metadata Regex</dt>
+            <dd>
+              <Chips v-model="model['includeSourceMetadataRegex']" class="inputWidth" />
+            </dd>
           </template>
           <template v-if="_.isEqual(model['dataSourceType'], 'Timed Data Source')">
             <dt>Cron Schedule*</dt>
@@ -110,6 +118,7 @@
 </template>
 
 <script setup>
+import Chips from "primevue/chips";
 import useFlows from "@/composables/useFlows";
 import useDataSource from "@/composables/useDataSource";
 import useFlowActions from "@/composables/useFlowActions";
@@ -198,6 +207,8 @@ const dataSourceTemplate = {
   annotationConfig: null,
   metadata: null,
   errorMessageRegex: null,
+  sourceMetadataPrefix: null,
+  includeSourceMetadataRegex: [],
 };
 
 const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rowDataProp) ? dataSourceTemplate : props.rowDataProp));
@@ -534,6 +545,10 @@ const metadataSchema = {
 
   .inputWidth {
     width: 90% !important;
+
+    .p-chips-multiple-container {
+      width: 100% !important;
+    }
   }
 
   .p-filled.capitalizeText {

@@ -390,13 +390,13 @@ class PluginServiceTest {
     void testSystemPluginRestore() {
         TransformFlowPlan keep = new TransformFlowPlan("keep", "");
         TransformFlowPlan replace = new TransformFlowPlan("replace", "");
-        OnErrorDataSourcePlan onErrorKeep = new OnErrorDataSourcePlan("onErrorKeep", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "topic", ".*Error.*", null, null, null, null, null);
+        OnErrorDataSourcePlan onErrorKeep = new OnErrorDataSourcePlan("onErrorKeep", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "topic", ".*Error.*", null, null, null, null, null, null);
         PluginEntity systemPlugin = new PluginEntity();
         systemPlugin.setFlowPlans(new ArrayList<>(List.of(keep, replace, onErrorKeep)));
 
         TransformFlowPlan snapshot = new TransformFlowPlan("snapshot", "");
         TransformFlowPlan replacement = new TransformFlowPlan("replace", "changed");
-        OnErrorDataSourcePlan onErrorSnapshot = new OnErrorDataSourcePlan("onErrorSnapshot", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "topic", ".*New.*", null, null, null, null, null);
+        OnErrorDataSourcePlan onErrorSnapshot = new OnErrorDataSourcePlan("onErrorSnapshot", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "topic", ".*New.*", null, null, null, null, null, null);
         SystemFlowPlans systemFlowPlans = new SystemFlowPlans();
         systemFlowPlans.setTransformPlans(List.of(snapshot, replacement));
         systemFlowPlans.setOnErrorDataSources(List.of(onErrorSnapshot));
@@ -411,7 +411,7 @@ class PluginServiceTest {
     void testGetSystemFlowPlansWithAllTypes() {
         RestDataSourcePlan restPlan = new RestDataSourcePlan("rest", FlowType.REST_DATA_SOURCE, "desc", "topic");
         TimedDataSourcePlan timedPlan = new TimedDataSourcePlan("timed", FlowType.TIMED_DATA_SOURCE, "desc", "topic", new ActionConfiguration("action", ActionType.TIMED_INGRESS, "type"), "*/5 * * * * *");
-        OnErrorDataSourcePlan onErrorPlan = new OnErrorDataSourcePlan("onError", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "error-topic", ".*Error.*", List.of(new ErrorSourceFilter(null, null, "action1", null)), null, null, null, null);
+        OnErrorDataSourcePlan onErrorPlan = new OnErrorDataSourcePlan("onError", FlowType.ON_ERROR_DATA_SOURCE, "desc", Collections.emptyMap(), null, "error-topic", ".*Error.*", List.of(new ErrorSourceFilter(null, null, "action1", null)), null, null, null, null, null);
         TransformFlowPlan transformPlan = new TransformFlowPlan("transform", "desc");
         DataSinkPlan dataSinkPlan = new DataSinkPlan("dataSink", FlowType.DATA_SINK, "desc", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
 

@@ -40,7 +40,7 @@ class OnErrorDataSourcePlanValidatorTest {
     @SuppressWarnings("unused")
     RuleValidator ruleValidator;
 
-    private OnErrorDataSourcePlan createPlan(String errorRegex, List<ErrorSourceFilter> sourceFilters, List<String> includeMetadataRegex,
+    private OnErrorDataSourcePlan createPlan(String errorRegex, List<ErrorSourceFilter> sourceFilters, List<String> includeMetadataRegex, String sourceMetaPrefix,
                                            List<String> includeAnnotationsRegex, Map<String, String> metadata, AnnotationConfig annotations) {
         return new OnErrorDataSourcePlan(
                 "test-plan",
@@ -54,13 +54,14 @@ class OnErrorDataSourcePlanValidatorTest {
                 null, // metadataFilters
                 null, // annotationFilters
                 includeMetadataRegex,
+                sourceMetaPrefix,
                 includeAnnotationsRegex
         );
     }
 
     @Test
     void validPlanWithErrorRegex() {
-        OnErrorDataSourcePlan plan = createPlan(".*error.*", null, null, null, null, null);
+        OnErrorDataSourcePlan plan = createPlan(".*error.*", null, null, null, null, null, null);
         
         Assertions.assertThatCode(() -> validator.validate(plan))
                 .doesNotThrowAnyException();
@@ -69,7 +70,7 @@ class OnErrorDataSourcePlanValidatorTest {
     @Test
     void validPlanWithSourceActions() {
         ErrorSourceFilter filter = new ErrorSourceFilter(null, null, "action1", null);
-        OnErrorDataSourcePlan plan = createPlan(null, List.of(filter), null, null, null, null);
+        OnErrorDataSourcePlan plan = createPlan(null, List.of(filter), null, null, null, null, null);
         
         Assertions.assertThatCode(() -> validator.validate(plan))
                 .doesNotThrowAnyException();
@@ -77,7 +78,7 @@ class OnErrorDataSourcePlanValidatorTest {
 
     @Test
     void allowCatchAllFilters() {
-        OnErrorDataSourcePlan plan = createPlan(null, null, null, null, null, null);
+        OnErrorDataSourcePlan plan = createPlan(null, null, null, null, null, null, null);
 
         Assertions.assertThatCode(() -> validator.validate(plan))
                 .doesNotThrowAnyException();
@@ -85,7 +86,7 @@ class OnErrorDataSourcePlanValidatorTest {
 
     @Test
     void invalidErrorMessageRegex() {
-        OnErrorDataSourcePlan plan = createPlan("[invalid regex", null, null, null, null, null);
+        OnErrorDataSourcePlan plan = createPlan("[invalid regex", null, null, null, null, null, null);
 
         Assertions.assertThatThrownBy(() -> validator.validate(plan))
                 .isInstanceOf(DeltafiConfigurationException.class)
@@ -94,7 +95,7 @@ class OnErrorDataSourcePlanValidatorTest {
 
     @Test
     void invalidIncludeSourceMetadataRegex() {
-        OnErrorDataSourcePlan plan = createPlan(".*valid.*", null, List.of("[invalid regex"), null, null, null);
+        OnErrorDataSourcePlan plan = createPlan(".*valid.*", null, List.of("[invalid regex"), "prefix.",  null, null, null);
 
         Assertions.assertThatThrownBy(() -> validator.validate(plan))
                 .isInstanceOf(DeltafiConfigurationException.class)
@@ -103,7 +104,7 @@ class OnErrorDataSourcePlanValidatorTest {
 
     @Test
     void invalidIncludeSourceAnnotationsRegex() {
-        OnErrorDataSourcePlan plan = createPlan(".*valid.*", null, null, List.of("[invalid regex"), null, null);
+        OnErrorDataSourcePlan plan = createPlan(".*valid.*", null, null, "",  List.of("[invalid regex"), null, null);
 
         Assertions.assertThatThrownBy(() -> validator.validate(plan))
                 .isInstanceOf(DeltafiConfigurationException.class)
@@ -114,7 +115,7 @@ class OnErrorDataSourcePlanValidatorTest {
     void multipleValidationErrors() {
         Map<String, String> metadata = Map.of("key", ""); // blank value
         AnnotationConfig annotationConfig = new AnnotationConfig(Map.of("", "value"), null, null); // blank key
-        OnErrorDataSourcePlan plan = createPlan(null, null, null, null, metadata, annotationConfig);
+        OnErrorDataSourcePlan plan = createPlan(null, null, null, null,   null,  metadata, annotationConfig);
 
         Assertions.assertThatThrownBy(() -> validator.validate(plan))
                 .isInstanceOf(DeltafiConfigurationException.class)

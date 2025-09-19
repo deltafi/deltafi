@@ -146,6 +146,7 @@ class DataSourcePlanConverterTest {
         assertThat(onErrorDataSource.getAnnotationFilters().getFirst().getKey()).isEqualTo("priority");
         assertThat(onErrorDataSource.getAnnotationFilters().getFirst().getValue()).isEqualTo("high");
         assertThat(onErrorDataSource.getIncludeSourceMetadataRegex()).containsExactly("source-.*");
+        assertThat(onErrorDataSource.getSourceMetadataPrefix()).isEqualTo("prefix.");
         assertThat(onErrorDataSource.getIncludeSourceAnnotationsRegex()).containsExactly("annotation-.*");
         assertThat(onErrorDataSource.getAnnotationConfig().nothingConfigured()).isTrue();
         assertThat(onErrorDataSource.getMetadata()).isEmpty();
