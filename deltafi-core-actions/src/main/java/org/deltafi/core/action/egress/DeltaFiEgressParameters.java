@@ -44,4 +44,8 @@ public class DeltaFiEgressParameters extends ActionParameters implements IHttpEg
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Send to the local DeltaFi; determines URL automatically")
     private boolean sendLocal = false;
+
+    @JsonProperty(defaultValue = "ERROR")
+    @JsonPropertyDescription("Policy for handling null content: FILTER (return FilterResult), ERROR (return ErrorResult), or SEND_EMPTY (continue with zero data)")
+    private NoContentPolicy noContentPolicy = NoContentPolicy.ERROR;
 }

@@ -113,4 +113,55 @@ class FlowfileEgressTest {
         assertEquals("test-delta-file", flowfileAttributes.get("originalFilename"));
         assertEquals("test-content", flowfileAttributes.get("filename"));
     }
+
+    @Test
+    void handlesNullContentGracefully() throws IOException {
+        UUID did = UUID.randomUUID();
+
+        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
+                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(APPLICATION_FLOWFILE))
+                .willReturn(WireMock.ok()));
+
+        HttpEgressParameters httpEgressParameters = new HttpEgressParameters();
+        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
+        httpEgressParameters.setUrl(url);
+        httpEgressParameters.setNoContentPolicy(NoContentPolicy.SEND_EMPTY);  // Explicitly set to send empty
+
+        EgressInput egressInput = EgressInput.builder()
+                .content(null)  // null content
+                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
+                .build();
+
+        EgressResultType egressResultType = action.egress(
+                ActionContext.builder()
+                        .contentStorageService(CONTENT_STORAGE_SERVICE)
+                        .did(did)
+                        .deltaFileName("test-delta-file")
+                        .dataSource("test-data-source")
+                        .flowName("test-flow-name")
+                        .build(),
+                httpEgressParameters, egressInput);
+
+        // Should succeed with zero data sent
+        assertInstanceOf(EgressResult.class, egressResultType);
+
+        List<ServeEvent> serveEventList = wireMockHttp.getServeEvents().getRequests();
+        byte[] flowfileSent = serveEventList.getFirst().getRequest().getBody();
+        FlowFileUnpackagerV1 flowFileUnpackagerV1 = new FlowFileUnpackagerV1();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        Map<String, String> flowfileAttributes = flowFileUnpackagerV1.unpackageFlowFile(
+                new ByteArrayInputStream(flowfileSent), byteArrayOutputStream);
+        
+        // Content should be empty (zero bytes)
+        assertEquals("", byteArrayOutputStream.toString());
+        
+        // Metadata should still be present
+        assertEquals("value-1", flowfileAttributes.get("key-1"));
+        assertEquals("value-2", flowfileAttributes.get("key-2"));
+        assertEquals(did.toString(), flowfileAttributes.get("did"));
+        assertEquals("test-data-source", flowfileAttributes.get("dataSource"));
+        assertEquals("test-flow-name", flowfileAttributes.get("flow"));
+        assertEquals("test-delta-file", flowfileAttributes.get("originalFilename"));
+        assertEquals("", flowfileAttributes.get("filename"));  // Should use empty string for null content
+    }
 }

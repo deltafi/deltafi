@@ -28,6 +28,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionOptions;
@@ -53,6 +54,23 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     public EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull HttpRequestMethod method, @NotNull EgressInput input) {
+        if (input.getContent() == null) {
+            NoContentPolicy policy = params.getNoContentPolicy();
+
+            switch (policy) {
+                case FILTER:
+                    return new FilterResult(context, "Content is null - filtered by noContentPolicy");
+                case ERROR:
+                    return new ErrorResult(context, "Cannot perform egress: no content available", 
+                            "The egress action requires content but none was provided").logErrorTo(log);
+                case SEND_EMPTY:
+                    break;
+                default:
+                    return new ErrorResult(context, "Unknown noContentPolicy: " + policy, 
+                            "The noContentPolicy value is not recognized").logErrorTo(log);
+            }
+        }
+
         try {
             Request request = buildOkHttpRequest(context, params, input, method);
             try (Response response = httpClient.newCall(request).execute()) {
@@ -106,6 +124,9 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
     }
 
     protected String getMediaType(@NotNull EgressInput input) {
+        if (input.getContent() == null) {
+            return null;
+        }
         return input.getContent().getMediaType();
     }
 

@@ -74,8 +74,9 @@ public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
         metadataMap.put("originalDid", context.getDid().toString());
         metadataMap.put("originalSystem", context.getSystemName());
 
+        String filename = input.getContent() != null ? input.getContent().getName() : "";
         Map<String, String> headersMap = new TreeMap<>(Map.of(
-                "Filename", input.getContent().getName(),
+                "Filename", filename,
                 "Metadata", OBJECT_MAPPER.writeValueAsString(metadataMap)));
 
         if (params.getFlow() != null) {

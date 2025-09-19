@@ -29,6 +29,7 @@ import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 
 import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
@@ -47,6 +48,14 @@ public class FlowFileRequestBody extends RequestBody {
 
     @Override
     public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
+        if (input.getContent() == null) {
+            // Write zero data when content is null
+            try (Source source = Okio.source(FlowFileInputStream.create(InputStream.nullInputStream(),
+                    StandardEgressHeaders.buildMap(context, input), 0, executorService))) {
+                bufferedSink.writeAll(source);
+            }
+            return;
+        }
         try (Source source = Okio.source(FlowFileInputStream.create(input.getContent().loadInputStream(),
                 StandardEgressHeaders.buildMap(context, input), input.getContent().getSize(), executorService))) {
             bufferedSink.writeAll(source);

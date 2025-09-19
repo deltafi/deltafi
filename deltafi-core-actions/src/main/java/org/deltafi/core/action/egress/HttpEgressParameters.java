@@ -38,4 +38,8 @@ public class HttpEgressParameters extends ActionParameters implements IHttpEgres
     @JsonProperty(defaultValue = "150")
     @JsonPropertyDescription("DEPRECATED: will be removed in a future release. Remove from your data sink configuration. Configure auto retry rules to trigger an external retry.")
     private Integer retryDelayMs = 150;
+
+    @JsonProperty(defaultValue = "ERROR")
+    @JsonPropertyDescription("Policy for handling null content: FILTER (return FilterResult), ERROR (return ErrorResult), or SEND_EMPTY (continue with zero data)")
+    private NoContentPolicy noContentPolicy = NoContentPolicy.ERROR;
 }

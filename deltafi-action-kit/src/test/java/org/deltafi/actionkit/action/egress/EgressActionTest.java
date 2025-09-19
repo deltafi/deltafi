@@ -61,8 +61,13 @@ class EgressActionTest {
         DeltaFileMessage deltaFileMessage = new DeltaFileMessage();
         deltaFileMessage.setContentList(Collections.emptyList());
 
-        assertThrows(IllegalArgumentException.class,
-            () -> testEgressAction.buildInput(actionContext, deltaFileMessage));
+        // When
+        EgressInput input = testEgressAction.buildInput(actionContext, deltaFileMessage);
+        
+        // Then
+        assertNotNull(input);
+        assertNull(input.getContent());
+        assertFalse(input.hasContent());
     }
 
     @Test
@@ -70,8 +75,13 @@ class EgressActionTest {
         DeltaFileMessage deltaFileMessage = new DeltaFileMessage();
         deltaFileMessage.setContentList(null);
 
-        assertThrows(IllegalArgumentException.class,
-            () -> testEgressAction.buildInput(actionContext, deltaFileMessage));
+        // When
+        EgressInput input = testEgressAction.buildInput(actionContext, deltaFileMessage);
+        
+        // Then
+        assertNotNull(input);
+        assertNull(input.getContent());
+        assertFalse(input.hasContent());
     }
 
     @Test

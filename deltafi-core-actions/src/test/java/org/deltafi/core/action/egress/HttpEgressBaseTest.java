@@ -27,6 +27,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.jetbrains.annotations.NotNull;
@@ -185,5 +186,96 @@ class HttpEgressBaseTest {
 
         assertInstanceOf(ErrorResult.class, egressResultType);
         assertEquals("Service POST failure", ((ErrorResult) egressResultType).getErrorCause());
+    }
+
+    @Test
+    void handlesNullContentWithDefaultPolicy() {
+        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
+                .willReturn(WireMock.aResponse().withStatus(200)));
+
+        EgressInput egressInput = EgressInput.builder()
+                .content(null)  // null content
+                .metadata(Map.of("test", "value"))
+                .build();
+
+        HttpEgressParameters params = new HttpEgressParameters();
+        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
+        params.setUrl(url);
+        // Default policy is ERROR
+        
+        TestHttpEgress testAction = new TestHttpEgress(httpService);
+        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        // Should return ErrorResult with default ERROR policy
+        assertInstanceOf(ErrorResult.class, egressResultType);
+        assertEquals("Cannot perform egress: no content available", ((ErrorResult) egressResultType).getErrorCause());
+    }
+
+    @Test
+    void handlesNullContentWithFilterPolicy() {
+        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
+                .willReturn(WireMock.aResponse().withStatus(200)));
+
+        EgressInput egressInput = EgressInput.builder()
+                .content(null)  // null content
+                .metadata(Map.of("test", "value"))
+                .build();
+
+        HttpEgressParameters params = new HttpEgressParameters();
+        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
+        params.setUrl(url);
+        params.setNoContentPolicy(NoContentPolicy.FILTER);
+        
+        TestHttpEgress testAction = new TestHttpEgress(httpService);
+        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        // Should return FilterResult
+        assertInstanceOf(FilterResult.class, egressResultType);
+        assertEquals("Content is null - filtered by noContentPolicy", ((FilterResult) egressResultType).getFilteredCause());
+    }
+
+    @Test
+    void handlesNullContentWithErrorPolicy() {
+        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
+                .willReturn(WireMock.aResponse().withStatus(200)));
+
+        EgressInput egressInput = EgressInput.builder()
+                .content(null)  // null content
+                .metadata(Map.of("test", "value"))
+                .build();
+
+        HttpEgressParameters params = new HttpEgressParameters();
+        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
+        params.setUrl(url);
+        params.setNoContentPolicy(NoContentPolicy.ERROR);
+        
+        TestHttpEgress testAction = new TestHttpEgress(httpService);
+        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        // Should return ErrorResult
+        assertInstanceOf(ErrorResult.class, egressResultType);
+        assertEquals("Cannot perform egress: no content available", ((ErrorResult) egressResultType).getErrorCause());
+    }
+
+    @Test
+    void handlesNullContentWithSendEmptyPolicy() {
+        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
+                .willReturn(WireMock.aResponse().withStatus(200)));
+
+        EgressInput egressInput = EgressInput.builder()
+                .content(null)  // null content
+                .metadata(Map.of("test", "value"))
+                .build();
+
+        HttpEgressParameters params = new HttpEgressParameters();
+        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
+        params.setUrl(url);
+        params.setNoContentPolicy(NoContentPolicy.SEND_EMPTY);
+        
+        TestHttpEgress testAction = new TestHttpEgress(httpService);
+        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        // Should succeed with zero data sent
+        assertInstanceOf(EgressResult.class, egressResultType);
     }
 }

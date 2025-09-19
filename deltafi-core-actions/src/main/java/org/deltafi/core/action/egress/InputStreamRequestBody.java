@@ -36,6 +36,10 @@ public class InputStreamRequestBody extends RequestBody {
 
     @Override
     public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
+        if (input.getContent() == null) {
+            // Write zero data when content is null
+            return;
+        }
         try (Source source = Okio.source(input.getContent().loadInputStream())) {
             bufferedSink.writeAll(source);
         }
@@ -44,11 +48,17 @@ public class InputStreamRequestBody extends RequestBody {
     @Nullable
     @Override
     public MediaType contentType() {
+        if (input.getContent() == null) {
+            return null;
+        }
         return MediaType.parse(input.getContent().getMediaType());
     }
 
     @Override
     public long contentLength() {
+        if (input.getContent() == null) {
+            return 0;
+        }
         return input.getContent().getSize();
     }
 

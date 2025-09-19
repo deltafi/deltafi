@@ -34,7 +34,14 @@ public class StandardEgressHeaders {
         headersMap.put("dataSource", context.getDataSource());
         headersMap.put("flow", context.getFlowName());
         headersMap.put("originalFilename", context.getDeltaFileName());
-        headersMap.put("filename", input.getContent().getName());
+        
+        // Handle null content case
+        if (input.getContent() != null) {
+            headersMap.put("filename", input.getContent().getName());
+        } else {
+            headersMap.put("filename", "");
+        }
+        
         return headersMap;
     }
 }

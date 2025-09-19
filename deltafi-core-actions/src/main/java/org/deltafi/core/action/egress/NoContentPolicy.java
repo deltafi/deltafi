@@ -17,7 +17,22 @@
  */
 package org.deltafi.core.action.egress;
 
-public interface IHttpEgressParameters {
-    String getUrl();
-    NoContentPolicy getNoContentPolicy();
+/**
+ * Policy for handling null content in egress actions.
+ */
+public enum NoContentPolicy {
+    /**
+     * Filter the DeltaFile when content is null (return FilterResult)
+     */
+    FILTER,
+    
+    /**
+     * Return an error when content is null (return ErrorResult)
+     */
+    ERROR,
+    
+    /**
+     * Send empty content when content is null (continue with zero data)
+     */
+    SEND_EMPTY
 }
