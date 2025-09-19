@@ -117,14 +117,14 @@ def _find_variables_filename(names: List[str]):
 
 
 def _setup_queue(max_connections):
-    url = os.getenv('VALKEY_URL', 'http://deltafi-valkey-master:6379')
+    url = os.getenv('VALKEY_URL', 'http://localhost:6379')
     password = os.getenv('VALKEY_PASSWORD')
     app_name = os.getenv('APP_NAME')
     return ActionEventQueue(url, max_connections, password, app_name)
 
 
 def _setup_content_service():
-    minio_url = os.getenv('MINIO_URL', 'http://deltafi-minio:9000')
+    minio_url = os.getenv('MINIO_URL', 'http://localhost:9000')
     return ContentService(minio_url,
                           os.getenv('MINIO_ACCESSKEY'),
                           os.getenv('MINIO_SECRETKEY'))
@@ -181,7 +181,7 @@ class Plugin(object):
         self.thread_config = {}
         if thread_config is not None:
             self.thread_config = thread_config
-        self.core_url = os.getenv('CORE_URL')
+        self.core_url = os.getenv('CORE_URL', 'http://127.0.0.1:8042')
         self.image = os.getenv('IMAGE')
         self.image_pull_secret = os.getenv('IMAGE_PULL_SECRET')
         action_classes = []
