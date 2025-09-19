@@ -7,7 +7,7 @@ license {
 }
 
 task tuiClean(type: Exec) {
-    commandLine 'make', 'clean'
+    commandLine 'make', 'debug-make', 'clean'
 }
 
 task tuiBuild(type: Exec) {

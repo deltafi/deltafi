@@ -31,9 +31,11 @@ HAS_GO := $(shell command -v go 2> /dev/null)
 USE_DOCKER ?= $(if $(HAS_GO),false,true)
 
 # Environment checks
-NATIVE_ARCH := $(shell uname -m | tr A-Z a-z)
-ifeq ($(NATIVE_ARCH),x86_64)
-  NATIVE_ARCH := amd64
+NATIVE_ARCH ?= $(strip $(shell uname -m | tr A-Z a-z))
+ifneq ($(NATIVE_ARCH),arm64)
+  ifneq ($(NATIVE_ARCH),amd64)
+    NATIVE_ARCH := amd64
+  endif
 endif
 
 NATIVE_OS := $(shell basename $(shell uname -o | tr A-Z a-z))
@@ -68,7 +70,7 @@ DOCKER_CMD := docker run --rm \
               -e GOCACHE=/tmp/.cache \
               -w $(DOCKER_WORKDIR)
 
-DOCKER_TOOLING_CMD := docker run --rm --platform linux/arm64 \
+DOCKER_TOOLING_CMD := docker run --rm --platform linux/$(NATIVE_ARCH) \
               -v $(BUILD_DIR):$(DOCKER_SOURCE) \
               -v $(BIN_DIR):$(DOCKER_BIN) \
               -v $(GOPATH):$(DOCKER_GOPATH) \
@@ -130,7 +132,7 @@ DIST_DIR  = $(CURDIR)/dist
 # Cross-compilation targets
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 
-.PHONY: all build clean test lint fmt deps dist tidy very-clean debug-make help check-env $(COMMANDS)
+.PHONY: all build clean test lint fmt deps dist tidy very-clean debug-make help check-env
 
 all: check-env build test
 
@@ -225,13 +227,17 @@ watch:
 	watchexec -w . -e go "make dev"
 
 debug-make:
-	@echo "Version:    " $(VERSION)
-	@echo "Build time: " $(BUILD_TIME)
-	@echo "Commands:   " $(COMMANDS)
-	@echo "PATH:       " $(PATH)
-	@echo "DOCKER:     " $(USE_DOCKER)
-	@echo "GOPATH:     " $(GOPATH)
-	@echo "CMD_PREFIX: " $(CMD_PREFIX)
-	@echo "Has Go:     " $(if $(HAS_GO),yes,no)
-	@echo "Has Docker: " $(if $(HAS_DOCKER),yes,no)
-	@echo "Build Tags: " $(BUILD_TAGS)
+	@echo
+	@echo "Version:            " $(VERSION)
+	@echo "Build time:         " $(BUILD_TIME)
+	@echo "DOCKER:             " $(USE_DOCKER)
+	@echo "CMD_PREFIX:         " $(CMD_PREFIX)
+	@echo "TOOLING_CMD_PREFIX: " $(TOOLING_CMD_PREFIX)
+	@echo "Has Go:             " $(if $(HAS_GO),yes,no)
+	@echo "Has Docker:         " $(if $(HAS_DOCKER),yes,no)
+	@echo "Build Tags:         " $(BUILD_TAGS)
+	@echo "NATIVE_ARCH:        " $(NATIVE_ARCH)
+	@echo "NATIVE_OS:          " $(NATIVE_OS)
+	@echo "GOPATH:             " $(GOPATH)
+	@echo "PATH:               " $(PATH)
+	@echo
