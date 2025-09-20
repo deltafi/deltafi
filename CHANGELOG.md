@@ -5,6 +5,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.33.0] - 2025-09-19
+
+### Added
+- Added a log viewer to the deltafi content viewer page. Added way to add user notes to a deltafile.
+- Added support for On-Error Data Sources in the UI
+- Configuration of an `OnErrorDataSource` now allows a `sourceMetadataPrefix` to be set. This is used as the prfix for any matching  metadata added from `includeSourceMetadataRegex`
+
+### Changed
+- Changed the `ErrorResult.logErrorTo` method to include the `action` and `did` as json fields in the log entry
+- Changed the audit log for `setPluginVariableValues` to leave out the values to avoid logging values that are masked
+- Added `noContentPolicy` parameter HTTP Egress actions and `DeltaFiEgress` to configure behavior for egress when no content is present:
+  - ERROR - (default) Action will error
+  - FILTER - Action will filter
+  - SEND_EMPTY - Action will publish with zero length content and empty string filename
+- Improved error logging when Egress has no content and an ERROR policy
+- Gradle install target rebuilds TUI
+- Gradle checks for docker and KinD installation where appropriate
+
+### Fixed
+- Fixed an issue where failing to convert an action result to an `ActionEvent` caused DeltaFiles to get stuck In-Flight and treated as a long-running action
+- Fixed an issue where null `ActionContent` entries caused an exception when creating `ActionEvents` from action results
+- Bitnami stopped support and removed the bitnami/valkey container image.  Migrating to the valkey/valkey container image.
+- Moved from using bitnami/kubectl to rancher/kubectl for clustermonitor, because Bitnami removed their container images.
+- Fixed code generation issue on MacOS when using containerized Go development environment
+- Bug in `gradle clean` for amd architecture
+- Throw IllegalArgumentException when EgressAction with no content is executed
+- Added unit test to document the behavior of EgressAction with no content
+- Fixed a bug where only the masked variable values were persisted and sent to the actions instead of sending the actual value
+- Minor build fixes for deltafi-python
+- If a transform action completes, but the transform flow is no longer running, the last action is marked as `ERROR` instead of generating a synthetic `MissingRunningFlow` action. This allows the DeltaFile to be resumed if the flow is restarted (which previously left the DeltaFile `IN_FLIGHT` indefinitely)
+- TUI: Kubernetes chart.lock error
+
+### Removed
+- Removed Undertow server, reverted back to standard Tomcat
+- The default prefix for metadata added by an `OnErrorDataSource` -- `"source."` has been removed.
+
+### Upgrade and Migration
+- Upgrade to valkey/valkey:8.1.3-alpine
+- Upgrade to Golang 1.25.1
+- If you have a custom Egress action, the action kit will no longer error automatically if there is no content available.
+- If you have any existing OnErrorDataSource where metadata copied from the source is expected to be prefixed with `"source."`, you will need to manually set the `sourceMetadataPrefix` in your flow plan
+- Upgrade from springboot 3.5.5 to 3.5.6
+
 ## [2.32.0] - 2025-09-10
 
 ### Added
@@ -4658,7 +4701,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.32.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.0...main
+[2.33.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.32.0...2.33.0
 [2.32.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.31.0...2.32.0
 [2.31.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.1...2.31.0
 [2.30.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.30.0...2.30.1
