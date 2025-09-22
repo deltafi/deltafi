@@ -1,0 +1,25 @@
+{
+    "did": "%1$s",
+    "flowName": "sampleTransform",
+    "flowId": "11111111-1111-1111-1111-111111111111",
+    "actionName": "Utf8TransformAction",
+    "start": "2021-07-11T13:44:22.183Z",
+    "stop": "2021-07-11T13:44:22.184Z",
+    "type": "TRANSFORM",
+    "transform": [
+        {
+            "did": "%1$s",
+            "content": [
+                {
+                    "name": "file.json",
+                    "segments": [{
+                        "uuid": "11111111-1111-1111-1111-111111111111",
+                        "offset": 0,
+                        "size": 500,
+                        "did": "%2$s" }],
+                    "mediaType": "application/octet-stream"
+                }
+            ]
+        }
+    ]
+}

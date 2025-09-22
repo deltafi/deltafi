@@ -535,6 +535,7 @@ public class DeltaFilesService {
             transformFlowService.getActiveFlowByName(event.getFlowName());
         } catch (MissingFlowException missingFlowException) {
             handleMissingFlow(deltaFile, flow, missingFlowException, action.getName());
+            removeContentBeingDiscarded(deltaFile, event.usedSegmentObjectNames());
             return;
         }
 
@@ -567,6 +568,19 @@ public class DeltaFilesService {
             deltaFile.setChildDids(updatedChildDids);
             deltaFile.setWaitingForChildren(true);
             advanceAndSave(inputs, false);
+        }
+    }
+
+    private void removeContentBeingDiscarded(DeltaFile deltaFile, Set<String> segmentsBeingDiscarded) {
+        Set<String> previouslyReferencedSegmentNames = deltaFile.referencedSegments().stream()
+                .map(Segment::objectName)
+                .collect(Collectors.toSet());
+        // Avoid deleting any Segments which might be a subsegment of another Content
+        // or content that belongs to a parent DeltaFile
+        segmentsBeingDiscarded.removeAll(previouslyReferencedSegmentNames);
+        if (!segmentsBeingDiscarded.isEmpty()) {
+            contentStorageService.deleteAllByObjectName(segmentsBeingDiscarded.stream().toList());
+            log.warn("Removed {} saved contents for DeltaFile {}", segmentsBeingDiscarded.size(), deltaFile.getDid());
         }
     }
 

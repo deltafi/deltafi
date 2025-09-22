@@ -4960,24 +4960,76 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2L, all.getInFlightCount());
 	}
 
-	@Test
-	void testTransformUtf8() throws IOException {
-		UUID did = UUID.randomUUID();
-		deltaFileRepo.save(fullFlowExemplarService.postIngressDeltaFile(did));
+    @Test
+    void testTransformUtf8() throws IOException {
+        UUID did = UUID.randomUUID();
+        deltaFileRepo.save(fullFlowExemplarService.postIngressDeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("transformUtf8", did));
+        deltaFilesService.handleActionEvent(actionEvent("transformUtf8", did));
 
-		verifyActionEventResults(fullFlowExemplarService.postTransformUtf8DeltaFile(did),
-				ActionContext.builder().flowName("sampleTransform").actionName("SampleTransformAction").build());
+        verifyActionEventResults(fullFlowExemplarService.postTransformUtf8DeltaFile(did),
+                ActionContext.builder().flowName("sampleTransform").actionName("SampleTransformAction").build());
 
-		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "Utf8TransformAction", REST_DATA_SOURCE_NAME, null);
-		extendTagsForAction(tags, "type");
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricService);
-	}
+        Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "Utf8TransformAction", REST_DATA_SOURCE_NAME, null);
+        extendTagsForAction(tags, "type");
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));
+        Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION, 1).addTags(tags));
+        Mockito.verifyNoMoreInteractions(metricService);
+    }
 
-	@Test
+    @Test
+    void testTransformUtf8FlowNoLongerRunning() throws IOException {
+        UUID did = UUID.randomUUID();
+        deltaFileRepo.save(fullFlowExemplarService.postIngressDeltaFile(did));
+        transformFlowService.stopFlow(SAMPLE_TRANSFORM_FLOW.getName());
+
+        // From transformUtf8.json:
+        UUID segmentUuid = UUID.fromString("11111111-1111-1111-1111-111111111114");
+        deltaFilesService.handleActionEvent(actionEvent("transformUtf8", did));
+
+        DeltaFile actual = deltaFilesService.getDeltaFile(did);
+        DeltaFile expected = fullFlowExemplarService.postTransformUtf8NotRunningDeltaFile(did);
+        assertEqualsIgnoringDates(expected, actual);
+
+        Mockito.verify(contentStorageService).deleteAllByObjectName(List.of(Segment.objectName(did, segmentUuid)));
+    }
+
+    @Test
+    void testTransformUtf8FlowNoLongerRunningSubsegment() throws IOException {
+        UUID did = UUID.randomUUID();
+        deltaFileRepo.save(fullFlowExemplarService.postIngressDeltaFile(did));
+        transformFlowService.stopFlow(SAMPLE_TRANSFORM_FLOW.getName());
+
+        // transformUtf8Subsegment.json -- uses same uuid as from ingress (i.e. subsegment)
+        // adds content with the same did
+        deltaFilesService.handleActionEvent(actionEventWithParent("transformUtf8Subsegment", did, did));
+
+        DeltaFile actual = deltaFilesService.getDeltaFile(did);
+        DeltaFile expected = fullFlowExemplarService.postTransformUtf8NotRunningDeltaFile(did);
+        assertEqualsIgnoringDates(expected, actual);
+
+        Mockito.verifyNoInteractions(contentStorageService);
+    }
+
+    @Test
+    void testTransformUtf8FlowNoLongerRunningParentContent() throws IOException {
+        UUID did = UUID.randomUUID();
+        UUID parentDid = UUID.randomUUID();
+        deltaFileRepo.save(fullFlowExemplarService.postIngressDeltaFile(did, parentDid));
+        transformFlowService.stopFlow(SAMPLE_TRANSFORM_FLOW.getName());
+
+        // transformUtf8Subsegment.json -- uses same uuid as from ingress (i.e. subsegment)
+        // adds content with the parent's did
+        deltaFilesService.handleActionEvent(actionEventWithParent("transformUtf8Subsegment", did, parentDid));
+
+        DeltaFile actual = deltaFilesService.getDeltaFile(did);
+        DeltaFile expected = fullFlowExemplarService.postTransformUtf8NotRunningDeltaFile(did, parentDid);
+        assertEqualsIgnoringDates(expected, actual);
+
+        Mockito.verifyNoInteractions(contentStorageService);
+    }
+
+    @Test
 	void testTransform() throws IOException {
 		UUID did = UUID.randomUUID();
 		deltaFileRepo.save(fullFlowExemplarService.postTransformUtf8DeltaFile(did));

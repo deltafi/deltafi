@@ -141,8 +141,16 @@ public class FullFlowExemplarService {
     }
 
     public DeltaFile postIngressDeltaFile(UUID did) {
-        Content content = new Content("name", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, did));
+        return postIngressDeltaFile(did, null);
+    }
+
+    public DeltaFile postIngressDeltaFile(UUID did, UUID parentDid) {
+        UUID contentDid = parentDid != null ? parentDid : did;
+        Content content = new Content("name", "application/octet-stream", new Segment(UUID.fromString("11111111-1111-1111-1111-111111111111"), 0, 500, contentDid));
         DeltaFile deltaFile = utilService.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
+        if (parentDid != null) {
+            deltaFile.setParentDids(List.of(parentDid));
+        }
         deltaFile.firstFlow().firstAction().setMetadata(SOURCE_METADATA);
         deltaFile.setIngressBytes(500L);
         DeltaFileFlow flow = deltaFile.addFlow(flowDefinitionService.getOrCreateFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM), deltaFile.firstFlow(), now());
@@ -164,6 +172,20 @@ public class FullFlowExemplarService {
         Action action = flow.getAction("Utf8TransformAction");
         action.complete(START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), now());
         flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, now());
+        return deltaFile;
+    }
+
+    public DeltaFile postTransformUtf8NotRunningDeltaFile(UUID did) {
+        return postTransformUtf8NotRunningDeltaFile(did, null);
+    }
+
+    public DeltaFile postTransformUtf8NotRunningDeltaFile(UUID did, UUID parentDid) {
+        DeltaFile deltaFile = postIngressDeltaFile(did, parentDid);
+        deltaFile.setStage(DeltaFileStage.ERROR);
+        DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
+        flow.setState(DeltaFileFlowState.ERROR);
+        Action action = flow.getAction("Utf8TransformAction");
+        action.error(START_TIME, STOP_TIME, now(), "The transform is stopped", "The transform named sampleTransform is not running");
         return deltaFile;
     }
 

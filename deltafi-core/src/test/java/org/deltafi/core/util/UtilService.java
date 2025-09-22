@@ -283,6 +283,11 @@ public class UtilService {
         return CoreEventQueue.convertEvent(json);
     }
 
+    public static ActionEvent actionEventWithParent(String filename, UUID did, UUID parentDid) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(UtilService.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()), did, parentDid);
+        return CoreEventQueue.convertEvent(json);
+    }
+
     public static ActionEvent filterActionEvent(UUID did, String flow, UUID flowId, String filteredAction) throws IOException {
         String json = String.format(new String(Objects.requireNonNull(UtilService.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction);
         return CoreEventQueue.convertEvent(json);
