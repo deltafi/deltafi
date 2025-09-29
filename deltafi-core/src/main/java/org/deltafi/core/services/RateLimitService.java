@@ -17,11 +17,9 @@
  */
 package org.deltafi.core.services;
 
-import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.Bucket;
-import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.*;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
-import io.jackey.JedisPool;
+import io.valkey.JedisPool;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,7 +35,7 @@ public class RateLimitService {
     @Autowired
     public RateLimitService(JedisPool jedisPool) {
         log.info("Initializing RateLimitService with JedisPool: {}", jedisPool);
-        this.proxyManager = JackeyBasedProxyManager.builderFor(jedisPool).build();
+        this.proxyManager = ValkeyBasedProxyManager.builderFor(jedisPool).build();
         log.info("RateLimitService initialized successfully");
     }
 

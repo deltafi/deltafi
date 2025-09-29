@@ -22,20 +22,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.core.monitor.checks.CheckResult;
 import org.deltafi.core.monitor.checks.StatusCheck;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
-import static org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
+import static org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
 
 @Slf4j
 @MonitorProfile

@@ -18,7 +18,7 @@
 package org.deltafi.actionkit.service;
 
 import lombok.SneakyThrows;
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.types.ActionExecution;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

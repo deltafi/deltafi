@@ -36,7 +36,7 @@ import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;

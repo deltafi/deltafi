@@ -38,7 +38,7 @@ dependencies {
     api "org.springframework.retry:spring-retry"
     api 'org.apache.nifi:nifi-flowfile-packager:2.5.0'
     api 'org.apache.httpcomponents.client5:httpclient5:5.5'
-    api 'io.jackey:jackey:5.2.0'
+    api 'io.valkey:valkey-java:5.4.0'
 
     compileOnly 'org.springframework.boot:spring-boot-starter-cache'
     testImplementation 'org.springframework.boot:spring-boot-starter-cache'

@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.configuration;
 
-import io.jackey.JedisPool;
+import io.valkey.JedisPool;
 import org.deltafi.common.action.EventQueueProperties;
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.uuid.RandomUUIDGenerator;

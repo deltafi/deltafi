@@ -17,17 +17,14 @@
  */
 package org.deltafi.core.monitor.checks;
 
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
 

@@ -20,7 +20,7 @@ package org.deltafi.core.monitor.stats;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.core.generated.types.DeltaFileStats;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.monitor.MonitorProfile;
@@ -30,7 +30,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.Map;
 
-import static org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
+import static org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
 
 @Slf4j
 @MonitorProfile

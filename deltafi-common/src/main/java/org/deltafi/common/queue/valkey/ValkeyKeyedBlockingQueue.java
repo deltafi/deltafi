@@ -15,14 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.queue.jackey;
+package org.deltafi.common.queue.valkey;
 
-import io.jackey.*;
-import io.jackey.params.ScanParams;
-import io.jackey.params.ZAddParams;
-import io.jackey.resps.ScanResult;
-import io.jackey.resps.Tuple;
-import io.jackey.util.KeyValue;
+import io.valkey.*;
+import io.valkey.params.ScanParams;
+import io.valkey.params.ZAddParams;
+import io.valkey.resps.ScanResult;
+import io.valkey.resps.Tuple;
+import io.valkey.util.KeyValue;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.deltafi.common.action.EventQueueProperties;
@@ -34,7 +34,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 /**
- * A keyed blocking queue based on the Jackey client library for Valkey.
+ * A keyed blocking queue based on the valkey client library for Valkey.
  */
 @Slf4j
 public class ValkeyKeyedBlockingQueue {

@@ -25,11 +25,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
-import org.deltafi.common.queue.jackey.SortedSetEntry;
-import org.deltafi.common.types.ActionEvent;
-import org.deltafi.common.types.ActionExecution;
-import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.queue.valkey.SortedSetEntry;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.types.*;
 import org.deltafi.core.types.WrappedActionInput;
 
 import java.time.Duration;

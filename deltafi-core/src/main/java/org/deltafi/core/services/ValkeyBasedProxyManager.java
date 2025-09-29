@@ -19,13 +19,11 @@ package org.deltafi.core.services;
 
 import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ClientSideConfig;
-import io.github.bucket4j.distributed.proxy.generic.compare_and_swap.AbstractCompareAndSwapBasedProxyManager;
-import io.github.bucket4j.distributed.proxy.generic.compare_and_swap.AsyncCompareAndSwapOperation;
-import io.github.bucket4j.distributed.proxy.generic.compare_and_swap.CompareAndSwapOperation;
+import io.github.bucket4j.distributed.proxy.generic.compare_and_swap.*;
 import io.github.bucket4j.distributed.remote.RemoteBucketState;
 import io.github.bucket4j.distributed.serialization.Mapper;
-import io.jackey.Jedis;
-import io.jackey.JedisPool;
+import io.valkey.Jedis;
+import io.valkey.JedisPool;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,15 +33,15 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
-public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxyManager<K> {
+public class ValkeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxyManager<K> {
 
-    private final JackeyApi jackeyApi;
+    private final ValkeyApi valkeyApi;
     private final ExpirationAfterWriteStrategy expirationStrategy;
     private final Mapper<K> keyMapper;
 
-    public static JackeyBasedProxyManagerBuilder<String> builderFor(final JedisPool jedisPool) {
+    public static ValkeyBasedProxyManagerBuilder<String> builderFor(final JedisPool jedisPool) {
         Objects.requireNonNull(jedisPool);
-        JackeyApi jackeyApi = new JackeyApi() {
+        ValkeyApi valkeyApi = new ValkeyApi() {
             @Override
             public Object eval(byte[] script, int keyCount, byte[]... params) {
                 try (Jedis jedis = jedisPool.getResource()) {
@@ -65,12 +63,12 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
                 }
             }
         };
-        return new JackeyBasedProxyManagerBuilder<>(Mapper.STRING, jackeyApi);
+        return new ValkeyBasedProxyManagerBuilder<>(Mapper.STRING, valkeyApi);
     }
 
-    private JackeyBasedProxyManager(JackeyBasedProxyManagerBuilder<K> builder) {
+    private ValkeyBasedProxyManager(ValkeyBasedProxyManagerBuilder<K> builder) {
         super(builder.getClientSideConfig());
-        this.jackeyApi = builder.jackeyApi;
+        this.valkeyApi = builder.valkeyApi;
         this.expirationStrategy = builder.getNotNullExpirationStrategy();
         this.keyMapper = builder.keyMapper;
     }
@@ -86,12 +84,12 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
         return new CompareAndSwapOperation() {
             @Override
             public Optional<byte[]> getStateData(Optional<Long> timeoutNanos) {
-                return Optional.ofNullable(JackeyBasedProxyManager.this.jackeyApi.get(keyBytes));
+                return Optional.ofNullable(ValkeyBasedProxyManager.this.valkeyApi.get(keyBytes));
             }
 
             @Override
             public boolean compareAndSwap(byte[] originalData, byte[] newData, RemoteBucketState newState, Optional<Long> timeoutNanos) {
-                return JackeyBasedProxyManager.this.compareAndSwap(keyBytes, originalData, newData, newState);
+                return ValkeyBasedProxyManager.this.compareAndSwap(keyBytes, originalData, newData, newState);
             }
         };
     }
@@ -103,7 +101,7 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
 
     @Override
     public void removeProxy(K key) {
-        this.jackeyApi.delete(this.keyMapper.toBytes(key));
+        this.valkeyApi.delete(this.keyMapper.toBytes(key));
     }
 
     @Override
@@ -123,7 +121,7 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
             if (originalData == null) {
                 // SET key value NX PX ttl
                 byte[][] keysAndArgs = new byte[][]{key, newData, encodeLong(ttlMillis)};
-                Object res = this.jackeyApi.eval(
+                Object res = this.valkeyApi.eval(
                     "if redis.call('set', KEYS[1], ARGV[1], 'nx', 'px', ARGV[2]) then return 1; else return 0; end"
                         .getBytes(StandardCharsets.UTF_8), 
                     1, keysAndArgs);
@@ -131,7 +129,7 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
             } else {
                 // Compare and set with expiration
                 byte[][] keysAndArgs = new byte[][]{key, originalData, newData, encodeLong(ttlMillis)};
-                Object res = this.jackeyApi.eval(
+                Object res = this.valkeyApi.eval(
                     "if redis.call('get', KEYS[1]) == ARGV[1] then redis.call('psetex', KEYS[1], ARGV[3], ARGV[2]); return 1; else return 0; end"
                         .getBytes(StandardCharsets.UTF_8), 
                     1, keysAndArgs);
@@ -141,7 +139,7 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
             if (originalData == null) {
                 // SET key value NX (no expiration)
                 byte[][] keysAndArgs = new byte[][]{key, newData};
-                Object res = this.jackeyApi.eval(
+                Object res = this.valkeyApi.eval(
                     "if redis.call('set', KEYS[1], ARGV[1], 'nx') then return 1; else return 0; end"
                         .getBytes(StandardCharsets.UTF_8), 
                     1, keysAndArgs);
@@ -149,7 +147,7 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
             } else {
                 // Compare and set without expiration
                 byte[][] keysAndArgs = new byte[][]{key, originalData, newData};
-                Object res = this.jackeyApi.eval(
+                Object res = this.valkeyApi.eval(
                     "if redis.call('get', KEYS[1]) == ARGV[1] then redis.call('set', KEYS[1], ARGV[2]); return 1; else return 0; end"
                         .getBytes(StandardCharsets.UTF_8), 
                     1, keysAndArgs);
@@ -162,40 +160,40 @@ public class JackeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
         return ("" + value).getBytes(StandardCharsets.UTF_8);
     }
 
-    public interface JackeyApi {
+    public interface ValkeyApi {
         Object eval(byte[] script, int keyCount, byte[]... params);
         byte[] get(byte[] key);
         void delete(byte[] key);
     }
 
-    public static class JackeyBasedProxyManagerBuilder<K> {
-        private final JackeyApi jackeyApi;
+    public static class ValkeyBasedProxyManagerBuilder<K> {
+        private final ValkeyApi valkeyApi;
         private final Mapper<K> keyMapper;
         private ExpirationAfterWriteStrategy expirationStrategy = ExpirationAfterWriteStrategy.none();
         @Getter
         private ClientSideConfig clientSideConfig = ClientSideConfig.getDefault();
 
-        public <Key> JackeyBasedProxyManagerBuilder<Key> withKeyMapper(Mapper<Key> keyMapper) {
-            return new JackeyBasedProxyManagerBuilder<>(keyMapper, this.jackeyApi);
+        public <Key> ValkeyBasedProxyManagerBuilder<Key> withKeyMapper(Mapper<Key> keyMapper) {
+            return new ValkeyBasedProxyManagerBuilder<>(keyMapper, this.valkeyApi);
         }
 
-        public JackeyBasedProxyManagerBuilder<K> withExpirationStrategy(ExpirationAfterWriteStrategy expirationStrategy) {
+        public ValkeyBasedProxyManagerBuilder<K> withExpirationStrategy(ExpirationAfterWriteStrategy expirationStrategy) {
             this.expirationStrategy = Objects.requireNonNull(expirationStrategy);
             return this;
         }
 
-        public JackeyBasedProxyManagerBuilder<K> withClientSideConfig(ClientSideConfig clientSideConfig) {
+        public ValkeyBasedProxyManagerBuilder<K> withClientSideConfig(ClientSideConfig clientSideConfig) {
             this.clientSideConfig = Objects.requireNonNull(clientSideConfig);
             return this;
         }
 
-        private JackeyBasedProxyManagerBuilder(Mapper<K> keyMapper, JackeyApi jackeyApi) {
+        private ValkeyBasedProxyManagerBuilder(Mapper<K> keyMapper, ValkeyApi valkeyApi) {
             this.keyMapper = Objects.requireNonNull(keyMapper);
-            this.jackeyApi = Objects.requireNonNull(jackeyApi);
+            this.valkeyApi = Objects.requireNonNull(valkeyApi);
         }
 
-        public JackeyBasedProxyManager<K> build() {
-            return new JackeyBasedProxyManager<>(this);
+        public ValkeyBasedProxyManager<K> build() {
+            return new ValkeyBasedProxyManager<>(this);
         }
 
         public ExpirationAfterWriteStrategy getNotNullExpirationStrategy() {

@@ -20,21 +20,16 @@ package org.deltafi.core.services;
 import com.fasterxml.uuid.Generators;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
-import static org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
+import static org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
 
 @Slf4j
 @Service
