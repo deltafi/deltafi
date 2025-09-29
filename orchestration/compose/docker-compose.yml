@@ -312,7 +312,15 @@ services:
     restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/valkey/:/usr/local/etc/valkey/:ro
-    command: ["valkey-server", "--include", "/usr/local/etc/valkey/overrides.conf"]
+    command:
+      - sh
+      - -c
+      - |
+        if [ -n "$${VALKEY_PASSWORD}" ]; then
+        valkey-server --include /usr/local/etc/valkey/overrides.conf --requirepass "$${VALKEY_PASSWORD}"
+        else
+        valkey-server --include /usr/local/etc/valkey/overrides.conf
+        fi
 
   deltafi-grafana:
     image: ${GRAFANA}
