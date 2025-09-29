@@ -82,10 +82,21 @@ var configCmd = &cobra.Command{
 			config := app.LoadConfigOrDefault()
 			json, err := json.MarshalIndent(config, "", "  ")
 			if err != nil {
-				return fmt.Errorf("Error rendering configuration: %w", err)
+				return fmt.Errorf("error rendering configuration: %w", err)
 			}
 			fmt.Println(styles.ColorizeJSON(string(json)))
 			return nil
+		}
+
+		// Check if both Docker and Kubernetes are unavailable
+		if !isDockerAvailable() && !isKubernetesClusterRunning() {
+			fmt.Println(styles.ErrorStyle.Render("Error: Neither Docker nor Kubernetes cluster is available."))
+			fmt.Println("Please ensure either:")
+			fmt.Println("  • Docker is installed and running, or")
+			fmt.Println("  • A Kubernetes cluster is accessible via kubectl")
+			fmt.Println()
+			fmt.Println("DeltaFi requires one of these orchestration platforms to run.")
+			return fmt.Errorf("no orchestration platform available")
 		}
 
 		configExists := app.ConfigExists()
@@ -141,7 +152,7 @@ var configCmd = &cobra.Command{
 
 		err := config.Save()
 		if err != nil {
-			return fmt.Errorf("Failed to save orchestration/deployment mode: %w", err)
+			return fmt.Errorf("failed to save orchestration/deployment mode: %w", err)
 		}
 
 		// Configure shell if possible
@@ -294,6 +305,8 @@ func NewConfigWizard() *ConfigWizard {
 		disabledOptions[0] = true // Disable Compose option (index 0)
 	}
 	if !isKubernetesClusterRunning() {
+		disabledOptions[1] = true // Disable Kubernetes option (index 1)
+	} else if isKindClusterRunning() {
 		disabledOptions[1] = true // Disable Kubernetes option (index 1)
 	}
 	if !isKindAvailable() {

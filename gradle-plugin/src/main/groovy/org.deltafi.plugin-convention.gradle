@@ -186,7 +186,7 @@ if (!deltafiConfig.isEmpty()) {
             group = 'install'
             description = 'Push docker image to KinD cluster'
             dependsOn "dockerTag${project.version}"
-            commandLine "kind", "load", "docker-image", "-n", "deltafi", "deltafi/${project.name}:${project.version}"
+            commandLine "deltafi", "kind", "load", "deltafi/${project.name}:${project.version}"
         }
     }
 

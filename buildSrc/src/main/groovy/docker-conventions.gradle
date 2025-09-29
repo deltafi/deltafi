@@ -39,7 +39,7 @@ if (!deltafiConfig.isEmpty()) {
 
             group = 'install'
             description = 'Load the docker image into KinD'
-            commandLine "kind", "load", "docker-image", "-n", "deltafi", "deltafi/${project.name}:${project.version}"
+            commandLine "deltafi", "kind", "load", "deltafi/${project.name}:${project.version}"
             dependsOn 'dockerTagDeltafi'
         }
     }

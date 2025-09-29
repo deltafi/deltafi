@@ -68,6 +68,30 @@ This command will:
 	},
 }
 
+var kindLoadCmd = &cobra.Command{
+	Use:   "load",
+	Short: "Load images into the KinD cluster",
+	Long: `Load images into the KinD cluster.
+
+This command will load images into the KinD cluster.`,
+
+	SilenceUsage:       true,
+	SilenceErrors:      true,
+	DisableFlagParsing: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		orchestrator := app.GetOrchestrator()
+		// error if the orchestrator is not a KindOrchestrator
+		kindOrchestrator, ok := orchestrator.(*orchestration.KindOrchestrator)
+		if !ok {
+			return fmt.Errorf("orchestrator is not a KindOrchestrator")
+		}
+
+		fmt.Println("Loading images into the KinD cluster...")
+		fmt.Println("Images:", args)
+		return kindOrchestrator.Load(args)
+	},
+}
+
 var kindDownCmd = &cobra.Command{
 	Use:   "down",
 	Short: "Stop and destroy the KinD cluster",
@@ -151,10 +175,95 @@ Use Ctrl+B then D to detach from the tmux session.`,
 	},
 }
 
+var kindImagesCmd = &cobra.Command{
+	Use:   "images",
+	Short: "List container images in use by the KinD control plane",
+	Long: `List container images in use by the KinD control plane
+
+	Output is JSON with the following schema:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "description": "SHA256 hash identifier for the image"
+          },
+          "repoTags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of repository tags for the image"
+          },
+          "repoDigests": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[^@]+@sha256:[a-f0-9]{64}$"
+            },
+            "description": "Array of repository digests for the image"
+          },
+          "size": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Size of the image in bytes as a string"
+          },
+          "uid": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              }
+            },
+            "required": ["value"],
+            "additionalProperties": false,
+            "description": "User ID object with numeric value as string"
+          },
+          "username": {
+            "type": "string",
+            "description": "Username associated with the image"
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "Whether the image is pinned"
+          }
+        },
+        "required": [
+          "id",
+          "repoTags",
+          "size",
+          "pinned"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["images"],
+  "additionalProperties": false
+}
+	`,
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		dockerCmd := exec.Command("docker", "exec", "-it", "deltafi-control-plane", "crictl", "images", "--filter", "dangling=false", "--output", "json")
+		return executeShellCommand(*dockerCmd)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(kindCmd)
 	kindCmd.AddCommand(kindUpCmd)
 	kindCmd.AddCommand(kindDownCmd)
 	kindCmd.AddCommand(kindDestroyCmd)
 	kindCmd.AddCommand(kindShellCmd)
+	kindCmd.AddCommand(kindImagesCmd)
+	kindCmd.AddCommand(kindLoadCmd)
 }

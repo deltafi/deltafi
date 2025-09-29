@@ -316,13 +316,7 @@ func isKubectlAvailable() bool {
 }
 
 func isKindAvailable() bool {
-	if !isDockerAvailable() {
-		return false
-	}
-
-	cmd := exec.Command("kind", "version")
-	err := cmd.Run()
-	return err == nil
+	return isDockerAvailable() && isKubectlAvailable()
 }
 
 func isKubernetesClusterRunning() bool {
@@ -335,6 +329,21 @@ func isKubernetesClusterRunning() bool {
 	cmd := exec.Command("kubectl", "cluster-info")
 	err := cmd.Run()
 	return err == nil
+}
+
+func isKindClusterRunning() bool {
+	cmd := exec.Command("kubectl", "get", "nodes", "-o", "jsonpath='{.items[0].spec.providerID}'")
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("error")
+		return false
+	}
+	if strings.HasPrefix(string(output), "'kind") {
+		return true
+	}
+
+	return false
 }
 
 // ConfirmPrompt displays a customizable y/n prompt and returns true for yes, false for no.
