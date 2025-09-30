@@ -17,12 +17,32 @@
 #
 
 import pytest
+from deltafi.exception import MissingMetadataException
+from deltafi.input import EgressInput, TransformInput
+from deltafi.storage import ContentService
 from mockito import mock, unstub
 
-from deltafi.exception import MissingMetadataException
-from deltafi.input import TransformInput
-from deltafi.storage import ContentService
 from .helperutils import *
+
+
+def test_egress_input():
+    unstub()
+    mock_content_service = mock(ContentService)
+    event = make_event(mock_content_service)
+
+    input = EgressInput(content=event.delta_file_messages[0].content_list,
+                        metadata=event.delta_file_messages[0].metadata)
+    assert input.has_content()
+
+
+def test_egress_input_no_content():
+    unstub()
+    mock_content_service = mock(ContentService)
+    event = make_event(mock_content_service)
+
+    input = EgressInput(content=None,
+                        metadata=event.delta_file_messages[0].metadata)
+    assert input.has_content() is False
 
 
 def test_transform_input():

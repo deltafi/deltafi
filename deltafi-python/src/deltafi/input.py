@@ -24,6 +24,9 @@ class EgressInput(NamedTuple):
     content: Content
     metadata: dict
 
+    def has_content(self) -> bool:
+        return self.content is not None
+
 
 class TransformInput(NamedTuple):
     content: List[Content]

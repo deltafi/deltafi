@@ -270,7 +270,10 @@ class EgressAction(Action, ABC):
         super().__init__(ActionType.EGRESS, description, (EgressResult, ErrorResult, FilterResult), action_options)
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
-        return EgressInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
+        content = None
+        if delta_file_message.content_list is not None and len(delta_file_message.content_list) > 0:
+            content = delta_file_message.content_list[0]
+        return EgressInput(content=content, metadata=delta_file_message.metadata)
 
     @abstractmethod
     def egress(self, context: Context, params: BaseModel, egress_input: EgressInput):
