@@ -230,17 +230,17 @@ dockerPrepare {
     from('../deltafi-docs') {
         into 'docs'
         include 'public/'
-        include 'src/'
+        include 'docs/'
         include 'package*.json'
-        include 'vue.config.js'
-        exclude 'public/docs/core-actions'
-        exclude 'public/docs/CHANGELOG.md'
+        include '.vitepress/'
+        exclude 'docs/core-actions'
+        exclude 'docs/CHANGELOG.md'
     }
     from(configurations.docs) {
-        into 'docs/public/docs/core-actions'
+        into 'docs/docs/core-actions'
     }
     from('../CHANGELOG.md') {
-        into 'docs/public/docs'
+        into 'docs/docs'
     }
     from('../deltafi-graphiql') {
         into 'graphiql'

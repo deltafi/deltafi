@@ -310,11 +310,11 @@ while Transforms and Data Sinks can subscribe to topics.
 Publishers declare rules that determine to which topics a DeltaFile will be sent after processing.
 The `publish` configuration has the following options:
 
-|     Field      | Description                                                                                                                                                                                        | Details                                                                                                                                                                                                                                |
-|:--------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| matchingPolicy | Determines whether the DeltaFile will be sent to all the matching topics or the first matching topic                                                                                               | <ul><li>ALL_MATCHING - use all matching rules (this is the default policy)</li><li>FIRST_MATCHING - use the first rule that matches</li></ul>                                                                                          |
-|  defaultRule   | Determines the default action to take when no rules match for the given DeltaFile. If the default rule is PUBLISH and the topic has no subscribers, the DeltaFile will be moved to an error state. | <ul><li>ERROR - error the DeltaFile (this is the default behavior)</li><li>FILTER - filter the DeltaFile</li><li>PUBLISH - publish the DeltaFile to a default topic</li>                                                               |
-|     rules      | Set of rules that specify which topics the DeltaFile will be sent to, optionally with conditions                                                                                                   | Each rule consists of a the following  <ul><li>topic - a topic to which to send the DeltaFile if the condition matches</li><li>condition - optional condition used to determine if the DeltaFile should be sent to the topic</li></ul> |
+| Field | Description | Details |
+|-------|-------------|---------|
+| `matchingPolicy` | Determines whether the DeltaFile will be sent to all the matching topics or the first matching topic | <ul><li>ALL_MATCHING - use all matching rules (this is the default policy)</li><li>FIRST_MATCHING - use the first rule that matches</li></ul> |
+|  `defaultRule`   | Determines the default action to take when no rules match for the given DeltaFile. If the default rule is PUBLISH and the topic has no subscribers, the DeltaFile will be moved to an error state. | <ul><li>ERROR - error the DeltaFile (this is the default behavior)</li><li>FILTER - filter the DeltaFile</li><li>PUBLISH - publish the DeltaFile to a default topic</li></ul> |
+|     `rules`     | Set of rules that specify which topics the DeltaFile will be sent to, optionally with conditions | Each rule consists of a the following  <ul><li>topic - a topic to which to send the DeltaFile if the condition matches</li><li>condition - optional condition used to determine if the DeltaFile should be sent to the topic</li></ul> |
 
 ### Subscribing
 Subscribers declare from which topics they will read DeltaFiles. If a DeltaFile matches multiple subscription rules, it
@@ -368,10 +368,19 @@ publish-subscribe pattern can be used to create flexible, content-aware data pip
   },
   "publish": {
     "matchingPolicy": "FIRST_MATCHING",
-    "defaultRule": {"defaultBehavior": "PUBLISH", "topic": "unknown-media-type"},
+    "defaultRule": {
+      "defaultBehavior": "PUBLISH",
+      "topic": "unknown-media-type"
+    },
     "rules": [
-      {"topic": "json", "condition": "hasMediaType('application/json')"},
-      {"topic": "xml", "condition": "hasMediaType('application/xml')"}
+      {
+        "topic": "json",
+        "condition": "hasMediaType('application/json')"
+      },
+      {
+        "topic": "xml",
+        "condition": "hasMediaType('application/xml')"
+      }
     ]
   },
   "cronSchedule": "0 0 0 * * ?"
@@ -383,8 +392,8 @@ publish-subscribe pattern can be used to create flexible, content-aware data pip
 This Transform:
 
 1. Subscribes to the "unknown-media-type" topic.
-1. Applies a single transform action to detect the media type.
-1. Publishes the result to the "processed-content" topic.
+2. Applies a single transform action to detect the media type.
+3. Publishes the result to the "processed-content" topic.
 
 ```json
 {
@@ -392,7 +401,9 @@ This Transform:
   "type": "TRANSFORM",
   "description": "Detect the media type of the content",
   "subscribe": [
-    {"topic": "unknown-media-type"}
+    {
+      "topic": "unknown-media-type"
+    }
   ],
   "transformActions": [
     {
@@ -402,7 +413,9 @@ This Transform:
   ],
   "publish": {
     "rules": [
-      {"topic": "processed-content"}
+      {
+        "topic": "processed-content"
+      }
     ]
   }
 }

@@ -89,11 +89,9 @@ When looking at the example inventory files, notice the `deltafi_node_roles` fie
 
 DeltaFi is designed to run in a Kubernetes cluster. In this section, we will set up a new RKE2 Kubernetes cluster using an Ansible playbook included with DeltaFi.
 
-<Note>
-
+::: tip NOTE:
 If you already have a Kubernetes cluster provisioned and would like to use that for installing DeltaFi, please skip to the [Install DeltaFi Core](/install/core) section of this guide.
-
-</Note>
+:::
 
 ### Air-Gap Install
 

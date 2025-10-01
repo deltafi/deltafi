@@ -7,6 +7,7 @@ In DeltaFi, `Actions` are the building blocks of flows. Each action in the flow 
 This is a hard coded value used directly in the action parameter. This should be used when you have a parameter that has a fixed value in the flow.
 
 Example - hard code the format parameter to `GZIP` in the Decompress action
+
 ```yaml
 name: gzip-transform
 type: TRANSFORM
@@ -51,17 +52,18 @@ Parameter templating pulls information out of the current `ActionInput` being se
 
 The following fields are available to use in a parameter template.
 
-| Field                        | Description                                                                                          | 
-|------------------------------|------------------------------------------------------------------------------------------------------|
-| `{{ deltaFileName }}`        | The name of the DeltaFile                                                                            |
-| `{{ did }}`                  | The did of the DeltaFile                                                                             |
-| `{{ metadata }}`             | The metadata from the first DeltaFileMessage                                                         |
-| `{{ content }}`              | The content list from the first DeltaFileMessage                                                     |
-| `{{ actionContext }}`        | The current ActionContext (see [Action Contex](actions#context) for information about the subfields) |
-| `{{ deltaFileMessages }}`    | The full list of DeltaFileMessages, useful for joins                                                 |
-| `{{ now() }}`                | Helper method to get the current timestamp                                                           |
+| Field | Description | 
+|-------|-------------|
+| `{{ deltaFileName }}` | The name of the DeltaFile |
+| `{{ did }}` | The did of the DeltaFile |
+| `{{ metadata }}` | The metadata from the first DeltaFileMessage |
+| `{{ content }}` | The content list from the first DeltaFileMessage |
+| `{{ actionContext }}` | The current ActionContext (see [Action Contex](actions#context) for information about the subfields) |
+| `{{ deltaFileMessages }}` | The full list of DeltaFileMessages, useful for joins |
+| `{{ now() }}` | Helper method to get the current timestamp |
 
 Example - use templating to pull out various pieces of information about the DeltaFile being sent to an action
+
 ```yaml
 ---
 name: params-to-content

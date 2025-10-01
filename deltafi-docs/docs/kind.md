@@ -127,8 +127,7 @@ To install a locally built version of DeltaFi (from docker images built locally)
 cluster loc build install
 ```
 
-After you install DeltaFi on the cluster, you will be able to point your browser at [local.deltafi.org](http://local.deltafi.org)
-and interact with the DeltaFi UI.  You can install plugins, enable flows, upload data, check metrics, etc.
+After you install DeltaFi on the cluster, you will be able to point your browser at [local.deltafi.org](http://local.deltafi.org) and interact with the DeltaFi UI.  You can install plugins, enable flows, upload data, check metrics, etc.
 
 ## `cluster` CLI
 

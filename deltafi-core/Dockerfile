@@ -6,7 +6,7 @@ RUN npm install
 COPY ui ./
 RUN npm run build
 
-FROM node:20-alpine3.19 AS deltafi-docs-build-stage
+FROM node:22-alpine3.19 AS deltafi-docs-build-stage
 WORKDIR /docs
 # Cache package installation
 COPY docs/package.json ./
@@ -28,7 +28,7 @@ VOLUME /tmp
 COPY deltafi-*.jar deltafi-app.jar
 COPY probe.sh .
 COPY --from=deltafi-ui-build-stage /ui/dist /deltafi
-COPY --from=deltafi-docs-build-stage /docs/dist /deltafi/docs
+COPY --from=deltafi-docs-build-stage /docs/.vitepress/dist /deltafi/docs
 COPY --from=deltafi-graphiql-build-stage /graphiql/build /deltafi/graphiql
 
 RUN echo '#!/bin/sh' > /home/deltafi/entrypoint.sh && \
