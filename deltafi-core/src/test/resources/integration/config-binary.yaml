@@ -34,8 +34,10 @@ expectedDeltaFiles:
   - stage: COMPLETE
     childCount: 3
     annotations:
-      - key: THIS
-        value: THAT
+      keyValueMatchers:
+        - name: THIS
+          value: THAT
+          exact: true
     expectedFlows:
       - flow: unarchive-passthrough-transform
         type: TRANSFORM
@@ -55,10 +57,10 @@ expectedDeltaFiles:
             state: COMPLETE
             actions: [ PassthroughEgress ]
             metadata:
-              - key: KEY3
-                value: VALUE3
-              - key: KEY4
-                value: VALUE4
+              containsKeys: [ keyX, keyY, keyZ ]
+              keyValueMatchers:
+                - name: KEY3
+                  value: VAL3
         expectedContent:
           flow: passthrough-egress
           type: DATA_SINK

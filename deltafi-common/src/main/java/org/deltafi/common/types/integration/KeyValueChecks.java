@@ -22,46 +22,54 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.DeltaFileFlowState;
-import org.deltafi.common.types.FlowType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExpectedFlow {
-    private String flow;
-    private FlowType type;
-    private DeltaFileFlowState state;
-    private List<String> actions;
-    private KeyValueChecks metadata;
+public class KeyValueChecks {
+    private List<String> containsKeys;
+    private List<KeyValueMatcher> keyValueMatchers;
 
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
 
-        if (StringUtils.isEmpty(flow)) {
-            errors.add("ExpectedFlow missing dataSource");
+        if (containsKeys != null) {
+            for (String key : containsKeys) {
+                if (StringUtils.isEmpty(key)) {
+                    errors.add("KeyValueChecks contains an invalid key");
+                    break;
+                }
+            }
         }
 
-        if (type == null) {
-            errors.add("ExpectedFlow missing type");
+        if (keyValueMatchers != null) {
+            for (KeyValueMatcher matcher : keyValueMatchers) {
+                errors.addAll(matcher.validate());
+            }
         }
 
-        if (metadata != null) {
-            errors.addAll(metadata.validate());
-        }
+        return errors;
+    }
 
-        if (state == null) {
-            state = DeltaFileFlowState.COMPLETE;
+    public List<String> matches(Map<String, String> actual, String label) {
+        List<String> errors = new ArrayList<>();
+        if (containsKeys != null) {
+            for (String key : containsKeys) {
+                if (!actual.containsKey(key)) {
+                    errors.add(label + " is missing key: " + key);
+                }
+            }
         }
-
-        if (actions == null) {
-            actions = new ArrayList<>();
+        if (keyValueMatchers != null) {
+            for (KeyValueMatcher matcher : keyValueMatchers) {
+                errors.addAll(matcher.matches(actual, label));
+            }
         }
-
         return errors;
     }
 }

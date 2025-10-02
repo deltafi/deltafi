@@ -21,13 +21,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.common.types.KeyValue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @SuperBuilder
@@ -40,7 +37,7 @@ public class ExpectedDeltaFile {
     private List<ExpectedFlow> expectedFlows;
     private List<ExpectedDeltaFile> children;
     private ExpectedContentList expectedContent;
-    private List<KeyValue> annotations;
+    private KeyValueChecks annotations;
 
     public List<String> validate(int level) {
         List<String> errors = new ArrayList<>();
@@ -82,10 +79,11 @@ public class ExpectedDeltaFile {
         if (expectedContent != null) {
             errors.addAll(expectedContent.validate());
         }
-        return errors;
-    }
 
-    public Map<String, String> annotationsToMap() {
-        return KeyValueConverter.convertKeyValues(annotations);
+        if (annotations != null) {
+            errors.addAll(annotations.validate());
+        }
+
+        return errors;
     }
 }

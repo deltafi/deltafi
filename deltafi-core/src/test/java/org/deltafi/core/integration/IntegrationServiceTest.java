@@ -24,6 +24,7 @@ import lombok.SneakyThrows;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.TestStatus;
 import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.common.types.integration.KeyValueChecks;
 import org.deltafi.common.types.integration.TestCaseIngress;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
@@ -91,11 +92,20 @@ class IntegrationServiceTest {
 
         assertEquals("unarchive-passthrough-rest-data-source", testCase.getInputs().getFirst().getFlow());
         assertEquals(3, testCase.getExpectedDeltaFiles().getFirst().getChildCount());
-        assertEquals(Map.of("THIS", "THAT"), testCase.getExpectedDeltaFiles().getFirst().annotationsToMap());
 
-        assertEquals(Map.of("KEY3", "VALUE3", "KEY4", "VALUE4"),
-                testCase.getExpectedDeltaFiles().getFirst().getChildren()
-                        .getFirst().getExpectedFlows().get(1).metadataToMap());
+        KeyValueChecks keyValCheck = testCase.getExpectedDeltaFiles().getFirst().getAnnotations();
+        assertTrue(keyValCheck.validate().isEmpty());
+        assertEquals("THIS", keyValCheck.getKeyValueMatchers().getFirst().getName());
+        assertEquals("THAT", keyValCheck.getKeyValueMatchers().getFirst().getValue());
+        assertTrue(keyValCheck.getKeyValueMatchers().getFirst().getExact());
+
+        keyValCheck = testCase.getExpectedDeltaFiles().getFirst().getChildren()
+                .getFirst().getExpectedFlows().get(1).getMetadata();
+        assertTrue(keyValCheck.validate().isEmpty());
+        assertEquals(List.of("keyX", "keyY", "keyZ"), keyValCheck.getContainsKeys());
+        assertEquals("KEY3", keyValCheck.getKeyValueMatchers().getFirst().getName());
+        assertEquals("VAL3", keyValCheck.getKeyValueMatchers().getFirst().getValue());
+        assertFalse(keyValCheck.getKeyValueMatchers().getFirst().getExact());
     }
 
     @Test

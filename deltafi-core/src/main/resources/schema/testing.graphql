@@ -23,6 +23,28 @@ enum TestStatus {
   FAILED
 }
 
+input KeyValueMatcherInput {
+    name: String! # name of the key value pair to check
+    value: String! # regex or exact value
+    exact: Boolean # defaults to false
+}
+
+type KeyValueMatcher {
+    name: String!
+    value: String!
+    exact: Boolean
+}
+
+input KeyValueChecksInput {
+    containsKeys: [String] # list of keys that must exist with any value
+    keyValueMatchers: [KeyValueMatcherInput] # list of specific key value pair checks
+}
+
+type KeyValueChecks {
+    containsKeys: [String]
+    keyValueMatchers: [KeyValueMatcher]
+}
+
 input ExpectedContentDataInput {
   name: String
   mediaType: String
@@ -70,8 +92,7 @@ input ExpectedFlowInput {
   type: FlowType
   state: DeltaFileFlowState
   actions: [String]
-  metadata: [KeyValueInput]
-  metaExactMatch: Boolean
+  metadata: KeyValueChecksInput
 }
 
 type ExpectedFlow {
@@ -79,8 +100,7 @@ type ExpectedFlow {
   type: FlowType
   state: DeltaFileFlowState
   actions: [String]
-  metadata: [KeyValue]
-  metaExactMatch: Boolean
+  metadata: KeyValueChecks
 }
 
 input ExpectedDeltaFileInput {
@@ -90,7 +110,7 @@ input ExpectedDeltaFileInput {
   expectedFlows: [ExpectedFlowInput]
   children: [ExpectedDeltaFileInput]
   expectedContent: ExpectedContentListInput
-  annotations: [KeyValueInput]
+  annotations: KeyValueChecksInput
 }
 
 type ExpectedDeltaFile5 {
@@ -100,7 +120,7 @@ type ExpectedDeltaFile5 {
   expectedFlows: [ExpectedFlow]
   "no children"
   expectedContent: ExpectedContentList
-  annotations: [KeyValue]
+  annotations: KeyValueChecks
 }
 
 type ExpectedDeltaFile4 {
@@ -110,7 +130,7 @@ type ExpectedDeltaFile4 {
   expectedFlows: [ExpectedFlow]
   children: [ExpectedDeltaFile5]
   expectedContent: ExpectedContentList
-  annotations: [KeyValue]
+  annotations: KeyValueChecks
 }
 
 type ExpectedDeltaFile3 {
@@ -120,7 +140,7 @@ type ExpectedDeltaFile3 {
   expectedFlows: [ExpectedFlow]
   children: [ExpectedDeltaFile4]
   expectedContent: ExpectedContentList
-  annotations: [KeyValue]
+  annotations: KeyValueChecks
 }
 
 type ExpectedDeltaFile2 {
@@ -130,7 +150,7 @@ type ExpectedDeltaFile2 {
   expectedFlows: [ExpectedFlow]
   children: [ExpectedDeltaFile3]
   expectedContent: ExpectedContentList
-  annotations: [KeyValue]
+  annotations: KeyValueChecks
 }
 
 type ExpectedDeltaFile {
@@ -140,7 +160,7 @@ type ExpectedDeltaFile {
   expectedFlows: [ExpectedFlow]
   children: [ExpectedDeltaFile2]
   expectedContent: ExpectedContentList
-  annotations: [KeyValue]
+  annotations: KeyValueChecks
 }
 
 input TestCaseIngressInput {
@@ -164,6 +184,7 @@ type TestCaseIngress {
 input IntegrationTestInput {
   name: String
   description: String
+  "PluginCoordinatesInput:version can be set to 'ANY' to use any version"
   plugins: [PluginCoordinatesInput]
   dataSources: [String]
   transformationFlows: [String]

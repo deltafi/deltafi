@@ -24,12 +24,8 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.TestStatus;
-import org.deltafi.common.types.integration.ExpectedContentData;
-import org.deltafi.common.types.integration.ExpectedContentList;
-import org.deltafi.common.types.integration.ExpectedDeltaFile;
-import org.deltafi.common.types.integration.ExpectedFlow;
+import org.deltafi.common.types.integration.*;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.Action;
 import org.deltafi.core.types.DeltaFile;
@@ -41,10 +37,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -264,36 +257,28 @@ public class TestEvaluator {
 
     private boolean metadataMatches(ExpectedFlow expectedFlow, DeltaFileFlow deltaFileFlow) {
         if (expectedFlow.getMetadata() != null) {
-            if (Boolean.TRUE.equals(expectedFlow.getMetaExactMatch())) {
-                if (expectedFlow.metadataToMap().equals(deltaFileFlow.getMetadata())) {
-                    return true;
-                } else {
-                    errors.add("Expected metadata: " + expectedFlow.metadataToMap().toString()
-                            + ", but was: " + deltaFileFlow.getMetadata().toString());
-                    return false;
-                }
-            } else {
-                // evaluate as "contains"
-                for (KeyValue keyValue : expectedFlow.getMetadata()) {
-                    if (!deltaFileFlow.getMetadata().containsKey(keyValue.getKey())) {
-                        errors.add("Missing metadata key: " + keyValue.getKey());
-                        return false;
-                    } else if (!deltaFileFlow.getMetadata().get(keyValue.getKey()).equals(keyValue.getValue())) {
-                        fatalError("Wrong value for metadata key: " + keyValue.getKey());
-                        return false;
-                    }
-                }
-            }
+            return checkMap(deltaFileFlow.getMetadata(), expectedFlow.getMetadata(), "metadata");
+        } else {
+            return true;
         }
-        return true;
     }
 
     private boolean annotationsMatch(DeltaFile deltaFile, ExpectedDeltaFile expected) {
-        if (expected.getAnnotations() == null) {
-            return true;
+        if (expected.getAnnotations() != null) {
+            return checkMap(deltaFile.annotationMap(), expected.getAnnotations(), "annotation");
         } else {
-            return deltaFile.annotationMap().equals(expected.annotationsToMap());
+            return true;
         }
+    }
+
+    private boolean checkMap(Map<String, String> actual, KeyValueChecks expected, String label) {
+        if (expected == null) {
+            return true;
+        }
+
+        List<String> localErrors = expected.matches(actual, label);
+        errors.addAll(localErrors);
+        return localErrors.isEmpty();
     }
 
     private boolean flowMatch(DeltaFileFlow flow, String name, FlowType type) {
