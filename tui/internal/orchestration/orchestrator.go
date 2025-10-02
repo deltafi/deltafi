@@ -46,7 +46,7 @@ type valuesData struct {
 	GrafanaContainer      string `default:"deltafi/grafana:12.2.0-0"`
 	GraphiteContainer     string `default:"graphiteapp/graphite-statsd:1.1.10-5"`
 	LokiContainer         string `default:"grafana/loki:2.9.14"`
-	MinioContainer        string `default:"minio/minio:RELEASE.2025-04-22T22-12-26Z"`
+	MinioContainer        string `default:"minio/minio:RELEASE.2025-09-07T16-13-09Z"`
 	NginxContainer        string `default:"nginx:1.28.0-alpine3.21"`
 	PromtailContainer     string `default:"grafana/promtail:2.9.14"`
 	ValkeyContainer       string `default:"valkey/valkey:8.1.3-alpine"`

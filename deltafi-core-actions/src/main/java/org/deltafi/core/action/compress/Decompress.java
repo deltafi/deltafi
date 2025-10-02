@@ -230,7 +230,14 @@ public class Decompress extends TransformAction<DecompressParameters> {
                             createArchiveInputStream(params.getFormat(), contentInputStream));
                     compressFormatName = params.getFormat().getValue();
                 }
-            } catch (ArchiveException | IOException e) {
+            } catch (ArchiveException e) {
+                try {
+                    contentInputStream.close();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                return new ErrorResult(context, "Unable to decompress content", e).logErrorTo(log);
+            } catch (IOException e) {
                 try {
                     contentInputStream.close();
                 } catch (IOException ex) {
@@ -288,7 +295,14 @@ public class Decompress extends TransformAction<DecompressParameters> {
                                 createCompressorInputStream(format, contentInputStream),
                                 createArchiveInputStream(format, contentInputStream));
                     }
-                } catch (IOException | ArchiveException e) {
+                } catch (ArchiveException e) {
+                    try {
+                        contentInputStream.close();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    return new ErrorResult(context, "Unable to decompress content", e).logErrorTo(log);
+                } catch (IOException e) {
                     try {
                         contentInputStream.close();
                     } catch (IOException ex) {
