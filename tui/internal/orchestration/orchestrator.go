@@ -43,7 +43,7 @@ type Orchestrator interface {
 type valuesData struct {
 	Tag                   string
 	Repo                  string `default:"deltafi"`
-	GrafanaContainer      string `default:"deltafi/grafana:11.6.1-0"`
+	GrafanaContainer      string `default:"deltafi/grafana:12.2.0-0"`
 	GraphiteContainer     string `default:"graphiteapp/graphite-statsd:1.1.10-5"`
 	LokiContainer         string `default:"grafana/loki:2.9.14"`
 	MinioContainer        string `default:"minio/minio:RELEASE.2025-04-22T22-12-26Z"`

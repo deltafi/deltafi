@@ -545,7 +545,7 @@
       },
       "id": 45,
       "interval": "1m",
-      "maxDataPoints": 99999,
+      "maxDataPoints": 99,
       "options": {
         "legend": {
           "calcs": [],
@@ -567,7 +567,7 @@
           "hide": true,
           "refCount": 1,
           "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')",
           "textEditor": false
         },
         {
@@ -578,7 +578,7 @@
           "hide": true,
           "refCount": 1,
           "refId": "B",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')",
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')",
           "textEditor": false
         },
         {
@@ -590,7 +590,7 @@
           "refCount": 0,
           "refId": "C",
           "target": "aliasByMetric(divideSeriesLists(#A, #B))",
-          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')))"
+          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')))"
         },
         {
           "datasource": {
@@ -600,7 +600,7 @@
           "hide": true,
           "refCount": 1,
           "refId": "D",
-          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
+          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
           "textEditor": false
         },
         {
@@ -611,7 +611,7 @@
           "hide": true,
           "refCount": 1,
           "refId": "E",
-          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
+          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
           "textEditor": false
         },
         {
@@ -623,7 +623,7 @@
           "refCount": 0,
           "refId": "F",
           "target": "aliasByMetric(divideSeriesLists(#D, #E))",
-          "targetFull": "aliasByMetric(divideSeriesLists(alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall'), alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')))"
+          "targetFull": "aliasByMetric(divideSeriesLists(alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall'), alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')))"
         }
       ],
       "title": "Action Execution Latency (Average Action Execution Time)",
@@ -699,7 +699,7 @@
       },
       "id": 5,
       "interval": "1m",
-      "maxDataPoints": 99999,
+      "maxDataPoints": 99,
       "options": {
         "legend": {
           "calcs": [],
@@ -721,7 +721,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '$__interval', 'sum', 'minutes'), 'sum', 'source'), 'source')"
+          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')"
         }
       ],
       "title": "Action Executions",

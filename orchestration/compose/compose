@@ -474,7 +474,7 @@ ingress:
   tls:
     enabled: false
 dependencies:
-  grafana: deltafi/grafana:11.6.1-0
+  grafana: deltafi/grafana:12.2.0-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
   loki: grafana/loki:2.9.14
   minio: minio/minio:RELEASE.2025-04-22T22-12-26Z
