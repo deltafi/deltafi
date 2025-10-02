@@ -5,6 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.33.2] - 2025-10-02
+
+### Changed
+- [python action kit] `EgressInput` now allows no content (matches recent Java change)
+
+### Upgrade and Migration
+- Upgrade Grafana to 12.2.0
+- Upgrade to Minio RELEASE.2025-09-07T16-13-09Z
+- Upgrade Minio java client to 8.6.0
+- Upgrade minio/mc image to RELEASE.2025-08-13T08-35-41Z
+- Upgrade from io.jackey:jackey:5.2.0 to io.valkey:valkey-java:5.4.0 (project changed name)
+- Upgrade loki to 2.9.15
+- Upgrade promtail to 2.9.15
+- Upgrade nginx to 1.29.1-alpine3.22
+- Upgrade docker-web-gui to 1.0.2-2
+
 ## [2.33.1] - 2025-09-29
 
 ### Changed
@@ -4716,7 +4732,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.2...main
+[2.33.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.1...2.33.2
 [2.33.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.0...2.33.1
 [2.33.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.32.0...2.33.0
 [2.32.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.31.0...2.32.0
