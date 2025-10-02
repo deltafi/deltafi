@@ -211,7 +211,7 @@ grafana:
 
 promtail:
   image:
-    tag: 2.9.14
+    tag: 2.9.15
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
@@ -321,7 +321,7 @@ promtail:
                   expression: "/healthz"
 loki:
   image:
-    tag: 2.9.14
+    tag: 2.9.15
   persistence:
     enabled: true
     existingClaim: deltafi-loki
