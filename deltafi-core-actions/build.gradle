@@ -6,22 +6,22 @@ plugins {
 dependencies {
     implementation project(':deltafi-action-kit')
 
-    implementation 'org.apache.commons:commons-compress:1.27.1'
+    implementation 'org.apache.commons:commons-compress:1.28.0'
     implementation 'org.tukaani:xz:1.10'
-    implementation 'org.apache.tika:tika-core:3.2.1'
+    implementation 'org.apache.tika:tika-core:3.2.3'
     implementation 'com.bazaarvoice.jolt:jolt-complete:0.1.8'
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${jacksonVersion}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${jacksonVersion}"
-    implementation 'com.github.mwiede:jsch:0.2.17'
+    implementation 'com.github.mwiede:jsch:2.27.3'
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.82'
 
     testImplementation project(':deltafi-common-test')
     testImplementation project(':deltafi-action-kit-test')
 
     testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
     testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
-    testImplementation 'io.rest-assured:rest-assured:5.5.5'
+    testImplementation 'io.rest-assured:rest-assured:5.5.6'
     testImplementation "org.mockito:mockito-junit-jupiter"
     testImplementation "org.junit.jupiter:junit-jupiter-api"
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
