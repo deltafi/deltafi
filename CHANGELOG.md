@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.33.3] - 2025-10-06
+
+### Added
+- [integration test] New `KeyValueCheck` type used for annotations and metadata matches; now supports "exists" and regex matching
+
+### Changed
+- [integration test]  The data type for expected annotations and metadata in results classes was changed from `KeyValue` to `KeyValueChecks`
+
+### Removed
+- [integration test]  The `metaExactMatch` field in `ExpectedFlow` has been removed
+
+### Upgrade and Migration
+- Java dependency updates:
+  - DGS `10.4.0` (from 10.1.2)
+  - Jackson `2.20.0` (from 2.19.2)
+  - Lombok `1.18.42`
+  - JUnit `6.0.0` (from 5.13.4)
+  - Various dependency patches
+- Upgrade Java base image to `deltafi/deltafi-java-jre:21.0.8-alpine-1`
+- Patch Alpine images with latest core libraries to avoid critical CVEs
+- Integration tests using metadata or annotation matching must migrate to new `KeyValueChecks` type.
+- All entries in the `integration_tests` DB table are deleted during migration.
+
 ## [2.33.2] - 2025-10-02
 
 ### Changed
@@ -4732,7 +4755,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.3...main
+[2.33.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.2...2.33.3
 [2.33.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.1...2.33.2
 [2.33.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.0...2.33.1
 [2.33.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.32.0...2.33.0
