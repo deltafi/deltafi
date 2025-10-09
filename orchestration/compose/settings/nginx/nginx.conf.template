@@ -6,7 +6,6 @@ http {
     proxy_cache_path /tmp/nginx-cache-auth levels=1:2 keys_zone=auth_cache:10m max_size=128m inactive=30m use_temp_path=off;
 
     map $host $upstream_mapping {
-        "~^orchestration.*" "deltafi-docker-ui";
         "~^ingress.*" "deltafi-core";
         "~^graphite.*" "deltafi-graphite";
         "~^minio.*" "deltafi-minio";
