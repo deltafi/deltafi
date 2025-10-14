@@ -11,7 +11,7 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build-uv:jdk21.0.8-python3.13-0
+image: deltafi/deltafi-build:jdk21.0.8-python3.13.7-2
 
 .gradle:
   variables:
