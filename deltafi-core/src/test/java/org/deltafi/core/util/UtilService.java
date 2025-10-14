@@ -270,7 +270,7 @@ public class UtilService {
 
     public static <T> T readResource(String resourcePath, Class<T> clazz) {
         try {
-            return OBJECT_MAPPER.readValue(UtilService.class.getClassLoader().getResource(resourcePath), clazz);
+            return OBJECT_MAPPER.readValue(UtilService.class.getClassLoader().getResourceAsStream(resourcePath), clazz);
         } catch (IOException e) {
             org.junit.jupiter.api.Assertions.fail(e);
         }

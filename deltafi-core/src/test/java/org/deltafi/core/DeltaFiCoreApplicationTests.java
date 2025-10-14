@@ -71,7 +71,7 @@ import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
@@ -187,7 +187,7 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	EventAnnotationsRepo eventAnnotationsRepo;
 
-	@MockBean
+	@MockitoBean
 	ContentStorageService contentStorageService;
 
 	@Autowired
@@ -268,7 +268,7 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	RoleService roleService;
 
-	@MockBean
+	@MockitoBean
 	DiskSpaceService diskSpaceService;
 
 	@Captor
@@ -277,13 +277,13 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	TestRestTemplate restTemplate;
 
-	@MockBean
+	@MockitoBean
 	MetricService metricService;
 
-	@MockBean
+	@MockitoBean
 	CoreEventQueue coreEventQueue;
 
-	@MockBean
+	@MockitoBean
 	DeployerService deployerService;
 
 	@Autowired
@@ -313,27 +313,27 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	UtilService utilService;
 
-	@MockBean
+	@MockitoBean
 	@SuppressWarnings("unused")
 	PlatformService platformService;
 
-	@MockBean
+	@MockitoBean
 	@SuppressWarnings("unused")
 	StorageConfigurationService storageConfigurationService;
 
-	@MockBean
+	@MockitoBean
 	@SuppressWarnings("unused")
 	ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
-	@MockBean
+	@MockitoBean
 	@SuppressWarnings("unused")
 	ServerSentService serverSentService;
 
-	@MockBean
+	@MockitoBean
 	@SuppressWarnings("unused")
 	CredentialProvider credentialProvider;
 
-	@MockBean
+	@MockitoBean
 	@SuppressWarnings("unused")
 	AnalyticEventService analyticEventService;
 

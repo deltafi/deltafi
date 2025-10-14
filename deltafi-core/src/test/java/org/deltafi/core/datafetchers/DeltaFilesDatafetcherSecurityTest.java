@@ -29,10 +29,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ import java.util.concurrent.Callable;
 
 @EnableMethodSecurity
 @SpringBootTest(classes = {DeltaFilesDatafetcher.class}, webEnvironment = WebEnvironment.NONE)
-@MockBean({DeltaFilesService.class, RestDataSourceService.class, ContentStorageService.class, CoreAuditLogger.class, AnalyticEventService.class, FlowDefinitionService.class})
+@MockitoBean(types = {DeltaFilesService.class, RestDataSourceService.class, ContentStorageService.class, CoreAuditLogger.class, AnalyticEventService.class, FlowDefinitionService.class})
 class DeltaFilesDatafetcherSecurityTest {
     
     private static final UUID DID = UUID.randomUUID();
