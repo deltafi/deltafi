@@ -1,6 +1,6 @@
 [project]
 name = "deltafi"
-version = "0.0.0"
+version = "2.33.4rc20251014150602"
 description = "SDK for DeltaFi plugins and actions"
 authors = [
     {name = "DeltaFi", email = "deltafi@systolic.com"}
@@ -19,7 +19,7 @@ classifiers = [
 ]
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "deepdiff==8.6.1",
+    "deepdiff==7.0.1",
     "json-logging==1.5.1",
     "minio==7.2.18",
     "pyyaml==6.0.3",
@@ -36,8 +36,8 @@ test = [
     "mockito==1.5.4",
 ]
 dev = [
-    "ruff>=0.1.0",
-    "mypy>=1.8.0",
+    "ruff>=0.14.0",
+    "mypy>=1.18.2",
 ]
 
 [project.urls]
