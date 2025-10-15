@@ -57,6 +57,17 @@
             <dd>
               <Chips v-model="model['includeSourceMetadataRegex']" class="inputWidth" />
             </dd>
+            <dt>Source Filters</dt>
+            <dd>
+              <div v-for="(_, index) in model['sourceFilters']" :key="index" class="mb-2">
+                <Dropdown v-model="model['sourceFilters'][index]['flowType']" :options="flowTypeOptions" option-value="value" option-label="name" show-clear="true" placeholder="Flow Type" class="mb-1 mr-1" style="width: 14rem"/>
+                <InputText v-model="model['sourceFilters'][index]['flowName']" placeholder="Flow Name" class="mb-1 mr-1" />
+                <InputText v-model="model['sourceFilters'][index]['actionName']" placeholder="Action Name" class="mb-1 mr-1" />
+                <InputText v-model="model['sourceFilters'][index]['actionClass']" placeholder="Action Class" class="mb-1 mr-1" />
+                <Button icon="pi pi-times" class="p-button-rounded p-button-text p-button-danger" @click="model['sourceFilters'].splice(index, 1)" />
+              </div>
+              <Button label="Add Source Filter" icon="pi pi-plus" class="p-button-text" @click="model['sourceFilters'] = model['sourceFilters'] ? model['sourceFilters'].concat([{}]) : [{}]" />
+            </dd>
           </template>
           <template v-if="_.isEqual(model['dataSourceType'], 'Timed Data Source')">
             <dt>Cron Schedule*</dt>
@@ -183,6 +194,20 @@ const dataSourceTypeMap = {
   TIMED_DATA_SOURCE: "Timed Data Source",
   ON_ERROR_DATA_SOURCE: "On-Error Data Source",
 };
+
+const flowTypeMap = {
+  TRANSFORM: "Transform",
+  DATA_SINK: "Data Sink",
+  ...dataSourceTypeMap
+};
+
+
+const flowTypeOptions = computed(() => {
+  return _.map(flowTypeMap, (value, key) => {
+    return { name: value, value: key };
+  });
+});
+
 const dataSourceTypeOptions = ref(Object.values(dataSourceTypeMap));
 
 const dataSourceTemplate = {
@@ -209,6 +234,7 @@ const dataSourceTemplate = {
   errorMessageRegex: null,
   sourceMetadataPrefix: null,
   includeSourceMetadataRegex: [],
+  sourceFilters: [],
 };
 
 const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rowDataProp) ? dataSourceTemplate : props.rowDataProp));

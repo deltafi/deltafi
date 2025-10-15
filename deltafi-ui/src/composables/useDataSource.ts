@@ -56,6 +56,12 @@ export default function useDataSource() {
     errorMessageRegex: true,
     sourceMetadataPrefix: true,
     includeSourceMetadataRegex: true,
+    sourceFilters: {
+      flowType: true,
+      flowName: true,
+      actionName: true,
+      actionClass: true,
+    }
   };
 
   const timeDataSourceFields = {
@@ -251,6 +257,17 @@ export default function useDataSource() {
   };
 
   const saveOnErrorDataSourcePlan = (onErrorDataSourceFlowPlan: Object) => {
+    if (onErrorDataSourceFlowPlan.hasOwnProperty("sourceFilters")) {
+      (onErrorDataSourceFlowPlan as any).sourceFilters = (onErrorDataSourceFlowPlan as any).sourceFilters.map((filter: any) => {
+        if (filter.flowType) {
+          return {
+            ...filter,
+            flowType: new EnumType(filter.flowType),
+          };
+        }
+        return filter;
+      });
+    }
     const query = {
       saveOnErrorDataSourcePlan: {
         __args: {

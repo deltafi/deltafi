@@ -78,7 +78,7 @@
         </Column>
       </DataTable>
     </CollapsiblePanel>
-    <Dialog v-model:visible="viewDialogVisible" :style="{ width: '30vw' }" :header="dialogHeader" :modal="true" :dismissable-mask="true" class="p-fluid on-error-data-source-dialog">
+    <Dialog v-model:visible="viewDialogVisible" :style="{ width: dialogWidth }" :header="dialogHeader" :modal="true" :dismissable-mask="true" class="p-fluid on-error-data-source-dialog">
       <div v-for="(label, fieldName) in fields" :key="fieldName" class="mb-3">
         <strong>{{ label }}</strong>
         <br />
@@ -105,11 +105,22 @@
           <span v-if="activeAction[fieldName] === null">-</span>
           <pre>{{ activeAction[fieldName] }}</pre>
         </span>
+        <span v-else-if="fieldName == 'sourceFilters'">
+          <span v-if="_.isEmpty(activeAction.sourceFilters)">-</span>
+          <div v-else>
+            <DataTable :value="activeAction.sourceFilters" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines">
+              <template #empty>No Source Filters defined</template>
+              <Column header="Flow Type" field="flowType" />
+              <Column header="Flow Name" field="flowName" />
+              <Column header="Action Name" field="actionName" />
+              <Column header="Action Class" field="actionClass" />
+            </DataTable>
+          </div>
+        </span>
         <span v-else>{{ activeAction[fieldName] || "-" }}</span>
       </div>
     </Dialog>
   </div>
-
 </template>
 
 <script setup>
@@ -198,6 +209,8 @@ const activeAction = computed(() => {
   });
 });
 
+const dialogWidth = computed(() => _.isEmpty(activeAction.value?.sourceFilters) ? "30vw" : "60vw");
+
 const fields = {
   name: "Name",
   description: "Description",
@@ -206,6 +219,7 @@ const fields = {
   errorMessageRegex: "Error Message Regex",
   sourceMetadataPrefix: "Source Metadata Prefix",
   includeSourceMetadataRegex: "Include Source Metadata Regex",
+  sourceFilters: "Source Filters",
 };
 
 const showAction = (actionName) => {
