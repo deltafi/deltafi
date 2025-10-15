@@ -2,9 +2,12 @@
   <Menu
     ref="menu"
     :id="`overlay_menu_` + data.name + `_` + data.type"
+    :key="`overlay_menu_` + data.name + `_` + data.type"
     :model="items"
     :popup="true"
+    @blur="blurTrigger"
     @hide="hideMenu"
+    @show="showMenu"
     :pt="{
       action: {
         class: 'py-1',
@@ -31,16 +34,19 @@
       </a>
     </template>
   </Menu>
-  <Button :id="`${data.name}-${data.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="showMenu" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
+  <Button :id="`${data.name}-${data.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
   <DataSourceRemoveButton ref="removeDataSource" :row-data-prop="data" @reload-data-sources="refresh" />
   <DialogTemplate ref="editDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @refresh-page="refresh" />
   <DialogTemplate ref="cloneDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="formatCloneDataSource(data)" @refresh-page="refresh" />
+  <DialogTemplate ref="addRateLimit" component-name="dataSources/RateLimitingForm" :header="`Add Rate Limit: ${data.name}`" dialog-width="35vw" :rest-data-source-name="data['name']" :rate-limit="data['rateLimit']" @close-dialog-template="editing = false" @open-dialog-template="editing = true" @refresh-page="refresh" />
 </template>
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
+import useNotifications from "@/composables/useNotifications";
+import useRateLimiting from "@/composables/useRateLimiting";
 import { computed, inject, reactive, ref } from "vue";
 
 import _ from "lodash";
@@ -52,11 +58,15 @@ import Ripple from "primevue/ripple";
 const overlayPanelPosition = ref({});
 const vRipple = Ripple;
 
+const { removeRestDataSourceRateLimit } = useRateLimiting();
+const notify = useNotifications();
 const emit = defineEmits(["reloadDataSources"]);
 const hasPermission = inject("hasPermission");
+const editing = inject("isEditing");
 const editDataSource = ref(null);
 const cloneDataSource = ref(null);
 const removeDataSource = ref(null);
+const addRateLimit = ref(null);
 const viewDataSourcePlugin = ref(null);
 const optionsButton = ref(null);
 const horizontalEllipsis = ref(false);
@@ -74,6 +84,7 @@ const { rowDataProp: data } = reactive(props);
 const concatMvnCoordinates = (sourcePlugin) => {
   return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
 };
+
 const items = ref([
   {
     label: "Edit",
@@ -105,6 +116,23 @@ const items = ref([
     visible: computed(() => hasPermission("FlowPlanCreate")),
     route: "/config/plugins/",
   },
+
+  {
+    label: "Add Rate Limit",
+    icon: "text-muted fa-solid fa-plus",
+    visible: computed(() => _.isEqual(data.type, "REST_DATA_SOURCE")),
+    command: () => {
+      addRateLimit.value.showDialog();
+    },
+  },
+  {
+    label: "Remove Rate Limit",
+    icon: "text-muted fa-solid fa-xmark",
+    visible: computed(() => _.isEqual(data.type, "REST_DATA_SOURCE") && !_.isEmpty(data.rateLimit)),
+    command: () => {
+      deleteRateLimit();
+    },
+  },
   {
     separator: true,
     visible: computed(() => data.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
@@ -119,15 +147,23 @@ const items = ref([
   },
 ]);
 
-const showMenu = (event) => {
+const menuButtonClick = (event) => {
   overlayPanelPosition.value = event;
   horizontalEllipsis.value = !horizontalEllipsis.value;
   menu.value.toggle(event);
 };
 
+const showMenu = (event) => {
+  editing.value = true;
+};
+
 const hideMenu = async () => {
   horizontalEllipsis.value = false;
-  menu.value.hide();
+  await menu.value.hide();
+};
+
+const blurTrigger = () => {
+  editing.value = false;
 };
 
 const formatCloneDataSource = (data) => {
@@ -156,6 +192,16 @@ const formatFlowData = () => {
   }
 
   return exportableData;
+};
+
+const deleteRateLimit = async () => {
+  const response = await removeRestDataSourceRateLimit(data.name);
+  if (response) {
+    notify.success("Removed Rate Limit", `Removed Rate Limit from Data Source ${data.name}.`, 3000);
+  } else {
+    notify.error("Error Removing Rate Limit", `Error removing Rate Limit from Data Source ${data.name}.`, 3000);
+  }
+  refresh();
 };
 
 const exportDataSource = () => {

@@ -223,6 +223,7 @@ const model = computed({
       },
     });
   },
+
   set(newValue) {
     Object.assign(
       rowData.value,

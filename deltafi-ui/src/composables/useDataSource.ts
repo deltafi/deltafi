@@ -85,15 +85,31 @@ export default function useDataSource() {
     },
   };
 
+  const restDataSourceFields = {
+    rateLimit: {
+      unit: true,
+      maxAmount: true,
+      durationSeconds: true,
+    },
+  };
+
   const getAllDataSources = () => {
     const query = {
       getAllFlows: {
         restDataSource: {
           ...defaultDataSourceFields,
+          ...restDataSourceFields,
         },
         timedDataSource: {
           ...defaultDataSourceFields,
           ...timeDataSourceFields,
+        },
+        onErrorDataSource: {
+          ...defaultDataSourceFields,
+          ...onErrorDataSourceFields,
+        },
+        dataSink: {
+          ...defaultDataSourceFields,
         },
       },
     };
@@ -105,6 +121,7 @@ export default function useDataSource() {
       getAllFlows: {
         restDataSource: {
           ...defaultDataSourceFields,
+          ...restDataSourceFields,
         },
       },
     };

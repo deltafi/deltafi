@@ -28,7 +28,7 @@
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                  <DataSourceNameColumnButtonGroup key="name" :row-data-prop="data" @reload-data-sources="refresh" />
+                  <DataSourceNameColumnButtonGroup :key="Math.random()" :row-data-prop="data" @reload-data-sources="refresh" />
                 </span>
               </span>
             </div>
@@ -48,6 +48,13 @@
           </template>
           <template #editor="{ data, field }">
             <InputNumber v-has-permission:FlowUpdate v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
+          </template>
+        </Column>
+        <Column header="Rate Limit" field="rateLimit" class="rate-limit-column">
+          <template #body="{ data, field }">
+            <DialogTemplate component-name="dataSources/RateLimitingForm" :header="`Add Rate Limit: ${data.name}`" dialog-width="35vw" :rest-data-source-name="data['name']" :rate-limit="data[field]" @close-dialog-template="editing = false" @open-dialog-template="editing = true" @refresh-page="refresh">
+              <RateLimitCell :row-data-prop="data[field]" />
+            </DialogTemplate>
           </template>
         </Column>
         <Column header="Test Mode" class="switch-column">
@@ -88,6 +95,8 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DataSourceNameColumnButtonGroup from "@/components/dataSources/DataSourceNameColumnButtonGroup.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
+import RateLimitCell from "@/components/dataSources/RateLimitCell.vue";
 import RestDataSourceTestModeInputSwitch from "@/components/dataSources/RestDataSourceTestModeInputSwitch.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import TopicSubscribers from "@/components/topics/TopicSubscribers.vue";
@@ -206,6 +215,10 @@ defineExpose({ refresh });
 .rest-data-source-panel {
   .table-panel {
     .data-sources-table {
+      td.rate-limit-column {
+        min-width: 10rem;
+      }
+
       td.switch-column {
         padding: 0 !important;
 
@@ -224,7 +237,7 @@ defineExpose({ refresh });
         width: 7rem;
         padding: 0 !important;
 
-        >span {
+        > span {
           padding: 0.5rem !important;
         }
 
@@ -234,7 +247,7 @@ defineExpose({ refresh });
           display: flex;
         }
 
-        .value-clickable>* {
+        .value-clickable > * {
           flex: 0 0 auto;
         }
 
