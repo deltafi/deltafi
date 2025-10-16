@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.33.4] - 2025-10-14
+
+### Fixed
+- Revoked python dependencies broke the build where the dependency is uncached
+
+### Removed
+- legacy orchestration.<domain> subdomain in compose NginX
+
+### Upgrade and Migration
+- Update Python dependencies
+
 ## [2.33.3] - 2025-10-06
 
 ### Added
@@ -4755,7 +4766,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.3...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.4...main
+[2.33.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.3...2.33.4
 [2.33.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.2...2.33.3
 [2.33.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.1...2.33.2
 [2.33.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.0...2.33.1
