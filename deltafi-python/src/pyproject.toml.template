@@ -19,7 +19,7 @@ classifiers = [
 ]
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "deepdiff==7.0.1",
+    "deepdiff==8.6.1",
     "json-logging==1.5.1",
     "minio==7.2.18",
     "pyyaml==6.0.3",
