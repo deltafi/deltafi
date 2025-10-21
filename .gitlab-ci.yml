@@ -106,18 +106,6 @@ stages:
   script:
     - curl -X POST -d {} $NETLIFY_DOCS_WEBHOOK
 
-"Check Docker Hub quota":
-  stage: build
-  image: alpine:3.21
-  tags:
-    - light
-  before_script:
-    - apk add curl jq
-  when: manual
-  script:
-    - |
-      TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq --raw-output .token) && curl --head --header "Authorization: Bearer $TOKEN" "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>&1
-
 # Trigger project for triggering downstream plugins
 "Trigger Plugin Jobs":
   stage: trigger
@@ -160,7 +148,7 @@ stages:
   tags:
     - light
   rules:
-    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
+    - if: $CI_COMMIT_TAG
   script:
     - |
       # Read version from VERSION file
@@ -198,7 +186,7 @@ stages:
   needs:
     - job: "Publish Installer Distros"
   rules:
-    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
 
 "Publish Linux-amd64 installer image":
   extends: .distro-containers
@@ -208,7 +196,7 @@ stages:
   needs:
     - job: "Publish Installer Distros"
   rules:
-    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
 
 "Publish Darwin-arm64 installer image":
   extends: .distro-containers
@@ -218,7 +206,7 @@ stages:
   needs:
     - job: "Publish Installer Distros"
   rules:
-    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
 
 "Publish Darwin-amd64 installer image":
   extends: .distro-containers
@@ -228,7 +216,7 @@ stages:
   needs:
     - job: "Publish Installer Distros"
   rules:
-    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
 
 Release:
   stage: release
@@ -237,6 +225,7 @@ Release:
     - if: $CI_COMMIT_TAG
   needs:
     - job: "Publish Installer Distros"
+      optional: true
   script:
     - echo "Release Job"
     - cp ./CHANGELOG/latest.md release_notes.md

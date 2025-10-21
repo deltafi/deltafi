@@ -235,10 +235,7 @@ image: ${JAVA_BASE_IMAGE}
     DISTRO_PROJECT: distro
     ARCH: arm64
     OS: linux
-  rules:
-    - if: $CI_COMMIT_TAG
-      variables:
-        VERSION: ${CI_COMMIT_TAG}
+    VERSION: ${CI_COMMIT_TAG}
   before_script:
     - docker buildx create --use
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
