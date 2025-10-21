@@ -6,8 +6,16 @@
   extends:
     - .pythonkit
     - .publish-python
+  rules:
+    - if: $CI_PROJECT_NAMESPACE == 'deltafi'
+      when: never
+    - if: $CI_COMMIT_TAG
 
 "Publish Python ActionKit to PyPi":
   extends:
     - .pythonkit
     - .publish-python-pypi
+  rules:
+    - if: $CI_PROJECT_NAMESPACE == 'deltafi'
+      when: never
+    - if: $CI_COMMIT_TAG
