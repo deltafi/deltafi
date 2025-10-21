@@ -1,4 +1,4 @@
-ui:eslint:
+"GUI eslint":
   tags:
     - light
   image: node:22.5.1-alpine
@@ -14,7 +14,7 @@ ui:eslint:
     # Run eslint
     - npm run lint
 
-ui:license:
+"GUI License Check":
   tags:
     - light
   image: node
@@ -23,12 +23,12 @@ ui:license:
   script:
     - ./deltafi-ui/licenseCheck.sh
 
-ui:test:
+"GUI Test":
   image: deltafi/deltafi-ui-test:2.17.1
   stage: test
   allow_failure: false
   needs:
-    - job: "ui:eslint"
+    - job: "GUI eslint"
   retry: 2
   script:
     - cd deltafi-ui

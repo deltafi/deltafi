@@ -2,12 +2,12 @@
   variables:
     PROJECT_NAME: deltafi-python
 
-pythonkit:publish:
+"Publish Python ActionKit to GitLab":
   extends:
     - .pythonkit
     - .publish-python
 
-pythonkit:pypipublish:
+"Publish Python ActionKit to PyPi":
   extends:
     - .pythonkit
     - .publish-python-pypi

@@ -1,3 +1,8 @@
+include:
+  - local: .ci/core.yml
+  - local: '*/.gitlab-ci.yml'
+  - local: 'orchestration/*/.gitlab-ci.yml'
+
 stages:
   - build
   - test
@@ -8,32 +13,17 @@ stages:
   - scan
   - release
 
-default:
-  timeout: 45m
-
-image: deltafi/deltafi-build:jdk21.0.8-python3.13.7-2
-
-.gradle:
-  variables:
-    GRADLE_USER_HOME: /cache/.gradle.${CI_CONCURRENT_ID}
-    GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-    GRADLE: "./gradlew -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
-
-.golang:
-  image: deltafi/deltafi-build:jdk21.0.8_9-golang1.25.0-alpine-0
-  variables:
-    GOPATH: /cache/go
-
 # Main build job (builds all the gradle things)
-build:gradle:
+"Core Build":
+  extends:
+    - .gradle-build
+  stage: build
   tags:
     - heavy
-  extends:
-    - .gradle
-  stage: build
-  script:
+  variables:
+    GRADLE_TASKS: license assemble test dockerPrepare
+  before_script:
     - git describe --tags
-    - ${GRADLE} --rerun-tasks license assemble test dockerPrepare
   artifacts:
     when: always
     reports:
@@ -44,13 +34,13 @@ build:gradle:
       - "**/build/tmp"
       - "**/build/classes"
 
-build:distros:
+"Build Installer Distros":
   rules:
     - if: $CI_COMMIT_TAG
   tags:
     - heavy
   extends:
-    - .gradle
+    - .gradle-build
     - .golang
   stage: build
   script:
@@ -61,80 +51,20 @@ build:distros:
     paths:
       - "build"
 
-.docker-multiarch:
-  stage: docker
-  image: docker:latest
-  tags:
-    - heavy
-  needs:
-    - job: "build:gradle"
-  variables:
-    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}/build/docker"
-  when: manual
-  rules:
-    - if: $CI_COMMIT_TAG
-  before_script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
-    - docker buildx create --name multiarch-builder --platform "linux/arm64,linux/amd64"
-    - docker run --privileged --rm tonistiigi/binfmt --install all
-  script:
-    - export SHA_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_ID}
-    - export NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME/\//_}
-    - cd "$CONTEXT"
-    - echo $SHA_TAG
-    - echo $NAMED_TAG
-    - docker buildx use multiarch-builder
-    - docker buildx build -t $NAMED_TAG --push --platform=linux/arm64,linux/amd64 .
-
-# Kaniko used for these docker builds to speed up the process
-.docker:
-  stage: docker
-  image:
-    name: gcr.io/kaniko-project/executor:v1.23.2-debug
-    entrypoint: [""]
-  tags:
-    - light
-  needs:
-    - job: "build:gradle"
-  variables:
-    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}/build/docker"
-  # except:
-  #   refs:
-  #     - tags
-  script:
-    - SHA_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}
-    - NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME/\//_}
-    - time /kaniko/executor
-      --context "$CONTEXT"
-      --dockerfile "${CONTEXT}/Dockerfile"
-      --destination "$SHA_TAG"
-      --destination "$NAMED_TAG"
-      --registry-mirror=172.17.0.1:6000
-      --cache
-
-.publish:
-  tags:
-    - heavy
-  extends:
-    - .gradle
-  stage: publish
-  needs:
-    - job: "build:gradle"
-
-publish:nexus:
+"Publish Maven Artifacts to Nexus":
   allow_failure: true
   tags:
     - heavy
   extends:
     - .publish
+  when: manual
   rules:
-    # - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
     - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
   script:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -PsonatypeNexusUsername="${SONATYPE_NEXUS_USERNAME}" -PsonatypeNexusPassword="${SONATYPE_NEXUS_PASSWORD}" publishPublicPublicationToSonatype closeSonatypeStagingRepository releaseSonatypeStagingRepository
 
-publish:gradle:
+"Publish Plugin to gradle.org":
   tags:
     - heavy
   extends:
@@ -147,7 +77,8 @@ publish:gradle:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" -Pgradle.publish.key="${GRADLE_PUBLISH_KEY}" -Pgradle.publish.secret="${GRADLE_PUBLISH_SECRET}" -PpublishToGradleOrg publishPlugin
 
-publish:gitlab:
+"Publish Maven Artifacts to GitLab":
+  stage: publish
   tags:
     - heavy
   extends:
@@ -157,12 +88,11 @@ publish:gitlab:
       - tags
       - dev
       - main
-      - "2.0"
   script:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -PprojectMavenRepo="https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/maven" -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
 
-publish:docs:
+"Trigger Netlify Docs":
   stage: publish
   image: curlimages/curl:latest
   tags:
@@ -175,32 +105,7 @@ publish:docs:
   script:
     - curl -X POST -d {} $NETLIFY_DOCS_WEBHOOK
 
-.publish-python:
-  extends:
-    - .publish
-  variables:
-    GITLAB_PYPI_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi"
-  only:
-    refs:
-      - tags
-      - dev
-      - main
-  script:
-    - ./gradlew $PROJECT_NAME:build
-    - cd $PROJECT_NAME/src
-    - uv publish --publish-url ${GITLAB_PYPI_URL} --username gitlab-ci-token --password ${CI_JOB_TOKEN}
-
-.publish-python-pypi:
-  extends:
-    - .publish
-  rules:
-    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
-  script:
-    - ./gradlew $PROJECT_NAME:build
-    - cd $PROJECT_NAME/src
-    - uv publish --username __token__ --password ${PYTHON_PYPI_PUBLISH_PASSWORD}
-
-hub_docker_quota_check:
+"Check Docker Hub quota":
   stage: build
   image: alpine:3.21
   tags:
@@ -213,17 +118,19 @@ hub_docker_quota_check:
       TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:ratelimitpreview/test:pull" | jq --raw-output .token) && curl --head --header "Authorization: Bearer $TOKEN" "https://registry-1.docker.io/v2/ratelimitpreview/test/manifests/latest" 2>&1
 
 # Trigger project for triggering downstream plugins
-trigger:plugins:
+"Trigger Plugin Jobs":
   stage: trigger
   variables:
     TRIGGER_BRANCH: $CI_COMMIT_REF_NAME
     TRIGGER_TAG: $CI_COMMIT_TAG
+  # rules:
+  #   - if: $CI_COMMIT_TAG
+  #   - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH == 'main'
   only:
     refs:
       - dev
       - main
       - release/*
-      - "2.0"
       - tags
   trigger:
     project: $CI_PROJECT_NAMESPACE/ci-plugin-triggers
@@ -232,53 +139,23 @@ trigger:plugins:
       yaml_variables: true
       pipeline_variables: false
 
-.container_scanning:
-  tags:
-    - light
-  variables:
-    CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning:5"
-    GIT_STRATEGY: fetch
-  image: "$CS_ANALYZER_IMAGE$CS_IMAGE_SUFFIX"
-  stage: scan
-  allow_failure: true
-  artifacts:
-    reports:
-      container_scanning: deltafi-core.container-report.json
-    paths:
-      - deltafi-core.container-report.json
-      - deltafi-core-actions.container-report.json
-      - deltafi-egress-sink.container-report.json
-      - deltafi-nodemonitor.container-report.json
-  dependencies: []
-  when: manual
-  script:
-    - which grype && grype db update
-    - CS_DOCKERFILE_PATH=deltafi-core CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core:${CI_COMMIT_SHORT_SHA} gtcs scan
-    - cp gl-container-scanning-report.json deltafi-core.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-core-actions CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core-actions:${CI_COMMIT_SHORT_SHA} gtcs scan
-    - cp gl-container-scanning-report.json deltafi-core-actions.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-egress-sink CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-egress-sink:${CI_COMMIT_SHORT_SHA} gtcs scan
-    - cp gl-container-scanning-report.json deltafi-egress-sink.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-nodemonitor CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-nodemonitor:${CI_COMMIT_SHORT_SHA} gtcs scan
-    - cp gl-container-scanning-report.json deltafi-nodemonitor.container-report.json
-
-grype_scan:
+"Grype Scan":
   extends:
     - .container_scanning
   variables:
     CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning/grype:5"
 
-trivy_scan:
+"Trivy Scan":
   extends:
     - .container_scanning
   variables:
     CS_ANALYZER_IMAGE: "$CI_TEMPLATE_REGISTRY_HOST/security-products/container-scanning/trivy:5"
 
-publish:distros:
+"Publish Installer Distros":
   stage: publish
   image: curlimages/curl:latest
   needs:
-    - job: "build:distros"
+    - job: "Build Installer Distros"
   tags:
     - light
   rules:
@@ -312,13 +189,45 @@ publish:distros:
     paths:
       - distribution.md
 
-release:
+"linux arm64 distro image":
+  extends: .distro-containers
+  variables:
+    ARCH: arm64
+    OS: linux
+  needs:
+    - job: "Publish Installer Distros"
+
+"linux amd64 distro image":
+  extends: .distro-containers
+  variables:
+    ARCH: amd64
+    OS: linux
+  needs:
+    - job: "Publish Installer Distros"
+
+"macos arm64 distro image":
+  extends: .distro-containers
+  variables:
+    ARCH: arm64
+    OS: macos
+  needs:
+    - job: "Publish Installer Distros"
+
+"macos amd64 distro image":
+  extends: .distro-containers
+  variables:
+    ARCH: amd64
+    OS: macos
+  needs:
+    - job: "Publish Installer Distros"
+
+Release:
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   rules:
     - if: $CI_COMMIT_TAG
   needs:
-    - job: "publish:distros"
+    - job: "Publish Installer Distros"
   script:
     - echo "Release Job"
     - cp ./CHANGELOG/latest.md release_notes.md
@@ -345,7 +254,3 @@ release:
   artifacts:
     paths:
       - release_notes.md
-
-include:
-  - local: '*/.gitlab-ci.yml'
-  - local: 'orchestration/*/.gitlab-ci.yml'

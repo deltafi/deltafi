@@ -1,6 +1,6 @@
 [project]
 name = "deltafi"
-version = "2.33.4rc20251014150602"
+version = "2.33.6"
 description = "SDK for DeltaFi plugins and actions"
 authors = [
     {name = "DeltaFi", email = "deltafi@systolic.com"}

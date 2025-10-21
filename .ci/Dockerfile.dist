@@ -1,0 +1,44 @@
+# Start with a temporary build stage to handle directory selection
+FROM alpine:latest AS builder
+
+ARG VERSION
+ARG OS
+ARG ARCH
+
+# Create working directory
+WORKDIR /build
+
+RUN wget https://gitlab.com/api/v4/projects/44592703/packages/generic/deltafi/$VERSION/deltafi-$VERSION-$OS-$ARCH.tgz
+RUN tar xvf *.tgz
+RUN rm *.tgz
+RUN echo "export DELTAFICLI_K8S_NAMESPACE=deltafi" > $VERSION/deltafi-cli/config && \
+echo "export DELTAFI_MODE=STANDALONE" >> $VERSION/deltafi-cli/config && \
+echo $VERSION >> VERSION
+
+# Use busybox as final image since we need cp command
+FROM busybox:uclibc
+
+LABEL org.opencontainers.image.title="DeltaFi distro"
+LABEL org.opencontainers.image.authors="DeltaFi contributors"
+LABEL org.opencontainers.image.licenses="Apache 2.0"
+LABEL org.opencontainers.image.url="https://www.deltafi.org"
+LABEL org.opencontainers.image.source="https://gitlab.com/deltafi/deltafi"
+
+# Copy the selected directory tree from builder
+COPY --from=builder /build /app
+
+# Create extract script
+RUN echo '#!/bin/sh' > /extract.sh && \
+    echo '[[ -d /deltafi ]] || echo "You must mount a volume to /deltafi (-v /path/to/local/deltafi:/deltafi)"' >> /extract.sh && \
+    echo '[[ -d /deltafi ]] || exit 1' >> /extract.sh && \
+    echo 'cp -rf /app/* /deltafi' >> /extract.sh && \
+    echo 'echo' >> /extract.sh && \
+    echo 'echo "  DeltaFi $(cat /deltafi/VERSION) has been installed in your deltafi directory"' >> /extract.sh && \
+    echo 'echo' >> /extract.sh && \
+    echo 'echo "  To configure and install/upgrade run: ./deltafi"' >> /extract.sh && \
+    echo 'echo' >> /extract.sh && \
+    chmod +x /extract.sh
+
+# Set the entrypoint to our extraction script
+ENTRYPOINT ["/extract.sh"]
+
