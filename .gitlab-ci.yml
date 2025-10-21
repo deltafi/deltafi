@@ -94,7 +94,7 @@ stages:
     - ${GRADLE} -PprojectMavenRepo="https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/maven" -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
 
 "Trigger Netlify Docs":
-  stage: publish
+  stage: trigger
   image: curlimages/curl:latest
   tags:
     - light

@@ -3,12 +3,12 @@
   variables:
     PROJECT_NAME: deltafi-clustermonitor
 
-clustermonitor:docker:
+"Publish deltafi-clustermonitor to GitLab :whale:":
   extends:
     - .clustermonitor
     - .docker
 
-clustermonitor:docker-multiarch:
+"Publish deltafi-clustermonitor to docker.io :whale:":
   extends:
     - .clustermonitor
     - .docker-multiarch

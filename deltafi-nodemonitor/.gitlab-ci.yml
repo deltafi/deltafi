@@ -3,12 +3,12 @@
   variables:
     PROJECT_NAME: deltafi-nodemonitor
 
-nodemonitor:docker:
+"Publish deltafi-nodemonitor to GitLab :whale:":
   extends:
     - .nodemonitor
     - .docker
 
-nodemonitor:docker-multiarch:
+"Publish deltafi-nodemonitor to docker.io :whale:":
   extends:
     - .nodemonitor
     - .docker-multiarch

@@ -1,7 +1,7 @@
 "Trigger Dev Deployment":
   tags:
     - light
-  stage: ci
+  stage: trigger
   only:
     refs:
       - dev

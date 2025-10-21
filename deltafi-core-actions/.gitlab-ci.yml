@@ -2,12 +2,12 @@
   variables:
     PROJECT_NAME: deltafi-core-actions
 
-core-actions:docker:
+"Publish deltafi-core-actions to GitLab :whale:":
   extends:
     - .core-actions
     - .docker
 
-core-actions:docker-multiarch:
+"Publish deltafi-core-actions to docker.io :whale:":
   extends:
     - .core-actions
     - .docker-multiarch
