@@ -20,7 +20,7 @@
     - light
   extends:
     - .golang
-  stage: build
+  stage: test
   when: manual
   script:
     - |
