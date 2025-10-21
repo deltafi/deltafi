@@ -1,4 +1,4 @@
-update-helmchart:
+"Trigger Dev Deployment":
   tags:
     - light
   stage: ci

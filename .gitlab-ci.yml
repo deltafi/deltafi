@@ -83,11 +83,12 @@ stages:
     - heavy
   extends:
     - .publish
-  only:
-    refs:
-      - tags
-      - dev
-      - main
+  rules:
+    - if: $CI_PROJECT_NAMESPACE == 'deltafi'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH == 'dev'
+    - if: $CI_COMMIT_TAG
   script:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -PprojectMavenRepo="https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/maven" -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
@@ -159,7 +160,7 @@ stages:
   tags:
     - light
   rules:
-    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
   script:
     - |
       # Read version from VERSION file
@@ -189,37 +190,45 @@ stages:
     paths:
       - distribution.md
 
-"linux arm64 distro image":
+"Publish Linux-arm64 installer image":
   extends: .distro-containers
   variables:
     ARCH: arm64
     OS: linux
   needs:
     - job: "Publish Installer Distros"
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
 
-"linux amd64 distro image":
+"Publish Linux-amd64 installer image":
   extends: .distro-containers
   variables:
     ARCH: amd64
     OS: linux
   needs:
     - job: "Publish Installer Distros"
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
 
-"macos arm64 distro image":
+"Publish Darwin-arm64 installer image":
   extends: .distro-containers
   variables:
     ARCH: arm64
-    OS: macos
+    OS: darwin
   needs:
     - job: "Publish Installer Distros"
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
 
-"macos amd64 distro image":
+"Publish Darwin-amd64 installer image":
   extends: .distro-containers
   variables:
     ARCH: amd64
-    OS: macos
+    OS: darwin
   needs:
     - job: "Publish Installer Distros"
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
 
 Release:
   stage: release
