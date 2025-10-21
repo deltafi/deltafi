@@ -3,12 +3,12 @@
   variables:
     PROJECT_NAME: deltafi-dirwatcher
 
-"Publish deltafi-dirwatcher to GitLab 🐳":
+"🐳 Publish dirwatcher (GitLab)":
   extends:
     - .dirwatcher
     - .docker
 
-"Publish deltafi-dirwatcher to docker.io 🐳":
+"🐳 Publish dirwatcher (docker.io)":
   extends:
     - .dirwatcher
     - .docker-multiarch

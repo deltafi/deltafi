@@ -3,12 +3,12 @@
   variables:
     PROJECT_NAME: deltafi-egress-sink
 
-"Publish deltafi-egress-sink to GitLab 🐳":
+"🐳 Publish egress-sink (GitLab)":
   extends:
     - .egress-sink
     - .docker
 
-"Publish deltafi-egress-sink to docker.io 🐳":
+"🐳 Publish egress-sink (docker.io)":
   extends:
     - .egress-sink
     - .docker-multiarch

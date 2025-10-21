@@ -3,12 +3,12 @@
   variables:
     PROJECT_NAME: deltafi-clustermonitor
 
-"Publish deltafi-clustermonitor to GitLab 🐳":
+"🐳 Publish clustermonitor (GitLab)":
   extends:
     - .clustermonitor
     - .docker
 
-"Publish deltafi-clustermonitor to docker.io 🐳":
+"🐳 Publish clustermonitor (docker.io)":
   extends:
     - .clustermonitor
     - .docker-multiarch
