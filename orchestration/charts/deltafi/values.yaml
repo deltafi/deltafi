@@ -7,9 +7,9 @@ deltafi:
     # deprecated - set the deployment specific values instead
     secret: ~
   core_actions:
-    image: deltafi/deltafi-core-actions:2.33.7
+    image: deltafi/deltafi-core-actions:2.33.14
   core:
-    image: deltafi/deltafi-core:2.33.7
+    image: deltafi/deltafi-core:2.33.14
     ssl:
       secret: ssl-secret
   ingress:
@@ -20,22 +20,22 @@ deltafi:
     secret: auth-secret
     entityResolver:
       enabled: false
-      image: deltafi/deltafi-entity-resolver:2.33.7
+      image: deltafi/deltafi-entity-resolver:2.33.14
       url: http://127.0.0.1:8080/
       ssl:
         secret: ssl-secret
   egress_sink:
     enabled: true
     drop_metadata: false
-    image: deltafi/deltafi-egress-sink:2.33.7
+    image: deltafi/deltafi-egress-sink:2.33.14
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:2.33.7
+    image: deltafi/deltafi-nodemonitor:2.33.14
     period: 9
   fastdelete:
     workersPerNode: 1
   clustermonitor:
     enabled: true
-    image: deltafi/deltafi-clustermonitor:2.33.7
+    image: deltafi/deltafi-clustermonitor:2.33.14
     period: 9
   plugins:
     ssl:
