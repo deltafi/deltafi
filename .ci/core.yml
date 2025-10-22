@@ -237,11 +237,13 @@ image: ${JAVA_BASE_IMAGE}
     OS: linux
     VERSION: ${CI_COMMIT_TAG}
   before_script:
+    - docker buildx inspect
     - docker buildx create --use
+    - docker buildx inspect
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
   script:
     - export PLATFORM=linux/$ARCH
     - export TAG=$VERSION-$OS-$ARCH
-    - echo docker build --label version="$VERSION" --label org.opencontainers.image.version="$VERSION" --push --platform "$PLATFORM" -t "${DOCKER_REPOSITORY}/${DISTRO_PROJECT}:${TAG}" --build-arg VERSION="$VERSION" --build-arg OS="$OS" --build-arg ARCH="$ARCH" -f .ci/Dockerfile.dist ./.ci
-    - docker build --label version="$VERSION" --label org.opencontainers.image.version="$VERSION" --push --platform "$PLATFORM" -t "${DOCKER_REPOSITORY}/${DISTRO_PROJECT}:${TAG}" --build-arg VERSION="$VERSION" --build-arg OS="$OS" --build-arg ARCH="$ARCH" -f .ci/Dockerfile.dist ./.ci
+    - echo docker buildx build --label version="$VERSION" --label org.opencontainers.image.version="$VERSION" --push --platform "$PLATFORM" -t "${DOCKER_REPOSITORY}/${DISTRO_PROJECT}:${TAG}" --build-arg VERSION="$VERSION" --build-arg OS="$OS" --build-arg ARCH="$ARCH" -f .ci/Dockerfile.dist ./.ci
+    - docker buildx build --label version="$VERSION" --label org.opencontainers.image.version="$VERSION" --push --platform "$PLATFORM" -t "${DOCKER_REPOSITORY}/${DISTRO_PROJECT}:${TAG}" --build-arg VERSION="$VERSION" --build-arg OS="$OS" --build-arg ARCH="$ARCH" -f .ci/Dockerfile.dist ./.ci
 
