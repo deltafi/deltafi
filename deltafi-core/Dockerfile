@@ -1,4 +1,4 @@
-FROM node:22-alpine3.19 AS deltafi-ui-build-stage
+FROM --platform=$BUILDPLATFORM node:22-alpine3.19 AS deltafi-ui-build-stage
 WORKDIR /ui
 # Cache package installation
 COPY ui/package.json ui/package-lock.json ./
@@ -7,7 +7,7 @@ RUN npm install
 COPY ui ./
 RUN npm run build
 
-FROM node:22-alpine3.19 AS deltafi-docs-build-stage
+FROM --platform=$BUILDPLATFORM node:22-alpine3.19 AS deltafi-docs-build-stage
 WORKDIR /docs
 # Cache package installation
 COPY docs/package.json ./
@@ -17,7 +17,7 @@ COPY docs ./
 ENV VUE_APP_EMBEDDED=true
 RUN npm run build
 
-FROM node:20-alpine3.19 AS deltafi-graphiql-build-stage
+FROM --platform=$BUILDPLATFORM node:20-alpine3.19 AS deltafi-graphiql-build-stage
 WORKDIR /graphiql
 # Cache package installation
 COPY graphiql/package.json /graphiql/package.json
