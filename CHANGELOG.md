@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.33.17] - 2025-10-22
+
+- No changes for this release
+
 ## [2.33.16] - 2025-10-22
 
 - No changes for this release
@@ -4796,7 +4800,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.16...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.17...main
+[2.33.17]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.16...2.33.17
 [2.33.16]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.15...2.33.16
 [2.33.15]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.14...2.33.15
 [2.33.14]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.7...2.33.14
