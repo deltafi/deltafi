@@ -77,9 +77,15 @@ image: ${JAVA_BASE_IMAGE}
     CONTEXT: "."
     DOCKER_BUILD_FLAGS:
     PUSH: --push
+  retry:
+    max: 2
+    when:
+      - script_failure
   before_script:
     - rm -rf extra.sh
-    - docker buildx create --use
+    - docker buildx inspect
+    - docker buildx create --name deltafi-inator --use
+    - docker buildx inspect
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
   script:
     - echo docker buildx build ${PUSH} --platform ${DOCKER_PLATFORMS} --tag ${DOCKER_REPOSITORY}/${PROJECT_NAME}:${DOCKER_TAG} ${DOCKER_BUILD_FLAGS} --file "${DOCKERFILE}" ${CONTEXT}
@@ -227,6 +233,10 @@ image: ${JAVA_BASE_IMAGE}
   tags:
     - light
   image: ${BUILDX_BASE_IMAGE}
+  retry:
+    max: 2
+    when:
+      - script_failure
   variables:
     REGISTRY: docker.io
     REGISTRY_USERNAME: ${DOCKERHUB_USERNAME}
@@ -238,7 +248,7 @@ image: ${JAVA_BASE_IMAGE}
     VERSION: ${CI_COMMIT_TAG}
   before_script:
     - docker buildx inspect
-    - docker buildx create --use
+    - docker buildx create --name deltafi-inator --use
     - docker buildx inspect
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
   script:

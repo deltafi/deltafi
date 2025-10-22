@@ -2,6 +2,7 @@ FROM node:22-alpine3.19 AS deltafi-ui-build-stage
 WORKDIR /ui
 # Cache package installation
 COPY ui/package.json ui/package-lock.json ./
+RUN npm config set fetch-timeout 600000 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-retries 5
 RUN npm install
 COPY ui ./
 RUN npm run build
@@ -10,6 +11,7 @@ FROM node:22-alpine3.19 AS deltafi-docs-build-stage
 WORKDIR /docs
 # Cache package installation
 COPY docs/package.json ./
+RUN npm config set fetch-timeout 600000 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-retries 5
 RUN npm install
 COPY docs ./
 ENV VUE_APP_EMBEDDED=true
@@ -19,7 +21,8 @@ FROM node:20-alpine3.19 AS deltafi-graphiql-build-stage
 WORKDIR /graphiql
 # Cache package installation
 COPY graphiql/package.json /graphiql/package.json
-RUN yarn install
+RUN yarn config set network-timeout 60000
+RUN yarn install --network-timeout 60000
 COPY graphiql .
 RUN yarn build
 
