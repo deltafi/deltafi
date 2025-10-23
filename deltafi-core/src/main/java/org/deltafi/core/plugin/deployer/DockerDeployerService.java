@@ -32,6 +32,7 @@ import org.deltafi.core.types.Result;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -183,6 +184,9 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .withLabels(containerLabels)
                 .withHealthcheck(PLUGIN_HEALTH_CHECK)
                 .withHostConfig(hostConfig())) {
+
+            Optional.ofNullable(certsUidGid())
+                    .ifPresent(containerCmd::withUser);
 
             containerResponse = containerCmd.exec();
             dockerClient.startContainerCmd(containerResponse.getId()).exec();
@@ -341,6 +345,22 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     private static class UnhealthyContainer extends RuntimeException {
         public UnhealthyContainer(String message) {
             super(message);
+        }
+    }
+
+    private String certsUidGid() {
+        Path path = Paths.get("/certs");
+
+        if (!Files.exists(path)) {
+            return null;
+        }
+        try {
+            int uid = (int) Files.getAttribute(path, "unix:uid", java.nio.file.LinkOption.NOFOLLOW_LINKS);
+            int gid = (int) Files.getAttribute(path, "unix:gid", java.nio.file.LinkOption.NOFOLLOW_LINKS);
+            return uid + ":" + gid;
+        } catch (IOException e) {
+            log.error("Could not determine the UID/GID of the certs directory", e);
+            return null;
         }
     }
 
