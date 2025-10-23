@@ -271,4 +271,37 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
         return !results.isEmpty();
     }
+
+    @Override
+    public Map<String, Integer> coldQueuedActionsCount() {
+        String sql = """
+                SELECT cold_queued_action , COUNT(*) AS count
+                FROM delta_file_flows
+                WHERE state  = 'IN_FLIGHT'
+                AND cold_queued_action IS NOT NULL
+                GROUP BY cold_queued_action""";
+
+        Query query = entityManager.createNativeQuery(sql);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> resultList = query.getResultList();
+        return resultList.stream()
+                .collect(Collectors.toMap(row -> (String) row[0], row -> ((Number) row[1]).intValue()));
+    }
+
+    @Override
+    public Long coldQueuedCount(int limit) {
+        String sql = """
+                SELECT COUNT(*) AS count
+                FROM (SELECT 1 FROM delta_file_flows
+                WHERE state  = 'IN_FLIGHT'
+                AND cold_queued_action IS NOT NULL
+                LIMIT :limit) AS a""";
+
+        Query query = entityManager.createNativeQuery(sql)
+                .setParameter("limit", limit);
+
+        return ((Number) query.getSingleResult()).longValue();
+    }
+
 }

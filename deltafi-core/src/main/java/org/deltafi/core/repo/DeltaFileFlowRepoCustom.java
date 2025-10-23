@@ -39,9 +39,9 @@ public interface DeltaFileFlowRepoCustom {
      * Count the number of errors per dataSource using the optional filter parameters, and return the requested
      * page of data based on offset and limit. All associated DeltaFile dids within each dataSource are included.
      *
-     * @param offset  Offset to use for pagination (defaults to 0)
-     * @param limit   Maximum number of flows to return
-     * @param filter  Filters are used to constrain which DeltaFiles are used in computation
+     * @param offset    Offset to use for pagination (defaults to 0)
+     * @param limit     Maximum number of flows to return
+     * @param filter    Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
      * @param sortField Field to order by, optional
      * @return the SummaryByFlow
@@ -52,9 +52,9 @@ public interface DeltaFileFlowRepoCustom {
      * Count the number of filtered DeltaFiles per dataSource using the optional filter parameters, and return the requested
      * page of data based on offset and limit. All associated DeltaFile dids within each dataSource are included.
      *
-     * @param offset  Offset to use for pagination (defaults to 0)
-     * @param limit   Maximum number of flows to return
-     * @param filter  Filters are used to constrain which DeltaFiles are used in computation
+     * @param offset    Offset to use for pagination (defaults to 0)
+     * @param limit     Maximum number of flows to return
+     * @param filter    Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
      * @param sortField Field to order by, optional
      * @return the SummaryByFlow
@@ -65,9 +65,9 @@ public interface DeltaFileFlowRepoCustom {
      * Count the number of errors per errorMessage + dataSource using the optional filter parameters, and return the requested
      * page of data based on offset and limit. All associated DeltaFile dids within each errorMessage + dataSource grouping are included.
      *
-     * @param offset  Offset to use for pagination (defaults to 0)
-     * @param limit   Maximum number of errorMessage/flows to return
-     * @param filter  Filters are used to constrain which DeltaFiles are used in computation
+     * @param offset    Offset to use for pagination (defaults to 0)
+     * @param limit     Maximum number of errorMessage/flows to return
+     * @param filter    Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
      * @param sortField Field to order by, optional
      * @return the SummaryByFlowAndMessage
@@ -78,9 +78,9 @@ public interface DeltaFileFlowRepoCustom {
      * Count the number of filtered DeltaFiles per dataSource and filterCause using the optional filter parameters, and return the requested
      * page of data based on offset and limit. All associated DeltaFile dids within each filterCause + dataSource grouping are included.
      *
-     * @param offset  Offset to use for pagination (defaults to 0)
-     * @param limit   Maximum number of errorMessage/flows to return
-     * @param filter  Filters are used to constrain which DeltaFiles are used in computation
+     * @param offset    Offset to use for pagination (defaults to 0)
+     * @param limit     Maximum number of errorMessage/flows to return
+     * @param filter    Filters are used to constrain which DeltaFiles are used in computation
      * @param direction Determines what order the returned records will be sorted by
      * @param sortField Field to order by, optional
      * @return the SummaryByFlowAndMessage
@@ -89,6 +89,7 @@ public interface DeltaFileFlowRepoCustom {
 
     /**
      * Get the distinct list of cold queued action classes (queue names)
+     *
      * @return distinct list of action classes that have a cold queued DeltaFile
      */
     List<String> distinctColdQueuedActions();
@@ -96,8 +97,25 @@ public interface DeltaFileFlowRepoCustom {
     /**
      * Check if any DeltaFileFlows exist where the cold queued flag is true
      * and the last action has a action class matching the given action class
+     *
      * @param actionClass action class (queue name) to search for
      * @return true if any DeltaFileFlow exist that is cold queued for the given action class
      */
     boolean isColdQueued(String actionClass);
+
+    /**
+     * Retrieves each action with a cold queue, and a count of items in each queue
+     *
+     * @return A {@code Map<String, Integer>} where the key is the action class and the value is the count of items in that actions's cold queue.
+     */
+    Map<String, Integer> coldQueuedActionsCount();
+
+    /**
+     * Compute the total number of cold queued items
+     *
+     * @param limit max rows to count
+     * @return A {@code Long} for the total number of cold queued items
+     */
+    Long coldQueuedCount(int limit);
+
 }

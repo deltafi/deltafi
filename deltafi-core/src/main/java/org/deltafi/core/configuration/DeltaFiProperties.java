@@ -108,6 +108,12 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10", dataType = VariableDataType.NUMBER)
     private int checkActionQueueSizeThreshold = 10;
 
+    @PropertyInfo(description = "Minimum number for cold queue size before checking if growing", defaultValue = "10000", dataType = VariableDataType.NUMBER)
+    private int checkColdQueueMinimumGrowing = 10000;
+
+    @PropertyInfo(description = "Threshold for cold queue size warning", defaultValue = "75000", dataType = VariableDataType.NUMBER)
+    private int checkColdQueueWarningThreshold = 75000;
+
     @PropertyInfo(description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
     private int checkContentStoragePercentThreshold = 90;
 

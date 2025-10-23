@@ -93,6 +93,8 @@ type DeltaFiProperties {
     pluginAutoRollback: Boolean
     pluginDeployTimeout: String
     checkActionQueueSizeThreshold: Int!
+    checkColdQueueMinimumGrowing: Int!
+    checkColdQueueWarningThreshold: Int!
     checkContentStoragePercentThreshold: Int!
     uiUseUTC: Boolean!
     uiContentPreviewSize: String
@@ -127,6 +129,8 @@ input DeltaFiPropertiesInput {
     pluginAutoRollback: Boolean
     pluginDeployTimeout: String
     checkActionQueueSizeThreshold: Int!
+    checkColdQueueMinimumGrowing: Int!
+    checkColdQueueWarningThreshold: Int!
     checkContentStoragePercentThreshold: Int!
     uiUseUTC: Boolean!
     uiContentPreviewSize: String
