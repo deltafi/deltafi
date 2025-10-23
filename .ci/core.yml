@@ -217,15 +217,24 @@ image: ${JAVA_BASE_IMAGE}
       - deltafi-nodemonitor.container-report.json
   dependencies: []
   when: manual
+  rules:
+    - if: $CI_COMMIT_TAG
+      variables:
+        IMAGE_TAG: $CI_COMMIT_TAG
+        REGISTRY: docker.io/deltafi
+    - if: $CI_COMMIT_BRANCH
+      variables:
+        IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+        REGISTRY: $CI_REGISTRY_IMAGE
   script:
     - which grype && grype db update
-    - CS_DOCKERFILE_PATH=deltafi-core CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core:${CI_COMMIT_SHORT_SHA} gtcs scan
+    - CS_DOCKERFILE_PATH=deltafi-core CS_IMAGE=${REGISTRY}/deltafi-core:${IMAGE_TAG} gtcs scan
     - cp gl-container-scanning-report.json deltafi-core.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-core-actions CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-core-actions:${CI_COMMIT_SHORT_SHA} gtcs scan
+    - CS_DOCKERFILE_PATH=deltafi-core-actions CS_IMAGE=${REGISTRY}/deltafi-core-actions:${IMAGE_TAG} gtcs scan
     - cp gl-container-scanning-report.json deltafi-core-actions.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-egress-sink CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-egress-sink:${CI_COMMIT_SHORT_SHA} gtcs scan
+    - CS_DOCKERFILE_PATH=deltafi-egress-sink CS_IMAGE=${REGISTRY}/deltafi-egress-sink:${IMAGE_TAG} gtcs scan
     - cp gl-container-scanning-report.json deltafi-egress-sink.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-nodemonitor CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-nodemonitor:${CI_COMMIT_SHORT_SHA} gtcs scan
+    - CS_DOCKERFILE_PATH=deltafi-nodemonitor CS_IMAGE=${REGISTRY}/deltafi-nodemonitor:${IMAGE_TAG} gtcs scan
     - cp gl-container-scanning-report.json deltafi-nodemonitor.container-report.json
 
 .distro-containers:
@@ -242,7 +251,7 @@ image: ${JAVA_BASE_IMAGE}
     REGISTRY_USERNAME: ${DOCKERHUB_USERNAME}
     REGISTRY_PASSWORD: ${DOCKERHUB_PASSWORD}
     DOCKER_REPOSITORY: docker.io/deltafi
-    DISTRO_PROJECT: distro
+    DISTRO_PROJECT: deltafi
     ARCH: arm64
     OS: linux
     VERSION: ${CI_COMMIT_TAG}
