@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class ValkeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxyManager<K> {
+    public static final String RATE_LIMIT_BUCKET_PREFIX = "rate-limit-bucket-";
 
     private final ValkeyApi valkeyApi;
     private final ExpirationAfterWriteStrategy expirationStrategy;
@@ -63,7 +64,7 @@ public class ValkeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
                 }
             }
         };
-        return new ValkeyBasedProxyManagerBuilder<>(Mapper.STRING, valkeyApi);
+        return new ValkeyBasedProxyManagerBuilder<>(new KeyMapper(), valkeyApi);
     }
 
     private ValkeyBasedProxyManager(ValkeyBasedProxyManagerBuilder<K> builder) {
@@ -198,6 +199,18 @@ public class ValkeyBasedProxyManager<K> extends AbstractCompareAndSwapBasedProxy
 
         public ExpirationAfterWriteStrategy getNotNullExpirationStrategy() {
             return expirationStrategy;
+        }
+    }
+
+    private static class KeyMapper implements Mapper<String> {
+        @Override
+        public byte[] toBytes(String value) {
+            return (RATE_LIMIT_BUCKET_PREFIX + value).getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public String toString(String value) {
+            return RATE_LIMIT_BUCKET_PREFIX + value;
         }
     }
 }

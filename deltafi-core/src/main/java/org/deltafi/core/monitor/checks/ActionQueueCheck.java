@@ -22,6 +22,7 @@ import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.ValkeyBasedProxyManager;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -127,6 +128,7 @@ public class ActionQueueCheck extends StatusCheck {
 
     private boolean expectedQueue(String queueName, Set<String> recentQueueNames) {
         return IGNORED_QUEUE_NAMES.contains(queueName) ||
+                queueName.startsWith(ValkeyBasedProxyManager.RATE_LIMIT_BUCKET_PREFIX) ||
                 queueName.startsWith(ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX) ||
                 queueName.startsWith("gauge.node") ||
                 recentQueueNames.contains(queueName);
