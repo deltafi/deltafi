@@ -24,10 +24,9 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.ContentType;
 import org.deltafi.common.nifi.FlowFileInputStream;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.common.types.IngressEventItem;
@@ -75,7 +74,7 @@ class IngressServiceTest {
     private static final TestUUIDGenerator UUID_GENERATOR = new TestUUIDGenerator();
 
     private static final ContentStorageService CONTENT_STORAGE_SERVICE =
-            new ContentStorageService(new InMemoryObjectStorageService());
+            new InMemoryContentStorageService();
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 

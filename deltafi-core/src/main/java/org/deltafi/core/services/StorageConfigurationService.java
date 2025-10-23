@@ -23,7 +23,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -42,14 +42,15 @@ public class StorageConfigurationService {
 
     private final MinioClient minioClient;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final StorageProperties storageProperties;
 
     private Integer expirationDayCache = null;
 
     @PostConstruct
     public void ensureBucket() throws ObjectStorageException {
-        if (!bucketExists(ContentStorageService.CONTENT_BUCKET)) {
-            createBucket(ContentStorageService.CONTENT_BUCKET);
-            setExpiration(ContentStorageService.CONTENT_BUCKET);
+        if (!bucketExists(storageProperties.bucketName())) {
+            createBucket(storageProperties.bucketName());
+            setExpiration(storageProperties.bucketName());
         } else {
             updateAgeOffIfChanged();
         }
@@ -58,7 +59,7 @@ public class StorageConfigurationService {
     @SneakyThrows
     public void updateAgeOffIfChanged() {
         if (expirationChanged()) {
-            setExpiration(ContentStorageService.CONTENT_BUCKET);
+            setExpiration(storageProperties.bucketName());
         }
     }
 
@@ -129,7 +130,7 @@ public class StorageConfigurationService {
 
     Integer getExpirationFromMinio() throws ObjectStorageException {
         try {
-            return getExpirationFromRule(minioClient.getBucketLifecycle(GetBucketLifecycleArgs.builder().bucket(ContentStorageService.CONTENT_BUCKET).build()));
+            return getExpirationFromRule(minioClient.getBucketLifecycle(GetBucketLifecycleArgs.builder().bucket(storageProperties.bucketName()).build()));
         } catch (Exception e) {
             log.error(GET_BUCKET_LIFECYCLE_ERROR);
             throw new ObjectStorageException(GET_BUCKET_LIFECYCLE_ERROR, e);

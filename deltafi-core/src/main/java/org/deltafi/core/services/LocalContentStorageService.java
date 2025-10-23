@@ -19,7 +19,7 @@ package org.deltafi.core.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.StorageProperties;
 import org.deltafi.core.repo.PendingDeleteRepo;
 import org.springframework.stereotype.Service;
 
@@ -32,11 +32,12 @@ import java.util.UUID;
 public class LocalContentStorageService {
     private final PendingDeleteRepo pendingDeleteRepo;
     private final SystemService systemService;
+    private final StorageProperties storageProperties;
 
     private static final long POLL_INTERVAL_MS = 50;
 
     public void deleteContent(List<UUID> dids, boolean blockUntilDeleted) {
-        pendingDeleteRepo.insertPendingDeletes(systemService.getContentNodeNames(), dids, ContentStorageService.CONTENT_BUCKET);
+        pendingDeleteRepo.insertPendingDeletes(systemService.getContentNodeNames(), dids, storageProperties.bucketName());
 
         if (!blockUntilDeleted) {
             return;

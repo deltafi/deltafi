@@ -27,8 +27,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.http.HttpService;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +39,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -57,7 +55,7 @@ class FlowfileEgressTest {
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("FlowfileEgressTest");
 
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new ActionContentStorageService(new InMemoryObjectStorageService());
+            new InMemoryContentStorageService();
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
@@ -65,7 +63,7 @@ class FlowfileEgressTest {
             .build();
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         wireMockHttp.resetAll();
     }
 

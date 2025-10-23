@@ -244,12 +244,13 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 	}
 
 	if o.inDevelopment() {
-		err := o.ExecuteMinioCommand([]string{"mc mb -p deltafi/storage > /dev/null"})
+		bucketName := o.getValueOr(values, "deltafi.storage.bucketName", "storage")
+		err := o.ExecuteMinioCommand([]string{fmt.Sprintf("mc mb -p deltafi/%s > /dev/null", bucketName)})
 		if err != nil {
 			fmt.Println(styles.ComposeFAIL("MinIO configured for development", "Error"))
 			return err
 		}
-		err = o.ExecuteMinioCommand([]string{"mc anonymous set public deltafi/storage > /dev/null"})
+		err = o.ExecuteMinioCommand([]string{fmt.Sprintf("mc anonymous set public deltafi/%s > /dev/null", bucketName)})
 		if err != nil {
 			fmt.Println(styles.ComposeFAIL("MinIO configured for development", "Error"))
 			return err
@@ -601,6 +602,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"SITE_DIR":                           o.sitePath,
 		"STATSD_HOSTNAME":                    "deltafi-graphite",
 		"STATSD_PORT":                        "8125",
+		"STORAGE_BUCKET_NAME":                o.getValueOr(values, "deltafi.storage.bucketName", "storage"),
 		"VALKEY_HOST":                        "deltafi-valkey",
 		"VALKEY_PORT":                        "6379",
 		"VALKEY_URL":                         "http://deltafi-valkey:6379",

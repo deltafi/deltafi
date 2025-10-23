@@ -28,7 +28,7 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,7 +59,7 @@ public abstract class ActionTest {
     @Mock
     protected ActionsProperties actionsProperties;
 
-    protected final ActionContentStorageService contentStorageService = new ActionContentStorageService(new InMemoryObjectStorageService());
+    protected final ActionContentStorageService contentStorageService = new InMemoryContentStorageService();
 
     protected String convertUTCDateToLocal(String utcDateString) {
         final DateTimeFormatter javaStdDateToStringFormatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy", Locale.ENGLISH);

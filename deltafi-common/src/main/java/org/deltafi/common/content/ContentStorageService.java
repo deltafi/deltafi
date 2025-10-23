@@ -17,7 +17,6 @@
  */
 package org.deltafi.common.content;
 
-import lombok.RequiredArgsConstructor;
 import org.deltafi.common.storage.s3.MissingContentException;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -28,11 +27,14 @@ import org.deltafi.common.types.SaveManyContent;
 import java.io.*;
 import java.util.*;
 
-@RequiredArgsConstructor
 public class ContentStorageService {
-    public static final String CONTENT_BUCKET = "storage";
-
     final ObjectStorageService objectStorageService;
+    final String contentBucket;
+
+    public ContentStorageService(ObjectStorageService objectStorageService, String bucketName) {
+        this.objectStorageService = objectStorageService;
+        this.contentBucket = bucketName == null || bucketName.isBlank() ? StorageProperties.STORAGE : bucketName;
+    }
 
     public InputStream load(Content content) throws ObjectStorageException {
         if (content.getSize() == 0) {
@@ -102,7 +104,7 @@ public class ContentStorageService {
             updatedContent.add(content);
         }
 
-        objectStorageService.putObjects(CONTENT_BUCKET, objectsToSave);
+        objectStorageService.putObjects(contentBucket, objectsToSave);
         return updatedContent;
     }
 
@@ -142,12 +144,12 @@ public class ContentStorageService {
 
     public void deleteAllByObjectName(List<String> objectNames) {
         if (!objectNames.isEmpty()) {
-            objectStorageService.removeObjects(CONTENT_BUCKET, objectNames);
+            objectStorageService.removeObjects(contentBucket, objectNames);
         }
     }
 
     private ObjectReference buildObjectReference(Segment segment) {
-        return new ObjectReference(CONTENT_BUCKET, segment.objectName(),
+        return new ObjectReference(contentBucket, segment.objectName(),
                 segment.getOffset(), segment.getSize());
     }
 

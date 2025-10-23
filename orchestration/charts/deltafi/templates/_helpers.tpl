@@ -151,6 +151,8 @@ initContainers:
   value: deltafi-redis-master
 - name: REDIS_PORT
   value: "6379"
+- name: STORAGE_BUCKET_NAME
+  value: {{ .Values.deltafi.storage.bucketName | default "storage" }}
 - name: VALKEY_URL
   value: http://deltafi-valkey-master:6379
 - name: DELTAFI_UI_DOMAIN

@@ -40,6 +40,8 @@ deltafi:
   plugins:
     ssl:
       secret: ssl-secret
+  storage:
+    bucketName: storage
 
 # Kubernetes ingress config
 ingress:

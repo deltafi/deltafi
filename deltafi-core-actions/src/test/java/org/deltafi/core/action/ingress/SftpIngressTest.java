@@ -32,7 +32,7 @@ import org.deltafi.actionkit.action.ingress.IngressResult;
 import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.ssl.SslContextProvider;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.IngressStatus;
 import org.junit.jupiter.api.AfterAll;
@@ -54,14 +54,14 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class SftpIngressTest {
+class SftpIngressTest {
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new ActionContentStorageService(new InMemoryObjectStorageService());
+            new InMemoryContentStorageService();
 
     private static SshServer sshServer;
 
     @BeforeAll
-    public static void beforeAll() throws UnrecoverableKeyException, CertificateException, KeyStoreException,
+    static void beforeAll() throws UnrecoverableKeyException, CertificateException, KeyStoreException,
             IOException, NoSuchAlgorithmException {
         KeyPair keyPair = loadKeyPair();
         sshServer = SshServer.setUpDefaultServer();
@@ -113,7 +113,7 @@ public class SftpIngressTest {
     }
 
     @AfterAll
-    public static void afterAll() throws IOException {
+    static void afterAll() throws IOException {
         sshServer.close();
     }
 

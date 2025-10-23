@@ -33,6 +33,8 @@ deltafi:
   plugins:
     ssl:
       secret: ssl-secret
+  storage:
+    bucketName: storage
 ingress:
   domain: local.deltafi.org
   tls:

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
-import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.content.ContentStorageService;
@@ -43,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
-public class ActionRunnerTest {
+class ActionRunnerTest {
     protected static final UUID DID = UUID.randomUUID();
     protected static final String HOSTNAME = "hostname";
 
@@ -62,13 +61,13 @@ public class ActionRunnerTest {
     private ActionContentStorageService actionContentStorageService;
 
     @BeforeEach
-    public void preTest() {
+    void preTest() {
         actionContentStorageService = new ActionContentStorageService(
-                new ContentStorageService(objectStorageService));
+                new ContentStorageService(objectStorageService, "storage"));
     }
 
     @Test
-    public void testOrphanAndLogging_Error() throws JsonProcessingException, ObjectStorageException {
+    void testOrphanAndLogging_Error() throws JsonProcessingException, ObjectStorageException {
         List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
 
         ErrorTestAction action = new ErrorTestAction();
@@ -115,7 +114,7 @@ public class ActionRunnerTest {
     }
 
     @Test
-    public void testOrphanAndLogging_Transform() throws JsonProcessingException, ObjectStorageException {
+    void testOrphanAndLogging_Transform() throws JsonProcessingException, ObjectStorageException {
         List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
 
         TransformTestAction action = new TransformTestAction();

@@ -25,7 +25,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,7 @@ class HttpEgressTest {
     private static final String URL_CONTEXT = "/endpoint";
     private static final String CONTENT = "This is the test content.";
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new ActionContentStorageService(new InMemoryObjectStorageService());
+            new InMemoryContentStorageService();
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
             .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))

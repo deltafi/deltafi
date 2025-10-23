@@ -26,8 +26,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.http.HttpService;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.asserters.ErrorResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
@@ -37,18 +36,17 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.net.http.HttpClient;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class DeltaFiEgressTest {
+class DeltaFiEgressTest {
     private static final String URL_ENDPOINT = "/endpoint";
     private static final String ENV_CORE_URL = null;
     private static final String CONTENT = "This is the test content.";
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new ActionContentStorageService(new InMemoryObjectStorageService());
+            new InMemoryContentStorageService();
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
@@ -60,12 +58,12 @@ public class DeltaFiEgressTest {
     private final DeltaFiEgress action = new DeltaFiEgress(httpService, ENV_CORE_URL);
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         wireMockHttp.resetAll();
     }
 
     @Test
-    public void errorInvalidUrl() {
+    void errorInvalidUrl() {
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
@@ -80,7 +78,7 @@ public class DeltaFiEgressTest {
     }
 
     @Test
-    public void errorCircularEgress() {
+    void errorCircularEgress() {
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
@@ -98,7 +96,7 @@ public class DeltaFiEgressTest {
     }
 
     @Test
-    public void egressRemote() {
+    void egressRemote() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
@@ -127,7 +125,7 @@ public class DeltaFiEgressTest {
     }
 
     @Test
-    public void egressEmptyContent() {
+    void egressEmptyContent() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
@@ -156,7 +154,7 @@ public class DeltaFiEgressTest {
     }
 
     @Test
-    public void egressLocalWithUrl() {
+    void egressLocalWithUrl() {
         UUID did = UUID.randomUUID();
 
         wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
@@ -187,7 +185,7 @@ public class DeltaFiEgressTest {
     }
 
     @Test
-    public void egressLocalDefaultUrl() {
+    void egressLocalDefaultUrl() {
         String mockHttpUrl = wireMockHttp.getRuntimeInfo().getHttpBaseUrl();
         UUID did = UUID.randomUUID();
 

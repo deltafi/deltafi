@@ -31,12 +31,12 @@ public class ActionContentStorageService extends ContentStorageService {
     private final List<Content> savedContent;
 
     public ActionContentStorageService(ContentStorageService contentStorageService) {
-        super(contentStorageService.objectStorageService);
+        super(contentStorageService.objectStorageService, contentStorageService.contentBucket);
         savedContent = new ArrayList<>();
     }
 
-    public ActionContentStorageService(ObjectStorageService objectStorageService) {
-        super(objectStorageService);
+    public ActionContentStorageService(ObjectStorageService objectStorageService, String bucketName) {
+        super(objectStorageService, bucketName);
         savedContent = new ArrayList<>();
     }
 

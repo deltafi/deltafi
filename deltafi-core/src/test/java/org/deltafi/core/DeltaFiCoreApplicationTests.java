@@ -32,6 +32,7 @@ import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -357,8 +358,8 @@ class DeltaFiCoreApplicationTests {
 	@TestConfiguration
 	public static class Config {
 		@Bean
-		public StorageConfigurationService storageConfigurationService(MinioClient minioClient, DeltaFiPropertiesService deltaFiPropertiesService) {
-			return new StorageConfigurationService(minioClient, deltaFiPropertiesService);
+		public StorageConfigurationService storageConfigurationService(MinioClient minioClient, DeltaFiPropertiesService deltaFiPropertiesService, StorageProperties storageProperties) {
+			return new StorageConfigurationService(minioClient, deltaFiPropertiesService, storageProperties);
 		}
 
 		@Bean

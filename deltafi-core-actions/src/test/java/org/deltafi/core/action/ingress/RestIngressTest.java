@@ -26,7 +26,7 @@ import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.IngressStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,12 +44,12 @@ import java.util.Map;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RestIngressTest {
+class RestIngressTest {
     private static final String URL_CONTEXT = "/endpoint?param1=x&param2=y";
     private static final String TEST_FILE = "file.txt";
 
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new ActionContentStorageService(new InMemoryObjectStorageService());
+            new InMemoryContentStorageService();
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
@@ -57,12 +57,12 @@ public class RestIngressTest {
             .build();
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         wireMockHttp.resetMappings();
     }
 
     @Test
-    public void ingressesFile() {
+    void ingressesFile() {
         wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
                 .willReturn(WireMock.ok()
                         .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
@@ -72,14 +72,14 @@ public class RestIngressTest {
     }
 
     @Test
-    public void ingressesNoContent() {
+    void ingressesNoContent() {
         wireMockHttp.stubFor(WireMock.get(URL_CONTEXT).willReturn(WireMock.noContent()));
 
         runTest(0, null, null, null);
     }
 
     @Test
-    public void ingressesFileWithoutContentDispositionFilename() {
+    void ingressesFileWithoutContentDispositionFilename() {
         wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
                 .willReturn(WireMock.ok()
                         .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
@@ -90,7 +90,7 @@ public class RestIngressTest {
     }
 
     @Test
-    public void ingressesFileWithoutContentDisposition() {
+    void ingressesFileWithoutContentDisposition() {
         wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
                 .willReturn(WireMock.ok()
                         .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
@@ -100,7 +100,7 @@ public class RestIngressTest {
     }
 
     @Test
-    public void ingressesFileWithHeaders() {
+    void ingressesFileWithHeaders() {
         wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
                 .withHeader(DeltaFiConstants.PERMISSIONS_HEADER, equalTo(DeltaFiConstants.ADMIN_PERMISSION))
                 .withHeader("another-header", equalTo("another-header-value"))
@@ -154,12 +154,12 @@ public class RestIngressTest {
     }
 
     @Test
-    public void failsIngressWithBadUrl() {
+    void failsIngressWithBadUrl() {
         runUnhealthyTest(HttpClient.newHttpClient(), "Bad response status: 404");
     }
 
     @Test
-    public void failsIngressWithInterruptedException() throws IOException, InterruptedException {
+    void failsIngressWithInterruptedException() throws IOException, InterruptedException {
         HttpClient httpClient = Mockito.mock(HttpClient.class);
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any())).thenThrow(new InterruptedException("Test error"));
         runUnhealthyTest(httpClient, "Test error");
@@ -167,7 +167,7 @@ public class RestIngressTest {
     }
 
     @Test
-    public void failsIngressWithIOException() throws IOException, InterruptedException {
+    void failsIngressWithIOException() throws IOException, InterruptedException {
         HttpClient httpClient = Mockito.mock(HttpClient.class);
         Mockito.when(httpClient.send(Mockito.any(), Mockito.any())).thenThrow(new IOException("Test error"));
         runUnhealthyTest(httpClient, "Test error");

@@ -17,18 +17,14 @@
  */
 package org.deltafi.common.content;
 
-import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@AutoConfiguration
-@EnableConfigurationProperties(StorageProperties.class)
-public class ContentStorageServiceAutoConfiguration {
-    @Bean
-    @ConditionalOnMissingBean
-    public ContentStorageService contentStorageService(ObjectStorageService objectStorageService, StorageProperties storageProperties) {
-        return new ContentStorageService(objectStorageService, storageProperties.bucketName());
+@ConfigurationProperties("storage")
+public record StorageProperties(String bucketName) {
+    public static final String STORAGE = "storage";
+    public StorageProperties {
+        if (bucketName == null || bucketName.isBlank()) {
+            bucketName = STORAGE;
+        }
     }
 }

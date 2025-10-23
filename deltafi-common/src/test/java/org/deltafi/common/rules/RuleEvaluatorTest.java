@@ -20,8 +20,8 @@ package org.deltafi.common.rules;
 import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
-import org.deltafi.common.types.*;
+import org.deltafi.common.test.content.InMemoryContentStorageService;
+import org.deltafi.common.types.Content;
 import org.junit.jupiter.api.Test;
 import org.springframework.expression.spel.SpelEvaluationException;
 
@@ -32,7 +32,7 @@ import java.util.UUID;
 
 class RuleEvaluatorTest {
 
-    ContentStorageService contentStorageService = new ContentStorageService(new InMemoryObjectStorageService());
+    ContentStorageService contentStorageService = new InMemoryContentStorageService();
     RuleEvaluator ruleEvaluator = new RuleEvaluator();
 
     @Test

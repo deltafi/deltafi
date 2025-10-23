@@ -17,6 +17,8 @@ deltafi:
     drop_metadata: false
   clustermonitor:
     enabled: true
+  storage:
+    bucketName: storage
 ingress:
   domain: local.deltafi.org
   tls:
