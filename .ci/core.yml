@@ -86,17 +86,18 @@ image: ${JAVA_BASE_IMAGE}
     - docker buildx create --name deltafi-inator --use
     - docker buildx inspect
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
   script:
     - >
       echo docker buildx build ${PUSH}
-      --cache-to=type=registry,ref=${DOCKER_REPOSITORY}/${PROJECT_NAME}:cache,mode=max
-      --cache-from=type=registry,ref=${DOCKER_REPOSITORY}/${PROJECT_NAME}:cache
+      --cache-to=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache,mode=max
+      --cache-from=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache
       --tag ${DOCKER_REPOSITORY}/${PROJECT_NAME}:${DOCKER_TAG}
       ${DOCKER_BUILD_FLAGS} --file "${DOCKERFILE}" ${CONTEXT}
     - >
       docker buildx build ${PUSH}
-      --cache-to=type=registry,ref=${DOCKER_REPOSITORY}/${PROJECT_NAME}:cache,mode=max
-      --cache-from=type=registry,ref=${DOCKER_REPOSITORY}/${PROJECT_NAME}:cache
+      --cache-to=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache,mode=max
+      --cache-from=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache
       --tag ${DOCKER_REPOSITORY}/${PROJECT_NAME}:${DOCKER_TAG}
       ${DOCKER_BUILD_FLAGS} --file "${DOCKERFILE}" ${CONTEXT}
 
@@ -127,11 +128,12 @@ image: ${JAVA_BASE_IMAGE}
     - docker buildx create --name deltafi-inator --use
     - docker buildx inspect
     - docker login -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD} ${REGISTRY}
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
   script:
     - >
       echo docker buildx build ${PUSH} --platform ${DOCKER_PLATFORMS}
-      --cache-to=type=registry,ref=${DOCKER_REPOSITORY}/${PROJECT_NAME}:cache,mode=max
-      --cache-from=type=registry,ref=${DOCKER_REPOSITORY}/${PROJECT_NAME}:cache
+      --cache-to=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache,mode=max
+      --cache-from=type=registry,ref=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:cache
       --tag ${DOCKER_REPOSITORY}/${PROJECT_NAME}:${DOCKER_TAG}
       ${DOCKER_BUILD_FLAGS} --file "${DOCKERFILE}" ${CONTEXT}
     - ls -la "$CONTEXT"
