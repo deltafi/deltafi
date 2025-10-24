@@ -978,6 +978,230 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	@SneakyThrows
+	void testOnErrorDataSourceTriggeringThenResume() {
+		clearForFlowTests();
+
+		// Set up OnError data source that catches errors from the egress action
+		OnErrorDataSource onErrorDataSource = new OnErrorDataSource();
+		onErrorDataSource.setName("test-error-catcher");
+		onErrorDataSource.getFlowStatus().setState(FlowState.RUNNING);
+		onErrorDataSource.setTestMode(false);
+		onErrorDataSource.setTopic("error-events");
+		onErrorDataSource.setSourcePlugin(PLUGIN_COORDINATES);
+		onErrorDataSource.setErrorMessageRegex(".*");
+		onErrorDataSource.setSourceFilters(List.of(
+			new org.deltafi.common.types.ErrorSourceFilter(null, null, "SampleEgressAction", null),
+			new org.deltafi.common.types.ErrorSourceFilter(org.deltafi.common.types.FlowType.DATA_SINK, DATA_SINK_FLOW_NAME, null, null)
+		));
+		onErrorDataSourceRepo.save(onErrorDataSource);
+
+		// Set up the normal flow configuration
+		loadConfig();
+		refreshFlowCaches();
+
+		// Create a DeltaFile and process it normally until it hits the egress stage
+		UUID did = UUID.randomUUID();
+		DeltaFile original = fullFlowExemplarService.postTransformDeltaFile(did);
+		deltaFileRepo.save(original);
+
+		// Count DeltaFiles before error occurs
+		long initialCount = deltaFileRepo.count();
+
+		// Trigger an error in the egress action - this should trigger our OnError data source
+		deltaFilesService.handleActionEvent(actionEvent("error", did, original.lastFlow().getId()));
+		deltaFileCacheService.flush();
+
+		// Verify the original DeltaFile is in error state
+		DeltaFile erroredFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileFlowState.ERROR, erroredFile.lastFlow().getState());
+		assertNotNull(erroredFile.lastFlow().lastAction().getErrorCause());
+		assertEquals("Authority XYZ not recognized", erroredFile.lastFlow().lastAction().getErrorCause());
+
+		// Verify that a new DeltaFile was created by the OnError data source
+		long finalCount = deltaFileRepo.count();
+		assertTrue(finalCount > initialCount, "OnError data source should have created a new DeltaFile");
+
+		DeltaFile updatedOriginal = deltaFileRepo.findById(original.getDid()).orElse(null);
+		assertNotNull(updatedOriginal);
+
+		// Find the newly created error event DeltaFile by checking for child DID
+		assertNotNull(updatedOriginal.getChildDids());
+		assertFalse(updatedOriginal.getChildDids().isEmpty());
+		UUID errorEventDid = updatedOriginal.getChildDids().getFirst();
+		DeltaFile errorEventFile = deltaFileRepo.findById(errorEventDid).orElse(null);
+
+		assertNotNull(errorEventFile, "Should have created an error event DeltaFile");
+		assertEquals("test-error-catcher", errorEventFile.getDataSource());
+
+		// Now attempt to resume the original DeltaFile
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("resume"), did),
+				"data." + DgsConstants.MUTATION.Resume,
+				new TypeRef<>() {});
+
+		// Verify resume was successful
+		assertNotNull(retryResults, "Resume should return results");
+		assertFalse(retryResults.isEmpty(), "Resume should return at least one result");
+
+		RetryResult firstResult = retryResults.getFirst();
+		assertEquals(did, firstResult.getDid(), "Resume result should be for the correct DID");
+		assertTrue(firstResult.getSuccess(),
+			"Resume should succeed. Error: " + (firstResult.getError() != null ? firstResult.getError() : "none"));
+
+		// Verify the original DeltaFile is now resuming/resumed correctly
+		DeltaFile resumedFile = deltaFilesService.getDeltaFile(did);
+		assertNotNull(resumedFile);
+
+		// The resumed file should be in IN_FLIGHT state (not stuck in ERROR)
+		assertEquals(DeltaFileFlowState.IN_FLIGHT, resumedFile.lastFlow().getState(),
+			"After resume, the DeltaFile should be IN_FLIGHT. Current state: " + resumedFile.lastFlow().getState());
+
+		// Verify the stage is also IN_FLIGHT
+		assertEquals(DeltaFileStage.IN_FLIGHT, resumedFile.getStage(),
+			"After resume, the DeltaFile stage should be IN_FLIGHT. Current stage: " + resumedFile.getStage());
+
+		// Verify the error action was marked as RETRIED
+		Action errorAction = resumedFile.lastFlow().getActions().stream()
+			.filter(a -> "SampleEgressAction".equals(a.getName()) && a.getState() == ActionState.RETRIED)
+			.findFirst()
+			.orElse(null);
+		assertNotNull(errorAction, "The errored action should be marked as RETRIED");
+
+		// Verify a new action attempt was queued
+		Action retryAction = resumedFile.lastFlow().getActions().stream()
+			.filter(a -> "SampleEgressAction".equals(a.getName()) && a.getState() == ActionState.QUEUED)
+			.findFirst()
+			.orElse(null);
+		assertNotNull(retryAction, "A new retry action should be QUEUED");
+		assertEquals(2, retryAction.getAttempt(), "Retry action should be on attempt 2");
+
+		// Verify the OnError child DeltaFile still exists and wasn't affected by the resume
+		DeltaFile stillExistingErrorEventFile = deltaFileRepo.findById(errorEventDid).orElse(null);
+		assertNotNull(stillExistingErrorEventFile, "OnError DeltaFile should still exist after resume");
+
+		// Verify the childDids relationship is maintained
+		assertEquals(List.of(errorEventDid), resumedFile.getChildDids(),
+			"The original DeltaFile should still have the OnError child DID");
+
+		// Verify action was queued for execution
+		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
+		List<WrappedActionInput> actionInputs = actionInputListCaptor.getValue();
+		assertFalse(actionInputs.isEmpty(), "Resume should have queued an action");
+		assertEquals(SAMPLE_EGRESS_ACTION, actionInputs.getFirst().getActionContext().getActionName());
+		assertEquals(DATA_SINK_FLOW_NAME, actionInputs.getFirst().getActionContext().getFlowName());
+	}
+
+	@Test
+	@SneakyThrows
+	void testOnErrorDataSourceTriggeringTwice() {
+		clearForFlowTests();
+
+		// Set up OnError data source that catches errors from the egress action
+		OnErrorDataSource onErrorDataSource = new OnErrorDataSource();
+		onErrorDataSource.setName("test-error-catcher");
+		onErrorDataSource.getFlowStatus().setState(FlowState.RUNNING);
+		onErrorDataSource.setTestMode(false);
+		onErrorDataSource.setTopic("error-events");
+		onErrorDataSource.setSourcePlugin(PLUGIN_COORDINATES);
+		onErrorDataSource.setErrorMessageRegex(".*");
+		onErrorDataSource.setSourceFilters(List.of(
+			new org.deltafi.common.types.ErrorSourceFilter(null, null, "SampleEgressAction", null),
+			new org.deltafi.common.types.ErrorSourceFilter(org.deltafi.common.types.FlowType.DATA_SINK, DATA_SINK_FLOW_NAME, null, null)
+		));
+		onErrorDataSourceRepo.save(onErrorDataSource);
+
+		// Set up the normal flow configuration
+		loadConfig();
+		refreshFlowCaches();
+
+		// Create a DeltaFile and process it normally until it hits the egress stage
+		UUID did = UUID.randomUUID();
+		DeltaFile original = fullFlowExemplarService.postTransformDeltaFile(did);
+		deltaFileRepo.save(original);
+
+		// Count DeltaFiles before first error occurs
+		long initialCount = deltaFileRepo.count();
+
+		// Trigger first error in the egress action
+		deltaFilesService.handleActionEvent(actionEvent("error", did, original.lastFlow().getId()));
+		deltaFileCacheService.flush();
+
+		// Verify the original DeltaFile is in error state after first error
+		DeltaFile erroredFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileFlowState.ERROR, erroredFile.lastFlow().getState());
+		assertEquals("Authority XYZ not recognized", erroredFile.lastFlow().lastAction().getErrorCause());
+
+		// Verify first OnError DeltaFile was created
+		long afterFirstErrorCount = deltaFileRepo.count();
+		assertTrue(afterFirstErrorCount > initialCount, "First OnError data source should have created a new DeltaFile");
+
+		DeltaFile afterFirstError = deltaFileRepo.findById(did).orElse(null);
+		assertNotNull(afterFirstError);
+		assertNotNull(afterFirstError.getChildDids());
+		assertEquals(1, afterFirstError.getChildDids().size(), "Should have one child DID after first error");
+		UUID firstErrorEventDid = afterFirstError.getChildDids().getFirst();
+
+		DeltaFile firstErrorEventFile = deltaFileRepo.findById(firstErrorEventDid).orElse(null);
+		assertNotNull(firstErrorEventFile, "First error event DeltaFile should exist");
+		assertEquals("test-error-catcher", firstErrorEventFile.getDataSource());
+		assertEquals(List.of(did), firstErrorEventFile.getParentDids());
+
+		// Now resume the original DeltaFile
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("resume"), did),
+				"data." + DgsConstants.MUTATION.Resume,
+				new TypeRef<>() {});
+
+		assertTrue(retryResults.getFirst().getSuccess(), "Resume should succeed");
+
+		// Verify the DeltaFile is now IN_FLIGHT after resume
+		DeltaFile resumedFile = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileFlowState.IN_FLIGHT, resumedFile.lastFlow().getState());
+		assertEquals(1, resumedFile.getChildDids().size(), "Should still have one child DID after resume");
+
+		// Now trigger a SECOND error (the resume failed)
+		deltaFilesService.handleActionEvent(actionEvent("error", did, resumedFile.lastFlow().getId()));
+		deltaFileCacheService.flush();
+
+		// Verify the original DeltaFile is back in error state after second error
+		DeltaFile erroredAgain = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileFlowState.ERROR, erroredAgain.lastFlow().getState());
+		assertEquals("Authority XYZ not recognized", erroredAgain.lastFlow().lastAction().getErrorCause());
+
+		// Verify second OnError DeltaFile was created
+		long afterSecondErrorCount = deltaFileRepo.count();
+		assertTrue(afterSecondErrorCount > afterFirstErrorCount, "Second OnError data source should have created another new DeltaFile");
+
+		// Verify we now have TWO child DIDs
+		assertNotNull(erroredAgain.getChildDids());
+		assertEquals(2, erroredAgain.getChildDids().size(),
+			"Should have TWO child DIDs after second error. Found: " + erroredAgain.getChildDids());
+
+		// Verify both error event DeltaFiles exist
+		UUID secondErrorEventDid = erroredAgain.getChildDids().get(1);
+		assertNotEquals(firstErrorEventDid, secondErrorEventDid, "Second error event DID should be different from first");
+
+		DeltaFile secondErrorEventFile = deltaFileRepo.findById(secondErrorEventDid).orElse(null);
+		assertNotNull(secondErrorEventFile, "Second error event DeltaFile should exist");
+		assertEquals("test-error-catcher", secondErrorEventFile.getDataSource());
+		assertEquals(List.of(did), secondErrorEventFile.getParentDids());
+
+		// Verify both error events have proper metadata
+		Map<String, String> firstMetadata = firstErrorEventFile.lastFlow().getMetadata();
+		Map<String, String> secondMetadata = secondErrorEventFile.lastFlow().getMetadata();
+
+		assertEquals(did.toString(), firstMetadata.get("onError.sourceDid"));
+		assertEquals(did.toString(), secondMetadata.get("onError.sourceDid"));
+		assertEquals("Authority XYZ not recognized", firstMetadata.get("onError.errorCause"));
+		assertEquals("Authority XYZ not recognized", secondMetadata.get("onError.errorCause"));
+
+		// Verify the order: first error event should be at index 0, second at index 1
+		assertEquals(firstErrorEventDid, erroredAgain.getChildDids().get(0));
+		assertEquals(secondErrorEventDid, erroredAgain.getChildDids().get(1));
+	}
+
+	@Test
 	void testResume() throws IOException {
 		UUID did = UUID.randomUUID();
 		deltaFileRepo.save(fullFlowExemplarService.postErrorDeltaFile(did));
