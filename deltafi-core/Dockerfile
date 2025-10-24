@@ -30,7 +30,6 @@ FROM --platform=$BUILDPLATFORM alpine:3.21 AS aggregator
 COPY --from=deltafi-ui-build-stage /ui/dist /deltafi
 COPY --from=deltafi-docs-build-stage /docs/.vitepress/dist /deltafi/docs
 COPY --from=deltafi-graphiql-build-stage /graphiql/build /deltafi/graphiql
-COPY deltafi-*.jar /deltafi/deltafi-app.jar
 
 FROM deltafi/deltafi-java-jre:21.0.8-alpine-1 AS final
 VOLUME /tmp
@@ -42,7 +41,9 @@ RUN echo '#!/bin/sh' > /home/deltafi/entrypoint.sh && \
   echo 'if [ -z "$UNIQUE_ID" ]; then export UNIQUE_ID=$(hostname); fi' >> /home/deltafi/entrypoint.sh && \
   echo 'echo "APP_NAME: $APP_NAME"' >> /home/deltafi/entrypoint.sh && \
   echo 'echo "UNIQUE_ID: $UNIQUE_ID"' >> /home/deltafi/entrypoint.sh && \
-  echo 'exec java -Djava.security.egd=file:/dev/./urandom -jar /deltafi/deltafi-app.jar "$@"' >> /home/deltafi/entrypoint.sh && \
+  echo 'exec java -Djava.security.egd=file:/dev/./urandom -jar /deltafi-app.jar "$@"' >> /home/deltafi/entrypoint.sh && \
   chmod a+rx /home/deltafi/entrypoint.sh
+
+COPY deltafi-*.jar /deltafi-app.jar
 
 ENTRYPOINT ["/home/deltafi/entrypoint.sh"]
