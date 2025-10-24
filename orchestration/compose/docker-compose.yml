@@ -1,18 +1,11 @@
-x-health-probe: &health-probe
-  healthcheck:
-    test: /probe.sh
-    interval: 15s
-    timeout: 15s
-    start_period: 5s
-    retries: 15
-
 x-relaxed-health-probe: &relaxed-health-probe
   healthcheck:
     test: /probe.sh
     interval: 15s
-    timeout: 30s
-    start_period: 5s
-    retries: 5000
+    timeout: 3s
+    start_period: 30s
+    retries: 5
+    start_interval: 1s
 
 x-logging-label: &logging-label
   logging: "promtail"
@@ -32,7 +25,7 @@ services:
       deltafi-postgres:
         condition: service_healthy
       deltafi-minio:
-        condition: service_started
+        condition: service_healthy
     expose:
       - "8080"
     group_add:
@@ -74,7 +67,7 @@ services:
       deltafi-postgres:
         condition: service_healthy
       deltafi-minio:
-        condition: service_started
+        condition: service_healthy
     group_add:
       - ${DOCKER_GID}
     user: "${USER_ID}:${GROUP_ID}"
@@ -135,9 +128,10 @@ services:
     healthcheck:
       test: cat /tmp/running
       interval: 30s
-      timeout: 30s
+      timeout: 1s
       retries: 4
       start_period: 10s
+      start_interval: 1s
     labels:
       app: deltafi-core-actions
       deltafi-group: deltafi-core
@@ -153,7 +147,7 @@ services:
     container_name: deltafi-nodemonitor
     depends_on:
       deltafi-graphite:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
@@ -175,7 +169,7 @@ services:
     command: ["/bin/bash", "-c", "/app/deleteit.sh"]
     depends_on:
       deltafi-graphite:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/postgres.env
@@ -195,7 +189,7 @@ services:
     container_name: deltafi-dirwatcher
     depends_on:
       core-scheduler:
-        condition: service_started
+        condition: service_healthy
     environment:
       DIRWATCHER_WATCH_DIR: /watched-dir
       DIRWATCHER_WORKERS: 20
@@ -223,7 +217,7 @@ services:
     container_name: deltafi-egress-sink-service
     depends_on:
       core-scheduler:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ${CONFIG_DIR}/common.env
     expose:
@@ -263,10 +257,12 @@ services:
       - ${DATA_DIR}/minio:/export
     user: "${USER_ID}:${GROUP_ID}"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 10s
+      timeout: 2s
       retries: 5
+      start_period: 10s
+      start_interval: 1s
 
   deltafi-postgres:
     image: ${POSTGRES}
@@ -277,8 +273,10 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 5s
-      timeout: 15s
-      retries: 40
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
     labels:
       deltafi-group: deltafi-dependency
     networks:
@@ -300,9 +298,10 @@ services:
     healthcheck:
       test: [ "CMD", "valkey-cli", "--raw", "ping" ]
       interval: 5s
-      timeout: 5s
-      retries: 8
+      timeout: 2s
+      retries: 3
       start_period: 5s
+      start_interval: 1s
     labels:
       deltafi-group: deltafi-dependency
     networks:
@@ -355,6 +354,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+      start_period: 30s
   deltafi-docker-ui:
     image: ${DOCKER_WEB_GUI}
     container_name: deltafi-docker-ui
@@ -386,6 +386,12 @@ services:
       - "2024"
       - "8125/udp"
       - "8126"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080 || exit 1" ]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
     labels:
       deltafi-group: deltafi-dependency
     networks:
@@ -414,17 +420,18 @@ services:
       - ${DATA_DIR}/loki:/data
     user: "${USER_ID}:${GROUP_ID}"
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/loki/api/v1/status/buildinfo || exit 1"]
       interval: 10s
-      timeout: 5s
-      retries: 20
+      timeout: 3s
+      retries: 3
+      start_period: 40s
   deltafi-promtail:
     image: ${PROMTAIL}
     container_name: deltafi-promtail
     command: -config.file=/etc/promtail/promtail.yaml
     depends_on:
       deltafi-loki:
-        condition: service_started
+        condition: service_healthy
     expose:
       - "3101"
     labels:
@@ -468,8 +475,10 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -so /dev/null http://localhost/ || exit 1"]
       interval: 20s
-      retries: 30
-      timeout: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+      start_interval: 1s
 
   java-devcontainer:
     image: ${DELTAFI_JAVA_DEVCONTAINER}

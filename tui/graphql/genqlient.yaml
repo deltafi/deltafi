@@ -1,8 +1,8 @@
 # Default genqlient config; for full documentation see:
 # https://github.com/Khan/genqlient/blob/main/docs/genqlient.yaml
 schema:
-- ./schema/deltafi.graphql
-- ./schema/*.graphql
+- ./schema/deltafi.graphqls
+- ./schema/*.graphqls
 operations:
 - plugin.graphql
 - transforms.graphql
