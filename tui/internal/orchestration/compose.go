@@ -21,17 +21,18 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
-	"github.com/deltafi/tui/internal/types"
-	"github.com/deltafi/tui/internal/ui/styles"
-	"github.com/mcuadros/go-defaults"
-	"gopkg.in/yaml.v3"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/deltafi/tui/internal/types"
+	"github.com/deltafi/tui/internal/ui/styles"
+	"github.com/mcuadros/go-defaults"
+	"gopkg.in/yaml.v3"
 )
 
 //go:embed compose.plugin-dev.yaml compose.core-dev.yaml compose.site.yaml compose.values.yaml compose.values.site.yaml
@@ -930,8 +931,8 @@ func (o *ComposeOrchestrator) SaveKeyCert(input SslInput) (*SslOutput, error) {
 	}
 
 	var builder strings.Builder
-	builder.WriteString(o.envPair("KEY_PATH", keyPath))
-	builder.WriteString(o.envPair("CERT_PATH", certPath))
+	builder.WriteString(o.envPair("KEY_PATH", "/certs/"+input.SecretName+"/"+tlsKey))
+	builder.WriteString(o.envPair("CERT_PATH", "/certs/"+input.SecretName+"/"+tlsCrt))
 	builder.WriteString(o.envPair("CA_CHAIN_PATH", "/certs/"+caCrt))
 
 	if strings.TrimSpace(input.KeyPassphrase) != "" {

@@ -22,7 +22,7 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient;
+import org.deltafi.common.ssl.SslContextProvider;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.DockerDeployerService;
 import org.deltafi.core.plugin.deployer.EnvironmentVariableHelper;
@@ -39,10 +39,14 @@ import org.springframework.context.annotation.Profile;
 public class DockerConfiguration {
 
     @Bean
-    public DockerClient dockerClient() {
+    public DockerClient dockerClient(SslContextProvider sslContextProvider) {
         DockerClientConfig standard = DefaultDockerClientConfig.createDefaultConfigBuilder().withDockerHost("unix:///var/run/docker.sock").build();
-        DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(standard.getDockerHost()).build();
-        return DockerClientImpl.getInstance(standard, httpClient);
+        ApacheDockerHttpClient.Builder clientBuilder = new ApacheDockerHttpClient.Builder().dockerHost(standard.getDockerHost());
+        if (sslContextProvider != null && sslContextProvider.isConfigured()) {
+            clientBuilder.sslConfig(sslContextProvider::createSslContext);
+        }
+
+        return DockerClientImpl.getInstance(standard, clientBuilder.build());
     }
 
     @Bean
