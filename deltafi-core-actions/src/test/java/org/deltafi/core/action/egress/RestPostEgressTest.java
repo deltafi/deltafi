@@ -17,80 +17,47 @@
  */
 package org.deltafi.core.action.egress;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
+import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.egress.EgressInput;
-import org.deltafi.actionkit.action.egress.EgressResult;
-import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.Mockito;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-
 class RestPostEgressTest {
-    private static final String URL_CONTEXT = "/endpoint";
     private static final String CONTENT = "This is the test content.";
 
-    private final RestPostEgress action = new RestPostEgress(new OkHttpClient());
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("RestPostEgressTest");
-
-    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new InMemoryContentStorageService();
-
-    @RegisterExtension
-    static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-
-    @BeforeEach
-    void beforeEach() {
-        wireMockHttp.resetAll();
-    }
+    RestPostEgress restPostEgress = new RestPostEgress(Mockito.mock(OkHttpClient.class));
 
     @Test
-    void egresses() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
-                .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
-                        "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
-                        "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
+    @SneakyThrows
+    void buildHeaders() {
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
                 .build();
 
-        RestPostEgressParameters restPostEgressParameters = new RestPostEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        restPostEgressParameters.setUrl(url);
-        restPostEgressParameters.setMetadataKey("headers-map");
-        EgressResultType egressResultType = action.egress(
-                ActionContext.builder()
-                        .contentStorageService(CONTENT_STORAGE_SERVICE)
-                        .did(did)
-                        .deltaFileName("test-delta-file")
-                        .dataSource("test-data-source")
-                        .flowName("test-flow-name")
-                        .build(),
-                restPostEgressParameters, egressInput);
+        ActionContext actionContext = runner.actionContextBuilder()
+                .did(new UUID(0, 0))
+                .deltaFileName("test-delta-file")
+                .dataSource("test-data-source")
+                .flowName("test-flow-name")
+                .build();
 
-        assertInstanceOf(EgressResult.class, egressResultType);
+        RestPostEgressParameters restPostEgressParameters = new RestPostEgressParameters();
+        restPostEgressParameters.setMetadataKey("headers-map");
+
+        Map<String, String> headers = restPostEgress.buildHeaders(actionContext, restPostEgressParameters, egressInput);
+
+        Assertions.assertThat(headers).containsEntry("headers-map", "{\"dataSource\":\"test-data-source\"," +
+                "\"did\":\"00000000-0000-0000-0000-000000000000\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
+                "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}");
     }
 }

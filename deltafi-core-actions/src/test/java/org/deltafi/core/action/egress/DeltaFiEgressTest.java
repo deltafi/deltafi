@@ -17,61 +17,54 @@
  */
 package org.deltafi.core.action.egress;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.egress.EgressInput;
-import org.deltafi.actionkit.action.egress.EgressResult;
-import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.asserters.ErrorResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.Mockito;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-
 class DeltaFiEgressTest {
-    private static final String URL_ENDPOINT = "/endpoint";
-    private static final String ENV_CORE_URL = null;
     private static final String CONTENT = "This is the test content.";
-    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new InMemoryContentStorageService();
-
-    @RegisterExtension
-    static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-    private final OkHttpClient httpService = new OkHttpClient();
+    private static final UUID DID = new UUID(0, 0);
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("DeltaFiEgressTest");
 
-    private final DeltaFiEgress action = new DeltaFiEgress(httpService, ENV_CORE_URL);
+    private final OkHttpClient okHttpClient = Mockito.mock(OkHttpClient.class);
+    private final DeltaFiEgress action = new DeltaFiEgress(okHttpClient, "https:/deltafi-core");
 
-    @BeforeEach
-    void beforeEach() {
-        wireMockHttp.resetAll();
+    @Test
+    @SneakyThrows
+    void egressToDefaultLocal() {
+        DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
+        deltaFiEgressParameters.setSendLocal(true);
+
+        action.egress(getContext(), deltaFiEgressParameters, getEgressInput());
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(this::verifyRequest));
+    }
+
+    @SneakyThrows
+    void verifyRequest(Request request) {
+        Assertions.assertThat(request.url()).hasToString("https://deltafi-core/api/v2/deltafile/ingress");
+        Assertions.assertThat(request.method()).isEqualTo("POST");
+        Assertions.assertThat(request.body()).isNotNull();
+        // this is the value used to set the content-length header (added by OKHttp during the request execution)
+        Assertions.assertThat(request.body().contentLength()).isEqualTo(CONTENT.length());
+        // this is the value used to set the content-type header (added by OKHttp during the request execution)
+        Assertions.assertThat(request.body().contentType()).hasToString("text/plain");
     }
 
     @Test
     void errorInvalidUrl() {
-        EgressInput egressInput = EgressInput.builder()
-                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
-                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
-                .build();
-
-        DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
-        ResultType resultType = action.egress(
-                getContext(UUID.randomUUID()), deltaFiEgressParameters, egressInput);
+        ResultType resultType = action.egress(getContext(), new DeltaFiEgressParameters(), getEgressInput());
 
         ErrorResultAssert.assertThat(resultType)
                 .hasCause("URL cannot be determined");
@@ -79,149 +72,70 @@ class DeltaFiEgressTest {
 
     @Test
     void errorCircularEgress() {
-        EgressInput egressInput = EgressInput.builder()
-                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
-                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
-                .build();
-
         DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
         deltaFiEgressParameters.setSendLocal(true);
         deltaFiEgressParameters.setFlow("data-source");
 
-        ResultType resultType = action.egress(
-                getContext(UUID.randomUUID()), deltaFiEgressParameters, egressInput);
+        ResultType resultType = action.egress(getContext(), deltaFiEgressParameters, getEgressInput());
 
         ErrorResultAssert.assertThat(resultType)
                 .hasCause("Circular egress detected");
     }
 
     @Test
-    void egressRemote() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
-                .withHeader("Filename", WireMock.equalTo("test-content"))
-                .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
-                .withHeader("Metadata", WireMock.equalTo("{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
-                        "\"originalDid\":\"" + did + "\",\"originalSystem\":\"test-system-name\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
-        EgressInput egressInput = EgressInput.builder()
-                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
-                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
-                .build();
-
+    @SneakyThrows
+    void buildHeadersForRemote() {
         DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_ENDPOINT;
-        deltaFiEgressParameters.setUrl(url);
+        deltaFiEgressParameters.setUrl("https://remote-deltafi");
         deltaFiEgressParameters.setFlow("test-flow-name");
-        EgressResultType egressResultType = action.egress(
-                getContext(did), deltaFiEgressParameters, egressInput);
 
-        assertInstanceOf(EgressResult.class, egressResultType);
+        Map<String, String> headers = action.buildHeaders(getContext(), deltaFiEgressParameters, getEgressInput());
+
+        Map<String, String> expectedHeaders = Map.of(
+                "Filename", "test-content",
+                "DataSource","test-flow-name",
+                "Metadata", "{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
+                        "\"originalDid\":\"00000000-0000-0000-0000-000000000000\",\"originalSystem\":\"test-system-name\"}");
+
+        Assertions.assertThat(headers).containsAllEntriesOf(expectedHeaders);
     }
 
     @Test
-    void egressEmptyContent() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo("0"))
-                .withHeader("Filename", WireMock.equalTo("test-content"))
-                .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
-                .withHeader("Metadata", WireMock.equalTo("{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
-                        "\"originalDid\":\"" + did + "\",\"originalSystem\":\"test-system-name\"}"))
-                .withRequestBody(WireMock.absent())
-                .willReturn(WireMock.ok()));
-
-        EgressInput egressInput = EgressInput.builder()
-                .content(runner.saveContent("", "test-content", MediaType.TEXT_PLAIN))
-                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
-                .build();
-
-        DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_ENDPOINT;
-        deltaFiEgressParameters.setUrl(url);
-        deltaFiEgressParameters.setFlow("test-flow-name");
-        EgressResultType egressResultType = action.egress(
-                getContext(did), deltaFiEgressParameters, egressInput);
-
-        assertInstanceOf(EgressResult.class, egressResultType);
-    }
-
-    @Test
-    void egressLocalWithUrl() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.post(URL_ENDPOINT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
-                .withHeader("Filename", WireMock.equalTo("test-content"))
-                .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
-                .withHeader("X-User-Name", WireMock.equalTo("host"))
-                .withHeader("X-User-Permissions", WireMock.equalTo("DeltaFileIngress"))
-                .withHeader("Metadata", WireMock.equalTo("{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
-                        "\"originalDid\":\"" + did + "\",\"originalSystem\":\"test-system-name\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
-        EgressInput egressInput = EgressInput.builder()
-                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
-                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
-                .build();
-
-        DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
-        deltaFiEgressParameters.setUrl(wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_ENDPOINT);
-        deltaFiEgressParameters.setSendLocal(true);
-        deltaFiEgressParameters.setFlow("test-flow-name");
-        EgressResultType egressResultType = action.egress(
-                getContext(did), deltaFiEgressParameters, egressInput);
-
-        assertInstanceOf(EgressResult.class, egressResultType);
-    }
-
-    @Test
-    void egressLocalDefaultUrl() {
-        String mockHttpUrl = wireMockHttp.getRuntimeInfo().getHttpBaseUrl();
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.post(DeltaFiEgress.INGRESS_URL_PATH)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
-                .withHeader("Filename", WireMock.equalTo("test-content"))
-                .withHeader("DataSource", WireMock.equalTo("test-flow-name"))
-                .withHeader("X-User-Name", WireMock.equalTo("host"))
-                .withHeader("X-User-Permissions", WireMock.equalTo("DeltaFileIngress"))
-                .withHeader("Metadata", WireMock.equalTo("{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
-                        "\"originalDid\":\"" + did + "\",\"originalSystem\":\"test-system-name\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
-        EgressInput egressInput = EgressInput.builder()
-                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
-                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
-                .build();
-
-        DeltaFiEgress localAction = new DeltaFiEgress(httpService, mockHttpUrl);
-
+    @SneakyThrows
+    void buildHeadersForLocal() {
         DeltaFiEgressParameters deltaFiEgressParameters = new DeltaFiEgressParameters();
         deltaFiEgressParameters.setSendLocal(true);
-        deltaFiEgressParameters.setFlow("test-flow-name");
-        EgressResultType egressResultType = localAction.egress(
-                getContext(did), deltaFiEgressParameters, egressInput);
 
-        assertInstanceOf(EgressResult.class, egressResultType);
+        Map<String, String> headers = action.buildHeaders(getContext(), deltaFiEgressParameters, getEgressInput());
+
+        Map<String, String> expectedHeaders = Map.of(
+                "Filename", "test-content",
+                "X-User-Name", "host",
+                "X-User-Permissions", "DeltaFileIngress",
+                "Metadata", "{\"key-1\":\"value-1\",\"key-2\":\"value-2\"," +
+                        "\"originalDid\":\"00000000-0000-0000-0000-000000000000\",\"originalSystem\":\"test-system-name\"}");
+
+        Assertions.assertThat(headers).containsAllEntriesOf(expectedHeaders);
     }
 
-    ActionContext getContext(UUID did) {
-        return ActionContext.builder()
-                .contentStorageService(CONTENT_STORAGE_SERVICE)
+    @Test
+    @SneakyThrows
+    void buildHeadersNoContent() {
+        Map<String, String> headers = action.buildHeaders(getContext(), new DeltaFiEgressParameters(), EgressInput.builder().build());
+        Assertions.assertThat(headers).containsEntry("Filename", "");
+    }
+
+    private EgressInput getEgressInput() {
+        return EgressInput.builder()
+                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
+                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
+                .build();
+    }
+
+    ActionContext getContext() {
+        return runner.actionContextBuilder()
                 .dataSource("data-source")
-                .did(did)
+                .did(DID)
                 .systemName("test-system-name")
                 .hostname("host")
                 .build();

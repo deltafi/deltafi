@@ -164,6 +164,14 @@ public class DeltaFiTestRunner {
     }
 
     /**
+     * Get a new ActionContextBuilder with the ContentStorageService populated
+     * @return new ActionContext
+     */
+    public ActionContext.ActionContextBuilder actionContextBuilder() {
+        return ActionContext.builder().contentStorageService(storageService);
+    }
+
+    /**
      * Read the bytes of file at the given classpath resource path
      * @param path of the file to read
      * @return byte[] from the content of the file

@@ -17,155 +17,142 @@
  */
 package org.deltafi.core.action.egress;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import lombok.SneakyThrows;
+import okhttp3.Call;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okio.Buffer;
+import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.test.content.InMemoryContentStorageService;
-import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.Mockito;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class HttpEgressTest {
-    private static final String URL_CONTEXT = "/endpoint";
+    private static final UUID DID = new UUID(0, 0);
+    private static final String URL = "https://somewhere/endpoint";
     private static final String CONTENT = "This is the test content.";
-    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new InMemoryContentStorageService();
-    @RegisterExtension
-    static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-    private final HttpEgress action = new HttpEgress(new OkHttpClient());
+    private static final String METADATA_JSON = "{\"dataSource\":\"test-data-source\"," +
+            "\"did\":\"00000000-0000-0000-0000-000000000000\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
+            "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}";
+
+    private final OkHttpClient okHttpClient = Mockito.mock(OkHttpClient.class);
+    private final HttpEgress action = new HttpEgress(okHttpClient);
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("HttpEgressTest");
 
     @BeforeEach
-    void beforeEach() {
-        wireMockHttp.resetAll();
+    void mockOkHttpClient() throws IOException {
+        Call mockCall = Mockito.mock(Call.class);
+        Response mockResponse = Mockito.mock(Response.class);
+        Mockito.when(okHttpClient.newCall(Mockito.any())).thenReturn(mockCall);
+        Mockito.when(mockCall.execute()).thenReturn(mockResponse);
+        Mockito.when(mockResponse.isSuccessful()).thenReturn(true);
     }
 
     @Test
     void egressDelete() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.delete(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
-                        "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
-                        "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
-                .willReturn(WireMock.ok()));
-
-        HttpEgress.Parameters params = makeParameters(HttpRequestMethod.DELETE);
-        EgressResultType egressResultType = runTest(did, params);
+        EgressResultType egressResultType = runTest(HttpRequestMethod.DELETE);
         assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(this::verifyDelete));
+    }
+
+    private void verifyDelete(Request request) {
+        Assertions.assertThat(request.method()).isEqualTo("DELETE");
+        Assertions.assertThat(request.url()).hasToString(URL);
+        Assertions.assertThat(request.headers()).hasSize(1);
+        Assertions.assertThat(request.headers().get("headers-map")).isEqualTo(METADATA_JSON);
     }
 
     @Test
     void egressPost() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching(String.valueOf(CONTENT.length())))
-                .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
-                        "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
-                        "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
-        HttpEgress.Parameters params = makeParameters(HttpRequestMethod.POST);
-        EgressResultType egressResultType = runTest(did, params);
+        EgressResultType egressResultType = runTest(HttpRequestMethod.POST);
         assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(request -> verifyWithBody(request, "POST")));
     }
 
     @Test
     void egressPostWithExtraHeaders() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo("text/plain")) // TODO - should extra parameters be allowed to override this?
-                .withHeader("extraKey", WireMock.equalTo("extraValue"))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
-                .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
-                        "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
-                        "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
-        HttpEgress.Parameters params = makeParameters(HttpRequestMethod.POST,
+        EgressResultType egressResultType = runTest(HttpRequestMethod.POST,
                 Map.of("extraKey", "extraValue", "content-type", "xml"));
-        EgressResultType egressResultType = runTest(did, params);
         assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(this::verifyPostWithExtraHeaders));
+    }
+
+    @SneakyThrows
+    private void verifyPostWithExtraHeaders(Request request) {
+        Assertions.assertThat(request.method()).isEqualTo("POST");
+        Assertions.assertThat(request.url()).hasToString(URL);
+        Assertions.assertThat(request.headers()).hasSize(3);
+        Assertions.assertThat(request.headers().get("headers-map")).isEqualTo(METADATA_JSON);
+        Assertions.assertThat(request.headers().get("extraKey")).isEqualTo("extraValue");
+        // this is replaced by the client with the body.contentType(), setting it has no impact on the final request
+        Assertions.assertThat(request.headers().get("content-type")).isEqualTo("xml");
+        Assertions.assertThat(request.body()).isNotNull();
+
+        Assertions.assertThat(request.body().contentLength()).isEqualTo(CONTENT.length());
+        Assertions.assertThat(request.body().contentType()).hasToString("text/plain");
+        Buffer buffer = new Buffer();
+        request.body().writeTo(buffer);
+        Assertions.assertThat(buffer.readUtf8()).isEqualTo(CONTENT);
     }
 
     @Test
     void egressPut() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.put(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
-                .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
-                        "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
-                        "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
-        HttpEgress.Parameters params = makeParameters(HttpRequestMethod.PUT);
-        EgressResultType egressResultType = runTest(did, params);
+        EgressResultType egressResultType = runTest(HttpRequestMethod.PUT);
         assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(request -> verifyWithBody(request, "PUT")));
     }
 
     @Test
     void egressPatch() {
-        UUID did = UUID.randomUUID();
-
-        wireMockHttp.stubFor(WireMock.patch(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.matching("" + CONTENT.getBytes().length))
-                .withHeader("headers-map", WireMock.equalTo("{\"dataSource\":\"test-data-source\"," +
-                        "\"did\":\"" + did + "\",\"filename\":\"test-content\",\"flow\":\"test-flow-name\"," +
-                        "\"key-1\":\"value-1\",\"key-2\":\"value-2\",\"originalFilename\":\"test-delta-file\"}"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
-        HttpEgress.Parameters params = makeParameters(HttpRequestMethod.PATCH);
-        EgressResultType egressResultType = runTest(did, params);
+        EgressResultType egressResultType = runTest(HttpRequestMethod.PATCH);
         assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(request -> verifyWithBody(request, "PATCH")));
     }
 
-    private EgressResultType runTest(UUID did, HttpEgress.Parameters params) {
+    @SneakyThrows
+    private void verifyWithBody(Request request, String method) {
+        Assertions.assertThat(request.method()).isEqualTo(method);
+        Assertions.assertThat(request.url()).hasToString(URL);
+        Assertions.assertThat(request.headers()).hasSize(1);
+        Assertions.assertThat(request.headers().get("headers-map")).isEqualTo(METADATA_JSON);
+        Assertions.assertThat(request.body()).isNotNull();
+
+        Assertions.assertThat(request.body().contentLength()).isEqualTo(CONTENT.length());
+        Buffer buffer = new Buffer();
+        request.body().writeTo(buffer);
+        Assertions.assertThat(buffer.readUtf8()).isEqualTo(CONTENT);
+    }
+
+    private EgressResultType runTest(HttpRequestMethod method) {
+        return runTest(method, null);
+    }
+
+    private EgressResultType runTest(HttpRequestMethod method, Map<String, String> extraHeaders) {
         return action.egress(
-                ActionContext.builder()
-                        .contentStorageService(CONTENT_STORAGE_SERVICE)
-                        .did(did)
+                runner.actionContextBuilder()
+                        .did(DID)
                         .deltaFileName("test-delta-file")
                         .dataSource("test-data-source")
                         .flowName("test-flow-name")
                         .build(),
-                params, egressInput());
-    }
-
-    private HttpEgress.Parameters makeParameters(HttpRequestMethod method) {
-        return makeParameters(method, null);
+                makeParameters(method, extraHeaders), egressInput());
     }
 
     private HttpEgress.Parameters makeParameters(HttpRequestMethod method, Map<String, String> extraHeaders) {
         HttpEgress.Parameters params = new HttpEgress.Parameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
+        params.setUrl(URL);
         params.setMetadataKey("headers-map");
         params.setMethod(method);
         if (extraHeaders != null) {

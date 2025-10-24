@@ -17,27 +17,23 @@
  */
 package org.deltafi.core.action.egress;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import okhttp3.OkHttpClient;
-import okhttp3.RequestBody;
-import okio.BufferedSink;
+
+import lombok.SneakyThrows;
+import okhttp3.*;
+import okio.Buffer;
+import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.ErrorResultAssert;
+import org.deltafi.test.asserters.FilterResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Map;
@@ -58,62 +54,59 @@ class HttpEgressBaseTest {
         }
     }
 
-    private static final String URL_CONTEXT = "/endpoint";
+    private static final String URL = "https://somewhere/endpoint";
     private static final String CONTENT = "This is the test content.";
 
-    private final OkHttpClient httpService = new OkHttpClient();
-    private final TestHttpEgress action = new TestHttpEgress(httpService);
+    private final OkHttpClient okHttpClient = Mockito.mock(OkHttpClient.class);
+    private final TestHttpEgress action = new TestHttpEgress(okHttpClient);
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("RestPostEgressTest");
-
-    @RegisterExtension
-    static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
-            .build();
-
-    @BeforeEach
-    public void beforeEach() {
-        wireMockHttp.resetAll();
-    }
 
     @Test
     void egresses() {
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
-                .withHeader("header-1", WireMock.equalTo("value-1"))
-                .withHeader("header-2", WireMock.equalTo("value-2"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
+        Response mockResponse = getMockResponse();
+        Mockito.when(mockResponse.isSuccessful()).thenReturn(true);
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
+        params.setUrl(URL);
         EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(this::verifyRequest));
+    }
+
+    @SneakyThrows
+    void verifyRequest(Request request) {
+        Assertions.assertThat(request.url()).hasToString(URL);
+        Assertions.assertThat(request.method()).isEqualTo("POST");
+        Assertions.assertThat(request.headers()).hasSize(2);
+        Assertions.assertThat(request.header("header-1")).isEqualTo("value-1");
+        Assertions.assertThat(request.header("header-2")).isEqualTo("value-2");
+        Assertions.assertThat(request.body()).isNotNull();
+        // this is the value used to set the content-length header (added by OKHttp during the request execution)
+        Assertions.assertThat(request.body().contentLength()).isEqualTo(CONTENT.length());
+        // this is the value used to set the content-type header (added by OKHttp during the request execution)
+        Assertions.assertThat(request.body().contentType()).hasToString("text/plain");
     }
 
     @Test
+    @SneakyThrows
     void errors() {
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
-                .withHeader("header-1", WireMock.equalTo("value-1"))
-                .withHeader("header-2", WireMock.equalTo("value-2"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.serverError().withBody("There was an error!")));
+        Response mockResponse = getMockResponse();
+        Mockito.when(mockResponse.isSuccessful()).thenReturn(false);
+        Mockito.when(mockResponse.code()).thenReturn(500);
+        ResponseBody responseBody = Mockito.mock(ResponseBody.class);
+        Mockito.when(mockResponse.body()).thenReturn(responseBody);
+        Mockito.when(responseBody.string()).thenReturn("There was an error!");
 
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
+        params.setUrl(URL);
         EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
@@ -123,66 +116,34 @@ class HttpEgressBaseTest {
 
     @Test
     void errorsOnHttpPostException() {
-        OkHttpClient mockHttpService = Mockito.mock(OkHttpClient.class);
-        Mockito.when(mockHttpService.newCall(Mockito.any()))
+        Mockito.when(okHttpClient.newCall(Mockito.any()))
                 .thenThrow(new RuntimeException());
-
-        TestHttpEgress testAction = new TestHttpEgress(mockHttpService);
 
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
-        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+        params.setUrl(URL);
+        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
         assertEquals("Unexpected error during POST request", ((ErrorResult) egressResultType).getErrorCause());
     }
 
-    private static class IOExceptionOpeningInputStream extends TestHttpEgress {
-        public IOExceptionOpeningInputStream(OkHttpClient httpClient) {
-            super(httpClient);
-        }
-
-        @Override
-        protected RequestBody prepareRequestBody(@NotNull ActionContext context, @NotNull EgressInput input){
-            return new RequestBody() {
-
-                @Override
-                public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
-                    throw new IOException();
-                }
-
-                @Override
-                public @Nullable okhttp3.MediaType contentType() {
-                    return null;
-                }
-            };
-        }
-    }
-
     @Test
+    @SneakyThrows
     void errorsOnIoExceptionOpeningInputStream() {
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(MediaType.TEXT_PLAIN))
-                .withHeader(HttpHeaders.CONTENT_LENGTH, WireMock.equalTo(String.valueOf(CONTENT.length())))
-                .withHeader("header-1", WireMock.equalTo("value-1"))
-                .withHeader("header-2", WireMock.equalTo("value-2"))
-                .withRequestBody(WireMock.equalTo(CONTENT))
-                .willReturn(WireMock.ok()));
-
+        Call mockCall = Mockito.mock(Call.class);
+        Mockito.when(okHttpClient.newCall(Mockito.any())).thenReturn(mockCall);
+        Mockito.when(mockCall.execute()).thenThrow(new IOException());
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
-        IOExceptionOpeningInputStream testAction = new IOExceptionOpeningInputStream(httpService);
-        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+        params.setUrl(URL);
+        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         assertInstanceOf(ErrorResult.class, egressResultType);
         assertEquals("Service POST failure", ((ErrorResult) egressResultType).getErrorCause());
@@ -190,92 +151,101 @@ class HttpEgressBaseTest {
 
     @Test
     void handlesNullContentWithDefaultPolicy() {
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .willReturn(WireMock.aResponse().withStatus(200)));
-
         EgressInput egressInput = EgressInput.builder()
                 .content(null)  // null content
                 .metadata(Map.of("test", "value"))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
+        params.setUrl(URL);
         // Default policy is ERROR
-        
-        TestHttpEgress testAction = new TestHttpEgress(httpService);
-        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         // Should return ErrorResult with default ERROR policy
-        assertInstanceOf(ErrorResult.class, egressResultType);
-        assertEquals("Cannot perform egress: no content available", ((ErrorResult) egressResultType).getErrorCause());
+        ErrorResultAssert.assertThat(egressResultType)
+                        .hasCause("Cannot perform egress: no content available");
     }
 
     @Test
     void handlesNullContentWithFilterPolicy() {
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .willReturn(WireMock.aResponse().withStatus(200)));
-
         EgressInput egressInput = EgressInput.builder()
                 .content(null)  // null content
                 .metadata(Map.of("test", "value"))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
+        params.setUrl(URL);
         params.setNoContentPolicy(NoContentPolicy.FILTER);
-        
-        TestHttpEgress testAction = new TestHttpEgress(httpService);
-        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         // Should return FilterResult
-        assertInstanceOf(FilterResult.class, egressResultType);
-        assertEquals("Content is null - filtered by noContentPolicy", ((FilterResult) egressResultType).getFilteredCause());
+        FilterResultAssert.assertThat(egressResultType)
+                .hasCause("Content is null - filtered by noContentPolicy");
     }
 
     @Test
     void handlesNullContentWithErrorPolicy() {
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .willReturn(WireMock.aResponse().withStatus(200)));
-
         EgressInput egressInput = EgressInput.builder()
                 .content(null)  // null content
                 .metadata(Map.of("test", "value"))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
+        params.setUrl(URL);
         params.setNoContentPolicy(NoContentPolicy.ERROR);
-        
-        TestHttpEgress testAction = new TestHttpEgress(httpService);
-        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         // Should return ErrorResult
-        assertInstanceOf(ErrorResult.class, egressResultType);
-        assertEquals("Cannot perform egress: no content available", ((ErrorResult) egressResultType).getErrorCause());
+        ErrorResultAssert.assertThat(egressResultType)
+                .hasCause("Cannot perform egress: no content available");
     }
 
     @Test
     void handlesNullContentWithSendEmptyPolicy() {
-        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
-                .willReturn(WireMock.aResponse().withStatus(200)));
-
+        Response mockResponse = getMockResponse();
+        Mockito.when(mockResponse.isSuccessful()).thenReturn(true);
         EgressInput egressInput = EgressInput.builder()
                 .content(null)  // null content
                 .metadata(Map.of("test", "value"))
                 .build();
 
         HttpEgressParameters params = new HttpEgressParameters();
-        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
-        params.setUrl(url);
+        params.setUrl(URL);
         params.setNoContentPolicy(NoContentPolicy.SEND_EMPTY);
-        
-        TestHttpEgress testAction = new TestHttpEgress(httpService);
-        EgressResultType egressResultType = testAction.egress(runner.actionContext(), params, egressInput);
+
+        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
 
         // Should succeed with zero data sent
         assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(this::verifyEmptyRequest));
+    }
+
+    @SneakyThrows
+    void verifyEmptyRequest(Request request) {
+        Assertions.assertThat(request.url()).hasToString(URL);
+        Assertions.assertThat(request.method()).isEqualTo("POST");
+        Assertions.assertThat(request.headers()).hasSize(2);
+        Assertions.assertThat(request.header("header-1")).isEqualTo("value-1");
+        Assertions.assertThat(request.header("header-2")).isEqualTo("value-2");
+        Assertions.assertThat(request.body()).isNotNull();
+        // this is the value used to set the content-length header (added by OKHttp during the request execution)
+        Assertions.assertThat(request.body().contentLength()).isZero();
+        // when the body is null the IngressStreamRequestBody should return null for the contentType
+        Assertions.assertThat(request.body().contentType()).isNull();
+        Buffer buffer = new Buffer();
+        request.body().writeTo(buffer);
+        Assertions.assertThat(buffer.readUtf8()).isEmpty();
+    }
+
+    @SneakyThrows
+    Response getMockResponse() {
+        Call mockCall = Mockito.mock(Call.class);
+        Response mockResponse = Mockito.mock(Response.class);
+        Mockito.when(okHttpClient.newCall(Mockito.any())).thenReturn(mockCall);
+        Mockito.when(mockCall.execute()).thenReturn(mockResponse);
+        return mockResponse;
     }
 }

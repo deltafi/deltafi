@@ -27,9 +27,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class FilterEgressTest {
+class FilterEgressTest {
     @Test
-    public void filters() {
+    void filters() {
         FilterEgress filterEgress = new FilterEgress();
 
         EgressResultType egressResultType = filterEgress.egress(ActionContext.builder().build(),

@@ -90,11 +90,6 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
         Map<String, String> headers = buildHeaders(context, params, input);
         headers.forEach(requestBuilder::addHeader);
 
-        String mediaType = getMediaType(input);
-        if (mediaType != null) {
-            requestBuilder.addHeader("Content-Type", mediaType);
-        }
-
         switch (method) {
             case POST -> requestBuilder.post(prepareRequestBody(context, input));
             case PUT -> requestBuilder.put(prepareRequestBody(context, input));

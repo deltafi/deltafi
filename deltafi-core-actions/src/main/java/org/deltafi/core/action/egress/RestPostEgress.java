@@ -42,6 +42,7 @@ public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
         super("Egress to an HTTP endpoint using POST", httpClient);
     }
 
+    @Override
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull RestPostEgressParameters params,
                                                @NotNull EgressInput input) throws JsonProcessingException {
         return Map.of(params.getMetadataKey(),
