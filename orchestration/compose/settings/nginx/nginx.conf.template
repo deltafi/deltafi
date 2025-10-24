@@ -6,31 +6,29 @@ http {
     proxy_cache_path /tmp/nginx-cache-auth levels=1:2 keys_zone=auth_cache:10m max_size=128m inactive=30m use_temp_path=off;
 
     map $host $upstream_mapping {
-        "~^ingress.*" "deltafi-core";
-        "~^graphite.*" "deltafi-graphite";
-        "~^minio.*" "deltafi-minio";
-        default "deltafi-core";
+        "~^ingress.*" "deltafi-core:8080/api/v2/deltafile/ingress";
+        "~^graphite.*" "deltafi-graphite:8080";
+        "~^minio.*" "deltafi-minio:9000";
+        default "deltafi-core:8080";
     }
 
-    upstream deltafi-core {
-        server deltafi-core:8080;
+    map $host $serviceName_mapping {
+        "~^graphite.*" "Graphite";
+        "~^minio.*" "MinIO";
+        default "DeltaFi";
     }
 
-    upstream deltafi-grafana {
-        server deltafi-grafana:3000;
+    map $request_uri $auth_cache_path {
+        ~^/visualization  "visualization";
+        ~^/orchestration  "orchestration";
+        default           "ui";
     }
 
-    upstream deltafi-graphite {
-        server deltafi-graphite:8080;
-    }
+    resolver 127.0.0.11 valid=10s;
 
-    upstream deltafi-minio {
-        server deltafi-minio:9000;
-    }
-
-    upstream deltafi-docker-ui {
-        server deltafi-docker-ui:3230;
-    }
+    # gracefully handle upstream errors using the UI error page
+    proxy_intercept_errors on;
+    error_page 502 503 504 = @unavailable_page;
 
     proxy_set_header   Host $host;
     proxy_set_header   X-Real-IP $remote_addr;
@@ -59,75 +57,72 @@ http {
 
         location /api/v2/auth {
             internal;
+            proxy_intercept_errors off;
             client_max_body_size    10G;
-            proxy_pass              http://deltafi-core;
+            set $upstream_auth deltafi-core:8080;
+            proxy_pass              http://$upstream_auth;
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
             proxy_set_header        X-Original-URL $scheme://$http_host$request_uri;
             proxy_set_header        ssl-client-subject-dn  $ssl_client_s_dn;
-            proxy_cache_key ${PROXY_CACHE_KEY};
+            proxy_cache_key ${PROXY_CACHE_KEY}$auth_cache_path;
             proxy_cache auth_cache;
             proxy_cache_valid 200 1m;
+            error_page 502 503 504 =502;
         }
 
-        location /orchestration {
+        location /orchestration/ {
             client_max_body_size 10G;
-            proxy_pass           http://deltafi-docker-ui/;
+            set $serviceName "Docker UI";
+            set $upstream deltafi-docker-ui:3230;
+            proxy_pass http://$upstream;
 
-            # Add necessary headers for React app
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Port $server_port;
-
-            # Handle API requests
-            location /orchestration/api/ {
-                proxy_pass http://deltafi-docker-ui/api/;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header X-Forwarded-Host $host;
-                proxy_set_header X-Forwarded-Port $server_port;
-            }
-
-            location /orchestration/images/ {
-                proxy_pass http://deltafi-docker-ui/;
-                sub_filter_once off;
-                sub_filter_types text/html;
-                sub_filter 'href="/' 'href="/orchestration/';
-                sub_filter 'src="/' 'src="/orchestration/';
-                sub_filter '"/manifest.json"' '"/orchestration/manifest.json"';
-                sub_filter 'url: "/api/"' 'url: "/orchestration/api/"';
-            }
-            location /orchestration/cleanup/ {
-                proxy_pass http://deltafi-docker-ui/;
-                sub_filter_once off;
-                sub_filter_types text/html;
-                sub_filter 'href="/' 'href="/orchestration/';
-                sub_filter 'src="/' 'src="/orchestration/';
-                sub_filter '"/manifest.json"' '"/orchestration/manifest.json"';
-                sub_filter 'url: "/api/"' 'url: "/orchestration/api/"';
-            }
-
-            # Handle all other requests
-            location /orchestration/ {
-                proxy_pass http://deltafi-docker-ui/;
-                sub_filter_once off;
-                sub_filter_types text/html;
-                sub_filter 'href="/' 'href="/orchestration/';
-                sub_filter 'src="/' 'src="/orchestration/';
-                sub_filter '"/manifest.json"' '"/orchestration/manifest.json"';
-                sub_filter 'url: "/api/"' 'url: "/orchestration/api/"';
-            }
         }
 
         location /visualization {
             client_max_body_size 10G;
-            proxy_pass           http://deltafi-grafana;
+            set $serviceName "Grafana";
+            set $upstream deltafi-grafana:3000;
+            proxy_pass           http://$upstream;
         }
- 
+
+        location /api {
+            client_max_body_size 10G;
+            set $upstream deltafi-core:8080;
+            proxy_pass           http://$upstream;
+
+            # if core API is unreachable return a 503 with the json containing the error
+            error_page 502 503 504 = @api_unavailable;
+        }
+
         location / {
             client_max_body_size 10G;
-            proxy_pass           http://deltafi-core;
+            set $upstream deltafi-core:8080;
+            proxy_pass           http://$upstream;
+
+            # if core is unreachable show the static unavailable page
+            error_page 502 503 504 = @static_unavailable;
+        }
+
+        location @unavailable_page {
+            internal;
+            return 302 $scheme://${DOMAIN}/unavailable?service=$serviceName;
+        }
+
+        location @static_unavailable {
+            internal;
+            root /etc/nginx/html;
+            try_files /unavailable.html =503;
+        }
+
+        location @api_unavailable {
+            internal;
+            default_type application/json;
+            return 503 '{"error": "Service Unavailable", "message": "Unable to complete the request within timeout, please try again later"}';
         }
     }
 
@@ -136,22 +131,35 @@ http {
         ${INCLUDE_CERT_AUTH}
 
         server_name *.${DOMAIN};
+        location /api/v2/auth {
+            internal;
+            proxy_intercept_errors off;
+            client_max_body_size    10G;
+            set $upstream_auth deltafi-core:8080;
+            proxy_pass              http://$upstream_auth;
+            proxy_pass_request_body off;
+            proxy_set_header        Content-Length "";
+            proxy_set_header        X-Original-URL http://$http_host;
+            proxy_cache_key ${PROXY_CACHE_KEY}$auth_cache_path;
+            proxy_cache auth_cache;
+            proxy_cache_valid 200 1m;
+            error_page 502 503 504 =502;
+        }
 
         location / {
             client_max_body_size 10G;
             proxy_pass           http://$upstream_mapping;
         }
 
-        location /api/v2/auth {
+        location @unavailable_page {
             internal;
-            client_max_body_size    10G;
-            proxy_pass              http://deltafi-core;
-            proxy_pass_request_body off;
-            proxy_set_header        Content-Length "";
-            proxy_set_header        X-Original-URL http://$http_host;
-            proxy_cache_key ${PROXY_CACHE_KEY};
-            proxy_cache auth_cache;
-            proxy_cache_valid 200 1m;
+            return 302 $scheme://${DOMAIN}/unavailable?service=$serviceName_mapping;
+        }
+
+        location @static_unavailable {
+            internal;
+            root /etc/nginx/html;
+            try_files /unavailable.html =503;
         }
     }
 
@@ -167,7 +175,8 @@ http {
 
         location / {
             client_max_body_size 10G;
-            proxy_pass           http://deltafi-core;
+            set $upstream deltafi-core:8080;
+            proxy_pass           http://$upstream;
             proxy_buffering off;
         }
     }

@@ -234,6 +234,11 @@ const routes: Array<RouteRecordRaw> = [
     component: UnauthorizedPage,
   },
   {
+    path: "/unavailable",
+    name: "Service Unavailable",
+    component: PageNotFound,
+  },
+  {
     path: "/:catchAll(.*)",
     name: "404 Not Found",
     component: PageNotFound,

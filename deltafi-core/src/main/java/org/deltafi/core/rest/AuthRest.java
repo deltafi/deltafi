@@ -131,6 +131,10 @@ public class AuthRest {
             return "MetricsView";
         }
 
+        if (path.startsWith("/orchestration")) {
+            return "Admin";
+        }
+
         return null;
     }
 
@@ -157,11 +161,7 @@ public class AuthRest {
         }
 
         try {
-            String path = URI.create(originalUrl).getPath();
-            if (StringUtils.isBlank(path)) {
-                throw invalidRequestException();
-            }
-            return path;
+            return URI.create(originalUrl).getPath();
         } catch (IllegalArgumentException e) {
             log.error("Illegal URL in auth check {}", originalUrl, e);
             throw invalidRequestException();

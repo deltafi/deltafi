@@ -18,10 +18,29 @@
 
 <template>
   <div>
-    <PageHeader heading="Page Not Found" />
-    <p>The page you are looking for cannot be found.</p>
+    <PageHeader :heading="heading" />
+    <p>{{ message }}</p>
   </div>
 </template>
+
 <script setup>
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import PageHeader from "@/components/PageHeader.vue";
+
+const route = useRoute();
+const service = computed(() => route.query.service);
+
+const heading = computed(() => {
+  return service.value
+      ? `${ service.value } Unavailable`
+      : 'Page Not Found';
+});
+
+const message = computed(() => {
+  return service.value
+      ? `The ${ service.value } service is currently offline or being updated. Please try again in a few moments.`
+      : 'The page you are looking for cannot be found.';
+});
+
 </script>

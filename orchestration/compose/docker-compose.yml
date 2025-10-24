@@ -445,13 +445,6 @@ services:
   deltafi-nginx:
     image: ${NGINX}
     container_name: deltafi-nginx
-    depends_on:
-      deltafi-grafana:
-        condition: service_started
-      deltafi-graphite:
-        condition: service_started
-      deltafi-postgres:
-        condition: service_healthy
     environment:
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/
     env_file:
@@ -467,6 +460,7 @@ services:
       - ${SETTINGS_DIR}/nginx/conf:/opt/nginx
       - ${DATA_DIR}/certs/${DELTAFI_SECRET_INGRESS_SSL:-ssl-secret}:/certs
       - ${SETTINGS_DIR}/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
+      - ${SETTINGS_DIR}/nginx/html:/etc/nginx/html
     ports:
       - "${UI_HTTP_PORT}:80"
       - "${UI_HTTPS_PORT}:443"

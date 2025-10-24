@@ -29,16 +29,5 @@ public class WebConfiguration implements WebMvcConfigurer {
         viewControllerRegistry.addRedirectViewController("/docs/", "/docs/index.html");
         viewControllerRegistry.addRedirectViewController("/graphiql", "/graphiql/index.html");
         viewControllerRegistry.addRedirectViewController("/graphiql/", "/graphiql/index.html");
-
-        // Forward routes handled by single-page app to "/" to handle fully-specified URLs
-        viewControllerRegistry.addViewController("/deltafile/**").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/errors").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/metrics/**").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/config/**").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/admin/**").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/versions").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/events").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/unauthorized").setViewName("forward:/");
-        viewControllerRegistry.addViewController("/system-map").setViewName("forward:/");
     }
 }
