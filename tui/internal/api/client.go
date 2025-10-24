@@ -31,7 +31,7 @@ import (
 
 type Client struct {
 	baseURL    string
-	httpClient *http.Client
+	HttpClient *http.Client
 	dnsMap     map[string]string
 }
 
@@ -45,7 +45,7 @@ func NewClient(baseURL string) *Client {
 
 	client := &Client{
 		baseURL: baseURL,
-		httpClient: &http.Client{
+		HttpClient: &http.Client{
 			Timeout:   60 * time.Second,
 			Transport: transport,
 		},
@@ -61,7 +61,7 @@ func NewClient(baseURL string) *Client {
 func (c *Client) AddCustomDNS(hostname string, ip string) {
 	c.dnsMap[hostname] = ip
 
-	transport := c.httpClient.Transport.(*http.Transport)
+	transport := c.HttpClient.Transport.(*http.Transport)
 	if transport.DialContext == nil {
 		transport.DialContext = (&net.Dialer{
 			Timeout:   60 * time.Second,
@@ -212,9 +212,7 @@ func (c *Client) DoWithBody(method string, path string, requestBody interface{},
 // The request will be sent with the X-User-Permissions and X-User-Name headers
 // set to "Admin" and "TUI" respectively.
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	req.Header.Add("X-User-Permissions", "Admin")
-	req.Header.Add("X-User-Name", "TUI")
-	return c.httpClient.Do(req)
+	return c.HttpClient.Do(req)
 }
 
 func (c *Client) Versions() (*VersionsResponse, error) {

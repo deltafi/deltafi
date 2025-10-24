@@ -29,6 +29,16 @@ import (
 	"github.com/deltafi/tui/internal/types"
 )
 
+// configure the API connection, this can be expanded to support timeouts/keepalive settings
+type Api struct {
+	Url string `yaml:"url"`
+}
+
+type Context struct {
+	Api            *Api  `yaml:"api"`
+	Authentication *Auth `yaml:"authentication"`
+}
+
 type Config struct {
 	OrchestrationMode orchestration.OrchestrationMode `yaml:"orchestrationMode"`
 	DeploymentMode    types.DeploymentMode            `yaml:"deploymentMode"`
@@ -37,6 +47,7 @@ type Config struct {
 	DataDirectory     string                          `yaml:"dataDirectory"`
 	SiteDirectory     string                          `yaml:"siteDirectory"`
 	Development       DevelopmentConfig               `yaml:"development"`
+	Context           *Context                        `yaml:"context"`
 }
 
 type DevelopmentConfig struct {

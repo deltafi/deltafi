@@ -120,9 +120,9 @@ func GetSemanticVersion() *semver.Version {
 
 func build() {
 
-	config, error := LoadConfig()
+	config, err := LoadConfig()
 
-	if error != nil {
+	if err != nil {
 		config = DefaultConfig()
 	}
 
@@ -143,7 +143,7 @@ func build() {
 	}
 
 	// Initialize the API and hit the me endpoint to verify running DeltaFi
-	err := instance.initializeAPI()
+	err = instance.initializeAPI()
 
 	if err != nil {
 		instance.running = false
@@ -209,23 +209,55 @@ func (a *App) initializeAPI() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	baseURL, err := a.getAPIBaseURL()
-	if err != nil {
-		return fmt.Errorf("failed to initialize API client: %w", err)
+	deltaFiContext := a.config.Context
+
+	// if the context is nil create a new one
+	if deltaFiContext == nil {
+		deltaFiContext = &Context{}
 	}
 
-	a.apiClient = api.NewClient(baseURL)
+	if deltaFiContext.Api == nil {
+		deltaFiContext.Api = &Api{}
+	}
 
-	a.graphqlClient = graphql.NewClient(baseURL+"/api/v2/graphql", a.apiClient)
+	// give the env var the highest precedence if it has a value
+	apiUrlEnvVar := os.Getenv("DELTAFI_API_URL")
+	if apiUrlEnvVar != "" {
+		deltaFiContext.Api.Url = apiUrlEnvVar
+	}
+
+	// if the server is not set in the config or env var then fall back to detecting the API base URL
+	if deltaFiContext.Api.Url == "" {
+		baseURL, err := a.getAPIBaseURL()
+		if err != nil {
+			return fmt.Errorf("failed to initialize API client: %w", err)
+		}
+
+		deltaFiContext.Api.Url = baseURL
+	}
+
+	// set an empty auth section if needed to fall back to disabled auth behavior
+	if deltaFiContext.Authentication == nil {
+		deltaFiContext.Authentication = &Auth{}
+	}
+
+	a.apiClient = api.NewClient(deltaFiContext.Api.Url)
+
+	err := deltaFiContext.Authentication.SetupClient(a.apiClient.HttpClient)
+	if err != nil {
+		return fmt.Errorf("failed to initialize API client authentication: %w", err)
+	}
+
+	a.graphqlClient = graphql.NewClient(deltaFiContext.Api.Url+"/api/v2/graphql", a.apiClient)
 
 	return nil
 }
 
 func (a *App) getAPIBaseURL() (string, error) {
-	base, error := a.orchestrator.GetAPIBaseURL()
+	base, err := a.orchestrator.GetAPIBaseURL()
 
-	if error != nil {
-		return "", error
+	if err != nil {
+		return "", err
 	}
 
 	coreServiceURL := fmt.Sprintf("http://%s", base)

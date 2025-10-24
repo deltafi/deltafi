@@ -68,6 +68,9 @@ var rootCmd = &cobra.Command{
 			} else {
 				return fmt.Errorf("configuration wizard not found")
 			}
+		} else if cmd.Flags().Changed("api-url") {
+			apiURL, _ := cmd.Flags().GetString("api-url")
+			_ = os.Setenv("DELTAFI_API_URL", apiURL)
 		}
 		return nil
 	},
@@ -109,6 +112,7 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVar(&splash, "splash", false, "Show splash screen")
 	rootCmd.PersistentFlags().BoolVar(&printVersion, "version", false, "Print version and exit")
+	rootCmd.PersistentFlags().String("api-url", "", "Set the DeltaFi API URL, this takes precedence over DELTAFI_API_URL env var and config.yaml")
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
