@@ -68,6 +68,7 @@ public class SystemSnapshotTestHelper {
         setResumePolicies(snapshot);
         setDeletePolicies(snapshot);
         setDeltaFiProperties(snapshot);
+        setLinks(snapshot);
         setPluginVariables(snapshot);
         setInstalledPlugins(snapshot);
         systemSnapshot.setSnapshot(OBJECT_MAPPER.convertValue(snapshot, new TypeReference<>() {}));
@@ -115,13 +116,24 @@ public class SystemSnapshotTestHelper {
                 new KeyValue("autoResumeCheckFrequency", "PT10M"),
                 new KeyValue("inMemoryQueueSize", "10"));
 
-        Link httpBin = new Link();
-        httpBin.setName("View in HTTPBin");
-        httpBin.setUrl("https://httpbin.org/anything/example?did=${did}");
-        httpBin.setLinkType(LinkType.EXTERNAL);
-        snapshot.setLinks(List.of(httpBin));
-
         snapshot.setDeltaFiProperties(deltaFiProperties);
+    }
+
+    private static void setLinks(Snapshot snapshot) {
+        Link externalLink = new Link();
+        externalLink.setId(UUID.fromString("11111111-2222-1111-1111-111111111111"));
+        externalLink.setName("Link1");
+        externalLink.setDescription("Desc1");
+        externalLink.setUrl("https://httpbin.org");
+        externalLink.setLinkType(LinkType.EXTERNAL);
+
+        Link deltaFileLink = new Link();
+        deltaFileLink.setId(UUID.fromString("11111111-3333-1111-1111-111111111111"));
+        deltaFileLink.setName("Link2");
+        deltaFileLink.setUrl("https://httpbin.org/anything/example?did=${did}");
+        deltaFileLink.setLinkType(LinkType.DELTAFILE_LINK);
+
+        snapshot.setLinks(List.of(externalLink, deltaFileLink));
     }
 
     private static void setPluginVariables(Snapshot snapshot) {
@@ -233,10 +245,18 @@ public class SystemSnapshotTestHelper {
                             ]
                             links: [
                                 {
-                                    name: "View in HTTPBin"
+                                    id: "11111111-2222-1111-1111-111111111111"
+                                    name: "Link1"
+                                    url: "https://httpbin.org"
+                                    description: "Desc1"
+                                    linkType: EXTERNAL
+                                },
+                                {
+                                    id: "11111111-3333-1111-1111-111111111111"
+                                    name: "Link2"
                                     url: "https://httpbin.org/anything/example?did=${did}"
                                     description: null
-                                    linkType: EXTERNAL
+                                    linkType: DELTAFILE_LINK
                                 }
                             ]
                             plugins: [

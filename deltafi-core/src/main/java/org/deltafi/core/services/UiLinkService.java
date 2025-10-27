@@ -83,7 +83,7 @@ public class UiLinkService implements Snapshotter {
         } else {
             links.forEach(link -> uiLinkRepo.deleteByNameAndLinkType(link.getName(), link.getLinkType()));
         }
-
+        links.forEach(link -> link.setId(null));
         uiLinkRepo.saveAll(links);
         return new Result();
     }
