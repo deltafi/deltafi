@@ -2,6 +2,7 @@ image: docker:latest
 stages:
   - build
   - docker
+  - scan
   - deploy
   - integration-test
 
@@ -325,3 +326,48 @@ default:
 #     TEST_NAME: example.example-test
 #     MAX_TRIES: 40
 #     SLEEP_SECS: 5.0
+
+.grype:
+  image: deltafi/executor:latest
+  allow_failure: true
+  tags:
+    - light
+  stage: scan
+  variables:
+    GIT_STRATEGY: none
+  rules:
+    - if: $CI_COMMIT_TAG
+      variables:
+        DOCKER_REPOSITORY: ${CI_REGISTRY_IMAGE}
+        DOCKER_TAG: ${CI_COMMIT_TAG}
+  before_script:
+    - |
+      grype db update
+      echo "only-fixed: true" >> .grype.yaml
+      echo "pretty: true" >> .grype.yaml
+      cat .grype.yaml
+  script:
+    - echo grype ${DOCKER_REPOSITORY}:${DOCKER_TAG}
+    - grype ${DOCKER_REPOSITORY}:${DOCKER_TAG}
+
+.trivy:
+  image: deltafi/executor:latest
+  allow_failure: true
+  tags:
+    - light
+  stage: scan
+  variables:
+    GIT_STRATEGY: none
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      variables:
+        DOCKER_REPOSITORY: ${CI_REGISTRY_IMAGE}
+        DOCKER_TAG: ${DOCKER_DEV_TAG}
+  before_script:
+    - trivy image -q --no-progress --download-db-only
+    - trivy image -q --no-progress --download-java-db-only
+  script:
+    - echo trivy image --ignore-unfixed --skip-db-update --no-progress --username ${CI_REGISTRY_USER} --password ${CI_JOB_TOKEN} -q ${CI_REGISTRY_IMAGE}:${DOCKER_DEV_TAG}
+    - trivy image --ignore-unfixed --skip-db-update --no-progress --username ${CI_REGISTRY_USER} --password ${CI_JOB_TOKEN} -q ${CI_REGISTRY_IMAGE}:${DOCKER_DEV_TAG}
+
