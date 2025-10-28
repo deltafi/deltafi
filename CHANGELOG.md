@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.34.1] - 2025-10-28
+
+### Changed
+- Changed the CPU and memory monitoring script used while running in compose to include plugin containers
+
+### Upgrade and Migration
+- Use custom Minio image: deltafi/minio:RELEASE.2025-10-15T17-29-55Z-0
+- Update python dependencies
+- Upgrade to Python 3.13.9
+- Springboot upgrade to 3.5.7
+
 ## [2.34.0] - 2025-10-27
 
 ### Added
@@ -4884,7 +4895,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.1...main
+[2.34.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.0...2.34.1
 [2.34.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.24...2.34.0
 [2.33.24]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.23...2.33.24
 [2.33.23]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.22...2.33.23
