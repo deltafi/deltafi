@@ -57,20 +57,19 @@ worker_loop() {
         # Rows with NULL started_at or started_at older than 1 minute are eligible
         # Note: psql returns 0 even when UPDATE affects 0 rows, so we don't need || error handling here
         results=$(psql "$PG_URL" -Atc "
-            UPDATE pending_deletes
-            SET started_at = now()
-            WHERE (node, did) IN (
+            WITH batch AS (
                 SELECT node, did
                 FROM pending_deletes
                 WHERE node = '${NODE_NAME}'
-                  AND (
-                    started_at IS NULL
-                    OR started_at < now() - interval '1 minute'
-                  )
+                  AND (started_at IS NULL OR started_at < now() - interval '1 minute')
                 LIMIT 100
                 FOR UPDATE SKIP LOCKED
             )
-            RETURNING bucket, did;
+            UPDATE pending_deletes pd
+            SET started_at = now()
+            FROM batch
+            WHERE pd.node = batch.node AND pd.did = batch.did
+            RETURNING pd.bucket, pd.did;
         " 2>&1)
 
         # Check for errors or empty results
@@ -110,7 +109,7 @@ worker_loop() {
         if (( ${#successful_dids[@]} > 0 )); then
             # PostgreSQL returns "DELETE n" where n is the count - extract that number
             delete_result=$(psql "$PG_URL" -tc "
-                DELETE FROM pending_deletes 
+                DELETE FROM pending_deletes
                 WHERE did IN ($(IFS=,; echo "${successful_dids[*]}"));
             ")
             # Extract the number from "DELETE n" output
