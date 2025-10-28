@@ -7,8 +7,6 @@
     - .pythonkit
     - .publish-python
   rules:
-    - if: $CI_PROJECT_NAMESPACE == 'deltafi'
-      when: never
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH == 'dev'
@@ -18,6 +16,6 @@
     - .pythonkit
     - .publish-python-pypi
   rules:
-    - if: $CI_PROJECT_NAMESPACE == 'deltafi'
+    - if: $CI_PROJECT_NAMESPACE != 'deltafi'
       when: never
     - if: $CI_COMMIT_TAG
