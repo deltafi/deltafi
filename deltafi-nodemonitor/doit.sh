@@ -252,7 +252,7 @@ report_container_metrics() {
 
         TIMESTAMP=$(date +%s)
 
-        stats_output=$(docker stats --no-stream $(docker ps --format '{{.Names}}' --filter 'label=com.docker.compose.project=deltafi') --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}}')
+        stats_output=$(docker stats --no-stream $(docker ps --format '{{.Names}}' --filter 'label=deltafi-group') --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}}')
 
         if [ -z "$stats_output" ]; then
             _warn "No containers for the 'deltafi' project"
