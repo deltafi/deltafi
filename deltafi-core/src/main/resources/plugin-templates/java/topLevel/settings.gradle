@@ -3,6 +3,10 @@ pluginManagement {
         mavenLocal()
         mavenCentral()
         gradlePluginPortal()
+        maven {
+            url "https://gitlab.com/api/v4/projects/44592703/packages/maven"
+            name "DeltaFi GitLab"
+        }
     }
 }
 
@@ -10,5 +14,9 @@ dependencyResolutionManagement {
     repositories {
         mavenLocal()
         mavenCentral()
+        maven {
+            url "https://gitlab.com/api/v4/projects/44592703/packages/maven"
+            name "DeltaFi GitLab"
+        }
     }
 }
