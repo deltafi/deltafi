@@ -117,6 +117,12 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
     private int checkContentStoragePercentThreshold = 90;
 
+    @PropertyInfo(description = "Pending delete lag warning threshold. System status becomes degraded when any node has more pending deletes than the configured value.", defaultValue = "2000000", dataType = VariableDataType.NUMBER)
+    private int checkDeleteLagWarningThreshold = 2_000_000;
+
+    @PropertyInfo(description = "Pending delete lag error threshold. System status becomes unhealthy when any node has more pending deletes than the configured value.", defaultValue = "10000000", dataType = VariableDataType.NUMBER)
+    private int checkDeleteLagErrorThreshold = 10_000_000;
+
     @PropertyInfo(description = "Certificate expiration error threshold (days). System status becomes unhealthy when any certificate expires within this timeframe.", defaultValue = "4", dataType = VariableDataType.NUMBER)
     private int checkSslExpirationErrorThreshold = 4;
 
@@ -315,6 +321,16 @@ public class DeltaFiProperties {
     public void setCheckSslExpirationWarningThreshold(int checkSslExpirationWarningThreshold) {
         minCheck(checkSslExpirationWarningThreshold, 0, "checkSslExpirationWarningThreshold");
         this.checkSslExpirationWarningThreshold = checkSslExpirationWarningThreshold;
+    }
+
+    public void setCheckDeleteLagWarningThreshold(int checkDeleteLagWarningThreshold) {
+        minCheck(checkDeleteLagWarningThreshold, 0, "checkDeleteLagWarningThreshold");
+        this.checkDeleteLagWarningThreshold = checkDeleteLagWarningThreshold;
+    }
+
+    public void setCheckDeleteLagErrorThreshold(int checkDeleteLagErrorThreshold) {
+        minCheck(checkDeleteLagErrorThreshold, 0, "checkDeleteLagErrorThreshold");
+        this.checkDeleteLagErrorThreshold = checkDeleteLagErrorThreshold;
     }
 
     /**

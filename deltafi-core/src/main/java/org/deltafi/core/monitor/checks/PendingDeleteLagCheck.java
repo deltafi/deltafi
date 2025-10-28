@@ -17,24 +17,28 @@
  */
 package org.deltafi.core.monitor.checks;
 
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.repo.PendingDeleteRepo;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 
 import java.time.Duration;
 import java.util.Map;
 
-import static org.deltafi.core.monitor.checks.CheckResult.CODE_RED;
+import static org.deltafi.core.monitor.checks.CheckResult.*;
 
 @MonitorProfile
 public class PendingDeleteLagCheck extends StatusCheck {
 
     private final PendingDeleteRepo pendingDeleteRepo;
+    private final DeltaFiPropertiesService propertiesService;
     private static final Duration AGE_THRESHOLD = Duration.ofSeconds(30);
 
-    public PendingDeleteLagCheck(PendingDeleteRepo pendingDeleteRepo) {
+    public PendingDeleteLagCheck(DeltaFiPropertiesService propertiesService, PendingDeleteRepo pendingDeleteRepo) {
         super("Pending Delete Lag Check");
         this.pendingDeleteRepo = pendingDeleteRepo;
+        this.propertiesService = propertiesService;
     }
 
     @Override
@@ -43,13 +47,25 @@ public class PendingDeleteLagCheck extends StatusCheck {
 
         Map<String, Integer> laggingNodes = pendingDeleteRepo.countOldEntriesPerNode(AGE_THRESHOLD);
 
+        DeltaFiProperties properties = propertiesService.getDeltaFiProperties();
+        int warningThreshold = properties.getCheckDeleteLagWarningThreshold();
+        int errorThreshold = properties.getCheckDeleteLagErrorThreshold();
+        int code = CODE_GREEN;
         if (!laggingNodes.isEmpty()) {
-            resultBuilder.code(CODE_RED);
             resultBuilder.addHeader("Nodes with stale pending delete entries (older than 1 minute):");
-            laggingNodes.forEach((node, count) -> resultBuilder.addLine("- " + node + ": __" + count + "__ entries"));
+            for (Map.Entry<String, Integer> entry : laggingNodes.entrySet()) {
+                int count = entry.getValue() != null ? entry.getValue() : 0;
+                if (count >= errorThreshold) {
+                    code = CODE_RED;
+                } else if (count >= warningThreshold && code != CODE_RED) {
+                    code = CODE_YELLOW;
+                }
+                resultBuilder.addLine("- " + entry.getKey() + ": __" + count + "__ entries");
+            }
             resultBuilder.addLine("");
             resultBuilder.addLine("Ensure deltafi-node-fastdelete is running and check the logs");
         }
+        resultBuilder.code(code);
 
         return result(resultBuilder);
     }
