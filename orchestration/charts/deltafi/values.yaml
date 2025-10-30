@@ -61,7 +61,7 @@ minio:
     MINIO_BROWSER: off
   image:
     repository: deltafi/minio
-    tag: RELEASE.2025-10-15T17-29-55Z-0
+    tag: RELEASE.2025-10-15T17-29-55Z-1
   mode: standalone
   existingSecret: minio-keys
   resources:
