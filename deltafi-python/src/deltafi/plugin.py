@@ -125,9 +125,11 @@ def _setup_queue(max_connections):
 
 def _setup_content_service():
     minio_url = os.getenv('MINIO_URL', 'http://localhost:9000')
+    bucket_name = os.getenv('STORAGE_BUCKET_NAME', 'storage')
     return ContentService(minio_url,
                           os.getenv('MINIO_ACCESSKEY'),
-                          os.getenv('MINIO_SECRETKEY'))
+                          os.getenv('MINIO_SECRETKEY'),
+                          bucket_name)
 
 
 class ActionThread(object):

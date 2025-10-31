@@ -41,7 +41,7 @@ def make_segments():
 
 
 def faux_content_service():
-    return ContentService("http://127.0.0.1:6543", "access_key", "secret_key")
+    return ContentService("http://127.0.0.1:6543", "access_key", "secret_key", "storage")
 
 
 def test_content_service():

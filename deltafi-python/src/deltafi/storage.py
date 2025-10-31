@@ -24,8 +24,6 @@ from urllib.parse import urlparse
 import minio
 from minio.deleteobjects import DeleteObject
 
-BUCKET = 'storage'
-
 
 class Segment(NamedTuple):
     uuid: str
@@ -57,8 +55,9 @@ class Segment(NamedTuple):
 
 
 class ContentService:
-    def __init__(self, url, access_key, secret_key):
+    def __init__(self, url, access_key, secret_key, bucket_name):
         parsed = urlparse(url)
+        self.bucket_name = bucket_name
         self.minio_client = minio.Minio(
             f"{parsed.hostname}:{str(parsed.port)}",
             access_key=access_key,
@@ -66,12 +65,12 @@ class ContentService:
             secure=False
         )
 
-        found = self.minio_client.bucket_exists(BUCKET)
+        found = self.minio_client.bucket_exists(self.bucket_name)
         if not found:
-            raise RuntimeError(f"Minio bucket {BUCKET} not found")
+            raise RuntimeError(f"Minio bucket {self.bucket_name} not found")
 
     def get_bytes(self, segments: List[Segment]):
-        return b"".join([self.minio_client.get_object(BUCKET, segment.id(), segment.offset,
+        return b"".join([self.minio_client.get_object(self.bucket_name, segment.id(), segment.offset,
                                                       segment.size).read() for segment in segments])
 
     def get_str(self, segments: List[Segment]):
@@ -82,7 +81,7 @@ class ContentService:
                           offset=0,
                           size=len(bytes_data),
                           did=did)
-        self.minio_client.put_object(BUCKET, segment.id(), io.BytesIO(bytes_data), len(bytes_data))
+        self.minio_client.put_object(self.bucket_name, segment.id(), io.BytesIO(bytes_data), len(bytes_data))
         return segment
 
     def put_str(self, did, string_data):
@@ -90,4 +89,4 @@ class ContentService:
 
     def delete_all(self, segments: List[Segment]):
         delete_objects = [DeleteObject(seg.id()) for seg in segments]
-        return self.minio_client.remove_objects(BUCKET, delete_objects)
+        return self.minio_client.remove_objects(self.bucket_name, delete_objects)

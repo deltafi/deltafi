@@ -20,6 +20,7 @@ package org.deltafi.core.plugin.deployer;
 import io.micrometer.common.util.StringUtils;
 import lombok.Getter;
 import org.deltafi.common.action.EventQueueProperties;
+import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.storage.s3.minio.MinioProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -33,12 +34,12 @@ public class EnvironmentVariableHelper {
     private final String dataDir;
     private final List<String> envVars;
 
-    public EnvironmentVariableHelper(MinioProperties minioProperties, EventQueueProperties eventQueueProperties, Environment environment) {
+    public EnvironmentVariableHelper(MinioProperties minioProperties, StorageProperties storageProperties, EventQueueProperties eventQueueProperties, Environment environment) {
         this.dataDir = environment.getProperty("DATA_DIR");
-        this.envVars = buildEnvVarList(minioProperties, eventQueueProperties, environment);
+        this.envVars = buildEnvVarList(minioProperties, storageProperties, eventQueueProperties, environment);
     }
 
-    private List<String> buildEnvVarList(MinioProperties minioProperties, EventQueueProperties eventQueueProperties,  Environment environment) {
+    private List<String> buildEnvVarList(MinioProperties minioProperties, StorageProperties storageProperties, EventQueueProperties eventQueueProperties,  Environment environment) {
         String coreUrl = environment.getProperty("CORE_URL");
         String sslProtocol = environment.getProperty("SSL_PROTOCOL", "TLSv1.2");
         String keyPassword = environment.getProperty("KEY_PASSWORD");
@@ -53,7 +54,8 @@ public class EnvironmentVariableHelper {
                 "REDIS_PASSWORD=" + (eventQueueProperties.getPassword() == null ? "" : eventQueueProperties.getPassword()),
                 "VALKEY_URL=" + eventQueueProperties.getUrl(),
                 "VALKEY_PASSWORD=" + (eventQueueProperties.getPassword() == null ? "" : eventQueueProperties.getPassword()),
-                "SSL_PROTOCOL=" + sslProtocol));
+                "SSL_PROTOCOL=" + sslProtocol,
+                "STORAGE_BUCKET_NAME=" + storageProperties.bucketName()));
 
         // match k8s behavior where this is not injected if it is not set
         if (StringUtils.isNotBlank(keyPassword)) {
