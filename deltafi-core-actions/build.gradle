@@ -28,7 +28,6 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.junit.jupiter:junit-jupiter-params"
     testImplementation 'org.assertj:assertj-core'
-    testImplementation 'org.wiremock:wiremock-standalone:3.13.1'
     testImplementation 'org.apache.sshd:sshd-core:2.15.0'
     testImplementation 'org.apache.sshd:sshd-sftp:2.15.0'
 }

@@ -17,21 +17,17 @@
  */
 package org.deltafi.core.action.ingress;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.ingress.IngressResult;
+import org.deltafi.actionkit.action.ingress.IngressResultItem;
 import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.test.content.InMemoryContentStorageService;
-import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.IngressStatus;
-import org.junit.jupiter.api.BeforeEach;
+import org.deltafi.core.action.HttpClientMocker;
+import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.asserters.IngressResultAssert;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -39,78 +35,85 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Map;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static javax.ws.rs.core.HttpHeaders.CONTENT_DISPOSITION;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RestIngressTest {
-    private static final String URL_CONTEXT = "/endpoint?param1=x&param2=y";
+    private static final String URL_CONTEXT = "https://somewhere/fetch-test";
     private static final String TEST_FILE = "file.txt";
 
-    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
-            new InMemoryContentStorageService();
-
-    @RegisterExtension
-    static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort())
-            .build();
-
-    @BeforeEach
-    void beforeEach() {
-        wireMockHttp.resetMappings();
-    }
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
+    HttpClient httpClient = Mockito.mock(HttpClient.class);
+    RestIngress restIngress = new RestIngress(httpClient);
+    HttpClientMocker httpClientMocker = new HttpClientMocker(httpClient, TEST_FILE);
 
     @Test
     void ingressesFile() {
-        wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
-                .willReturn(WireMock.ok()
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withBodyFile(TEST_FILE)));
-
+        httpClientMocker.mockSuccessResponse(Map.of(CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\""));
         runTest(TEST_FILE, MediaType.MEDIA_TYPE_WILDCARD, null);
     }
 
     @Test
     void ingressesNoContent() {
-        wireMockHttp.stubFor(WireMock.get(URL_CONTEXT).willReturn(WireMock.noContent()));
-
+        httpClientMocker.mockResponse(204);
         runTest(0, null, null, null);
     }
 
     @Test
     void ingressesFileWithoutContentDispositionFilename() {
-        wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
-                .willReturn(WireMock.ok()
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "inline")
-                        .withBodyFile(TEST_FILE)));
-
+        httpClientMocker.mockSuccessResponse(Map.of(
+                HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN,
+                HttpHeaders.CONTENT_DISPOSITION, "inline"
+        ));
         runTest(RestIngress.DEFAULT_FILENAME, null);
     }
 
     @Test
     void ingressesFileWithoutContentDisposition() {
-        wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
-                .willReturn(WireMock.ok()
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withBodyFile(TEST_FILE)));
-
+        httpClientMocker.mockSuccessResponse(Map.of(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN));
         runTest(RestIngress.DEFAULT_FILENAME, null);
     }
 
     @Test
     void ingressesFileWithHeaders() {
-        wireMockHttp.stubFor(WireMock.get(URL_CONTEXT)
-                .withHeader(DeltaFiConstants.PERMISSIONS_HEADER, equalTo(DeltaFiConstants.ADMIN_PERMISSION))
-                .withHeader("another-header", equalTo("another-header-value"))
-                .willReturn(WireMock.ok()
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withBodyFile(TEST_FILE)));
+        httpClientMocker.mockSuccessResponse();
 
         runTest(TEST_FILE, Map.of(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION,
                 "another-header", "another-header-value"));
+        httpClientMocker.verifyRequest(this::verifyHeaders);
+    }
+
+    private void verifyHeaders(HttpRequest httpRequest) {
+        Assertions.assertThat(httpRequest.headers().allValues(DeltaFiConstants.PERMISSIONS_HEADER))
+                .hasSize(1).contains(DeltaFiConstants.ADMIN_PERMISSION);
+        Assertions.assertThat(httpRequest.headers().allValues("another-header"))
+                .hasSize(1).contains("another-header-value");
+    }
+
+    @Test
+    void failsIngressWithBadUrl() {
+        HttpResponse<InputStream> response = httpClientMocker.mockResponse(404);
+        httpClientMocker.mockResponseBody(response, "Bad response status: 404");
+
+        runUnhealthyTest("Bad response status: 404");
+    }
+
+    @Test
+    void failsIngressWithInterruptedException() throws IOException, InterruptedException {
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any())).thenThrow(new InterruptedException("Test error"));
+        runUnhealthyTest("Test error");
+        assertTrue(Thread.currentThread().isInterrupted());
+    }
+
+    @Test
+    void failsIngressWithIOException() throws IOException, InterruptedException {
+        Mockito.when(httpClient.send(Mockito.any(), Mockito.any())).thenThrow(new IOException("Test error"));
+        runUnhealthyTest("Test error");
+        assertFalse(Thread.currentThread().isInterrupted());
     }
 
     private void runTest(String expectedFilename, Map<String, String> headers) {
@@ -122,70 +125,35 @@ class RestIngressTest {
     }
 
     private void runTest(int numExpectedResults, String expectedFilename, String expectedMediaType,
-            Map<String, String> headers) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
+                         Map<String, String> headers) {
+        IngressResult ingressResult = executeAction(headers);
 
-        RestIngress restIngress = new RestIngress(HttpClient.newHttpClient());
-        RestIngress.Parameters parameters = new RestIngress.Parameters();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
-        if (headers != null) {
-            parameters.setHeaders(headers);
-        }
-        IngressResultType ingressResultType = restIngress.ingress(
-                ActionContext.builder().contentStorageService(CONTENT_STORAGE_SERVICE).build(), parameters);
-
-        assertInstanceOf(IngressResult.class, ingressResultType);
-        IngressResult ingressResult = (IngressResult) ingressResultType;
-        assertEquals(numExpectedResults, ingressResult.getIngressResultItems().size());
         if (numExpectedResults == 0) {
             return;
         }
-        assertEquals(expectedFilename, ingressResult.getIngressResultItems().getFirst().getDeltaFileName());
-        try (InputStream inputStream = CONTENT_STORAGE_SERVICE.load(
-                ingressResult.getIngressResultItems().getFirst().getContent().getFirst().getContent())) {
-            assertEquals(new String(inputStream.readAllBytes()), "This is the content.");
-        } catch (ObjectStorageException | IOException e) {
-            fail("Unable to load content", e);
-        }
-        assertEquals(expectedMediaType,
-                ingressResult.getIngressResultItems().getFirst().getContent().getFirst().getMediaType());
-        CONTENT_STORAGE_SERVICE.delete(
-                ingressResult.getIngressResultItems().getFirst().getContent().getFirst().getContent());
+        IngressResultItem firstResult = ingressResult.getIngressResultItems().getFirst();
+        assertEquals(expectedFilename, firstResult.getDeltaFileName());
+
+        ContentAssert.assertThat(firstResult.getContent().getFirst())
+                .hasName(expectedFilename)
+                .hasMediaType(expectedMediaType)
+                .loadStringIsEqualTo("This is test content.");
     }
 
-    @Test
-    void failsIngressWithBadUrl() {
-        runUnhealthyTest(HttpClient.newHttpClient(), "Bad response status: 404");
+    private void runUnhealthyTest(String expectedMessage) {
+        IngressResult ingressResult = executeAction(null);
+        IngressResultAssert.assertThat(ingressResult)
+                .hasChildrenSize(0)
+                .hasStatus(IngressStatus.UNHEALTHY)
+                .hasStatusMessage("Unable to get file from REST URL: " + expectedMessage);
     }
 
-    @Test
-    void failsIngressWithInterruptedException() throws IOException, InterruptedException {
-        HttpClient httpClient = Mockito.mock(HttpClient.class);
-        Mockito.when(httpClient.send(Mockito.any(), Mockito.any())).thenThrow(new InterruptedException("Test error"));
-        runUnhealthyTest(httpClient, "Test error");
-        assertTrue(Thread.currentThread().isInterrupted());
-    }
-
-    @Test
-    void failsIngressWithIOException() throws IOException, InterruptedException {
-        HttpClient httpClient = Mockito.mock(HttpClient.class);
-        Mockito.when(httpClient.send(Mockito.any(), Mockito.any())).thenThrow(new IOException("Test error"));
-        runUnhealthyTest(httpClient, "Test error");
-    }
-
-    private void runUnhealthyTest(HttpClient httpClient, String expectedMessage) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
-
-        RestIngress restIngress = new RestIngress(httpClient);
+    private IngressResult executeAction(Map<String, String> headers) {
         RestIngress.Parameters parameters = new RestIngress.Parameters();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
-        IngressResultType ingressResultType = restIngress.ingress(
-                ActionContext.builder().contentStorageService(CONTENT_STORAGE_SERVICE).build(), parameters);
+        parameters.setUrl(URL_CONTEXT);
+        parameters.setHeaders(headers);
 
-        assertInstanceOf(IngressResult.class, ingressResultType);
-        IngressResult ingressResult = (IngressResult) ingressResultType;
-        assertEquals(IngressStatus.UNHEALTHY, ingressResult.getStatus());
-        assertEquals("Unable to get file from REST URL: " + expectedMessage, ingressResult.getStatusMessage());
-        assertEquals(0, ingressResult.getIngressResultItems().size());
+        IngressResultType ingressResultType = restIngress.ingress(runner.actionContext(), parameters);
+        return IngressResultAssert.assertThat(ingressResultType).actual();
     }
 }

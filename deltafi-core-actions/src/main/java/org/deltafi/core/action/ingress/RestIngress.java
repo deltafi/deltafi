@@ -65,7 +65,10 @@ public class RestIngress extends TimedIngressAction<RestIngress.Parameters> {
     @Override
     public IngressResultType ingress(@NotNull ActionContext context, @NotNull RestIngress.Parameters params) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(URI.create(params.getUrl()));
-        params.getHeaders().forEach(requestBuilder::header);
+        if (params.getHeaders() != null) {
+            params.getHeaders().forEach(requestBuilder::header);
+        }
+
         try {
             HttpResponse<InputStream> response = httpClient.send(requestBuilder.build(),
                     HttpResponse.BodyHandlers.ofInputStream());

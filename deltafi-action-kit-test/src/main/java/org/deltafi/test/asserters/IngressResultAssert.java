@@ -22,6 +22,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.ingress.IngressResult;
 import org.deltafi.actionkit.action.ingress.IngressResultItem;
+import org.deltafi.common.types.IngressStatus;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -144,6 +145,50 @@ public class IngressResultAssert extends ResultAssert<IngressResultAssert, Ingre
             describedAs(description);
             failWithMessage("\nChild/content at index %d/%d failed %s", childIndex, contentIndex, e.getMessage());
         }
+        return myself;
+    }
+
+    /**
+     * Verify that the IngressResult status is equal to the given value.
+     *
+     * @param expectedStatus expected status value
+     * @return this
+     */
+    public IngressResultAssert hasStatus(IngressStatus expectedStatus) {
+        return hasStatus(expectedStatus, "IngressResult status is equal to");
+    }
+
+    /**
+     * Verify that the IngressResult status is equal to the given value.
+     *
+     * @param expectedStatus expected status value
+     * @param description a description to include with the assertion (may be null)
+     * @return this
+     */
+    public IngressResultAssert hasStatus(IngressStatus expectedStatus, String description) {
+        Assertions.assertThat(actual.getStatus()).describedAs(description).isEqualTo(expectedStatus);
+        return myself;
+    }
+
+    /**
+     * Verify that the IngressResult status message is equal to the given value.
+     *
+     * @param expectedStatusMessage expected status message
+     * @return this
+     */
+    public IngressResultAssert hasStatusMessage(String expectedStatusMessage) {
+        return hasStatusMessage(expectedStatusMessage, "IngressResult status message is equal to");
+    }
+
+    /**
+     * Verify that the IngressResult status message is equal to the given value.
+     *
+     * @param expectedStatusMessage expected status message
+     * @param description a description to include with the assertion (may be null)
+     * @return this
+     */
+    public IngressResultAssert hasStatusMessage(String expectedStatusMessage, String description) {
+        Assertions.assertThat(actual.getStatusMessage()).describedAs(description).isEqualTo(expectedStatusMessage);
         return myself;
     }
 

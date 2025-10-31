@@ -17,60 +17,49 @@
  */
 package org.deltafi.core.action.fetch;
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.types.Content;
+import org.deltafi.core.action.HttpClientMocker;
 import org.deltafi.test.asserters.ErrorResultAssert;
 import org.deltafi.test.asserters.TransformResultAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.Mockito;
 
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import java.io.InputStream;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
 class HttpFetchContentTest {
-    private static final String URL_CONTEXT = "/fetch-test";
+    private static final String URL_CONTEXT = "https://somewhere/fetch-test";
     private static final String TEST_FILE = "test.txt";
     private static final String FILE_CONTENT = "This is test content.";
 
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("HttpFetchContentTest");
 
-    @RegisterExtension
-    static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
-            .options(WireMockConfiguration.wireMockConfig().dynamicPort())
-            .build();
-
-    private HttpFetchContent action;
-
-    @BeforeEach
-    void beforeEach() {
-        wireMockHttp.resetMappings();
-        action = new HttpFetchContent(HttpClient.newHttpClient());
-    }
+    private final HttpClient httpClient = Mockito.mock(HttpClient.class);
+    private final HttpFetchContent action = new HttpFetchContent(httpClient);
+    private final HttpClientMocker httpClientMocker = new HttpClientMocker(httpClient, TEST_FILE);
 
     @Test
+    @SneakyThrows
     void fetchesFileSuccessfully() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withBody(FILE_CONTENT)));
+        httpClientMocker.mockSuccessResponse();
 
         ResultType result = executeFetchTest(true);
 
@@ -78,14 +67,13 @@ class HttpFetchContentTest {
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, TEST_FILE, MediaType.TEXT_PLAIN, FILE_CONTENT.getBytes(StandardCharsets.UTF_8))
                 .hasTagsAt(0, Set.of("test-tag"));
+
+        httpClientMocker.verifyRequest(r -> Assertions.assertThat(r.method()).isEqualTo("GET"));
     }
 
     @Test
     void fetchesFileWithoutContentDisposition() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withBody(FILE_CONTENT)));
+        httpClientMocker.mockSuccessResponse(Map.of(CONTENT_TYPE, MediaType.TEXT_PLAIN));
 
         ResultType result = executeFetchTest(true);
 
@@ -97,11 +85,7 @@ class HttpFetchContentTest {
 
     @Test
     void fetchesFileWithReplaceExistingFalse() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withBody(FILE_CONTENT)));
+        httpClientMocker.mockSuccessResponse();
 
         ResultType result = executeFetchTest(false);
 
@@ -112,7 +96,8 @@ class HttpFetchContentTest {
 
     @Test
     void returnsErrorOnBadResponse() {
-        wireMockHttp.stubFor(get(URL_CONTEXT).willReturn(aResponse().withStatus(404)));
+        HttpResponse<InputStream> response = httpClientMocker.mockResponse(404);
+        httpClientMocker.mockResponseBody(response, "HTTP request failed with response code 404");
 
         ResultType result = executeFetchTest(true);
 
@@ -123,11 +108,7 @@ class HttpFetchContentTest {
 
     @Test
     void testFetchWithAnnotations() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withBody(FILE_CONTENT)));
+        httpClientMocker.mockSuccessResponse();
 
         ResultType result = executeFetchTestWithAnnotations("http_status");
 
@@ -137,139 +118,92 @@ class HttpFetchContentTest {
                 .addedAnnotation("http_status", "200");
     }
 
-    private ResultType executeFetchTest(boolean replaceExisting) {
-        return executeFetchTestWithAnnotations("http_response", replaceExisting);
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private ResultType executeFetchTestWithAnnotations(String annotationName) {
-        return executeFetchTestWithAnnotations(annotationName, true);
-    }
-
-    private ResultType executeFetchTestWithAnnotations(String annotationName, boolean replaceExisting) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
-
-        HttpFetchContentParameters parameters = new HttpFetchContentParameters();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
-        parameters.setReplaceExistingContent(replaceExisting);
-        parameters.setTags(Set.of("test-tag"));
-        parameters.setResponseCodeAnnotationName(annotationName);
-
-        ActionContent existingContent = new ActionContent(new Content("old", "old/old", List.of()), null);
-        return action.transform(runner.actionContext(), parameters, TransformInput.builder().content(List.of(existingContent)).build());
-    }
-
     @Test
+    @SneakyThrows
     void testHttpMethodSelection() {
-        wireMockHttp.stubFor(post(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withBody(FILE_CONTENT)));
-
+        httpClientMocker.mockSuccessResponse();
         ResultType result = executeFetchTestWithMethod("POST");
 
         TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, TEST_FILE, MediaType.TEXT_PLAIN, FILE_CONTENT.getBytes(StandardCharsets.UTF_8));
 
-        // Verify WireMock received a POST request
-        wireMockHttp.verify(postRequestedFor(urlEqualTo(URL_CONTEXT)));
+        httpClientMocker.verifyRequest(r -> Assertions.assertThat(r.method()).isEqualTo("POST"));
     }
 
     @SuppressWarnings("SameParameterValue")
     private ResultType executeFetchTestWithMethod(String httpMethod) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
-
         HttpFetchContentParameters parameters = new HttpFetchContentParameters();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
+        parameters.setUrl(URL_CONTEXT);
         parameters.setHttpMethod(httpMethod);
 
         return action.transform(runner.actionContext(), parameters, TransformInput.builder().build());
     }
 
     @Test
+    @SneakyThrows
     void testFetchWithRequestBody() {
-        wireMockHttp.stubFor(post(URL_CONTEXT)
-                .withRequestBody(equalTo("test request body"))
-                .willReturn(ok()
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN)
-                        .withBody(FILE_CONTENT)));
+        httpClientMocker.mockSuccessResponse();
 
-        ResultType result = executeFetchTestWithRequestBody("POST", "test request body");
+        HttpFetchContentParameters parameters = new HttpFetchContentParameters();
+        parameters.setHttpMethod("POST");
+        parameters.setRequestBody("test request body");
+        ResultType result = executeFetch(parameters);
 
         TransformResultAssert.assertThat(result)
                 .hasContentCount(1)
                 .hasContentMatchingAt(0, TEST_FILE, MediaType.TEXT_PLAIN, FILE_CONTENT.getBytes(StandardCharsets.UTF_8));
 
-        wireMockHttp.verify(postRequestedFor(urlEqualTo(URL_CONTEXT))
-                .withRequestBody(equalTo("test request body")));
+        httpClientMocker.verifyRequest(this::verifyPost);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private ResultType executeFetchTestWithRequestBody(String httpMethod, String requestBody) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
-
-        HttpFetchContentParameters parameters = new HttpFetchContentParameters();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
-        parameters.setHttpMethod(httpMethod);
-        parameters.setRequestBody(requestBody);
-
-        return action.transform(runner.actionContext(), parameters, TransformInput.builder().build());
+    private void verifyPost(HttpRequest httpRequest) {
+        Assertions.assertThat(httpRequest.method()).isEqualTo("POST");
+        String requestBody = httpClientMocker.readRequestBody(httpRequest);
+        Assertions.assertThat(requestBody).isEqualTo("test request body");
     }
 
     @Test
     void testFetchStoresResponseHeadersInMetadata() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader("x-custom-header", "HeaderValue")
-                        .withBody(FILE_CONTENT)));
-
-        ResultType result = executeFetchTestWithMetadataKey("response_headers");
-
-        TransformResultAssert.assertThat(result)
-                .hasContentCount(1);
-        assertTrue(((TransformResult)result).getMetadata().containsKey("response_headers"));
-        assertTrue(((TransformResult)result).getMetadata().get("response_headers").contains("x-custom-header: HeaderValue"));
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private ResultType executeFetchTestWithMetadataKey(String metadataKey) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
+        httpClientMocker.mockSuccessResponse(Map.of("x-custom-header", "HeaderValue"));
 
         HttpFetchContentParameters parameters = new HttpFetchContentParameters();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
-        parameters.setResponseHeadersMetadataKey(metadataKey);
+        parameters.setResponseHeadersMetadataKey("response_headers");
+        ResultType result = executeFetch(parameters);
 
-        return action.transform(runner.actionContext(), parameters, TransformInput.builder().build());
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(1)
+                .addedMetadata("response_headers", "x-custom-header: HeaderValue");
     }
 
     @Test
+    @SneakyThrows
     void testFetchSendsExtraHeaders() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .withHeader("X-Test-Header", equalTo("TestValue"))
-                .willReturn(ok()
-                        .withBody(FILE_CONTENT)));
+        httpClientMocker.mockSuccessResponse();
 
-        ResultType result = executeFetchTestWithExtraHeaders(Map.of("X-Test-Header", "TestValue"));
+        HttpFetchContentParameters parameters = new HttpFetchContentParameters();
+        parameters.setRequestHeaders(Map.of("X-Test-Header", "TestValue"));
+        ResultType result = executeFetch(parameters);
 
         TransformResultAssert.assertThat(result)
                 .hasContentCount(1);
 
-        wireMockHttp.verify(getRequestedFor(urlEqualTo(URL_CONTEXT))
-                .withHeader("X-Test-Header", equalTo("TestValue")));
+        httpClientMocker.verifyRequest(this::verifyHeader);
+    }
+
+    private void verifyHeader(HttpRequest httpRequest) {
+        Assertions.assertThat(httpRequest.headers().firstValue("X-Test-Header").orElseThrow()).isEqualTo("TestValue");
     }
 
     @Test
     void testFetchStoresResponseIndividualHeadersInMetadata() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader("x-custom-header", "HeaderValue")
-                        .withHeader("x-a", "value", "value2")
-                        .withHeader("x-b", "value")
-                        .withHeader("x-c", "value")
-                        .withBody(FILE_CONTENT)));
+        Map<String, List<String>> headerMap = toMapOfList(Map.of("x-custom-header", "HeaderValue","x-b", "value", "x-c", "value"));
+        headerMap.put("x-a", List.of("value", "value2"));
+        HttpHeaders headers = HttpHeaders.of(headerMap, (a,b)-> true);
+
+        HttpResponse<InputStream> response = httpClientMocker.mockResponse(200);
+        Mockito.when(response.headers()).thenReturn(headers);
+        httpClientMocker.mockResponseBody(response);
 
         HttpFetchContentParameters parameters = new HttpFetchContentParameters();
         parameters.setHeadersToMetadata(List.of("x-a", "x-c", "non-existent"));
@@ -286,10 +220,7 @@ class HttpFetchContentTest {
 
     @Test
     void testFetchStoreFilenameInMetadata() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok()
-                        .withHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + TEST_FILE + "\"")
-                        .withBody(FILE_CONTENT)));
+        httpClientMocker.mockSuccessResponse();
 
         HttpFetchContentParameters parameters = new HttpFetchContentParameters();
         parameters.setFilenameMetadataKey("response-filename");
@@ -302,8 +233,8 @@ class HttpFetchContentTest {
 
     @Test
     void testFetchStoreFilenameInMetadata_missingFilename() {
-        wireMockHttp.stubFor(get(URL_CONTEXT)
-                .willReturn(ok().withBody(FILE_CONTENT)));
+        // response headers will not include CONTENT_DISPOSITION
+        httpClientMocker.mockSuccessResponse(Map.of());
 
         HttpFetchContentParameters parameters = new HttpFetchContentParameters();
         parameters.setFilenameMetadataKey("response-filename");
@@ -312,20 +243,34 @@ class HttpFetchContentTest {
         Assertions.assertThat(metadata).doesNotContainKey("response-filename");
     }
 
-    private ResultType executeFetchTestWithExtraHeaders(Map<String, String> requestHeaders) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
+    private ResultType executeFetchTest(boolean replaceExisting) {
+        return executeFetchTestWithAnnotations("http_response", replaceExisting);
+    }
 
+    @SuppressWarnings("SameParameterValue")
+    private ResultType executeFetchTestWithAnnotations(String annotationName) {
+        return executeFetchTestWithAnnotations(annotationName, true);
+    }
+
+    private ResultType executeFetchTestWithAnnotations(String annotationName, boolean replaceExisting) {
         HttpFetchContentParameters parameters = new HttpFetchContentParameters();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
-        parameters.setRequestHeaders(requestHeaders);
+        parameters.setUrl(URL_CONTEXT);
+        parameters.setReplaceExistingContent(replaceExisting);
+        parameters.setTags(Set.of("test-tag"));
+        parameters.setResponseCodeAnnotationName(annotationName);
 
-        return action.transform(runner.actionContext(), parameters, TransformInput.builder().build());
+        ActionContent existingContent = new ActionContent(new Content("old", "old/old", List.of()), null);
+        return action.transform(runner.actionContext(), parameters, TransformInput.builder().content(List.of(existingContent)).build());
     }
 
     private ResultType executeFetch(HttpFetchContentParameters parameters) {
-        WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
-        parameters.setUrl(wmRuntimeInfo.getHttpBaseUrl() + URL_CONTEXT);
-
+        parameters.setUrl(URL_CONTEXT);
         return action.transform(runner.actionContext(), parameters, TransformInput.builder().build());
+    }
+
+    private Map<String, List<String>> toMapOfList(Map<String, String> headersMap) {
+        Map<String, List<String>> headers = new HashMap<>();
+        headersMap.forEach((key, value) -> headers.put(key, List.of(value)));
+        return headers;
     }
 }
