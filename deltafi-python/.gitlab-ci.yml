@@ -2,7 +2,7 @@
   variables:
     PROJECT_NAME: deltafi-python
 
-"Publish Python ActionKit to GitLab":
+"Python ActionKit to GitLab":
   extends:
     - .pythonkit
     - .publish-python
@@ -11,7 +11,7 @@
     - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH == 'dev'
 
-"Publish Python ActionKit to PyPi":
+"Python ActionKit to PyPi":
   extends:
     - .pythonkit
     - .publish-python-pypi
