@@ -5,6 +5,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.34.3] - 2025-11-03
+
+### Added
+- Added methods to the IngressResultAssert class to verify the status and status message of an IngressResult
+
+### Changed
+- Updated the python action-kit to support configurable bucket names
+
+### Fixed
+- Fixed an issue where the `STORAGE_BUCKET_NAME` environment variable was not set in plugins when running in compose
+
+### Upgrade and Migration
+- Updated minio image: deltafi/minio:RELEASE.2025-10-15T17-29-55Z-1
+
+### Changed
+- Reduce the default `checkDeleteLagWarningThreshold` to 100,000 and the default `checkDeleteLagErrorThreshold` to 500,000
+
+
+### Security
+- 
+
+
+### Deprecated
+- 
+
+
+### Added
+- 
+
+
+### Fixed
+- 
+
+
+### Tech-Debt/Refactor
+- 
+
+
+### Removed
+- 
+
+
 ## [2.34.2] - 2025-10-28
 
 ### Added
@@ -4904,7 +4946,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.3...main
+[2.34.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.2...2.34.3
 [2.34.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.1...2.34.2
 [2.34.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.0...2.34.1
 [2.34.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.33.24...2.34.0
