@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.34.4] - 2025-11-05
+
+### Tech-Debt/Refactor
+- Updates for Python plugin CI pipelines
+
 ## [2.34.3] - 2025-11-03
 
 ### Added
@@ -4946,7 +4951,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.3...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.4...main
+[2.34.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.3...2.34.4
 [2.34.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.2...2.34.3
 [2.34.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.1...2.34.2
 [2.34.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.0...2.34.1
