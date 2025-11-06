@@ -8,10 +8,9 @@ build and test:
   variables:
     GRADLE_TASKS: assemble test
 
-# -------------------------------------
-dev:kaniko:
+🐳 Plugin image (GitLab):
   extends:
-    - .kaniko
+    - .docker-publish-gitlab
   needs:
     - job: "build and test"
   rules:
@@ -19,12 +18,12 @@ dev:kaniko:
       when: never
     - if: $CI_COMMIT_BRANCH
   variables:
-    DOCKERFILE: build/Dockerfile
+    DOCKER_BUILD_FLAGS: --target release
+    DOCKERFILE: Dockerfile
 
-# -------------------------------------
-release:gitlab:
+🐳 Plugin image (docker.io):
   extends:
-    - .docker-publish-gitlab
+    - .docker-multiarch
   needs:
     - job: "build and test"
   rules:
@@ -32,20 +31,8 @@ release:gitlab:
       variables:
         DOCKER_TAG: $CI_COMMIT_TAG
   variables:
-    DOCKERFILE: build/Dockerfile
-
-# -------------------------------------
-release:dockerhub:
-  extends:
-    - .docker-publish-dockerhub
-  needs:
-    - job: "build and test"
-  rules:
-    - if: $CI_COMMIT_TAG
-      variables:
-        DOCKER_TAG: $CI_COMMIT_TAG
-  variables:
-    DOCKERFILE: build/Dockerfile
+    DOCKER_BUILD_FLAGS: --platform ${DOCKER_PLATFORMS} --sbom=true --target release
+    DOCKERFILE: Dockerfile
 
 # -------------------------------------
 install on dev:

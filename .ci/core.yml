@@ -3,7 +3,6 @@ variables:
   PYTHON_BASE_IMAGE: deltafi/python:3.13.9-2
   JAVA_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.8-python3.13.7-2
   BUILDX_BASE_IMAGE: deltafi/docker-with-buildx:28.5.1-alpine3.22-0.29.1-0
-  KANIKO_BASE_IMAGE: gcr.io/kaniko-project/executor:v1.24.0-debug
 
   PROJECT_NAME: ${CI_PROJECT_NAME}
   CORE_PROJECT_ID: 45043636
