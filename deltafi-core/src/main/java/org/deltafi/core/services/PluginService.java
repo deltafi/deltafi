@@ -20,25 +20,26 @@ package org.deltafi.core.services;
 import com.netflix.graphql.dgs.InputArgument;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.deltafi.common.action.documentation.DocumentationGenerator;
+import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.util.ParameterUtil;
 import org.deltafi.core.generated.types.Flows;
 import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
+import org.deltafi.core.lookup.LookupTableService;
+import org.deltafi.core.lookup.LookupTableServiceException;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.snapshot.PluginSnapshot;
-import org.deltafi.core.types.snapshot.Snapshot;
-import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.*;
 import org.deltafi.core.validation.FlowPlanValidator;
 import org.deltafi.core.validation.PluginValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,9 +49,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class PluginService implements Snapshotter {
+    public static final String SYSTEM_PLUGIN_GROUP_ID = "org.deltafi";
+    public static final String SYSTEM_PLUGIN_ARTIFACT_ID = "system-plugin";
+    public static final GroupIdArtifactId SYSTEM_PLUGIN_ID
+            = new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID);
+
+    private static final String SYSTEM_PLUGIN_DISPLAY_NAME = "System Plugin";
+    private static final String SYSTEM_PLUGIN_DESCRIPTION = "System Plugin that holds flows created within the system";
 
     private final PluginRepository pluginRepo;
     private final PluginVariableService pluginVariableService;
@@ -69,18 +76,42 @@ public class PluginService implements Snapshotter {
     private final TransformFlowPlanService transformFlowPlanService;
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
+    private final LookupTableService lookupTableService;
 
     private final ReentrantLock mapsUpdateLock = new ReentrantLock();
 
     private Map<String, ActionDescriptor> actionDescriptorMap;
     private Map<String, String> actionsToPlugin;
 
-    public static final String SYSTEM_PLUGIN_GROUP_ID = "org.deltafi";
-    public static final String SYSTEM_PLUGIN_ARTIFACT_ID = "system-plugin";
-    public static final GroupIdArtifactId SYSTEM_PLUGIN_ID = new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID);
-    private static final String SYSTEM_PLUGIN_DISPLAY_NAME = "System Plugin";
-    private static final String SYSTEM_PLUGIN_DESCRIPTION = "System Plugin that holds flows created within the system";
-
+    public PluginService(PluginRepository pluginRepo, PluginVariableService pluginVariableService,
+            BuildProperties buildProperties, DataSinkService dataSinkService,
+            RestDataSourceService restDataSourceService, TimedDataSourceService timedDataSourceService,
+            OnErrorDataSourceService onErrorDataSourceService, TransformFlowService transformFlowService,
+            Environment environment, PluginValidator pluginValidator, DataSinkPlanService dataSinkPlanService,
+            RestDataSourcePlanService restDataSourcePlanService, TimedDataSourcePlanService timedDataSourcePlanService,
+            OnErrorDataSourcePlanService onErrorDataSourcePlanService,
+            TransformFlowPlanService transformFlowPlanService, List<PluginUninstallCheck> pluginUninstallChecks,
+            List<PluginCleaner> pluginCleaners, @Nullable LookupTableService lookupTableService) {
+        this.pluginRepo = pluginRepo;
+        this.pluginVariableService = pluginVariableService;
+        this.buildProperties = buildProperties;
+        this.dataSinkService = dataSinkService;
+        this.restDataSourceService = restDataSourceService;
+        this.timedDataSourceService = timedDataSourceService;
+        this.onErrorDataSourceService = onErrorDataSourceService;
+        this.transformFlowService = transformFlowService;
+        this.environment = environment;
+        this.pluginValidator = pluginValidator;
+        this.dataSinkPlanService = dataSinkPlanService;
+        this.restDataSourcePlanService = restDataSourcePlanService;
+        this.timedDataSourcePlanService = timedDataSourcePlanService;
+        this.onErrorDataSourcePlanService = onErrorDataSourcePlanService;
+        this.transformFlowPlanService = transformFlowPlanService;
+        this.pluginUninstallChecks = pluginUninstallChecks;
+        this.pluginCleaners = pluginCleaners;
+        this.lookupTableService = lookupTableService;
+    }
+    
     @PostConstruct
     public void updateSystemPlugin() {
         if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
@@ -241,50 +272,65 @@ public class PluginService implements Snapshotter {
     }
 
     @Transactional
-    public VariableUpdate setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
-        VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, variables);
-        if (update.isUpdated()) {
-            if (pluginCoordinates.equalsIgnoreVersion(PluginCoordinates.builder().groupId(SYSTEM_PLUGIN_GROUP_ID).artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).build())) {
-                rebuildAllFlows();
-            } else {
-                getPlugin(pluginCoordinates).ifPresent(this::rebuildFlows);
-            }
+    public VariableUpdate setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates,
+            @InputArgument List<KeyValue> keyValueVariables) {
+        VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, keyValueVariables);
+        if (!update.isUpdated()) {
+            return update;
+        }
+
+        if (pluginCoordinates.equalsIgnoreVersion(PluginCoordinates.builder()
+                .groupId(SYSTEM_PLUGIN_GROUP_ID).artifactId(SYSTEM_PLUGIN_ARTIFACT_ID).build())) {
+            updateAllPlugins();
+        } else {
+            getPlugin(pluginCoordinates).ifPresent(this::updatePlugin);
         }
 
         return update;
     }
 
-    @Transactional
-    public void saveSystemVariables(List<Variable> variables) {
-        pluginVariableService.validateAndSaveVariables(getSystemPluginCoordinates(), variables);
-        rebuildAllFlows();
+    private void updateAllPlugins() {
+        getPlugins().forEach(this::updatePlugin);
     }
 
-    @Transactional
-    public void removeSystemVariables() {
-        pluginVariableService.removeVariables(getSystemPluginCoordinates());
-        rebuildAllFlows();
+    private void updatePlugin(PluginEntity plugin) {
+        List<Variable> variables = pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates());
+
+        rebuildFlows(plugin, variables);
+
+        if (lookupTableService != null) {
+            lookupTableService.updateVariables(plugin.getLookupTables().stream().map(LookupTable::getName).toList(),
+                    variables);
+        }
     }
 
-    public void rebuildAllFlows() {
-        getPlugins().forEach(this::rebuildFlows);
-    }
-
-    private void rebuildFlows(PluginEntity plugin) {
+    private void rebuildFlows(PluginEntity plugin, List<Variable> variables) {
         if (plugin.getFlowPlans() == null || plugin.getFlowPlans().isEmpty()) {
             return;
         }
         List<FlowPlan> flowPlans = plugin.getFlowPlans();
         PluginCoordinates pluginCoordinates = plugin.getPluginCoordinates();
-        dataSinkService.rebuildFlows(filterByType(flowPlans, FlowType.DATA_SINK), pluginCoordinates);
-        transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates);
-        restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates);
-        timedDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.TIMED_DATA_SOURCE), pluginCoordinates);
-        onErrorDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.ON_ERROR_DATA_SOURCE), pluginCoordinates);
+        dataSinkService.rebuildFlows(filterByType(flowPlans, FlowType.DATA_SINK), pluginCoordinates, variables);
+        transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates, variables);
+        restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates, variables);
+        timedDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.TIMED_DATA_SOURCE), pluginCoordinates, variables);
+        onErrorDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.ON_ERROR_DATA_SOURCE), pluginCoordinates, variables);
     }
 
     private List<FlowPlan> filterByType(List<FlowPlan> flowPlans, FlowType flowType) {
         return flowPlans.stream().filter(fp -> fp.getType() == flowType).toList();
+    }
+
+    @Transactional
+    public void saveSystemVariables(List<Variable> variables) {
+        pluginVariableService.validateAndSaveVariables(getSystemPluginCoordinates(), variables);
+        updateAllPlugins();
+    }
+
+    @Transactional
+    public void removeSystemVariables() {
+        pluginVariableService.removeVariables(getSystemPluginCoordinates());
+        updateAllPlugins();
     }
 
     static String hashRegistration(PluginRegistration pluginRegistration) {
@@ -314,15 +360,20 @@ public class PluginService implements Snapshotter {
 
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
         List<String> validationErrors = validate(plugin, groupedFlowPlans, pluginRegistration.getVariables());
+        if (lookupTableService != null) {
+            plugin.getLookupTables().forEach(lookupTable ->
+                    validationErrors.addAll(lookupTableService.validateLookupTableCreation(lookupTable)));
+        }
         validationErrors.addAll(integrationService.validate(pluginRegistration.getIntegrationTests()));
         if (!validationErrors.isEmpty()) {
             return Result.builder().success(false).errors(validationErrors).build();
         }
 
         Optional<PluginEntity> existingPlugin = getPlugin(plugin.getPluginCoordinates());
-        // if this plugin group/artifactId/version already exists, don't delete it before overwriting
         if (existingPlugin.isEmpty()) {
-            pluginRepo.deleteById(new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId()));
+            // delete non-matching versions of the plugin
+            pluginRepo.deleteById(new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(),
+                    plugin.getPluginCoordinates().getArtifactId()));
         }
 
         Map<String, ActionDescriptor> newActionDescriptors = new HashMap<>();
@@ -340,6 +391,21 @@ public class PluginService implements Snapshotter {
         updateActionMapsNoLockCheck();
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlows(plugin, groupedFlowPlans);
+
+        if (lookupTableService != null) {
+            List<Variable> combinedVariables =
+                    pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates());
+            for (LookupTable lookupTable : pluginRegistration.getLookupTables()) {
+                lookupTable.setSourcePlugin(pluginRegistration.getPluginCoordinates());
+                lookupTable.setVariables(combinedVariables);
+                try {
+                    lookupTableService.createLookupTable(lookupTable, false); // validated above
+                    lookupTableService.loadFromSupplier(lookupTable.getName());
+                } catch (LookupTableServiceException e) {
+                    log.warn("Unable to create and load lookup table {}, skipping: ", lookupTable.getName(), e);
+                }
+            }
+        }
 
         for (IntegrationTest integrationTest : pluginRegistration.getIntegrationTests()) {
             integrationService.save(integrationTest);

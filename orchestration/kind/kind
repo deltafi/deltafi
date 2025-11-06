@@ -547,7 +547,6 @@ install() {
 }
 
 _k8s_init() {
-  _k8s_add_namespace deltafi
   _k8s_add_pv minio "${PV_STORAGE}" 1000
   _k8s_add_pv graphite "${PV_STORAGE}" 1000
   _k8s_add_pv grafana "${PV_STORAGE}" 472
@@ -555,6 +554,7 @@ _k8s_init() {
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000
   _k8s_add_pv auth "${PV_STORAGE}" 1000
   _k8s_add_pv postgres 10Gi 1001 deltafi "deltafi-postgres"
+  _k8s_add_pv postgres-lookup 1Gi 1001 deltafi "deltafi-postgres-lookup"
   _k8s_add_pv docker-registry "${PV_STORAGE}" 1000
 
   _ok "Kubernetes prerequisites"

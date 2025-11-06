@@ -17,6 +17,7 @@
 #
 
 from datetime import datetime, timezone
+from typing import List
 from urllib.parse import urlparse
 
 import json
@@ -54,7 +55,7 @@ class ActionEventQueue:
         added = conn.zadd(name, {item: now}, nx=True)
         return added
 
-    def take(self, name: str) -> str:
+    def take(self, name: List[str]) -> str:
         conn = self.get_connection()
         setkey, item, score = conn.bzpopmin(name, 0)
         return item

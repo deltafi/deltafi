@@ -193,17 +193,26 @@ public class ValkeyKeyedBlockingQueue {
     /**
      * Takes an object out of the queue.
      * <p>
-     * This method will block until an object for the provided key is available. When multiple objects are available for
-     * the provided key, the earliest one put into the queue is retrieved.
+     * This method will block until an object for any of the provided keys is available. When multiple objects are
+     * available, the earliest one put into the queue is retrieved.
      *
-     * @param key the key for the object
+     * @param keys the keys for the object
      * @return the object value
      * type
      */
-    public String take(String key) {
+    public String take(String... keys) {
+        return take(0, keys);
+    }
+
+    public String take(double timeout, String... keys) {
         try (Jedis jedis = jedisPool.getResource()) {
-            KeyValue<String, Tuple> keyValue = jedis.bzpopmin(0, key);
-            return keyValue.getValue().getElement();
+            try {
+                KeyValue<String, Tuple> keyValue = jedis.bzpopmin(timeout, keys);
+                return keyValue.getValue().getElement();
+            } catch (NullPointerException npe) {
+                // Workaround for bug fixed in redis/jedis but not pulled into valkey/jedis
+                return null;
+            }
         }
     }
 

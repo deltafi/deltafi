@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import com.networknt.schema.utils.StringUtils;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.exceptions.ValidationException;
 import org.deltafi.core.repo.EventRepo;

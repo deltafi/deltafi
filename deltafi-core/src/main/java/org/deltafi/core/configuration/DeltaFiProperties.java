@@ -17,15 +17,13 @@
  */
 package org.deltafi.core.configuration;
 
-import com.networknt.schema.utils.StringUtils;
 import lombok.Data;
 import org.deltafi.common.types.LogSeverity;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.VariableDataType;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Holds the system properties. To add a new property that will be exposed

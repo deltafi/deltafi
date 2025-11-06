@@ -113,7 +113,7 @@ initContainers:
 {{- define "initContainersWaitForDatabases" -}}
 initContainers:
 - name: wait-for-postgres
-  image: postgres:{{ .Values.postgres.version }}-alpine3.20
+  image: postgres:{{ .Values.postgres.version }}-alpine3.22
   env:
   - name: PGUSER
     value: deltafi
@@ -194,6 +194,13 @@ initContainers:
     secretKeyRef:
       name: deltafi.deltafi-postgres
       key: password
+{{ if .Values.deltafi.lookup.enabled }}
+- name: POSTGRES_LOOKUP_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: deltafi.deltafi-postgres-lookup
+      key: password
+{{ end }}
 {{- end -}}
 
 {{- define "graphiteEnvVars" -}}

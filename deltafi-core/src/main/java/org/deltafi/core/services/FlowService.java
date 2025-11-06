@@ -177,8 +177,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @param sourcePlugin PluginCoordinates used to find the variables
      */
     public void rebuildFlows(List<FlowPlan> flowPlans, PluginCoordinates sourcePlugin) {
+        rebuildFlows(flowPlans, sourcePlugin, pluginVariableService.getVariablesByPlugin(sourcePlugin));
+    }
+
+    public void rebuildFlows(List<FlowPlan> flowPlans, PluginCoordinates sourcePlugin, List<Variable> variables) {
         Map<String, FlowT> existingFlows = getByPlugin(sourcePlugin);
-        List<Variable> variables = pluginVariableService.getVariablesByPlugin(sourcePlugin);
         List<FlowT> updatedFlows = flowPlans.stream()
                 .map(flowPlan -> buildFlow(existingFlows, flowPlan, variables))
                 .toList();

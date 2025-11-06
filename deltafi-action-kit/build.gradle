@@ -1,5 +1,6 @@
 plugins {
     id 'java-conventions'
+    id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
     id 'maven-publish'
 }
 
@@ -13,6 +14,8 @@ dependencies {
     api "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     implementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+
     testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
     testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
     testImplementation "org.mockito:mockito-junit-jupiter"
@@ -21,4 +24,17 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.hamcrest:hamcrest:${hamcrestVersion}"
     testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-cache'
+    testImplementation 'com.github.ben-manes.caffeine:caffeine:3.2.0'
+}
+
+generateJava {
+    packageName = 'org.deltafi.actionkit.generated'
+    generateClient = true
+    skipEntityQueries = true
+    typeMapping = [
+            "SortDirection"    : "org.deltafi.common.types.SortDirection",
+            "LookupTable"      : "org.deltafi.common.lookup.LookupTable"
+    ]
 }

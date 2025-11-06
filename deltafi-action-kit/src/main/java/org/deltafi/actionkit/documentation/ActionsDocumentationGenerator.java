@@ -33,22 +33,23 @@ import org.deltafi.common.storage.s3.minio.MinioAutoConfiguration;
 import org.deltafi.common.types.ActionDescriptor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @ComponentScan("${scan.base.package}")
 @EnableAutoConfiguration(exclude = {ActionKitAutoConfiguration.class, CacheAutoConfiguration.class,
-        ContentStorageServiceAutoConfiguration.class, MinioAutoConfiguration.class})
+        ContentStorageServiceAutoConfiguration.class, DataSourceAutoConfiguration.class, MinioAutoConfiguration.class})
 public class ActionsDocumentationGenerator implements CommandLineRunner {
     private final List<Action<?, ?, ?>> actions;
 
-    private final SchemaGenerator schemaGenerator =
-            new ActionKitAutoConfiguration(null).parametersSchemaGenerator(Optional.empty());
+    private final SchemaGenerator schemaGenerator = new ActionKitAutoConfiguration().parametersSchemaGenerator(null);
 
     public static void main(String... args) {
         if (args.length < 2) {

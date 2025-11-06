@@ -36,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ActionParametersSchemaGeneratorTest {
     @Test
     void testGetSchema() throws IOException {
-        ActionKitAutoConfiguration configuration = new ActionKitAutoConfiguration(null);
-        SchemaGenerator generator  = configuration.parametersSchemaGenerator(Optional.empty());
+        ActionKitAutoConfiguration configuration = new ActionKitAutoConfiguration();
+        SchemaGenerator generator  = configuration.parametersSchemaGenerator(null);
         JsonNode schemaJson = generator.generateSchema(TestActionParameters.class);
         String expectedSchema = new String(Objects.requireNonNull(getClass().getResourceAsStream("/expectedParamSchema.json")).readAllBytes());
         assertEquals(Resource.read("/expectedParamSchema.json"), schemaJson.toPrettyString());

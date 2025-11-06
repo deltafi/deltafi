@@ -16,6 +16,36 @@
 #    limitations under the License.
 #
 
+type Variable {
+    name: String!
+    description: String!
+    dataType: DataType!
+    required: Boolean!
+    defaultValue: String
+    value: String
+    masked: Boolean
+}
+
+input VariableInput {
+    name: String!
+    description: String!
+    dataType: DataType!
+    required: Boolean!
+    defaultValue: String
+    value: String
+    masked: Boolean
+}
+
+type PluginVariables {
+    sourcePlugin: PluginCoordinates!
+    variables: [Variable]!
+}
+
+input PluginVariablesInput {
+    sourcePlugin: PluginCoordinatesInput!
+    variables: [VariableInput]!
+}
+
 """
 A Plugin is a collection of actions. It may depend on other Plugins.
 """
@@ -189,4 +219,8 @@ extend type Mutation {
 
     "Restart the plugin with the given coordinates"
     restartPlugin(pluginName: String!, waitForSuccess: Boolean): Boolean!
+
+    savePluginVariables(variables: [VariableInput]!) : Boolean!
+    removePluginVariables: Boolean!
+    setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
 }

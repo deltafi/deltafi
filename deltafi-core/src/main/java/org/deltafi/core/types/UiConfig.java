@@ -37,6 +37,7 @@ public class UiConfig {
     private SecurityBanner securityBanner;
     private List<Link> deltaFileLinks = new ArrayList<>();
     private List<Link> externalLinks = new ArrayList<>();
+    private boolean lookupTablesEnabled;
 
     public void setProperties(DeltaFiProperties properties) {
         this.setTitle(properties.getSystemName());

@@ -390,6 +390,7 @@ EOF
     cat <<EOF > "${POSTGRES_SECRET_PATH}"
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=$postgres_password
+POSTGRES_LOOKUP_PASSWORD=$postgres_password
 POSTGRES_DB=postgres
 PGUSER=postgres
 EOF
@@ -522,11 +523,11 @@ _from_values() {
 }
 
 _append_startup_from_values() {
-  _append_startup "${1}" "$(_from_values "${2}")" "${STARTUP_SETTINGS}"
+  _append_startup "${1}" "$(_from_values "${2}")"
 }
 
 _append_common_from_values() {
-  _append_common "${1}" "$(_from_values "${2}")" "${COMMON_SETTINGS}"
+  _append_common "${1}" "$(_from_values "${2}")"
 }
 
 _append_compose_profiles() {
@@ -736,7 +737,7 @@ _post_install() {
 _create_data_dirs() {
   mkdir -p "${DATA_DIR}"
   if _is_linux; then
-    mkdir -p "${DATA_DIR}"/{postgres,egress-sink,graphite,grafana,auth,loki,minio,certs}
+    mkdir -p "${DATA_DIR}"/{postgres,postgres-lookup,egress-sink,graphite,grafana,auth,loki,minio,certs}
   fi
 }
 
@@ -757,7 +758,7 @@ uninstall() {
     _ok "Plugins removed"
   fi
 
-  rm -rf "${DATA_DIR}"/postgres
+  rm -rf "${DATA_DIR}"/{postgres,postgres-lookup}
 }
 
 stop_services() {

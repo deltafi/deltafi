@@ -29,8 +29,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
-import org.deltafi.core.types.hibernate.StringArrayType;
-import org.deltafi.core.types.hibernate.UUIDArrayType;
+import org.deltafi.core.types.hibernate.StringListType;
+import org.deltafi.core.types.hibernate.UUIDListType;
 import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
 import org.jetbrains.annotations.NotNull;
@@ -61,12 +61,12 @@ public class DeltaFile {
   private UUID did = Generators.timeBasedEpochGenerator().generate();
   private String name;
   private String dataSource;
-  @Type(UUIDArrayType.class)
+  @Type(UUIDListType.class)
   @Column(columnDefinition = "uuid[]")
   @Builder.Default
   private List<UUID> parentDids = new ArrayList<>();
   private UUID joinId;
-  @Type(UUIDArrayType.class)
+  @Type(UUIDListType.class)
   @Column(columnDefinition = "uuid[]")
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
@@ -117,22 +117,22 @@ public class DeltaFile {
   private OffsetDateTime contentDeleted;
   private String contentDeletedReason;
 
-  @Type(UUIDArrayType.class)
+  @Type(UUIDListType.class)
   @Column(columnDefinition = "uuid[]")
   @Builder.Default
   private List<UUID> contentObjectIds = new ArrayList<>();
 
-  @Type(StringArrayType.class)
+  @Type(StringListType.class)
   @Column(columnDefinition = "text[]")
   @Builder.Default
   private List<String> topics = new ArrayList<>();
 
-  @Type(StringArrayType.class)
+  @Type(StringListType.class)
   @Column(columnDefinition = "text[]")
   @Builder.Default
   private List<String> transforms = new ArrayList<>();
 
-  @Type(StringArrayType.class)
+  @Type(StringListType.class)
   @Column(columnDefinition = "text[]")
   @Builder.Default
   private List<String> dataSinks = new ArrayList<>();

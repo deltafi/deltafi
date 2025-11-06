@@ -17,7 +17,6 @@
 #
 
 scalar DateTime
-scalar Duration
 scalar JSON
 scalar Long
 scalar Metadata
@@ -511,10 +510,6 @@ type Mutation {
 
   addAnnotations(did: UUID!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
   annotateMatching(filter: DeltaFilesFilter!, annotations: [KeyValueInput]!, allowOverwrites: Boolean!) : Boolean!
-
-  savePluginVariables(variables: [VariableInput]!) : Boolean!
-  removePluginVariables: Boolean!
-  setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
 
   stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!
   stressTestAnalyticEvents(numRecords: Int!, hours: Int!) : Int!

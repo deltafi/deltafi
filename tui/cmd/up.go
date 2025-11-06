@@ -124,7 +124,7 @@ func Up(force bool) error {
 	if app.GetOrchestrationMode() == orchestration.Kind {
 		perr := app.SetAdminPassword("password")
 		if perr != nil {
-			fmt.Println(styles.FAIL("Failed to set admin password"))
+			fmt.Println(styles.FAIL(fmt.Sprintf("Failed to set admin password: %s", perr)))
 		} else {
 			fmt.Println(styles.INFO("Admin password set to 'password'"))
 		}

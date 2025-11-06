@@ -38,6 +38,8 @@ import SystemMapPage from "@/pages/SystemMapPage.vue";
 import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
 import SystemPropertiesPage from "@/pages/SystemPropertiesPage.vue";
 import SystemSnapshotsPage from "@/pages/SystemSnapshotsPage.vue";
+import LookupTablePage from "@/pages/LookupTablePage.vue";
+import LookupTableResultPage from "@/pages/LookupTableResultPage.vue";
 import TopicsPage from "@/pages/TopicsPage.vue";
 import UnauthorizedPage from "@/pages/UnauthorizedPage.vue";
 import UsersPage from "@/pages/UsersPage.vue";
@@ -202,6 +204,22 @@ const routes: Array<RouteRecordRaw> = [
     component: RolesPage,
     meta: {
       permission: "RoleRead",
+    },
+  },
+  {
+    path: "/admin/lookup-tables",
+    name: "Lookup Table",
+    component: LookupTablePage,
+    meta: {
+      permission: "LookupTableRead",
+    },
+  },
+  {
+    path: "/admin/lookup-table/:lookupTableName?",
+    name: "Lookup Table Results",
+    component: LookupTableResultPage,
+    meta: {
+      permission: "LookupTableRead",
     },
   },
   {

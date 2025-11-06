@@ -316,7 +316,7 @@ context:
   - Docker Compose: Set `FASTDELETE_WORKERS` environment variable (default: 1)
 
 ### Changed
-- KinD image managment no longer uses localhost:5000 images
+- KinD image management no longer uses localhost:5000 images
 - KinD no longer needs sidecar registry containers
 - KinD image caching consolidated and simplified
 - Gradle: `configureKindCluster` task renamed to `startKindCluster`

@@ -33,7 +33,7 @@ spec:
         image: {{ .Values.deltafi.core.image }}
         env:
         - name: JDK_JAVA_OPTIONS
-          value: "-Dcom.redhat.fips=false"
+          value: "-Dcom.redhat.fips=false -Dlookup.enabled={{ .Values.deltafi.lookup.enabled }}"
         - name: UNIQUE_ID
           value: core-scheduler
         - name: SPRING_PROFILES_ACTIVE

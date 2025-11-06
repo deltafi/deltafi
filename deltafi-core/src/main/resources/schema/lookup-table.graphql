@@ -1,0 +1,82 @@
+#
+#    DeltaFi - Data transformation and enrichment platform
+#
+#    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+
+type LookupTable {
+  name: String!
+  columns: [String!]!
+  keyColumns: [String!]!
+  serviceBacked: Boolean!
+  backingServiceActive: Boolean!
+  pullThrough: Boolean!
+  refreshDuration: String
+  lastRefresh: DateTime
+  totalRows: Int
+}
+
+input LookupTableInput {
+  name: String!
+  columns: [String!]!
+  keyColumns: [String!]!
+  serviceBacked: Boolean!
+  backingServiceActive: Boolean!
+  pullThrough: Boolean!
+  refreshDuration: String
+  lastRefresh: DateTime
+}
+
+type ColumnValue {
+  column: String!
+  value: String!
+}
+
+type LookupResults {
+  offset: Int
+  count: Int
+  totalCount: Int
+  rows: [[ColumnValue!]!]!
+}
+
+input ColumnValueInput {
+  column: String!
+  value: String!
+}
+
+input MatchingColumnValueInput {
+  column: String!
+  value: [String!]!
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+extend type Query {
+  getLookupTables: [LookupTable!]!
+  getLookupTable(lookupTableName: String!): LookupTable
+  lookup(lookupTableName: String!, matchingColumnValues: [MatchingColumnValueInput!], resultColumns: [String!],
+    sortColumn: String, sortDirection: SortDirection, offset: Int, limit: Int): LookupResults!
+}
+
+extend type Mutation {
+  createLookupTable(lookupTableInput: LookupTableInput!): Result!
+  deleteLookupTable(lookupTableName: String!): Result!
+  upsertLookupTableRows(lookupTableName: String!, rows: [[ColumnValueInput!]!]!): Result!
+  removeLookupTableRows(lookupTableName: String!, rows: [[ColumnValueInput!]!]!): Result!
+  setLookupTableBackingServiceActive(lookupTableName: String!, active: Boolean!): Result!
+}

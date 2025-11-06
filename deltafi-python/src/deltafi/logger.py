@@ -23,14 +23,26 @@ from datetime import datetime, UTC
 import json_logging
 
 
+logger_map = {}
+
 def get_logger(name: str = None) -> logging.Logger:
+    logger_name = name
+    if logger_name is None:
+        logger_name = "root"
+
+    if logger_name in logger_map:
+        return logger_map[logger_name]
+
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
+    logger.handlers.clear()
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.propagate = False
 
     if name is not None:
         logger = logging.LoggerAdapter(logger, dict(action=name))
+
+    logger_map[logger_name] = logger
 
     return logger
 

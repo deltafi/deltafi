@@ -24,40 +24,47 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
-import lombok.AllArgsConstructor;
+import com.netflix.graphql.dgs.client.GraphQLClient;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.DataSizeDefinitionProvider;
 import org.deltafi.actionkit.action.parameters.SchemaGeneratorConfigCustomizer;
 import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.service.HeartbeatService;
+import org.deltafi.actionkit.lookup.*;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
+import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
+import org.deltafi.common.http.HttpService;
+import org.deltafi.actionkit.lookup.LookupTableClient;
+import org.deltafi.actionkit.lookup.LookupTableSupplier;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import javax.annotation.Nullable;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
 import java.util.*;
 
-@AllArgsConstructor
 @AutoConfiguration
-@EnableConfigurationProperties({EventQueueProperties.class, ActionsProperties.class})
+@EnableConfigurationProperties({ActionsProperties.class, EventQueueProperties.class})
 @AutoConfigureAfter(SslAutoConfiguration.class)
 @EnableScheduling
 public class ActionKitAutoConfiguration {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private ActionsProperties actionsProperties;
 
     @Bean
     public StartupFailureHandler startupFailureHandler() {
@@ -65,12 +72,18 @@ public class ActionKitAutoConfiguration {
     }
 
     @Bean
-    public ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue(EventQueueProperties eventQueueProperties, List<Action<?, ?, ?>> actions)
-            throws URISyntaxException {
+    public ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue(ActionsProperties actionsProperties,
+            EventQueueProperties eventQueueProperties, List<Action<?, ?, ?>> actions,
+            List<LookupTableSupplier> lookupTableSuppliers) throws URISyntaxException {
         // Calculate the total number of threads for all actions
         int totalThreads = actions.stream()
                 .mapToInt(action -> actionsProperties.getActionThreads().getOrDefault(action.getClassCanonicalName(), 1))
                 .sum();
+
+        // Add one thread to handle all lookup table suppliers
+        if (!lookupTableSuppliers.isEmpty()) {
+            totalThreads++;
+        }
 
         // Add a thread for heartbeats
         totalThreads += 1;
@@ -84,12 +97,15 @@ public class ActionKitAutoConfiguration {
     }
 
     @Bean
-    public PluginRegistrar pluginRegistrar(ActionRunner actionRunner, BuildProperties buildProperties,
+    public PluginRegistrar pluginRegistrar(ActionRunner actionRunner,
+            LookupTableSupplierRunner lookupTableSupplierRunner, BuildProperties buildProperties,
             ApplicationContext applicationContext, Environment environment, SchemaGenerator schemaGenerator) {
-        return new PluginRegistrar(actionRunner, buildProperties, applicationContext, environment, schemaGenerator);
+        return new PluginRegistrar(actionRunner, lookupTableSupplierRunner, buildProperties, applicationContext,
+                environment, schemaGenerator);
     }
 
     @Bean
+    @DependsOn({"lookupTableSupplierRunner"})
     public ActionRunner actionRunner() {
         return new ActionRunner();
     }
@@ -105,7 +121,7 @@ public class ActionKitAutoConfiguration {
     }
 
     @Bean
-    public SchemaGenerator parametersSchemaGenerator(Optional<SchemaGeneratorConfigCustomizer> schemaGeneratorCustomizer) {
+    public SchemaGenerator parametersSchemaGenerator(@Nullable SchemaGeneratorConfigCustomizer schemaGeneratorCustomizer) {
         SchemaGeneratorConfigBuilder configBuilder =
                 new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
                         .without(Option.SCHEMA_VERSION_INDICATOR)
@@ -150,8 +166,37 @@ public class ActionKitAutoConfiguration {
                     .withAdditionalPropertiesResolver(scope ->
                             scope.getType().isInstanceOf(Map.class) ? scope.getTypeParameterFor(Map.class, 1) : null);
         configBuilder.forTypesInGeneral().withCustomDefinitionProvider(new DataSizeDefinitionProvider());
-        schemaGeneratorCustomizer.ifPresent(customizer -> customizer.customize(configBuilder));
+
+        if (schemaGeneratorCustomizer != null) {
+            schemaGeneratorCustomizer.customize(configBuilder);
+        }
 
         return new SchemaGenerator(configBuilder.build());
+    }
+
+    @Bean
+    public LookupTableSupplierRunner lookupTableSupplierRunner(ActionEventQueue actionEventQueue,
+            List<LookupTableSupplier> lookupTableSuppliers) {
+        return new LookupTableSupplierRunner(actionEventQueue, lookupTableSuppliers);
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public GraphQLClient graphQLClient(Environment environment, HttpClient httpClient) {
+        String coreUrl = buildCoreUrl(environment);
+        return new GraphQLClientFactory(httpClient).build(coreUrl + "/graphql", "X-User-Permissions", "Admin",
+                "X-User-Name", "deltafi-cli");
+    }
+
+    private String buildCoreUrl(Environment environment) {
+        return environment.getProperty("CORE_URL", "http://deltafi-core:8080") + "/api/v2";
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public LookupTableClient lookupTableClient(Environment environment, GraphQLClient graphQLClient,
+            HttpService httpService) {
+        String coreUrl = buildCoreUrl(environment);
+        return new LookupTableClient(coreUrl + "/lookup", graphQLClient, httpService);
     }
 }

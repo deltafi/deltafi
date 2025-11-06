@@ -27,6 +27,7 @@ import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.util.ParameterResolver;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -36,6 +37,7 @@ import org.springframework.security.authorization.AuthorizationEventPublisher;
 import org.springframework.security.authorization.SpringAuthorizationEventPublisher;
 
 import java.net.URISyntaxException;
+import java.time.Clock;
 
 @Configuration
 @EnableConfigurationProperties({EventQueueProperties.class, SslSecretNames.class})
@@ -43,25 +45,35 @@ public class DeltaFiConfiguration {
 
     @Bean
     public ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue(EventQueueProperties eventQueueProperties,
-                                                             DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
+            DeltaFiPropertiesService deltaFiPropertiesService, @Value("${lookup.enabled:false}") boolean lookupEnabled)
+            throws URISyntaxException {
         // add two additional threads to the pool for the incoming action event threads
         int poolSize = deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads() + 2;
+
+        if (lookupEnabled) {
+            poolSize++;
+        }
 
         return new ValkeyKeyedBlockingQueue(eventQueueProperties, poolSize);
     }
 
     @Bean
     public JedisPool jedisPool(EventQueueProperties eventQueueProperties,
-                               DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
+            DeltaFiPropertiesService deltaFiPropertiesService, @Value("${lookup.enabled:false}") boolean lookupEnabled)
+            throws URISyntaxException {
         // add two additional threads to the pool for the incoming action event threads
         int poolSize = deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads() + 2;
-        
+
+        if (lookupEnabled) {
+            poolSize++;
+        }
+
         return ValkeyKeyedBlockingQueue.createJedisPool(eventQueueProperties, poolSize, poolSize);
     }
 
     @Bean
-    public CoreEventQueue coreEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue) {
-        return new CoreEventQueue(valkeyKeyedBlockingQueue);
+    public CoreEventQueue coreEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue, Clock clock) {
+        return new CoreEventQueue(valkeyKeyedBlockingQueue, clock);
     }
 
     @Bean

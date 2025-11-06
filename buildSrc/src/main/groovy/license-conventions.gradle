@@ -5,13 +5,14 @@ plugins {
 license {
     header(rootProject.file('HEADER'))
     ext.year = 2025
+    // Excludes are relative to source sets directories
     excludes(["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
               "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
-              "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
+              "**/*.txt", "**/*.html", "**/*.json", "**/test/resources/**",
               "**/*.md", "**/*.png", "**/*.ico", "**/*.jar", "**/*.MF", "**/.gitkeep", "**/Dockerfile",
               "**/*.drawio", "**/.dockerignore", "**/.go",
               "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**", "**/virtualenv/**",
-              "**/db/migration/**"])
+              "**/db/migration/**", "**/db/lookup/migration/**"])
     strictCheck true
     mapping("java", "SLASHSTAR_STYLE")
     mapping("graphql", "SCRIPT_STYLE")

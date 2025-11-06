@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
+import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,8 @@ class CoreEventQueueTest {
     private ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    private static final TestClock TEST_CLOCK = new TestClock();
 
     private static final String QUEUE_NAME = "queueName";
     private static final String DGS_QUEUE_NAME = "dgs-" + QUEUE_NAME;
@@ -150,7 +153,7 @@ class CoreEventQueueTest {
     void testConvertBasic() throws JsonProcessingException {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(GOOD_BASIC);
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
         assertEquals(DID, actionEvent.getDid());
     }
@@ -159,7 +162,7 @@ class CoreEventQueueTest {
     void testConvertUnicode() throws JsonProcessingException {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(GOOD_UNICODE);
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
         assertEquals("āȂ.̃Є", actionEvent.getActionName());
     }
@@ -168,7 +171,7 @@ class CoreEventQueueTest {
     void testExtraFieldsIgnored() throws JsonProcessingException {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(EXTRA_FIELDS_IGNORED);
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         ActionEvent actionEvent = coreEventQueue.takeResult(QUEUE_NAME);
         assertEquals(DID, actionEvent.getDid());
     }
@@ -177,7 +180,7 @@ class CoreEventQueueTest {
     void testWrongJsonType() {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(getActionEventsArray());
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
                 .isInstanceOf(JsonProcessingException.class)
@@ -188,7 +191,7 @@ class CoreEventQueueTest {
     void testInvalidConversion() {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(INVALID_DATE);
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
                 .isInstanceOf(JsonProcessingException.class)
@@ -199,7 +202,7 @@ class CoreEventQueueTest {
     void testIllegalControlChars() {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(ILLEGAL_CONTROL_CHARS);
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
                 .isInstanceOf(JsonProcessingException.class)
@@ -210,7 +213,7 @@ class CoreEventQueueTest {
     void testMetricsOverflow() {
         when(valkeyKeyedBlockingQueue.take(DGS_QUEUE_NAME)).thenReturn(METRICS_OVERFLOW);
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> coreEventQueue.takeResult(QUEUE_NAME))
                 .isInstanceOf(JsonProcessingException.class)
@@ -230,7 +233,7 @@ class CoreEventQueueTest {
                         OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(1)))
                 ));
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         List<ActionExecution> result = coreEventQueue.getLongRunningTasks();
         assertEquals(2, result.size());
     }
@@ -242,7 +245,7 @@ class CoreEventQueueTest {
                 .thenReturn(Map.of("TestClass:testAction:" + DID,
                         OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1)))));
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);
         assertTrue(exists);
     }
@@ -254,7 +257,7 @@ class CoreEventQueueTest {
                 .thenReturn(Map.of("TestClass:testAction:" + DID,
                         OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(100)))));
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         boolean exists = coreEventQueue.longRunningTaskExists("TestClass", "testAction", DID);
         assertFalse(exists);
     }
@@ -270,7 +273,7 @@ class CoreEventQueueTest {
                         OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1)))
                 ));
 
-        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue);
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         coreEventQueue.removeExpiredLongRunningTasks();
         verify(valkeyKeyedBlockingQueue, times(1)).removeLongRunningTask("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1");
     }

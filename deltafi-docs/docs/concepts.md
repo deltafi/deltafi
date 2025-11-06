@@ -66,3 +66,11 @@ multiple Flows and Actions within that plugin.
 
 Join Configuration allows Transform Actions to process multiple DeltaFiles together. It defines criteria for collecting
 a batch of DeltaFiles before executing the Transform Action.
+
+## Lookup Tables
+
+Lookup tables provide a centralized database solution for actions requiring tabular data. A simple API in the DeltaFi
+Action Kit provides queries for the data.
+
+Lookup table suppliers are defined in Plugins to supply data to lookup tables. Suppliers will provide data on startup
+and can be configured to refresh it periodically.

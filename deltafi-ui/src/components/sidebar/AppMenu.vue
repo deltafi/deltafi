@@ -108,7 +108,7 @@ const staticMenuItems = ref([
     badge: () => {
       return betaBadge.value;
     },
-    visible: computed(() => hasPermission("DashboardView"))
+    visible: computed(() => hasPermission("DashboardView")),
   },
   {
     name: "DeltaFiles",
@@ -233,7 +233,7 @@ const staticMenuItems = ref([
   {
     name: "Administration",
     expand: true,
-    visible: computed(() => hasSomePermissions("UserRead", "RoleRead")),
+    visible: computed(() => hasSomePermissions("UserRead", "RoleRead", "LookupTableRead")),
     children: [
       {
         name: "Audit Log",
@@ -252,6 +252,12 @@ const staticMenuItems = ref([
         icon: "far fa-id-badge fa-fw",
         path: "/admin/roles",
         visible: computed(() => hasPermission("RoleRead")),
+      },
+      {
+        name: "Lookup Tables",
+        icon: "fas fa-book-atlas fa-fw",
+        path: "/admin/lookup-tables",
+        visible: computed(() => hasPermission("LookupTableRead") && uiConfig.lookupTablesEnabled),
       },
       {
         name: "External Links",

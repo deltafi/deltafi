@@ -25,13 +25,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.lookup.LookupTableEvent;
+import org.deltafi.common.lookup.LookupTableEventResult;
 import org.deltafi.common.queue.valkey.SortedSetEntry;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.types.*;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.deltafi.common.action.EventQueueProperties.DGS_QUEUE;
 
@@ -67,7 +68,19 @@ public class ActionEventQueue {
      * @throws JsonProcessingException if the incoming event cannot be serialized
      */
     public ActionInput takeAction(String actionClassName) throws JsonProcessingException {
-        return convertInput(valkeyKeyedBlockingQueue.take(actionClassName));
+        return OBJECT_MAPPER.readValue(valkeyKeyedBlockingQueue.take(actionClassName), ActionInput.class);
+    }
+
+    public LookupTableEvent takeLookupTableEvent(String... lookupTableNames) throws JsonProcessingException {
+        String[] prefixedLookupTableNames = Arrays.stream(lookupTableNames)
+                .map(LookupTableEvent::buildKey)
+                .toArray(String[]::new);
+        return OBJECT_MAPPER.readValue(valkeyKeyedBlockingQueue.take(prefixedLookupTableNames), LookupTableEvent.class);
+    }
+
+    public void putLookupTableResult(LookupTableEventResult lookupTableEventResult) throws JsonProcessingException {
+        valkeyKeyedBlockingQueue.put(new SortedSetEntry(lookupTableEventResult.getLookupTableEventId(),
+                OBJECT_MAPPER.writeValueAsString(lookupTableEventResult), OffsetDateTime.now()));
     }
 
     private String queueName(String returnAddress) {
@@ -89,17 +102,13 @@ public class ActionEventQueue {
         valkeyKeyedBlockingQueue.put(new SortedSetEntry(queueName(returnAddress), OBJECT_MAPPER.writeValueAsString(result), OffsetDateTime.now()));
     }
 
-    public static ActionInput convertInput(String element) throws JsonProcessingException {
-        return OBJECT_MAPPER.readValue(element, ActionInput.class);
-    }
-
     public void setHeartbeat(String key) {
         valkeyKeyedBlockingQueue.setHeartbeat(key);
     }
 
     /**
      * Records a long-running task in Valkey.
-     *
+     * <p>
      * Serializes the given {@link ActionExecution} object and stores it in Valkey
      * along with its start time and the current time as the heartbeat.
      *
@@ -119,7 +128,7 @@ public class ActionEventQueue {
 
     /**
      * Removes the specified long-running task from Valkey.
-     *
+     * <p>
      * Deletes the given {@link ActionExecution} object from the Valkey hash,
      * thus marking it as no longer a long-running task.
      *

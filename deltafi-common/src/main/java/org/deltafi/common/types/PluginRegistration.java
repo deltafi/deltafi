@@ -20,6 +20,7 @@ package org.deltafi.common.types;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.integration.IntegrationTest;
 
 import java.util.ArrayList;
@@ -36,9 +37,12 @@ public class PluginRegistration {
     private String actionKitVersion;
     private List<PluginCoordinates> dependencies;
     private List<ActionDescriptor> actions;
-    private List<Variable> variables;
+    @Builder.Default
+    private List<Variable> variables= new ArrayList<>();
     @Builder.Default
     private List<FlowPlan> flowPlans = new ArrayList<>();
+    @Builder.Default
+    private List<LookupTable> lookupTables = new ArrayList<>();
     @Builder.Default
     private List<IntegrationTest> integrationTests = new ArrayList<>();
 
@@ -57,6 +61,7 @@ public class PluginRegistration {
         plugin.setActions(actions);
         plugin.setDependencies(dependencies);
         plugin.setFlowPlans(flowPlans);
+        plugin.setLookupTables(lookupTables);
         return plugin;
     }
 }

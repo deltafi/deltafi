@@ -311,30 +311,6 @@ public class FlowPlanDatafetcher {
         return transformFlowService.disableTestMode(flowName);
     }
 
-    @DgsMutation
-    @NeedsPermission.PluginVariableUpdate
-    public boolean savePluginVariables(@InputArgument List<Variable> variables) {
-        auditLogger.audit("saved plugin variables {}", CoreAuditLogger.listToString(variables, Variable::getName));
-        pluginService.saveSystemVariables(variables);
-        return true;
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginVariableUpdate
-    public boolean removePluginVariables() {
-        auditLogger.audit("removed system plugin variables");
-        pluginService.removeSystemVariables();
-        return true;
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginVariableUpdate
-    public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
-        VariableUpdate variableUpdate = pluginService.setPluginVariableValues(pluginCoordinates, variables);
-        auditLogger.audit("updated plugin variables: {}", CoreAuditLogger.listToString(variableUpdate.getUpdatedVariables(), VariableUpdate.Result::nameAndValue));
-        return variableUpdate.isUpdated();
-    }
-
     @DgsQuery
     @NeedsPermission.FlowView
     public SystemFlowPlans getAllSystemFlowPlans() {

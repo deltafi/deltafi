@@ -270,6 +270,11 @@ Plugin([MyTransformAction],
 Flows may be defined for a Plugin. See [Flows](/flows).
 
 
+## Lookup Tables
+
+Lookup tables may be used by a Plugin. See [Lookup Tables](/lookup-tables).
+
+
 ## Testing Plugin Actions
 
 Java based actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. See [Java Unit Testing](/unit-test) 

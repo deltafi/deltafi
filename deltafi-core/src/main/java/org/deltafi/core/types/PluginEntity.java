@@ -22,6 +22,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.*;
 import org.deltafi.core.plugin.deployer.InstallDetails;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -62,6 +63,10 @@ public class PluginEntity {
     @Column(columnDefinition = "jsonb")
     private List<FlowPlan> flowPlans = new ArrayList<>();
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<LookupTable> lookupTables = new ArrayList<>();
+
     @Transient
     private List<Variable> variables;
 
@@ -94,6 +99,7 @@ public class PluginEntity {
         this.dependencies = plugin.getDependencies();
         this.variables = plugin.getVariables();
         this.flowPlans = plugin.getFlowPlans();
+        this.lookupTables = plugin.getLookupTables();
     }
 
     public Plugin toPlugin() {
@@ -110,6 +116,7 @@ public class PluginEntity {
         plugin.setDependencies(this.dependencies);
         plugin.setVariables(this.variables);
         plugin.setFlowPlans(this.flowPlans);
+        plugin.setLookupTables(this.lookupTables);
         return plugin;
     }
 

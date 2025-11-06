@@ -33,7 +33,7 @@ import org.hibernate.type.descriptor.jdbc.JdbcType;
 import org.hibernate.type.spi.TypeConfiguration;
 import org.hibernate.usertype.UserType;
 
-public class StringArrayType implements UserType<List<String>> {
+public class StringListType implements UserType<List<String>> {
 
     @Override
     public int getSqlType() {

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.monitor.checks;
 
+import org.deltafi.common.lookup.LookupTableEvent;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.monitor.MonitorProfile;
@@ -131,6 +132,7 @@ public class ActionQueueCheck extends StatusCheck {
                 queueName.startsWith(ValkeyBasedProxyManager.RATE_LIMIT_BUCKET_PREFIX) ||
                 queueName.startsWith(ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX) ||
                 queueName.startsWith("gauge.node") ||
+                queueName.startsWith(LookupTableEvent.PREFIX) ||
                 recentQueueNames.contains(queueName);
     }
 }

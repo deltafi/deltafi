@@ -52,7 +52,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     // a magic number known by the GUI that says there are "many" total results
     private static final int MANY_RESULTS = 10_000;
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "primary")
     private final EntityManager entityManager;
     private final JdbcTemplate jdbcTemplate;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()

@@ -39,8 +39,10 @@ from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event, ActionExecution
 from deltafi.exception import ExpectedContentException, MissingMetadataException
 from deltafi.logger import get_logger
+from deltafi.lookuptable import LookupTable, LookupTableClient, LookupTableEvent, LookupTableEventResult, LookupTableSupplier
 from deltafi.result import ErrorResult, IngressResult, TransformResult, TransformResults
 from deltafi.storage import ContentService
+from deltafi.types import PluginCoordinates
 
 
 def _coordinates():
@@ -143,26 +145,12 @@ class ActionThread(object):
         return f"{self.name}#{self.thread_num}"
 
 
-class PluginCoordinates(object):
-    def __init__(self, group_id: str, artifact_id: str, version: str):
-        self.group_id = group_id
-        self.artifact_id = artifact_id
-        self.version = version
-
-    def __json__(self):
-        return {
-            "groupId": self.group_id,
-            "artifactId": self.artifact_id,
-            "version": self.version
-        }
-
-
 LONG_RUNNING_TASK_DURATION = timedelta(seconds=5)
 
 
 class Plugin(object):
     def __init__(self, description: str, plugin_name: str = None, plugin_coordinates: PluginCoordinates = None,
-                 actions: List = None, action_package: str = None,
+                 actions: List = None, action_package: str = None, lookup_table_suppliers_package: str = None,
                  thread_config: dict = None):
         """
         Initialize the plugin object
@@ -172,7 +160,8 @@ class Plugin(object):
                                    environment variables
         :param actions: list of action classes to run
         :param action_package: name of the package containing the actions to run
-        :param  thread_config: map of action class name and thread count. Actions not found default to 1 thread.
+        :param lookup_table_suppliers_package name of the package containing lookup table suppliers
+        :param thread_config: map of action class name and thread count. Actions not found default to 1 thread.
         """
         self.logger = get_logger()
 
@@ -191,12 +180,21 @@ class Plugin(object):
             action_classes.extend(actions)
 
         if action_package is not None:
-            found_actions = Plugin.find_actions(action_package)
+            found_actions = Plugin.find_classes(action_package, Action)
             if len(found_actions):
                 action_classes.extend(found_actions)
 
         unique_actions = dict.fromkeys(action_classes)
         self.singleton_actions = [action() for action in unique_actions]
+
+        self.lookup_table_suppliers = {}
+        if lookup_table_suppliers_package is not None:
+            lookup_table_client = LookupTableClient()
+            lookup_table_supplier_classes = Plugin.find_classes(lookup_table_suppliers_package, LookupTableSupplier)
+            self.logger.info(f"Found {len(lookup_table_supplier_classes)} suppliers")
+            for lookup_table_supplier_class in lookup_table_supplier_classes:
+                lookup_table_supplier = lookup_table_supplier_class(lookup_table_client)
+                self.lookup_table_suppliers[lookup_table_supplier.lookup_table.name] = lookup_table_supplier
 
         self.description = description
         self.display_name = os.getenv('PROJECT_NAME') if plugin_name is None else plugin_name
@@ -214,11 +212,12 @@ class Plugin(object):
         self.logger.debug(f"Initialized ActionRunner with actions {self.singleton_actions}")
 
     @staticmethod
-    def find_actions(package_name) -> List[object]:
+    def find_classes(package_name: str, base_class: type) -> List[object]:
         """
-        Find all concrete classes that extend the base Action class in the given package
-        :param package_name: name of the package to load and scan for actions
-        :return: list of classes that extend the Action class
+        Find all concrete classes that extend the base class in the given package
+        :param package_name: name of the package to load and scan
+        :param base_class: the base class
+        :return: list of classes that extend the base class
         """
         package = importlib.import_module(package_name)
         classes = []
@@ -234,20 +233,11 @@ class Plugin(object):
             # Iterate over all members in the module
             for name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and obj.__module__.startswith(package_name) and obj not in visited:
-                    if Plugin.is_action(obj):
+                    if not inspect.isabstract(obj) and issubclass(obj, base_class):
                         classes.append(obj)
                     visited.add(obj)
 
         return classes
-
-    @staticmethod
-    def is_action(maybe_action: type) -> bool:
-        """
-        Check if the given object is a non-abstract subclass of the Action class
-        :param maybe_action: object to inspect to see if it is an Action class
-        :return: true if the object is a non-abstract subclass of the Action class
-        """
-        return not inspect.isabstract(maybe_action) and issubclass(maybe_action, Action)
 
     def action_name(self, action):
         return f"{self.coordinates.group_id}.{action.__class__.__name__}"
@@ -289,6 +279,7 @@ class Plugin(object):
 
         flows = _load__all_resource(flows_path, flow_files)
         actions = [self._action_json(action) for action in self.singleton_actions]
+        lookup_tables = [lookup_table_supplier.lookup_table.json() for lookup_table_supplier in self.lookup_table_suppliers.values()]
 
         test_files = self.load_integration_tests(tests_path)
         if len(test_files) == 0:
@@ -296,7 +287,7 @@ class Plugin(object):
                 f"tests directory ({tests_path}) does not exist or contains no valid files. No tests will be installed.")
 
         return {
-            'pluginCoordinates': self.coordinates.__json__(),
+            'pluginCoordinates': self.coordinates.json(),
             'displayName': self.display_name,
             'description': self.description,
             'actionKitVersion': metadata.version('deltafi'),
@@ -304,6 +295,7 @@ class Plugin(object):
             'imagePullSecret': self.image_pull_secret,
             'dependencies': [],
             'actions': actions,
+            'lookupTables': lookup_tables,
             'variables': variables,
             'flowPlans': flows,
             'integrationTests': test_files
@@ -311,7 +303,7 @@ class Plugin(object):
 
     def _register(self):
         url = f"{self.core_url}/plugins"
-        headers = {'Content-type': 'application/json'}
+        headers = {'Content-Type': 'application/json'}
         registration_json = self.registration_json()
 
         self.logger.info(f"Registering plugin:\n{registration_json}")
@@ -338,12 +330,20 @@ class Plugin(object):
                 action_thread = ActionThread(action, i, self.action_name(action))
                 self.action_threads.append(action_thread)
 
-        self.queue = _setup_queue(len(self.action_threads) + 1)
+        total_threads = len(self.action_threads) + 1
+        if len(self.lookup_table_suppliers) > 0:
+            total_threads += 1
+
+        self.queue = _setup_queue(total_threads)
         self.content_service = _setup_content_service()
-        self._register()
+
+        if len(self.lookup_table_suppliers) > 0:
+            threading.Thread(target=self._handle_lookup_table_supplier_events).start()
 
         for action_thread in self.action_threads:
             threading.Thread(target=self._do_action, args=(action_thread,)).start()
+
+        self._register()
 
         hb_thread = threading.Thread(target=self._heartbeat)
         hb_thread.start()
@@ -445,6 +445,19 @@ class Plugin(object):
             except BaseException as e:
                 action_logger.error(f"Unexpected {type(e)} error: {str(e)}\n{traceback.format_exc()}")
                 time.sleep(1)
+
+    def _handle_lookup_table_supplier_events(self):
+        event_keys = ["lookup-table-event-" + key for key in self.lookup_table_suppliers.keys()]
+        self.logger.debug(f"Listening for the following lookup table supplier events: {event_keys}")
+        while True:
+            event_string = self.queue.take(event_keys)
+            lookup_table_event = LookupTableEvent.create(json.loads(event_string))
+            rows = self.lookup_table_suppliers[lookup_table_event.lookup_table_name].get_rows(
+                lookup_table_event.variables, lookup_table_event.matching_column_values,
+                lookup_table_event.result_columns)
+            lookup_table_event_result = LookupTableEventResult(lookup_table_event_id=lookup_table_event.id,
+                lookup_table_name=lookup_table_event.lookup_table_name, rows=rows)
+            self.queue.put(lookup_table_event.id, json.dumps(lookup_table_event_result.json()))
 
     @staticmethod
     def orphaned_content_check(logger, context, result, response):

@@ -350,4 +350,24 @@ public class NeedsPermission {
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize("hasAnyAuthority('VersionsView'" + OR_ADMIN)
     public @interface VersionsView {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('LookupTableRead'" + OR_ADMIN)
+    public @interface LookupTableRead {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('LookupTableCreate'" + OR_ADMIN)
+    public @interface LookupTableCreate {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('LookupTableUpdate'" + OR_ADMIN)
+    public @interface LookupTableUpdate {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('LookupTableDelete'" + OR_ADMIN)
+    public @interface LookupTableDelete {}
 }

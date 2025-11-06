@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Repository
 public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
-    @PersistenceContext
+    @PersistenceContext(unitName = "primary")
     EntityManager entityManager;
 
     @Override

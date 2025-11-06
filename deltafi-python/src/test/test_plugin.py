@@ -19,7 +19,8 @@
 from importlib import metadata
 from unittest import mock
 
-from deltafi.plugin import Plugin, PluginCoordinates
+from deltafi.types import PluginCoordinates
+from deltafi.plugin import Plugin
 
 from .sample.actions import SampleTransformAction
 
@@ -104,7 +105,7 @@ def test_plugin_register(monkeypatch):
         plugin._register()
 
     mock_post.assert_called_once_with("http://core/plugins",
-                                      headers={'Content-type': 'application/json'},
+                                      headers={'Content-Type': 'application/json'},
                                       json=get_expected_json())
 
 
@@ -222,6 +223,9 @@ def get_expected_json():
                     },
                 },
             }
+        ],
+        "lookupTables": [
+
         ],
         "variables": [
 

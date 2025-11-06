@@ -100,9 +100,9 @@ func (o *KubernetesOrchestrator) GetMinioName() (string, error) {
 func (o *KubernetesOrchestrator) GetAPIBaseURL() (string, error) {
 	return getKubernetesServiceIP("deltafi-core-service", o.namespace)
 }
-func (o *KubernetesOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
 
-	podName, err := o.GetMasterPod("application=spilo,spilo-role=master")
+func (o *KubernetesOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
+	podName, err := o.GetMasterPod("application=spilo,spilo-role=master,cluster-name=deltafi-postgres")
 	if err != nil {
 		return *exec.Command(""), fmt.Errorf("unable to find Postgres pod")
 	}
@@ -120,8 +120,25 @@ func (o *KubernetesOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error)
 }
 
 func (o *KubernetesOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error) {
+	podName, err := o.GetMasterPod("application=spilo,spilo-role=master,cluster-name=deltafi-postgres")
+	if err != nil {
+		return *exec.Command(""), fmt.Errorf("unable to find Postgres pod")
+	}
 
-	podName, err := o.GetMasterPod("application=spilo,spilo-role=master")
+	cmdArgs := []string{
+		podName,
+		"-c", "postgres",
+		"--",
+		"psql",
+	}
+
+	cmdArgs = append(cmdArgs, args...)
+	cmdArgs = append(cmdArgs, "-U", "deltafi", "deltafi")
+	return getKubectlExecCmd(cmdArgs)
+}
+
+func (o *KubernetesOrchestrator) GetPostgresLookupCmd(args []string) (exec.Cmd, error) {
+	podName, err := o.GetMasterPod("application=spilo,spilo-role=master,cluster-name=deltafi-postgres-lookup")
 	if err != nil {
 		return *exec.Command(""), fmt.Errorf("unable to find Postgres pod")
 	}

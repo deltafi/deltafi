@@ -18,13 +18,11 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.repo.FlowRepo;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.Flow;
+import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.DataSourceSnapshot;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
@@ -116,7 +114,7 @@ public abstract class DataSourceService<P extends FlowPlan, F extends DataSource
      * @param result the result object
      * @return true if any changes were made, false otherwise
      */
-    public final boolean flowSpecificUpdateFromSnapshot(F flow, S dataSourceSnapshot, org.deltafi.core.types.Result result) {
+    public final boolean flowSpecificUpdateFromSnapshot(F flow, S dataSourceSnapshot, Result result) {
         boolean changed = updateCommonDataSourceFields(flow, dataSourceSnapshot);
         return updateSpecificDataSourceFields(flow, dataSourceSnapshot, result) || changed;
     }
@@ -155,7 +153,7 @@ public abstract class DataSourceService<P extends FlowPlan, F extends DataSource
      * @param result the result object
      * @return true if any changes were made, false otherwise
      */
-    protected boolean updateSpecificDataSourceFields(F flow, S dataSourceSnapshot, org.deltafi.core.types.Result result) {
+    protected boolean updateSpecificDataSourceFields(F flow, S dataSourceSnapshot, Result result) {
         return false;
     }
 

@@ -1,8 +1,8 @@
 logging:
   level:
+    root: OFF
     org:
       springframework: OFF
-    root: OFF
 
 spring:
   aop:
@@ -16,15 +16,12 @@ spring:
         catalog-services-watch:
           enabled: false
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
   jpa:
     hibernate:
       ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        packagesToScan: org.deltafi.core.types
         generate_statistics: false
   sql:
     init:

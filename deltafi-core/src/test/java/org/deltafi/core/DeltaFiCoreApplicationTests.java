@@ -29,10 +29,10 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.minio.MinioClient;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.content.Segment;
-import org.deltafi.common.content.StorageProperties;
+import org.deltafi.common.content.*;
+import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.storage.s3.ObjectStorageException;
@@ -51,6 +51,8 @@ import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.integration.*;
+import org.deltafi.core.lookup.LookupTableService;
+import org.deltafi.core.lookup.LookupTableServiceException;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
@@ -72,9 +74,7 @@ import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.*;
@@ -86,6 +86,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -130,12 +131,13 @@ import static org.mockito.Mockito.times;
 @Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, flows, plugins, properties, resume_policies, analytics, event_annotations, flow_definitions CASCADE",
 		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DeltaFiCoreApplicationTests {
-	public static final DockerImageName TS_POSTGRES_IMAGE = DockerImageName
-			.parse("deltafi/timescaledb:2.19.0-pg16")
-			.asCompatibleSubstituteFor("postgres");
 	@Container
-	@ServiceConnection
-	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(TS_POSTGRES_IMAGE);
+	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(
+			DockerImageName.parse("deltafi/timescaledb:2.19.0-pg16").asCompatibleSubstituteFor("postgres"));
+
+	@Container
+	public static final PostgreSQLContainer<?> POSTGRES_LOOKUP_CONTAINER = new PostgreSQLContainer<>(
+			DockerImageName.parse("postgres:16.9-alpine3.22").asCompatibleSubstituteFor("postgres"));
 
 	@Container
 	public static final GenericContainer<?> VALKEY_CONTAINER = new GenericContainer<>("valkey/valkey:8.1.1-alpine")
@@ -151,6 +153,9 @@ class DeltaFiCoreApplicationTests {
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
+		registry.add("spring.datasource.url", POSTGRES_CONTAINER::getJdbcUrl);
+		registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
+		registry.add("spring.datasource.password", POSTGRES_CONTAINER::getPassword);
 		registry.add("valkey.url", () -> "redis://" + VALKEY_CONTAINER.getHost() + ":" + VALKEY_CONTAINER.getMappedPort(6379));
 		registry.add("schedule.actionEvents", () -> false);
 		registry.add("schedule.maintenance", () -> false);
@@ -159,6 +164,10 @@ class DeltaFiCoreApplicationTests {
 		registry.add("schedule.errorCount", () -> false);
 		registry.add("schedule.propertySync", () -> false);
 		registry.add("cold.queue.refresh.duration", () -> "PT1M");
+		registry.add("lookup.enabled", () -> true);
+		registry.add("lookup.datasource.url", POSTGRES_LOOKUP_CONTAINER::getJdbcUrl);
+		registry.add("lookup.datasource.username", POSTGRES_LOOKUP_CONTAINER::getUsername);
+		registry.add("lookup.datasource.password", POSTGRES_LOOKUP_CONTAINER::getPassword);
 	}
 
 	@Autowired
@@ -6011,7 +6020,6 @@ class DeltaFiCoreApplicationTests {
 
 		// action name not found
 		assertThat(deltaFileFlowRepo.isColdQueued(actionClass+"1")).isFalse();
-
 	}
 
 	@Test
@@ -6079,5 +6087,54 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(25, eventAnnotationsRepo.count());
 		assertEquals(25, eventAnnotationsRepo.deleteUnusedEventAnnotations(50));
 		assertEquals(0, eventAnnotationsRepo.count());
+	}
+
+	@Autowired
+	LookupTableService lookupTableService;
+
+	@Test
+	public void testLookupTableService() throws LookupTableServiceException {
+		LookupTable lookupTable = LookupTable.builder()
+				.name("test_lookup_1")
+				.columns(List.of("column_a", "column_b", "column_c"))
+				.keyColumns(List.of("column_a"))
+				.serviceBacked(false)
+				.backingServiceActive(false)
+				.build();
+		lookupTableService.createLookupTable(lookupTable, true);
+
+		lookupTableService.upsertRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 1", "column_b", "Column B Value 1", "column_c", "Column C Value 1")));
+		lookupTableService.upsertRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 2", "column_b", "Column B Value 2")));
+		lookupTableService.upsertRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 3", "column_c", "Column C Value 3")));
+
+		Pair<Integer, List<Map<String, String>>> results = lookupTableService.lookup(lookupTable.getName(),
+				Map.of("column_c", Set.of("Column C Value 1")), null, null, null, null, null);
+		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 1");
+		assertThat(results.getRight().getFirst().get("column_b")).isEqualTo("Column B Value 1");
+		assertThat(results.getRight().getFirst().get("column_c")).isEqualTo("Column C Value 1");
+
+		results = lookupTableService.lookup(lookupTable.getName(),
+				Map.of("column_c", Set.of("Column C Value 1")), List.of("column_a", "column_c"), null, null, null, null);
+		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 1");
+		assertThat(results.getRight().getFirst().get("column_b")).isNull();
+		assertThat(results.getRight().getFirst().get("column_c")).isEqualTo("Column C Value 1");
+
+		lookupTableService.upsertRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 1", "column_c", "Column C Value 4")));
+
+		results = lookupTableService.lookup(lookupTable.getName(),
+				Map.of("column_a", Set.of("Column A Value 1")), null, null, null, null, null);
+		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 1");
+		assertThat(results.getRight().getFirst().get("column_b")).isNull();
+		assertThat(results.getRight().getFirst().get("column_c")).isEqualTo("Column C Value 4");
+
+		lookupTableService.removeRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 1"),
+				Map.of("column_a", "Column A Value 3")));
+		results = lookupTableService.lookup(lookupTable.getName(), null, null, null, null, null, null);
+		assertThat(results.getRight().size()).isEqualTo(1);
+		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 2");
+
+		lookupTableService.deleteLookupTable(lookupTable.getName());
+
+		assertThat(lookupTableService.getLookupTables()).isEmpty();
 	}
 }

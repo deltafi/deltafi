@@ -7,21 +7,16 @@ spring:
     url: jdbc:postgresql://${DELTAFI_POSTGRES_SERVICE_HOST:deltafi-postgres}:${DELTAFI_POSTGRES_SERVICE_PORT:5432}/${POSTGRES_DB}
     username: ${POSTGRES_USER:deltafi}
     password: ${POSTGRES_PASSWORD}
-    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 32
   flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    baseline-version: 0
+    enabled: false
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
-        packagesToScan: org.deltafi.core.types
         generate_statistics: false
         default_batch_fetch_size: 500
     show-sql: false
@@ -35,6 +30,13 @@ spring:
   web:
     resources:
       static-locations: ["file:/deltafi/"]
+lookup:
+  datasource:
+    url: jdbc:postgresql://${DELTAFI_POSTGRES_LOOKUP_SERVICE_HOST:deltafi-postgres-lookup}:${DELTAFI_POSTGRES_LOOKUP_SERVICE_PORT:5432}/${POSTGRES_DB}
+    username: ${POSTGRES_USER:deltafi}
+    password: ${POSTGRES_LOOKUP_PASSWORD}
+    hikari:
+      maximum-pool-size: 32
 dgs:
   graphql:
     path: "/api/v2/graphql"

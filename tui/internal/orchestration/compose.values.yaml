@@ -44,6 +44,9 @@ deltafi:
   plugins:
     ssl:
       secret: ssl-secret
+  lookup:
+    enabled: false
+
 # nginx domain
 ingress:
   domain: local.deltafi.org
@@ -64,3 +67,4 @@ dependencies:
   valkey: {{.ValkeyContainer}}
   docker_web_gui: {{.DockerWebGuiContainer}}
   postgres: {{.PostgresContainer}}
+  postgres_lookup: {{.PostgresLookupContainer}}

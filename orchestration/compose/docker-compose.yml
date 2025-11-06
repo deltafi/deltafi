@@ -32,7 +32,7 @@ services:
       - ${DOCKER_GID}
     user: "${USER_ID}:${GROUP_ID}"
     environment:
-      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
+      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false -Dlookup.enabled=${LOOKUP_TABLES_ENABLED}"
       SPRING_PROFILES_ACTIVE: monitor,localContentStorage
       APP_ID: core-scheduler
       UNIQUE_ID: core-scheduler
@@ -74,7 +74,7 @@ services:
     expose:
       - "8080"
     environment:
-      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.maintenance=false -Dschedule.diskSpace=false"
+      JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.maintenance=false -Dschedule.diskSpace=false -Dlookup.enabled=${LOOKUP_TABLES_ENABLED}"
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
@@ -288,6 +288,30 @@ services:
     volumes:
       - ${DATA_DIR}/postgres:/var/lib/postgresql/data/
     user: "${USER_ID}:${GROUP_ID}"
+
+  deltafi-postgres-lookup:
+    profiles: ["lookup-tables"]
+    image: ${POSTGRES}
+    container_name: deltafi-postgres-lookup
+    command: [ "-c", "max_connections=1000" ]
+    env_file:
+      - ${SECRETS_DIR}/postgres.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 15s
+      retries: 40
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    expose:
+      - "5432"
+    restart: unless-stopped
+    volumes:
+      - ${DATA_DIR}/postgres-lookup:/var/lib/postgresql/data/
+    user: "${USER_ID}:${GROUP_ID}"
+
   deltafi-valkey:
     image: ${VALKEY}
     container_name: deltafi-valkey

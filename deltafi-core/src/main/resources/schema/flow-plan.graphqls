@@ -53,36 +53,6 @@ input RateLimitInput {
   durationSeconds: Int!
 }
 
-type Variable {
-  name: String!
-  description: String!
-  dataType: DataType!
-  required: Boolean!
-  defaultValue: String
-  value: String
-  masked: Boolean
-}
-
-input VariableInput {
-  name: String!
-  description: String!
-  dataType: DataType!
-  required: Boolean!
-  defaultValue: String
-  value: String
-  masked: Boolean
-}
-
-type PluginVariables {
-  sourcePlugin: PluginCoordinates!
-  variables: [Variable]!
-}
-
-input PluginVariablesInput {
-  sourcePlugin: PluginCoordinatesInput!
-  variables: [VariableInput]!
-}
-
 type DataSinkPlan {
   name: String!
   type: String!

@@ -42,6 +42,8 @@ deltafi:
       secret: ssl-secret
   storage:
     bucketName: storage
+  lookup:
+    enabled: false
 
 # Kubernetes ingress config
 ingress:

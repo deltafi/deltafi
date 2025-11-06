@@ -18,6 +18,7 @@
 package org.deltafi.common.types;
 
 import lombok.Data;
+import org.deltafi.common.lookup.LookupTable;
 
 import java.util.List;
 
@@ -35,4 +36,5 @@ public class Plugin {
   private List<PluginCoordinates> dependencies;
   private List<Variable> variables;
   private List<FlowPlan> flowPlans;
+  private List<LookupTable> lookupTables;
 }

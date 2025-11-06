@@ -34,7 +34,7 @@ import org.hibernate.type.descriptor.jdbc.JdbcType;
 import org.hibernate.type.spi.TypeConfiguration;
 import org.hibernate.usertype.UserType;
 
-public class UUIDArrayType implements UserType<List<UUID>> {
+public class UUIDListType implements UserType<List<UUID>> {
 
     @Override
     public int getSqlType() {

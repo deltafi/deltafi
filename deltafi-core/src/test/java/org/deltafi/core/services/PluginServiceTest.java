@@ -17,12 +17,14 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.ExpectedDeltaFile;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.types.integration.TestCaseIngress;
 import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
+import org.deltafi.core.lookup.LookupTableService;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.snapshot.PluginSnapshot;
@@ -109,6 +111,9 @@ class PluginServiceTest {
     @Mock
     IntegrationService integrationService;
 
+    @Mock
+    LookupTableService lookupTableService;
+
     @BeforeEach
     void setup() {
         List<PluginCleaner> cleaners = List.of(dataSinkService, transformFlowService, restDataSourceService,
@@ -118,7 +123,8 @@ class PluginServiceTest {
         pluginService = new PluginService(pluginRepository, pluginVariableService, buildProperties,
                 dataSinkService, restDataSourceService, timedDataSourceService, onErrorDataSourceService, transformFlowService,
                 environment, pluginValidator, dataSinkPlanService, restDataSourcePlanService,
-                timedDataSourcePlanService, onErrorDataSourcePlanService, transformFlowPlanService, checkers, cleaners);
+                timedDataSourcePlanService, onErrorDataSourcePlanService, transformFlowPlanService, checkers, cleaners,
+                lookupTableService);
     }
 
     @Test
@@ -281,6 +287,25 @@ class PluginServiceTest {
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
+        Result result = pluginService.register(pluginRegistration, integrationService);
+
+        assertFalse(result.isSuccess());
+        assertEquals(2, result.getErrors().size());
+        assertEquals("error1", result.getErrors().get(0));
+        assertEquals("error2", result.getErrors().get(1));
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void addPluginFailedLookupTableValidationReturnsErrors() {
+        Mockito.when(lookupTableService.validateLookupTableCreation(Mockito.any()))
+                .thenReturn(List.of("error1"), List.of("error2"));
+
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"))
+                .lookupTables(List.of(LookupTable.builder().build(), LookupTable.builder().build()))
+                .build();
         Result result = pluginService.register(pluginRegistration, integrationService);
 
         assertFalse(result.isSuccess());

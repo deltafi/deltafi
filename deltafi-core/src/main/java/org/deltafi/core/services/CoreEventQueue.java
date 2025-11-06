@@ -24,19 +24,22 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.lookup.LookupTableEvent;
+import org.deltafi.common.lookup.LookupTableEventResult;
 import org.deltafi.common.queue.valkey.SortedSetEntry;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.types.*;
 import org.deltafi.core.types.WrappedActionInput;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.*;
 
 /**
  * Service for pushing and popping action events to a valkey queue.
  */
+@RequiredArgsConstructor
 @Slf4j
 public class CoreEventQueue {
 
@@ -59,12 +62,11 @@ public class CoreEventQueue {
     private static final Duration LONG_RUNNING_HEARTBEAT_THRESHOLD = Duration.ofSeconds(30);
 
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
+    private final Clock clock;
 
-    public CoreEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue) {
-        this.valkeyKeyedBlockingQueue = valkeyKeyedBlockingQueue;
+    public Set<String> keys() {
+        return valkeyKeyedBlockingQueue.keys();
     }
-
-    public Set<String> keys() { return valkeyKeyedBlockingQueue.keys(); }
 
     public void drop(List<String> actionNames) {
         valkeyKeyedBlockingQueue.drop(actionNames);
@@ -282,5 +284,28 @@ public class CoreEventQueue {
 
         String appName = values.size() == 3 ? values.get(2) : null;
         return new Value(startTime, heartbeatTime, appName);
+    }
+
+    public void putLookupTableEvent(LookupTableEvent lookupTableEvent) throws JsonProcessingException {
+        valkeyKeyedBlockingQueue.put(new SortedSetEntry(lookupTableEvent.getKey(),
+                OBJECT_MAPPER.writeValueAsString(lookupTableEvent), OffsetDateTime.now(clock)));
+    }
+
+    public void dropLookupTableEvent(LookupTableEvent lookupTableEvent) {
+        drop(List.of(lookupTableEvent.getKey()));
+    }
+
+    private static final Duration MAX_RESPONSE_DURATION = Duration.ofMinutes(1);
+
+    /**
+     * Gets a lookup table result from the queue, blocking for up to a minute.
+     *
+     * @param lookupTableEventId the id of the corresponding lookup table event
+     * @return the result or null if no result is returned within a minute
+     * @throws JsonProcessingException if the result cannot be converted to a LookupTableEventResult
+     */
+    public LookupTableEventResult takeLookupTableResult(String lookupTableEventId) throws JsonProcessingException {
+        String lookupTableResult = valkeyKeyedBlockingQueue.take(MAX_RESPONSE_DURATION.toSeconds(), lookupTableEventId);
+        return lookupTableResult == null ? null : OBJECT_MAPPER.readValue(lookupTableResult, LookupTableEventResult.class);
     }
 }

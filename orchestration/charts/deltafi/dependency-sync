@@ -20,3 +20,4 @@ sync loki https://gitlab.com/deltafi/helmcharts/loki.git 2.12.2
 sync minio https://gitlab.com/deltafi/helmcharts/minio.git 5.0.7
 sync promtail https://gitlab.com/deltafi/helmcharts/promtail.git 6.10.0
 sync redis https://gitlab.com/deltafi/helmcharts/redis.git 17.1.2
+#sync postgresql https://gitlab.com/deltafi/helmcharts/postgresql.git 16.7.19

@@ -31,7 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.transform.Join;
+import org.deltafi.actionkit.lookup.LookupTableSupplierRunner;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
+import org.deltafi.actionkit.lookup.LookupTableSupplier;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.util.ResourceMapper;
@@ -51,6 +53,7 @@ public class PluginRegistrar {
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     private final ActionRunner actionRunner;
+    private final LookupTableSupplierRunner lookupTableSupplierRunner;
     private final BuildProperties buildProperties;
     private final ApplicationContext applicationContext;
     private final Environment environment;
@@ -82,7 +85,9 @@ public class PluginRegistrar {
                 .description(buildProperties.get("description"))
                 .actionKitVersion(buildProperties.get("actionKitVersion"))
                 .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
-                .actions(actionRunner.getSingletonActions().stream().map(this::buildActionDescriptor).toList());
+                .actions(actionRunner.getSingletonActions().stream().map(this::buildActionDescriptor).toList())
+                .lookupTables(lookupTableSupplierRunner.getLookupTableSupplierMap().values().stream()
+                        .map(LookupTableSupplier::getLookupTable).toList());
 
         Resource flowsDirectory = applicationContext.getResource("classpath:flows");
         if (flowsDirectory.exists()) {
@@ -123,7 +128,7 @@ public class PluginRegistrar {
     private List<Variable> loadVariables() {
         Resource variablesResource = findVariables();
         if (variablesResource == null) {
-            log.info("No flow variables have been defined");
+            log.info("No plugin variables have been defined");
             return Collections.emptyList();
         }
 

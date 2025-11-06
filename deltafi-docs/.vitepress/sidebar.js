@@ -41,6 +41,7 @@ export const sidebar = [
       { text: "Egress Action", link: "/actions/egress" },
       { text: "Flows", link: "/flows" },
       { text: "Action Parameters", link: "/action_parameters" },
+      { text: "Lookup Tables", link: "/lookup_tables" },
       { text: "Action Unit Testing", link: "/unit-test" },
     ],
   },

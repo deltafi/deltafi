@@ -38,7 +38,7 @@ import java.util.UUID;
 @Slf4j
 public class EventRepoImpl implements EventRepoCustom {
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "primary")
     private EntityManager entityManager;
 
     @Override

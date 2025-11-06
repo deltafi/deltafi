@@ -20,18 +20,13 @@ package org.deltafi.core.datafetchers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQuery;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import com.netflix.graphql.dgs.client.codegen.*;
 import org.deltafi.common.types.*;
-import org.deltafi.core.converters.DurationScalar;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 import static org.deltafi.core.util.Constants.TIMED_DATA_SOURCE_NAME;
 
@@ -351,7 +346,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     static <T> T executeQuery(DgsQueryExecutor dgsQueryExecutor, GraphQLQuery query, BaseProjectionNode projection, Class<T> clazz) {
-        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(new GraphQLQueryRequest(query, projection, Map.of(Duration.class, new DurationScalar())).serialize(), "data." + query.getOperationName(), clazz);
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(new GraphQLQueryRequest(query, projection).serialize(), "data." + query.getOperationName(), clazz);
     }
 
     private static class EmptyProjection extends BaseProjectionNode {}

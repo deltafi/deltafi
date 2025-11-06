@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.validation;
 
-import com.networknt.schema.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.core.generated.types.FlowConfigError;

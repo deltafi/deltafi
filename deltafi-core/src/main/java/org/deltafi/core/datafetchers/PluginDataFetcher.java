@@ -17,24 +17,17 @@
  */
 package org.deltafi.core.datafetchers;
 
-import com.netflix.graphql.dgs.DgsComponent;
-import com.netflix.graphql.dgs.DgsMutation;
-import com.netflix.graphql.dgs.DgsQuery;
-import com.netflix.graphql.dgs.InputArgument;
+import com.netflix.graphql.dgs.*;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.ActionDescriptor;
-import org.deltafi.common.types.Plugin;
-import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.DeltaFiUserService;
-import org.deltafi.core.services.PluginService;
-import org.deltafi.core.services.SystemSnapshotService;
-import org.deltafi.core.types.PluginEntity;
-import org.deltafi.core.types.Result;
+import org.deltafi.core.services.*;
+import org.deltafi.core.types.*;
 
 import java.util.Collection;
+import java.util.List;
 
 @DgsComponent
 @RequiredArgsConstructor
@@ -95,4 +88,27 @@ public class PluginDataFetcher {
         return reason;
     }
 
+    @DgsMutation
+    @NeedsPermission.PluginVariableUpdate
+    public boolean savePluginVariables(@InputArgument List<Variable> variables) {
+        auditLogger.audit("saved plugin variables {}", CoreAuditLogger.listToString(variables, Variable::getName));
+        pluginService.saveSystemVariables(variables);
+        return true;
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginVariableUpdate
+    public boolean removePluginVariables() {
+        auditLogger.audit("removed system plugin variables");
+        pluginService.removeSystemVariables();
+        return true;
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginVariableUpdate
+    public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
+        VariableUpdate variableUpdate = pluginService.setPluginVariableValues(pluginCoordinates, variables);
+        auditLogger.audit("updated plugin variables: {}", CoreAuditLogger.listToString(variableUpdate.getUpdatedVariables(), VariableUpdate.Result::nameAndValue));
+        return variableUpdate.isUpdated();
+    }
 }

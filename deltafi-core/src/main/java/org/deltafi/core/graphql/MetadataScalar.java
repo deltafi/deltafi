@@ -15,27 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.converters;
+package org.deltafi.core.graphql;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.graphql.dgs.DgsScalar;
 import graphql.language.*;
-import graphql.schema.Coercing;
-import graphql.schema.CoercingParseLiteralException;
-import graphql.schema.CoercingParseValueException;
-import graphql.schema.CoercingSerializeException;
+import graphql.scalars.util.Kit;
+import graphql.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static graphql.scalars.util.Kit.typeName;
-
-@DgsScalar(name = "Metadata")
 public class MetadataScalar implements Coercing<Map<String, String>, Object> {
-
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
@@ -57,7 +50,7 @@ public class MetadataScalar implements Coercing<Map<String, String>, Object> {
     @Override
     public Map<String, String> parseLiteral(@NotNull Object input) throws CoercingParseLiteralException {
         if (!(input instanceof Value)) {
-            throw new CoercingParseLiteralException("Expected AST type 'Value' but was '" + typeName(input) + "'.");
+            throw new CoercingParseLiteralException("Expected AST type 'Value' but was '" + Kit.typeName(input) + "'.");
         }
 
         if (input instanceof StringValue) {

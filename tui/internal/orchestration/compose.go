@@ -89,7 +89,6 @@ func getDockerExecCmd(args []string) (exec.Cmd, error) {
 }
 
 func (o *ComposeOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
-
 	cmdArgs := []string{"deltafi-postgres", "bash", "-c"}
 
 	psqlCmd := fmt.Sprintf("psql -v HISTFILE=/tmp/psql_history $POSTGRES_DB %s", strings.Join(args, " "))
@@ -100,6 +99,15 @@ func (o *ComposeOrchestrator) GetPostgresCmd(args []string) (exec.Cmd, error) {
 
 func (o *ComposeOrchestrator) GetPostgresExecCmd(args []string) (exec.Cmd, error) {
 	cmdArgs := []string{"deltafi-postgres", "bash", "-c"}
+
+	psqlCmd := fmt.Sprintf("psql -v HISTFILE=/tmp/psql_history $POSTGRES_DB %s", strings.Join(args, " "))
+	cmdArgs = append(cmdArgs, psqlCmd)
+
+	return getDockerExecCmd(cmdArgs)
+}
+
+func (o *ComposeOrchestrator) GetPostgresLookupCmd(args []string) (exec.Cmd, error) {
+	cmdArgs := []string{"deltafi-postgres-lookup", "bash", "-c"}
 
 	psqlCmd := fmt.Sprintf("psql -v HISTFILE=/tmp/psql_history $POSTGRES_DB %s", strings.Join(args, " "))
 	cmdArgs = append(cmdArgs, psqlCmd)
@@ -390,6 +398,7 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 
 	subdirs := []string{
 		"postgres",
+		"postgres-lookup",
 		"dirwatcher",
 		"egress-sink",
 		"entityResolver",
@@ -714,6 +723,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"GRAFANA":                            o.getValue(values, "dependencies.grafana"),
 		"GRAPHITE":                           o.getValue(values, "dependencies.graphite"),
 		"LOKI":                               o.getValue(values, "dependencies.loki"),
+		"LOOKUP_TABLES_ENABLED":              o.getValue(values, "deltafi.lookup.enabled"),
 		"MINIO":                              o.getValue(values, "dependencies.minio"),
 		"POSTGRES":                           o.getValue(values, "dependencies.postgres"),
 		"NGINX":                              o.getValue(values, "dependencies.nginx"),
@@ -742,6 +752,9 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	}
 	if o.getValue(values, "deltafi.java_ide.enabled") == "true" {
 		profiles = append(profiles, "java-ide")
+	}
+	if o.getValue(values, "deltafi.lookup.enabled") == "true" {
+		profiles = append(profiles, "lookup-tables")
 	}
 	if o.getValue(values, "deltafi.core_worker.enabled") == "true" {
 		profiles = append(profiles, "worker")

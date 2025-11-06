@@ -21,15 +21,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
 import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedActionException;
-import org.deltafi.core.generated.types.FlowState;
-import org.deltafi.core.types.hibernate.StringArrayType;
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
+import org.deltafi.core.types.hibernate.StringListType;
+import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
 import org.jetbrains.annotations.NotNull;
 
@@ -71,19 +69,19 @@ public class DeltaFileFlow {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private List<Action> actions = new ArrayList<>();
-    @Type(StringArrayType.class)
+    @Type(StringListType.class)
     @Column(columnDefinition = "text[]")
     @Builder.Default
     private List<String> publishTopics = new ArrayList<>();
     private int depth;
-    @Type(StringArrayType.class)
+    @Type(StringListType.class)
     @Column(columnDefinition = "text[]")
     @Builder.Default
     private List<String> pendingAnnotations = new ArrayList<>();
     boolean testMode;
     String testModeReason;
     private UUID joinId;
-    @Type(StringArrayType.class)
+    @Type(StringListType.class)
     @Column(columnDefinition = "text[]")
     @Builder.Default
     private List<String> pendingActions = new ArrayList<>();
