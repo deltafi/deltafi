@@ -1,0 +1,15 @@
+{
+  "name": "{{.PluginName}}-{{.ActionFileName}}-data-source",
+  "type": "TIMED_DATA_SOURCE",
+  "description": "{{.PluginName}} {{.ClassName}} timed data source",
+  "topic": "{{.PluginName}}-data",
+  "cronSchedule": "*/5 * * * * *",
+  "timedIngressAction": {
+    "name": "{{.ClassName}}",
+    "type": "{{.GroupID}}.{{.ClassName}}"
+  },
+  "metadata": {
+    "source": "{{.PluginName}}"
+  }
+}
+

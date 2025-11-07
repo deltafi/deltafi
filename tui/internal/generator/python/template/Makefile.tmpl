@@ -1,0 +1,247 @@
+.ONESHELL:
+.DEFAULT_GOAL     := help
+
+# Project configuration
+PROJECT_NAME            ?= $(shell grep '^name = ' pyproject.toml | awk -F'"' '{print $$2}')
+PACKAGE_NAME            ?= $(subst -,_,$(PROJECT_NAME))
+REGISTRY                ?= docker.io/deltafi
+BASE_IMAGE              ?= docker.io/deltafi/python:3.13.9-2
+DELTAFI_PYTHON_SRC      ?= "$(PWD)/../deltafi/deltafi-python/src/"
+DOCKER_PLATFORMS        ?= linux/amd64,linux/arm64
+PACKAGE_DIR             ?= $(PWD)/src/$(PACKAGE_NAME)
+PLUGIN_SCRIPT            = $(PACKAGE_DIR)/plugin.py
+VENV                     = .venv
+
+# Build mode configuration
+ifeq ($(BUILD_MODE),)
+  ifneq ($(wildcard ~/.deltafi/config.yaml),)
+    ifeq ("$(shell grep deploymentMode ~/.deltafi/config.yaml | sed 's/deploymentMode: //' | xargs echo | tr '[:lower:]' '[:upper:]')", "COREDEVELOPMENT")
+      BUILD_MODE = custom
+    endif
+    BUILD_MODE ?= dev
+  endif
+  BUILD_MODE ?= release
+endif
+
+# Version extraction functions
+define get_version
+$(shell uv version --short 2>/dev/null || grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+endef
+
+define get_dev_version
+$(shell (uv version --bump dev --dry-run 2>/dev/null || uv version --bump patch --bump dev --dry-run 2>/dev/null) | head -1 | sed 's/.* //' | sed 's/\.dev.*/.dev$(TIMESTAMP)/' || \
+  grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/' | awk -F. '{print $$1"."$$2"."($$3+1)".dev$(TIMESTAMP)"}')
+endef
+
+# Version variables
+TIMESTAMP               := $(shell date "+%Y%m%d%H%M%S")
+VERSION                 := $(call get_version)
+DEV_VERSION_TAG         := $(call get_dev_version)
+
+# UV mode detection
+UV_MODE                 ?= $(if $(shell uv version --short 2>/dev/null),native,container)
+
+# Consolidated image naming
+PLUGIN_IMAGE = $(REGISTRY)/$(PROJECT_NAME):$(if $(filter release,$(BUILD_MODE)),$(VERSION),$(if $(filter custom,$(BUILD_MODE)),custom,latest))
+
+DOCKER_EXTRA_FLAGS :=
+
+.PHONY: uv-check
+uv-check: ## Check if uv is installed, prompt to install if not
+	@if ! command -v uv >/dev/null 2>&1; then \
+		echo "uv is not installed."; \
+		echo ""; \
+		echo "uv is required for this project. Would you like to install it now?"; \
+		echo "1) Install via curl (official installer)"; \
+		echo "2) Install via homebrew (macOS)"; \
+		echo "3) Install via pip"; \
+		echo "4) Skip installation (you can install manually later)"; \
+		echo ""; \
+		read -p "Please choose an option (1-4): " choice; \
+		case $$choice in \
+			1) \
+				echo "Installing uv via official installer..."; \
+				curl -LsSf https://astral.sh/uv/install.sh | sh; \
+				echo "Please restart your shell or run 'source ~/.cargo/env' to use uv"; \
+				;; \
+			2) \
+				echo "Installing uv via homebrew..."; \
+				brew install uv; \
+				echo "uv installed successfully!"; \
+				;; \
+			3) \
+				echo "Installing uv via pip..."; \
+				pip3 install uv || pip install uv; \
+				echo "uv installed successfully!"; \
+				;; \
+			4) \
+				echo "Skipping uv installation. Please install uv manually:"; \
+				echo "  pip install uv"; \
+				echo "  or visit: https://docs.astral.sh/uv/getting-started/installation/"; \
+				exit 1; \
+				;; \
+			*) \
+				echo "Invalid option. Please run 'make uv-check' again."; \
+				exit 1; \
+				;; \
+		esac; \
+	else \
+		echo "uv is already installed: $$(uv --version)"; \
+	fi
+
+.PHONY: help
+help: info ## Show this help message
+	@echo
+	@echo "Available targets:"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Build modes: dev, custom, release (default: $(BUILD_MODE))"
+	@echo "Use BUILD_MODE=<mode> to override the build mode"
+	@echo
+	@echo "'custom' build mode will use a local version of the deltafi action kit from the deltafi repository that is adjacent to this plugin repository."
+	@echo
+	@echo "The makefile will detect if the DeltaFi deployment mode is 'coreDevelopment' and automatically switch from 'dev' to 'custom' build mode."
+	@echo
+	@echo "Quick examples:"
+	@echo "  make test"
+	@echo "  make install"
+	@echo "  make coordinates"
+	@echo "  make manifest"
+	@echo "  make run"
+
+$(VENV): uv-check pyproject.toml
+	@echo
+	@echo Creating local virtual environment
+	@echo
+	@uv python install
+	@uv venv --system-site-packages --allow-existing
+	@uv sync -q
+
+.PHONY: run
+run: uv-check info run-$(BUILD_MODE) ## Run the plugin
+
+.PHONY: run-dev
+run-dev: uv-check $(VENV) ## Run the plugin against released action-kit
+	@uv run --frozen $(PLUGIN_SCRIPT)
+
+.PHONY: run-custom
+run-custom: $(VENV) ## Run the plugin against local developmental action-kit
+	@uv add --editable $(DELTAFI_PYTHON_SRC)
+	@uv run --frozen $(PLUGIN_SCRIPT)
+
+.PHONY: test
+test: info test-$(BUILD_MODE) ## Run unit tests for current BUILD_MODE
+
+test-native: uv-check $(VENV)
+	@uv python install
+	@uv sync --extra testing -q
+	@uv run --frozen pytest . --junitxml build/test-result.xml
+
+test-container:
+	@docker build -t $(PLUGIN_IMAGE)-test . \
+		--build-context deltafi_src=$(DELTAFI_PYTHON_SRC) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--target test \
+		-q
+	@docker run --rm -v $(DELTAFI_PYTHON_SRC):/core -v $(PWD)/src:/data/src -v $(PWD)/pyproject.toml:/data/pyproject.toml $(PLUGIN_IMAGE)-test
+
+.PHONY: test-release
+test-release: test-$(UV_MODE) ## Run tests using released action kit
+
+.PHONY: test-dev
+test-dev: test-$(UV_MODE) ## Run tests using released action kit
+
+.PHONY: test-custom
+test-custom: ## Run tests against local action kit
+	@docker build -t $(PLUGIN_IMAGE)-test . \
+		--build-context deltafi_src=$(DELTAFI_PYTHON_SRC) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--target custom-action-kit-test \
+		-q
+	docker run --rm -v $(DELTAFI_PYTHON_SRC):/core -v $(PWD)/src:/data/src -v $(PWD)/pyproject.toml:/data/pyproject.toml $(PLUGIN_IMAGE)-test
+
+.PHONY: coordinates
+coordinates: DOCKER_EXTRA_FLAGS = -q
+coordinates: docker ## Show plugin coordinates
+	@echo
+	@docker run --rm $(PLUGIN_IMAGE) uv run -q --frozen --offline $(PLUGIN_SCRIPT) coordinates
+
+.PHONY: manifest
+manifest: DOCKER_EXTRA_FLAGS = -q
+manifest: docker ## Show plugin manifest
+	@echo
+	@docker run --rm $(PLUGIN_IMAGE) uv run -q --frozen --offline $(PLUGIN_SCRIPT) manifest
+
+.PHONY: publish
+publish: BUILD_MODE=release
+publish: ## Publish multi-platform release container to docker hub
+	@docker buildx build --push --sbom=true --platform $(DOCKER_PLATFORMS) -t $(PLUGIN_IMAGE) . \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--target release
+
+.PHONY: docker-release
+docker-release: ## Build release Docker image
+	@docker build -t $(PLUGIN_IMAGE) . \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--target release \
+		$(DOCKER_EXTRA_FLAGS)
+
+.PHONY: install-release
+install-release: docker-release ## Build and install release plugin
+	@echo "         Installing plugin"
+	@deltafi plugin install $(PLUGIN_IMAGE)
+
+.PHONY: docker-dev
+docker-dev: ## Build development Docker image
+	@docker build -t $(PLUGIN_IMAGE) . \
+		--target released-action-kit \
+		--build-arg VERSION=$(DEV_VERSION_TAG) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		$(DOCKER_EXTRA_FLAGS)
+
+.PHONY: install-dev
+install-dev: docker-dev ## Build and install development plugin
+	@echo "         Installing plugin"
+	@deltafi plugin install $(PLUGIN_IMAGE)
+
+.PHONY: action-kit
+action-kit: ## Build the custom Python action kit
+	@echo Building DeltaFi Python action kit
+	@cd $(DELTAFI_PYTHON_SRC)/.. && ../gradlew clean build
+
+.PHONY: docker-custom
+docker-custom: ## Build custom development Docker image
+	@[[ -d $(DELTAFI_PYTHON_SRC)/dist ]] || echo "Action kit does not exist.  Make sure core repo is cloned and built at $(DELTAFI_PYTHON_SRC).\nRun 'make action-kit' to build the local action kit"
+	@docker build -t $(PLUGIN_IMAGE) . \
+		--build-context deltafi_src=$(DELTAFI_PYTHON_SRC) \
+		--target custom-action-kit \
+		--build-arg VERSION=$(DEV_VERSION_TAG) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		$(DOCKER_EXTRA_FLAGS)
+
+.PHONY: install-custom
+install-custom: docker-custom ## Build and install custom development plugin
+	@echo "         Installing plugin"
+	@deltafi plugin install $(PLUGIN_IMAGE)
+
+clean: ## Clean build artifacts and virtual environment
+	@find . -name __pycache__ | xargs rm -rf
+	@find . -name .pytest_cache | xargs rm -rf
+	@rm -rf $(VENV) build dist uv.lock
+
+info: ## Show build information
+	@echo "Build Mode:     $(BUILD_MODE)"
+ifeq ($(BUILD_MODE),release)
+	@echo "Plugin version: $(VERSION)"
+else
+	@echo "Plugin version: $(DEV_VERSION_TAG)"
+endif
+	@echo "Plugin image:   $(PLUGIN_IMAGE)"
+
+.PHONY: docker
+docker: info docker-$(BUILD_MODE) ## Build Docker image for current build mode
+
+.PHONY: install
+install: info install-$(BUILD_MODE) ## Build and install plugin into DeltaFi for the current build mode
+

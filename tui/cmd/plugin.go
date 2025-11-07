@@ -46,7 +46,9 @@ Examples:
   deltafi plugin list                                    # List plugins
   deltafi plugin install my-plugin:latest               # Install plugin
   deltafi plugin describe my-plugin                     # Show details
-  deltafi plugin generate --zip my-new-plugin.zip       # Generate template`,
+  deltafi plugin generate java                          # Generate Java plugin
+  deltafi plugin generate python my-plugin              # Generate Python plugin
+  deltafi plugin generate python action my-plugin my-action  # Generate action`,
 	GroupID:      "flow",
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {

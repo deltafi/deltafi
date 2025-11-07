@@ -1,1 +1,1 @@
-../deltafi-docs/public/docs/operating/TUI.md
+../deltafi-docs/docs/operating/TUI.md

@@ -1,0 +1,28 @@
+{
+  "name": "{{.PluginName}}-{{.ActionFileName}}",
+  "type": "TRANSFORM",
+  "description": "{{.PluginName}} {{.ClassName}} transform",
+  "subscribe": [
+    {
+      "topic": "{{.PluginName}}-data"
+    }
+  ],
+  "transformActions": [
+    {
+      "name": "{{.ClassName}}",
+      "type": "{{.GroupID}}.{{.ClassName}}"
+    }
+  ],
+  "publish": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {
+      "defaultBehavior": "ERROR"
+    },
+    "rules": [
+      {
+        "topic": "{{.PluginName}}-egress"
+      }
+    ]
+  }
+}
+

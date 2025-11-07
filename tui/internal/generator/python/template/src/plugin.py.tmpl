@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+#
+#    DeltaFi - Data transformation and enrichment platform
+#
+#    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+import sys
+from importlib import metadata
+
+from deltafi.plugin import Plugin, PluginCoordinates
+
+ACTION_THREAD_CONFIG = {
+}
+
+
+def get_coords():
+    plugin_metadata = metadata.metadata("{{.PluginName}}")
+    plugin_name = plugin_metadata["Name"]
+    return PluginCoordinates("{{.GroupID}}", plugin_name, plugin_metadata["Version"])
+
+
+def gen_manifest():
+    return build_plugin().registration_json()
+
+
+def build_plugin():
+    plugin_metadata = metadata.metadata("{{.PluginName}}")
+    plugin_coordinates = get_coords()
+    return Plugin(plugin_metadata["Summary"],
+                  plugin_name=plugin_coordinates.artifact_id,
+                  plugin_coordinates=plugin_coordinates,
+                  action_package="actions",
+                  thread_config=ACTION_THREAD_CONFIG)
+
+
+def run_plugin():
+    build_plugin().run()
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if args:
+        if "coordinates" in args:
+            coords = get_coords();
+            print(f"{coords.group_id}:{coords.artifact_id}:{coords.version}")
+        elif "manifest" in args:
+            print(f"{gen_manifest()}")
+    else:
+        run_plugin()
+

@@ -1,0 +1,58 @@
+#
+#    DeltaFi - Data transformation and enrichment platform
+#
+#    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+
+from deltafi.action import TransformAction
+from deltafi.domain import Context
+from deltafi.input import TransformInput
+from deltafi.result import TransformResult
+from pydantic import BaseModel
+
+
+class {{.ClassName}}Parameters(BaseModel):
+    pass
+
+
+class {{.ClassName}}(TransformAction):
+    def __init__(self):
+        super().__init__('TODO: Add action description')
+
+    def param_class(self):
+        return {{.ClassName}}Parameters
+
+    def transform(self, context: Context, params: {{.ClassName}}Parameters, transform_input: TransformInput):
+        context.logger.info("TODO: Implement action logic")
+
+        # Pass through content unchanged
+        transform_result = TransformResult(context)
+        for content in transform_input.content:
+            # Save the content to pass it through
+            transform_result.save_string_content(
+                content.load_str(),
+                content.name,
+                content.media_type,
+                content.tags if hasattr(content, 'tags') else None
+            )
+
+        # Add todo annotation
+        transform_result.annotate("todo", "todo")
+
+        # Add metadata
+        transform_result.add_metadata("{{.ActionName}}", "todo")
+
+        return transform_result
+

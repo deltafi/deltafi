@@ -1,0 +1,112 @@
+# {{.PluginName}}
+
+{{.Description}}
+
+## Overview
+
+This is a Python plugin for the DeltaFi platform.
+
+## Prerequisites
+
+- Python 3.13+ (optional for containerized uv targets)
+- Docker
+- Make
+- UV package manager (installed automatically if not present, optional for some targets)
+- DeltaFi cluster environment (for testing)
+
+## Quick Start
+
+```bash
+# Show available commands and current build mode
+make help
+
+# Run unit tests in dev mode (No python or UV required)
+make test-dev
+
+# Set up DeltaFi cluster
+deltafi config --plugin-development
+
+# Build and install the plugin
+make install
+```
+
+## Makefile targets
+
+The following general makefile targets are available:
+
+```bash
+make info        # Show build information
+make help        # Details on all build targets
+make run         # Run the local code as a non-containerized (i.e. bare metal) plugin without building a container.  Requires a DeltaFi running in `PluginDevelopment` mode.
+make coordinates # Print out the local code plugin name as it will be registered when running
+make manifest    # Print out the registration manifest that will be used to register the plugin with DeltaFi
+make publish     # Build and publish a multi-architecture docker container (always release mode)
+make action-kit  # Build the core DeltaFi action kit if there is a core working copy available.  Can be used to prime custom build mode.
+```
+
+The following makefile targets can be used, and will operate corresponding to the current Build Mode.  Build Modes are specified below.
+
+```bash
+make test    # Run unit tests
+make docker  # Build a local copy of the docker image
+make install # Install the built docker image into a running DeltaFi
+```
+
+## Build Modes
+
+The makefile supports three build modes with automatic detection:
+
+### 1. Development Mode (Default)
+Uses the latest development version of the DeltaFi Python Action Kit.
+
+Development mode is the default mode if you have a DeltaFi installed locally and the system is not in `CoreDevelopment` mode.
+
+The `pyproject.toml` specifies the version of the DeltaFi Python Action Kit to use.  The plugin version will automatically be incremented to the next patch release version with a dev designator correlating to the timestamp of the makefile invocation.
+
+```bash
+# Default mode - no configuration needed
+make test
+make install
+
+# Build Docker image
+make docker
+
+# Show build information
+make info
+```
+
+### 2. Release Mode
+Uses the stable release version of the DeltaFi Python Action Kit.  This is the default mode if no DeltaFi is installed.
+
+The `pyproject.toml` specifies the version of the DeltaFi Python Action Kit to use.  The plugin version will be the version specified by `pyproject.toml` as well
+
+```bash
+# Set release mode
+export BUILD_MODE=release
+
+# Build and test
+make test
+make install
+```
+
+### 3. Custom Mode (Core Development)
+Uses a local version of the DeltaFi Python Action Kit for core development. Automatically detected when DeltaFi deployment mode is 'coreDevelopment'.
+
+The `pyproject.toml` specifies the version of the DeltaFi Python Action Kit to use.  The plugin version will automatically be incremented to the next patch release version with a dev designator correlating to the timestamp of the makefile invocation.
+
+```bash
+# Set custom mode (auto-detected if core development)
+export BUILD_MODE=custom
+
+# Build local action kit first
+make action-kit
+
+# Build and test with local action kit
+make test
+make install
+```
+
+## License
+
+This project is licensed under the terms specified in the LICENSE file.
+

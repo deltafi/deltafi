@@ -1,0 +1,15 @@
+{
+  "name": "{{.PluginName}}-{{.ActionFileName}}-data-sink",
+  "type": "DATA_SINK",
+  "description": "{{.PluginName}} {{.ClassName}} egress",
+  "subscribe": [
+    {
+      "topic": "{{.PluginName}}-egress"
+    }
+  ],
+  "egressAction": {
+    "name": "{{.ClassName}}",
+    "type": "{{.GroupID}}.{{.ClassName}}"
+  }
+}
+

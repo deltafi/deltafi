@@ -1,0 +1,22 @@
+plugins {
+    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'org.deltafi.plugin-convention' version "${deltafiVersion}"
+    id 'org.deltafi.test-summary' version "1.0"
+}
+
+group '{{.GroupID}}'
+
+ext.pluginDescription = '{{.Description}}'
+
+dependencies {
+}
+
+license {
+    header(rootProject.file('HEADER'))
+    excludes(["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12", "**/*.yaml", "**/*.tar",
+              "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar", "**/*.txt", "**/*.xml", "**/*.html", "**/*.json",
+              "**/test/resources/**", "**/node_modules/**"])
+    strictCheck true
+    mapping('java', 'SLASHSTAR_STYLE')
+}
+

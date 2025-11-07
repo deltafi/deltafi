@@ -748,10 +748,141 @@ Manage plugins in DeltaFi.
   ```bash
   deltafi plugin describe <pluginName> [--verbose|-v] [--action|-a <actionName>]
   ```
-- `generate`: Generate a new plugin
+- `generate`: Generate a new plugin project
   ```bash
-  deltafi plugin generate [--zip|-z <filename>]
+  deltafi plugin generate [--java | --python] <plugin-name> [flags]
+  deltafi plugin generate action <plugin-name> <action-name> [flags]
   ```
+  
+  **Plugin Generation:**
+  
+  - Generate a new plugin project or update an existing one
+    ```bash
+    deltafi plugin generate [--java | --python] <plugin-name> [--namespace|-n <namespace>] [--interactive|-i] [--force|-f] [--dry-run|-d]
+    ```
+    - `--java`: Generate a Java plugin (required, mutually exclusive with --python)
+    - `--python`: Generate a Python plugin (required, mutually exclusive with --java)
+    - `plugin-name`: Name of the plugin to generate or update (required)
+    - `--namespace, -n`: Plugin namespace (default: org.deltafi.&lt;plugin-name&gt;, only used when generating new plugin)
+    - `--interactive, -i`: Interactive mode - prompt for each file with diff view (update only)
+    - `--force, -f`: Force overwrite all files without prompting (update only)
+    - `--dry-run, -d`: Show what would be updated without making changes (update only)
+    
+    **Java Plugin Behavior:**
+    - If the plugin directory does not exist: Generates a complete Java plugin project skeleton
+    - If the plugin directory already exists: Updates the plugin with the latest templates
+    
+    **When generating a new Java plugin**, creates:
+    - Project structure following Java/Gradle best practices
+    - `build.gradle` configuration with DeltaFi plugin conventions
+    - `settings.gradle` with repository configuration
+    - `gradle.properties` with DeltaFi SDK version
+    - Gradle wrapper files (`gradlew`, `gradlew.bat`, `gradle-wrapper.properties`)
+    - Dockerfile for containerization (via plugin convention)
+    - README.md with project documentation
+    - Main Spring Boot application class
+    - Empty actions and test directories
+    - Flows directory with `data-source.json` and `variables.json`
+    
+    **When generating a new Python plugin**, creates:
+    - Project structure following Python best practices
+    - `pyproject.toml` configuration with DeltaFi SDK dependency
+    - Dockerfile for containerization
+    - Makefile with common development tasks
+    - README.md with project documentation
+    - Plugin registration file
+    - Empty actions and test directories
+    - Flows directory with `data-source.json` and `variables.yaml`
+    
+    **When updating an existing plugin**, updates files with the latest templates while preserving:
+    - Java: DeltaFi version in `gradle.properties`, additional dependencies in `build.gradle`
+    - Python: Project version in `pyproject.toml`, additional dependencies in `pyproject.toml`
+    - User modifications (with interactive merge prompts)
+    
+    **Update Modes:**
+    - **Default**: Shows summary of changes and asks for single confirmation
+    - **Interactive (`-i`)**: Shows side-by-side colorized diff for each file and prompts (y/n/d/a/q):
+      - `y`: Accept changes
+      - `n`: Skip file
+      - `d`: Show diff (side-by-side colorized)
+      - `a`: Accept all remaining files
+      - `q`: Quit without applying changes
+    - **Force (`-f`)**: Overwrites all files without prompting
+    - **Dry Run (`-d`)**: Shows what would be updated without making changes
+    
+    **Examples:**
+    ```bash
+    # Generate a new Java plugin with default namespace
+    deltafi plugin generate --java my-plugin
+    
+    # Generate a Java plugin with custom namespace
+    deltafi plugin generate --java my-plugin --namespace com.example.myplugin
+    
+    # Generate a new Python plugin
+    deltafi plugin generate --python my-plugin
+    
+    # Update an existing plugin (directory already exists)
+    deltafi plugin generate --java my-plugin
+    
+    # Preview what would be updated
+    deltafi plugin generate --java my-plugin --dry-run
+    
+    # Update with interactive merge prompts
+    deltafi plugin generate --python my-plugin --interactive
+    
+    # Force update all files
+    deltafi plugin generate --java my-plugin --force
+    ```
+  
+  **Action Generation:**
+  
+  - `action &lt;plugin-name&gt; &lt;action-name&gt;`: Generate a new action in an existing plugin
+    ```bash
+    deltafi plugin generate action <plugin-name> <action-name> [--type|-t <type>]
+    ```
+    - `plugin-name`: Name of the existing plugin (required)
+    - `action-name`: Name of the action to generate (required)
+    - `--type, -t`: Type of action to generate (default: TransformAction)
+    
+    **Language Auto-Detection:**
+    - Language is automatically detected based on the plugin directory:
+      - `build.gradle` file → Java plugin
+      - `pyproject.toml` file → Python plugin
+    
+    **Supported Action Types (Java):**
+    - `TransformAction` (default)
+    - `EgressAction`
+    - `TimedIngressAction`
+    - `JoiningTransformAction`
+    - `TransformManyAction`
+    
+    **Supported Action Types (Python):**
+    - `TransformAction` (default)
+    - `EgressAction`
+    - `IngressAction`
+    - `TimedIngressAction`
+    - `JoiningTransformAction`
+    - `TransformManyAction`
+    - `TransformExecAction`
+    
+    **Generates:**
+    - Java: Action implementation file in `src/main/java/org/deltafi/&lt;package&gt;/actions/`, test file in `src/test/java/org/deltafi/&lt;package&gt;/actions/`, flow JSON file in `src/main/resources/flows/`
+    - Python: Action implementation file in `src/&lt;package&gt;/actions/`, test file in `src/&lt;package&gt;/test/`
+    - Initial action with content passthrough behavior, TODO annotations, and logging
+    
+    **Examples:**
+    ```bash
+    # Generate a TransformAction (default) - language auto-detected
+    deltafi plugin generate action my-plugin my-transform
+    
+    # Generate an EgressAction
+    deltafi plugin generate action my-plugin my-egress --type EgressAction
+    
+    # Generate action with PascalCase name
+    # Java: Creates SuperDuperAction.java with class SuperDuperAction
+    # Python: Creates super_duper_action.py with class SuperDuperAction
+    deltafi plugin generate action my-plugin SuperDuper
+    ```
 
 #### `graph`
 Display a graph of data flow paths.

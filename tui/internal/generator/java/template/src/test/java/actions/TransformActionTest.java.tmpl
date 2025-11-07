@@ -1,0 +1,56 @@
+/*
+ *    DeltaFi - Data transformation and enrichment platform
+ *
+ *    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package {{.GroupID}}.actions;
+
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.TransformResultAssert;
+import org.deltafi.test.content.DeltaFiTestRunner;
+import org.junit.jupiter.api.Test;
+
+import javax.ws.rs.core.MediaType;
+import java.util.List;
+import java.util.UUID;
+
+class {{.TestClassName}} {
+    private final {{.ClassName}} action = new {{.ClassName}}();
+    private final DeltaFiTestRunner deltaFiTestRunner = DeltaFiTestRunner.setup();
+
+    @Test
+    void testTransform() {
+        TransformResultAssert.assertThat(runTest("1efdd3c6-0c7b-11ef-a7c1-ff66faa1c348", "data"))
+                .hasContentCount(1)
+                .addedMetadata("{{.ActionName}}", "todo")
+                .addedAnnotation("todo", "todo");
+    }
+
+    private TransformResultType runTest(String did, String data) {
+        return action.transform(
+                ActionContext.builder()
+                        .did(UUID.fromString(did))
+                        .contentStorageService(deltaFiTestRunner.actionContext().getContentStorageService())
+                        .build(),
+                new ActionParameters(),
+                TransformInput.builder()
+                        .content(List.of(deltaFiTestRunner.saveContent(data).getFirst()))
+                        .build());
+    }
+}
+

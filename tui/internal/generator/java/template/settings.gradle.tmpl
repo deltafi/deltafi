@@ -1,0 +1,37 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        maven {
+            url deltafiPublicMavenRepo
+            name "GitLab"
+            credentials(HttpHeaderCredentials) {
+                name = gitLabTokenType
+                value = gitLabToken
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            url deltafiPublicMavenRepo
+            name "GitLab"
+            credentials(HttpHeaderCredentials) {
+                name = gitLabTokenType
+                value = gitLabToken
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}
+

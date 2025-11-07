@@ -1,0 +1,74 @@
+ARG BASE_IMAGE=fixme
+FROM ${BASE_IMAGE} AS dependencies
+
+USER deltafi
+WORKDIR /data
+
+ENTRYPOINT [ "uv", "run", "--frozen", "--offline", "src/{{.PackageName}}/plugin.py" ]
+
+COPY --chown=deltafi:deltafi pyproject.toml README.md /data
+RUN uv venv && uv sync --no-install-project && uv cache dir
+
+# -------------------------------------------------------------------
+FROM dependencies AS custom-action-kit
+
+COPY --chown=deltafi:deltafi --from=deltafi_src / /core
+COPY --chown=deltafi:deltafi . /data
+RUN uv add --editable /core
+
+RUN uv sync
+
+ARG VERSION=0.0.0
+RUN uv version $VERSION && uv tree && \
+    uv run --frozen --offline src/{{.PackageName}}/plugin.py coordinates && \
+    chmod -R a+rwX /data
+
+# -------------------------------------------------------------------
+FROM dependencies AS custom-action-kit-test
+
+COPY --chown=deltafi:deltafi . /data
+COPY --chown=deltafi:deltafi --from=deltafi_src / /core
+RUN uv add --editable /core
+
+RUN uv sync --extra testing --no-install-project
+
+ENTRYPOINT [ "uv", "run", "--frozen", "pytest", "." ]
+
+# -------------------------------------------------------------------
+FROM dependencies AS test
+
+COPY --chown=deltafi:deltafi . /data
+RUN uv sync --extra testing
+ENTRYPOINT [ "uv", "run", "--frozen", "pytest", "." ]
+
+# -------------------------------------------------------------------
+FROM dependencies AS released-action-kit
+COPY --chown=deltafi:deltafi . /data
+
+RUN uv sync
+
+ARG VERSION=0.0.0
+RUN uv version $VERSION && uv tree && \
+    uv run --frozen --offline src/{{.PackageName}}/plugin.py coordinates && \
+    chmod -R a+rwX /data
+
+# -------------------------------------------------------------------
+ARG BASE_IMAGE=fixme
+FROM ${BASE_IMAGE} AS release
+
+USER deltafi
+WORKDIR /data
+ENV UV_CACHE_DIR=/data/.cache
+ARG UV_CACHE_DIR=/data/.cache
+
+ENTRYPOINT [ "uv", "run", "--frozen", "--offline", "src/{{.PackageName}}/plugin.py" ]
+
+COPY --chown=deltafi:deltafi . /data
+
+ARG DELTAFI_PYPI_INDEX=https://pypi.org/simple/
+RUN export UV_CACHE_DIR=$UV_CACHE_DIR && ls -la /data && uv venv && uv sync && \
+    ([[ -x /data/extra.sh ]] && DELTAFI_PYPI_INDEX=$DELTAFI_PYPI_INDEX /data/extra.sh || echo) && \
+    uv tree && \
+    uv run src/{{.PackageName}}/plugin.py coordinates && \
+    chmod -R a+rwX /data
+
