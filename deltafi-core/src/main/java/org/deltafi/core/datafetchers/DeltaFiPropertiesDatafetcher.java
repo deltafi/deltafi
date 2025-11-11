@@ -44,8 +44,8 @@ public class DeltaFiPropertiesDatafetcher {
 
     @DgsQuery
     @NeedsPermission.SystemPropertiesRead
-    public List<PropertySet> getPropertySets() {
-        return deltaFiPropertiesService.getPopulatedProperties();
+    public List<PropertySet> getPropertySets(@InputArgument Boolean splitByGroup) {
+        return deltaFiPropertiesService.getPopulatedProperties(splitByGroup);
     }
 
 

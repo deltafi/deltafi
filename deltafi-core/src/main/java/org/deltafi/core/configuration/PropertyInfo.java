@@ -29,6 +29,7 @@ import java.lang.annotation.Target;
 public @interface PropertyInfo {
     String NULL = "NULL";
     String description();
+    PropertyGroup group();
     String defaultValue() default NULL;
     boolean refreshable() default true;
     VariableDataType dataType() default VariableDataType.STRING;

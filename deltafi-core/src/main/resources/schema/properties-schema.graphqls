@@ -148,7 +148,7 @@ input DeltaFiPropertiesInput {
 }
 
 extend type Query {
-    getPropertySets: [PropertySet]!
+    getPropertySets(splitByGroup: Boolean): [PropertySet]!
     getDeltaFiProperties: DeltaFiProperties!
 }
 

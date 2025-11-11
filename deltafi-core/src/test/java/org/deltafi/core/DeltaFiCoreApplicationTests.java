@@ -42,6 +42,7 @@ import org.deltafi.common.types.integration.*;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.AuthProperties;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.PropertyGroup;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
 import org.deltafi.core.datafetchers.*;
@@ -2006,9 +2007,15 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testGetPropertySets() {
-		List<PropertySet> propertySets = PropertiesDatafetcherTestHelper.getPropertySets(dgsQueryExecutor);
+		List<PropertySet> propertySets = PropertiesDatafetcherTestHelper.getPropertySets(dgsQueryExecutor, null);
 		assertThat(propertySets).hasSize(1);
-	}
+
+        propertySets = PropertiesDatafetcherTestHelper.getPropertySets(dgsQueryExecutor, false);
+        assertThat(propertySets).hasSize(1);
+
+        propertySets = PropertiesDatafetcherTestHelper.getPropertySets(dgsQueryExecutor, true);
+        assertThat(propertySets).hasSize(PropertyGroup.values().length);
+    }
 
 	@Test
 	void testGetDeltaFiProperties() {
@@ -4589,24 +4596,31 @@ class DeltaFiCoreApplicationTests {
 				DIDS.get(11), "f4", DeltaFileStage.COMPLETE, now, now));
 	}
 
+    void updateProperties(boolean splitByGroup) {
+        deltaFiPropertiesService.upsertProperties();
+        // verify nothing is set for systemName to start
+        deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME));
+        checkSystemNameProp("DeltaFi", false, splitByGroup);
+
+        deltaFiPropertiesService.updateProperties(List.of(new KeyValue(SYSTEM_NAME, "newName")));
+        deltaFiPropertiesService.refreshProperties();
+
+        // verify the property is updated
+        checkSystemNameProp("newName", true, splitByGroup);
+
+        // already newName no changes made, return false
+        assertThat(deltaFiPropertiesRepo.updateProperty(SYSTEM_NAME, "newName")).isEqualTo(0);
+    }
 	@Test
 	void updateProperties() {
-		deltaFiPropertiesService.upsertProperties();
-		// verify nothing is set for systemName to start
-		deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME));
-		checkSystemNameProp("DeltaFi", false);
+        updateProperties(false);	}
 
-		deltaFiPropertiesService.updateProperties(List.of(new KeyValue(SYSTEM_NAME, "newName")));
-		deltaFiPropertiesService.refreshProperties();
+    @Test
+    void updatePropertiesWhenSplitByGroup() {
+        updateProperties(true);
+    }
 
-		// verify the property is updated
-		checkSystemNameProp("newName", true);
-
-		// already newName no changes made, return false
-		assertThat(deltaFiPropertiesRepo.updateProperty(SYSTEM_NAME, "newName")).isEqualTo(0);
-	}
-
-	@Test
+    @Test
 	void unsetProperties() {
 		deltaFiPropertiesService.upsertProperties();
 		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isEqualTo(0); // nothing to unset
@@ -4614,23 +4628,24 @@ class DeltaFiCoreApplicationTests {
 		// set a custom value that will be unset
 		deltaFiPropertiesRepo.updateProperty(SYSTEM_NAME, "newName");
 		deltaFiPropertiesService.refreshProperties();
-		checkSystemNameProp("newName", true);
+		checkSystemNameProp("newName", true, false);
 
 		// unset the custom value
 		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isGreaterThan(0);
 		deltaFiPropertiesService.refreshProperties();
 
-		checkSystemNameProp("DeltaFi", false);
+		checkSystemNameProp("DeltaFi", false, false);
 
 		// second time no change is needed so it returns false
 		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isEqualTo(0);
 	}
 
-	private void checkSystemNameProp(String expected, boolean hasValueSet) {
+	private void checkSystemNameProp(String expected, boolean hasValueSet, boolean splitByGroup) {
 		DeltaFiProperties current = deltaFiPropertiesService.getDeltaFiProperties();
 		assertThat(current.getSystemName()).isEqualTo(expected);
 
-		Property systemNameProp = deltaFiPropertiesService.getPopulatedProperties().getFirst().getProperties().stream()
+		// UI_CONTROLS is last in enum PropertyGroup
+        Property systemNameProp = deltaFiPropertiesService.getPopulatedProperties(splitByGroup).getLast().getProperties().stream()
 				.filter(p -> p.getKey().equals(SYSTEM_NAME))
 				.findFirst().orElseThrow();
 

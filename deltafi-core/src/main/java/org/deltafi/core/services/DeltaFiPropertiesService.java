@@ -20,14 +20,15 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.core.types.Property;
-import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.PropertyGroup;
 import org.deltafi.core.configuration.PropertyInfo;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
-import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.Property;
+import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.stereotype.Service;
@@ -39,20 +40,20 @@ import java.util.*;
 @Service
 public class DeltaFiPropertiesService implements Snapshotter {
 
-    private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
-    private DeltaFiProperties cachedDeltaFiProperties;
-    private List<Property> properties;
     private static final Set<String> allowedProperties;
     private static final List<Property> defaultProperties;
+    private static final Map<String, PropertyGroup> propertyToGroup;
 
     static {
         allowedProperties = new HashSet<>();
         defaultProperties = new ArrayList<>();
+        propertyToGroup = new HashMap<>();
         for (Field field : DeltaFiProperties.class.getDeclaredFields()) {
             PropertyInfo propertyInfo = field.getAnnotation(PropertyInfo.class);
             if (propertyInfo != null) {
                 allowedProperties.add(field.getName());
                 String value = !PropertyInfo.NULL.equals(propertyInfo.defaultValue()) ? propertyInfo.defaultValue() : null;
+                propertyToGroup.put(field.getName(), propertyInfo.group());
 
                 defaultProperties.add(Property.builder().key(field.getName()).defaultValue(value)
                         .description(propertyInfo.description()).refreshable(propertyInfo.refreshable())
@@ -60,6 +61,10 @@ public class DeltaFiPropertiesService implements Snapshotter {
             }
         }
     }
+
+    private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
+    private DeltaFiProperties cachedDeltaFiProperties;
+    private List<Property> properties;
 
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
@@ -122,9 +127,21 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     /**
      * Get the properties and return them as a list of PropertySets
+     *
      * @return the list of PropertySets
      */
-    public List<PropertySet> getPopulatedProperties() {
+    public List<PropertySet> getPopulatedProperties(Boolean splitByGroup) {
+        if (splitByGroup != null && splitByGroup) {
+            List<PropertySet> result = new ArrayList<>();
+            for (PropertyGroup group : PropertyGroup.values()) {
+                PropertySet groupSet = groupPropertySet(group);
+                groupSet.setProperties(this.properties.stream()
+                        .filter(p -> propertyToGroup.get(p.getKey()).equals(group))
+                        .toList());
+                result.add(groupSet);
+            }
+            return result;
+        }
         PropertySet common = commonPropertySet();
         common.setProperties(this.properties);
         return List.of(common);
@@ -132,6 +149,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     /**
      * Update the DeltaFiProperties based on the list of updates
+     *
      * @param updates changes to make to the properties
      * @return true if the update was successful
      */
@@ -146,6 +164,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     /**
      * For each property id reset the value to the default value
+     *
      * @param propertyNames list of properties to reset
      * @return true if the update was successful
      */
@@ -199,6 +218,18 @@ public class DeltaFiPropertiesService implements Snapshotter {
         propertySet.setId("deltafi-common");
         propertySet.setDisplayName("Common Properties");
         propertySet.setDescription("Properties used across all parts of the system.");
+        return propertySet;
+    }
+
+    private PropertySet groupPropertySet(PropertyGroup group) {
+        PropertySet propertySet = new PropertySet();
+        propertySet.setId("deltafi-common-" + group.getName());
+        propertySet.setDisplayName("Core - " + group.getLabel());
+        if (group.getDescription().isEmpty()) {
+            propertySet.setDescription("Properties used for " + group.getName());
+        } else {
+            propertySet.setDescription(group.getDescription());
+        }
         return propertySet;
     }
 

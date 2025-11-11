@@ -34,144 +34,144 @@ import java.util.*;
 @SuppressWarnings("unused")
 public class DeltaFiProperties {
 
-    @PropertyInfo(description = "Name of the DeltaFi system", defaultValue = "DeltaFi")
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Name of the DeltaFi system", defaultValue = "DeltaFi")
     private String systemName = "DeltaFi";
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Time to wait for an action to finish processing a DeltaFile before requeuing the action", defaultValue = "PT5M")
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Time to wait for an action to finish processing a DeltaFile before requeuing the action", defaultValue = "PT5M")
     private Duration requeueDuration = Duration.ofMinutes(5);
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Frequency that the auto-resume check is triggered", defaultValue = "PT1M")
+    @PropertyInfo(group = PropertyGroup.ERROR_CONTROLS, description = "[Duration or ISO 8601] Frequency that the auto-resume check is triggered", defaultValue = "PT1M")
     private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "The number of threads used in core processing", defaultValue = "16", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "The number of threads used in core processing", defaultValue = "16", dataType = VariableDataType.NUMBER)
     private int coreServiceThreads = 16;
 
-    @PropertyInfo(description = "The number of incoming events for core to queue internally for processing", defaultValue = "64", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "The number of incoming events for core to queue internally for processing", defaultValue = "64", dataType = VariableDataType.NUMBER)
     private int coreInternalQueueSize = 64;
 
-    @PropertyInfo(description = "Maximum allowed number of threads", defaultValue = "8", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum allowed number of threads", defaultValue = "8", dataType = VariableDataType.NUMBER)
     private int scheduledServiceThreads = 8;
 
-    @PropertyInfo(description = "Enable reporting of metrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable reporting of metrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
     private boolean metricsEnabled = true;
 
-    @PropertyInfo(description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
     private String analyticsGroupName;
 
-    @PropertyInfo(description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.LIST)
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.LIST)
     private String allowedAnalyticsAnnotations;
 
-    @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
     private int ageOffDays = 13;
 
-    @PropertyInfo(description = "The max percentage of disk space to use. When the system exceeds this percentage, content will be removed to lower the disk space usage.", defaultValue = "80.0")
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "The max percentage of disk space to use. When the system exceeds this percentage, content will be removed to lower the disk space usage.", defaultValue = "80.0")
     private double diskSpacePercentThreshold = 80.0;
 
-    @PropertyInfo(description = "The max percentage of disk space to use for database metadata. When the metadata size exceeds this percentage, deltaFiles will be removed to lower the metadata disk space usage.", defaultValue = "40.0")
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "The max percentage of disk space to use for database metadata. When the metadata size exceeds this percentage, deltaFiles will be removed to lower the metadata disk space usage.", defaultValue = "40.0")
     private double metadataDiskSpacePercentThreshold = 40.0;
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Frequency that the delete action is triggered", defaultValue = "PT5M")
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "[Duration or ISO 8601] Frequency that the delete action is triggered", defaultValue = "PT5M")
     private Duration deleteFrequency = Duration.ofMinutes(5);
 
-    @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "1000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Maximum deletes per policy iteration loop", defaultValue = "1000", dataType = VariableDataType.NUMBER)
     private int deletePolicyBatchSize = 1000;
 
-    @PropertyInfo(description = "Maximum DeltaFiles to insert in a batch", defaultValue = "1000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.DATABASE_CONTROLS, description = "Maximum DeltaFiles to insert in a batch", defaultValue = "1000", dataType = VariableDataType.NUMBER)
     private int insertBatchSize = 1000;
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
     private Duration cacheSyncDuration = Duration.ofSeconds(30);
 
-    @PropertyInfo(description = "Enables or disables all ingress", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    @PropertyInfo(group = PropertyGroup.INGRESS_CONTROLS, description = "Enables or disables all ingress", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean ingressEnabled = true;
 
-    @PropertyInfo(description = "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", defaultValue = "1000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.INGRESS_CONTROLS, description = "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.", defaultValue = "1000", dataType = VariableDataType.NUMBER)
     private long ingressDiskSpaceRequirementInMb = 1000;
 
-    @PropertyInfo(description = "Default imagePullSecret used in plugin deployments")
+    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "Default imagePullSecret used in plugin deployments")
     private String pluginImagePullSecret;
 
-    @PropertyInfo(description = "Rollback failed plugin deployments", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "Rollback failed plugin deployments", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean pluginAutoRollback = false;
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
+    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
     private Duration pluginDeployTimeout = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the pod. Null (or 0) indicates disabled, which is the default. To enable, this value must be greater than 30 seconds and should be less than the requeueDuration. To disable this feature use 'Revert' (or set the value to 0)")
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the pod. Null (or 0) indicates disabled, which is the default. To enable, this value must be greater than 30 seconds and should be less than the requeueDuration. To disable this feature use 'Revert' (or set the value to 0)")
     private Duration actionExecutionTimeout;
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated . Null (or 0) indicates disabled, which is the default. To disable this feature use 'Revert' (or set the value to 0)")
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Minimum time to allow an action to remain running before a warning is generated . Null (or 0) indicates disabled, which is the default. To disable this feature use 'Revert' (or set the value to 0)")
     private Duration actionExecutionWarning;
 
-    @PropertyInfo(description = "Threshold for Action Queue size check", defaultValue = "10", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Threshold for Action Queue size check", defaultValue = "10", dataType = VariableDataType.NUMBER)
     private int checkActionQueueSizeThreshold = 10;
 
-    @PropertyInfo(description = "Minimum number for cold queue size before checking if growing", defaultValue = "10000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Minimum number for cold queue size before checking if growing", defaultValue = "10000", dataType = VariableDataType.NUMBER)
     private int checkColdQueueMinimumGrowing = 10000;
 
-    @PropertyInfo(description = "Threshold for cold queue size warning", defaultValue = "75000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Threshold for cold queue size warning", defaultValue = "75000", dataType = VariableDataType.NUMBER)
     private int checkColdQueueWarningThreshold = 75000;
 
-    @PropertyInfo(description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Threshold for content storage usage check", defaultValue = "90", dataType = VariableDataType.NUMBER)
     private int checkContentStoragePercentThreshold = 90;
 
-    @PropertyInfo(description = "Pending delete lag warning threshold. System status becomes degraded when any node has more pending deletes than the configured value.", defaultValue = "100000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Pending delete lag warning threshold. System status becomes degraded when any node has more pending deletes than the configured value.", defaultValue = "100000", dataType = VariableDataType.NUMBER)
     private int checkDeleteLagWarningThreshold = 100_000;
 
-    @PropertyInfo(description = "Pending delete lag error threshold. System status becomes unhealthy when any node has more pending deletes than the configured value.", defaultValue = "500000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Pending delete lag error threshold. System status becomes unhealthy when any node has more pending deletes than the configured value.", defaultValue = "500000", dataType = VariableDataType.NUMBER)
     private int checkDeleteLagErrorThreshold = 500_000;
 
-    @PropertyInfo(description = "Certificate expiration error threshold (days). System status becomes unhealthy when any certificate expires within this timeframe.", defaultValue = "4", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Certificate expiration error threshold (days). System status becomes unhealthy when any certificate expires within this timeframe.", defaultValue = "4", dataType = VariableDataType.NUMBER)
     private int checkSslExpirationErrorThreshold = 4;
 
-    @PropertyInfo(description = "Certificate expiration warning threshold (days). System status becomes degraded when any certificate expires within this timeframe.", defaultValue = "14", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Certificate expiration warning threshold (days). System status becomes degraded when any certificate expires within this timeframe.", defaultValue = "14", dataType = VariableDataType.NUMBER)
     private int checkSslExpirationWarningThreshold = 14;
 
-    @PropertyInfo(description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean uiUseUTC = true;
 
-    @PropertyInfo(description = "Maximum number of bytes the UI will retrieve from the backend when viewing content", defaultValue = "32768", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Maximum number of bytes the UI will retrieve from the backend when viewing content", defaultValue = "32768", dataType = VariableDataType.NUMBER)
     private long uiContentPreviewSize = 32768; // 32KB
 
-    @PropertyInfo(description = "Background color of the top bar")
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Background color of the top bar")
     private String topBarBackgroundColor;
 
-    @PropertyInfo(description = "Text color of the top bar")
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Text color of the top bar")
     private String topBarTextColor;
 
-    @PropertyInfo(description = "Text to display in the security banner")
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Text to display in the security banner")
     private String securityBannerText;
 
-    @PropertyInfo(description = "Background color of the security banner")
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Background color of the security banner")
     private String securityBannerBackgroundColor;
 
-    @PropertyInfo(description = "Color of the text in the security banner")
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Color of the text in the security banner")
     private String securityBannerTextColor;
 
-    @PropertyInfo(description = "Toggles the security banner display", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Toggles the security banner display", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean securityBannerEnabled = false;
 
-    @PropertyInfo(description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000", dataType = VariableDataType.NUMBER)
     private int inMemoryQueueSize = 5000;
 
-    @PropertyInfo(description = "The maximum number of flows a DeltaFile may traverse", defaultValue = "32", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "The maximum number of flows a DeltaFile may traverse", defaultValue = "32", dataType = VariableDataType.NUMBER)
     private int maxFlowDepth = 32;
 
-    @PropertyInfo(description = "The amount of time to wait before timing out while waiting to acquire the join lock", defaultValue = "30000", dataType = VariableDataType.NUMBER)
+    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "The amount of time to wait before timing out while waiting to acquire the join lock", defaultValue = "30000", dataType = VariableDataType.NUMBER)
     private long joinAcquireLockTimeoutMs = 30000;
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Maximum duration a database lock can be held on a " +
+    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "[Duration or ISO 8601] Maximum duration a database lock can be held on a " +
             "join entry before it is automatically unlocked", defaultValue = "PT1M")
     private Duration joinMaxLockDuration = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "[Duration or ISO 8601] Frequency that database locks on join entries are " +
+    @PropertyInfo(group = PropertyGroup.JOIN_CONTROLS, description = "[Duration or ISO 8601] Frequency that database locks on join entries are " +
             "checked against the join.maxLockDuration", defaultValue = "PT1M")
     private Duration joinLockCheckInterval = Duration.ofMinutes(1);
 
-    @PropertyInfo(description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    @PropertyInfo(group = PropertyGroup.DATABASE_CONTROLS, description = "Enable pg_squeeze extension. Postgres must be manually restarted if this is changed from true to false", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean autoCleanPostgres = false;
 
-    @PropertyInfo(description = "Minimum severity for action log messages. "
+    @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "Minimum severity for action log messages. "
             + "Choose: TRACE, INFO, WARNING, ERROR, or USER", defaultValue = "INFO")
     private LogSeverity minimumActionLogSeverity = LogSeverity.INFO;
 
@@ -292,7 +292,7 @@ public class DeltaFiProperties {
     }
 
     public void setMaxFlowDepth(int maxFlowDepth) {
-        minCheck(maxFlowDepth,  1,"maxFlowDepth");
+        minCheck(maxFlowDepth, 1, "maxFlowDepth");
         this.maxFlowDepth = maxFlowDepth;
     }
 

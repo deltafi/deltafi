@@ -40,8 +40,12 @@ public class PropertiesDatafetcherTestHelper {
     @Language("GraphQL")
     private static final String SAVE_LINK = "mutation($link: LinkInput!) { saveLink(link: $link) {id name url description linkType }}";
 
-    public static List<PropertySet> getPropertySets(DgsQueryExecutor dgsQueryExecutor) {
-        @Language("GraphQL") String query = "query {getPropertySets {id displayName description properties {key value refreshable}}}";
+    public static List<PropertySet> getPropertySets(DgsQueryExecutor dgsQueryExecutor, Boolean splitByGroup) {
+        String extra = "";
+        if (splitByGroup != null) {
+            extra = splitByGroup ? "(splitByGroup: true)" : "(splitByGroup: false)";
+        }
+        @Language("GraphQL") String query = "query {getPropertySets" + extra + " {id displayName description properties {key value refreshable}}}";
         return dgsQueryExecutor.executeAndExtractJsonPath(query, "data.getPropertySets");
     }
 

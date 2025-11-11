@@ -25,6 +25,9 @@ export default function usePropertySets() {
 
   const fetchQuery = {
     getPropertySets: {
+        __args: {
+          splitByGroup: true,
+        },
       id: true,
       displayName: true,
       description: true,
