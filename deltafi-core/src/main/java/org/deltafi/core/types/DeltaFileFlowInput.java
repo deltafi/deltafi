@@ -39,6 +39,7 @@ public class DeltaFileFlowInput {
     @Transient
     @JsonIgnore
     @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private DeltaFileFlow flow;
 
     @Transient

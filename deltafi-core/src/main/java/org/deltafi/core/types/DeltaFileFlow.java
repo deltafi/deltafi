@@ -99,6 +99,7 @@ public class DeltaFileFlow {
     @Transient
     @JsonIgnore
     @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private DeltaFile owner;
 
     public DeltaFileFlow(DeltaFileFlow other) {
