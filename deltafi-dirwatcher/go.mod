@@ -1,6 +1,6 @@
 module deltafi.org/deltafi-dirwatcher
 
-go 1.25.1
+go 1.25.4
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0

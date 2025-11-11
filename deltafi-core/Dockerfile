@@ -26,12 +26,12 @@ RUN yarn install --network-timeout 60000
 COPY graphiql .
 RUN yarn build
 
-FROM --platform=$BUILDPLATFORM alpine:3.21 AS aggregator
+FROM --platform=$BUILDPLATFORM alpine:3.22 AS aggregator
 COPY --from=deltafi-ui-build-stage /ui/dist /deltafi
 COPY --from=deltafi-docs-build-stage /docs/.vitepress/dist /deltafi/docs
 COPY --from=deltafi-graphiql-build-stage /graphiql/build /deltafi/graphiql
 
-FROM deltafi/deltafi-java-jre:21.0.8-alpine-1 AS final
+FROM deltafi/deltafi-java-jre:21.0.9-alpine-0 AS final
 VOLUME /tmp
 COPY probe.sh .
 COPY --from=aggregator /deltafi /deltafi

@@ -1,7 +1,8 @@
 
 variables:
-  PYTHON_BASE_IMAGE: deltafi/python:3.13.9-2
-  JAVA_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.8-python3.13.7-2
+  PYTHON_BASE_IMAGE: deltafi/python:3.13.9-3
+  JAVA_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.9-python3.13.9-0
+  GO_BASE_IMAGE: deltafi/deltafi-build:jdk21.0.9_10-golang1.25.4-alpine-0
   BUILDX_BASE_IMAGE: deltafi/docker-with-buildx:28.5.1-alpine3.22-0.29.1-0
 
   PROJECT_NAME: ${CI_PROJECT_NAME}
@@ -26,7 +27,7 @@ image: ${JAVA_BASE_IMAGE}
     GRADLE: "./gradlew -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
 .golang:
-  image: deltafi/deltafi-build:jdk21.0.8_9-golang1.25.0-alpine-0
+  image: ${GO_BASE_IMAGE}
   variables:
     GOPATH: /cache/go
 

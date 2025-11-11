@@ -1,6 +1,6 @@
 module github.com/deltafi/tui
 
-go 1.25.1
+go 1.25.4
 
 require (
 	github.com/Khan/genqlient v0.8.1
@@ -53,7 +53,7 @@ require (
 	github.com/charmbracelet/x/exp/slice v0.0.0-20250902204034-1cdc10c66d5b // indirect
 	github.com/charmbracelet/x/exp/strings v0.0.0-20250902204034-1cdc10c66d5b // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
-	github.com/containerd/containerd v1.7.28 // indirect
+	github.com/containerd/containerd v1.7.29 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect

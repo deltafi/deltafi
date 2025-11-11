@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-java-jre:21.0.8-alpine-1
+FROM deltafi/deltafi-java-jre:21.0.9-alpine-0
 VOLUME /tmp
 ADD deltafi-*.jar deltafi-app.jar
 
