@@ -53,7 +53,7 @@ export GOPATH
 GOBINPATH = $(GOPATH)/bin
 
 # Docker settings
-DOCKER_IMAGE := golang:1.25.1
+DOCKER_IMAGE := golang:1.25.4
 DOCKER_SOURCE := /go/src/deltafi
 DOCKER_BIN := /go/bin
 DOCKER_WORKDIR := $(DOCKER_SOURCE)/tui
