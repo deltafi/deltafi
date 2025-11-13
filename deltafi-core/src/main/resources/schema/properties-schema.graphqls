@@ -34,6 +34,7 @@ type Property {
     value: String                   # value as set in git/file-system or db
     propertySource: PropertySource! # where the property was set (external for git/filesystem or db)
     dataType: DataType!             # data type of the property (STRING, NUMBER ... etc)
+    editable: Boolean!              # false if the current installation does not support the property
 }
 
 input PropertyInput {

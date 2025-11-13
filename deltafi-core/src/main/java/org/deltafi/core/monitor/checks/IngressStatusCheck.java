@@ -90,6 +90,10 @@ public class IngressStatusCheck extends StatusCheck {
     }
 
     private void doCheckForStorageDisabledIngress(ResultBuilder resultBuilder) throws StorageCheckException {
+        if (propertiesService.isExternalContent()) {
+            return;
+        }
+
         long remaining = systemService.contentNodesDiskMetrics().stream().map(DiskMetrics::bytesRemaining).reduce(Long.MAX_VALUE, Long::min);
         long required = propertiesService.getDeltaFiProperties().getIngressDiskSpaceRequirementInBytes();
 

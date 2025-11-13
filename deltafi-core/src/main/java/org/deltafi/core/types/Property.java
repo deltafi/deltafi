@@ -44,6 +44,7 @@ public class Property {
     private boolean refreshable;
     @Enumerated(EnumType.STRING)
     private VariableDataType dataType;
+    private boolean editable = true;
 
     public boolean hasValue() {
         return null != customValue;

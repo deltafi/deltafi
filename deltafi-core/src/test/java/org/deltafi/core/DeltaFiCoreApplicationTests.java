@@ -152,7 +152,7 @@ class DeltaFiCoreApplicationTests {
 	private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
 			.registerModule(new JavaTimeModule());
 
-	@DynamicPropertySource
+    @DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
 		registry.add("spring.datasource.url", POSTGRES_CONTAINER::getJdbcUrl);
 		registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
@@ -280,7 +280,7 @@ class DeltaFiCoreApplicationTests {
 	RoleService roleService;
 
 	@MockitoBean
-	DiskSpaceService diskSpaceService;
+	SystemService systemService;
 
 	@Captor
 	ArgumentCaptor<List<WrappedActionInput>> actionInputListCaptor;
@@ -415,7 +415,7 @@ class DeltaFiCoreApplicationTests {
 		securityContext.setAuthentication(authentication);
 		SecurityContextHolder.setContext(securityContext);
 
-		Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
+		Mockito.when(systemService.isContentStorageDepleted()).thenReturn(false);
 
 		flowDefinitionService.clearCache();
 	}

@@ -42,7 +42,7 @@ public class TimedDataSourceScheduler {
     private final TimedDataSourceService timedDataSourceService;
     private final CoreEventQueue coreEventQueue;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final DiskSpaceService diskSpaceService;
+    private final SystemService systemService;
     private final ErrorCountService errorCountService;
     private final Clock clock;
 
@@ -51,7 +51,7 @@ public class TimedDataSourceScheduler {
         for (TimedDataSource dataSource : timedDataSourceService.getRunningFlows()) {
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled() &&
-                    !diskSpaceService.isContentStorageDepleted()) {
+                    !systemService.isContentStorageDepleted()) {
                 try {
                     errorCountService.checkErrorsExceeded(FlowType.TIMED_DATA_SOURCE, dataSource.getName());
                 } catch (IngressRateLimitException e) {

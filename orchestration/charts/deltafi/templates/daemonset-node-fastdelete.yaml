@@ -1,4 +1,4 @@
----
+{{- if .Values.enable.minio -}}
 # Deploy a node-fastdelete instance per node for minio content cleanup
 apiVersion: apps/v1
 kind: DaemonSet
@@ -47,3 +47,4 @@ spec:
       - name: pvdata
         hostPath:
           path: /data
+{{- end -}}

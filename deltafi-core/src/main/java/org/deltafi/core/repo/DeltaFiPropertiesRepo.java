@@ -29,6 +29,7 @@ import java.util.Set;
 
 @Repository
 public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
+
     /**
      * Performs a batch upsert of properties and deletes properties not in the input or allowed list, all in a single database operation.
      *
@@ -48,17 +49,18 @@ public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value =
-            "WITH input_rows(key, default_value, description, refreshable, data_type) AS ( " +
-                    "    SELECT * FROM UNNEST(:keys, :defaultValues, :descriptions, :refreshables, :dataTypes) " +
+            "WITH input_rows(key, default_value, description, refreshable, data_type, editable) AS ( " +
+                    "    SELECT * FROM UNNEST(:keys, :defaultValues, :descriptions, :refreshables, :dataTypes, :editables) " +
                     "), " +
                     "upsert AS ( " +
-                    "    INSERT INTO properties (key, default_value, description, refreshable, data_type) " +
+                    "    INSERT INTO properties (key, default_value, description, refreshable, data_type, editable) " +
                     "    SELECT * FROM input_rows " +
                     "    ON CONFLICT (key) DO UPDATE SET " +
                     "        data_type = EXCLUDED.data_type, " +
                     "        default_value = EXCLUDED.default_value, " +
                     "        description = EXCLUDED.description, " +
-                    "        refreshable = EXCLUDED.refreshable " +
+                    "        refreshable = EXCLUDED.refreshable, " +
+                    "        editable = EXCLUDED.editable " +
                     "    RETURNING key " +
                     ") " +
                     "DELETE FROM properties WHERE key NOT IN (SELECT key FROM upsert) AND key NOT IN :allowedKeys")
@@ -67,6 +69,7 @@ public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
             String[] defaultValues,
             String[] descriptions,
             Boolean[] refreshables,
+            Boolean[] editables,
             String[] dataTypes,
             Set<String> allowedKeys
     );

@@ -54,6 +54,7 @@ public class EnvironmentVariableHelper {
                 "REDIS_PASSWORD=" + (eventQueueProperties.getPassword() == null ? "" : eventQueueProperties.getPassword()),
                 "VALKEY_URL=" + eventQueueProperties.getUrl(),
                 "VALKEY_PASSWORD=" + (eventQueueProperties.getPassword() == null ? "" : eventQueueProperties.getPassword()),
+                "SNOWBALL_ENABLED=" + environment.getProperty("SNOWBALL_ENABLED", "true"),
                 "SSL_PROTOCOL=" + sslProtocol,
                 "STORAGE_BUCKET_NAME=" + storageProperties.bucketName()));
 

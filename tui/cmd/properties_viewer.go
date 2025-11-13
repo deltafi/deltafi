@@ -43,6 +43,7 @@ type Property struct {
 	Source       graphql.PropertySource
 	DataType     graphql.DataType
 	SetName      string
+	Editable     bool
 }
 
 // PropertyItem implements list.Item interface
@@ -312,9 +313,11 @@ func (pv *PropertiesViewer) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "enter":
 			if pv.selectedProp != nil {
-				pv.textInput.SetValue(pv.selectedProp.Value)
-				pv.textInput.Focus()
-				return pv, textinput.Blink
+				if pv.selectedProp.Editable {
+					pv.textInput.SetValue(pv.selectedProp.Value)
+					pv.textInput.Focus()
+					return pv, textinput.Blink
+				}
 			}
 		case "ctrl+t":
 			if pv.selectedProp != nil && pv.selectedProp.DataType == graphql.DataTypeBoolean {
@@ -568,6 +571,12 @@ func (pv *PropertiesViewer) View() string {
 			doc.WriteString(styles.ErrorStyle.Render("Error: " + pv.err.Error()))
 			doc.WriteString("\n")
 		}
+
+		if pv.selectedProp != nil && !pv.selectedProp.Editable {
+			doc.WriteString(styles.WarningStyle.Render("This property is disabled and cannot be edited"))
+		}
+		// always add the extra line to avoid an extra help line when the warning message is not there
+		doc.WriteString("\n")
 	}
 
 	// Help
@@ -626,6 +635,7 @@ func (pv *PropertiesViewer) fetchProperties() tea.Cmd {
 					Source:       prop.PropertySource,
 					DataType:     prop.DataType,
 					SetName:      set.DisplayName,
+					Editable:     prop.Editable,
 				})
 			}
 		}

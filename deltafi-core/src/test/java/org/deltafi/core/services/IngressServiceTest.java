@@ -79,7 +79,7 @@ class IngressServiceTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final MetricService metricService;
-    private final DiskSpaceService diskSpaceService;
+    private final SystemService systemService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private  final RestDataSourceService restDataSourceService;
@@ -99,14 +99,14 @@ class IngressServiceTest {
     ArgumentCaptor<IngressEventItem> ingressEventCaptor;
 
     IngressServiceTest(@Mock MetricService metricService,
-                       @Mock DiskSpaceService diskSpaceService, @Mock DeltaFilesService deltaFilesService,
+                       @Mock SystemService systemService, @Mock DeltaFilesService deltaFilesService,
                        @Mock DeltaFiPropertiesService deltaFiPropertiesService,
                        @Mock RestDataSourceService restDataSourceService,
                        @Mock ErrorCountService errorCountService,
                        @Mock AnalyticEventService analyticEventService,
                        @Mock RateLimitService rateLimitService) {
         this.metricService = metricService;
-        this.diskSpaceService = diskSpaceService;
+        this.systemService = systemService;
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.restDataSourceService = restDataSourceService;
@@ -114,7 +114,7 @@ class IngressServiceTest {
         this.analyticEventService = analyticEventService;
         this.rateLimitService = rateLimitService;
 
-        ingressService = new IngressService(metricService, diskSpaceService, CONTENT_STORAGE_SERVICE,
+        ingressService = new IngressService(metricService, systemService, CONTENT_STORAGE_SERVICE,
                 deltaFilesService, deltaFiPropertiesService, restDataSourceService, errorCountService, UUID_GENERATOR,
                 analyticEventService, rateLimitService);
     }
@@ -141,7 +141,7 @@ class IngressServiceTest {
     private void mockExecution(boolean flowRunning) {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
-        Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
+        Mockito.when(systemService.isContentStorageDepleted()).thenReturn(false);
         if (flowRunning) {
             Mockito.when(restDataSourceService.getActiveFlowByName(any())).thenReturn(REST_DATA_SOURCE);
         } else {
@@ -231,7 +231,7 @@ class IngressServiceTest {
     void ingressStorageDepleted() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
-        Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(true);
+        Mockito.when(systemService.isContentStorageDepleted()).thenReturn(true);
 
         assertThrows(IngressStorageException.class,
                 () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,
@@ -243,7 +243,7 @@ class IngressServiceTest {
     void ingressBadHeaderMetadata() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
-        Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
+        Mockito.when(systemService.isContentStorageDepleted()).thenReturn(false);
 
         assertThrows(IngressMetadataException.class,
                 () -> ingressService.ingress("dataSource", "filename", MediaType.APPLICATION_OCTET_STREAM,

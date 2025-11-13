@@ -42,7 +42,7 @@ public class SystemService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule());
-    private static final List<String> METRIC_KEYS = List.of("gauge.node.memory.usage", "gauge.node.memory.limit",
+    static final List<String> METRIC_KEYS = List.of("gauge.node.memory.usage", "gauge.node.memory.limit",
             "gauge.node.disk-minio.usage", "gauge.node.disk-minio.limit",
             "gauge.node.disk-postgres.usage", "gauge.node.disk-postgres.limit",
             "gauge.node.cpu.usage", "gauge.node.cpu.limit");
@@ -50,11 +50,13 @@ public class SystemService {
     private final PlatformService platformService;
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
     private final BuildProperties buildProperties;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     private Map<String, NodeMetrics> cachedNodeMetrics;
     private List<String> cachedContentNodeNames;
     private List<String> cachedMetadataNodeNames;
     private Map<String, List<AppName>> cachedAppsByNode;
+    boolean diskSpaceAPIReachable = true;
 
     @PostConstruct
     public void init() {
@@ -84,6 +86,37 @@ public class SystemService {
         }
     }
 
+    /**
+     * Check to see if the content storage is depleted (bytes remaining is less than the configured requirement)
+     * <p>
+     * This method calculates based on a cached value that is asynchronously polled to prevent blocking on API calls
+     *
+     * @return true if content storage free bytes is lower than the configured threshold
+     */
+    public boolean isContentStorageDepleted() {
+        try {
+            if (deltaFiPropertiesService.isExternalContent()) {
+                return false;
+            }
+
+            boolean storageDepleted = contentNodesDiskMetrics().stream().anyMatch(c -> c.bytesRemaining() <= requiredBytes());
+
+            if (!diskSpaceAPIReachable) {
+                log.info("Disk Space API is reachable again");
+                diskSpaceAPIReachable = true;
+            }
+
+            return storageDepleted;
+        } catch (StorageCheckException e) {
+            if (diskSpaceAPIReachable) {
+                log.warn("Unable to calculate storage depletion, error communicating with API: {}", e.getMessage());
+                diskSpaceAPIReachable = false;
+            }
+
+            return false;
+        }
+    }
+
     public Versions getRunningVersions() {
         return new Versions(platformService.getRunningVersions());
     }
@@ -108,6 +141,10 @@ public class SystemService {
     }
 
     public List<NodeMetrics> contentNodesMetrics() throws StorageCheckException {
+        if (deltaFiPropertiesService.isExternalContent()) {
+            return List.of();
+        }
+
         Map<String, NodeMetrics> allMetrics = getNodeMetrics();
         List<String> minioNodes = getContentNodeNames();
 
@@ -137,13 +174,14 @@ public class SystemService {
     }
 
     public List<DiskMetrics> contentNodesDiskMetrics() throws StorageCheckException {
-        List<NodeMetrics> contentMetrics = contentNodesMetrics().stream().toList();
-        return contentMetrics.stream()
-                .map(contentMetric -> {
-                    Map<String, Long> metrics = contentMetric.resources().get("disk-minio");
-                    return new DiskMetrics(contentMetric.name(), metrics.get("limit"), metrics.get("usage"));
-                })
+        return contentNodesMetrics().stream()
+                .map(this::buildDiskMetrics)
                 .toList();
+    }
+
+    private DiskMetrics buildDiskMetrics(NodeMetrics contentMetric) {
+        Map<String, Long> metrics = contentMetric.resources().get("disk-minio");
+        return new DiskMetrics(contentMetric.name(), metrics.get("limit"), metrics.get("usage"));
     }
 
     public Map<String, DiskMetrics> allDiskMetrics() {
@@ -290,5 +328,9 @@ public class SystemService {
 
     private SystemStatusException missingStatus() {
         return new SystemStatusException("Received empty response from valkey");
+    }
+
+    private long requiredBytes() {
+        return deltaFiPropertiesService.getDeltaFiProperties().getIngressDiskSpaceRequirementInBytes();
     }
 }

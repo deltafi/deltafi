@@ -35,6 +35,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "local.storage", havingValue = "true")
 public class StorageConfigurationService {
 
     private static final String AGE_OFF = "AgeOff";

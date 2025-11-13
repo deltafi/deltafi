@@ -1,44 +1,97 @@
+{{- $minioEnabled := .Values.enable.minio }}
+{{- $grafanaEnabled := and .Values.enable.grafana (or .Values.tags.metrics .Values.tags.logs) }}
+{{- $lokiEnabled := and .Values.enable.loki .Values.tags.logs }}
+{{- $graphiteEnabled := and .Values.enable.graphite .Values.tags.metrics }}
+{{- $egressSinkEnabled := .Values.deltafi.egress_sink.enabled }}
+{{- $kubeDashboardEnabled := index .Values.enable "kubernetes-dashboard" }}
+{{- $redisEnabled := .Values.enable.redis }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: deltafi-status-checks
-  namespace: deltafi
 data:
   StatefulSet: |
+    {{- if $graphiteEnabled }}
     - deltafi-graphite
+    {{- end }}
+    {{- if $lokiEnabled }}
     - deltafi-loki
+    {{- end }}
+    {{- if $redisEnabled }}
     - deltafi-valkey-master
+    {{- end }}
   Deployment: |
     - deltafi-core-actions
     - deltafi-core-scheduler
     - deltafi-core-worker
+    {{- if $egressSinkEnabled }}
     - deltafi-egress-sink
+    {{- end }}
+    {{- if $grafanaEnabled }}
     - deltafi-grafana
+    {{- end }}
+    {{- if $kubeDashboardEnabled }}
     - deltafi-kubernetes-dashboard
+    {{- end }}
+    {{- if $minioEnabled }}
     - deltafi-minio
+    {{- end }}
   Ingress: |
+    {{- if $grafanaEnabled }}
     - deltafi-grafana
+    {{- end }}
+    {{- if $graphiteEnabled }}
     - deltafi-graphite
+    {{- end }}
     - deltafi-ingress
+    {{- if $kubeDashboardEnabled }}
     - deltafi-kubernetes-dashboard
+    {{- end }}
+    {{- if $minioEnabled }}
     - deltafi-minio
+    {{- end }}
     - deltafi-ui-ingress
   Service: |
     - deltafi-core-service
+    {{- if $egressSinkEnabled }}
     - deltafi-egress-sink-service
+    {{- end }}
+    {{- if $grafanaEnabled }}
     - deltafi-grafana
+    {{- end }}
+    {{- if $graphiteEnabled }}
     - deltafi-graphite
+    {{- end }}
     - deltafi-ingress-service
+    {{- if $kubeDashboardEnabled }}
     - deltafi-kubernetes-dashboard
+    {{- end }}
+    {{- if $lokiEnabled }}
     - deltafi-loki
     - deltafi-loki-headless
     - deltafi-loki-memberlist
+    {{- end }}
+    {{- if $minioEnabled }}
     - deltafi-minio
+    {{- end }}
+    {{- if $redisEnabled }}
     - deltafi-valkey-headless
     - deltafi-valkey-master
+    {{- end }}
   PersistentVolumeClaim: |
+    {{- if $egressSinkEnabled }}
     - deltafi-egress-sink
+    {{- end }}
+    {{- if $grafanaEnabled }}
     - deltafi-grafana
+    {{- end }}
+    {{- if $graphiteEnabled }}
     - deltafi-graphite
+    {{- end }}
+    {{- if $lokiEnabled }}
     - deltafi-loki
+    {{- end }}
+    {{- if $minioEnabled }}
     - deltafi-minio
+    {{- end }}

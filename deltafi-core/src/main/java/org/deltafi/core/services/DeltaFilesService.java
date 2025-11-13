@@ -116,7 +116,7 @@ public class DeltaFilesService {
     private final IdentityService identityService;
     private final FlowDefinitionService flowDefinitionService;
     private final ParameterResolver parameterResolver;
-    private final LocalContentStorageService localContentStorageService;
+    private final Optional<LocalContentStorageService> localContentStorageService;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -125,6 +125,7 @@ public class DeltaFilesService {
 
     @PostConstruct
     public void init() {
+        log.info("Delta file service initialization started is local storage? {}", localContentStorageService.isPresent());
         String scheduleActionEvents = environment.getProperty("schedule.actionEvents");
         if (scheduleActionEvents == null || scheduleActionEvents.equals("true")) {
             DeltaFiProperties properties = getProperties();
@@ -1691,8 +1692,8 @@ public class DeltaFilesService {
         }
 
         try {
-            if (isLocalStorage()) {
-                localContentStorageService.deleteContent(List.of(did), false);
+            if (localContentStorageService.isPresent()) {
+                localContentStorageService.get().deleteContent(List.of(did), false);
             } else {
                 contentStorageService.delete(content);
             }
@@ -1732,7 +1733,7 @@ public class DeltaFilesService {
 
         List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(
                 createdBefore, completedBefore, minBytes, flow, deleteMetadata,
-                policy.equals(TTL_SYSTEM_POLICY), batchSize - alreadyDeleted, !isLocalStorage(), ordered);
+                policy.equals(TTL_SYSTEM_POLICY), batchSize - alreadyDeleted, isExternalStorage(), ordered);
         delete(deltaFiles, policy, deleteMetadata, alreadyDeleted, false);
 
         return deltaFiles.size() == batchSize;
@@ -1740,7 +1741,7 @@ public class DeltaFilesService {
 
     public List<DeltaFileDeleteDTO> diskSpaceDelete(long bytesToDelete, int batchSize) {
         logBatch(batchSize, DiskSpaceDelete.POLICY_NAME);
-        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, batchSize, !isLocalStorage()), DiskSpaceDelete.POLICY_NAME, false, 0, true);
+        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, batchSize, isExternalStorage()), DiskSpaceDelete.POLICY_NAME, false, 0, true);
     }
 
     public void logBatch(int batchSize, String policy) {
@@ -1769,8 +1770,8 @@ public class DeltaFilesService {
 
     private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, boolean blockUntilDeleted) {
         List<DeltaFileDeleteDTO> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
-        if (isLocalStorage()) {
-            localContentStorageService.deleteContent(deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).toList(), blockUntilDeleted);
+        if (localContentStorageService.isPresent()) {
+            localContentStorageService.get().deleteContent(deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).toList(), blockUntilDeleted);
         } else {
             contentStorageService.deleteAllByObjectName(deltaFilesWithContent.stream()
                     .flatMap(d -> d.getContentObjectIds().stream()
@@ -2517,7 +2518,7 @@ public class DeltaFilesService {
         long byteCount = 0L;
     }
 
-    private boolean isLocalStorage() {
-        return environment.matchesProfiles("localContentStorage");
+    private boolean isExternalStorage() {
+        return localContentStorageService.isEmpty();
     }
 }

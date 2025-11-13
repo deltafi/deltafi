@@ -66,7 +66,7 @@ import static org.deltafi.common.nifi.ContentType.*;
 public class IngressService {
     public static final String INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME = "Ingress error for dataSource={} filename={} contentType={} username={}: {}";
     private final MetricService metricService;
-    private final DiskSpaceService diskSpaceService;
+    private final SystemService systemService;
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -87,7 +87,7 @@ public class IngressService {
             throw new IngressUnavailableException("Ingress disabled for this instance of DeltaFi");
         }
 
-        if (diskSpaceService.isContentStorageDepleted()) {
+        if (systemService.isContentStorageDepleted()) {
             log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename,
                     contentType, username, "Ingress temporarily disabled due to storage limits");
             throw new IngressStorageException("Ingress temporarily disabled due to storage limits");

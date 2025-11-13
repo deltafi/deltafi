@@ -21,6 +21,7 @@ import io.minio.MinioClient;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -52,7 +53,8 @@ public class MinioAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MinioObjectStorageService minioObjectStorageService(MinioClient minioClient,
-                                                               MinioProperties minioProperties) {
-        return new MinioObjectStorageService(minioClient, minioProperties);
+                                                               MinioProperties minioProperties,
+                                                               @Value("${SNOWBALL_ENABLED:true}") boolean useSnowball) {
+        return new MinioObjectStorageService(minioClient, minioProperties, useSnowball);
     }
 }

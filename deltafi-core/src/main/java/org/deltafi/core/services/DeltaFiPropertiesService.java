@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.deltafi.common.types.KeyValue;
+import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.PropertyGroup;
 import org.deltafi.core.configuration.PropertyInfo;
@@ -40,6 +41,12 @@ import java.util.*;
 @Service
 public class DeltaFiPropertiesService implements Snapshotter {
 
+    private static final String AGE_OFF_META_ONLY = "Number of days that a DeltaFile metadata should live, any records older will be removed. " +
+            "The externally stored content will not be removed by this setting.";
+    private static final String DISABLED_DESCRIPTION = "Disabled due to using external storage.  ";
+    private static final Set<String> DISABLED_FOR_EXTERNAL_STORAGE = Set.of("diskSpacePercentThreshold", "ingressDiskSpaceRequirementInMb",
+            "checkContentStoragePercentThreshold", "checkDeleteLagErrorThreshold", "checkDeleteLagWarningThreshold");
+
     private static final Set<String> allowedProperties;
     private static final List<Property> defaultProperties;
     private static final Map<String, PropertyGroup> propertyToGroup;
@@ -57,18 +64,21 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
                 defaultProperties.add(Property.builder().key(field.getName()).defaultValue(value)
                         .description(propertyInfo.description()).refreshable(propertyInfo.refreshable())
-                        .dataType(propertyInfo.dataType()).build());
+                        .editable(true).dataType(propertyInfo.dataType()).build());
             }
         }
     }
 
     private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
+    private final LocalStorageProperties localStorageProperties;
+    private final Set<String> disabledProperties;
     private DeltaFiProperties cachedDeltaFiProperties;
     private List<Property> properties;
 
-    public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo) {
+    public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, LocalStorageProperties localStorageProperties) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
-
+        this.localStorageProperties = localStorageProperties;
+        this.disabledProperties = new HashSet<>();
         // make sure the latest DeltaFiProperties structure is reflected in the properties collection
         upsertProperties();
         refreshProperties();
@@ -83,19 +93,39 @@ public class DeltaFiPropertiesService implements Snapshotter {
         String[] descriptions = new String[defaultProperties.size()];
         Boolean[] refreshables = new Boolean[defaultProperties.size()];
         String[] dataTypes = new String[defaultProperties.size()];
+        Boolean[] editables = new Boolean[defaultProperties.size()];
 
         for (int i = 0; i < defaultProperties.size(); i++) {
             Property prop = defaultProperties.get(i);
             keys[i] = prop.getKey();
+
+            if (isExternalContent()) {
+                modifyForExternalStorage(prop);
+            }
             defaultValues[i] = prop.getDefaultValue();
             descriptions[i] = prop.getDescription();
             refreshables[i] = prop.isRefreshable();
             dataTypes[i] = prop.getDataType().name();
+            editables[i] = prop.isEditable();
+
+            if (!prop.isEditable()) {
+                disabledProperties.add(prop.getKey());
+            }
         }
 
         deltaFiPropertiesRepo.batchUpsertAndDeleteProperties(
-                keys, defaultValues, descriptions, refreshables, dataTypes, allowedProperties
+                keys, defaultValues, descriptions, refreshables, editables, dataTypes, allowedProperties
         );
+    }
+
+    private void modifyForExternalStorage(Property property) {
+        String key = property.getKey();
+        if (DISABLED_FOR_EXTERNAL_STORAGE.contains(key)) {
+            property.setEditable(false);
+            property.setDescription(DISABLED_DESCRIPTION + property.getDescription());
+        } else if (key.equals("ageOffDays")) {
+            property.setDescription(AGE_OFF_META_ONLY);
+        }
     }
 
     /**
@@ -154,7 +184,19 @@ public class DeltaFiPropertiesService implements Snapshotter {
      * @return true if the update was successful
      */
     public boolean updateProperties(List<KeyValue> updates) {
-        List<KeyValue> allowedUpdates = updates.stream().filter(this::isValid).toList();
+        return updateProperties(updates, false);
+    }
+
+    /**
+     * Update the DeltaFiProperties based on the list of updates
+     * @param updates changes to make to the properties
+     * @param fromSnapshot true if these updates are being applied from a snapshot
+     * @return true if the update was successful
+     */
+     boolean updateProperties(List<KeyValue> updates, boolean fromSnapshot) {
+        List<KeyValue> allowedUpdates = updates.stream()
+                .filter(keyValue -> isValid(keyValue, fromSnapshot))
+                .toList();
         boolean changed = false;
         for (KeyValue keyValue : allowedUpdates) {
             changed = (deltaFiPropertiesRepo.updateProperty(keyValue.getKey(), keyValue.getValue()) > 0) || changed;
@@ -193,11 +235,15 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
         List<KeyValue> snapshotProperties = snapshot.getDeltaFiProperties();
         if (snapshotProperties != null) {
-            updateProperties(snapshotProperties);
+            updateProperties(snapshotProperties, true);
         }
 
         refreshProperties();
         return Result.successResult();
+    }
+
+    public boolean isExternalContent() {
+        return !this.localStorageProperties.content();
     }
 
     private boolean refresh(boolean changed) {
@@ -233,13 +279,22 @@ public class DeltaFiPropertiesService implements Snapshotter {
         return propertySet;
     }
 
-    private boolean isValid(KeyValue update) {
+    private boolean isValid(KeyValue update, boolean fromSnapshot) {
         String key = update.getKey();
         String value = update.getValue();
 
         if (!allowedProperties.contains(key)) {
             log.warn("Unrecognized property update received with a key of {}", key);
             return false;
+        }
+
+        if (disabledProperties.contains(key)) {
+            if (fromSnapshot) {
+                log.warn("Property with a key of {} cannot be applied from the snapshot because the property is disabled", key);
+                return false;
+            } else {
+                throw new IllegalArgumentException("Property " + key + " is disabled and cannot be changed");
+            }
         }
 
         Binder binder = new Binder(new MapConfigurationPropertySource(Map.of(key, value)));

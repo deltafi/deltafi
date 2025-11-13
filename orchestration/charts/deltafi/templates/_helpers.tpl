@@ -138,11 +138,20 @@ initContainers:
       fieldPath: spec.nodeName
 {{- end -}}
 
+{{- define "storage.snowballEnabled" -}}
+{{- $override := .Values.deltafi.storage.snowball.enabled -}}
+{{- if ne $override nil -}}
+{{- $override | quote -}}
+{{- else -}}
+{{- .Values.enable.minio | quote | default "true" -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "commonEnvVars" -}}
 - name: CORE_URL
   value: http://deltafi-core-service
 - name: MINIO_URL
-  value: http://deltafi-minio:9000
+  value: {{ .Values.deltafi.storage.url | default "http://deltafi-minio:9000" }}
 - name: MINIO_PARTSIZE
   value: "5242880"
 - name: REDIS_URL
@@ -153,6 +162,8 @@ initContainers:
   value: "6379"
 - name: STORAGE_BUCKET_NAME
   value: {{ .Values.deltafi.storage.bucketName | default "storage" }}
+- name: SNOWBALL_ENABLED
+  value: {{ include "storage.snowballEnabled" . }}
 - name: VALKEY_URL
   value: http://deltafi-valkey-master:6379
 - name: DELTAFI_UI_DOMAIN

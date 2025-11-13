@@ -41,6 +41,14 @@ public class ContentStorageCheck extends StatusCheck {
 
     public CheckResult check() {
         ResultBuilder resultBuilder = new ResultBuilder();
+        if (!deltaFiPropertiesService.isExternalContent()) {
+            checkContentStorage(resultBuilder);
+        }
+
+        return result(resultBuilder);
+    }
+
+    private void checkContentStorage(ResultBuilder resultBuilder) {
         try {
             int threshold = deltaFiPropertiesService.getDeltaFiProperties().getCheckContentStoragePercentThreshold();
             int usage = systemService.contentNodesDiskMetrics().stream().map(DiskMetrics::percentUsedFloor).reduce(0, Integer::max);
@@ -55,7 +63,5 @@ public class ContentStorageCheck extends StatusCheck {
             resultBuilder.code(CODE_RED);
             resultBuilder.addLine(e.getMessage());
         }
-
-        return result(resultBuilder);
     }
 }

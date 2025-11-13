@@ -35,6 +35,7 @@ export default function usePropertySets() {
         key: true,
         value: true,
         defaultValue: true,
+        editable: true,
         refreshable: true,
         description: true,
         propertySource: true,

@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.DiskSpaceService;
+import org.deltafi.core.services.SystemService;
 import org.deltafi.core.types.DeltaFileDeleteDTO;
 import org.deltafi.core.types.DiskMetrics;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DiskSpaceDelete {
     public static final String POLICY_NAME = "Disk Space Policy";
-    private final DiskSpaceService diskSpaceService;
+    private final SystemService systemService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService propertiesService;
 
@@ -43,12 +43,12 @@ public class DiskSpaceDelete {
         int batchSize = propertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
         List<DiskMetrics> contentMetrics = null;
         try {
-            contentMetrics = diskSpaceService.contentMetrics();
+            contentMetrics = systemService.contentNodesDiskMetrics();
         } catch (StorageCheckException e) {
             log.warn("Unable to evaluate deletion criteria: {}", e.getMessage());
         }
 
-        if (contentMetrics == null) {
+        if (contentMetrics == null || contentMetrics.isEmpty()) {
             return false;
         }
 
@@ -76,7 +76,7 @@ public class DiskSpaceDelete {
 
         if (bytesToDelete > 0) {
             try {
-                contentMetrics = diskSpaceService.contentMetrics();
+                contentMetrics = systemService.contentNodesDiskMetrics();
                 if (contentMetrics.stream().allMatch(c -> c.percentUsed() <= maxPercent)) {
                     log.info("Disk space delete batching stopped early due to disk usage below threshold.");
                     return false;

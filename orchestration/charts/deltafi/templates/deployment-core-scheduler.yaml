@@ -37,7 +37,9 @@ spec:
         - name: UNIQUE_ID
           value: core-scheduler
         - name: SPRING_PROFILES_ACTIVE
-          value: kubernetes,monitor,localContentStorage
+          value: kubernetes,monitor
+        - name: LOCAL_STORAGE_CONTENT
+          value: {{ .Values.enable.minio | quote }}
         {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080

@@ -172,7 +172,9 @@ var setPropertyCmd = &cobra.Command{
 		var keys []string
 		for _, set := range resp.GetPropertySets {
 			for _, prop := range set.Properties {
-				keys = append(keys, prop.Key)
+				if prop.Editable {
+					keys = append(keys, prop.Key)
+				}
 			}
 		}
 

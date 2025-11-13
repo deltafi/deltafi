@@ -252,7 +252,8 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 		return err
 	}
 
-	if o.inDevelopment() {
+	minioEnabled := o.getValueOr(values, "enable.minio", "true")
+	if o.inDevelopment() && minioEnabled == "true" {
 		bucketName := o.getValueOr(values, "deltafi.storage.bucketName", "storage")
 		err := o.ExecuteMinioCommand([]string{fmt.Sprintf("mc mb -p deltafi/%s > /dev/null", bucketName)})
 		if err != nil {
@@ -573,6 +574,14 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		return fmt.Errorf("error getting hostname: %w", err)
 	}
 
+	localStorage := o.getValueOr(values, "enable.minio", "true")
+	snowballEnabled := o.getValue(values, "deltafi.storage.snowball.enabled")
+
+	// if the snowballEnabled override is not set, determine the value from enable.minio
+	if snowballEnabled == "" {
+		snowballEnabled = localStorage
+	}
+
 	envVars := map[string]string{
 		"AUTH_MODE":                          o.getValue(values, "deltafi.auth.mode"),
 		"CONFIG_DIR":                         o.configPath,
@@ -596,9 +605,10 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"GRAPHITE_PORT":                      "2003",
 		"HOSTNAME":                           hostname,
 		"INGRESS_URL":                        "http://deltafi-core:8080",
+		"LOCAL_STORAGE_CONTENT":              localStorage,
 		"METRICS_PERIOD_SECONDS":             "10",
 		"MINIO_PARTSIZE":                     "5242880",
-		"MINIO_URL":                          "http://deltafi-minio:9000",
+		"MINIO_URL":                          o.getValueOr(values, "deltafi.storage.url", "http://deltafi-minio:9000"),
 		"NODE_NAME":                          hostname,
 		"ORCHESTRATION_DIR":                  o.orchestrationPath,
 		"PERIOD":                             "5",
@@ -609,6 +619,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"REPOS_DIR":                          o.reposPath,
 		"RUNNING_IN_CLUSTER":                 "false",
 		"SECRETS_DIR":                        o.secretsPath,
+		"SNOWBALL_ENABLED":                   snowballEnabled,
 		"SITE_DIR":                           o.sitePath,
 		"STATSD_HOSTNAME":                    "deltafi-graphite",
 		"STATSD_PORT":                        "8125",
@@ -758,6 +769,10 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	}
 	if o.getValue(values, "deltafi.core_worker.enabled") == "true" {
 		profiles = append(profiles, "worker")
+	}
+
+	if o.getValueOr(values, "enable.minio", "true") != "false" {
+		profiles = append(profiles, "localStorage")
 	}
 
 	if len(profiles) > 0 {

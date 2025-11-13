@@ -22,6 +22,7 @@ import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
 import org.deltafi.core.repo.PendingDeleteRepo;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.time.Duration;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Map;
 import static org.deltafi.core.monitor.checks.CheckResult.*;
 
 @MonitorProfile
+@ConditionalOnProperty(name = "local.storage.content", havingValue = "true", matchIfMissing = true)
 public class PendingDeleteLagCheck extends StatusCheck {
 
     private final PendingDeleteRepo pendingDeleteRepo;

@@ -29,14 +29,14 @@
         <template #empty> No properties in this property set. </template>
         <Column header="Key" field="key" :sortable="true" :style="{ width: '50%' }">
           <template #body="property">
-            <span :class="{ 'text-muted': !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.key }}</span>
+            <span :class="{ 'text-muted': !$hasPermission('SystemPropertiesUpdate') || property.data.editable === false }">{{ property.data.key }}</span>
             <i v-if="tooltipText(property.data)" v-tooltip.right="tooltipText(property.data)" class="ml-2 text-muted fas fa-info-circle fa-fw" />
           </template>
         </Column>
         <Column header="Value" field="value" :sortable="true" class="value-column" :style="{ width: '50%' }">
           <template #body="{ data }">
-            <template v-if="!$hasPermission('SystemPropertiesUpdate')">
-              <div>
+            <template v-if="!$hasPermission('SystemPropertiesUpdate') || data.editable === false">
+              <div class="value-disabled">
                 <span v-if="data.value !== data.defaultValue" class="override-icon">
                   <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
                 </span>
@@ -103,6 +103,13 @@ const onSaved = (property) => {
 .property-set-table {
   td.value-column {
     padding: 0 !important;
+  }
+
+  .value-disabled {
+    cursor: default;
+    padding: 0.5rem !important;
+    width: 100%;
+    display: flex;
   }
 
   .value-clickable {

@@ -24,8 +24,6 @@ services:
         condition: service_healthy
       deltafi-postgres:
         condition: service_healthy
-      deltafi-minio:
-        condition: service_healthy
     expose:
       - "8080"
     group_add:
@@ -33,7 +31,7 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false -Dlookup.enabled=${LOOKUP_TABLES_ENABLED}"
-      SPRING_PROFILES_ACTIVE: monitor,localContentStorage
+      SPRING_PROFILES_ACTIVE: monitor
       APP_ID: core-scheduler
       UNIQUE_ID: core-scheduler
     env_file:
@@ -65,8 +63,6 @@ services:
       deltafi-valkey:
         condition: service_healthy
       deltafi-postgres:
-        condition: service_healthy
-      deltafi-minio:
         condition: service_healthy
     group_add:
       - ${DOCKER_GID}
@@ -179,6 +175,7 @@ services:
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
+    profiles: ["localStorage"]
     networks:
       - deltafi
     restart: unless-stopped
@@ -252,6 +249,7 @@ services:
       name: deltafi-minio
     networks:
       - deltafi
+    profiles: ["localStorage"]
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/minio:/export

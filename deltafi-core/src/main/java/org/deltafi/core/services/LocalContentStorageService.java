@@ -21,13 +21,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.StorageProperties;
 import org.deltafi.core.repo.PendingDeleteRepo;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
-@Service
 @Slf4j
 public class LocalContentStorageService {
     private final PendingDeleteRepo pendingDeleteRepo;

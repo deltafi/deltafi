@@ -1,3 +1,18 @@
+# toggle specific subcharts on (true) or off (false)
+enable:
+  minio: true
+  redis: true
+  kubernetes-dashboard: true
+  promtail: true
+  loki: true
+  graphite: true
+  grafana: true
+
+# toggle groups of subcharts on (true) or off (false)
+tags:
+  metrics: true
+  logs: true
+
 # DeltaFi config
 deltafi:
   local_path_provisioner:
@@ -42,6 +57,10 @@ deltafi:
       secret: ssl-secret
   storage:
     bucketName: storage
+    url: http://deltafi-minio:9000
+    # enabled by default, disabled when enable.minio is false unless overridden here
+    snowball:
+      enabled: ~
   lookup:
     enabled: false
 

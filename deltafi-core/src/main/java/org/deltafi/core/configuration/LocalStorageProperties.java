@@ -15,24 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core;
+package org.deltafi.core.configuration;
 
-import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.configuration.LocalStorageProperties;
-import org.deltafi.core.repo.DeltaFiPropertiesRepo;
-import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.mockito.Mockito;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-public class MockDeltaFiPropertiesService extends DeltaFiPropertiesService  {
+@ConfigurationProperties("local.storage")
+public record LocalStorageProperties(boolean content, boolean metadata) {}
 
-    private final DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-
-    public MockDeltaFiPropertiesService() {
-        super(Mockito.mock(DeltaFiPropertiesRepo.class), new LocalStorageProperties(true, true));
-    }
-
-    @Override
-    public DeltaFiProperties getDeltaFiProperties() {
-        return deltaFiProperties;
-    }
-}

@@ -17,7 +17,9 @@
  */
 package org.deltafi.core.services;
 
+import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.KeyValue;
+import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.types.Property;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.types.snapshot.Snapshot;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -42,8 +45,11 @@ class DeltaFiPropertiesServiceTest {
     @Mock
     DeltaFiPropertiesRepo deltaFiPropertiesRepo;
 
+    @Spy
+    LocalStorageProperties localStorageProperties = new LocalStorageProperties(true, true);
+
     @BeforeEach
-    public void clearRepo() {
+    void clearRepo() {
         Mockito.reset(deltaFiPropertiesRepo);
     }
 
@@ -54,7 +60,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(property));
 
         // An invalid property will prevent startup -- this can only happen if a migration was missed or a value is hand-jammed in the DB
-        assertThatThrownBy(() -> new DeltaFiPropertiesService(deltaFiPropertiesRepo));
+        assertThatThrownBy(() -> new DeltaFiPropertiesService(deltaFiPropertiesRepo, new LocalStorageProperties(true, true)));
     }
 
     @Test
@@ -69,6 +75,23 @@ class DeltaFiPropertiesServiceTest {
         // updates with an unrecognized property name are note applied
         deltaFiPropertiesService.updateProperties(List.of(new KeyValue("badKey", "30_000")));
         Mockito.verifyNoInteractions(deltaFiPropertiesRepo);
+    }
+
+    @Test
+    void testUpdateWithDisabledProperty() {
+        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, new LocalStorageProperties(false, true));
+        List<KeyValue> updates = List.of(new KeyValue("checkDeleteLagErrorThreshold", "30_000"));
+        Assertions.assertThatThrownBy(() -> propsWithExternalStorage.updateProperties(updates, false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Property checkDeleteLagErrorThreshold is disabled and cannot be changed");
+    }
+
+    @Test
+    void testSnapshotDisabledPropertyIgnored() {
+        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, new LocalStorageProperties(false, true));
+        List<KeyValue> updates = List.of(new KeyValue("checkDeleteLagErrorThreshold", "30_000"));
+        Assertions.assertThatNoException().isThrownBy(() -> propsWithExternalStorage.updateProperties(updates, true));
+        Mockito.verify(deltaFiPropertiesRepo, Mockito.never()).updateProperty(Mockito.any(), Mockito.any());
     }
 
     @Test
