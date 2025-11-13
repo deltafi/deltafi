@@ -141,7 +141,7 @@ class DeltaFiCoreApplicationTests {
 			DockerImageName.parse("postgres:16.9-alpine3.22").asCompatibleSubstituteFor("postgres"));
 
 	@Container
-	public static final GenericContainer<?> VALKEY_CONTAINER = new GenericContainer<>("valkey/valkey:8.1.1-alpine")
+	public static final GenericContainer<?> VALKEY_CONTAINER = new GenericContainer<>("valkey/valkey:9.0.0-alpine")
 			.withExposedPorts(6379);
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
@@ -905,33 +905,33 @@ class DeltaFiCoreApplicationTests {
 			new org.deltafi.common.types.ErrorSourceFilter(org.deltafi.common.types.FlowType.DATA_SINK, DATA_SINK_FLOW_NAME, null, null)
 		));
 		onErrorDataSourceRepo.save(onErrorDataSource);
-		
+
 		// Set up the normal flow configuration needed for the error test
 		loadConfig();
 		refreshFlowCaches();
-		
+
 		// Create a DeltaFile and process it normally until it hits the egress stage
 		UUID did = UUID.randomUUID();
 		DeltaFile original = fullFlowExemplarService.postTransformDeltaFile(did);
 		deltaFileRepo.save(original);
-		
+
 		// Count DeltaFiles before error occurs
 		long initialCount = deltaFileRepo.count();
-		
+
 		// Trigger an error in the egress action - this should trigger our OnError data source
 		deltaFilesService.handleActionEvent(actionEvent("error", did, original.lastFlow().getId()));
 		deltaFileCacheService.flush();
-		
+
 		// Verify the original DeltaFile is in error state
 		DeltaFile erroredFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileFlowState.ERROR, erroredFile.lastFlow().getState());
 		assertNotNull(erroredFile.lastFlow().lastAction().getErrorCause());
 		assertEquals("Authority XYZ not recognized", erroredFile.lastFlow().lastAction().getErrorCause());
-		
+
 		// Verify that a new DeltaFile was created by the OnError data source
 		long finalCount = deltaFileRepo.count();
 		assertTrue(finalCount > initialCount, "OnError data source should have created a new DeltaFile, but count went from " + initialCount + " to " + finalCount);
-		
+
 		DeltaFile updatedOriginal = deltaFileRepo.findById(original.getDid()).orElse(null);
 		assertNotNull(updatedOriginal);
 
@@ -945,7 +945,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(List.of(original.getDid()), errorEventFile.getParentDids());
 		assertNotNull(original.getChildDids());
 		assertEquals(List.of(errorEventFile.getDid()), updatedOriginal.getChildDids());
-		
+
 		assertNotNull(errorEventFile, "Should have created an error event DeltaFile with DID: " + errorEventDid);
 		assertEquals(errorEventDid, errorEventFile.getDid(), "DeltaFile DID should match the DID used in ContentStorageService.save");
 		assertEquals("test-error-catcher", errorEventFile.getDataSource());
@@ -4960,7 +4960,7 @@ class DeltaFiCoreApplicationTests {
 	@SneakyThrows
 	void testIngress_storageLimit() {
 		Mockito.when(contentStorageService.save(any(), (InputStream) any(), any(), any())).thenThrow(new ObjectStorageException("out of space"));
-		
+
 		// Make the REST call directly to avoid the helper method's mock setup
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Filename", FILENAME);
@@ -4970,7 +4970,7 @@ class DeltaFiCoreApplicationTests {
 		headers.add(USER_NAME_HEADER, USERNAME);
 		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
 		HttpEntity<byte[]> request = new HttpEntity<>(CONTENT_DATA.getBytes(), headers);
-		
+
 		ResponseEntity<String> response = restTemplate.postForEntity("/api/v2/deltafile/ingress", request, String.class);
 		assertEquals(HttpStatus.INSUFFICIENT_STORAGE.value(), response.getStatusCode().value());
 	}

@@ -50,7 +50,7 @@ type valuesData struct {
 	MinioContainer          string `default:"deltafi/minio:RELEASE.2025-10-15T17-29-55Z-1"`
 	NginxContainer          string `default:"nginx:1.29.1-alpine3.22"`
 	PromtailContainer       string `default:"grafana/promtail:2.9.15"`
-	ValkeyContainer         string `default:"valkey/valkey:8.1.3-alpine"`
+	ValkeyContainer         string `default:"valkey/valkey:9.0.0-alpine"`
 	DockerWebGuiContainer   string `default:"deltafi/docker-web-gui:1.0.2-3"`
 	PostgresContainer       string `default:"deltafi/timescaledb:2.19.3-pg16-0"`
 	PostgresLookupContainer string `default:"postgres:16.9-alpine3.22"`
