@@ -161,14 +161,14 @@ task dist {
 
 task distBinaries(type: Download) {
     src([
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.1/lazydocker_0.24.1_Darwin_arm64.tar.gz',
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.1/lazydocker_0.24.1_Darwin_x86_64.tar.gz',
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.1/lazydocker_0.24.1_Linux_arm64.tar.gz',
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.1/lazydocker_0.24.1_Linux_x86_64.tar.gz',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_linux_arm64',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_linux_amd64',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_darwin_arm64',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_darwin_amd64',
+        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Darwin_arm64.tar.gz',
+        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Darwin_x86_64.tar.gz',
+        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Linux_arm64.tar.gz',
+        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Linux_x86_64.tar.gz',
+        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_linux_arm64',
+        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_linux_amd64',
+        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_darwin_arm64',
+        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_darwin_amd64',
         'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-amd64',
         'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-arm64',
         'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-amd64',
@@ -190,10 +190,10 @@ task decompressDistBinaries {
     description = 'Decompress the distribution binaries'
 }
 
-[ [ source: 'lazydocker_0.24.1_Darwin_arm64.tar.gz', destination: 'lazydocker/darwin/arm64' ],
-  [ source: 'lazydocker_0.24.1_Darwin_x86_64.tar.gz', destination: 'lazydocker/darwin/amd64' ],
-  [ source: 'lazydocker_0.24.1_Linux_arm64.tar.gz', destination: 'lazydocker/linux/arm64' ],
-  [ source: 'lazydocker_0.24.1_Linux_x86_64.tar.gz', destination: 'lazydocker/linux/amd64' ] ].each { archive ->
+[ [ source: 'lazydocker_0.24.2_Darwin_arm64.tar.gz', destination: 'lazydocker/darwin/arm64' ],
+  [ source: 'lazydocker_0.24.2_Darwin_x86_64.tar.gz', destination: 'lazydocker/darwin/amd64' ],
+  [ source: 'lazydocker_0.24.2_Linux_arm64.tar.gz', destination: 'lazydocker/linux/arm64' ],
+  [ source: 'lazydocker_0.24.2_Linux_x86_64.tar.gz', destination: 'lazydocker/linux/amd64' ] ].each { archive ->
     task "extract${pathToCamelCase(archive.destination)}" (type: Copy) {
         from tarTree(layout.buildDirectory.file(archive.source))
         into layout.buildDirectory.file(archive.destination)
