@@ -35,7 +35,9 @@ import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 @Slf4j
 public abstract class BaseDeployerService implements DeployerService {
@@ -171,6 +173,30 @@ public abstract class BaseDeployerService implements DeployerService {
     @Override
     public int getOrder() {
         return SnapshotRestoreOrder.PLUGIN_INSTALL_ORDER;
+    }
+
+    protected Stream<InstallDetails> getAllPluginInstallInfo() {
+        return this.pluginService.getPlugins().stream()
+                .map(this::toInstallDetails)
+                .filter(Objects::nonNull);
+    }
+
+    private InstallDetails toInstallDetails(PluginEntity pluginEntity) {
+        String imageName = pluginEntity.getImageName();
+        if (StringUtils.isBlank(imageName)) {
+            return null;
+        }
+
+        String secretName = pluginEntity.getImagePullSecret();
+        if (StringUtils.isBlank(secretName)) {
+            secretName = deltaFiPropertiesService.getDeltaFiProperties().getPluginImagePullSecret();
+        }
+
+        if (StringUtils.isNotBlank(pluginEntity.getImageTag())) {
+            imageName += ":" + pluginEntity.getImageTag();
+        }
+
+        return InstallDetails.from(imageName, secretName);
     }
 
     protected String getGroupName(String appName) {

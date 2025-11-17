@@ -28,6 +28,9 @@ import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.Result;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,15 +63,33 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
     private final List<String> environmentVariables;
     private final String dataDir;
+    private final boolean isScheduledMaintenance;
 
     public DockerDeployerService(DockerClient dockerClient, PluginService pluginService, SslSecretNames sslSecretNames,
                                  EventService eventService, EnvironmentVariableHelper environmentVariableHelper,
-                                 DeltaFiPropertiesService deltaFiPropertiesService) {
+                                 DeltaFiPropertiesService deltaFiPropertiesService, Environment environment) {
         super(pluginService, eventService, deltaFiPropertiesService);
         this.dockerClient = dockerClient;
         this.sslSecretNames = sslSecretNames;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
         this.dataDir = environmentVariableHelper.getDataDir();
+        this.isScheduledMaintenance = environment.getProperty("schedule.maintenance", Boolean.class, true);
+    }
+
+    // wait for the app ready event so plugins can register when they are reinstalled
+    @EventListener(ApplicationReadyEvent.class)
+    public void reinstallPlugins() {
+        if (!isScheduledMaintenance) {
+            return;
+        }
+        try {
+            List<InstallDetails> missingInstalls = this.getAllPluginInstallInfo()
+                    .filter(this::notInstalled)
+                    .toList();
+            installOrUpgradePlugins(missingInstalls);
+        } catch (Exception e) {
+            log.error("Failed to reinstall missing deltafi-plugins", e);
+        }
     }
 
     @Override
@@ -225,6 +246,10 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
         containers.stream().map(Container::getId).forEach(this::stopAndRemoveContainer);
         return new Result();
+    }
+
+    private boolean notInstalled(InstallDetails installDetails) {
+        return findExisting(installDetails.appName()).isEmpty();
     }
 
     private HostConfig hostConfig() {
