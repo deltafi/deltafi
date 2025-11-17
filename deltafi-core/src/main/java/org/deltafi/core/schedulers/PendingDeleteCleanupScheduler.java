@@ -19,16 +19,10 @@ package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.repo.*;
+import org.deltafi.core.repo.PendingDeleteRepo;
 import org.deltafi.core.services.SystemService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
 
-@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
-@Service
-@EnableScheduling
 @RequiredArgsConstructor
 @Slf4j
 public class PendingDeleteCleanupScheduler {

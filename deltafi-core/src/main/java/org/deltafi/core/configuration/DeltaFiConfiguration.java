@@ -19,19 +19,14 @@ package org.deltafi.core.configuration;
 
 import io.valkey.JedisPool;
 import org.deltafi.common.action.EventQueueProperties;
-import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.uuid.RandomUUIDGenerator;
 import org.deltafi.common.uuid.UUIDGenerator;
-import org.deltafi.core.repo.PendingDeleteRepo;
 import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.services.LocalContentStorageService;
-import org.deltafi.core.services.SystemService;
 import org.deltafi.core.util.ParameterResolver;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
@@ -113,9 +108,4 @@ public class DeltaFiConfiguration {
         return new ParameterResolver();
     }
 
-    @Bean
-    @ConditionalOnProperty(name = "local.storage.content", havingValue = "true", matchIfMissing = true)
-    public LocalContentStorageService localContentStorageService(PendingDeleteRepo pendingDeleteRepo, SystemService systemService, StorageProperties storageProperties) {
-        return new LocalContentStorageService(pendingDeleteRepo, systemService, storageProperties);
-    }
 }
