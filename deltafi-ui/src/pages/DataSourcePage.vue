@@ -20,6 +20,9 @@
   <div>
     <PageHeader heading="Data Sources">
       <div class="d-flex">
+        <SystemPropertySwitch class="mt-1 mr-1" property-name="ingressEnabled"
+          off-confirmation="Are you sure? This will stop all data from flowing into the system."
+          off-tooltip="Enable ingress" on-tooltip="Disable ingress" />
         <div class="btn-toolbar">
           <IconField iconPosition="left">
             <InputIcon class="pi pi-search"> </InputIcon>
@@ -46,6 +49,7 @@ import RestDataSourcesPanel from "@/components/dataSources/RestDataSourcesPanel.
 import OnErrorDataSourcesPanel from "@/components/dataSources/OnErrorDataSourcePanel.vue";
 import TimedDataSourcesPanel from "@/components/dataSources/TimedDataSourcesPanel.vue";
 import useTopics from "@/composables/useTopics";
+import SystemPropertySwitch from "@/components/SystemPropertySwitch.vue";
 import { computed, inject, onMounted, onUnmounted, provide, ref } from "vue";
 
 import _ from "lodash";

@@ -19,12 +19,17 @@
 <template>
   <div>
     <PageHeader heading="Data Sinks">
-      <div class="btn-toolbar">
-        <IconField iconPosition="left">
-          <InputIcon class="pi pi-search"> </InputIcon>
-          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
-        </IconField>
-        <DataSinkPageHeaderButtonGroup :export-data-sinks="dataSinkExport" @reload-data-sinks="refresh" />
+      <div class="d-flex">
+        <SystemPropertySwitch class="mt-1 mr-1" property-name="egressEnabled"
+          off-confirmation="Are you sure? This will stop all data from flowing out of the system."
+          off-tooltip="Enable egress" on-tooltip="Disable egress" />
+        <div class="btn-toolbar">
+          <IconField iconPosition="left">
+            <InputIcon class="pi pi-search"> </InputIcon>
+            <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
+          </IconField>
+          <DataSinkPageHeaderButtonGroup :export-data-sinks="dataSinkExport" @reload-data-sinks="refresh" />
+        </div>
       </div>
     </PageHeader>
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
@@ -40,6 +45,7 @@ import DataSinksPanel from "@/components/dataSinks/DataSinksPanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useTopics from "@/composables/useTopics";
+import SystemPropertySwitch from "@/components/SystemPropertySwitch.vue";
 import { computed, inject, onMounted, onUnmounted, provide, ref } from "vue";
 
 import _ from "lodash";
