@@ -2730,7 +2730,7 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.insertBatch(List.of(shouldResume, shouldNotResume, notResumable, cancelled, contentDeleted, shouldAlsoResume), 1000);
 
-		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(NOW, 5000);
+		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(NOW, false, 5000);
 		assertEquals(2, hits.size());
 		assertEquals(Stream.of(shouldResume, shouldAlsoResume).map(DeltaFile::getDid).sorted().toList(),
 				hits.stream().map(DeltaFile::getDid).sorted().toList());
@@ -2744,6 +2744,23 @@ class DeltaFiCoreApplicationTests {
 						.addTag(DATA_SOURCE, TRANSFORM_FLOW_NAME));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
+
+    @Test
+    void testFindReadyForAutoResume_egressDisabled() {
+        DeltaFile input = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
+        OffsetDateTime nextAutoResume = OffsetDateTime.now().minusMinutes(1);
+        input.setStage(DeltaFileStage.ERROR);
+        DeltaFileFlow dataSink = input.lastFlow();
+        dataSink.setState(DeltaFileFlowState.ERROR);
+        dataSink.setNextAutoResume(nextAutoResume);
+        Action egressAction = dataSink.lastAction();
+        egressAction.setState(ERROR);
+        egressAction.setNextAutoResume(nextAutoResume);
+        deltaFileRepo.save(input);
+
+        assertThat(deltaFileRepo.findReadyForAutoResume(NOW, false, 5000)).hasSize(1);
+        assertThat(deltaFileRepo.findReadyForAutoResume(NOW, true, 5000)).isEmpty();
+    }
 
 	@Test
 	void testFindForResumeByFlowTypeAndName() {
@@ -2859,14 +2876,14 @@ class DeltaFiCoreApplicationTests {
 		excludedByDid.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
 		excludedByDid.firstFlow().addAction("hit",null,  ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
 
-		DeltaFile wrongStage = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.CANCELLED, NOW, NOW.minusSeconds(1000));
-		wrongStage.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
-		wrongStage.firstFlow().addAction("hit", null, ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
+		DeltaFile wrongState = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.CANCELLED, NOW, NOW.minusSeconds(1000));
+		wrongState.firstFlow().setState(DeltaFileFlowState.CANCELLED);
+		wrongState.firstFlow().addAction("hit", null, ActionType.TRANSFORM, CANCELLED, NOW.minusSeconds(1000));
 
-		deltaFileRepo.insertBatch(List.of(oneHit, twoHits, miss, excludedByDid, wrongStage), 1000);
+		deltaFileRepo.insertBatch(List.of(oneHit, twoHits, miss, excludedByDid, wrongState), 1000);
 
 		List<DeltaFile> hits = deltaFileRepo.findForRequeue(NOW, Duration.ofSeconds(30),
-				Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()), 5000);
+				Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()), false, 5000);
 
 		assertEquals(2, hits.size());
 
@@ -2917,6 +2934,16 @@ class DeltaFiCoreApplicationTests {
 
 		assertDoesNotThrow(() -> deltaFilesService.requeue());
 	}
+
+    @Test
+    void testFindForRequeue_egressDisabled() {
+        DeltaFile input = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
+        deltaFileRepo.save(input);
+
+        OffsetDateTime requeueTime = NOW.plusMinutes(6);
+        assertThat(deltaFileRepo.findForRequeue(requeueTime, Duration.ofMinutes(1), Set.of(), Set.of(), false, 10)).hasSize(1);
+        assertThat(deltaFileRepo.findForRequeue(requeueTime, Duration.ofMinutes(1), Set.of(), Set.of(), true, 10)).isEmpty();
+    }
 
 	@Test
 	void testRequeuePausedFlows() {
@@ -2971,6 +2998,7 @@ class DeltaFiCoreApplicationTests {
 				Set.of("skipTimed"),
 				Set.of("skipTransform"),
 				Set.of("skipSink"),
+                true,
 				5000);
 		assertEquals(Stream.of(multipleTypes.getDid(), partiallySkipped.getDid()).sorted().toList(),
 				hits.stream().map(DeltaFile::getDid).sorted().toList());
@@ -3010,8 +3038,19 @@ class DeltaFiCoreApplicationTests {
 
 		skipAllAfter.getFlows().forEach(flow ->
 				assertEquals(DeltaFileFlowState.PAUSED, flow.getState()));
-
 	}
+
+    @Test
+    void findPausedToQueue_egressDisabled() {
+        DeltaFile input = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
+        input.setPaused(true);
+        DeltaFileFlow dataSink = input.lastFlow();
+        dataSink.setState(DeltaFileFlowState.PAUSED);
+        deltaFileRepo.save(input);
+
+        assertThat(deltaFileRepo.findPausedForRequeue(Set.of(), Set.of(), Set.of(), Set.of(), false, 10)).hasSize(1);
+        assertThat(deltaFileRepo.findPausedForRequeue(Set.of(), Set.of(), Set.of(), Set.of(), true, 10)).isEmpty();
+    }
 
 	@Test
 	void batchedBulkDeleteByDidIn() {

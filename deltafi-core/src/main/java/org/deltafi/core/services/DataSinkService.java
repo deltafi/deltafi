@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.DataSinkPlan;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.Subscriber;
@@ -32,10 +33,8 @@ import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -96,5 +95,18 @@ class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapsh
     @Override
     public Set<Subscriber> subscriberForTopic(String topic) {
         return topicSubscribers.getOrDefault(topic, Set.of());
+    }
+
+    public Collection<String> allQueueNames() {
+        return getAll().stream()
+                .map(DataSink::getEgressAction)
+                .map(ActionConfiguration::getType)
+                .collect(Collectors.toSet());
+    }
+
+    public boolean isEgressAction(String actionClass) {
+        return getAll().stream()
+                .map(DataSink::getEgressAction)
+                .anyMatch(action -> action.getType().equals(actionClass));
     }
 }

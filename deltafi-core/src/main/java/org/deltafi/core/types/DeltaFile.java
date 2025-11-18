@@ -340,8 +340,9 @@ public class DeltaFile {
     return joinId.equals(flow.getJoinId()) && !flow.terminal();
   }
 
-  public List<DeltaFileFlow> resumeErrors(@NotNull List<ResumeMetadata> resumeMetadata, OffsetDateTime now) {
+  public List<DeltaFileFlow> resumeErrors(@NotNull List<ResumeMetadata> resumeMetadata, boolean excludeEgress, OffsetDateTime now) {
     List<DeltaFileFlow> retries = flows.stream()
+            .filter(f -> !excludeEgress || !f.isDataSink())
             .filter(f -> f.resume(Objects.requireNonNullElseGet(resumeMetadata, List::of), now))
             .toList();
 
@@ -421,6 +422,14 @@ public class DeltaFile {
 
   public boolean hasErrors() {
     return flows.stream().anyMatch(flow -> flow.getState() == DeltaFileFlowState.ERROR);
+  }
+
+  public boolean hasEgressErrors() {
+      return flows.stream().anyMatch(this::isEgressError);
+  }
+
+  private boolean isEgressError(DeltaFileFlow flow) {
+      return flow.getState() == DeltaFileFlowState.ERROR && flow.isDataSink();
   }
 
   public boolean hasJoiningAction() {

@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 
@@ -44,6 +45,9 @@ class DeltaFiPropertiesServiceTest {
 
     @Mock
     DeltaFiPropertiesRepo deltaFiPropertiesRepo;
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @Spy
     LocalStorageProperties localStorageProperties = new LocalStorageProperties(true, true);
@@ -60,7 +64,7 @@ class DeltaFiPropertiesServiceTest {
         Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(property));
 
         // An invalid property will prevent startup -- this can only happen if a migration was missed or a value is hand-jammed in the DB
-        assertThatThrownBy(() -> new DeltaFiPropertiesService(deltaFiPropertiesRepo, new LocalStorageProperties(true, true)));
+        assertThatThrownBy(() -> new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true)));
     }
 
     @Test
@@ -79,7 +83,7 @@ class DeltaFiPropertiesServiceTest {
 
     @Test
     void testUpdateWithDisabledProperty() {
-        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, new LocalStorageProperties(false, true));
+        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true));
         List<KeyValue> updates = List.of(new KeyValue("checkDeleteLagErrorThreshold", "30_000"));
         Assertions.assertThatThrownBy(() -> propsWithExternalStorage.updateProperties(updates, false))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -88,7 +92,7 @@ class DeltaFiPropertiesServiceTest {
 
     @Test
     void testSnapshotDisabledPropertyIgnored() {
-        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, new LocalStorageProperties(false, true));
+        DeltaFiPropertiesService propsWithExternalStorage = new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(false, true));
         List<KeyValue> updates = List.of(new KeyValue("checkDeleteLagErrorThreshold", "30_000"));
         Assertions.assertThatNoException().isThrownBy(() -> propsWithExternalStorage.updateProperties(updates, true));
         Mockito.verify(deltaFiPropertiesRepo, Mockito.never()).updateProperty(Mockito.any(), Mockito.any());

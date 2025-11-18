@@ -68,7 +68,7 @@ public class CoreEventQueue {
         return valkeyKeyedBlockingQueue.keys();
     }
 
-    public void drop(List<String> actionNames) {
+    public void drop(Collection<String> actionNames) {
         valkeyKeyedBlockingQueue.drop(actionNames);
     }
 

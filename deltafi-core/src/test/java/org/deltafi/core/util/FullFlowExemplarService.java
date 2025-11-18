@@ -204,7 +204,7 @@ public class FullFlowExemplarService {
 
     public DeltaFile postResumeNoSubscribersDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8NoSubscriberDeltaFile(did);
-        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, NO_SUBSCRIBERS, Map.of(), List.of())), now());
+        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, NO_SUBSCRIBERS, Map.of(), List.of())), false, now());
 
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         flow.setState(DeltaFileFlowState.COMPLETE);
@@ -236,7 +236,7 @@ public class FullFlowExemplarService {
     @SuppressWarnings("SameParameterValue")
     public DeltaFile postResumeTransformDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
-        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, "SampleTransformAction", Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue"), List.of("removeMe"))), now());
+        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, "SampleTransformAction", Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue"), List.of("removeMe"))), false, now());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         DeltaFileFlow flow = deltaFile.getFlow(UUID_1);
         Action action = flow.queueAction("SampleTransformAction", null, ActionType.TRANSFORM, false, now());

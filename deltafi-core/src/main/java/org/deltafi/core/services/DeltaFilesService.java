@@ -47,6 +47,7 @@ import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.ParameterResolver;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -616,6 +617,12 @@ public class DeltaFilesService {
         metricService.increment(new Metric(FILES_TO_SINK, 1, tags));
     }
 
+    @EventListener
+    public void onEgressDisabled(EgressDisabledEvent ignored) {
+        log.info("Egress is switching to disabled");
+        coreEventQueue.drop(dataSinkService.allQueueNames());
+    }
+
     public void filter(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event, OffsetDateTime now) {
         deltaFile.addAnnotations(event.getFilter().getAnnotations());
         deltaFile.setModified(now);
@@ -1098,7 +1105,7 @@ public class DeltaFilesService {
                             result.setSuccess(false);
                             result.setError("Cannot resume DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
-                            List<DeltaFileFlow> retryFlows = deltaFile.resumeErrors(resumeMetadata, now);
+                            List<DeltaFileFlow> retryFlows = deltaFile.resumeErrors(resumeMetadata, isEgressDisabled(), now);
                             if (!retryFlows.isEmpty()) {
                                 deltaFile.updateState(now);
                                 deltaFile.wireBackPointers();
@@ -1106,8 +1113,12 @@ public class DeltaFilesService {
                                         .map(flow -> new StateMachineInput(deltaFile, flow))
                                         .toList());
                             } else {
+                                String message = "DeltaFile with did " + did + " had no errors";
                                 result.setSuccess(false);
-                                result.setError("DeltaFile with did " + did + " had no errors");
+                                if (isEgressDisabled() && deltaFile.hasEgressErrors()) {
+                                    message = message + " because egress is disabled";
+                                }
+                                result.setError(message);
                             }
                         }
                     } catch (Exception e) {
@@ -1804,7 +1815,8 @@ public class DeltaFilesService {
             Set<String> skipActions = queueManagementService.coldQueueActions();
 
             List<DeltaFile> filesToRequeue = deltaFileRepo.findForRequeue(modified,
-                    getProperties().getRequeueDuration(), skipActions, longRunningDids, REQUEUE_BATCH_SIZE);
+                    getProperties().getRequeueDuration(), skipActions, longRunningDids,
+                    isEgressDisabled(), REQUEUE_BATCH_SIZE);
             numFound = filesToRequeue.size();
             if (numFound > 0) {
                 log.info("requeuing {}", numFound);
@@ -1815,7 +1827,7 @@ public class DeltaFilesService {
                 deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
                 deltaFile.setModified(modified);
                 deltaFile.getFlows().stream()
-                        .filter(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT)
+                        .filter(this::canRequeue)
                         .forEach(flow -> {
                             if (flow.getActions().isEmpty()) {
                                 StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, flow);
@@ -1846,7 +1858,16 @@ public class DeltaFilesService {
         }
     }
 
+    // only allow IN_FLIGHT and filter out DATA_SINKs if egress is disabled
+    private boolean canRequeue(DeltaFileFlow flow) {
+        return DeltaFileFlowState.IN_FLIGHT.equals(flow.getState()) && isNotSkipEgress(flow);
+    }
+
     public void requeueColdQueueActions(String actionClass, int maxFiles) {
+        if (isEgressDisabled() && dataSinkService.isEgressAction(actionClass)) {
+            return;
+        }
+
         OffsetDateTime modified = OffsetDateTime.now(clock);
         List<DeltaFile> filesToRequeue = deltaFileRepo.findColdQueuedForRequeue(actionClass, maxFiles);
 
@@ -1895,6 +1916,7 @@ public class DeltaFilesService {
                     pausedFlows.get(FlowType.TIMED_DATA_SOURCE),
                     pausedFlows.get(FlowType.TRANSFORM),
                     pausedFlows.get(FlowType.DATA_SINK),
+                    isEgressDisabled(),
                     REQUEUE_BATCH_SIZE);
             numFound = filesToRequeue.size();
 
@@ -1903,8 +1925,7 @@ public class DeltaFilesService {
                 deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
                 deltaFile.setModified(modified);
                 inputs.addAll(deltaFile.getFlows().stream()
-                        .filter(f -> f.getState() == DeltaFileFlowState.PAUSED &&
-                                !pausedFlows.get(f.getType()).contains(f.getName()))
+                        .filter(f -> canRequeuePaused(f, pausedFlows))
                         .map(f -> {
                             f.setState(DeltaFileFlowState.IN_FLIGHT);
                             return new StateMachineInput(deltaFile, f);
@@ -1919,6 +1940,12 @@ public class DeltaFilesService {
                 enqueueActions(actionInputs, false);
             }
         }
+    }
+
+    private boolean canRequeuePaused(DeltaFileFlow flow, Map<FlowType, Set<String>> pausedFlows) {
+        return flow.getState() == DeltaFileFlowState.PAUSED &&
+                !pausedFlows.get(flow.getType()).contains(flow.getName()) &&
+                isNotSkipEgress(flow);
     }
 
     private WrappedActionInput requeueActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action) {
@@ -1956,7 +1983,7 @@ public class DeltaFilesService {
         int currentBatchSize = batchSize;
         while (currentBatchSize == batchSize) {
             Map<String, Integer> countByFlow = new HashMap<>();
-            List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp, batchSize);
+            List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp, isEgressDisabled(), batchSize);
             currentBatchSize = autoResumeDeltaFiles.size();
             if (!autoResumeDeltaFiles.isEmpty()) {
                 Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
@@ -2278,6 +2305,10 @@ public class DeltaFilesService {
         return deltaFiPropertiesService.getDeltaFiProperties();
     }
 
+    private boolean isEgressDisabled() {
+        return !getProperties().isEgressEnabled();
+    }
+
     public Long totalCount() {
         return deltaFileRepo.count();
     }
@@ -2520,5 +2551,9 @@ public class DeltaFilesService {
 
     private boolean isExternalStorage() {
         return localContentStorageService.isEmpty();
+    }
+
+    private boolean isNotSkipEgress(DeltaFileFlow flow) {
+        return !isEgressDisabled() || !flow.isDataSink();
     }
 }

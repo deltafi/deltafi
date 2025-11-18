@@ -24,6 +24,7 @@ import lombok.Getter;
 @Getter
 public enum PropertyGroup {
     INGRESS_CONTROLS("ingress", "Ingress Controls", ""),
+    EGRESS_CONTROLS("egress", "Egress Controls", ""),
     DATA_RETENTION("retention", "Data Retention", ""),
     DATABASE_CONTROLS("database", "Database", ""),
     DATA_FLOW_CONTROLS("dataflow", "Data Flow", ""),

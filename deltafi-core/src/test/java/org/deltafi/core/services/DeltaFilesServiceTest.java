@@ -34,10 +34,7 @@ import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
-import org.deltafi.core.util.FlowBuilders;
-import org.deltafi.core.util.MockFlowDefinitionService;
-import org.deltafi.core.util.ParameterResolver;
-import org.deltafi.core.util.UtilService;
+import org.deltafi.core.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.common.types.ActionState.ERROR;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -80,6 +78,8 @@ class DeltaFilesServiceTest {
     private final UtilService utilService;
     private final FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
     private final AnalyticEventService analyticEventService;
+    private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService;
+    private final FullFlowExemplarService fullFlowExemplarService;
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
@@ -125,8 +125,8 @@ class DeltaFilesServiceTest {
         this.metricService = metricService;
         this.utilService = new UtilService(flowDefinitionService);
         this.analyticEventService = analyticEventService;
-
-        MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
+        this.mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
+        this.fullFlowExemplarService = new FullFlowExemplarService(flowDefinitionService, utilService);
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
@@ -634,16 +634,16 @@ class DeltaFilesServiceTest {
 
         when(coreEventQueue.getLongRunningTasks()).thenReturn(Collections.emptyList());
         when(queueManagementService.coldQueueActions()).thenReturn(Collections.emptySet());
-        when(deltaFileRepo.findForRequeue(any(), any(), any(), any(), anyInt()))
+        when(deltaFileRepo.findForRequeue(any(), any(), any(), any(), anyBoolean(), anyInt()))
                 .thenReturn(List.of(aggregate));
         when(deltaFileRepo.findAllById(List.of(parent1.getDid(), parent2.getDid())))
                 .thenReturn(List.of(parent1, parent2));
 
-        ActionConfiguration ActionConfiguration =
+        ActionConfiguration actionConfiguration =
                 new ActionConfiguration("join-transform", ActionType.TRANSFORM, "org.deltafi.SomeJoiningTransformAction");
-        ActionConfiguration.setJoin(new JoinConfiguration(Duration.parse("PT1H"), null, 3, null));
+        actionConfiguration.setJoin(new JoinConfiguration(Duration.parse("PT1H"), null, 3, null));
         when(timedDataSourceService.findRunningActionConfig("myFlow", "join-transform"))
-                .thenReturn(ActionConfiguration);
+                .thenReturn(actionConfiguration);
 
         deltaFilesService.requeue();
 
@@ -876,6 +876,28 @@ class DeltaFilesServiceTest {
                 .addTag("source", action.getName())
                 .addTag("action", "error")
                 .addTag("dataSource", deltaFile.getDataSource()));
+    }
+
+    @Test
+    void resume_egressDisabled_checkErrorMsg() {
+        DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
+        deltaFile.getFlows().forEach(f -> f.setId(UUID.randomUUID()));
+        DeltaFileFlow egressFlow = deltaFile.getFlow(deltaFile.getFlows().size() - 1);
+        Action lastAction = egressFlow.lastAction();
+        lastAction.setErrorCause("failed");
+        lastAction.setState(ERROR);
+        deltaFileRepo.save(deltaFile);
+
+        this.mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(false);
+        List<RetryResult> results = deltaFilesService.resumeDeltaFiles(List.of(deltaFile), List.of());
+        this.mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(true);
+
+        assertEquals(1, results.size());
+
+        RetryResult result = results.getFirst();
+        assertEquals(deltaFile.getDid(), result.getDid());
+        assertFalse(result.getSuccess());
+        assertEquals("DeltaFile with did " + deltaFile.getDid() + " had no errors", result.getError());
     }
 
     private List<ActionConfiguration> mockActions(String... names) {
@@ -1203,5 +1225,95 @@ class DeltaFilesServiceTest {
         verify(onErrorDataSourceService).getTriggeredDataSources(
                 "testFlow", FlowType.TRANSFORM, "TestAction", "com.example.TestAction", "Test error message",
                 Map.of(), Map.of());
+    }
+
+    @Test
+    void resume_egressDisabled() {
+        // create a DeltaFile that has two flows with errors, verify the egress flow is not resumed
+        DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
+        DeltaFileFlow transform = deltaFile.getFlow(1);
+        transform.setState(DeltaFileFlowState.ERROR);
+        OffsetDateTime now = OffsetDateTime.now();
+        transform.queueAction("someAction", "a.b.c", ActionType.TRANSFORM, false, now);
+        transform.lastAction().error(now, now, now, "bad", "things");
+        DeltaFileFlow dataSink = deltaFile.lastFlow();
+        dataSink.setState(DeltaFileFlowState.ERROR);
+        dataSink.lastAction().error(now, now, now, "bad", "things");
+
+        this.mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(false);
+        deltaFilesService.resumeDeltaFiles(List.of(deltaFile), List.of());
+        this.mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(true);
+
+        // verify input was only created for the transform action
+        verify(stateMachine).advance(assertArg(this::verifyResumeInput));
+    }
+
+    private void verifyResumeInput(List<StateMachineInput> input) {
+        assertThat(input).hasSize(1);
+        DeltaFileFlow flow = input.getFirst().flow();
+        assertThat(flow.getType()).isEqualTo(FlowType.TRANSFORM);
+    }
+
+    @Test
+    void requeue_egressDisabled() {
+        // create a DeltaFile that has two flows with actions to requeue, verify the egress action is not requeued
+        DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
+        DeltaFileFlow transform = deltaFile.getFlow(1);
+        transform.setState(DeltaFileFlowState.IN_FLIGHT);
+        OffsetDateTime now = OffsetDateTime.now();
+        transform.queueAction("someAction", "a.b.c", ActionType.TRANSFORM, false, now);
+
+        testClock.setInstant(OffsetDateTime.now().plusMinutes(6).toInstant());
+        Mockito.when(coreEventQueue.getLongRunningTasks()).thenReturn(List.of());
+        Mockito.when(queueManagementService.coldQueueActions()).thenReturn(Set.of());
+        Mockito.when(deltaFileRepo.findForRequeue(OffsetDateTime.now(testClock), Duration.ofMinutes(5), Set.of(), Set.of(), true,  5000))
+                .thenReturn(List.of(deltaFile));
+        Mockito.when(transformFlowService.findRunningActionConfig(transform.getName(), "someAction")).thenReturn(new ActionConfiguration());
+
+        this.mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(false);
+        deltaFilesService.requeue();
+        this.mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(true);
+
+        // verify input was only created for the transform action
+        verify(coreEventQueue).putActions(assertArg(this::verifyRequeuedInput), Mockito.eq(true));
+        verify(dataSinkService, Mockito.never()).findRunningActionConfig(Mockito.anyString(), Mockito.anyString());
+    }
+
+    private void verifyRequeuedInput(List<WrappedActionInput> input) {
+        assertThat(input).hasSize(1);
+        assertThat(input.getFirst().getActionContext().getActionName()).isEqualTo("someAction");
+    }
+
+    @Test
+    void requeuePaused_egressDisabled() {
+        // create a DeltaFile that has two flows that are paused, verify the egress action is not unpaused
+        DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
+        deltaFile.setPaused(true);
+        DeltaFileFlow transform = deltaFile.getFlow(1);
+        transform.setState(DeltaFileFlowState.PAUSED);
+        DeltaFileFlow dataSink = deltaFile.lastFlow();
+        dataSink.setState(DeltaFileFlowState.PAUSED);
+
+        Mockito.when(restDataSourceService.getPausedFlows()).thenReturn(List.of());
+        Mockito.when(timedDataSourceService.getPausedFlows()).thenReturn(List.of());
+        Mockito.when(transformFlowService.getPausedFlows()).thenReturn(List.of());
+        Mockito.when(dataSinkService.getPausedFlows()).thenReturn(List.of());
+        Mockito.when(deltaFileRepo.findPausedForRequeue(Set.of(), Set.of(), Set.of(), Set.of(), true, 5000))
+                .thenReturn(List.of(deltaFile));
+
+        mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(false);
+        deltaFilesService.requeuePausedFlows();
+        mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(true);
+
+        verify(stateMachine).advance(assertArg(this::verifyResumeInput));
+    }
+
+    @Test
+    void coldToWarm_egressDisabled() {
+        // verify that cold queue skips egressActions when egress is disabled
+        this.mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(false);
+        Mockito.when(dataSinkService.isEgressAction("egressAction")).thenReturn(true);
+        deltaFilesService.requeueColdQueueActions("egressAction", 1);
+        verifyNoInteractions(deltaFileRepo);
     }
 }

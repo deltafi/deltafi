@@ -20,6 +20,8 @@ package org.deltafi.core.services.pubsub;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.test.time.TestClock;
+import org.deltafi.core.MockDeltaFiPropertiesService;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.common.types.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
@@ -73,6 +75,9 @@ class PublisherServiceTest {
     @Spy
     @SuppressWarnings("unused")
     FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
+
+    @Spy
+    DeltaFiPropertiesService propertiesService = new MockDeltaFiPropertiesService();
 
     @Mock
     RuleEvaluator ruleEvaluator;

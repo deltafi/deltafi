@@ -22,13 +22,15 @@ import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.mockito.Mockito;
+import org.springframework.context.ApplicationEventPublisher;
 
 public class MockDeltaFiPropertiesService extends DeltaFiPropertiesService  {
 
     private final DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
 
     public MockDeltaFiPropertiesService() {
-        super(Mockito.mock(DeltaFiPropertiesRepo.class), new LocalStorageProperties(true, true));
+        super(Mockito.mock(DeltaFiPropertiesRepo.class), Mockito.mock(ApplicationEventPublisher.class),
+                new LocalStorageProperties(true, true));
     }
 
     @Override

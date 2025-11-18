@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.*;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.FlowDefinitionService;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
@@ -30,6 +31,8 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.deltafi.common.types.FlowType.DATA_SINK;
 
 /**
  * The PublisherService is used to find the next destinations for
@@ -49,6 +52,7 @@ public class PublisherService {
     private final Clock clock;
     private final AnalyticEventService analyticEventService;
     private final FlowDefinitionService flowDefinitionService;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     /**
      * Create new DeltaFileFlows for each subscriber that accepts the Deltafile and return the set.
@@ -85,6 +89,13 @@ public class PublisherService {
 
         if (subscribers.isEmpty()) {
             return handleNoMatches(publisher, deltaFile, publishingFlow, publishTopics);
+        }
+
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isEgressEnabled()) {
+            // treat all egress flows as paused when egress is not enabled
+            subscribers.stream()
+                    .filter(subscriber -> DATA_SINK.equals(subscriber.getType()))
+                    .forEach(f -> f.setState(DeltaFileFlowState.PAUSED));
         }
 
         return subscribers;

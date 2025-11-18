@@ -439,4 +439,8 @@ public class DeltaFileFlow {
     public void setPendingAnnotations(Set<String> expectedAnnotations) {
         this.pendingAnnotations = expectedAnnotations.stream().toList();
     }
+
+    public boolean isDataSink() {
+        return FlowType.DATA_SINK.equals(this.getType());
+    }
 }

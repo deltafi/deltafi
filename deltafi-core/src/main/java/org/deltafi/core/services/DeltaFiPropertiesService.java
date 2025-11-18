@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.deltafi.common.types.KeyValue;
+import org.deltafi.core.types.EgressDisabledEvent;
 import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.PropertyGroup;
@@ -32,6 +33,7 @@ import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
@@ -70,13 +72,16 @@ public class DeltaFiPropertiesService implements Snapshotter {
     }
 
     private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
+    private final ApplicationEventPublisher eventPublisher;
     private final LocalStorageProperties localStorageProperties;
     private final Set<String> disabledProperties;
     private DeltaFiProperties cachedDeltaFiProperties;
     private List<Property> properties;
 
-    public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, LocalStorageProperties localStorageProperties) {
+    public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
+                                    LocalStorageProperties localStorageProperties) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
+        this.eventPublisher = eventPublisher;
         this.localStorageProperties = localStorageProperties;
         this.disabledProperties = new HashSet<>();
         // make sure the latest DeltaFiProperties structure is reflected in the properties collection
@@ -199,9 +204,19 @@ public class DeltaFiPropertiesService implements Snapshotter {
                 .toList();
         boolean changed = false;
         for (KeyValue keyValue : allowedUpdates) {
-            changed = (deltaFiPropertiesRepo.updateProperty(keyValue.getKey(), keyValue.getValue()) > 0) || changed;
+            boolean updated = deltaFiPropertiesRepo.updateProperty(keyValue.getKey(), keyValue.getValue()) > 0;
+            if (updated && disabledEgress(keyValue)) {
+                eventPublisher.publishEvent(new EgressDisabledEvent(keyValue));
+            }
+            changed = updated || changed;
         }
         return refresh(changed);
+    }
+
+    private boolean disabledEgress(KeyValue keyValue) {
+        String value = keyValue.getValue();
+        return "egressEnabled".equals(keyValue.getKey()) &&
+                value != null && "false".equalsIgnoreCase(value.trim());
     }
 
     /**

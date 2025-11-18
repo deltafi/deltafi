@@ -82,6 +82,9 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "[Duration or ISO 8601] Sync all DeltaFiles that have not been modified for this duration", defaultValue = "PT30S")
     private Duration cacheSyncDuration = Duration.ofSeconds(30);
 
+    @PropertyInfo(group = PropertyGroup.EGRESS_CONTROLS, description = "Enables or disables all egress. When this is false all DeltaFiles will go to a paused state when they reach a DataSink until this value is set back to true.", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean egressEnabled = true;
+
     @PropertyInfo(group = PropertyGroup.INGRESS_CONTROLS, description = "Enables or disables all ingress", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean ingressEnabled = true;
 

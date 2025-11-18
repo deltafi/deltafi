@@ -152,7 +152,7 @@ class DeltaFileTest {
 
         List<DeltaFileFlow> retried = deltaFile.resumeErrors(List.of(
                 new ResumeMetadata("flow1", "action1", Map.of("a", "b"), List.of("c", "d")),
-                new ResumeMetadata("flow3", "action3", Map.of("x", "y"), List.of("z"))), now);
+                new ResumeMetadata("flow3", "action3", Map.of("x", "y"), List.of("z"))),  false, now);
         assertNull(action1.getNextAutoResume());
         assertNotNull(action2.getNextAutoResume());
         assertNull(action3.getNextAutoResume());

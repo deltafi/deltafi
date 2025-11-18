@@ -37,10 +37,11 @@ public interface DeltaFileRepoCustom {
      * @param requeueDuration duration to wait for an action to finish before requeuing
      * @param skipActions Set of actions to not requeue
      * @param skipDids Set of dids to not requeue
+     * @param excludeEgressActions when true exclude egress actions from the results
      * @param limit maximum number of results to return
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> findForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit);
+    List<DeltaFile> findForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, boolean excludeEgressActions, int limit);
 
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names
@@ -58,20 +59,22 @@ public interface DeltaFileRepoCustom {
      * @param skipTimedDataSource Set of timed data sources to not requeue
      * @param skipTransforms Set of transforms to not requeue
      * @param skipDataSinks Set of data sinks to not requeue
+     * @param excludeEgressActions when true exclude egress actions from the results
      * @param maxFiles limit the query to this many files
      * @return the list of the DeltaFiles to be requeued
      */
     List<DeltaFile> findPausedForRequeue(Set<String> skipRestDataSources, Set<String> skipTimedDataSource,
-                                         Set<String> skipTransforms, Set<String> skipDataSinks, int maxFiles);
+                                         Set<String> skipTransforms, Set<String> skipDataSinks, boolean excludeEgressActions, int maxFiles);
 
     /**
      * Find DeltaFiles that are ready for an automatic resume after encountering an error.
      *
      * @param maxReadyTime upper limit for finding matching DeltaFiles
+     * @param excludeEgressActions when true exclude egress actions from the results
      * @param batchSize maximum number of files to return
      * @return the list of the DeltaFiles to be resumed
      */
-    List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, int batchSize);
+    List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, boolean excludeEgressActions, int batchSize);
 
     /**
      * Search for DeltaFiles in an ERROR stage which may be candidates for applying

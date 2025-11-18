@@ -51,6 +51,7 @@ import java.util.regex.Pattern;
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     // a magic number known by the GUI that says there are "many" total results
     private static final int MANY_RESULTS = 10_000;
+    public static final String LIMIT = "limit";
 
     @PersistenceContext(unitName = "primary")
     private final EntityManager entityManager;
@@ -79,30 +80,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
-        StringBuilder sqlQuery = new StringBuilder("""
-            SELECT DISTINCT delta_file_id
-            FROM delta_file_flows dff
-            JOIN delta_files df
-            ON dff.delta_file_id = df.did
-            WHERE df.modified < :requeueThreshold
-            AND df.stage = 'IN_FLIGHT'
-            AND dff.cold_queued = false""");
-
-        if (skipActions != null && !skipActions.isEmpty()) {
-            sqlQuery.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' NOT IN (:skipActions)");
-        }
-
-        if (skipDids != null && !skipDids.isEmpty()) {
-            sqlQuery.append("\nAND dff.delta_file_id NOT IN (:skipDids)");
-        }
-
-        sqlQuery.append("\nLIMIT :limit");
-
+    public List<DeltaFile> findForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, boolean excludeEgressActions, int limit) {
+        String sqlQuery = buildRequeueSql(skipActions, skipDids, excludeEgressActions);
         OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
-        Query query = entityManager.createNativeQuery(sqlQuery.toString(), UUID.class)
+        Query query = entityManager.createNativeQuery(sqlQuery, UUID.class)
                 .setParameter("requeueThreshold", requeueThreshold)
-                .setParameter("limit", limit);
+                .setParameter(LIMIT, limit);
 
         if (skipDids != null && !skipDids.isEmpty()) {
             query.setParameter("skipDids", skipDids);
@@ -114,6 +97,38 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         @SuppressWarnings("unchecked")
         List<UUID> didsToRequeue = query.getResultList();
         return fetchByDidIn(didsToRequeue);
+    }
+
+    private String buildRequeueSql(Set<String> skipActions, Set<UUID> skipDids, boolean excludeEgressActions) {
+        StringBuilder sqlQuery = new StringBuilder("""
+            SELECT DISTINCT delta_file_id
+            FROM delta_file_flows dff
+            """);
+
+        if (excludeEgressActions) {
+            sqlQuery.append("JOIN flow_definitions fd ON fd.id = dff.flow_definition_id\n");
+        }
+
+        sqlQuery.append("""
+            WHERE dff.modified < :requeueThreshold
+            AND dff.state = 'IN_FLIGHT'
+            AND dff.cold_queued = false""");
+
+        if (skipActions != null && !skipActions.isEmpty()) {
+            sqlQuery.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' NOT IN (:skipActions)");
+        }
+
+        if (skipDids != null && !skipDids.isEmpty()) {
+            sqlQuery.append("\nAND dff.delta_file_id NOT IN (:skipDids)");
+        }
+
+        if (excludeEgressActions) {
+            sqlQuery.append("\nAND fd.type <> 'DATA_SINK'");
+        }
+
+        sqlQuery.append("\nLIMIT :limit");
+
+        return sqlQuery.toString();
     }
 
     @Override
@@ -135,7 +150,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
                 .setParameter("actionClass", actionClass)
-                .setParameter("limit", maxFiles);
+                .setParameter(LIMIT, maxFiles);
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = nativeQuery.getResultList();
@@ -145,7 +160,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     @Transactional
     public List<DeltaFile> findPausedForRequeue(Set<String> skipRestDataSources, Set<String> skipTimedDataSource,
-                                                Set<String> skipTransforms, Set<String> skipDataSinks, int maxFiles) {
+                                                Set<String> skipTransforms, Set<String> skipDataSinks, boolean excludeEgressActions, int maxFiles) {
         // join to delta_files to check the overall paused flag
         // only resume if all other flows are terminal, causing the top level paused flag to be set
         // else there can be split brain between caches in core workers
@@ -162,7 +177,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                    OR
                    (fd.type = 'TRANSFORM' AND (:skipTransforms IS NULL OR fd.name NOT IN (:skipTransforms)))
                    OR
-                   (fd.type = 'DATA_SINK' AND (:skipDataSinks IS NULL OR fd.name NOT IN (:skipDataSinks)))
+                   (fd.type = 'DATA_SINK' AND :excludeEgressActions = FALSE AND (:skipDataSinks IS NULL OR fd.name NOT IN (:skipDataSinks)))
                  )
                  LIMIT :limit
             """;
@@ -172,16 +187,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 .setParameter("skipTimedDataSources", skipTimedDataSource)
                 .setParameter("skipTransforms", skipTransforms)
                 .setParameter("skipDataSinks", skipDataSinks)
-                .setParameter("limit", maxFiles);
+                .setParameter("excludeEgressActions", excludeEgressActions)
+                .setParameter(LIMIT, maxFiles);
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = nativeQuery.getResultList();
         return fetchByDidIn(dids);
     }
 
-    @Override
-    public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, int batchSize) {
-        String queryStr = """
+    private static final String RESUME_READY = """
             SELECT DISTINCT df.did
             FROM delta_file_flows dff
             JOIN delta_files df
@@ -193,6 +207,24 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             AND dff.next_auto_resume < :maxReadyTime
             LIMIT :batchSize
             """;
+
+    private static final String RESUME_READY_NO_EGRESS = """
+            SELECT DISTINCT df.did
+            FROM delta_file_flows dff
+            JOIN delta_files df ON dff.delta_file_id = df.did
+            JOIN flow_definitions fd ON fd.id = dff.flow_definition_id
+            WHERE df.stage = 'ERROR'
+            AND df.content_deleted IS NULL
+            AND dff.state = 'ERROR'
+            AND dff.error_acknowledged IS NULL
+            AND dff.next_auto_resume < :maxReadyTime
+            AND fd.type <> 'DATA_SINK'
+            LIMIT :batchSize
+            """;
+
+    @Override
+    public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime, boolean excludeEgressActions, int batchSize) {
+        String queryStr = excludeEgressActions ? RESUME_READY_NO_EGRESS : RESUME_READY;
 
         Query query = entityManager.createNativeQuery(queryStr, UUID.class)
                 .setParameter("maxReadyTime", maxReadyTime)
@@ -262,7 +294,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 .setParameter("flowType", flowType.name())
                 .setParameter("flowName", flowName)
                 .setParameter("includeAcknowledged", includeAcknowledged)
-                .setParameter("limit", limit);
+                .setParameter(LIMIT, limit);
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = query.getResultList();
@@ -289,7 +321,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
                 .setParameter("errorCause", errorCause)
                 .setParameter("includeAcknowledged", includeAcknowledged)
-                .setParameter("limit", limit);
+                .setParameter(LIMIT, limit);
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = query.getResultList();
@@ -502,7 +534,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         int intOffset = offset == null ? 0 : offset;
 
         Query query = entityManager.createNativeQuery(sqlQuery.toString(), DeltaFile.class);
-        query.setParameter("limit", limit);
+        query.setParameter(LIMIT, limit);
         query.setParameter("offset", intOffset);
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
             query.setParameter(entry.getKey(), entry.getValue());
@@ -541,7 +573,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         sqlQuery.append("LIMIT :limit");
 
         Query query = entityManager.createNativeQuery(sqlQuery.toString(), DeltaFile.class);
-        query.setParameter("limit", limit);
+        query.setParameter(LIMIT, limit);
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
             query.setParameter(entry.getKey(), entry.getValue());
         }
