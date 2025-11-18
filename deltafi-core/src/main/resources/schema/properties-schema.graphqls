@@ -88,6 +88,7 @@ type DeltaFiProperties {
     deleteFrequency: String!
     deletePolicyBatchSize: Int!
     cacheSyncDuration: String!
+    egressEnabled: Boolean!
     ingressEnabled: Boolean!
     ingressDiskSpaceRequirementInMb: Long!
     pluginImagePullSecret: String
@@ -124,6 +125,7 @@ input DeltaFiPropertiesInput {
     deleteFrequency: String!
     deletePolicyBatchSize: Int!
     cacheSyncDuration: String!
+    egressEnabled: Boolean!
     ingressEnabled: Boolean!
     ingressDiskSpaceRequirementInMb: Long!
     pluginImagePullSecret: String
