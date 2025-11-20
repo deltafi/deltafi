@@ -4,7 +4,7 @@ import vue from "@vitejs/plugin-vue";
 import Components from "unplugin-vue-components/vite";
 import fs from "fs";
 import { resolve, basename } from "path";
-import glob from "glob";
+import fg from "fast-glob";
 
 import { sidebar } from "./sidebar.js"; // Import the sidebar configuration
 
@@ -45,7 +45,7 @@ function copyDocs() {
 
   // Copy core actions docs
   const srcPattern = resolve(__dirname, "../../deltafi-core-actions/src/main/resources/docs/org.deltafi.core.action.*.md");
-  const files = glob.sync(srcPattern);
+  const files = fg.sync(srcPattern);
   files.forEach((file) => {
     const destFile = resolve(targetDir, basename(file));
     fs.copyFileSync(file, destFile);
@@ -57,7 +57,7 @@ function copyDocs() {
 function updateVersionInDocs() {
   const version = getLatestVersion(resolve(__dirname, "../docs/CHANGELOG.md"));
   console.log("Replacing __VERSION__ with", version, "in built docs...");
-  const files = glob.sync(resolve(__dirname, './dist/**/*.{js,html}'));
+  const files = fg.sync(resolve(__dirname, './dist/**/*.{js,html}'));
   files.forEach((file) => {
     let content = fs.readFileSync(file, 'utf8');
     content = content.replace(/__VERSION__/g, version);

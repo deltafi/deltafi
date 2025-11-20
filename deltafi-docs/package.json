@@ -19,6 +19,7 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "@vueuse/core": "^13.9.0",
     "eslint": "^9.36.0",
+    "fast-glob": "^3.3.3",
     "https-localhost": "^4.7.1",
     "unocss": "^66.5.2",
     "unplugin-vue-components": "^29.1.0",
