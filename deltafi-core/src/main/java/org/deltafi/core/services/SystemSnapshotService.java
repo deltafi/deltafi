@@ -25,14 +25,20 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
+import org.deltafi.core.generated.types.DeltaFileDirection;
+import org.deltafi.core.generated.types.SystemSnapshotFilter;
+import org.deltafi.core.generated.types.SystemSnapshotSort;
+import org.deltafi.core.generated.types.SystemSnapshots;
 import org.deltafi.core.repo.SystemSnapshotRepo;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 @Service
@@ -46,8 +52,18 @@ public class SystemSnapshotService {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .registerModule(new JavaTimeModule());
 
+    private static final int DEFAULT_QUERY_LIMIT = 50;
+
     private List<Snapshotter> snapshotters;
     private SystemSnapshotRepo systemSnapshotRepo;
+
+    public SystemSnapshots getSystemSnapshots(Integer offset, Integer limit, SystemSnapshotFilter filter, DeltaFileDirection direction, SystemSnapshotSort sortField) {
+        return systemSnapshotRepo.getSnapshotsByFilter(offset,
+                (limit != null && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                filter,
+                direction != null ? direction : DeltaFileDirection.DESC,
+                sortField != null ? sortField : SystemSnapshotSort.CREATED);
+    }
 
     public SystemSnapshot getWithMaskedVariables(UUID snapshotId) {
         SystemSnapshot snapshot = getById(snapshotId);
@@ -150,6 +166,7 @@ public class SystemSnapshotService {
 
     /**
      * Map the given snapshot data to the latest data model
+     *
      * @param snapshot that will be used to reset the system settings
      * @return a snapshot using the latest data model that can be applied to the current system
      */
@@ -176,6 +193,5 @@ public class SystemSnapshotService {
         snapshotConsumer.accept(snapshot);
         systemSnapshot.setSnapshot(OBJECT_MAPPER.convertValue(snapshot, new TypeReference<>() {}));
     }
-
 
 }

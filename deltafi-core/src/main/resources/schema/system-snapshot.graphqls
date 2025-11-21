@@ -32,9 +32,29 @@ input SystemSnapshotInput {
     snapshot: JSON!
 }
 
+input SystemSnapshotFilter {
+  reasonFilter: NameFilter
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+type SystemSnapshots {
+  offset: Int
+  count: Int
+  totalCount: Int
+  systemSnapshots: [SystemSnapshot!]!
+}
+
+enum SystemSnapshotSort {
+  ID,
+  REASON,
+  CREATED
+}
+
 extend type Query {
   getSystemSnapshots: [SystemSnapshot]!
   getSystemSnapshot(snapshotId: UUID!) : SystemSnapshot
+  getSystemSnapshotsByFilter(offset: Int, limit: Int, filter: SystemSnapshotFilter,, direction: DeltaFileDirection, sortField: SystemSnapshotSort): SystemSnapshots!
 }
 
 extend type Mutation {

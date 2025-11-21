@@ -24,6 +24,7 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
+import org.deltafi.core.generated.client.GetSystemSnapshotsByFilterProjectionRoot;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.PluginSnapshot;
@@ -39,9 +40,33 @@ public class SystemSnapshotTestHelper {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static Snapshot snapshot;
+    public static final GetSystemSnapshotsByFilterProjectionRoot<?, ?> BY_FILTER_PROJECTION_ROOT = new GetSystemSnapshotsByFilterProjectionRoot<>()
+            .systemSnapshots()
+            .id()
+            .reason()
+            .created()
+            .schemaVersion()
+            .snapshot()
+            .parent()
+            .offset()
+            .count()
+            .totalCount();
+
 
     public static SystemSnapshot importSystemSnapshot(DgsQueryExecutor dgsQueryExecutor) {
         @Language("GraphQL") String mutation = IMPORT_SNAPSHOT.replace("$projection", PROJECTION);
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                mutation,
+                "data.importSnapshot",
+                new TypeRef<>() {});
+    }
+
+    public static SystemSnapshot importSystemSnapshot2(DgsQueryExecutor dgsQueryExecutor) {
+        @Language("GraphQL") String mutation = IMPORT_SNAPSHOT.replace("$projection", PROJECTION)
+                .replace("11111111-1111-1111-1111-111111111111", "22222222-1111-1111-1111-111111111111")
+                .replace("REASON1", "reason2")
+                .replace("2023-02-28T21:27:03.407Z", "2023-03-28T21:27:03.407Z");
+
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 mutation,
                 "data.importSnapshot",
@@ -62,7 +87,7 @@ public class SystemSnapshotTestHelper {
     public static SystemSnapshot expectedSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
-        systemSnapshot.setReason("TEST");
+        systemSnapshot.setReason("REASON1");
         systemSnapshot.setCreated(OffsetDateTime.parse("2023-02-28T21:27:03.407Z"));
         Snapshot snapshot = new Snapshot();
         setResumePolicies(snapshot);
@@ -170,7 +195,7 @@ public class SystemSnapshotTestHelper {
                 importSnapshot(
                     snapshot: {
                         id: "11111111-1111-1111-1111-111111111111"
-                        reason: "TEST"
+                        reason: "REASON1"
                         created: "2023-02-28T21:27:03.407Z"
                         schemaVersion: 2,
                         snapshot: {

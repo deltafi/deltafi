@@ -24,5 +24,5 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-public interface SystemSnapshotRepo extends JpaRepository<SystemSnapshot, UUID> {
+public interface SystemSnapshotRepo extends JpaRepository<SystemSnapshot, UUID>, SystemSnapshotRepoCustom {
 }

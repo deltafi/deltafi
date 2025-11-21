@@ -24,6 +24,10 @@ import com.netflix.graphql.dgs.InputArgument;
 import com.networknt.schema.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.generated.types.DeltaFileDirection;
+import org.deltafi.core.generated.types.SystemSnapshotFilter;
+import org.deltafi.core.generated.types.SystemSnapshotSort;
+import org.deltafi.core.generated.types.SystemSnapshots;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
@@ -49,6 +53,17 @@ public class SystemSnapshotDatafetcher {
     @NeedsPermission.SnapshotRead
     public List<SystemSnapshot> getSystemSnapshots() {
         return systemSnapshotService.getAll();
+    }
+
+    @DgsQuery
+    @NeedsPermission.SnapshotRead
+    public SystemSnapshots getSystemSnapshotsByFilter(
+            @InputArgument Integer offset,
+            @InputArgument Integer limit,
+            @InputArgument SystemSnapshotFilter filter,
+            @InputArgument DeltaFileDirection direction,
+            @InputArgument SystemSnapshotSort sortField) {
+        return systemSnapshotService.getSystemSnapshots(offset, limit, filter, direction, sortField);
     }
 
     @DgsMutation

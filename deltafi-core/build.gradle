@@ -164,6 +164,7 @@ generateJava {
             "RestDataSourceSnapshotInput"   : "org.deltafi.core.types.snapshot.RestDataSourceSnapshot",
             "Role"                          : "org.deltafi.core.types.snapshot.RoleSnapshot",
             "RoleInput"                     : "org.deltafi.core.types.snapshot.RoleSnapshot",
+            "SystemSnapshot"                : "org.deltafi.core.types.snapshot.SystemSnapshot",
             "TimedDataSourceSnapshot"       : "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
             "TimedDataSourceSnapshotInput"  : "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
             "TransformFlowSnapshot"         : "org.deltafi.core.types.snapshot.TransformFlowSnapshot",

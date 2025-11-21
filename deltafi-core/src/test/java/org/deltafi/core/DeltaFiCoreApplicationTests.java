@@ -4710,6 +4710,130 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+    void testGetSystemSnapshotsByFilter() {
+        SystemSnapshot snapshot1 = SystemSnapshotTestHelper.importSystemSnapshot(dgsQueryExecutor);
+        SystemSnapshot snapshot2 = SystemSnapshotTestHelper.importSystemSnapshot2(dgsQueryExecutor);
+
+        // matches only 1
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
+                new GetSystemSnapshotsByFilterGraphQLQuery.Builder()
+                        .limit(5)
+                        .filter(SystemSnapshotFilter.newBuilder().reasonFilter(
+                                        NameFilter.newBuilder().caseSensitive(true).name("REASON1").build())
+                                .build())
+                        .build(),
+                SystemSnapshotTestHelper.BY_FILTER_PROJECTION_ROOT
+        );
+
+        SystemSnapshots actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + DgsConstants.QUERY.GetSystemSnapshotsByFilter,
+                SystemSnapshots.class
+        );
+
+        assertEquals(0, actual.getOffset());
+        assertEquals(1, actual.getCount());
+        assertEquals(1, actual.getTotalCount());
+        assertEquals(snapshot1, actual.getSystemSnapshots().getFirst());
+
+        // matches both, returns reverse order by id
+        graphQLQueryRequest = new GraphQLQueryRequest(
+                new GetSystemSnapshotsByFilterGraphQLQuery.Builder()
+                        .limit(5)
+                        .sortField(SystemSnapshotSort.ID)
+                        .direction(DeltaFileDirection.DESC)
+                        .filter(SystemSnapshotFilter.newBuilder().reasonFilter(
+                                        NameFilter.newBuilder().caseSensitive(false).name("REASON").build())
+                                .build())
+                        .build(),
+                SystemSnapshotTestHelper.BY_FILTER_PROJECTION_ROOT
+        );
+
+        actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + DgsConstants.QUERY.GetSystemSnapshotsByFilter,
+                SystemSnapshots.class
+        );
+
+        assertEquals(0, actual.getOffset());
+        assertEquals(2, actual.getCount());
+        assertEquals(2, actual.getTotalCount());
+        assertEquals(snapshot2, actual.getSystemSnapshots().getFirst());
+        assertEquals(snapshot1, actual.getSystemSnapshots().getLast());
+
+        // matches both, returns ASC order by id
+        graphQLQueryRequest = new GraphQLQueryRequest(
+                new GetSystemSnapshotsByFilterGraphQLQuery.Builder()
+                        .limit(5)
+                        .sortField(SystemSnapshotSort.ID)
+                        .direction(DeltaFileDirection.ASC)
+                        .filter(SystemSnapshotFilter.newBuilder().reasonFilter(
+                                        NameFilter.newBuilder().caseSensitive(null).name("REASON").build())
+                                .build())
+                        .build(),
+                SystemSnapshotTestHelper.BY_FILTER_PROJECTION_ROOT
+        );
+
+        actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + DgsConstants.QUERY.GetSystemSnapshotsByFilter,
+                SystemSnapshots.class
+        );
+
+        assertEquals(0, actual.getOffset());
+        assertEquals(2, actual.getCount());
+        assertEquals(2, actual.getTotalCount());
+        assertEquals(snapshot1, actual.getSystemSnapshots().getFirst());
+        assertEquals(snapshot2, actual.getSystemSnapshots().getLast());
+
+        // matches both, default order (created/DESC), but only returns '1' due to offset
+        graphQLQueryRequest = new GraphQLQueryRequest(
+                new GetSystemSnapshotsByFilterGraphQLQuery.Builder()
+                        .limit(5)
+                        .offset(1)
+                        .filter(SystemSnapshotFilter.newBuilder()
+                                .createdAfter(OffsetDateTime.parse("2021-02-28T21:27:03.407Z"))
+                                .createdBefore(OffsetDateTime.parse("2025-02-28T21:27:03.407Z"))
+                                .build())
+                        .build(),
+                SystemSnapshotTestHelper.BY_FILTER_PROJECTION_ROOT
+        );
+
+        actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + DgsConstants.QUERY.GetSystemSnapshotsByFilter,
+                SystemSnapshots.class
+        );
+
+        assertEquals(1, actual.getOffset());
+        assertEquals(1, actual.getCount());
+        assertEquals(2, actual.getTotalCount());
+        assertEquals(snapshot1, actual.getSystemSnapshots().getFirst());
+
+        // does not match anything
+        graphQLQueryRequest = new GraphQLQueryRequest(
+                new GetSystemSnapshotsByFilterGraphQLQuery.Builder()
+                        .limit(5)
+                        .filter(SystemSnapshotFilter.newBuilder()
+                                .createdAfter(OffsetDateTime.parse("2025-02-28T21:27:03.407Z"))
+                                .createdBefore(OffsetDateTime.parse("2021-02-28T21:27:03.407Z"))
+                                .build())
+                        .build(),
+                SystemSnapshotTestHelper.BY_FILTER_PROJECTION_ROOT
+        );
+
+        actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + DgsConstants.QUERY.GetSystemSnapshotsByFilter,
+                SystemSnapshots.class
+        );
+
+        assertEquals(0, actual.getOffset());
+        assertEquals(0, actual.getCount());
+        assertEquals(0, actual.getTotalCount());
+    }
+
+    @Test
 	void setDataSinkExpectedAnnotations() {
 		clearForFlowTests();
 		DataSink dataSink = new DataSink();
