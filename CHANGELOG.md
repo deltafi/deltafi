@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.37.0] - 2025-11-21
+
+### Added
+- Added a post startup method to the core-scheduler that re-installs any plugins that should be installed when running in compose
+- Added a system property, `egressEnabled`, that can be used to turn off DeltaFile egress globally. When false, egress is disabled, pausing all DeltaFiles at `DataSinks`. Egress action queues are drained and the actions are ineligible for requeue until egress is re-enabled. Resetting the property to true will allow the actions to requeue.
+- UI: Added switch on Data Sources page to toggle ingress
+- UI: Added switch on Data Sinks page to toggle egress
+
+### Changed
+- Changed resume to skip egress action errors when egress is disabled, this applies to auto-resume rules as well
+
+### Fixed
+- NodeJS dependency tree for docs dropped glob as a transitive dependency.  Moved the code to use fast-glob directly.
+
+### Tech-Debt/Refactor
+- Do not create the `PendingDeleteCleanupScheduler` service when using external storage
+
+### Upgrade and Migration
+- Upgrade lazydocker distro to the latest version
+
 ## [2.36.0] - 2025-11-17
 
 ### Added
@@ -5003,7 +5023,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.36.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.37.0...main
+[2.37.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.36.0...2.37.0
 [2.36.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.35.0...2.36.0
 [2.35.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.4...2.35.0
 [2.34.4]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.3...2.34.4
