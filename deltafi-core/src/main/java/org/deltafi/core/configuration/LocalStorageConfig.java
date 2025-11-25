@@ -17,10 +17,13 @@
  */
 package org.deltafi.core.configuration;
 
+import io.minio.MinioClient;
 import org.deltafi.common.content.StorageProperties;
 import org.deltafi.core.repo.PendingDeleteRepo;
 import org.deltafi.core.schedulers.PendingDeleteCleanupScheduler;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.LocalContentStorageService;
+import org.deltafi.core.services.StorageConfigurationService;
 import org.deltafi.core.services.SystemService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -39,5 +42,11 @@ public class LocalStorageConfig {
     @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
     public PendingDeleteCleanupScheduler pendingDeleteCleanupScheduler(SystemService systemService, PendingDeleteRepo pendingDeleteRepo) {
         return new PendingDeleteCleanupScheduler(systemService, pendingDeleteRepo);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
+    public StorageConfigurationService storageConfigurationService(MinioClient minioClient, DeltaFiPropertiesService deltaFiPropertiesService, StorageProperties storageProperties) {
+        return new StorageConfigurationService(minioClient, deltaFiPropertiesService, storageProperties);
     }
 }

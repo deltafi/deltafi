@@ -25,17 +25,12 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 
 @Slf4j
-@Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
-@ConditionalOnProperty(name = "local.storage", havingValue = "true")
 public class StorageConfigurationService {
 
     private static final String AGE_OFF = "AgeOff";
