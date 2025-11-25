@@ -5,6 +5,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.38.0] - 2025-11-25
+
+### Added
+- Added GraphQL query endpoint `getSystemSnapshotsByFilter` to support system snapshot paging, query, and sort
+- Added a tags field to flows to allow tagging related flows
+- Added a mutation to set the flow state on any flow matching a given `FlowTagFilter`, along a with a dryRun query that can be used to see what flows will be updated by the mutation
+- Added a query to find flows by a given `FlowTagFilter`
+- Added leader-member monitoring feature for centralized monitoring of distributed DeltaFi deployments. See [Leader-Member Deployment](advanced/leader_member.md) for details.
+  - Configure member sites via `leaderConfig` system property with URL, tags, and credentials
+  - Leader Dashboard page displays member health, error counts, queue metrics, and system metrics
+  - Multiple dashboard views: Summary, Detailed, Ingress, Egress, Storage, Deleted bytes
+  - Fleet Config page compares plugins, flows, properties, and other configuration across members
+- Added `/api/v2/status/report` endpoint combining status, metrics, and version in a single response
+- Added `/api/v2/metrics/flow` endpoint for querying ingress/egress/storage/deleted byte metrics
+- Added `/api/v2/system/snapshot/current` endpoint to retrieve current configuration as a snapshot
+- UI conditionally shows Leader Dashboard and Fleet Config menu items only when leader mode is enabled
+- Added warm queue, cold queue, and paused metrics to the dashboard
+
+### Upgrade and Migration
+- Update some tui dependencies for CVEs
+
 ## [2.37.0] - 2025-11-21
 
 ### Added
@@ -5023,7 +5044,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.37.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.38.0...main
+[2.38.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.37.0...2.38.0
 [2.37.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.36.0...2.37.0
 [2.36.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.35.0...2.36.0
 [2.35.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.34.4...2.35.0
