@@ -22,15 +22,15 @@
       Loading...
     </div>
     <div v-else class="list-group list-group-flush">
-      <div class="row">
-        <div v-for="label in statLabels" :key="label" class="col-4 text-center">
+      <div class="stats-row">
+        <div v-for="label in statLabels" :key="label" class="stat-cell text-center">
           <div class="stat-label">
             {{ label }}
           </div>
         </div>
       </div>
-      <div class="row">
-        <div v-for="value in statValues" :key="value" class="col-4 text-center">
+      <div class="stats-row">
+        <div v-for="(value, index) in statValues" :key="index" class="stat-cell text-center">
           <div class="stat-data">
             {{ value }}
           </div>
@@ -53,8 +53,11 @@ const { fetchDeltaFileStats } = useDeltaFileStats();
 const deltaFileStats = ref(null)
 const statLabels = [
   "Total DeltaFiles",
-  "Total DeltaFiles In-flight",
-  "Total Bytes In-flight"
+  "In-flight",
+  "In-flight Bytes",
+  "Warm Queue",
+  "Cold Queue",
+  "Paused"
 ]
 const statValues = computed(() => {
   if (deltaFileStats.value == null) return {};
@@ -62,7 +65,10 @@ const statValues = computed(() => {
   return [
     deltaFileStats.value.totalCount.toLocaleString("en-US"),
     deltaFileStats.value.inFlightCount.toLocaleString("en-US"),
-    formattedBytes(deltaFileStats.value.inFlightBytes)
+    formattedBytes(deltaFileStats.value.inFlightBytes),
+    (deltaFileStats.value.warmQueuedCount ?? 0).toLocaleString("en-US"),
+    (deltaFileStats.value.coldQueuedCount ?? 0).toLocaleString("en-US"),
+    (deltaFileStats.value.pausedCount ?? 0).toLocaleString("en-US")
   ]
 })
 
@@ -80,6 +86,16 @@ onMounted(async () => {
 </script>
 
 <style>
+.stats-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.stat-cell {
+  flex: 1 1 16%;
+  min-width: 100px;
+}
+
 .stat-data {
   padding-bottom: 0.3rem;
   font-size: x-large;

@@ -23,8 +23,8 @@ export default function useApi(version: Number = 2) {
   const notify = useNotifications();
   const basePath: RequestInfo = `/api/v${version}`;
   const response: Ref<any> = ref({});
-  const loading: Ref<Boolean> = ref(false);
-  const loaded: Ref<Boolean> = ref(false);
+  const loading: Ref<boolean> = ref(false);
+  const loaded: Ref<boolean> = ref(false);
   const errors: Ref<Array<string>> = ref([]);
 
   const buildURL = (endpoint: String, params: URLSearchParams = new URLSearchParams()) => {

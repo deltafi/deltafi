@@ -151,6 +151,23 @@ public class ValkeyKeyedBlockingQueue {
     }
 
     /**
+     * Set a key value pair in valkey with expiration time
+     * @param key to use
+     * @param value to use
+     * @param ttl time to live duration
+     */
+    public void set(String key, String value, java.time.Duration ttl) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            long ttlSeconds = ttl.toSeconds();
+            if (ttlSeconds > 0) {
+                jedis.setex(key, (int) ttlSeconds, value);
+            } else {
+                jedis.set(key, value);
+            }
+        }
+    }
+
+    /**
      * Publish a heartbeat in the form of a timestamp
      *
      * @param key the name of the component publishing the heartbeat
@@ -348,8 +365,12 @@ public class ValkeyKeyedBlockingQueue {
             Map<String, Long> queueCnts = new HashMap<>();
 
             for (String key : keys) {
-                long count = jedis.zcount(key, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
-                queueCnts.put(key, count);
+                try {
+                    long count = jedis.zcount(key, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+                    queueCnts.put(key, count);
+                } catch (Exception e) {
+                    log.warn("Failed to get count for key '{}': {}", key, e.getMessage());
+                }
             }
 
             return queueCnts;

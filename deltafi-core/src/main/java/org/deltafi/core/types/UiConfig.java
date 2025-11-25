@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
+@Slf4j
 public class UiConfig {
     private String title;
     private String domain;
@@ -38,6 +40,7 @@ public class UiConfig {
     private List<Link> deltaFileLinks = new ArrayList<>();
     private List<Link> externalLinks = new ArrayList<>();
     private boolean lookupTablesEnabled;
+    private boolean leader;
 
     public void setProperties(DeltaFiProperties properties) {
         this.setTitle(properties.getSystemName());
@@ -45,6 +48,7 @@ public class UiConfig {
         this.setUseUTC(properties.isUiUseUTC());
         this.topBar = new TopBar(properties);
         this.securityBanner = new SecurityBanner(properties);
+        this.leader = properties.hasMembers();
     }
 
     public void setLinks(List<Link> links) {

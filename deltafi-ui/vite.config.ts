@@ -9,6 +9,7 @@ export default ({ mode }) => {
   process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
 
   const DELTAFI_DOMAIN = process.env.DELTAFI_DOMAIN || "dev.deltafi.org";
+  const SCHEME = process.env.SCHEME || "https";
 
   return defineConfig({
     plugins: [vue(), tsconfigPaths(), commonjs()],
@@ -17,7 +18,7 @@ export default ({ mode }) => {
       port: 8080,
       proxy: {
         "/api": {
-          target: `https://${DELTAFI_DOMAIN}`,
+          target: `${SCHEME}://${DELTAFI_DOMAIN}`,
           changeOrigin: true,
           secure: false,
           configure: (proxy, options) => {
@@ -31,17 +32,17 @@ export default ({ mode }) => {
           },
         },
         "/visualization": {
-          target: `https://${DELTAFI_DOMAIN}`,
+          target: `${SCHEME}://${DELTAFI_DOMAIN}`,
           changeOrigin: true,
           secure: false
         },
         "/deltafile/ingress": {
-          target: `https://ingress.${DELTAFI_DOMAIN}`,
+          target: `${SCHEME}://ingress.${DELTAFI_DOMAIN}`,
           changeOrigin: true,
           secure: false
         },
         "/deltafile/annotate": {
-          target: `https://${DELTAFI_DOMAIN}`,
+          target: `${SCHEME}://${DELTAFI_DOMAIN}`,
           changeOrigin: true,
           secure: false
         },

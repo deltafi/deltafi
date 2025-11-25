@@ -26,7 +26,10 @@ export default function useVersion() {
       deltaFileStats: {
         totalCount: true,
         inFlightCount: true,
-        inFlightBytes: true
+        inFlightBytes: true,
+        warmQueuedCount: true,
+        coldQueuedCount: true,
+        pausedCount: true
       }
     };
 

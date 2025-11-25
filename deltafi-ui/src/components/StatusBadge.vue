@@ -19,36 +19,7 @@
 <template>
   <span>
     <Tag v-tooltip.bottom="'Click for more info'" class="status-tag" :icon="icon(computedStatus.code)" :severity="tagSeverity(computedStatus.code)" :value="computedStatus.state" @click="openStatusDialog()" />
-    <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{ width: '50vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" class="status-dialog">
-      <DataTable v-model:expanded-rows="rowsExpanded" :value="computedStatus.checks" data-key="description" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines status-table">
-        <Column :expander="true" header-style="width: 3rem" class="expander-col" />
-        <Column field="code" header="Status" class="severity-col">
-          <template #body="slotProps">
-            <EventSeverityBadge :severity="messageSeverity(slotProps.data.code)" style="width: 6rem" />
-          </template>
-        </Column>
-        <Column field="description" header="Description" />
-        <Column header="Last Run" field="timestamp" :sortable="true" style="width: 15rem" class="timestamp-column">
-          <template #body="row">
-            <Timestamp :timestamp="row.data.timestamp" style="width: 12rem" />
-          </template>
-        </Column>
-        <template #expansion="message">
-          <div v-if="message.data.message !== ''">
-            <div class="message" v-html="markdown(message.data.message)" />
-          </div>
-          <div v-else>
-            <div class="message"><i>No details provided</i></div>
-          </div>
-        </template>
-      </DataTable>
-      <template #footer>
-        <small v-if="computedStatus.timestamp" class="text-muted">
-          Last Updated:
-          <Timestamp :timestamp="computedStatus.timestamp" />
-        </small>
-      </template>
-    </Dialog>
+    <CheckDialog ref="checkDialog" :header="'System Status Details'" :checks="computedStatus.checks" :last-updated="computedStatus.timestamp" />
   </span>
 </template>
 
@@ -56,24 +27,19 @@
 import useServerSentEvents from "@/composables/useServerSentEvents";
 import useStatus from "@/composables/useStatus";
 import MarkdownIt from "markdown-it";
-import Dialog from "primevue/dialog";
 import Tag from "primevue/tag";
-import Timestamp from "@/components/Timestamp.vue";
-import { onMounted, ref, computed, nextTick } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useTimeAgo } from "@vueuse/core";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import EventSeverityBadge from "./events/EventSeverityBadge.vue";
+import CheckDialog from "@/components/CheckDialog.vue";
 
 const markdownIt = new MarkdownIt();
 const timeSinceLastStatusThreshold = 30;
 const clockSkewThreshold = 60_000; // 60 seconds
 const status = ref({ checks: [] });
 const now = ref(new Date().getTime());
-const showStatusDialog = ref(false);
 const { serverSentEvents, connectionStatus } = useServerSentEvents();
 const { fetchStatus, loading: apiLoading } = useStatus();
-const rowsExpanded = ref([]);
+const checkDialog = ref(null);
 
 onMounted(async () => {
   status.value = await fetchStatus();
@@ -158,8 +124,7 @@ serverSentEvents.addEventListener("status", (event) => {
 });
 
 const openStatusDialog = async () => {
-  rowsExpanded.value = [];
-  showStatusDialog.value = true;
+  checkDialog.value.show();
 };
 
 const tagSeverity = (code) => {
@@ -167,19 +132,10 @@ const tagSeverity = (code) => {
   return severities[code] || "info";
 };
 
-const messageSeverity = (code) => {
-  const severities = ["success", "warn", "error"];
-  return severities[code] || "info";
-};
-
 const icon = (code) => {
   const icons = ["check", "exclamation-triangle", "times", "spin pi-spinner"];
   const icon = icons[code] || "question-circle";
   return `pi pi-${icon}`;
-};
-
-const markdown = (source) => {
-  return markdownIt.render(source);
 };
 </script>
 

@@ -93,6 +93,7 @@ export const sidebar = [
       { text: "Advanced Routing", link: "/advanced/advanced_routing" },
       { text: "Data Retention", link: "/advanced/data_retention" },
       { text: "DeltaFile Annotations", link: "/advanced/deltafile_annotations" },
+      { text: "Leader-Member Deployment", link: "/advanced/leader_member" },
       { text: "Multithreading Java Actions", link: "/advanced/multithreading_java_action_kit" },
     ],
   },

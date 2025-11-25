@@ -5330,6 +5330,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0, none.getTotalCount());
 		assertEquals(0L, none.getInFlightCount());
 		assertEquals(0L, none.getInFlightBytes());
+		// Queue counts should be present (calculated from QueueManagementService)
+		assertNotNull(none.getWarmQueuedCount());
+		assertNotNull(none.getColdQueuedCount());
 
 		DeltaFile deltaFile1 = utilService.emptyDeltaFile(UUID.randomUUID(), "dataSource", List.of());
 		deltaFile1.setTotalBytes(1L);
@@ -5350,10 +5353,12 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile2, deltaFile3));
 
 		DeltaFileStats all = deltaFilesService.deltaFileStats();
-		// stats returns an estimate, so this may still be 0 if pulled from the deltaFileStats
 		assertEquals(3, deltaFileRepo.count());
 		assertEquals(6L, all.getInFlightBytes());
 		assertEquals(2L, all.getInFlightCount());
+		assertEquals(0L, all.getWarmQueuedCount());
+		// coldQueuedCount comes from Valkey (populated by ColdQueueCheck), which is 0 in tests
+		assertEquals(0L, all.getColdQueuedCount());
 	}
 
     @Test
@@ -6273,6 +6278,9 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	LookupTableService lookupTableService;
 
+	@Autowired
+	MemberMonitorService memberMonitorService;
+
 	@Test
 	public void testLookupTableService() throws LookupTableServiceException {
 		LookupTable lookupTable = LookupTable.builder()
@@ -6319,97 +6327,438 @@ class DeltaFiCoreApplicationTests {
 		assertThat(lookupTableService.getLookupTables()).isEmpty();
 	}
 
-    @Test
-    void testSetStateByTagFilter() {
-        setupFlowTagTestData();
+	@Test
+	void testDeltaFiPropertiesHasMembersWithEmptyConfig() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		properties.setLeaderConfig("{}");
 
-        FlowTagFilter filter = FlowTagFilter.builder()
-                .all(Set.of("a", "b"))
-                .any(Set.of("c", "d"))
-                .none(Set.of("skip"))
-                .types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
-                .build();
+		assertThat(properties.hasMembers()).isFalse();
+		assertThat(properties.getMemberConfigs()).isEmpty();
+	}
 
-        List<Flow> updated = unifiedFlowService.setFlowStateByTags(filter, FlowState.STOPPED);
+	@Test
+	void testDeltaFiPropertiesGetMemberConfigsWithSingleMember() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		String config = """
+			{
+			  "site1": {
+				"url": "https://site1.example.com",
+				"tags": ["east", "production"]
+			  }
+			}
+			""";
+		properties.setLeaderConfig(config);
 
-        assertThat(updated).hasSize(2);
-        assertThat(updated).extracting(Flow::getName)
-                .containsExactlyInAnyOrder("dataSourceMatch", "transformMatch");
-    }
+		assertThat(properties.hasMembers()).isTrue();
+		assertThat(properties.getMemberConfigs()).hasSize(1);
+		assertThat(properties.getMemberConfigs().get(0).name()).isEqualTo("site1");
+		assertThat(properties.getMemberConfigs().get(0).url()).isEqualTo("https://site1.example.com");
+		assertThat(properties.getMemberConfigs().get(0).tags()).containsExactly("east", "production");
+	}
 
-    @Test
-    void testFindByTagsAndNewState() {
-        setupFlowTagTestData();
+	@Test
+	void testDeltaFiPropertiesGetMemberConfigsWithCredentials() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		String config = """
+			{
+			  "dev": {
+				"url": "https://dev.deltafi.org",
+				"tags": ["development"],
+				"credentials": {
+				  "type": "basic",
+				  "username": "admin",
+				  "passwordEnvVar": "DEV_PASSWORD"
+				}
+			  }
+			}
+			""";
+		properties.setLeaderConfig(config);
 
-        FlowTagFilter filter = FlowTagFilter.builder()
-                .all(Set.of("a", "b"))
-                .any(Set.of("c", "d"))
-                .none(Set.of("skip"))
-                .types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
-                .build();
+		assertThat(properties.hasMembers()).isTrue();
+		assertThat(properties.getMemberConfigs()).hasSize(1);
+		assertThat(properties.getMemberConfigs().get(0).credentials()).isNotNull();
+		assertThat(properties.getMemberConfigs().get(0).credentials().type()).isEqualTo("basic");
+		assertThat(properties.getMemberConfigs().get(0).credentials().username()).isEqualTo("admin");
+		assertThat(properties.getMemberConfigs().get(0).credentials().passwordEnvVar()).isEqualTo("DEV_PASSWORD");
+	}
 
-        List<Flow> updated = unifiedFlowService.findByTagsAndNewState(filter, FlowState.STOPPED);
+	@Test
+	void testDeltaFiPropertiesSetLeaderConfigClearsCachedValue() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		properties.setLeaderConfig("{\"site1\": {\"url\": \"https://site1.example.com\"}}");
 
-        assertThat(updated).hasSize(2);
-        assertThat(updated).extracting(Flow::getName)
-                .containsExactlyInAnyOrder("dataSourceMatch", "transformMatch");
-    }
+		var members1 = properties.getMemberConfigs();
+		assertThat(members1).hasSize(1);
+		assertThat(members1.get(0).name()).isEqualTo("site1");
 
-    @Test
-    void testFindByTags() {
-        setupFlowTagTestData();
+		properties.setLeaderConfig("{\"site2\": {\"url\": \"https://site2.example.com\"}}");
 
-        FlowTagFilter filter = FlowTagFilter.builder()
-                .all(Set.of("a", "b"))
-                .any(Set.of("c", "d"))
-                .none(Set.of("skip"))
-                .types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
-                .build();
+		var members2 = properties.getMemberConfigs();
+		assertThat(members2).hasSize(1);
+		assertThat(members2.get(0).name()).isEqualTo("site2");
+		assertThat(members1).isNotSameAs(members2);
+	}
 
-        List<Flow> updated = unifiedFlowService.findByTags(filter);
+	@Test
+	void testLeaderConfigValidationRejectsMissingUrl() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		String config = """
+			{
+			  "site1": {
+				"tags": ["east"]
+			  }
+			}
+			""";
+		assertThatThrownBy(() -> properties.setLeaderConfig(config))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("url is required");
+	}
 
-        // the findByTags does not exlude anything based on state, so the invalid flow and alreadyStopped flow are both returned
-        assertThat(updated).hasSize(4)
-                .extracting(Flow::getName)
-                .containsExactlyInAnyOrder("dataSourceMatch", "transformMatch", "invalid", "alreadyStopped");
-    }
+	@Test
+	void testLeaderConfigValidationRejectsInvalidTags() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		String config = """
+			{
+			  "site1": {
+				"url": "https://site1.example.com",
+				"tags": "not-a-list"
+			  }
+			}
+			""";
+		assertThatThrownBy(() -> properties.setLeaderConfig(config))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("tags must be a list");
+	}
+
+	@Test
+	void testLeaderConfigValidationRejectsInvalidCredentialsType() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		String config = """
+			{
+			  "site1": {
+				"url": "https://site1.example.com",
+				"credentials": {
+				  "type": "oauth",
+				  "username": "admin",
+				  "passwordEnvVar": "PASSWORD"
+				}
+			  }
+			}
+			""";
+		assertThatThrownBy(() -> properties.setLeaderConfig(config))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("credentials.type must be 'basic'");
+	}
+
+	@Test
+	void testLeaderConfigValidationRejectsMissingCredentialsUsername() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		String config = """
+			{
+			  "site1": {
+				"url": "https://site1.example.com",
+				"credentials": {
+				  "type": "basic",
+				  "passwordEnvVar": "PASSWORD"
+				}
+			  }
+			}
+			""";
+		assertThatThrownBy(() -> properties.setLeaderConfig(config))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("credentials.username is required");
+	}
+
+	@Test
+	void testLeaderConfigValidationRejectsMissingPasswordEnvVar() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		String config = """
+			{
+			  "site1": {
+				"url": "https://site1.example.com",
+				"credentials": {
+				  "type": "basic",
+				  "username": "admin"
+				}
+			  }
+			}
+			""";
+		assertThatThrownBy(() -> properties.setLeaderConfig(config))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("credentials.passwordEnvVar is required");
+	}
+
+	@Test
+	void testLeaderConfigValidationRejectsInvalidJson() {
+		DeltaFiProperties properties = new DeltaFiProperties();
+		assertThatThrownBy(() -> properties.setLeaderConfig("not valid json"))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("Invalid leaderConfig JSON");
+	}
+
+	@Test
+	void testMemberMonitorServiceGetLeaderStatus() {
+		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		statusNode.put("state", "Healthy");
+		statusNode.put("code", 0);
+		statusNode.putArray("checks");
+
+		Mockito.when(systemService.systemStatus()).thenReturn(new SystemService.Status(statusNode));
+
+		// Mock node metrics with cpu, memory, and disk data
+		org.deltafi.core.types.NodeMetrics nodeMetrics = new org.deltafi.core.types.NodeMetrics("test-node");
+		nodeMetrics.addMetric("cpu", "usage", 500L);
+		nodeMetrics.addMetric("cpu", "limit", 1000L);
+		nodeMetrics.addMetric("memory", "usage", 1024L);
+		nodeMetrics.addMetric("memory", "limit", 2048L);
+		nodeMetrics.addMetric("disk", "usage", 50000L);
+		nodeMetrics.addMetric("disk", "limit", 100000L);
+		Mockito.when(systemService.nodeAppsAndMetrics()).thenReturn(java.util.List.of(nodeMetrics));
+
+		var leaderStatus = memberMonitorService.getLeaderStatus();
+
+		assertThat(leaderStatus).isNotNull();
+		assertThat(leaderStatus.memberName()).isEqualTo("Leader");
+		assertThat(leaderStatus.url()).isEqualTo("local");
+		assertThat(leaderStatus.tags()).contains("leader");
+		assertThat(leaderStatus.isLeader()).isTrue();
+		assertThat(leaderStatus.connectionState()).isEqualTo(org.deltafi.core.types.leader.ConnectionState.CONNECTED);
+		assertThat(leaderStatus.status()).isNotNull();
+		assertThat(leaderStatus.errorCount()).isNotNull();
+		assertThat(leaderStatus.inFlightCount()).isNotNull();
+		assertThat(leaderStatus.warmQueuedCount()).isNotNull();
+		assertThat(leaderStatus.coldQueuedCount()).isNotNull();
+		// System metrics should be non-null (values may vary by environment)
+		assertThat(leaderStatus.cpuUsage()).isNotNull();
+		assertThat(leaderStatus.memoryUsage()).isNotNull();
+		assertThat(leaderStatus.diskUsage()).isNotNull();
+	}
+
+	@Test
+	void testMemberMonitorServiceFormatHttpError() throws Exception {
+		var formatHttpError = org.deltafi.core.services.MemberMonitorService.class
+				.getDeclaredMethod("formatHttpError", int.class, String.class);
+		formatHttpError.setAccessible(true);
+
+		assertThat(formatHttpError.invoke(memberMonitorService, 401, "https://example.com"))
+				.isEqualTo("HTTP 401: Authentication required (https://example.com)");
+		assertThat(formatHttpError.invoke(memberMonitorService, 404, "https://example.com"))
+				.isEqualTo("HTTP 404: Endpoint not found (https://example.com)");
+		assertThat(formatHttpError.invoke(memberMonitorService, 500, "https://example.com"))
+				.isEqualTo("HTTP 500: Internal server error (https://example.com)");
+		assertThat(formatHttpError.invoke(memberMonitorService, 999, "https://example.com"))
+				.isEqualTo("HTTP 999: HTTP error (https://example.com)");
+	}
+
+	@Test
+	void testMemberMonitorServiceFormatException() throws Exception {
+		var formatException = org.deltafi.core.services.MemberMonitorService.class
+				.getDeclaredMethod("formatException", Exception.class);
+		formatException.setAccessible(true);
+
+		Exception connectionRefused = new Exception("Connection refused");
+		assertThat(formatException.invoke(memberMonitorService, connectionRefused))
+				.isEqualTo("Connection refused");
+
+		Exception timeout = new Exception("Connection timed out");
+		assertThat(formatException.invoke(memberMonitorService, timeout))
+				.isEqualTo("Connection timed out");
+
+		Exception unknownHost = new Exception("unknown host");
+		assertThat(formatException.invoke(memberMonitorService, unknownHost))
+				.isEqualTo("Host not found");
+
+		Exception alreadyFormatted = new Exception("HTTP 401: Authentication required (https://example.com)");
+		assertThat(formatException.invoke(memberMonitorService, alreadyFormatted))
+				.isEqualTo("HTTP 401: Authentication required (https://example.com)");
+	}
+
+	@Test
+	void testLeaderRestEndpoint() {
+		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		statusNode.put("state", "Healthy");
+		statusNode.put("code", 0);
+		statusNode.putArray("checks");
+
+		Mockito.when(systemService.systemStatus()).thenReturn(new SystemService.Status(statusNode));
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(USER_NAME_HEADER, USERNAME);
+		HttpEntity<String> request = new HttpEntity<>(headers);
+
+		ResponseEntity<String> response = restTemplate.exchange(
+				"/api/v2/leader/members",
+				HttpMethod.GET,
+				request,
+				String.class
+		);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isNotNull();
+		assertThat(response.getBody()).contains("\"members\"");
+		assertThat(response.getBody()).contains("\"memberName\":\"Leader\"");
+	}
+
+	@Test
+	void testLeaderStatsEndpoint() {
+		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		statusNode.put("state", "Healthy");
+		statusNode.put("code", 0);
+		statusNode.putArray("checks");
+
+		Mockito.when(systemService.systemStatus()).thenReturn(new SystemService.Status(statusNode));
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(USER_NAME_HEADER, USERNAME);
+		HttpEntity<String> request = new HttpEntity<>(headers);
+
+		ResponseEntity<String> response = restTemplate.exchange(
+				"/api/v2/leader/stats",
+				HttpMethod.GET,
+				request,
+				String.class
+		);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isNotNull();
+		assertThat(response.getBody()).contains("\"totalInFlight\"");
+		assertThat(response.getBody()).contains("\"totalErrors\"");
+		assertThat(response.getBody()).contains("\"totalWarmQueue\"");
+		assertThat(response.getBody()).contains("\"totalColdQueue\"");
+		assertThat(response.getBody()).contains("\"memberCount\"");
+		assertThat(response.getBody()).contains("\"healthyCount\"");
+		assertThat(response.getBody()).contains("\"unhealthyCount\"");
+	}
+
+	@Test
+	void testAggregatedStatsCalculation() {
+		com.fasterxml.jackson.databind.node.ObjectNode statusNode = OBJECT_MAPPER.createObjectNode();
+		statusNode.put("state", "Healthy");
+		statusNode.put("code", 0);
+		statusNode.putArray("checks");
+
+		Mockito.when(systemService.systemStatus()).thenReturn(new SystemService.Status(statusNode));
+
+		var stats = memberMonitorService.getAggregatedStats();
+
+		assertThat(stats).isNotNull();
+		assertThat(stats.memberCount()).isGreaterThanOrEqualTo(1);
+		assertThat(stats.healthyCount()).isGreaterThanOrEqualTo(0);
+		assertThat(stats.unhealthyCount()).isGreaterThanOrEqualTo(0);
+		assertThat(stats.totalInFlight()).isGreaterThanOrEqualTo(0);
+		assertThat(stats.totalErrors()).isGreaterThanOrEqualTo(0);
+		assertThat(stats.totalWarmQueue()).isGreaterThanOrEqualTo(0);
+		assertThat(stats.totalColdQueue()).isGreaterThanOrEqualTo(0);
+	}
+
+	@Test
+	void testUiConfigLeaderFlag() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(USER_NAME_HEADER, USERNAME);
+		HttpEntity<String> request = new HttpEntity<>(headers);
+
+		ResponseEntity<String> response = restTemplate.exchange(
+				"/api/v2/config",
+				HttpMethod.GET,
+				request,
+				String.class
+		);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isNotNull();
+		assertThat(response.getBody()).contains("\"leader\"");
+	}
+
+	@Test
+	void testSetStateByTagFilter() {
+		setupFlowTagTestData();
+
+		FlowTagFilter filter = FlowTagFilter.builder()
+			.all(Set.of("a", "b"))
+			.any(Set.of("c", "d"))
+			.none(Set.of("skip"))
+			.types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
+			.build();
+
+		List<Flow> updated = unifiedFlowService.setFlowStateByTags(filter, FlowState.STOPPED);
+
+		assertThat(updated).hasSize(2);
+		assertThat(updated).extracting(Flow::getName)
+			.containsExactlyInAnyOrder("dataSourceMatch", "transformMatch");
+	}
+
+	@Test
+	void testFindByTagsAndNewState() {
+		setupFlowTagTestData();
+
+		FlowTagFilter filter = FlowTagFilter.builder()
+			.all(Set.of("a", "b"))
+			.any(Set.of("c", "d"))
+			.none(Set.of("skip"))
+			.types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
+			.build();
+
+		List<Flow> updated = unifiedFlowService.findByTagsAndNewState(filter, FlowState.STOPPED);
+
+		assertThat(updated).hasSize(2);
+		assertThat(updated).extracting(Flow::getName)
+			.containsExactlyInAnyOrder("dataSourceMatch", "transformMatch");
+	}
+
+	@Test
+	void testFindByTags() {
+		setupFlowTagTestData();
+
+		FlowTagFilter filter = FlowTagFilter.builder()
+			.all(Set.of("a", "b"))
+			.any(Set.of("c", "d"))
+			.none(Set.of("skip"))
+			.types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
+			.build();
+
+		List<Flow> updated = unifiedFlowService.findByTags(filter);
+
+		// the findByTags does not exlude anything based on state, so the invalid flow and alreadyStopped flow are both returned
+		assertThat(updated).hasSize(4)
+			.extracting(Flow::getName)
+			.containsExactlyInAnyOrder("dataSourceMatch", "transformMatch", "invalid", "alreadyStopped");
+	}
 
 
-    private void setupFlowTagTestData() {
-        // create matching flows, show only one of the `any` must be included
-        RestDataSource dataSourceMatch = FlowBuilders.buildRestDataSource("dataSourceMatch", FlowState.RUNNING,
-                Set.of("a", "b", "c"));
-        TransformFlow transformMatch = FlowBuilders.buildTransformFlow("transformMatch", FlowState.RUNNING,
-                Set.of("a", "b", "d"));
+	private void setupFlowTagTestData() {
+		// create matching flows, show only one of the `any` must be included
+		RestDataSource dataSourceMatch = FlowBuilders.buildRestDataSource("dataSourceMatch", FlowState.RUNNING,
+				Set.of("a", "b", "c"));
+		TransformFlow transformMatch = FlowBuilders.buildTransformFlow("transformMatch", FlowState.RUNNING,
+				Set.of("a", "b", "d"));
 
-        // missing the required tag `b`
-        RestDataSource missingOneOfAll = FlowBuilders.buildRestDataSource("missingOneOfAll", FlowState.RUNNING,
-                Set.of("a", "c", "d"));
+		// missing the required tag `b`
+		RestDataSource missingOneOfAll = FlowBuilders.buildRestDataSource("missingOneOfAll", FlowState.RUNNING,
+				Set.of("a", "c", "d"));
 
-        // has all the required tags, but it is exluded due to the none clause with skip
-        RestDataSource excluded = FlowBuilders.buildRestDataSource("excluded", FlowState.RUNNING,
-                Set.of("a", "b", "d", "skip"));
+		// has all the required tags, but it is exluded due to the none clause with skip
+		RestDataSource excluded = FlowBuilders.buildRestDataSource("excluded", FlowState.RUNNING,
+				Set.of("a", "b", "d", "skip"));
 
-        // has all the tags needed but it is currently invalid
-        RestDataSource invalid = FlowBuilders.buildRestDataSource("invalid", FlowState.RUNNING,
-                Set.of("a", "b", "d"));
-        invalid.getFlowStatus().setValid(false);
+		// has all the tags needed but it is currently invalid
+		RestDataSource invalid = FlowBuilders.buildRestDataSource("invalid", FlowState.RUNNING,
+				Set.of("a", "b", "d"));
+		invalid.getFlowStatus().setValid(false);
 
-        // has all the tags needed but it is already stopped
-        RestDataSource alreadyStopped = FlowBuilders.buildRestDataSource("alreadyStopped", FlowState.STOPPED,
-                Set.of("a", "b", "c"));
+		// has all the tags needed but it is already stopped
+		RestDataSource alreadyStopped = FlowBuilders.buildRestDataSource("alreadyStopped", FlowState.STOPPED,
+				Set.of("a", "b", "c"));
 
-        // has the required tags but doesn't have any of c or d
-        RestDataSource missingAny = FlowBuilders.buildRestDataSource("missingAny", FlowState.RUNNING,
-                Set.of("a", "b"));
+		// has the required tags but doesn't have any of c or d
+		RestDataSource missingAny = FlowBuilders.buildRestDataSource("missingAny", FlowState.RUNNING,
+				Set.of("a", "b"));
 
-        // has everything to match except its the wrong type
-        TimedDataSource wrongType = FlowBuilders.buildTimedDataSource("wrongType", FlowState.RUNNING,
-                Set.of("a", "b", "d"));
+		// has everything to match except its the wrong type
+		TimedDataSource wrongType = FlowBuilders.buildTimedDataSource("wrongType", FlowState.RUNNING,
+				Set.of("a", "b", "d"));
 
-        restDataSourceRepo.saveAll(List.of(dataSourceMatch, missingOneOfAll, excluded, invalid, missingAny, alreadyStopped));
-        transformFlowRepo.save(transformMatch);
-        timedDataSourceRepo.save(wrongType);
-    }
-
+		restDataSourceRepo.saveAll(List.of(dataSourceMatch, missingOneOfAll, excluded, invalid, missingAny, alreadyStopped));
+		transformFlowRepo.save(transformMatch);
+		timedDataSourceRepo.save(wrongType);
+	}
 }

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.monitor;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import org.deltafi.core.monitor.checks.CheckResult;
 
@@ -25,6 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record MonitorResult(int code, String color, String state, List<CheckResult> checks, OffsetDateTime timestamp) {
     public static MonitorResult statuses(List<CheckResult> checkResults) {
         OffsetDateTime now = OffsetDateTime.now();

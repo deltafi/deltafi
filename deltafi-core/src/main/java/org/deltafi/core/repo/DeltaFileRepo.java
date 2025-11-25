@@ -72,7 +72,8 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
         in_flight_stats AS (
           SELECT
             COUNT(*) as in_flight_count,
-            COALESCE(SUM(referenced_bytes), 0) as in_flight_bytes
+            COALESCE(SUM(referenced_bytes), 0) as in_flight_bytes,
+            COUNT(*) FILTER (WHERE paused = true) as paused_count
           FROM delta_files
           WHERE stage = 'IN_FLIGHT'::df_stage_enum
         )
@@ -82,7 +83,8 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
             ELSE ts.estimated_count
           END as estimate,
           ifs.in_flight_count as count,
-          ifs.in_flight_bytes as total_bytes
+          ifs.in_flight_bytes as total_bytes,
+          ifs.paused_count as paused_count
         FROM table_stats ts
         CROSS JOIN in_flight_stats ifs
     """, nativeQuery = true)
@@ -106,19 +108,23 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     List<Object[]> getRawMetadataStorageStats();
 
     /**
-     * Get estimated count and sizes of deltaFiles in the system
-     * @return stats
+     * Get estimated count and sizes of deltaFiles in the system.
+     * Returns database stats only - queue counts are added by DeltaFilesService.
+     * @return stats with queue counts set to 0
      */
     default DeltaFileStats deltaFileStats() {
         List<Object[]> rawStats = getRawDeltaFileStats();
         if (rawStats.isEmpty()) {
-            return new DeltaFileStats(0L, 0L, 0L);
+            return new DeltaFileStats(0L, 0L, 0L, 0L, 0L, 0L);
         }
         Object[] row = rawStats.getFirst();
         return new DeltaFileStats(
                 Math.max(0, ((Number) row[0]).longValue()),
                 Math.max(0, ((Number) row[1]).longValue()),
-                Math.max(0, ((Number) row[2]).longValue())
+                Math.max(0, ((Number) row[2]).longValue()),
+                0L,  // warmQueuedCount - set by DeltaFilesService
+                0L,  // coldQueuedCount - set by DeltaFilesService
+                Math.max(0, ((Number) row[3]).longValue())  // pausedCount
         );
     }
 

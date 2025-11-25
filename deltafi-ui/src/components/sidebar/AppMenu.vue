@@ -111,6 +111,25 @@ const staticMenuItems = ref([
     visible: computed(() => hasPermission("DashboardView")),
   },
   {
+    name: "Fleet",
+    expand: true,
+    visible: computed(() => uiConfig.leader && hasSomePermissions("StatusView", "SnapshotRead")),
+    children: [
+      {
+        name: "Dashboard",
+        icon: "fas fa-chart-line fa-fw",
+        path: "/fleet/dashboard",
+        visible: computed(() => hasPermission("StatusView")),
+      },
+      {
+        name: "Config",
+        icon: "fas fa-sliders fa-fw",
+        path: "/fleet/config",
+        visible: computed(() => hasPermission("SnapshotRead")),
+      },
+    ],
+  },
+  {
     name: "DeltaFiles",
     expand: true,
     visible: computed(() => hasSomePermissions("DeltaFileMetadataView", "DeltaFileIngress")),

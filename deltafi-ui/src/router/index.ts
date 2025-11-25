@@ -20,6 +20,8 @@ import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import AutoResumePage from "@/pages/AutoResumePage.vue";
 import DashboardPage from "@/pages/DashboardPage.vue";
 import DataSinkPage from "@/pages/DataSinkPage.vue";
+import LeaderConfigPage from "@/pages/LeaderConfigPage.vue";
+import LeaderDashboardPage from "@/pages/LeaderDashboardPage.vue";
 import DataSourcePage from "@/pages/DataSourcePage.vue";
 import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
 import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
@@ -60,6 +62,22 @@ const routes: Array<RouteRecordRaw> = [
     component: SystemMapPage,
     meta: {
       permission: "DashboardView",
+    },
+  },
+  {
+    path: "/fleet/dashboard",
+    name: "Fleet Dashboard",
+    component: LeaderDashboardPage,
+    meta: {
+      permission: "StatusView",
+    },
+  },
+  {
+    path: "/fleet/config",
+    name: "Fleet Config",
+    component: LeaderConfigPage,
+    meta: {
+      permission: "SnapshotRead",
     },
   },
   {

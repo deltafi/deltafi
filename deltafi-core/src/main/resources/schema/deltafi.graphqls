@@ -369,6 +369,9 @@ type DeltaFileStats {
   totalCount: Long!
   inFlightCount: Long!
   inFlightBytes: Long!
+  warmQueuedCount: Long!
+  coldQueuedCount: Long!
+  pausedCount: Long!
 }
 
 input ResumeMetadata {

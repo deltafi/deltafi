@@ -17,12 +17,14 @@
  */
 package org.deltafi.core.monitor.checks;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record CheckResult(String description, int code, String message, OffsetDateTime timestamp) {
     public static final int CODE_GREEN = 0;
     public static final int CODE_YELLOW = 1;

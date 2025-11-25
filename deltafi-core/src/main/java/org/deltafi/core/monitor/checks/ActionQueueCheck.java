@@ -33,11 +33,7 @@ import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
 @MonitorProfile
 public class ActionQueueCheck extends StatusCheck {
 
-    private static final Set<String> IGNORED_QUEUE_NAMES = Set.of(
-            ValkeyKeyedBlockingQueue.MONITOR_STATUS_HASH,
-            ValkeyKeyedBlockingQueue.HEARTBEAT_HASH,
-            ValkeyKeyedBlockingQueue.LONG_RUNNING_TASKS_HASH
-    );
+    private static final String DELTAFI_KEY_PREFIX = "org.deltafi.";
 
     private final ValkeyKeyedBlockingQueue valkeyQueue;
     private final MetricService metricService;
@@ -128,7 +124,7 @@ public class ActionQueueCheck extends StatusCheck {
     }
 
     private boolean expectedQueue(String queueName, Set<String> recentQueueNames) {
-        return IGNORED_QUEUE_NAMES.contains(queueName) ||
+        return queueName.startsWith(DELTAFI_KEY_PREFIX) ||
                 queueName.startsWith(ValkeyBasedProxyManager.RATE_LIMIT_BUCKET_PREFIX) ||
                 queueName.startsWith(ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX) ||
                 queueName.startsWith("gauge.node") ||

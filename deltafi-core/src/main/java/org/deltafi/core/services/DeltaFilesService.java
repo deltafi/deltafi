@@ -118,6 +118,7 @@ public class DeltaFilesService {
     private final FlowDefinitionService flowDefinitionService;
     private final ParameterResolver parameterResolver;
     private final Optional<LocalContentStorageService> localContentStorageService;
+    private final org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue valkeyQueue;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -2314,7 +2315,28 @@ public class DeltaFilesService {
     }
 
     public DeltaFileStats deltaFileStats() {
-        return deltaFileRepo.deltaFileStats();
+        DeltaFileStats dbStats = deltaFileRepo.deltaFileStats();
+        long warmQueuedCount = queueManagementService.getAllQueues().values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
+        long coldQueuedCount = getColdQueuedCountFromValkey();
+        return new DeltaFileStats(
+                dbStats.getTotalCount(),
+                dbStats.getInFlightCount(),
+                dbStats.getInFlightBytes(),
+                warmQueuedCount,
+                coldQueuedCount,
+                dbStats.getPausedCount()
+        );
+    }
+
+    private long getColdQueuedCountFromValkey() {
+        try {
+            String value = valkeyQueue.getByKey(org.deltafi.core.monitor.checks.ColdQueueCheck.COLD_QUEUE_COUNT_KEY);
+            return value != null ? Long.parseLong(value) : 0L;
+        } catch (Exception e) {
+            return 0L;
+        }
     }
 
     public Result applyResumePolicies(List<String> policyNames) {

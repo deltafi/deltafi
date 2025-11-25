@@ -109,6 +109,16 @@ public class SystemSnapshotService {
         return saveSnapshot(systemSnapshot);
     }
 
+    /**
+     * Assemble the current system configuration as a Snapshot without persisting.
+     * Used for configuration comparison and export.
+     */
+    public Snapshot assembleCurrentSnapshot() {
+        Snapshot snapshot = new Snapshot();
+        snapshotters.forEach(snapshotter -> snapshotter.updateSnapshot(snapshot));
+        return snapshot;
+    }
+
     public Result resetFromSnapshot(UUID snapshotId, boolean hardReset) {
         SystemSnapshot systemSnapshot = getById(snapshotId);
 

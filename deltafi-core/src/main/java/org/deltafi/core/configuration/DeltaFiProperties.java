@@ -17,10 +17,14 @@
  */
 package org.deltafi.core.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.LogSeverity;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.VariableDataType;
+import org.deltafi.core.types.leader.CredentialsConfig;
+import org.deltafi.core.types.leader.MemberConfig;
 
 import java.time.Duration;
 import java.util.*;
@@ -31,8 +35,13 @@ import java.util.*;
  * requires validation add a custom setter with the validation logic.
  */
 @Data
+@Slf4j
 @SuppressWarnings("unused")
 public class DeltaFiProperties {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private List<MemberConfig> cachedMemberConfigs;
 
     @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Name of the DeltaFi system", defaultValue = "DeltaFi")
     private String systemName = "DeltaFi";
@@ -129,6 +138,163 @@ public class DeltaFiProperties {
 
     @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Certificate expiration warning threshold (days). System status becomes degraded when any certificate expires within this timeframe.", defaultValue = "14", dataType = VariableDataType.NUMBER)
     private int checkSslExpirationWarningThreshold = 14;
+
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Leader-member monitoring configuration. Only configured on leader instances. JSON object mapping member names to their config: {\"site1\": {\"url\": \"https://site1.example.com\", \"tags\": [\"east\"]}, \"site2\": {\"url\": \"https://site2.example.com\", \"tags\": [\"west\", \"production\"]}}", defaultValue = "{}", refreshable = true, dataType = VariableDataType.STRING)
+    private String leaderConfig = "{}";
+
+    public void setLeaderConfig(String leaderConfig) {
+        // Parse and validate in one pass, caching the result
+        this.cachedMemberConfigs = parseAndValidateLeaderConfig(leaderConfig);
+        this.leaderConfig = leaderConfig;
+    }
+
+    private List<MemberConfig> parseAndValidateLeaderConfig(String config) {
+        if (StringUtils.isBlank(config) || "{}".equals(config.trim())) {
+            return List.of();
+        }
+
+        List<String> errors = new ArrayList<>();
+        List<MemberConfig> configs = new ArrayList<>();
+
+        Map<String, Object> configMap;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parsed = OBJECT_MAPPER.readValue(config, Map.class);
+            configMap = parsed;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid leaderConfig JSON: " + e.getMessage());
+        }
+
+        for (Map.Entry<String, Object> entry : configMap.entrySet()) {
+            String memberName = entry.getKey();
+            if (!(entry.getValue() instanceof Map)) {
+                errors.add("Member '" + memberName + "': value must be an object");
+                continue;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> memberMap = (Map<String, Object>) entry.getValue();
+
+            // Validate and extract URL
+            Object urlObj = memberMap.get("url");
+            if (urlObj == null || !(urlObj instanceof String) || ((String) urlObj).isBlank()) {
+                errors.add("Member '" + memberName + "': url is required and must be a non-empty string");
+                continue;
+            }
+            String url = (String) urlObj;
+            
+            // Validate URL format (must start with http:// or https://)
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                errors.add("Member '" + memberName + "': url must start with http:// or https://");
+                continue;
+            }
+            
+            // Basic URL validation
+            try {
+                java.net.URI.create(url);
+            } catch (IllegalArgumentException e) {
+                errors.add("Member '" + memberName + "': url is not a valid URI: " + e.getMessage());
+                continue;
+            }
+
+            // Validate and extract tags
+            List<String> tags = List.of();
+            if (memberMap.containsKey("tags")) {
+                Object tagsObj = memberMap.get("tags");
+                if (!(tagsObj instanceof List)) {
+                    errors.add("Member '" + memberName + "': tags must be a list");
+                } else {
+                    @SuppressWarnings("unchecked")
+                    List<String> tagsList = (List<String>) tagsObj;
+                    tags = tagsList;
+                }
+            }
+
+            // Validate and extract credentials
+            CredentialsConfig credentials = null;
+            if (memberMap.containsKey("credentials")) {
+                Object creds = memberMap.get("credentials");
+                if (!(creds instanceof Map)) {
+                    errors.add("Member '" + memberName + "': credentials must be an object");
+                } else {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> credMap = (Map<String, Object>) creds;
+
+                    Object type = credMap.get("type");
+                    if (type == null || !"basic".equals(type)) {
+                        errors.add("Member '" + memberName + "': credentials.type must be 'basic'");
+                    }
+
+                    Object username = credMap.get("username");
+                    if (username == null || !(username instanceof String) || ((String) username).isBlank()) {
+                        errors.add("Member '" + memberName + "': credentials.username is required");
+                    }
+
+                    Object passwordEnvVar = credMap.get("passwordEnvVar");
+                    if (passwordEnvVar == null || !(passwordEnvVar instanceof String) || ((String) passwordEnvVar).isBlank()) {
+                        errors.add("Member '" + memberName + "': credentials.passwordEnvVar is required");
+                    }
+
+                    if (errors.isEmpty()) {
+                        credentials = new CredentialsConfig(
+                            (String) type,
+                            (String) username,
+                            (String) passwordEnvVar
+                        );
+                    }
+                }
+            }
+
+            if (errors.isEmpty()) {
+                configs.add(new MemberConfig(memberName, url, tags, credentials));
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException("Invalid leaderConfig: " + String.join("; ", errors));
+        }
+
+        return configs;
+    }
+
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Interval between polling cycles for each member (milliseconds). Healthy members are polled at this interval, unhealthy members at 1/6 of this interval.", defaultValue = "30000", refreshable = true, dataType = VariableDataType.NUMBER)
+    private int memberPollingInterval = 30000;
+
+    @PropertyInfo(group = PropertyGroup.SYSTEM_MONITORING, description = "Timeout for individual HTTP requests to members (milliseconds). Must be less than memberPollingTimeout.", defaultValue = "10000", refreshable = true, dataType = VariableDataType.NUMBER)
+    private int memberRequestTimeout = 10000;
+
+    /**
+     * Get the timeout for polling operations (80% of polling interval).
+     * This ensures requests complete before the next polling cycle.
+     */
+    public int getMemberPollingTimeout() {
+        return (int) (memberPollingInterval * 0.8);
+    }
+
+    public int getMemberRequestTimeout() {
+        return memberRequestTimeout;
+    }
+
+    public void setMemberPollingInterval(int memberPollingInterval) {
+        if (memberPollingInterval < 5000) {
+            throw new IllegalArgumentException("memberPollingInterval must be >= 5000ms, but was " + memberPollingInterval);
+        }
+        if (memberRequestTimeout >= memberPollingInterval * 0.8) {
+            throw new IllegalArgumentException("memberRequestTimeout (" + memberRequestTimeout + "ms) must be < memberPollingTimeout (" + (int)(memberPollingInterval * 0.8) + "ms)");
+        }
+        this.memberPollingInterval = memberPollingInterval;
+    }
+
+    public void setMemberRequestTimeout(int memberRequestTimeout) {
+        if (memberRequestTimeout < 1000) {
+            throw new IllegalArgumentException("memberRequestTimeout must be >= 1000ms, but was " + memberRequestTimeout);
+        }
+        int pollingTimeout = (int) (memberPollingInterval * 0.8);
+        if (memberRequestTimeout >= pollingTimeout) {
+            throw new IllegalArgumentException("memberRequestTimeout (" + memberRequestTimeout + "ms) must be < memberPollingTimeout (" + pollingTimeout + "ms)");
+        }
+        this.memberRequestTimeout = memberRequestTimeout;
+    }
 
     @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Display times in UTC", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
     private boolean uiUseUTC = true;
@@ -372,5 +538,17 @@ public class DeltaFiProperties {
         if (StringUtils.isBlank(str)) {
             throw new IllegalArgumentException("The " + name + " property must not be blank");
         }
+    }
+
+    public List<MemberConfig> getMemberConfigs() {
+        if (cachedMemberConfigs == null) {
+            // Parse on first access if not already cached (e.g., default value)
+            cachedMemberConfigs = parseAndValidateLeaderConfig(leaderConfig);
+        }
+        return cachedMemberConfigs;
+    }
+
+    public boolean hasMembers() {
+        return !getMemberConfigs().isEmpty();
     }
 }

@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.types.EgressDisabledEvent;
 import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -239,7 +240,34 @@ public class DeltaFiPropertiesService implements Snapshotter {
     }
 
     private KeyValue keyValue(Property property) {
-        return property.hasValue() ? new KeyValue(property.getKey(), property.getCustomValue()) : null;
+        // Only include in snapshot if customValue differs from defaultValue
+        if (!property.hasValue()) {
+            return null;
+        }
+        String customValue = property.getCustomValue();
+        String defaultValue = property.getDefaultValue();
+        if (valuesEqual(customValue, defaultValue, property.getDataType())) {
+            return null;
+        }
+        return new KeyValue(property.getKey(), customValue);
+    }
+
+    private boolean valuesEqual(String value1, String value2, VariableDataType dataType) {
+        if (Objects.equals(value1, value2)) {
+            return true;
+        }
+        if (value1 == null || value2 == null) {
+            return false;
+        }
+        // For numeric types, compare as numbers to handle "80" vs "80.0"
+        if (dataType == VariableDataType.NUMBER) {
+            try {
+                return Double.parseDouble(value1) == Double.parseDouble(value2);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     @Override
