@@ -12,9 +12,7 @@ metadata:
   name: deltafi-status-checks
 data:
   StatefulSet: |
-    {{- if $graphiteEnabled }}
-    - deltafi-graphite
-    {{- end }}
+    - deltafi-victoriametrics
     {{- if $lokiEnabled }}
     - deltafi-loki
     {{- end }}
@@ -40,9 +38,7 @@ data:
   Ingress: |
     {{- if $grafanaEnabled }}
     - deltafi-grafana
-    {{- end }}
-    {{- if $graphiteEnabled }}
-    - deltafi-graphite
+    - deltafi-victoriametrics
     {{- end }}
     - deltafi-ingress
     {{- if $kubeDashboardEnabled }}
@@ -59,9 +55,7 @@ data:
     {{- end }}
     {{- if $grafanaEnabled }}
     - deltafi-grafana
-    {{- end }}
-    {{- if $graphiteEnabled }}
-    - deltafi-graphite
+    - deltafi-victoriametrics
     {{- end }}
     - deltafi-ingress-service
     {{- if $kubeDashboardEnabled }}
@@ -85,9 +79,7 @@ data:
     {{- end }}
     {{- if $grafanaEnabled }}
     - deltafi-grafana
-    {{- end }}
-    {{- if $graphiteEnabled }}
-    - deltafi-graphite
+    - deltafi-victoriametrics
     {{- end }}
     {{- if $lokiEnabled }}
     - deltafi-loki

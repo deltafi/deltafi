@@ -54,7 +54,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "description": "App RAM utilization over time",
       "fieldConfig": {
@@ -134,7 +134,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refId": "B",
           "target": "removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~gauge.app.memory', 'node=${hostName:regex}'), 'sum', 'app'), 'app'))"
@@ -145,7 +145,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "description": "",
       "fieldConfig": {
@@ -225,7 +225,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "Limit",
@@ -234,7 +234,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -244,7 +244,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -254,7 +254,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -264,7 +264,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -277,7 +277,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "description": "",
       "fieldConfig": {
@@ -357,7 +357,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refId": "B",
           "target": "removeEmptySeries(aliasByTags(seriesByTag('name=~gauge.app.cpu', 'node=${hostName:regex}'), 'app'))"
@@ -368,7 +368,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -522,7 +522,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "B",
@@ -531,7 +531,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -541,7 +541,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -551,7 +551,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -564,7 +564,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "description": "",
       "fieldConfig": {
@@ -646,7 +646,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refId": "A",

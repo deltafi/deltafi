@@ -51,7 +51,7 @@ public class GraphiteQueryService {
     public GraphiteQueryService(
             HttpClient httpClient,
             ObjectMapper objectMapper,
-            @Value("${GRAPHITE_QUERY_URL:http://deltafi-graphite:8080}") String graphiteUrl,
+            @Value("${GRAPHITE_QUERY_URL:http://deltafi-victoriametrics:8428/graphite}") String graphiteUrl,
             @Value("${deltafi.metrics.enabled:true}") boolean metricsEnabled) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;

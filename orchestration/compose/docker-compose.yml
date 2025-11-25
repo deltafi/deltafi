@@ -142,7 +142,7 @@ services:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
     depends_on:
-      deltafi-graphite:
+      deltafi-victoriametrics:
         condition: service_healthy
     env_file:
       - ${CONFIG_DIR}/common.env
@@ -164,7 +164,7 @@ services:
     container_name: deltafi-node-fastdelete
     command: ["/bin/bash", "-c", "/app/deleteit.sh"]
     depends_on:
-      deltafi-graphite:
+      deltafi-victoriametrics:
         condition: service_healthy
     env_file:
       - ${CONFIG_DIR}/common.env
@@ -393,23 +393,20 @@ services:
         aliases:
           - "orchestration"
     restart: unless-stopped
-  deltafi-graphite:
-    image: ${GRAPHITE}
-    container_name: deltafi-graphite
-    environment:
-      STATSD_INTERFACE: tcp
-      GRAPHITE_TIME_ZONE: Etc/UTC
+  deltafi-victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.129.1
+    container_name: deltafi-victoriametrics
+    command:
+      - "-storageDataPath=/victoria-metrics-data"
+      - "-httpListenAddr=:8428"
+      - "-graphiteListenAddr=:2003"
+      - "-retentionPeriod=720d"
+      - "-search.graphiteStorageStep=10s"
     expose:
-      - "8080"
-      - "2003/tcp"
-      - "2003/udp"
-      - "2004"
-      - "2023"
-      - "2024"
-      - "8125/udp"
-      - "8126"
+      - "2003"
+      - "8428"
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8080 || exit 1" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8428/health || exit 1" ]
       interval: 15s
       timeout: 3s
       retries: 3
@@ -417,13 +414,13 @@ services:
     labels:
       deltafi-group: deltafi-dependency
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "deltafi-victoriametrics"
     restart: unless-stopped
     volumes:
-      - ${SETTINGS_DIR}/graphite/conf:/opt/graphite/conf/
-      - ${SETTINGS_DIR}/graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
-      - ${SETTINGS_DIR}/graphite/statsd/udp.js:/opt/statsd/config/udp.js
-      - ${DATA_DIR}/graphite:/opt/graphite/storage/
+      - ${DATA_DIR}/victoriametrics:/victoria-metrics-data
+    user: "${USER_ID}:${GROUP_ID}"
   deltafi-loki:
     image: ${LOKI}
     container_name: deltafi-loki

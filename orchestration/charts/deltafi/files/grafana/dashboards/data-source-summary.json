@@ -185,7 +185,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -195,7 +195,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -512,7 +512,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -522,7 +522,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -532,7 +532,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Filtered')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Filtered')"
         },
         {
           "datasource": {
@@ -542,7 +542,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Dropped')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Dropped')"
         },
         {
           "datasource": {
@@ -552,7 +552,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Errored')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Errored')"
         }
       ],
       "title": "Total Files",
@@ -964,7 +964,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -974,7 +974,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -1261,7 +1261,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -1271,7 +1271,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSource=~${dfDataSource:regex}', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -1281,7 +1281,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Filtered')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Filtered')"
         },
         {
           "datasource": {
@@ -1291,7 +1291,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Dropped')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Dropped')"
         },
         {
           "datasource": {
@@ -1301,7 +1301,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Errored')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)), 'Errored')"
         }
       ],
       "title": "Total Files",
@@ -1535,7 +1535,7 @@
         "current": {
           "selected": false,
           "text": "Graphite",
-          "value": "deltafi-graphite"
+          "value": "deltafi-victoriametrics"
         },
         "hide": 0,
         "includeAll": false,
@@ -1594,7 +1594,7 @@
         },
         "datasource": {
           "type": "graphite",
-          "uid": "deltafi-graphite"
+          "uid": "deltafi-victoriametrics"
         },
         "definition": "tag_values(dataSink, dataSource=~${dfDataSource:regex})",
         "description": "Filter egress graphs to only contain these data sinks",

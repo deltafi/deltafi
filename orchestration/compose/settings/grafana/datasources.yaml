@@ -3,10 +3,10 @@ datasources:
   - access: proxy
     editable: false
     isDefault: true
-    name: Graphite
+    name: VictoriaMetrics
     type: graphite
-    uid: deltafi-graphite
-    url: http://deltafi-graphite:8080
+    uid: deltafi-victoriametrics
+    url: http://deltafi-victoriametrics:8428/graphite
     version: 2
   - access: proxy
     editable: false

@@ -17,7 +17,7 @@
 #    limitations under the License.
 #
 
-GRAPHITE_HOST=${GRAPHITE_HOST:-deltafi-graphite}
+GRAPHITE_HOST=${GRAPHITE_HOST:-deltafi-victoriametrics}
 GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
 VALKEY_HOST=${VALKEY_HOST:-deltafi-valkey-master}
 VALKEY_PORT=${VALKEY_PORT:-6379}

@@ -13,11 +13,28 @@ function sync() {
 
 }
 
-sync grafana https://gitlab.com/deltafi/helmcharts/grafana.git 6.52.5
-sync graphite https://gitlab.com/deltafi/helmcharts/graphite.git 1.1.0-deltafi1
-sync kubernetes-dashboard https://gitlab.com/deltafi/helmcharts/kubernetes-dashboard.git 5.7.0
-sync loki https://gitlab.com/deltafi/helmcharts/loki.git 2.12.2
-sync minio https://gitlab.com/deltafi/helmcharts/minio.git 5.0.7
-sync promtail https://gitlab.com/deltafi/helmcharts/promtail.git 6.10.0
-sync redis https://gitlab.com/deltafi/helmcharts/redis.git 17.1.2
+function sync_oci() {
+  local chartName="$1"
+  local localName="$2"
+  local ociRepo="$3"
+  local version="$4"
+
+  echo "Sync $chartName (as $localName) $version from $ociRepo"
+  rm -rf "charts/$localName"
+  helm pull "$ociRepo/$chartName" --version "$version" --untar --untardir charts
+  # Rename if chart name differs from local name
+  if [ "$chartName" != "$localName" ]; then
+    mv "charts/$chartName" "charts/$localName"
+  fi
+  yq e ".dependencies[] |= select(.name == \"$localName\").version=\"$version\"" -i Chart.yaml
+
+}
+
+sync grafana https://gitlab.com/deltafi/helmcharts/grafana.git 7.0.17
+sync kubernetes-dashboard https://gitlab.com/deltafi/helmcharts/kubernetes-dashboard.git 6.0.8
+sync loki https://gitlab.com/deltafi/helmcharts/loki.git 2.16.0
+sync_oci victoria-metrics-single victoriametrics oci://ghcr.io/victoriametrics/helm-charts 0.25.4
+sync minio https://gitlab.com/deltafi/helmcharts/minio.git 5.0.9
+sync promtail https://gitlab.com/deltafi/helmcharts/promtail.git 6.15.2
+sync redis https://gitlab.com/deltafi/helmcharts/redis.git 18.4.0
 #sync postgresql https://gitlab.com/deltafi/helmcharts/postgresql.git 16.7.19

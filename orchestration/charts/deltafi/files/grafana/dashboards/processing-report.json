@@ -243,7 +243,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '$__interval', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -253,7 +253,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -355,7 +355,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source'), '$__interval', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -365,7 +365,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Files",
@@ -710,7 +710,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource!='), '1d', 'sum'), 'dataSource'))"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource!='), '$__interval', 'sum'), 'dataSource'))"
         },
         {
           "datasource": {
@@ -720,7 +720,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource!=', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource'))"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource!=', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum'), 'dataSource'))"
         }
       ],
       "title": "Processed Bytes by Data Source",
@@ -859,7 +859,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), '1d', 'sum'), 'dataSource'))"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), '$__interval', 'sum'), 'dataSource'))"
         },
         {
           "datasource": {
@@ -869,7 +869,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '1d', 'sum'), 'dataSource'))"
+          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum'), 'dataSource'))"
         }
       ],
       "title": "Processed Files by Data Source",
@@ -954,7 +954,7 @@
       {
         "current": {
           "text": "Graphite",
-          "value": "deltafi-graphite"
+          "value": "deltafi-victoriametrics"
         },
         "includeAll": false,
         "label": "Database",
@@ -976,7 +976,7 @@
         },
         "datasource": {
           "type": "graphite",
-          "uid": "deltafi-graphite"
+          "uid": "deltafi-victoriametrics"
         },
         "definition": "tag_values(dataSink)",
         "description": "Include only these data sinks",

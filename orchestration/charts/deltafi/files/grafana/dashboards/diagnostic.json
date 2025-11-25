@@ -933,7 +933,7 @@
         "current": {
           "selected": false,
           "text": "Graphite",
-          "value": "deltafi-graphite"
+          "value": "deltafi-victoriametrics"
         },
         "hide": 0,
         "includeAll": false,

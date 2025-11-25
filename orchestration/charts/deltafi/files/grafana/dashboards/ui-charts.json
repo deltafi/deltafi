@@ -982,7 +982,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "description": "Memory utilization over time",
       "fieldConfig": {
@@ -1122,7 +1122,7 @@
       {
         "current": {
           "text": "Graphite",
-          "value": "deltafi-graphite"
+          "value": "deltafi-victoriametrics"
         },
         "includeAll": false,
         "label": "Graphite Data",

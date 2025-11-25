@@ -85,7 +85,7 @@ const generateData = () => {
             name: "deltafi-grafana-5656d4f775-zdnr8"
           },
           {
-            name: "deltafi-graphite-0"
+            name: "deltafi-victoriametrics-0"
           },
           {
             name: "deltafi-ingress-d5546d8bd-f9fnj"

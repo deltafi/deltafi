@@ -235,7 +235,7 @@
       {
         "current": {
           "text": "Graphite",
-          "value": "deltafi-graphite"
+          "value": "deltafi-victoriametrics"
         },
         "includeAll": false,
         "label": "Data Source",

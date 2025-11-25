@@ -43,10 +43,10 @@ dependencies:
     condition: enable.loki
     tags:
       - logs
-  - name: graphite
-    version: 1.1.0-deltafi1
-    # repository: https://kiwigrid.github.io
-    condition: enable.graphite
+  - name: victoriametrics
+    version: 0.25.4
+    # repository: oci://ghcr.io/victoriametrics/helm-charts
+    condition: enable.victoriametrics
     tags:
       - metrics
   - name: grafana

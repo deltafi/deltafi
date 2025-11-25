@@ -59,7 +59,7 @@ ingress:
     https_port: 443
 dependencies:
   grafana: {{.GrafanaContainer}}
-  graphite: {{.GraphiteContainer}}
+  victoriametrics: {{.VictoriaMetricsContainer}}
   loki: {{.LokiContainer}}
   minio: {{.MinioContainer}}
   nginx: {{.NginxContainer}}

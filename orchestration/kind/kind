@@ -548,7 +548,7 @@ install() {
 
 _k8s_init() {
   _k8s_add_pv minio "${PV_STORAGE}" 1000
-  _k8s_add_pv graphite "${PV_STORAGE}" 1000
+  _k8s_add_pv victoriametrics "${PV_STORAGE}" 1000
   _k8s_add_pv grafana "${PV_STORAGE}" 472
   _k8s_add_pv loki "${PV_STORAGE}" 10001
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000

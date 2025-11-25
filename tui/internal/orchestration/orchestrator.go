@@ -45,7 +45,7 @@ type valuesData struct {
 	Tag                     string
 	Repo                    string `default:"deltafi"`
 	GrafanaContainer        string `default:"deltafi/grafana:12.2.1-0"`
-	GraphiteContainer       string `default:"graphiteapp/graphite-statsd:1.1.10-5"`
+	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.129.1"`
 	LokiContainer           string `default:"grafana/loki:2.9.17"`
 	MinioContainer          string `default:"deltafi/minio:RELEASE.2025-10-15T17-29-55Z-2"`
 	NginxContainer          string `default:"nginx:1.29.3-alpine3.22"`

@@ -125,7 +125,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false))"
+          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false))"
         }
       ],
       "transparent": true,
@@ -557,7 +557,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false), 'sum', 'dataSource'), 'dataSource')), 0)"
+          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false), 'sum', 'dataSource'), 'dataSource')), 0)"
         }
       ],
       "transparent": true,
@@ -628,7 +628,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false), 'sum', 'dataSource'), 'dataSource')), 0)"
+          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false), 'sum', 'dataSource'), 'dataSource')), 0)"
         }
       ],
       "transparent": true,
@@ -1524,7 +1524,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1607,7 +1607,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "A",
@@ -1620,7 +1620,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1674,7 +1674,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "A",
@@ -1687,7 +1687,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1746,7 +1746,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "A",
@@ -1759,7 +1759,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1842,7 +1842,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "hide": false,
           "refCount": 0,
@@ -1856,7 +1856,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -1941,7 +1941,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "A",
@@ -1954,7 +1954,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -2011,7 +2011,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "A",
@@ -2024,7 +2024,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -2082,7 +2082,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "A",
@@ -2095,7 +2095,7 @@
     {
       "datasource": {
         "type": "graphite",
-        "uid": "deltafi-graphite"
+        "uid": "deltafi-victoriametrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -2180,7 +2180,7 @@
         {
           "datasource": {
             "type": "graphite",
-            "uid": "deltafi-graphite"
+            "uid": "deltafi-victoriametrics"
           },
           "refCount": 0,
           "refId": "A",
@@ -3231,7 +3231,7 @@
         "current": {
           "selected": false,
           "text": "Graphite",
-          "value": "deltafi-graphite"
+          "value": "deltafi-victoriametrics"
         },
         "hide": 0,
         "includeAll": false,

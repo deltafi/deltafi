@@ -596,7 +596,7 @@ _write_common_base() {
 CORE_URL=http://deltafi-core:8080
 DELTAFI_GRAFANA_URL=http://deltafi-grafana:3000
 DELTAFI_MODE=STANDALONE
-GRAPHITE_HOST=deltafi-graphite
+GRAPHITE_HOST=deltafi-victoriametrics
 GRAPHITE_PORT="2003"
 INGRESS_URL=http://deltafi-core:8080
 PERIOD="5"
@@ -611,8 +611,6 @@ REDIS_URL=http://deltafi-valkey:6379
 REDIS_HOST=deltafi-valkey
 REDIS_PORT=6379
 RUNNING_IN_CLUSTER=false
-STATSD_HOSTNAME=deltafi-graphite
-STATSD_PORT="8125"
 EOF
 }
 

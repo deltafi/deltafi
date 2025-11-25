@@ -1,6 +1,6 @@
 fqdns:
   - local.deltafi.org
-  - graphite.local.deltafi.org
+  - victoriametrics.local.deltafi.org
   - metrics.local.deltafi.org
   - minio.local.deltafi.org
   - k8s.local.deltafi.org

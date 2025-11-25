@@ -29,7 +29,7 @@ grafana:
                   relativeTimeRange:
                     from: 60
                     to: 0
-                  datasourceUid: deltafi-graphite
+                  datasourceUid: deltafi-victoriametrics
                   model:
                     intervalMs: 1000
                     maxDataPoints: 43200

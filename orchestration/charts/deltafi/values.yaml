@@ -204,14 +204,14 @@ grafana:
     datasources.yaml:
       apiVersion: 1
       datasources:
-      - name: Graphite
+      - name: VictoriaMetrics
         type: graphite
         access: proxy
-        url: http://deltafi-graphite:8080
+        url: http://deltafi-victoriametrics:8428/graphite
         editable: false
         isDefault: true
         version: 2
-        uid: deltafi-graphite
+        uid: deltafi-victoriametrics
       - name: Loki
         type: loki
         access: proxy
@@ -381,17 +381,39 @@ loki:
   readinessProbe:
    initialDelaySeconds: 5
 
-# Graphite Configuration
-graphite:
-  image:
-    tag: 1.1.10-5
-  persistence:
-    enabled: true
-    existingClaim: deltafi-graphite
-  nodeSelector:
-    node-role.deltafi.org/storage: "true"
-  statsd:
-    interface: TCP
+# VictoriaMetrics Configuration
+victoria-metrics-single:
+  server:
+    image:
+      tag: v1.129.1
+    retentionPeriod: "720d"
+    extraArgs:
+      envflag.enable: "true"
+      envflag.prefix: VM_
+      loggerFormat: json
+      httpListenAddr: ":8428"
+      graphiteListenAddr: ":2003"
+      search.graphiteStorageStep: "10s"
+    persistentVolume:
+      enabled: true
+      existingClaim: deltafi-victoriametrics
+    service:
+      type: ClusterIP
+      servicePort: 8428
+      extraPorts:
+        - name: graphite
+          port: 2003
+          targetPort: 2003
+          protocol: TCP
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1024Mi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    nodeSelector:
+      node-role.deltafi.org/storage: "true"
 
 # Postgres Configuration
 postgres:

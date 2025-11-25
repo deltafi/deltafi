@@ -99,13 +99,13 @@ initContainers:
 
 {{- define "initContainersWaitForGraphite" -}}
 initContainers:
-- name: wait-for-graphite
+- name: wait-for-victoriametrics
   image: busybox:1.36.0
   command:
   - 'sh'
   - '-c'
   - >
-    until nc -z -w 2 deltafi-graphite 2003 && echo graphite ok;
+    until nc -z -w 2 deltafi-victoriametrics 2003 && echo victoriametrics ok;
       do sleep 1;
     done
 {{- end -}}
@@ -216,7 +216,7 @@ initContainers:
 
 {{- define "graphiteEnvVars" -}}
 - name: GRAPHITE_HOST
-  value: deltafi-graphite
+  value: deltafi-victoriametrics
 - name: GRAPHITE_PORT
   value: "2003"
 {{- end -}}
@@ -288,10 +288,6 @@ volumeMounts:
 {{- end -}}
 
 {{- define "coreEnvVars" -}}
-- name: STATSD_HOSTNAME
-  value: "deltafi-graphite"
-- name: STATSD_PORT
-  value: "8125"
 - name: METRICS_PERIOD_SECONDS
   value: "10"
 - name: SERVER_PORT
