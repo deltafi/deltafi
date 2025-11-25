@@ -41,88 +41,88 @@ ext {
     // Architecture-specific files/directories
     archDistroContents = [
         'linux-amd64': [
-            [source: 'tui/dist/linux/amd64', destination: '.', topLevel: true],
-            [source: layout.buildDirectory.file('jq-linux-amd64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'jq'
-            ],
-            [source: layout.buildDirectory.file('yq_linux_amd64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'yq'
-            ],
-            [source: layout.buildDirectory.file('lazydocker/linux/amd64/lazydocker').orNull,
-                destination: 'bin',
-                mode: 0755,
-            ],
-            [source: layout.buildDirectory.file('lazydocker/linux/amd64/LICENSE').orNull,
-                destination: 'bin',
-                rename: 'LICENSE.lazydocker',
-            ]
+            // [source: layout.buildDirectory.file('jq-linux-amd64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'jq'
+            // ],
+            // [source: layout.buildDirectory.file('yq_linux_amd64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'yq'
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/linux/amd64/lazydocker').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/linux/amd64/LICENSE').orNull,
+            //     destination: 'bin',
+            //     rename: 'LICENSE.lazydocker',
+            // ],
+            [source: 'tui/dist/linux/amd64', destination: '.', topLevel: true]
         ],
         'linux-arm64': [
-            [source: 'tui/dist/linux/arm64', destination: '.', topLevel: true],
-            [source: layout.buildDirectory.file('jq-linux-arm64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'jq'
-            ],
-            [source: layout.buildDirectory.file('yq_linux_arm64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'yq'
-            ],
-            [source: layout.buildDirectory.file('lazydocker/linux/arm64/lazydocker').orNull,
-                destination: 'bin',
-                mode: 0755,
-            ],
-            [source: layout.buildDirectory.file('lazydocker/linux/arm64/LICENSE').orNull,
-                destination: 'bin',
-                rename: 'LICENSE.lazydocker',
-            ]
+            // [source: layout.buildDirectory.file('jq-linux-arm64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'jq'
+            // ],
+            // [source: layout.buildDirectory.file('yq_linux_arm64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'yq'
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/linux/arm64/lazydocker').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/linux/arm64/LICENSE').orNull,
+            //     destination: 'bin',
+            //     rename: 'LICENSE.lazydocker',
+            // ],
+            [source: 'tui/dist/linux/arm64', destination: '.', topLevel: true]
         ],
         'darwin-amd64': [
-            [source: 'tui/dist/darwin/amd64', destination: '.', topLevel: true],
-            [source: layout.buildDirectory.file('jq-macos-amd64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'jq'
-            ],
-            [source: layout.buildDirectory.file('yq_darwin_amd64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'yq'
-            ],
-            [source: layout.buildDirectory.file('lazydocker/darwin/amd64/lazydocker').orNull,
-                destination: 'bin',
-                mode: 0755,
-            ],
-            [source: layout.buildDirectory.file('lazydocker/darwin/amd64/LICENSE').orNull,
-                destination: 'bin',
-                rename: 'LICENSE.lazydocker',
-            ]
+            // [source: layout.buildDirectory.file('jq-macos-amd64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'jq'
+            // ],
+            // [source: layout.buildDirectory.file('yq_darwin_amd64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'yq'
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/darwin/amd64/lazydocker').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/darwin/amd64/LICENSE').orNull,
+            //     destination: 'bin',
+            //     rename: 'LICENSE.lazydocker',
+            // ],
+            [source: 'tui/dist/darwin/amd64', destination: '.', topLevel: true]
         ],
         'darwin-arm64': [
-            [source: 'tui/dist/darwin/arm64', destination: '.', topLevel: true],
-            [source: layout.buildDirectory.file('jq-macos-arm64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'jq'
-            ],
-            [source: layout.buildDirectory.file('yq_darwin_arm64').orNull,
-                destination: 'bin',
-                mode: 0755,
-                rename: 'yq'
-            ],
-            [source: layout.buildDirectory.file('lazydocker/darwin/arm64/lazydocker').orNull,
-                destination: 'bin',
-                mode: 0755,
-            ],
-            [source: layout.buildDirectory.file('lazydocker/darwin/arm64/LICENSE').orNull,
-                destination: 'bin',
-                rename: 'LICENSE.lazydocker',
-            ]
+            // [source: layout.buildDirectory.file('jq-macos-arm64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'jq'
+            // ],
+            // [source: layout.buildDirectory.file('yq_darwin_arm64').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            //     rename: 'yq'
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/darwin/arm64/lazydocker').orNull,
+            //     destination: 'bin',
+            //     mode: 0755,
+            // ],
+            // [source: layout.buildDirectory.file('lazydocker/darwin/arm64/LICENSE').orNull,
+            //     destination: 'bin',
+            //     rename: 'LICENSE.lazydocker',
+            // ],
+            [source: 'tui/dist/darwin/arm64', destination: '.', topLevel: true]
         ]
     ]
 }
@@ -161,18 +161,18 @@ task dist {
 
 task distBinaries(type: Download) {
     src([
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Darwin_arm64.tar.gz',
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Darwin_x86_64.tar.gz',
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Linux_arm64.tar.gz',
-        'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Linux_x86_64.tar.gz',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_linux_arm64',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_linux_amd64',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_darwin_arm64',
-        'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_darwin_amd64',
-        'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-amd64',
-        'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-arm64',
-        'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-amd64',
-        'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-arm64'
+        // 'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Darwin_arm64.tar.gz',
+        // 'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Darwin_x86_64.tar.gz',
+        // 'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Linux_arm64.tar.gz',
+        // 'https://github.com/jesseduffield/lazydocker/releases/download/v0.24.2/lazydocker_0.24.2_Linux_x86_64.tar.gz',
+        // 'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_linux_arm64',
+        // 'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_linux_amd64',
+        // 'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_darwin_arm64',
+        // 'https://github.com/mikefarah/yq/releases/download/v4.48.2/yq_darwin_amd64',
+        // 'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-amd64',
+        // 'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-macos-arm64',
+        // 'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-amd64',
+        // 'https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-linux-arm64'
     ])
     dest layout.buildDirectory
 
@@ -190,17 +190,17 @@ task decompressDistBinaries {
     description = 'Decompress the distribution binaries'
 }
 
-[ [ source: 'lazydocker_0.24.2_Darwin_arm64.tar.gz', destination: 'lazydocker/darwin/arm64' ],
-  [ source: 'lazydocker_0.24.2_Darwin_x86_64.tar.gz', destination: 'lazydocker/darwin/amd64' ],
-  [ source: 'lazydocker_0.24.2_Linux_arm64.tar.gz', destination: 'lazydocker/linux/arm64' ],
-  [ source: 'lazydocker_0.24.2_Linux_x86_64.tar.gz', destination: 'lazydocker/linux/amd64' ] ].each { archive ->
-    task "extract${pathToCamelCase(archive.destination)}" (type: Copy) {
-        from tarTree(layout.buildDirectory.file(archive.source))
-        into layout.buildDirectory.file(archive.destination)
-        dependsOn 'distBinaries'
-    }
-    decompressDistBinaries.dependsOn "extract${pathToCamelCase(archive.destination)}"
-}
+// [ [ source: 'lazydocker_0.24.2_Darwin_arm64.tar.gz', destination: 'lazydocker/darwin/arm64' ],
+//   [ source: 'lazydocker_0.24.2_Darwin_x86_64.tar.gz', destination: 'lazydocker/darwin/amd64' ],
+//   [ source: 'lazydocker_0.24.2_Linux_arm64.tar.gz', destination: 'lazydocker/linux/arm64' ],
+//   [ source: 'lazydocker_0.24.2_Linux_x86_64.tar.gz', destination: 'lazydocker/linux/amd64' ] ].each { archive ->
+//     task "extract${pathToCamelCase(archive.destination)}" (type: Copy) {
+//         from tarTree(layout.buildDirectory.file(archive.source))
+//         into layout.buildDirectory.file(archive.destination)
+//         dependsOn 'distBinaries'
+//     }
+//     decompressDistBinaries.dependsOn "extract${pathToCamelCase(archive.destination)}"
+// }
 
 
 task tui {
