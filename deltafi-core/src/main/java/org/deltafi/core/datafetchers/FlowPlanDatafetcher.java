@@ -35,6 +35,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.FlowTagFilter;
 import org.deltafi.core.validation.*;
 
 import java.util.*;
@@ -64,6 +65,7 @@ public class FlowPlanDatafetcher {
     private final TimedDataSourcePlanValidator timedDataSourcePlanValidator;
     private final OnErrorDataSourcePlanValidator onErrorDataSourcePlanValidator;
     private final TransformFlowPlanValidator transformFlowPlanValidator;
+    private final UnifiedFlowService unifiedFlowService;
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
@@ -197,6 +199,26 @@ public class FlowPlanDatafetcher {
         } else {
             throw new IllegalArgumentException("Unsupported flow state: " + flowState);
         }
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public SystemFlows findFlowsByTags(FlowTagFilter filter) {
+        return toSystemFlows(unifiedFlowService.findByTags(filter));
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowUpdate
+    public SystemFlows setFlowStateByTagsDryRun(FlowTagFilter filter, FlowState flowState) {
+        return toSystemFlows(unifiedFlowService.findByTagsAndNewState(filter, flowState));
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public SystemFlows setFlowStateByTags(FlowTagFilter filter, FlowState flowState) {
+        List<Flow> updatedFlows = unifiedFlowService.setFlowStateByTags(filter, flowState);
+        auditLogger.audit("set state to {} in flows {}", flowState, CoreAuditLogger.listToString(updatedFlows, flow -> flow.getType().getDisplayName() + ": " + flow.getName()));
+        return toSystemFlows(updatedFlows);
     }
 
     @DgsMutation
@@ -535,5 +557,21 @@ public class FlowPlanDatafetcher {
         List<DataSourceErrorState> errors = restDataSourceService.dataSourceErrorsExceeded();
         errors.addAll(timedDataSourceService.dataSourceErrorsExceeded());
         return errors;
+    }
+
+    private SystemFlows toSystemFlows(List<Flow> flows) {
+        SystemFlows systemFlows = new SystemFlows(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        for (Flow flow : flows) {
+            switch(flow) {
+                case TimedDataSource timedDataSource -> systemFlows.getTimedDataSource().add(timedDataSource);
+                case RestDataSource restDataSource -> systemFlows.getRestDataSource().add(restDataSource);
+                case OnErrorDataSource onErrorDataSource -> systemFlows.getOnErrorDataSource().add(onErrorDataSource);
+                case TransformFlow transformFlow -> systemFlows.getTransform().add(transformFlow);
+                case DataSink dataSink -> systemFlows.getDataSink().add(dataSink);
+                default -> log.warn("Unexpected flow type {}", flow.getClass());
+            }
+        }
+
+        return systemFlows;
     }
 }

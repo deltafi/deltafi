@@ -190,6 +190,7 @@ generateJava {
             "FilteredByFlow"                : "org.deltafi.core.types.SummaryByFlow",
             "FilteredByMessage"             : "org.deltafi.core.types.SummaryByFlowAndMessage",
             "FilteredSummaryFilter"         : "org.deltafi.core.types.FilteredSummaryFilter",
+            "FlowTagFilter"                 : "org.deltafi.core.types.FlowTagFilter",
             "OnErrorDataSource"             : "org.deltafi.core.types.OnErrorDataSource",
             "PerActionUniqueKeyValues"      : "org.deltafi.core.types.PerActionUniqueKeyValues",
             "PluginVariables"               : "org.deltafi.core.types.PluginVariables",

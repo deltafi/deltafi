@@ -21,8 +21,10 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -37,6 +39,7 @@ public abstract class FlowPlan {
     private final String name;
     private final FlowType type;
     private final String description;
+    protected Set<String> tags = new HashSet<>();
 
     private PluginCoordinates sourcePlugin;
 

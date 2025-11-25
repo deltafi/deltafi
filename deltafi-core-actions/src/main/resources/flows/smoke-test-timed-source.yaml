@@ -9,3 +9,7 @@ timedIngressAction:
   parameters:
     metadata:
       smoke: test
+tags:
+  - smoke
+  - sample
+  - cron

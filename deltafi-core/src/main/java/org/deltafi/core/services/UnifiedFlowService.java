@@ -20,7 +20,11 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.repo.FlowStateUpdater;
 import org.deltafi.core.types.DataSink;
+import org.deltafi.core.types.Flow;
+import org.deltafi.core.types.FlowTagFilter;
 import org.deltafi.core.types.TransformFlow;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +33,12 @@ import java.util.*;
 @AllArgsConstructor
 @Service
 public class UnifiedFlowService {
-    DataSinkService dataSinkService;
-    TransformFlowService transformFlowService;
+    private final TimedDataSourceService timedDataSourceService;
+    private final DataSinkService dataSinkService;
+    private final TransformFlowService transformFlowService;
+    private final RestDataSourceService restDataSourceService;
+    private final OnErrorDataSourceService onErrorDataSourceService;
+    private final FlowStateUpdater flowStateUpdater;
 
     public List<ActionConfiguration> runningTransformActions() {
         return new ArrayList<>(transformFlowService.getRunningFlows().stream()
@@ -77,5 +85,23 @@ public class UnifiedFlowService {
                 .toList());
 
         return configs;
+    }
+
+    public List<Flow> setFlowStateByTags(FlowTagFilter filter, FlowState flowState) {
+        List<Flow> flows = flowStateUpdater.setFlowStateByTags(filter, flowState);
+        dataSinkService.refreshCache();
+        transformFlowService.refreshCache();
+        restDataSourceService.refreshCache();
+        timedDataSourceService.refreshCache();
+        onErrorDataSourceService.refreshCache();
+        return flows;
+    }
+
+    public List<Flow> findByTagsAndNewState(FlowTagFilter filter, FlowState flowState) {
+        return flowStateUpdater.findByTagsAndNewState(filter, flowState);
+    }
+
+    public List<Flow> findByTags(FlowTagFilter filter) {
+        return flowStateUpdater.findByTags(filter);
     }
 }

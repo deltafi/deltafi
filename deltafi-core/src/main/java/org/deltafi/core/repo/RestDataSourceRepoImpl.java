@@ -43,9 +43,9 @@ public class RestDataSourceRepoImpl implements RestDataSourceRepoCustom {
         String sql = """
             INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
                                topic, discriminator, id, max_errors,
-                               metadata, annotation_config)
+                               metadata, annotation_config, tags)
             VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
-                    ?, ?::jsonb, ?::jsonb)
+                    ?, ?::jsonb, ?::jsonb, ?::jsonb)
         """;
 
         jdbcTemplate.batchUpdate(sql, restDataSources, 1000, (ps, restDataSource) -> {
@@ -61,6 +61,7 @@ public class RestDataSourceRepoImpl implements RestDataSourceRepoCustom {
             ps.setInt(10, restDataSource.getMaxErrors());
             ps.setString(11, toJson(restDataSource.getMetadata()));
             ps.setString(12, toJson(restDataSource.getAnnotationConfig()));
+            ps.setString(13, toJson(restDataSource.getTags()));
         });
     }
 

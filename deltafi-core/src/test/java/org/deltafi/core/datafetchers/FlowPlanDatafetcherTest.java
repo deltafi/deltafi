@@ -79,6 +79,9 @@ class FlowPlanDatafetcherTest {
     @Mock
     private TransformFlowPlanValidator transformFlowPlanValidator;
 
+    @Mock
+    private UnifiedFlowService unifiedFlowService;
+
     private FlowPlanDatafetcher flowPlanDatafetcher;
 
     @BeforeEach
@@ -97,7 +100,8 @@ class FlowPlanDatafetcherTest {
                 restDataSourcePlanValidator,
                 timedDataSourcePlanValidator,
                 onErrorDataSourcePlanValidator,
-                transformFlowPlanValidator
+                transformFlowPlanValidator,
+                unifiedFlowService
         );
         
         lenient().when(restDataSourceService.hasFlow("test-rest-datasource")).thenReturn(true);

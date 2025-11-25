@@ -45,9 +45,9 @@ public class TimedDataSourceRepoImpl implements TimedDataSourceRepoCustom {
                                topic, timed_ingress_action, cron_schedule, last_run, next_run,
                                memo, current_did, execute_immediate, ingress_status,
                                ingress_status_message, discriminator, id, max_errors,
-                               metadata, annotation_config)
+                               metadata, annotation_config, tags)
             VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?::jsonb, ?::jsonb)
+                    ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb)
         """;
 
         jdbcTemplate.batchUpdate(sql, timedDataSources, 1000, (ps, timedDataSource) -> {
@@ -72,6 +72,7 @@ public class TimedDataSourceRepoImpl implements TimedDataSourceRepoCustom {
             ps.setInt(19, timedDataSource.getMaxErrors());
             ps.setString(20, toJson(timedDataSource.getMetadata()));
             ps.setString(21, toJson(timedDataSource.getAnnotationConfig()));
+            ps.setString(22, toJson(timedDataSource.getTags()));
         });
     }
 

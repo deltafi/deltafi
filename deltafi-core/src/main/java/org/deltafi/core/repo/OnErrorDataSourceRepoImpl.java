@@ -45,9 +45,9 @@ public class OnErrorDataSourceRepoImpl implements OnErrorDataSourceRepoCustom {
                                topic, discriminator, id, max_errors,
                                metadata, annotation_config, error_message_regex, source_filters,
                                metadata_filters, annotation_filters, include_source_metadata_regex,
-                               source_metadata_prefix, include_source_annotations_regex)
+                               source_metadata_prefix, include_source_annotations_regex, tags)
             VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
-                    ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb)
+                    ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb)
         """;
 
         jdbcTemplate.batchUpdate(sql, onErrorDataSources, 1000, (ps, onErrorDataSource) -> {
@@ -70,6 +70,7 @@ public class OnErrorDataSourceRepoImpl implements OnErrorDataSourceRepoCustom {
             ps.setString(17, toJson(onErrorDataSource.getIncludeSourceMetadataRegex()));
             ps.setString(18, onErrorDataSource.getSourceMetadataPrefix());
             ps.setString(19, toJson(onErrorDataSource.getIncludeSourceAnnotationsRegex()));
+            ps.setString(20, toJson(onErrorDataSource.getTags()));
         });
     }
 

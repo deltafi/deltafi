@@ -9,3 +9,6 @@ egressAction:
   parameters:
     metadataKey: deltafiMetadata
     url: "${smokeEgressUrl}"
+tags:
+  - smoke
+  - sample

@@ -19,6 +19,7 @@ package org.deltafi.core.repo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.hypersistence.utils.hibernate.type.array.internal.ArrayUtil;
 import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.core.types.TransformFlow;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,8 +43,8 @@ public class TransformFlowRepoImpl implements TransformFlowRepoCustom {
     public void batchInsert(List<TransformFlow> transformFlows) {
         String sql = """
             INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
-                               transform_actions, subscribe, publish, discriminator, id)
-            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)
+                               transform_actions, subscribe, publish, discriminator, id, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
         """;
 
         jdbcTemplate.batchUpdate(sql, transformFlows, 1000, (ps, transformFlow) -> {
@@ -58,6 +59,7 @@ public class TransformFlowRepoImpl implements TransformFlowRepoCustom {
             ps.setString(9, toJson(transformFlow.getPublish()));
             ps.setString(10, "TRANSFORM");
             ps.setObject(11, transformFlow.getId());
+            ps.setString(12, toJson(transformFlow.getTags()));
         });
     }
 

@@ -63,6 +63,11 @@ public abstract class Flow {
     @Column(columnDefinition = "jsonb")
     protected Set<Variable> variables = new HashSet<>();
 
+    // note - using jsonb because text[] doesn't work well with inheritance
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    protected Set<String> tags = new HashSet<>();
+
     public Flow(String name, FlowType type, String description, PluginCoordinates sourcePlugin) {
         this.name = name;
         this.type = type;

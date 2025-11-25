@@ -25,6 +25,7 @@ import org.deltafi.core.types.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.util.Constants.*;
@@ -36,6 +37,12 @@ public class FlowBuilders {
         return buildRestDataSource(REST_DATA_SOURCE_NAME, flowState);
     }
 
+    public static RestDataSource buildRestDataSource(String name, FlowState flowState, Set<String> tags) {
+        RestDataSource restDataSource = buildRestDataSource(name, flowState);
+        restDataSource.setTags(tags);
+        return restDataSource;
+    }
+
     public static RestDataSource buildRestDataSource(String name, FlowState flowState) {
         RestDataSource dataSource = new RestDataSource();
         dataSource.setName(name);
@@ -44,6 +51,13 @@ public class FlowBuilders {
         dataSource.setTopic(TRANSFORM_TOPIC);
         dataSource.setSourcePlugin(PLUGIN_COORDINATES);
         return dataSource;
+    }
+
+    public static TimedDataSource buildTimedDataSource(String name, FlowState flowState, Set<String> tags) {
+        TimedDataSource timedDataSource = buildTimedDataSource(flowState);
+        timedDataSource.setName(name);
+        timedDataSource.setTags(tags);
+        return timedDataSource;
     }
 
     public static TimedDataSource buildTimedDataSource(FlowState flowState) {
@@ -112,6 +126,13 @@ public class FlowBuilders {
         return publishRules;
     }
 
+    public static DataSink buildDataSink(String name, FlowState flowState, Set<String> tags) {
+        DataSink dataSink = buildDataSink(flowState);
+        dataSink.setName(name);
+        dataSink.setTags(tags);
+        return dataSink;
+    }
+
     public static DataSink buildDataSink(FlowState flowState) {
         ActionConfiguration sampleEgress = new ActionConfiguration("SampleEgressAction", ActionType.EGRESS, "type");
 
@@ -129,6 +150,13 @@ public class FlowBuilders {
 
     public static DataSink buildRunningDataSink(String name, ActionConfiguration egressAction, boolean testMode) {
         return buildDataSink(name, egressAction, FlowState.RUNNING, testMode);
+    }
+
+    public static TransformFlow buildTransformFlow(String name, FlowState flowState, Set<String> tags) {
+        TransformFlow transformFlow = buildTransformFlow(flowState);
+        transformFlow.setName(name);
+        transformFlow.setTags(tags);
+        return transformFlow;
     }
 
     public static TransformFlow buildTransformFlow(FlowState flowState) {

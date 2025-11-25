@@ -10,3 +10,6 @@ egressAction:
     metadataKey: deltafiMetadata
     url: "${passthroughEgressUrl}"
     method: "${passthroughEgressMethod}"
+tags:
+  - passthrough
+  - sample

@@ -42,8 +42,8 @@ public class DataSinkRepoImpl implements DataSinkRepoCustom {
     public void batchInsert(List<DataSink> dataSinks) {
         String sql = """
             INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
-                               egress_action, expected_annotations, subscribe, discriminator, id)
-            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)
+                               egress_action, expected_annotations, subscribe, discriminator, id, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
         """;
 
         jdbcTemplate.batchUpdate(sql, dataSinks, 1000, (ps, dataSink) -> {
@@ -58,6 +58,7 @@ public class DataSinkRepoImpl implements DataSinkRepoCustom {
             ps.setString(9, toJson(dataSink.getSubscribe()));
             ps.setString(10, "DATA_SINK");
             ps.setObject(11, dataSink.getId());
+            ps.setString(12, toJson(dataSink.getTags()));
         });
     }
 

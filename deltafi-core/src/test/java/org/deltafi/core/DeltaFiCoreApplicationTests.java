@@ -279,6 +279,9 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	RoleService roleService;
 
+    @Autowired
+    private UnifiedFlowService unifiedFlowService;
+
 	@MockitoBean
 	SystemService systemService;
 
@@ -6315,4 +6318,98 @@ class DeltaFiCoreApplicationTests {
 
 		assertThat(lookupTableService.getLookupTables()).isEmpty();
 	}
+
+    @Test
+    void testSetStateByTagFilter() {
+        setupFlowTagTestData();
+
+        FlowTagFilter filter = FlowTagFilter.builder()
+                .all(Set.of("a", "b"))
+                .any(Set.of("c", "d"))
+                .none(Set.of("skip"))
+                .types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
+                .build();
+
+        List<Flow> updated = unifiedFlowService.setFlowStateByTags(filter, FlowState.STOPPED);
+
+        assertThat(updated).hasSize(2);
+        assertThat(updated).extracting(Flow::getName)
+                .containsExactlyInAnyOrder("dataSourceMatch", "transformMatch");
+    }
+
+    @Test
+    void testFindByTagsAndNewState() {
+        setupFlowTagTestData();
+
+        FlowTagFilter filter = FlowTagFilter.builder()
+                .all(Set.of("a", "b"))
+                .any(Set.of("c", "d"))
+                .none(Set.of("skip"))
+                .types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
+                .build();
+
+        List<Flow> updated = unifiedFlowService.findByTagsAndNewState(filter, FlowState.STOPPED);
+
+        assertThat(updated).hasSize(2);
+        assertThat(updated).extracting(Flow::getName)
+                .containsExactlyInAnyOrder("dataSourceMatch", "transformMatch");
+    }
+
+    @Test
+    void testFindByTags() {
+        setupFlowTagTestData();
+
+        FlowTagFilter filter = FlowTagFilter.builder()
+                .all(Set.of("a", "b"))
+                .any(Set.of("c", "d"))
+                .none(Set.of("skip"))
+                .types(Set.of(FlowType.REST_DATA_SOURCE, FlowType.TRANSFORM))
+                .build();
+
+        List<Flow> updated = unifiedFlowService.findByTags(filter);
+
+        // the findByTags does not exlude anything based on state, so the invalid flow and alreadyStopped flow are both returned
+        assertThat(updated).hasSize(4)
+                .extracting(Flow::getName)
+                .containsExactlyInAnyOrder("dataSourceMatch", "transformMatch", "invalid", "alreadyStopped");
+    }
+
+
+    private void setupFlowTagTestData() {
+        // create matching flows, show only one of the `any` must be included
+        RestDataSource dataSourceMatch = FlowBuilders.buildRestDataSource("dataSourceMatch", FlowState.RUNNING,
+                Set.of("a", "b", "c"));
+        TransformFlow transformMatch = FlowBuilders.buildTransformFlow("transformMatch", FlowState.RUNNING,
+                Set.of("a", "b", "d"));
+
+        // missing the required tag `b`
+        RestDataSource missingOneOfAll = FlowBuilders.buildRestDataSource("missingOneOfAll", FlowState.RUNNING,
+                Set.of("a", "c", "d"));
+
+        // has all the required tags, but it is exluded due to the none clause with skip
+        RestDataSource excluded = FlowBuilders.buildRestDataSource("excluded", FlowState.RUNNING,
+                Set.of("a", "b", "d", "skip"));
+
+        // has all the tags needed but it is currently invalid
+        RestDataSource invalid = FlowBuilders.buildRestDataSource("invalid", FlowState.RUNNING,
+                Set.of("a", "b", "d"));
+        invalid.getFlowStatus().setValid(false);
+
+        // has all the tags needed but it is already stopped
+        RestDataSource alreadyStopped = FlowBuilders.buildRestDataSource("alreadyStopped", FlowState.STOPPED,
+                Set.of("a", "b", "c"));
+
+        // has the required tags but doesn't have any of c or d
+        RestDataSource missingAny = FlowBuilders.buildRestDataSource("missingAny", FlowState.RUNNING,
+                Set.of("a", "b"));
+
+        // has everything to match except its the wrong type
+        TimedDataSource wrongType = FlowBuilders.buildTimedDataSource("wrongType", FlowState.RUNNING,
+                Set.of("a", "b", "d"));
+
+        restDataSourceRepo.saveAll(List.of(dataSourceMatch, missingOneOfAll, excluded, invalid, missingAny, alreadyStopped));
+        transformFlowRepo.save(transformMatch);
+        timedDataSourceRepo.save(wrongType);
+    }
+
 }

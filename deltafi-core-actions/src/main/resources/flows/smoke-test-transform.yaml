@@ -15,3 +15,6 @@ publish:
     defaultBehavior: ERROR
   rules:
     - topic: smoke-egress
+tags:
+  - smoke
+  - sample

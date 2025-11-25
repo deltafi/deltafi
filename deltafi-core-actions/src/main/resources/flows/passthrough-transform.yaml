@@ -15,3 +15,6 @@ publish:
     defaultBehavior: ERROR
   rules:
     - topic: passthrough-egress
+tags:
+  - passthrough
+  - sample

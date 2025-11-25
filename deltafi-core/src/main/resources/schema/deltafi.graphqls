@@ -392,6 +392,17 @@ type TopicParticipant {
   condition: String
 }
 
+input FlowTagFilter {
+  # Must have ALL of these tags
+  all: [String]
+  # Must have AT LEAST ONE of these tags
+  any: [String]
+  # Must NOT have any of these tags
+  none: [String]
+  # Must be one of these FlowTypes
+  types: [FlowType]
+}
+
 type Query {
   getDataSinkPlan(planName: String!): DataSinkPlan!
   getRestDataSourcePlan(planName: String!): RestDataSourcePlan!
@@ -419,6 +430,8 @@ type Query {
   getAllSystemFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
   dataSourceErrorsExceeded: [DataSourceErrorState]!
+  setFlowStateByTagsDryRun(filter: FlowTagFilter!, flowState: FlowState!) : SystemFlows!
+  findFlowsByTags(filter: FlowTagFilter!) : SystemFlows!
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: UUID!): DeltaFile
@@ -466,6 +479,7 @@ type Mutation {
   saveSystemFlowPlans(systemFlowPlansInput: SystemFlowPlansInput!) : Boolean!
 
   setFlowState(flowType: FlowType!, flowName: String!, flowState: FlowState!) : Boolean!
+  setFlowStateByTags(filter: FlowTagFilter!, flowState: FlowState!) : SystemFlows!
 
   setRestDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   setTimedDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!

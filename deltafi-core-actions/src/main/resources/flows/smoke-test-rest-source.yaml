@@ -2,3 +2,6 @@ name: smoke-rest-data-source
 type: REST_DATA_SOURCE
 description: Create smoke DeltaFiles
 topic: smoke-transform
+tags:
+  - smoke
+  - sample

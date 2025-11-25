@@ -24,6 +24,7 @@ import org.deltafi.core.types.Flow;
 import org.deltafi.common.types.FlowPlan;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extends Flow> {
@@ -36,6 +37,7 @@ public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extend
         flow.setDescription(flowPlan.getDescription());
         flow.setName(flowPlan.getName());
         flow.setSourcePlugin(flowPlan.getSourcePlugin());
+        flow.setTags(flowPlan.getTags() != null ? new HashSet<>(flowPlan.getTags()) : new HashSet<>());
 
         List<FlowConfigError> configErrors = new ArrayList<>(flowPlanPropertyHelper.getErrors());
 
