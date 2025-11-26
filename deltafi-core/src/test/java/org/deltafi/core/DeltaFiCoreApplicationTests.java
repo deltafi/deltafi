@@ -6262,16 +6262,17 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testCleanUnusedAnnotationsReturnsCorrectCounts() {
+	void testDeleteOldEventAnnotations() {
 		IntStream.range(0, 75).forEach(i -> {
 			UUID did = UUID.randomUUID();
-            eventAnnotationsRepo.save(new EventAnnotationEntity(new EventAnnotationId(did, i), i));
+			eventAnnotationsRepo.save(EventAnnotationEntity.builder()
+					.id(new EventAnnotationId(did, i))
+					.annotationValueId(i)
+					.build());
 		});
 
 		assertEquals(75, eventAnnotationsRepo.count());
-		assertEquals(50, eventAnnotationsRepo.deleteUnusedEventAnnotations(50));
-		assertEquals(25, eventAnnotationsRepo.count());
-		assertEquals(25, eventAnnotationsRepo.deleteUnusedEventAnnotations(50));
+		eventAnnotationsRepo.deleteOldEventAnnotations("0 seconds");
 		assertEquals(0, eventAnnotationsRepo.count());
 	}
 

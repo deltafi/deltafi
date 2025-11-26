@@ -19,6 +19,9 @@ package org.deltafi.core.types;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "event_annotations")
@@ -30,4 +33,6 @@ public class EventAnnotationEntity {
     @EmbeddedId
     private EventAnnotationId id;
     private Integer annotationValueId;
+    @CreationTimestamp
+    private OffsetDateTime created;
 }

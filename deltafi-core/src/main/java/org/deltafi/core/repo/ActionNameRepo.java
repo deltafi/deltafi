@@ -30,8 +30,13 @@ public interface ActionNameRepo extends JpaRepository<ActionName, Integer> {
 
     @Modifying
     @Transactional
+    @Query(value = "REFRESH MATERIALIZED VIEW action_name_ids_in_use", nativeQuery = true)
+    void refreshActionNameIdsInUse();
+
+    @Modifying
+    @Transactional
     @Query(value = "DELETE FROM action_names a WHERE NOT EXISTS (" +
-            "SELECT 1 FROM errors_filters_5m_noanno e WHERE e.action_id = a.id" +
+            "SELECT 1 FROM action_name_ids_in_use u WHERE u.action_id = a.id" +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedActionNames();
 }

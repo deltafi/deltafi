@@ -1,0 +1,1 @@
+TRUNCATE event_annotations;

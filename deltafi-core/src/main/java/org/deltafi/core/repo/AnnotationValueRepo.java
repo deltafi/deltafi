@@ -30,8 +30,13 @@ public interface AnnotationValueRepo extends JpaRepository<AnnotationValue, Inte
 
     @Modifying
     @Transactional
+    @Query(value = "REFRESH MATERIALIZED VIEW annotation_value_ids_in_use", nativeQuery = true)
+    void refreshAnnotationValueIdsInUse();
+
+    @Modifying
+    @Transactional
     @Query(value = "DELETE FROM annotation_values av WHERE NOT EXISTS (" +
-            "SELECT 1 FROM analytics_5m_anno a5 WHERE av.id = a5.annotation_value_id" +
+            "SELECT 1 FROM annotation_value_ids_in_use u WHERE av.id = u.annotation_value_id" +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedAnnotationValues();
 }

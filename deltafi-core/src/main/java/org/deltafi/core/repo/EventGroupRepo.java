@@ -30,8 +30,13 @@ public interface EventGroupRepo extends JpaRepository<EventGroup, Integer> {
 
     @Modifying
     @Transactional
+    @Query(value = "REFRESH MATERIALIZED VIEW event_group_ids_in_use", nativeQuery = true)
+    void refreshEventGroupIdsInUse();
+
+    @Modifying
+    @Transactional
     @Query(value = "DELETE FROM event_groups e WHERE NOT EXISTS (" +
-            "SELECT 1 FROM analytics_5m_noanno a WHERE a.event_group_id = e.id " +
+            "SELECT 1 FROM event_group_ids_in_use u WHERE u.event_group_id = e.id" +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedEventGroups();
 }

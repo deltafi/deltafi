@@ -101,7 +101,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private String buildRequeueSql(Set<String> skipActions, Set<UUID> skipDids, boolean excludeEgressActions) {
         StringBuilder sqlQuery = new StringBuilder("""
-            SELECT DISTINCT delta_file_id
+            SELECT delta_file_id
             FROM delta_file_flows dff
             """);
 
@@ -126,7 +126,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             sqlQuery.append("\nAND fd.type <> 'DATA_SINK'");
         }
 
-        sqlQuery.append("\nLIMIT :limit");
+        sqlQuery.append("\nGROUP BY delta_file_id LIMIT :limit");
 
         return sqlQuery.toString();
     }
@@ -833,7 +833,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             criteria.append("AND df.paused = :paused ");
             parameters.put("paused", filter.getPaused());
         }
-        
+
         if (filter.getPinned() != null) {
             criteria.append("AND df.pinned = :pinned ");
             parameters.put("pinned", filter.getPinned());

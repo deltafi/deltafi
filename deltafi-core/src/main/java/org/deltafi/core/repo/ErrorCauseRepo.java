@@ -30,8 +30,13 @@ public interface ErrorCauseRepo extends JpaRepository<ErrorCause, Integer> {
 
     @Modifying
     @Transactional
+    @Query(value = "REFRESH MATERIALIZED VIEW error_cause_ids_in_use", nativeQuery = true)
+    void refreshErrorCauseIdsInUse();
+
+    @Modifying
+    @Transactional
     @Query(value = "DELETE FROM error_causes ec WHERE NOT EXISTS (" +
-                "SELECT 1 FROM errors_filters_5m_noanno ef WHERE ec.id = ef.cause_id " +
+            "SELECT 1 FROM error_cause_ids_in_use u WHERE ec.id = u.cause_id" +
             ") AND created < NOW() - INTERVAL '30 days'", nativeQuery = true)
     void deleteUnusedErrorCauses();
 }
