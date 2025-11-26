@@ -483,7 +483,7 @@ dependencies:
   promtail: grafana/promtail:3.5.8
   valkey: valkey/valkey:9.0.0-alpine
   docker_web_gui: deltafi/docker-web-gui:1.0.2-4
-  postgres: deltafi/timescaledb:2.19.3-pg16-2
+  postgres: deltafi/timescaledb:2.19.3-pg16-3
 EOF
 }
 

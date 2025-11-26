@@ -52,7 +52,7 @@ type valuesData struct {
 	PromtailContainer        string `default:"grafana/promtail:3.5.8"`
 	ValkeyContainer          string `default:"valkey/valkey:9.0.0-alpine"`
 	DockerWebGuiContainer    string `default:"deltafi/docker-web-gui:1.0.2-4"`
-	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-2"`
+	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-3"`
 	PostgresLookupContainer  string `default:"postgres:16.10-alpine3.22"`
 	JavaIDEContainer         string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-2"`
 	JavaDevContainer         string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`
