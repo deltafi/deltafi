@@ -382,8 +382,9 @@ loki:
    initialDelaySeconds: 5
 
 # VictoriaMetrics Configuration
-victoria-metrics-single:
+victoriametrics:
   server:
+    fullnameOverride: deltafi-victoriametrics
     image:
       tag: v1.129.1
     retentionPeriod: "720d"

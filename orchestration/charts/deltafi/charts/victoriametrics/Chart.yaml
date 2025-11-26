@@ -36,7 +36,7 @@ keywords:
 - metricsql
 - timeseries
 kubeVersion: '>=1.25.0-0'
-name: victoria-metrics-single
+name: victoriametrics
 sources:
 - https://github.com/VictoriaMetrics/helm-charts
 type: application
