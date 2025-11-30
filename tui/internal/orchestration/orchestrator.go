@@ -48,7 +48,7 @@ type valuesData struct {
 	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.129.1"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
 	MinioContainer           string `default:"deltafi/minio:RELEASE.2025-10-15T17-29-55Z-2"`
-	NginxContainer           string `default:"nginx:1.29.3-alpine3.22"`
+	NginxContainer           string `default:"deltafi/nginx:1.29.3-alpine3.22-0"`
 	PromtailContainer        string `default:"grafana/promtail:3.5.8"`
 	ValkeyContainer          string `default:"valkey/valkey:9.0.0-alpine"`
 	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-3"`
