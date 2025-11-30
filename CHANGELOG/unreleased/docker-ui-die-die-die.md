@@ -22,4 +22,4 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- 
+- Upgrade Java base image to deltafi/deltafi-java-jre:21.0.9-alpine-1
