@@ -5,6 +5,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.39.0] - 2025-11-30
+
+### Changed
+- Replace Graphite with VictoriaMetrics for metrics storage
+
+### Fixed
+- Fixed an issue where the `storage` bucket was not created on startup and changes to the ageOff were not propagated when running with local content storage
+
+### Removed
+- Removed docker web UI ("Docker Dashboard") from compose distributions
+
+### Tech-Debt/Refactor
+- Query optimizations to reduce load on postgres 
+
+### Upgrade and Migration
+- Upgrade Java base image to deltafi/deltafi-java-jre:21.0.9-alpine-1
+- Upgrade to Grafana deltafi/grafana:12.3.0-0 
+- Upgrade compose timescaledb to deltafi/timescaledb:2.19.3-pg16-3
+- Upgrade to NGINX: deltafi/nginx:1.29.3-alpine3.22-0
+- VictoriaMetrics v1.129.1
+- New persistent volume claim is required for deltafi-victoriametrics in k8s
+- Migration from Graphite to VictoriaMetrics requires running `bin/migrate-graphite-to-victoriametrics.sh` to preserve historical metrics. This should be run after installation of the new version. Once run the old graphite data may be deleted.
+- A new version of the deltafi TUI is required to install this in a dev environment
+- Grafana dashboards using the summarize function with a fixed time interval will need to be corrected. This pattern was present in several of the default dashboards, so dashboards clones and modified from these will no longer work until this change is made.
+```diff
+- summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)
++ summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), '$__interval', 'sum', false)
+```
+
 ## [2.38.0] - 2025-11-25
 
 ### Added
@@ -5044,7 +5073,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.38.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.39.0...main
+[2.39.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.38.0...2.39.0
 [2.38.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.37.0...2.38.0
 [2.37.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.36.0...2.37.0
 [2.36.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.35.0...2.36.0
