@@ -291,12 +291,6 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("Admin") && uiConfig.clusterMode),
       },
       {
-        name: "Docker Dashboard",
-        icon: "fa-brands fa-docker fa-fw",
-        url: "/orchestration",
-        visible: computed(() => hasPermission("Admin") && !uiConfig.clusterMode),
-      },
-      {
         name: "GraphiQL",
         icon: "icomoon graphql",
         url: computed(() => buildURL(null, "/graphiql")),

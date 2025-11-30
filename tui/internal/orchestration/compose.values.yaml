@@ -65,6 +65,5 @@ dependencies:
   nginx: {{.NginxContainer}}
   promtail: {{.PromtailContainer}}
   valkey: {{.ValkeyContainer}}
-  docker_web_gui: {{.DockerWebGuiContainer}}
   postgres: {{.PostgresContainer}}
   postgres_lookup: {{.PostgresLookupContainer}}

@@ -20,7 +20,6 @@ http {
 
     map $request_uri $auth_cache_path {
         ~^/visualization  "visualization";
-        ~^/orchestration  "orchestration";
         default           "ui";
     }
 
@@ -69,18 +68,6 @@ http {
             proxy_cache auth_cache;
             proxy_cache_valid 200 1m;
             error_page 502 503 504 =502;
-        }
-
-        location /orchestration/ {
-            client_max_body_size 10G;
-            set $serviceName "Docker UI";
-            set $upstream deltafi-docker-ui:3230;
-            proxy_pass http://$upstream;
-
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Port $server_port;
         }
 
         location /visualization {

@@ -377,22 +377,7 @@ services:
       timeout: 5s
       retries: 20
       start_period: 30s
-  deltafi-docker-ui:
-    image: ${DOCKER_WEB_GUI}
-    container_name: deltafi-docker-ui
-    expose:
-      - "3230"
-    environment:
-      PUBLIC_URL: /orchestration
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      deltafi-group: deltafi-dependency
-    networks:
-      deltafi:
-        aliases:
-          - "orchestration"
-    restart: unless-stopped
+
   deltafi-victoriametrics:
     image: victoriametrics/victoria-metrics:v1.129.1
     container_name: deltafi-victoriametrics
