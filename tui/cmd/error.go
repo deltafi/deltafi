@@ -33,11 +33,14 @@ that occur during DeltaFile processing. You can search for specific error
 patterns, view error summaries, and perform bulk operations on errored files.
 
 Examples:
-  deltafi errored view                    # View unacknowledged errors
+  deltafi errored view                    # Interactive Errored DeltaFiles viewer (unacknowledged only)
+  deltafi errored list                    # List Errored DeltaFiles (unacknowledged only)
   deltafi errored view --all              # View all errors (acknowledged and unacknowledged)
-  deltafi errored view --error-acknowledged yes  # View all errors including acknowledged
-  deltafi errored summary                 # Show error summary by flow
-  deltafi errored list                    # List recent errors`,
+  deltafi errored list --acknowledged     # List only acknowledged errors
+  deltafi errored  view --error-cause POST
+                                          # View errors containing 'post' (case insensitive) in the error cause
+  deltafi errored  list --data-source smoke-timed-data-source
+                                          # List/search for errors from the smoke-timed-data-source data source`,
 	GroupID:            "deltafile",
 	SilenceUsage:       true,
 	DisableSuggestions: true,
@@ -49,7 +52,7 @@ Examples:
 
 var errorViewCmd = &cobra.Command{
 	Use:          "view",
-	Short:        "View DeltaFile errors",
+	Short:        "View DeltaFile errors interactively",
 	Long:         `View DeltaFile errors using various criteria such as error messages, flow names, or time ranges. By default shows only unacknowledged errors. Use --all to view all errors.`,
 	SilenceUsage: true,
 	RunE:         runErrorView,
@@ -58,7 +61,7 @@ var errorViewCmd = &cobra.Command{
 func runErrorView(cmd *cobra.Command, args []string) error {
 	RequireRunningDeltaFi()
 	if len(args) > 0 {
-		return fmt.Errorf("search command does not accept positional arguments: %v", args)
+		return fmt.Errorf("view command does not accept positional arguments: %v", args)
 	}
 
 	searchParams.stage = "ERROR"
