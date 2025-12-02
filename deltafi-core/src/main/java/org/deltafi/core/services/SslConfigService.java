@@ -83,6 +83,12 @@ public interface SslConfigService {
      */
     SslSettings getSslSettings();
 
+    /**
+     * Get the key passphrase for the key used by plugins
+     * @return the keyphrase or null if it is not set
+     */
+    String getPluginKeyPassphrase();
+
     default Map<String, SslInfo> getSslInfoMap(SslSecretNames sslSecretNames) {
         Map<String, SslInfo> keyCertPairs = new HashMap<>();
 

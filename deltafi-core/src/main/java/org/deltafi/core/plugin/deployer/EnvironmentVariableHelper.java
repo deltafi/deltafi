@@ -22,6 +22,7 @@ import lombok.Getter;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.content.StorageProperties;
 import org.deltafi.common.storage.s3.minio.MinioProperties;
+import org.deltafi.core.services.SslConfigService;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
@@ -33,16 +34,18 @@ import java.util.List;
 public class EnvironmentVariableHelper {
     private final String dataDir;
     private final List<String> envVars;
+    private final String keyPassphrase;
 
-    public EnvironmentVariableHelper(MinioProperties minioProperties, StorageProperties storageProperties, EventQueueProperties eventQueueProperties, Environment environment) {
+    public EnvironmentVariableHelper(MinioProperties minioProperties, StorageProperties storageProperties, SslConfigService sslConfigService,
+                                     EventQueueProperties eventQueueProperties, Environment environment) {
         this.dataDir = environment.getProperty("DATA_DIR");
         this.envVars = buildEnvVarList(minioProperties, storageProperties, eventQueueProperties, environment);
+        this.keyPassphrase = sslConfigService.getPluginKeyPassphrase();
     }
 
     private List<String> buildEnvVarList(MinioProperties minioProperties, StorageProperties storageProperties, EventQueueProperties eventQueueProperties,  Environment environment) {
         String coreUrl = environment.getProperty("CORE_URL");
         String sslProtocol = environment.getProperty("SSL_PROTOCOL", "TLSv1.2");
-        String keyPassword = environment.getProperty("KEY_PASSWORD");
 
         List<String> properties = new ArrayList<>(List.of(
                 "CORE_URL=" + coreUrl,
@@ -59,8 +62,8 @@ public class EnvironmentVariableHelper {
                 "STORAGE_BUCKET_NAME=" + storageProperties.bucketName()));
 
         // match k8s behavior where this is not injected if it is not set
-        if (StringUtils.isNotBlank(keyPassword)) {
-            properties.add("KEY_PASSWORD=" + keyPassword);
+        if (StringUtils.isNotBlank(this.keyPassphrase)) {
+            properties.add("KEY_PASSWORD=" + this.keyPassphrase);
         }
 
         return properties;

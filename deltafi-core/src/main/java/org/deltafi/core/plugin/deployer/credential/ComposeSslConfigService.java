@@ -45,6 +45,7 @@ public class ComposeSslConfigService implements SslConfigService {
     private static final Path CERTS = Path.of("/certs");
     private static final Path CA_CHAIN = CERTS.resolve(CA_CRT);
     private static final String ENV_FILE = ".env";
+    private static final String PASSPHRASE_FILE = ".passphrase.env";
     public static final String KEY_PASSWORD = "KEY_PASSWORD";
 
     private final CertificateInfoService certificateInfoService;
@@ -72,7 +73,7 @@ public class ComposeSslConfigService implements SslConfigService {
 
         String tlsKey = readFile(secretDir.resolve(TLS_KEY));
         String tlsCert = readFile(secretDir.resolve(TLS_CRT));
-        Properties props = readEnv(secretDir.resolve(ENV_FILE));
+        Properties props = readEnv(secretDir.resolve(PASSPHRASE_FILE));
         KeyCertPair keyCertPair = new KeyCertPair(tlsKey, tlsCert, props.getProperty(KEY_PASSWORD));
         return certificateInfoService.getSslInfo(secretName, keyCertPair);
     }
@@ -111,7 +112,8 @@ public class ComposeSslConfigService implements SslConfigService {
         builder.append(envPair("CA_CHAIN_PATH", CA_CHAIN));
 
         if (StringUtils.isNotBlank(keyCertPair.keyPassphrase())) {
-            builder.append(envPair(KEY_PASSWORD, keyCertPair.keyPassphrase()));
+            String passphrase = envPair(KEY_PASSWORD, keyCertPair.keyPassphrase());
+            writeFile(secretDir.resolve(PASSPHRASE_FILE), passphrase);
         }
 
         writeFile(secretDir.resolve(ENV_FILE), builder.toString());
@@ -190,6 +192,12 @@ public class ComposeSslConfigService implements SslConfigService {
         }
 
         return new SslSettings(keyCertPairs.values(), getCaChain());
+    }
+
+    @Override
+    public String getPluginKeyPassphrase() {
+        SslInfo sslInfo = getKeyCert(sslSecretNames.pluginsSsl(), false);
+        return sslInfo != null ? sslInfo.keyPassphrase() : null;
     }
 
     void copyCaChain() {

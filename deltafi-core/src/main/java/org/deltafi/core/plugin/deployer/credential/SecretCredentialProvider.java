@@ -183,6 +183,12 @@ public class SecretCredentialProvider implements CredentialProvider, SslConfigSe
         return new SslSettings(keyCertPairs.values(), getCaChain());
     }
 
+    @Override
+    public String getPluginKeyPassphrase() {
+        SslInfo sslInfo = getKeyCert(sslSecretNames.pluginsSsl(), false);
+        return sslInfo != null ? sslInfo.keyPassphrase() : null;
+    }
+
     private void addSslInfo(Map<String, SslInfo> sslInfoMap, Secret secret) {
         String secretName = secret.getMetadata().getName();
         if (sslInfoMap.containsKey(secretName)) {

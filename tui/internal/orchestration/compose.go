@@ -900,11 +900,12 @@ func (o *ComposeOrchestrator) entityResolverConfig() error {
 }
 
 const (
-	caCrt       = "ca.crt"
-	tlsKey      = "tls.key"
-	tlsCrt      = "tls.crt"
-	envFile     = ".env"
-	keyPassword = "KEY_PASSWORD"
+	caCrt          = "ca.crt"
+	tlsKey         = "tls.key"
+	tlsCrt         = "tls.crt"
+	envFile        = ".env"
+	passphraseFile = ".passphrase.env"
+	keyPassword    = "KEY_PASSWORD"
 )
 
 func (o *ComposeOrchestrator) GetKeyCert(secretName string) (*SslOutput, error) {
@@ -962,7 +963,10 @@ func (o *ComposeOrchestrator) SaveKeyCert(input SslInput) (*SslOutput, error) {
 	builder.WriteString(o.envPair("CA_CHAIN_PATH", "/certs/"+caCrt))
 
 	if strings.TrimSpace(input.KeyPassphrase) != "" {
-		builder.WriteString(o.envPair(keyPassword, input.KeyPassphrase))
+		passphrase := o.envPair(keyPassword, input.KeyPassphrase)
+		if err := o.writeFile(filepath.Join(secretDir, passphraseFile), passphrase); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := o.writeFile(filepath.Join(secretDir, envFile), builder.String()); err != nil {

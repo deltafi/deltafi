@@ -41,6 +41,8 @@ services:
       - ${SECRETS_DIR}/minio.env
       - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_CORE_SSL:-ssl-secret}/.env
         required: false
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_CORE_SSL:-ssl-secret}/.passphrase.env
+        required: false
     <<: *relaxed-health-probe
     labels:
       deltafi-group: deltafi-core
@@ -78,6 +80,8 @@ services:
       - ${SECRETS_DIR}/minio.env
       - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_CORE_SSL:-ssl-secret}/.env
         required: false
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_CORE_SSL:-ssl-secret}/.passphrase.env
+        required: false
     <<: *relaxed-health-probe
     labels:
       deltafi-group: deltafi-core
@@ -94,7 +98,7 @@ services:
     image: ${DELTAFI_ENTITY_RESOLVER}
     container_name: deltafi-entity-resolver
     env_file:
-      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}/.env
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}/.passphrase.env
         required: false
     user: "${USER_ID}:${GROUP_ID}"
     expose:
@@ -119,7 +123,7 @@ services:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
-      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_PLUGINS_SSL:-ssl-secret}/.env
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_PLUGINS_SSL:-ssl-secret}/.passphrase.env
         required: false
     healthcheck:
       test: cat /tmp/running
