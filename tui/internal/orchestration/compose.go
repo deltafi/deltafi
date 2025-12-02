@@ -811,7 +811,7 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	postgresPath := filepath.Join(secretsDir, "postgres.env")
 	if _, err := os.Stat(postgresPath); os.IsNotExist(err) {
 		postgresPassword := randomPassword(20)
-		postgresContent := fmt.Sprintf("POSTGRES_USER='postgres'\nPOSTGRES_PASSWORD='%s'\nPOSTGRES_DB='postgres'\nPGUSER='postgres'\n", postgresPassword)
+		postgresContent := fmt.Sprintf("POSTGRES_USER='postgres'\nPOSTGRES_PASSWORD='%s'\nPOSTGRES_LOOKUP_PASSWORD='%s'\nPOSTGRES_DB='postgres'\nPGUSER='postgres'\n", postgresPassword, postgresPassword)
 		if err := os.WriteFile(postgresPath, []byte(postgresContent), 0600); err != nil {
 			return fmt.Errorf("error writing postgres secrets: %w", err)
 		}
