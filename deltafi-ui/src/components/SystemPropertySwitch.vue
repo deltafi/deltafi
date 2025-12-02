@@ -17,10 +17,10 @@
 -->
 
 <template>
-  <div>
+  <span>
     <ConfirmDialog :group="dialogGroup" />
     <InputSwitch v-tooltip="tooltip" v-model="isOn" :disabled="updating" @click="onChange($event)" />
-  </div>
+  </span>
 </template>
 
 <script setup>
@@ -65,6 +65,7 @@ const props = defineProps({
 const propertyValue = ref();
 const isOn = ref(false);
 const updating = ref(false);
+const emit = defineEmits(["changed"]);
 
 onMounted(async () => {
   propertyValue.value = await get(props.propertyName);
@@ -144,6 +145,7 @@ const setProperty = async (value) => {
     isOn.value = !isOn.value;
   }
   updating.value = false;
+  emit("changed", { key: props.propertyName, value: value });
 };
 
 </script>

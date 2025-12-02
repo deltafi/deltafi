@@ -46,7 +46,13 @@
               </div>
             </template>
             <template v-else>
-              <PropertyEditDialog :property="data" @saved="onSaved($event)">
+              <div v-if="data.dataType === 'BOOLEAN'" class="mt-1 ml-1">
+                <SystemPropertySwitch :property-name="data.key" @changed="onSaved($event)" />
+                <span v-if="data.value !== data.defaultValue" class="override-icon" style="vertical-align: top;">
+                  <i v-tooltip.right="'Default value has been overridden'" class="fas fa fa-gavel ml-2 mt-1 text-muted" />
+                </span>
+              </div>
+              <PropertyEditDialog v-else :property="data" @saved="onSaved($event)">
                 <div class="value-clickable">
                   <span v-if="data.value !== data.defaultValue" class="override-icon">
                     <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
@@ -68,6 +74,7 @@
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import SystemPropertySwitch from "@/components/SystemPropertySwitch.vue";
 import PropertyEditDialog from "@/components/properties/PropertyEditDialog.vue";
 import { computed, inject, reactive } from "vue";
 import _ from "lodash";
