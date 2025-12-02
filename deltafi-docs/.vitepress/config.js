@@ -6,8 +6,6 @@ import fs from "fs";
 import { resolve, basename } from "path";
 import fg from "fast-glob";
 
-import { sidebar } from "./sidebar.js"; // Import the sidebar configuration
-
 function isHtmlTag(tag) {
   // Remove angle brackets
   tag = tag.replace(/[<>]/g, "");
@@ -65,6 +63,39 @@ function updateVersionInDocs() {
   });
 }
 
+function generateDocsSidebar() {
+  console.log("Generating docs sidebar...");
+  const namePattern = /(\w+)\.md/;
+  const sidebarCoreActions = [];
+  // VUE_APP_EMBEDDED set TRUE when running vitepress in app, otherwise vitepress is served from netlify for public docs
+  const coreActionDocsPath = process.env.VUE_APP_EMBEDDED ? "../docs/core-actions" : "../../deltafi-core-actions/src/main/resources/docs";
+  const srcPattern = resolve(__dirname, `${coreActionDocsPath}/org.deltafi.core.action.*.md`);
+  const files = fg.sync(srcPattern);
+  files.forEach((file) => {
+    const fileName = basename(file);
+    const fileNameParts = fileName.split('.');
+    const actionName = fileNameParts[fileNameParts.length - 2]; // Extract action name from file name
+    sidebarCoreActions.push({ name: actionName, link: `/core-actions/${fileName}` })
+  });
+  sidebarCoreActions.sort((a, b) => a.name.localeCompare(b.name));
+
+  const sidebarJson = fs.readFileSync(resolve(__dirname, 'sidebar.json'), 'utf8');
+  const sidebarContent = JSON.parse(sidebarJson);
+
+  // Inject core action menu items into the sidebar
+  const coreActionsSection = sidebarContent.find(section => section.text === "Core Actions");
+  if (coreActionsSection) {
+    coreActionsSection.items = sidebarCoreActions.map(action => ({
+      text: action.name,
+      link: action.link
+    }));
+  } else {
+    throw new Error("Core Actions section not found in sidebar.json");
+  }
+
+  return sidebarContent;
+}
+
 // run immediately when config loads
 copyDocs();
 
@@ -95,7 +126,7 @@ export default defineConfig(({ mode }) => {
       search: {
         provider: "local",
       },
-      sidebar: sidebar, // Assign the imported sidebar
+      sidebar: generateDocsSidebar(),
       socialLinks: [
         {
           icon: {

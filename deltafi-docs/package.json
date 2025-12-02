@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
@@ -24,6 +25,6 @@
     "unocss": "^66.5.2",
     "unplugin-vue-components": "^29.1.0",
     "vite-plugin-pwa": "^1.0.3",
-    "vitepress": "^2.0.0-alpha.12"
+    "vitepress": "^2.0.0-alpha.15"
   }
 }
