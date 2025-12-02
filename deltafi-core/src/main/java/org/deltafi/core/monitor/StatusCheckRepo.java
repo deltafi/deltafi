@@ -15,27 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package api
+package org.deltafi.core.monitor;
 
-import (
-	"time"
-)
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-// StatusCheck represents a single system status check
-type StatusCheck struct {
-	Code        int       `json:"code"`
-	Description string    `json:"description"`
-	Message     string    `json:"message"`
-	NextRunTime time.Time `json:"nextRunTime"`
-}
-
-// StatusResponse represents the full system status response
-type StatusResponse struct {
-	Status struct {
-		Code    int           `json:"code"`
-		Color   string        `json:"color"`
-		State   string        `json:"state"`
-		Checks  []StatusCheck `json:"checks"`
-		Version string        `json:"version"`
-	} `json:"status"`
+@Repository
+public interface StatusCheckRepo extends JpaRepository<StatusCheckEntity, String> {
 }

@@ -36,7 +36,8 @@ import javax.sql.DataSource;
 import java.util.Map;
 
 @Configuration
-@EnableJpaRepositories(basePackages = {"org.deltafi.core.repo", "org.deltafi.core.security", "org.deltafi.core.integration"})
+@EnableJpaRepositories(basePackages = {"org.deltafi.core.repo", "org.deltafi.core.security",
+        "org.deltafi.core.integration", "org.deltafi.core.monitor"})
 public class DatabaseConfiguration {
     @Bean
     @Primary

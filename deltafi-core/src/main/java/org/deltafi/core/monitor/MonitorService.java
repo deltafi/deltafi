@@ -27,13 +27,15 @@ import org.deltafi.core.monitor.checks.CheckResult;
 import org.deltafi.core.monitor.checks.StatusCheck;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
 
-@Slf4j
 @MonitorProfile
+@Slf4j
 public class MonitorService {
     private static final String SSE_STATUS_CHANNEL = SSE_VALKEY_CHANNEL_PREFIX + ".status";
 
@@ -41,20 +43,37 @@ public class MonitorService {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-    private final List<StatusCheck> checks;
     private final ValkeyKeyedBlockingQueue valkeyQueue;
+    private final StatusCheckRepo statusCheckRepo;
     private final ScheduledExecutorService scheduledExecutorService;
+    private final Map<String, StatusCheck> statusCheckMap = new ConcurrentHashMap<>();
     private final Map<String, CheckResult> statuses = new ConcurrentHashMap<>();
 
-    public MonitorService(List<StatusCheck> checks, ValkeyKeyedBlockingQueue valkeyQueue) {
-        this.checks = checks;
+    private Set<String> pausedChecks = new HashSet<>();
+
+    public MonitorService(List<StatusCheck> checks, ValkeyKeyedBlockingQueue valkeyQueue,
+            StatusCheckRepo statusCheckRepo) {
         this.valkeyQueue = valkeyQueue;
+        this.statusCheckRepo = statusCheckRepo;
         this.scheduledExecutorService = Executors.newScheduledThreadPool(checks.size());
-        scheduleChecks();
+
+        for (StatusCheck check : checks) {
+            statusCheckMap.put(check.getId(), check);
+            scheduledExecutorService.scheduleWithFixedDelay(() -> updateStatus(check), 0, 5, TimeUnit.SECONDS);
+        }
+    }
+
+    private void updateStatus(StatusCheck statusCheck) {
+        if (pausedChecks.contains(statusCheck.getId())) {
+            return;
+        }
+        statuses.put(statusCheck.getId(), statusCheck.runCheck());
     }
 
     @Scheduled(fixedDelay = 5_000)
     public void publishStatus() {
+        refreshPausedChecks();
+
         MonitorResult monitorResult = MonitorResult.statuses(new ArrayList<>(statuses.values()));
         try {
             String json = OBJECT_MAPPER.writeValueAsString(monitorResult);
@@ -65,15 +84,24 @@ public class MonitorService {
         }
     }
 
-    public void scheduleChecks() {
-        for (StatusCheck check : checks) {
-            scheduledExecutorService.scheduleWithFixedDelay(() -> updateStatus(check), 0, 5, TimeUnit.SECONDS);
-        }
-    }
+    private void refreshPausedChecks() {
+        Set<String> pausedChecks = new HashSet<>();
 
-    void updateStatus(StatusCheck statusCheck) {
-        CheckResult result = statusCheck.runCheck();
-        statuses.put(statusCheck.getClass().getSimpleName(), result);
+        Map<String, OffsetDateTime> pausedStatusChecks = statusCheckRepo.findAll().stream()
+                .collect(Collectors.toMap(StatusCheckEntity::getId, StatusCheckEntity::getNextRunTime));
+        for (Map.Entry<String, OffsetDateTime> entry : pausedStatusChecks.entrySet()) {
+            CheckResult status = statuses.get(entry.getKey());
+            if (entry.getValue().isBefore(OffsetDateTime.now())) {
+                statusCheckRepo.deleteById(entry.getKey());
+                statuses.put(entry.getKey(), statusCheckMap.get(entry.getKey()).runCheck());
+            } else {
+                pausedChecks.add(entry.getKey());
+                statuses.put(entry.getKey(), new CheckResult(status.statusCheckId(), status.description(),
+                        CheckResult.CODE_PAUSED, "", status.timestamp(), entry.getValue()));
+            }
+        }
+
+        this.pausedChecks = pausedChecks;
     }
 
     @PreDestroy

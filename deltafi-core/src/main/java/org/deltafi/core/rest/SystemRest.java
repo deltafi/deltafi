@@ -19,22 +19,16 @@ package org.deltafi.core.rest;
 
 import lombok.AllArgsConstructor;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.GraphiteQueryService;
-import org.deltafi.core.services.SystemService;
+import org.deltafi.core.services.*;
 import org.deltafi.core.services.SystemService.Status;
 import org.deltafi.core.services.SystemService.Versions;
-import org.deltafi.core.services.SystemSnapshotService;
-import org.deltafi.core.types.FlowMetrics;
-import org.deltafi.core.types.MemberReport;
-import org.deltafi.core.types.NodeMetrics;
+import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -135,6 +129,20 @@ public class SystemRest {
             return Math.round((double) totalUsage / totalLimit * 1000.0) / 10.0;
         }
         return null;
+    }
+
+    @PutMapping("/status/{statusCheckId}/pauseDuration")
+    @NeedsPermission.StatusPause
+    public void pauseStatusCheck(@PathVariable("statusCheckId") String statusCheckId,
+            @RequestBody Duration pauseDuration) {
+        systemService.pauseStatusCheck(statusCheckId, pauseDuration);
+    }
+
+    @DeleteMapping("/status/{statusCheckId}/pauseDuration")
+    @NeedsPermission.StatusPause
+    public ResponseEntity<Void> resumeStatusCheck(@PathVariable("statusCheckId") String statusCheckId) {
+        systemService.resumeStatusCheck(statusCheckId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/versions")

@@ -58,7 +58,7 @@ export default function useUsers() {
 
   const remove = async (userObject: Record<string, string>) => {
     try {
-      await deleteUser(endpoint, userObject.id);
+      await deleteUser(`${endpoint}/${userObject.id}`);
       notify.warn("User Deleted", userObject.name)
     } catch (response: any) {
       processErrorResponse(response);

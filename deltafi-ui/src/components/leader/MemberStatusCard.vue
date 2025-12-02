@@ -203,7 +203,7 @@
   </Panel>
 
   <!-- Status Details Dialog -->
-  <CheckDialog ref="checkDialog" :header="member.memberName + ' System Status Details'" :checks="member.status?.checks" :last-updated="member.status?.timestamp" />
+  <CheckDialog ref="checkDialog" :header="member.memberName + ' System Status Details'" :checks="member.status?.checks" :last-updated="member.status?.timestamp" :readonly="true" />
 </template>
 
 <script setup lang="ts">

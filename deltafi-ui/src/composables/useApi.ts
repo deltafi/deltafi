@@ -96,12 +96,14 @@ export default function useApi(version: Number = 2) {
     return postPut('POST', endpoint, body, parseJSON)
   }
 
-  const remove = async (endpoint: String, id: String) => {
-    const url = buildURL(`${endpoint}/${id}`,);
+  const remove = async (endpoint: String) => {
+    const url = buildURL(endpoint);
     try {
       const res = await fetch(url, { method: 'DELETE' });
       if (!res.ok) return Promise.reject(res);
-      response.value = await res.json();
+      if (res.status != 204) {
+          response.value = await res.json();
+      }
       loaded.value = true;
       return Promise.resolve(res);
     } catch (error: any) {

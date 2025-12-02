@@ -2,6 +2,7 @@ Category,Name,Description
 Administration,Admin,One permission to rule them all
 General,UIAccess,Grants access to the UI
 General,StatusView,Grants the ability to view system status
+General,StatusPause,Grants the ability to pause and resume system status checks
 General,DashboardView,Grants the ability to view the UI dashboard
 General,VersionsView,Grants the ability to view running versions
 Metrics,MetricsAdmin,Grants the Admin role in Grafana

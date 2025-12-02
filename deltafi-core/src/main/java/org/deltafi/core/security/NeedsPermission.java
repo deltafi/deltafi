@@ -323,6 +323,11 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('StatusPause'" + OR_ADMIN)
+    public @interface StatusPause {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('UserRead'" + OR_ADMIN)
     public @interface UserRead {}
 

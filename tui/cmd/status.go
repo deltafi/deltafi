@@ -220,8 +220,11 @@ func getStatusStyle(color string) lipgloss.Style {
 	}
 }
 
-func getStatusIcon(code int) string {
-	switch code {
+func getStatusIcon(status api.StatusCheck) string {
+	if !status.NextRunTime.IsZero() {
+		return "#"
+	}
+	switch status.Code {
 	case 0:
 		return "✓"
 	case 1:
@@ -233,9 +236,12 @@ func getStatusIcon(code int) string {
 	}
 }
 
-func getIconStyle(code int) lipgloss.Style {
+func getIconStyle(status api.StatusCheck) lipgloss.Style {
 	style := lipgloss.NewStyle()
-	switch code {
+	if !status.NextRunTime.IsZero() {
+		return style.Foreground(styles.Blue)
+	}
+	switch status.Code {
 	case 0:
 		return style.Foreground(styles.SuccessStyle.GetForeground())
 	case 1:
@@ -270,13 +276,17 @@ func RenderStatus(status api.StatusResponse, interactive bool, renderer *glamour
 
 	// Status checks
 	for _, check := range status.Status.Checks {
-		iconStyle := getIconStyle(check.Code)
-		icon := getStatusIcon(check.Code)
+		iconStyle := getIconStyle(check)
+		icon := getStatusIcon(check)
 
-		// Render check with icon
+		details := ""
+		if !check.NextRunTime.IsZero() {
+			details = " (Paused until " + check.NextRunTime.Format(time.RFC3339) + ")"
+		}
 		checkLine := lipgloss.JoinHorizontal(lipgloss.Left,
 			iconColumn.Render(iconStyle.Render(icon)),
 			check.Description,
+			details,
 		)
 		sb.WriteString(checkLine)
 		sb.WriteString("\n")
@@ -345,12 +355,17 @@ func (c *StatusCommand) View() string {
 
 	var checks []string
 	for _, check := range c.status.Status.Checks {
-		iconStyle := getIconStyle(check.Code)
-		icon := getStatusIcon(check.Code)
+		iconStyle := getIconStyle(check)
+		icon := getStatusIcon(check)
 
+		details := ""
+		if !check.NextRunTime.IsZero() {
+			details = " (Paused until " + check.NextRunTime.Format(time.RFC3339) + ")"
+		}
 		checkLine := lipgloss.JoinHorizontal(lipgloss.Left,
 			iconColumn.Render(iconStyle.Render(icon)),
 			check.Description,
+			details,
 		)
 		checks = append(checks, checkLine)
 

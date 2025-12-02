@@ -31,7 +31,9 @@ public record MonitorResult(int code, String color, String state, List<CheckResu
     public static MonitorResult statuses(List<CheckResult> checkResults) {
         OffsetDateTime now = OffsetDateTime.now();
         checkResults.sort(Comparator.comparingInt(CheckResult::code).reversed().thenComparing(CheckResult::description));
-        int overallStatus = checkResults.stream().mapToInt(CheckResult::code).max().orElse(-1);
+        int overallStatus = checkResults.stream()
+                .filter(CheckResult::isActive)
+                .mapToInt(CheckResult::code).max().orElse(-1);
         MonitorResultBuilder builder = MonitorResult.builder()
                 .code(overallStatus)
                 .checks(checkResults)

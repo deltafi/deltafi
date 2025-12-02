@@ -55,7 +55,7 @@ export default function useRoles() {
 
   const remove = async (roleObject: Record<string, string>) => {
     try {
-      await deleteRole(endpoint, roleObject.id);
+      await deleteRole(`${endpoint}/${roleObject.id}`);
       notify.warn("Role Deleted", roleObject.name)
     } catch (response: any) {
       processErrorResponse(response);

@@ -15,27 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package api
+package org.deltafi.core.monitor;
 
-import (
-	"time"
-)
+import jakarta.persistence.*;
+import lombok.*;
 
-// StatusCheck represents a single system status check
-type StatusCheck struct {
-	Code        int       `json:"code"`
-	Description string    `json:"description"`
-	Message     string    `json:"message"`
-	NextRunTime time.Time `json:"nextRunTime"`
-}
+import java.time.OffsetDateTime;
 
-// StatusResponse represents the full system status response
-type StatusResponse struct {
-	Status struct {
-		Code    int           `json:"code"`
-		Color   string        `json:"color"`
-		State   string        `json:"state"`
-		Checks  []StatusCheck `json:"checks"`
-		Version string        `json:"version"`
-	} `json:"status"`
+@Entity
+@Table(name = "status_checks")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class StatusCheckEntity {
+    @Id
+    private String id;
+    private OffsetDateTime nextRunTime;
 }

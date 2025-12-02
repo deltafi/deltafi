@@ -19,7 +19,7 @@
 import useApi from './useApi'
 
 export default function useStatus() {
-  const { response, get, loading, loaded, errors } = useApi();
+  const { response, get, put, remove, loading, loaded, errors } = useApi();
   const endpoint: string = 'status';
 
   const fetchStatus = async () => {
@@ -31,5 +31,13 @@ export default function useStatus() {
     }
   }
 
-  return { loaded, loading, errors, fetchStatus };
+  const pauseStatusCheck = async (statusCheckId: string, duration: string) => {
+    await put(endpoint + '/' + statusCheckId + '/pauseDuration', duration, false)
+  }
+
+  const resumeStatusCheck = async (statusCheckId: string) => {
+    await remove(endpoint + '/' + statusCheckId + '/pauseDuration')
+  }
+
+  return { loaded, loading, errors, fetchStatus, pauseStatusCheck, resumeStatusCheck };
 }

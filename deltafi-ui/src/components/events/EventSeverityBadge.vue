@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Tag :value="badgeText" :severity="tagSeverity" :icon="tagIcon" :rounded="true" />
+  <Tag :value="badgeText" :severity="tagSeverity" :icon="tagIcon" :rounded="true" v-tooltip.top="tooltip"/>
 </template>
 
 <script setup>
@@ -29,12 +29,17 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  tooltip: {
+    type: String,
+    required: false,
+  },
 });
 const { severity } = toRefs(props);
 
 const tagSeverity = computed(() => {
   if (severity.value == "warn") return "warning";
   if (severity.value == "error") return "danger";
+  if (severity.value == "inactive") return "secondary";
 
   return severity.value;
 });
@@ -44,7 +49,7 @@ const tagIcon = computed(() => {
   if (severity.value == "error") return "pi pi-times";
   if (severity.value == "info") return "pi pi-info-circle";
   if (severity.value == "success") return "pi pi-check";
-
+  if (severity.value == "inactive") return "pi pi-pause-circle";
   return null;
 });
 

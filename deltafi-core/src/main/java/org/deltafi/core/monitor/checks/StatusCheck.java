@@ -40,6 +40,10 @@ public abstract class StatusCheck {
         this.description = description;
     }
 
+    public String getId() {
+        return getClass().getSimpleName();
+    }
+
     public CheckResult runCheck() {
         Future<CheckResult> futureResult = executorService.submit(this::check);
         try {
@@ -72,6 +76,6 @@ public abstract class StatusCheck {
     }
 
     public CheckResult result(int code, String message) {
-        return new CheckResult(description, code, message);
+        return new CheckResult(getId(), description, code, message);
     }
 }

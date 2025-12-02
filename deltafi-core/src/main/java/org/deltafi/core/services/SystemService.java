@@ -25,13 +25,17 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.exceptions.SystemStatusException;
+import org.deltafi.core.monitor.StatusCheckEntity;
+import org.deltafi.core.monitor.StatusCheckRepo;
 import org.deltafi.core.types.*;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -51,6 +55,8 @@ public class SystemService {
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
     private final BuildProperties buildProperties;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final StatusCheckRepo statusCheckRepo;
+    private final CoreAuditLogger auditLogger;
 
     private Map<String, NodeMetrics> cachedNodeMetrics;
     private List<String> cachedContentNodeNames;
@@ -84,6 +90,19 @@ public class SystemService {
         } catch (IOException ioException) {
             throw new SystemStatusException("Unable to parse the system status");
         }
+    }
+
+    public void pauseStatusCheck(String statusCheckId, Duration pauseDuration) {
+        log.info("Pausing status check {} for duration {}", statusCheckId, pauseDuration);
+        OffsetDateTime nextRunTime = OffsetDateTime.now().plus(pauseDuration);
+        statusCheckRepo.save(new StatusCheckEntity(statusCheckId, nextRunTime));
+        auditLogger.audit("Paused status check {} for duration {}", statusCheckId, pauseDuration);
+    }
+
+    public void resumeStatusCheck(String statusCheckId) {
+        log.info("Resuming status check {}", statusCheckId);
+        statusCheckRepo.deleteById(statusCheckId);
+        auditLogger.audit("Resumed status check {}", statusCheckId);
     }
 
     /**

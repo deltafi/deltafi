@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.monitor.checks;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 
@@ -25,13 +26,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record CheckResult(String description, int code, String message, OffsetDateTime timestamp) {
+public record CheckResult(String statusCheckId, String description, int code, String message, OffsetDateTime timestamp,
+        OffsetDateTime nextRunTime) {
+    public static final int CODE_PAUSED = -1;
     public static final int CODE_GREEN = 0;
     public static final int CODE_YELLOW = 1;
     public static final int CODE_RED = 2;
 
-    public CheckResult(String description, int code, String message) {
-        this(description, code, message, OffsetDateTime.now());
+    public CheckResult(String statusCheckId, String description, int code, String message) {
+        this(statusCheckId, description, code, message, OffsetDateTime.now(), null);
+    }
+
+    @JsonIgnore
+    public boolean isActive() {
+        return nextRunTime == null;
     }
 
     public static class ResultBuilder {
