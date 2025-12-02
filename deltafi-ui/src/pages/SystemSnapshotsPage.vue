@@ -27,23 +27,23 @@
     <Panel header="Snapshots" class="table-panel system-snapshots-panel">
       <template #icons>
         <div class="btn-group align-items-center">
-          <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage" />
+          <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalCount" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage" />
           <IconField iconPosition="left">
             <InputIcon class="pi pi-search"> </InputIcon>
-            <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
+            <InputText v-model="filter" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
           </IconField>
         </div>
       </template>
-      <DataTable v-model:filters="filters" :value="snapshots" :paginator="true" :first="pageFirst" :rows="pageRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading" data-key="id">
+      <DataTable :value="snapshots" :first="pageFirst" :rows="pageRows" :total-records="totalCount" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading" data-key="id" :lazy="true" @sort="onSort($event)">
         <template #empty> No snapshots to display. </template>
         <template #loading> Loading. Please wait... </template>
-        <Column field="id" header="ID">
+        <Column field="id" header="ID" class="id-column">
           <template #body="data">
-            <a v-tooltip.top="`View Snapshot`" class="cursor-pointer monospace" style="color: black" @click="showSnapshot(data.data)">{{ data.data.id }}</a>
+            <a v-tooltip.top="`View Snapshot`" class="cursor-pointer monospace" @click="showSnapshot(data.data)">{{ data.data.id.split('-').slice(-1)[0] }}</a>
           </template>
         </Column>
         <Column field="reason" header="Reason" />
-        <Column field="created" header="Date Created" class="date-column" :sortable="true">
+        <Column field="created" header="Date Created" class="date-column" sortable>
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
           </template>
@@ -61,14 +61,14 @@
     </Panel>
   </div>
   <Dialog v-model:visible="showSnapshotDialog" header="System Snapshot" :modal="true" :dismissable-mask="true" :draggable="false">
-    <div v-if="snapshot != null">
-      <HighlightedCode :code="JSON.stringify(snapshot, null, 2)" :style="{ width: '65vw' }" />
+    <div class="snapshot-json-container" v-if="snapshot != null">
+      <HighlightedCode :code="snapshotJSON" language="json" :style="{ width: '65vw'}" />
     </div>
     <template #footer>
       <span class="btn-group">
-        <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onDownload(snapshot)" />
-        <Button v-has-permission:SnapshotRevert label="Revert to Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-secondary p-button-outlined" @click="onRevertClick(snapshot)" />
-        <Button v-has-permission:SnapshotDelete v-tooltip.left="'Delete Snapshot'" label="Delete Snapshot" icon="pi pi-trash" class="p-button p-button-secondary p-button-outlined" @click="onDeleteClick(snapshot)" />
+        <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-primary mr-2" @click="onDownload(snapshot)" />
+        <Button v-has-permission:SnapshotRevert label="Revert to Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-warning mr-2" @click="onRevertClick(snapshot)" />
+        <Button v-has-permission:SnapshotDelete label="Delete Snapshot" icon="pi pi-trash" class="p-button p-button-danger" @click="onDeleteClick(snapshot)" />
       </span>
     </template>
   </Dialog>
@@ -94,40 +94,38 @@ import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useNotifications from "@/composables/useNotifications";
 import useSystemSnapshots from "@/composables/useSnapshots";
-import { onMounted, ref, computed } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
 import ConfirmDialog from "primevue/confirmdialog";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
-import { FilterMatchMode } from "primevue/api";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
 import { useConfirm } from "primevue/useconfirm";
+import _ from "lodash";
 
 const confirm = useConfirm();
 const pageRows = ref(20);
 const pageFirst = ref(0);
-const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot, deleteSnapshot, loading } = useSystemSnapshots();
+const sortField = ref("created");
+const sortDirection = ref("DESC");
+const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot, deleteSnapshot, loading, totalCount } = useSystemSnapshots();
 const snapshot = ref(null);
 const notify = useNotifications();
 const reason = ref("");
 const fileUploader = ref();
 const showSnapshotDialog = ref(false);
 const showCreateSnapshotDialog = ref(false);
-const filters = ref({
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-});
+const filter = ref();
 
 onMounted(async () => {
-  await getSystemSnapshots();
+  await getSnapshots();
 });
-
-const totalSnaps = computed(() => (snapshots.value || []).length);
 
 const download = (content, fileName, contentType) => {
   const a = document.createElement("a");
@@ -142,17 +140,54 @@ const close = () => {
   showSnapshotDialog.value = false;
   fileUploader.value.files = [];
 };
+
+const snapshotJSON = computed(() => {
+  return snapshot.value ? JSON.stringify(snapshot.value, null, 2) : "";
+});
+
 const onDownload = (snapshotData) => {
-  download(JSON.stringify(snapshotData, null, 2), snapshotData.id, "application/json");
+  snapshot.value = snapshotData;
+  download(snapshotJSON.value, snapshotData.id, "application/json");
 };
-const showSnapshot = (snapshotData) => {
+
+const showSnapshot = async (snapshotData) => {
   snapshot.value = snapshotData;
   showSnapshotDialog.value = true;
+};
+
+const onSort = (event) => {
+  pageFirst.value = event.first;
+  pageRows.value = event.rows;
+  sortField.value = event.sortField;
+  sortDirection.value = event.sortOrder < 0 ? "DESC" : "ASC";
+  getSnapshots();
 };
 
 const onPage = (event) => {
   pageFirst.value = event.first;
   pageRows.value = event.rows;
+  getSnapshots();
+};
+
+watch(
+  () => filter.value,
+  _.debounce(
+    () => {
+      getSnapshots();
+    },
+    500,
+    { leading: false, trailing: true }
+  )
+);
+
+const getSnapshots = async () => {
+  const filterObject = {
+    reasonFilter: {
+      caseSensitive: false,
+      name: filter.value || "",
+    }
+  };
+  await getSystemSnapshots(pageFirst.value, pageRows.value, sortField.value, sortDirection.value, filterObject);
 };
 
 const onRevert = async (id) => {
@@ -199,7 +234,7 @@ const onDelete = async (id) => {
   if (deleteResponse.success === true) {
     notify.success("Successfully Deleted Snapshot ", id);
     close();
-    await getSystemSnapshots();
+    await getSnapshots();
   } else {
     notify.error("Failed to Delete Snapshot", deleteResponse.errors[0]);
   }
@@ -215,7 +250,7 @@ const onImport = async (snapShotData) => {
     close();
     notify.error("Error Importing Snapshot");
   }
-  await getSystemSnapshots();
+  await getSnapshots();
 };
 
 const cleanUpSnapshot = (snapShotData) => {
@@ -257,7 +292,7 @@ const confirmCreate = async () => {
   close();
   if (mutationResponse.value != null) {
     notify.success("Successfully Created Snapshot", mutationResponse.value);
-    await getSystemSnapshots();
+    await getSnapshots();
   } else {
     notify.error("Failed To Create Snapshot");
   }
@@ -279,8 +314,12 @@ const confirmCreate = async () => {
       }
     }
 
+    .id-column {
+      width: 8rem;
+    }
+
     .date-column {
-      width: 15rem;
+      width: 14rem;
     }
 
     .p-paginator {
@@ -310,5 +349,10 @@ const confirmCreate = async () => {
       }
     }
   }
+}
+
+.snapshot-json-container {
+  height: 100vh;
+  background-color: #303030;
 }
 </style>

@@ -18,10 +18,13 @@
 
 import { ref } from 'vue'
 import useGraphQL from './useGraphQL'
+import { EnumType } from "json-to-graphql-query";
+
 export default function useSystemSnapshots() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
   const mutationData = ref(null);
+  const totalCount = ref(0);
 
   const snapshotFields = {
     id: true,
@@ -31,15 +34,27 @@ export default function useSystemSnapshots() {
     snapshot: true
   }
 
-  const fetch = async () => {
+  const fetch = async (offset: number, limit: number, sortField: string, sortDirection: string, filter: Object) => {
     const query = {
-      getSystemSnapshots: {
-        ...snapshotFields
+      getSystemSnapshotsByFilter: {
+        __args: {
+          offset: offset,
+          limit: limit,
+          sortField: new EnumType(sortField.toUpperCase()),
+          direction: new EnumType(sortDirection.toUpperCase()),
+          filter: filter
+        },
+        count: true,
+        offset: true,
+        totalCount: true,
+        systemSnapshots: {
+          ...snapshotFields
+        }
       }
     };
-    await queryGraphQL(query, "getSystemSnapshots");
-    data.value = response.value.data.getSystemSnapshots
-      .sort((a: any, b: any) => (a.created < b.created ? 1 : -1));
+    await queryGraphQL(query, "getSystemSnapshotsByFilter");
+    data.value = response.value.data.getSystemSnapshotsByFilter.systemSnapshots;
+    totalCount.value = response.value.data.getSystemSnapshotsByFilter.totalCount;
   };
 
   const create = async (reason: string) => {
@@ -96,5 +111,5 @@ export default function useSystemSnapshots() {
     return response.value.data.deleteSnapshot;
   };
 
-  return { data, loading, loaded, fetch, create, revert, importSnapshot, deleteSnapshot, mutationData, errors };
+  return { data, loading, loaded, fetch, create, revert, importSnapshot, deleteSnapshot, mutationData, errors, totalCount };
 }
