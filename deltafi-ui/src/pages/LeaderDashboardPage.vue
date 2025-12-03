@@ -250,7 +250,7 @@
               <i class="pi pi-tag text-muted" v-tooltip.top="data.memberData.tags.length > 0 ? 'Tags: ' + data.memberData.tags.join(', ') : 'No tags'" />
               <Tag v-if="data.memberData.connectionState === 'UNREACHABLE'" severity="danger" value="Unreachable" class="status-tag" />
               <Tag v-else-if="data.memberData.connectionState === 'STALE'" severity="warning" value="Stale" class="status-tag" />
-              <Tag v-else-if="data.memberData.status" :severity="getHealthSeverity(data.memberData)" :value="data.memberData.status.state" class="status-tag" />
+              <Tag v-else-if="data.memberData.status" :severity="getHealthSeverity(data.memberData)" :icon="getHealthIcon(data.memberData)" :value="data.memberData.status.state" class="status-tag" />
             </div>
           </template>
         </Column>
@@ -721,14 +721,22 @@ const formatBytes = (bytes: number): string => {
   return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 };
 
-const getHealthSeverity = (member: { status?: { code?: number } }): "success" | "warn" | "danger" | "info" => {
+const getHealthSeverity = (member: { status?: { code?: number } }): "success" | "warning" | "danger" | "info" => {
   if (!member.status) return "info";
   switch (member.status.code) {
     case 0: return "success";
-    case 1: return "warn";
+    case 1: return "warning";
     case 2: return "danger";
     default: return "info";
   }
+};
+
+const getHealthIcon = (member: { status?: { code?: number } }) => {
+  if (!member.status) return "pi pi-question";
+  const code = member.status.code;
+  if (code === 0) return "pi pi-check";
+  if (code === 1) return "pi pi-exclamation-triangle";
+  return "pi pi-times";
 };
 
 const openMemberSite = (url: string) => {

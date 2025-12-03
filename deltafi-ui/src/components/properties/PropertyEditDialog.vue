@@ -30,17 +30,19 @@
           </div>
         </div>
       </template>
-      <ListEdit v-if="localProperty.dataType === 'LIST'" v-model="localProperty.value" />
-      <MapEdit v-if="localProperty.dataType === 'MAP'" v-model="localProperty.value" />
-      <span v-if="localProperty.dataType === 'STRING'">
-        <TextArea ref="textAreaEl" v-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
-        <InputText ref="inputTextEl" v-else v-model="localProperty.value" style="width: 100%" />
-      </span>
-      <InputNumber v-if="localProperty.dataType === 'NUMBER'" v-model="localProperty.value" style="width: 100%" />
-      <span v-if="localProperty.dataType === 'BOOLEAN'">
-        <Checkbox v-model="localProperty.value" :binary="true" />
-        {{ localProperty.value }}
-      </span>
+      <div ref="inputContainer">
+        <ListEdit v-if="localProperty.dataType === 'LIST'" v-model="localProperty.value" />
+        <MapEdit v-if="localProperty.dataType === 'MAP'" v-model="localProperty.value" />
+        <span v-if="localProperty.dataType === 'STRING'">
+          <TextArea v-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
+          <InputText v-else v-model="localProperty.value" style="width: 100%" />
+        </span>
+        <InputNumber v-if="localProperty.dataType === 'NUMBER'" v-model="localProperty.value" style="width: 100%" />
+        <span v-if="localProperty.dataType === 'BOOLEAN'">
+          <Checkbox v-model="localProperty.value" :binary="true" />
+          {{ localProperty.value }}
+        </span>
+      </div>
       <template #footer>
         <div class="d-flex">
           <span class="mr-auto">
@@ -60,7 +62,7 @@ import MapEdit from "@/components/plugin/MapEdit.vue";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import usePropertySets from "@/composables/usePropertySets";
-import { computed, inject, toRefs, ref, watch, nextTick } from "vue";
+import { computed, toRefs, ref, watch, nextTick } from "vue";
 
 import _ from "lodash";
 
@@ -93,8 +95,7 @@ const localProperty = ref({});
 const dialogVisible = ref(false);
 const saving = ref(false);
 const textAreaThreshold = 48;
-const textAreaEl = ref(null);
-const inputTextEl = ref(null);
+const inputContainer = ref(null);
 
 const textArea = computed(() => localProperty.value.value && localProperty.value.value.length > textAreaThreshold);
 const saveBtnLabel = computed(() => (saving.value ? "Saving" : "Save"));
@@ -111,15 +112,7 @@ watch(
 
 const setFocus = async () => {
   await nextTick();
-  if (textArea.value) {
-    if (textAreaEl.value) {
-      textAreaEl.value.$el.focus();
-    }
-  } else {
-    if (inputTextEl.value) {
-      inputTextEl.value.$el.focus();
-    }
-  }
+  inputContainer.value.querySelectorAll('input, textarea')[0].focus();
 };
 
 const show = () => {
