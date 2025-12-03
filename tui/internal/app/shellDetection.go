@@ -102,7 +102,7 @@ func ConfigureShell(shell ShellType, tuiPath string) error {
 
 // configureBash sets up bash configuration
 func configureBash(tuiPath string) error {
-	rc := filepath.Join(os.Getenv("HOME"), ".bashrc")
+	rc := filepath.Join(UserHomeDir(), ".bashrc")
 	config := filepath.Join(ConfigPath(), "rc.bash")
 	configLine := "[[ -f " + config + " ]] && source " + config + " # Required for DeltaFi configuration"
 
@@ -131,7 +131,7 @@ export PATH="%s":$PATH:"%s/bin"
 
 // configureZsh sets up zsh configuration
 func configureZsh(tuiPath string) error {
-	rc := filepath.Join(os.Getenv("HOME"), ".zshrc")
+	rc := filepath.Join(UserHomeDir(), ".zshrc")
 	config := filepath.Join(ConfigPath(), "rc.zsh")
 	configLine := "[[ -f " + config + " ]] && source " + config + " # Required for DeltaFi configuration"
 
@@ -160,7 +160,7 @@ export PATH="%s":$PATH:"%s/bin"
 
 // configureFish sets up fish configuration
 func configureFish(tuiPath string) error {
-	rc := filepath.Join(os.Getenv("HOME"), ".config/fish/config.fish")
+	rc := filepath.Join(UserHomeDir(), ".config/fish/config.fish")
 	config := filepath.Join(ConfigPath(), "rc.fish")
 	configLine := "[[ -f " + config + " ]] && source " + config + " # Required for DeltaFi configuration"
 

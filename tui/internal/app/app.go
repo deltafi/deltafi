@@ -20,7 +20,9 @@ package app
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -173,7 +175,7 @@ func ConfigPath() string {
 	if configPath := os.Getenv("DELTAFI_CONFIG_PATH"); configPath != "" {
 		return configPath
 	} else {
-		return filepath.Join(os.Getenv("HOME"), ".deltafi")
+		return filepath.Join(UserHomeDir(), ".deltafi")
 	}
 }
 
@@ -290,4 +292,16 @@ func SendEvent(event *api.Event) error {
 
 	_, err = client.CreatEvent(*event)
 	return err
+}
+
+func UserHomeDir() string {
+	home, exists := os.LookupEnv("HOME")
+	if !exists {
+		currentUser, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		home = currentUser.HomeDir
+	}
+	return home
 }
