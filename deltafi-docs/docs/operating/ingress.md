@@ -8,15 +8,23 @@ Data is submitted to DeltaFi's Ingress component, which turns that data and its 
 To submit data to DeltaFi, you must send an HTTP POST request to the DeltaFi ingress endpoint at
 `http://<deltafi_url>/api/v2/deltafile/ingress`. The data should be included in the body of the request.
 
-In addition to the data, also provide the following headers:
-- Content-Type: (Required) Defines the type of the incoming data
-- Filename: (Optional) The name of the file being ingressed. Must be supplied in this header, in the "filename" key of
-the Metadata header, or as a FlowFile attribute named "filename".
-- Flow: (Optional) The name of the flow in which the data should be ingested. If this is not supplied in this header,
-in the "flow" key of the Metadata header, or as a FlowFile attribute named "flow", DeltaFi will attempt to determine the
-flow based on whether the metadata meets any configured advanced routing rules.
-- Metadata: (Optional) A JSON object containing metadata to attach to the DeltaFile. Must be a valid JSON object. This
-metadata will merge with any FlowFile attributes, overriding any existing keys.
+In addition to the data, provide the following information:
+
+- Content-Type: (Required) Defines the type of the incoming data, must be provided in the `Content-Type` header
+
+- Filename: (Required) The name of the file being ingressed, can be provided via
+    -  The `Filename` header (highest priority)
+    - "filename" key in the Metadata header
+    - FlowFile attribute named "filename" (lowest priority)
+
+- DataSource: (Required) The name of the data source in which the data should be ingested, can be provided via
+    - The `DataSource` header (highest priority)
+    - "dataSource" key in the Metadata header
+    - FlowFile attribute named "dataSource" (lowest priority)
+
+- Metadata: (Optional) A JSON object containing metadata to attach to the DeltaFile
+    - Must be a valid JSON object
+    - For FlowFiles: Values in this header will merge with FlowFile attributes, with Metadata header values taking precedence over FlowFile attributes for any duplicate keys
 
 Here's an example of how to ingress a file using curl:
 
@@ -24,7 +32,7 @@ Here's an example of how to ingress a file using curl:
 curl -X POST \
   -H "Content-Type: text/plain" \
   -H "Filename: example.txt" \
-  -H "Flow: default" \
+  -H "DataSource: default" \
   -H "Metadata: {\"key\": \"value\"}" \
   --data-binary @/path/to/example.txt http://<deltafi_url>/api/v2/deltafile/ingress
 ```

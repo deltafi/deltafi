@@ -162,7 +162,10 @@ public class IngressService {
                     filename = combinedMetadata.get("filename");
                 }
                 if (filename == null) {
-                    throw new IngressMetadataException("Filename must be passed in as a header or FlowFile attribute");
+                    throw new IngressMetadataException("Filename must be passed in as a header, a FlowFile attribute, or in the metadata with a key of filename");
+                }
+                if (dataSource == null) {
+                    throw new IngressMetadataException("DataSource must be passed in as a header, a FlowFile attribute, or in the metadata with a key of dataSource");
                 }
 
                 Writer writer = outputStream -> flowFileTwoStepUnpackager.unpackageContent(contentInputStream, outputStream);
@@ -248,8 +251,18 @@ public class IngressService {
     private IngressResult ingressBinary(String dataSource, String filename, String mediaType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
             throws IngressMetadataException, IngressException, IngressUnavailableException, IngressRateLimitException, ObjectStorageException {
+        if (dataSource == null) {
+            dataSource = headerMetadata.get("dataSource");
+        }
         if (filename == null) {
-            throw new IngressMetadataException("Filename must be passed in as a header");
+            filename = headerMetadata.get("filename");
+        }
+
+        if (filename == null) {
+            throw new IngressMetadataException("Filename must be passed in as a header or in the metadata with a key of filename");
+        }
+        if (dataSource == null) {
+            throw new IngressMetadataException("DataSource must be passed in as a header or in the metadata with a key of dataSource");
         }
         return ingress(dataSource, filename, mediaType, contentInputStream, headerMetadata, created);
     }

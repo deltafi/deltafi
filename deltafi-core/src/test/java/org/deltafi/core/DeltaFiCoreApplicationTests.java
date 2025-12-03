@@ -70,6 +70,7 @@ import org.deltafi.core.types.snapshot.*;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.util.*;
 import org.hamcrest.MatcherAssert;
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -4985,14 +4986,20 @@ class DeltaFiCoreApplicationTests {
 		return ingress(REST_DATA_SOURCE_NAME, filename, body);
 	}
 
+    private ResponseEntity<String> ingress(String dataSource, String filename, byte[] body) {
+        return ingress(dataSource, filename, body, METADATA);
+    }
+
 	@SneakyThrows
-	private ResponseEntity<String> ingress(String dataSource, String filename, byte[] body) {
+	private ResponseEntity<String> ingress(String dataSource, String filename, byte[] body, String metadata) {
 		HttpHeaders headers = new HttpHeaders();
 		if (filename != null) {
 			headers.add("Filename", filename);
 		}
-		headers.add("DataSource", dataSource);
-		headers.add("Metadata", METADATA);
+        if (dataSource != null) {
+            headers.add("DataSource", dataSource);
+        }
+		headers.add("Metadata", metadata);
 		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
 		headers.add(USER_NAME_HEADER, USERNAME);
 		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
@@ -5112,8 +5119,22 @@ class DeltaFiCoreApplicationTests {
 	void testIngress_missingFilename() {
 		ResponseEntity<String> response = ingress(null, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
-		assertEquals("Filename must be passed in as a header", response.getBody());
+		assertEquals("Filename must be passed in as a header or in the metadata with a key of filename", response.getBody());
 	}
+
+    @Test
+    void testIngress_useMetadata() {
+        @Language("json")
+        String metadata = """
+                {"filename":"test.txt", "dataSource": "sampleRestDataSource"}
+                """;
+        ResponseEntity<String> response = ingress(null, null, CONTENT_DATA.getBytes(), metadata);
+        assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        DeltaFile deltaFile = deltaFileRepo.findById(UUID.fromString(response.getBody())).orElseThrow();
+        assertThat(deltaFile.getName()).isEqualTo("test.txt");
+        assertThat(deltaFile.getDataSource()).isEqualTo("sampleRestDataSource");
+    }
 
 	@Test
 	void testIngress_disabled() {
