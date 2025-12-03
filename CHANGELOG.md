@@ -5,6 +5,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.40.0] - 2025-12-03
+
+### Added
+- UI: Added server-side paging and filtering to System Snapshots page
+- Added pausing and resuming system status checks
+
+### Changed
+- UI: Boolean System Properties are now rendered as a toggle switch on the System Properties page
+
+### Fixed
+- UI: Fixed button layout on System Snapshot viewer
+- UI: Improved performance of System Snapshot viewer
+- Fixed an issue where the `deltafi-core-actions` looked for certs in the wrong location when running in compose
+- Fixed an issue where the plugins could be given the wrong key passphrase when deployed in compose
+- Add missing env needed to run table lookup service in compose
+- Fixed missing core-actions docs
+- Fixed TUI documentation for the `deltafi errored` commands
+
+### Removed
+- Removed jq, yq, lazydocker from compose distros due to ongoing CVEs
+
 ## [2.39.0] - 2025-11-30
 
 ### Changed
@@ -5073,7 +5094,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.39.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.40.0...main
+[2.40.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.39.0...2.40.0
 [2.39.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.38.0...2.39.0
 [2.38.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.37.0...2.38.0
 [2.37.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.36.0...2.37.0
