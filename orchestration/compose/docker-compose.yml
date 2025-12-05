@@ -383,7 +383,7 @@ services:
       start_period: 30s
 
   deltafi-victoriametrics:
-    image: victoriametrics/victoria-metrics:v1.129.1
+    image: ${VICTORIAMETRICS}
     container_name: deltafi-victoriametrics
     command:
       - "-storageDataPath=/victoria-metrics-data"

@@ -45,13 +45,13 @@ type valuesData struct {
 	Tag                      string
 	Repo                     string `default:"deltafi"`
 	GrafanaContainer         string `default:"deltafi/grafana:12.3.0-0"`
-	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.129.1"`
+	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.131.0"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
 	MinioContainer           string `default:"deltafi/minio:RELEASE.2025-10-15T17-29-55Z-2"`
-	NginxContainer           string `default:"deltafi/nginx:1.29.3-alpine3.22-0"`
-	PromtailContainer        string `default:"grafana/promtail:3.5.8"`
+	NginxContainer           string `default:"deltafi/nginx:1.29.3-alpine3.22-1"`
+	PromtailContainer        string `default:"grafana/promtail:3.6.2"`
 	ValkeyContainer          string `default:"valkey/valkey:9.0.0-alpine"`
-	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-3"`
+	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-4"`
 	PostgresLookupContainer  string `default:"postgres:16.10-alpine3.22"`
 	JavaIDEContainer         string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-2"`
 	JavaDevContainer         string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`

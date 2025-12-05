@@ -235,7 +235,7 @@ grafana:
 
 promtail:
   image:
-    tag: 3.5.8
+    tag: 3.6.2
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
@@ -386,7 +386,7 @@ victoriametrics:
   server:
     fullnameOverride: deltafi-victoriametrics
     image:
-      tag: v1.129.1
+      tag: v1.131.0
     retentionPeriod: "720d"
     extraArgs:
       envflag.enable: "true"
