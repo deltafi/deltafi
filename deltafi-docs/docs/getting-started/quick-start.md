@@ -1,15 +1,15 @@
-# Quick Start with Docker Compose
+# Quick Start
 
 ## Quick Install
 
 Set some environment variables for your configuration:
 
 ```bash
-VERSION=__VERSION__ # Or whatever version you want to install
-DELTAFI_INSTALL_DIR=~/deltafi # Or where you want it
+VERSION=__VERSION__ # Or check gitlab.com/deltafi/deltafi/-/releases for other versions
+DELTAFI_INSTALL_DIR=~/deltafi # Or wherever you want it
 ```
 
-Note: Latest released versions and change logs can be found on the [DeltaFi release page](https://gitlab.com/deltafi/deltafi/-/releases).
+See the [DeltaFi releases page](https://gitlab.com/deltafi/deltafi/-/releases) for available versions and changelogs.
 
 Also, additional variables need to be set for your specific OS and architecture:
 
@@ -37,9 +37,16 @@ docker run --rm -v "${DELTAFI_INSTALL_DIR}":/deltafi deltafi/deltafi:${VERSION}-
 "${DELTAFI_INSTALL_DIR}"/deltafi
 ```
 
-After the installation wizard has completed you will have a running and fully functional DeltaFi system.
+The installation wizard will ask you to select:
+- **Role**: Deployment, Plugin Development, or Core Development
+- **Orchestration mode**: Compose (recommended) or KinD
 
-In order to use the command line interface, you will either need to open a new shell or source your rc file like so:
+After the wizard completes, you'll have a running DeltaFi system. For detailed guidance based on your role, see:
+- [Operator's Guide](/getting-started/for-operators) - Running and managing DeltaFi
+- [Plugin Developer's Guide](/getting-started/for-plugin-developers) - Building custom actions
+- [Core Developer's Guide](/getting-started/for-core-developers) - Contributing to DeltaFi
+
+To use the command line interface, open a new shell or source your rc file:
 
 ```bash
 . ~/.bashrc # or .zshrc if that is your thing
@@ -49,7 +56,7 @@ It is recommended that you install [Bash completion](https://github.com/scop/bas
 
 ## Command Line Tour
 
-DeltaFi has a feature rich Text User Interface (TUI) that is accessed with the `deltafi` command.
+The `deltafi` command provides tools for managing the system, inspecting data, and debugging flows.
 
 ```bash
 deltafi --help  # see what it can do!

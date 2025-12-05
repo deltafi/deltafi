@@ -1,16 +1,16 @@
 # DeltaFi Metrics
 
 A DeltaFi deployment provides normalized metrics generation and centralized metrics collection and visualization.
-Metrics are generated and sent to a Graphite time-series database that is used as a data source for Grafana visualization.
+Metrics are generated and sent to a VictoriaMetrics time-series database that is used as a data source for Grafana visualization.
 
 ## Default Metrics Generation
 
 DeltaFi automatically generates metrics for action cognizance, ingress and egress volume, and system utilization.
-These metrics can be queried from the Graphite database or referenced by Grafana when creating metrics visualizations.
+These metrics can be queried from VictoriaMetrics or referenced by Grafana when creating metrics visualizations.
 
 ### Metrics Lexicon
 
-The following metrics are generated to the Graphite time-series database by default:
+The following metrics are generated to VictoriaMetrics by default:
 
 | Name                              | Tags                                               | Description                                                                                           |
 |-----------------------------------|----------------------------------------------------|-------------------------------------------------------------------------------------------------------|
@@ -33,7 +33,7 @@ The following metrics are generated to the Graphite time-series database by defa
 
 Each action kit has a custom metric interface built in to the Result class for the action.  To add a new custom
 metric from the load action, simply use the add interface to create custom metrics with custom tags.  Note that
-the actual metric name in the Graphite data store will be prepended with `stats_counts.` and custom metrics will
+the actual metric name in VictoriaMetrics will be prepended with `stats_counts.` and custom metrics will
 automatically be tagged with `action`, `ingressFlow`, and `source`.
 
 For example, in the Java Action Kit:
@@ -50,8 +50,8 @@ result.add(
 
 ## Metrics Visualization
 
-Grafana is used to generate rich visualizations for the metrics contained in the Graphite data store.  The following
-default dashboards are included in a DeltaFi Kubernetes installation:
+Grafana is used to generate rich visualizations for the metrics contained in VictoriaMetrics. The following
+default dashboards are included in a DeltaFi installation:
 
 * System Overview - A general system status dashboard that includes ingress and egress metrics, files errored/dropped/filtered, queue status, action activity, system alerts, and disk utilization trends
 * Flow Summary - A view of the ingress and egress activity for one or more flows
@@ -62,9 +62,9 @@ In addition, there are Dashboards with logs, audit logging information, and logg
 
 ## Metrics APIs
 
-DeltaFi exposes the full API for Graphite and Grafana, allowing for easy custom querying, scripting, and metrics injection.
+DeltaFi exposes the full API for VictoriaMetrics and Grafana, allowing for easy custom querying, scripting, and metrics injection.
 
-- [Graphite REST API](https://graphite-api.readthedocs.io/en/latest/api.html)
+- [VictoriaMetrics API](https://docs.victoriametrics.com/url-examples/)
 - [Grafana REST API](https://grafana.com/docs/grafana/latest/developers/http_api/)
 
 In addition, this API provides summary node info:

@@ -7,50 +7,74 @@
 [![Contributor Covenant](public/images/contributor-covenant.svg)](CODE_OF_CONDUCT.md)
 [![Docker Pulls](https://img.shields.io/docker/pulls/deltafi/deltafi-api?color=yellow&logo=docker)](https://hub.docker.com/u/deltafi)
 
-## Table of Contents
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Getting Started](#getting-started)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [Contact](#contact)
+DeltaFi is a flexible, code-light data transformation and normalization platform.
 
-## Overview
+**The problem**: Data pipelines are messy. Sources change formats without warning. When something breaks, tracing the issue is painful.
 
-DeltaFi is a flexible, code-light data transformation and normalization platform that allows you to:
-- Manipulate any type of data in any programming language
-- Explore and analyze your data
-- Monitor data flows with precision metrics, alerting and notifications
-- Capture and diagnose errors
+**DeltaFi helps by**:
+- Tracking every piece of data through the system with full provenance
+- Letting you inspect data and metadata at each transformation step
+- Providing resume/replay when errors occur - fix the problem, rerun the data
+- Keeping business logic simple - most work is configuration, not code
 
-## Key Features
+**📚 Documentation: [docs.deltafi.org](https://docs.deltafi.org)**
 
-- Flexible deployment:
-  - Cloud-ready: Install on any modern Kubernetes cluster
-  - Local development: Run in Docker Compose
-  - Scalable: Adapt to use cases from single-node setups to large clusters
-- Data loss protection
-- Comprehensive metrics and monitoring
-- Tracking and provenance for all data
-- Customizable error reporting and handling
-- Flexible data retention policies
-- Data filtering capabilities
-- Pub/sub architecture for flexible data flows
-- Plugin system for easy extensibility
+## Quick Start
 
-## Getting Started
+For **operators** (running DeltaFi without development):
 
-1. [Set up a cluster](https://docs.deltafi.org/#/getting-started/cluster)
-2. [Build your first plugin](https://docs.deltafi.org/#/getting-started/simple-plugin)
+```bash
+# Set your install location and version
+DELTAFI_INSTALL_DIR=~/deltafi
+VERSION=2.38.0  # Check gitlab.com/deltafi/deltafi/-/releases
+
+# Extract the TUI binary from Docker
+mkdir -p $DELTAFI_INSTALL_DIR
+docker run --rm -v "${DELTAFI_INSTALL_DIR}":/deltafi deltafi/deltafi:${VERSION}-darwin-arm64
+
+# Run the installation wizard
+"${DELTAFI_INSTALL_DIR}"/deltafi
+```
+
+For **plugin developers** or **core developers**, use the same installation steps and select your role when the wizard asks.
+
+See the [Quick Start Guide](https://docs.deltafi.org/getting-started/quick-start) for detailed instructions.
+
+## Repository Structure
+
+| Directory | Description |
+|-----------|-------------|
+| `tui/` | **Command-line interface** - Installation, orchestration, and runtime commands |
+| `deltafi-core/` | Core platform services (Java/Spring Boot) |
+| `deltafi-action-kit/` | SDK for building custom actions (Java) |
+| `deltafi-core-actions/` | Built-in transform, egress, and ingress actions |
+| `deltafi-common/` | Shared types and utilities |
+| `deltafi-docs/` | Documentation source (VitePress) |
+| `deltafi-ui/` | Web GUI (Vue.js) |
+| `charts/` | Helm charts for Kubernetes deployment |
+| `compose/` | Docker Compose configuration |
+
+## Getting Started Guides
+
+| I want to... | Guide |
+|--------------|-------|
+| **Run DeltaFi** and process data | [Operator's Guide](https://docs.deltafi.org/getting-started/for-operators) |
+| **Build plugins** with custom actions | [Plugin Developer's Guide](https://docs.deltafi.org/getting-started/for-plugin-developers) |
+| **Contribute** to DeltaFi core | [Core Developer's Guide](https://docs.deltafi.org/getting-started/for-core-developers) |
 
 ## Documentation
 
-For detailed information, visit our [documentation site](https://docs.deltafi.org).
+- [Concepts](https://docs.deltafi.org/concepts) - Core architecture and terminology
+- [TUI Reference](https://docs.deltafi.org/operating/TUI) - Command-line interface
+- [Plugin Development](https://docs.deltafi.org/plugins) - Building custom actions
+- [Quick Start](https://docs.deltafi.org/getting-started/quick-start) - Installation guide
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for more information.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to get involved.
 
 ## Contact
 
-For more information, contact us at info@deltafi.org. 
+- **Slack**: Request an invitation at deltafi@systolic.com
+- **GitLab**: [gitlab.com/deltafi](https://gitlab.com/deltafi)
+- **Email**: info@deltafi.org

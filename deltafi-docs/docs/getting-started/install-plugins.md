@@ -8,7 +8,7 @@ DeltaFi comes with a core plugin that contains useful actions, passthrough flows
 
 Plugins can be installed to extend the capabilities of DeltaFi.  The DeltaFi community publishes
 publicly available plugins and custom plugins can be developed using the DeltaFi Action Kit.
-Plugin development is documented elsewhere.
+For developing your own plugins, see the [Plugin Developer's Guide](/getting-started/for-plugin-developers).
 
 ## Installing a plugin
 

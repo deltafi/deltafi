@@ -14,6 +14,54 @@ DeltaFi TUI serves as the primary management interface for DeltaFi deployments, 
 
 This document provides comprehensive documentation for all available commands, subcommands, and their usage, including every flag and option. Whether you're a system administrator managing production deployments or a developer working with DeltaFi flows, this guide covers all aspects of the TUI interface.
 
+## Understanding the TUI
+
+### Why It Exists
+
+The TUI is a single command-line tool that:
+
+1. **Abstracts orchestration backends** - The same commands work whether you're running Docker Compose, KinD, or Kubernetes. You don't need to learn `docker-compose`, `kubectl`, or `helm` commands.
+
+2. **Manages the full lifecycle** - Install, upgrade, start, stop, and configure DeltaFi without touching config files directly.
+
+3. **Interacts with running services** - Search DeltaFiles, manage flows, view metrics, and debug issues through a consistent interface.
+
+### Two Types of Commands
+
+The TUI mixes two distinct responsibilities:
+
+| Type | Examples | What They Do |
+|------|----------|--------------|
+| **Orchestration** | `up`, `down`, `config`, `upgrade` | Control the DeltaFi cluster lifecycle. These work regardless of what version is deployed. |
+| **Runtime** | `search`, `ingress`, `data-source`, `properties` | Talk to the running DeltaFi services via API. These interact with the deployed version. |
+
+### Version Model
+
+There are two versions to be aware of:
+
+- **TUI version** (`deltafi --version`) - The binary you're running
+- **Deployed version** (`deltafi versions`) - The DeltaFi services actually running
+
+For operators using released versions, these typically match. For developers, the TUI might be built from source while testing against different deployed versions.
+
+To switch deployed versions:
+```bash
+deltafi upgrade list      # See available versions
+deltafi upgrade 2.39.0    # Upgrade to a specific version
+```
+
+### Orchestration Modes
+
+The TUI supports multiple deployment backends:
+
+| Mode | Use Case |
+|------|----------|
+| **Compose** | Docker Compose deployment (simplest, recommended for most users) |
+| **KinD** | Kubernetes-in-Docker (for testing K8s features locally) |
+| **Kubernetes** | Production Kubernetes clusters |
+
+Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, etc.) work across all modes.
+
 ## Key Features
 
 - **Interactive TUI Components**: Rich terminal-based interfaces for complex operations like search and dashboard monitoring

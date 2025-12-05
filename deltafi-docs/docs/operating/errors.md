@@ -57,8 +57,6 @@ mutation {
 In this example, the error threshold is set to 10. This means that if there are 10 or more unacknowledged active errors
 within this ingress flow, the flow will be blocked, and no further data will be allowed to enter.
 
-_NOTE: GUI support for setting maxErrors will be coming shortly._
-
 ### Unblocking an Ingress Flow
 
 When an ingress flow is blocked due to reaching the error threshold, it is important to address the underlying issues

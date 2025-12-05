@@ -1,8 +1,8 @@
 # Contributing to Core Development
 
-We welcome contributors to DeltaFi!  See the guidance below to get started or [contact us](https://deltafi.org/#contact).
+We welcome contributors to DeltaFi! See the guidance below to get started or [contact us](https://deltafi.org/#contact).
 
-A good staring point would be walking through the [tutorial on building a simple plugin](/getting-started/simple-plugin), which would also include [setting up your KinD-based DeltaFi development environment](/kind).
+To get started, follow the [Core Developer's Guide](/getting-started/for-core-developers) to set up your development environment. To understand how plugins consume the action kit, consider the [simple plugin tutorial](/getting-started/simple-plugin).
 
 ## Working with the Repository and Submitting a Merge Request
 

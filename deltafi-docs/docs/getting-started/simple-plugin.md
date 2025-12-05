@@ -329,3 +329,9 @@ Now you can go to the [errors page](http://local.deltafi.org/errors) in the Delt
 
 ## Adding Another Flow to Your Plugin
 New flows can be created under the `flows` directory. Any code changes or flow changes will require the docker image to be rebuilt via the `./gradlew install` command.
+
+## Next Steps
+
+- [Plugin Developer's Guide](/getting-started/for-plugin-developers) - Reference for common patterns and scenarios
+- [Actions Reference](/actions) - Complete action API documentation
+- [Action Unit Testing](/unit-test) - Testing patterns for your actions

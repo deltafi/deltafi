@@ -11,7 +11,10 @@
     "text": "Getting Started",
     "collapsed": true,
     "items": [
-      { "text": "Quick Start With Docker Compose", "link": "/getting-started/quick-start" },
+      { "text": "Quick Start", "link": "/getting-started/quick-start" },
+      { "text": "Operator's Guide", "link": "/getting-started/for-operators" },
+      { "text": "Plugin Developer's Guide", "link": "/getting-started/for-plugin-developers" },
+      { "text": "Core Developer's Guide", "link": "/getting-started/for-core-developers" },
       { "text": "Extending DeltaFi with Plugins", "link": "/getting-started/install-plugins" },
       { "text": "Creating a Simple Plugin", "link": "/getting-started/simple-plugin" }
     ]
@@ -20,9 +23,7 @@
     "text": "Installation",
     "collapsed": true,
     "items": [
-      { "text": "Docker Compose", "link": "/install/compose" },
-      { "text": "Kubernetes", "link": "/install/kubernetes" },
-      { "text": "KinD (Kubernetes in Docker)", "link": "/install/kind" }
+      { "text": "Kubernetes", "link": "/install/kubernetes" }
     ]
   },
   {
@@ -77,7 +78,6 @@
       { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" }
     ]
   },
-  { "text": "KinD Cluster for Demo, Dev, and Test", "link": "/kind" },
   { "text": "Contributing to Core Development", "link": "/contributing" },
   { "text": "Changelog", "link": "/CHANGELOG" }
 ]
