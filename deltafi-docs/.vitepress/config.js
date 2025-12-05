@@ -5,6 +5,8 @@ import Components from "unplugin-vue-components/vite";
 import fs from "fs";
 import { resolve, basename } from "path";
 import fg from "fast-glob";
+import { parse } from "csv-parse/sync";
+import { execSync } from "child_process";
 
 function isHtmlTag(tag) {
   // Remove angle brackets
@@ -63,9 +65,25 @@ function updateVersionInDocs() {
   });
 }
 
+function injectPermissionsInDocs() {
+  console.log("Injecting permissions into markdown");
+  const base = process.env.VUE_APP_EMBEDDED ? "../docs" : "../../deltafi-core/src/main/resources";
+  const csvFile = resolve(__dirname, `${base}/permissions.csv`);
+  const csvContent = fs.readFileSync(csvFile, 'utf8');
+  const records = parse(csvContent, { columns: true });
+  let permissionsTable = "<table><tr><th>Name</th><th>Category</th><th>Description</th></tr>";
+  records.forEach((record) => {
+    permissionsTable += `<tr><td>${record.Name}</td><td>${record.Category}</td><td>${record.Description}</td></tr>`;
+  });
+  permissionsTable += "</table>"; // Close table
+  const file = resolve(__dirname, './dist/config/authentication.html');
+  let content = fs.readFileSync(file, 'utf8');
+  content = content.replace(/PERMISSIONS_TABLE/g, permissionsTable);
+  fs.writeFileSync(file, content);
+}
+
 function generateDocsSidebar() {
   console.log("Generating docs sidebar...");
-  const namePattern = /(\w+)\.md/;
   const sidebarCoreActions = [];
   // VUE_APP_EMBEDDED set TRUE when running vitepress in app, otherwise vitepress is served from netlify for public docs
   const coreActionDocsPath = process.env.VUE_APP_EMBEDDED ? "../docs/core-actions" : "../../deltafi-core-actions/src/main/resources/docs";
@@ -242,6 +260,7 @@ export default defineConfig(({ mode }) => {
     // Run a script after build completes
     buildEnd() {
       updateVersionInDocs();
+      injectPermissionsInDocs();
     }
   };
 });

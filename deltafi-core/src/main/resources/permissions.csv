@@ -1,63 +1,63 @@
 Category,Name,Description
-Administration,Admin,One permission to rule them all
-General,UIAccess,Grants access to the UI
-General,StatusView,Grants the ability to view system status
-General,StatusPause,Grants the ability to pause and resume system status checks
-General,DashboardView,Grants the ability to view the UI dashboard
-General,VersionsView,Grants the ability to view running versions
-Metrics,MetricsAdmin,Grants the Admin role in Grafana
-Metrics,MetricsView,Grants the Viewer role in Grafana
-Metrics,MetricsEdit,Grants the Editor role in Grafana
-Metrics,SurveyCreate,Grants the ability to post survey metrics into the system
-DeltaFiles,DeltaFileMetadataView,Grants the ability to query for and view DeltaFiles
-DeltaFiles,DeltaFileMetadataWrite,Grants the ability to update DeltaFile metadata
-DeltaFiles,DeltaFileContentView,Grants the ability to view DeltaFile content
-DeltaFiles,DeltaFileReplay,Grants the ability to replay DeltaFiles
-DeltaFiles,DeltaFileResume,Grants the ability to resume DeltaFiles in an ERROR stage
-DeltaFiles,DeltaFileAcknowledge,Grants the ability to acknowledge DeltaFiles in an ERROR stage
-DeltaFiles,DeltaFileCancel,Grants the ability to cancel processing a DeltaFile
-DeltaFiles,DeltaFileUserNote,Grants the ability to add a user note to a DeltaFile
-DeltaFiles,DeltaFilePinning,Grants the ability to pin or unpin a DeltaFile
-DeltaFiles,DeltaFileIngress,Grants the ability to ingress DeltaFiles
-Flows,FlowView,Grants the ability to view flows
-Flows,FlowValidate,Grants the ability to validate flows
-Flows,FlowUpdate,Grants the ability to change flow state and update flows
-Flows,FlowPlanDelete,Grants the ability to remove flow plans from the system plugin
-Flows,FlowPlanCreate,Grants the ability to save flow plans in the system plugin
-Plugins,PluginsView,Grants the ability to view installed Plugins
-Plugins,PluginInstall,Grants the ability to install Plugins
-Plugins,PluginUninstall,Grants the ability to uninstall Plugins
-Plugins,PluginVariableUpdate,Grants the ability to edit plugin variables
-System Properties,SystemPropertiesRead,Grants the ability to view System Properties
-System Properties,SystemPropertiesUpdate,Grants the ability to edit System Properties
-Delete Policies,DeletePolicyCreate,Grants the ability to create Delete Policies
-Delete Policies,DeletePolicyRead,Grants the ability to view Delete Policies
-Delete Policies,DeletePolicyUpdate,Grants the ability to edit Delete Policies
-Delete Policies,DeletePolicyDelete,Grants the ability to delete Delete Policies
-Snapshots,SnapshotCreate,Grants the ability to delete Snapshots
-Snapshots,SnapshotRead,Grants the ability to view Snapshots
-Snapshots,SnapshotDelete,Grants the ability to delete Snapshots
-Snapshots,SnapshotRevert,Grants the ability to revert the system to a Snapshot
-Users,UserCreate,Grants the ability to create Users
-Users,UserRead,Grants the ability to view Users
-Users,UserUpdate,Grants the ability to edit Users
-Users,UserDelete,Grants the ability to delete Users
-Roles,RoleCreate,Grants the ability to create Roles
-Roles,RoleRead,Grants the ability to view Roles
-Roles,RoleUpdate,Grants the ability to edit Roles
-Roles,RoleDelete,Grants the ability to delete Roles
-Events,EventCreate,Grants the ability to create Events
-Events,EventRead,Grants the ability to view Events
-Events,EventUpdate,Grants the ability to edit Events
-Events,EventDelete,Grants the ability to delete Events
-Events,EventAcknowledge,Grants the ability to acknowledge Events
-Stress Tests,StressTest,Grants the ability to execute Stress Tests
-Integration Tests,IntegrationTestUpdate,Grants the ability to save and start integration tests
-Integration Tests,IntegrationTestView,Grants the ability to view integration test results
-Integration Tests,IntegrationTestDelete,Grants the ability to delete results of completed integration tests
-Resume Policies,ResumePolicyApply,Grants the ability to apply Resume Policies to DeltaFiles already in an ERROR state
-Resume Policies,ResumePolicyDryRun,Grants the ability to perform a dry run of what DeltaFiles a policy may affect
-Resume Policies,ResumePolicyCreate,Grants the ability to create Resume Policies
-Resume Policies,ResumePolicyRead,Grants the ability to view Resume Policies
-Resume Policies,ResumePolicyUpdate,Grants the ability to edit Resume Policies
-Resume Policies,ResumePolicyDelete,Grants the ability to delete Resume Policies
+Administration,Admin,Full system access
+General,UIAccess,Access to the UI
+General,StatusView,View system status
+General,StatusPause,Pause and resume system status checks
+General,DashboardView,View the UI dashboard
+General,VersionsView,View running versions
+Metrics,MetricsAdmin,Admin role in Grafana
+Metrics,MetricsView,Viewer role in Grafana
+Metrics,MetricsEdit,Editor role in Grafana
+Metrics,SurveyCreate,Post survey metrics into the system
+DeltaFiles,DeltaFileMetadataView,Query and view DeltaFile metadata
+DeltaFiles,DeltaFileMetadataWrite,Update DeltaFile metadata
+DeltaFiles,DeltaFileContentView,View DeltaFile content
+DeltaFiles,DeltaFileReplay,Replay DeltaFiles
+DeltaFiles,DeltaFileResume,Resume DeltaFiles in an ERROR stage
+DeltaFiles,DeltaFileAcknowledge,Acknowledge DeltaFiles in an ERROR stage
+DeltaFiles,DeltaFileCancel,Cancel processing of a DeltaFile
+DeltaFiles,DeltaFileUserNote,Add user notes to a DeltaFile
+DeltaFiles,DeltaFilePinning,Pin or unpin a DeltaFile
+DeltaFiles,DeltaFileIngress,Ingress DeltaFiles
+Flows,FlowView,View flows
+Flows,FlowValidate,Validate flows
+Flows,FlowUpdate,Change flow state and update flows
+Flows,FlowPlanDelete,Remove flow plans from the system plugin
+Flows,FlowPlanCreate,Save flow plans in the system plugin
+Plugins,PluginsView,View installed plugins
+Plugins,PluginInstall,Install plugins
+Plugins,PluginUninstall,Uninstall plugins
+Plugins,PluginVariableUpdate,Edit plugin variables
+System Properties,SystemPropertiesRead,View System Properties
+System Properties,SystemPropertiesUpdate,Edit System Properties
+Delete Policies,DeletePolicyCreate,Create Delete Policies
+Delete Policies,DeletePolicyRead,View Delete Policies
+Delete Policies,DeletePolicyUpdate,Edit Delete Policies
+Delete Policies,DeletePolicyDelete,Delete Delete Policies
+Snapshots,SnapshotCreate,Create Snapshots
+Snapshots,SnapshotRead,View Snapshots
+Snapshots,SnapshotDelete,Delete Snapshots
+Snapshots,SnapshotRevert,Revert the system to a Snapshot
+Users,UserCreate,Create Users
+Users,UserRead,View Users
+Users,UserUpdate,Edit Users
+Users,UserDelete,Delete Users
+Roles,RoleCreate,Create Roles
+Roles,RoleRead,View Roles
+Roles,RoleUpdate,Edit Roles
+Roles,RoleDelete,Delete Roles
+Events,EventCreate,Create Events
+Events,EventRead,View Events
+Events,EventUpdate,Edit Events
+Events,EventDelete,Delete Events
+Events,EventAcknowledge,Acknowledge Events
+Stress Tests,StressTest,Execute Stress Tests
+Integration Tests,IntegrationTestUpdate,Save and start integration tests
+Integration Tests,IntegrationTestView,View integration test results
+Integration Tests,IntegrationTestDelete,Delete completed integration test results
+Resume Policies,ResumePolicyApply,Apply Resume Policies to DeltaFiles in an ERROR state
+Resume Policies,ResumePolicyDryRun,Preview which DeltaFiles a policy would affect
+Resume Policies,ResumePolicyCreate,Create Resume Policies
+Resume Policies,ResumePolicyRead,View Resume Policies
+Resume Policies,ResumePolicyUpdate,Edit Resume Policies
+Resume Policies,ResumePolicyDelete,Delete Resume Policies

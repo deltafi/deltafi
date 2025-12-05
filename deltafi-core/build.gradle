@@ -243,6 +243,9 @@ dockerPrepare {
     from('../CHANGELOG.md') {
         into 'docs/docs'
     }
+    from('src/main/resources/permissions.csv') {
+        into 'docs/docs'
+    }
     from('../deltafi-graphiql') {
         into 'graphiql'
     }

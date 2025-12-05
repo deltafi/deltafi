@@ -80,7 +80,9 @@ Authorization in DeltaFi is built on a Role-Based Access Control (RBAC) model. E
 
 ### Permissions
 
-Permissions in DeltaFi are static and do not change between releases. A list of Permissions can be seen when creating Roles (see below).
+Permissions in DeltaFi are static and do not change between releases.
+
+PERMISSIONS_TABLE
 
 > __Note:__ The `Admin` Permission is a catch-all Permission that will allow access to everything in the system. This should be used with caution.
 
