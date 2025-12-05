@@ -8,6 +8,15 @@ description = 'DeltaFi Core'
 
 configurations {
     docs
+    
+    // Force resolution of lz4-java to use org.lz4 group instead of at.yawk.lz4
+    all {
+        resolutionStrategy {
+            dependencySubstitution {
+                substitute module('at.yawk.lz4:lz4-java') using module('org.lz4:lz4-java:1.8.1') because 'org.lz4 is the canonical group ID for lz4-java'
+            }
+        }
+    }
 }
 
 dependencies {
@@ -31,7 +40,7 @@ dependencies {
     implementation 'io.fabric8:kubernetes-client:6.14.0'
     implementation 'com.github.docker-java:docker-java-core:3.6.0'
     implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.6.0'
-    implementation 'org.lz4:lz4-java:1.8.0'
+    implementation 'org.lz4:lz4-java:1.8.1'
     implementation 'org.postgresql:postgresql:42.7.8'
     implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.11.0'
     implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.1'
