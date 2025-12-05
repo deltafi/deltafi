@@ -390,6 +390,8 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         }
         
         def imageList = versionsOutput.toString().trim().split('\n').findAll { it.trim().length() > 0 }
+            .unique()
+            .sort()
         
         if (imageList.isEmpty()) {
             println "\nNo images found. Make sure DeltaFi is installed and running."
@@ -813,6 +815,8 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         }
         
         def imageList = versionsOutput.toString().trim().split('\n').findAll { it.trim().length() > 0 }
+            .unique()
+            .sort()
         
         if (imageList.isEmpty()) {
             println "\nNo images found. Make sure DeltaFi is installed and running."
@@ -822,7 +826,7 @@ deltafi versions --plain --brief | awk '{ print \$3 }' | grep -v '^Image\$'
         println "\nFound ${imageList.size()} image(s) to scan:"
         imageList.each { println "  - ${it}" }
         println ""
-        
+
         // Check if trivy is available locally or via Docker
         def checkResult = exec {
             ignoreExitValue = true
