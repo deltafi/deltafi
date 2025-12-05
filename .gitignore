@@ -70,3 +70,5 @@ repomix*
 deltafi2
 
 deltafi.yaml
+trivy.scan.txt
+grype.scan.txt

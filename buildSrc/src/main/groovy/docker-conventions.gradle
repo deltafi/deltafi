@@ -46,3 +46,338 @@ if (!deltafiConfig.isEmpty()) {
 
 }
 
+task grype {
+    group = 'verification'
+    description = 'Scans the Docker image for vulnerabilities using grype'
+    dependsOn 'dockerTagDeltafi'
+    
+    // Always run grype, never cache - vulnerability databases update frequently
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    
+    doLast {
+        // Check if grype is available locally
+        def checkResult = exec {
+            ignoreExitValue = true
+            executable "bash"
+            args "-c", "command -v grype"
+            standardOutput = new ByteArrayOutputStream()
+            errorOutput = new ByteArrayOutputStream()
+        }
+        
+        def useContainer = (checkResult.exitValue != 0)
+        def grypeCmd = useContainer ? "docker" : "grype"
+        def grypeImage = "anchore/grype:latest"
+        
+        if (useContainer) {
+            // Check if docker is available
+            def dockerCheck = exec {
+                ignoreExitValue = true
+                executable "bash"
+                args "-c", "command -v docker"
+                standardOutput = new ByteArrayOutputStream()
+                errorOutput = new ByteArrayOutputStream()
+            }
+            
+            if (dockerCheck.exitValue != 0) {
+                throw new GradleException("grype is not installed and docker is not available. Please install grype or docker.")
+            }
+            
+            println "grype not found locally, using Docker container: ${grypeImage}"
+        }
+        
+        def imageName = "deltafi/${project.name}:${project.version}"
+        
+        // Helper function to build grype command
+        def buildGrypeArgs = { args ->
+            if (useContainer) {
+                // Use docker run with mounted Docker socket to access local images
+                // Try to detect Docker socket path - default to standard location
+                def dockerSocket = "/var/run/docker.sock"
+                def osName = System.getProperty("os.name").toLowerCase()
+                if (osName.contains("windows")) {
+                    // Windows Docker Desktop uses named pipe or //var/run/docker.sock
+                    dockerSocket = "//var/run/docker.sock"
+                }
+                // Mount Docker socket and run grype container
+                return ["run", "--rm", "-v", "${dockerSocket}:/var/run/docker.sock", grypeImage] + args
+            } else {
+                return args
+            }
+        }
+        
+        // Update grype database
+        exec {
+            executable grypeCmd
+            args buildGrypeArgs(["db", "update"])
+        }
+        
+        // Run grype with JSON output to capture results for summary
+        def jsonOutput = new ByteArrayOutputStream()
+        def jsonErrorOutput = new ByteArrayOutputStream()
+        def jsonResult = exec {
+            ignoreExitValue = true
+            executable grypeCmd
+            args buildGrypeArgs([imageName, "--output", "json"])
+            standardOutput = jsonOutput
+            errorOutput = jsonErrorOutput
+        }
+        
+        // Run grype with table output for user to see
+        def tableResult = exec {
+            ignoreExitValue = true
+            executable grypeCmd
+            args buildGrypeArgs([imageName])
+        }
+        
+        // Parse JSON and generate summary (even if grype found vulnerabilities)
+        if (jsonOutput.size() > 0) {
+            try {
+                def json = new groovy.json.JsonSlurper().parseText(jsonOutput.toString())
+                def matches = json.matches ?: []
+                
+                // Count vulnerabilities by severity and collect fixable vulnerabilities
+                def severityCounts = [:]
+                def fixableCount = 0
+                def fixableVulnerabilities = []
+                
+                matches.each { match ->
+                    def severity = match.vulnerability?.severity ?: "Unknown"
+                    severityCounts[severity] = (severityCounts[severity] ?: 0) + 1
+                    
+                    if (match.vulnerability?.fix?.versions && !match.vulnerability.fix.versions.isEmpty()) {
+                        fixableCount++
+                        fixableVulnerabilities.add([
+                            id: match.vulnerability?.id ?: "Unknown",
+                            severity: severity,
+                            package: match.artifact?.name ?: "Unknown",
+                            version: match.artifact?.version ?: "Unknown",
+                            fixVersion: match.vulnerability?.fix?.versions?.get(0) ?: "Unknown",
+                            description: match.vulnerability?.description ?: ""
+                        ])
+                    }
+                }
+                
+                // Store results for aggregation
+                def resultsFile = rootProject.layout.buildDirectory.file("grype-results/${project.name}-grype-results.json").get().asFile
+                resultsFile.parentFile.mkdirs()
+                
+                def results = [
+                    projectName: project.name,
+                    imageName: imageName,
+                    totalVulnerabilities: matches.size(),
+                    severityCounts: severityCounts,
+                    fixableCount: fixableCount,
+                    fixableVulnerabilities: fixableVulnerabilities
+                ]
+                
+                resultsFile.text = new groovy.json.JsonBuilder(results).toPrettyString()
+                
+                // Display summary
+                def separator = "=================================================================================="
+                println "\n" + separator
+                println "GRYPE SCAN SUMMARY"
+                println separator
+                println "Image: ${imageName}"
+                println "Total vulnerabilities found: ${matches.size()}"
+                
+                if (severityCounts.size() > 0) {
+                    println "\nVulnerabilities by severity:"
+                    def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                    severityOrder.each { severity ->
+                        if (severityCounts.containsKey(severity)) {
+                            println "  ${severity.padRight(12)}: ${severityCounts[severity]}"
+                        }
+                    }
+                    // Show any severities not in the standard order
+                    severityCounts.each { severity, count ->
+                        if (!severityOrder.contains(severity)) {
+                            println "  ${severity.padRight(12)}: ${count}"
+                        }
+                    }
+                }
+                
+                if (fixableCount > 0) {
+                    println "\nFixable vulnerabilities: ${fixableCount}"
+                }
+                
+                println separator + "\n"
+                
+            } catch (Exception e) {
+                println "\nWarning: Could not parse grype JSON output for summary: ${e.message}"
+            }
+        }
+    }
+}
+
+task trivy {
+    group = 'verification'
+    description = 'Scans the Docker image for vulnerabilities using trivy'
+    dependsOn 'dockerTagDeltafi'
+    
+    // Always run trivy, never cache - vulnerability databases update frequently
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    
+    doLast {
+        // Check if trivy is available locally
+        def checkResult = exec {
+            ignoreExitValue = true
+            executable "bash"
+            args "-c", "command -v trivy"
+            standardOutput = new ByteArrayOutputStream()
+            errorOutput = new ByteArrayOutputStream()
+        }
+        
+        def useContainer = (checkResult.exitValue != 0)
+        def trivyCmd = useContainer ? "docker" : "trivy"
+        def trivyImage = "aquasec/trivy:latest"
+        
+        if (useContainer) {
+            // Check if docker is available
+            def dockerCheck = exec {
+                ignoreExitValue = true
+                executable "bash"
+                args "-c", "command -v docker"
+                standardOutput = new ByteArrayOutputStream()
+                errorOutput = new ByteArrayOutputStream()
+            }
+            
+            if (dockerCheck.exitValue != 0) {
+                throw new GradleException("trivy is not installed and docker is not available. Please install trivy or docker.")
+            }
+            
+            println "trivy not found locally, using Docker container: ${trivyImage}"
+        }
+        
+        def imageName = "deltafi/${project.name}:${project.version}"
+        
+        // Helper function to build trivy command
+        def buildTrivyArgs = { args ->
+            if (useContainer) {
+                // Use docker run with mounted Docker socket to access local images
+                // Try to detect Docker socket path - default to standard location
+                def dockerSocket = "/var/run/docker.sock"
+                def osName = System.getProperty("os.name").toLowerCase()
+                if (osName.contains("windows")) {
+                    // Windows Docker Desktop uses named pipe or //var/run/docker.sock
+                    dockerSocket = "//var/run/docker.sock"
+                }
+                // Mount Docker socket and run trivy container
+                return ["run", "--rm", "-v", "${dockerSocket}:/var/run/docker.sock", trivyImage, "image"] + args
+            } else {
+                return ["image"] + args
+            }
+        }
+        
+        // Run trivy with JSON output to capture results for summary
+        def jsonOutput = new ByteArrayOutputStream()
+        def jsonErrorOutput = new ByteArrayOutputStream()
+        def jsonResult = exec {
+            ignoreExitValue = true
+            executable trivyCmd
+            args buildTrivyArgs(["--format", "json", imageName])
+            standardOutput = jsonOutput
+            errorOutput = jsonErrorOutput
+        }
+        
+        // Run trivy with table output for user to see
+        def tableResult = exec {
+            ignoreExitValue = true
+            executable trivyCmd
+            args buildTrivyArgs([imageName])
+        }
+        
+        // Parse JSON and generate summary (even if trivy found vulnerabilities)
+        if (jsonOutput.size() > 0) {
+            try {
+                def json = new groovy.json.JsonSlurper().parseText(jsonOutput.toString())
+                def vulnerabilities = []
+                
+                // Trivy JSON structure: { "Results": [{ "Vulnerabilities": [...] }] }
+                if (json.Results) {
+                    json.Results.each { result ->
+                        if (result.Vulnerabilities) {
+                            vulnerabilities.addAll(result.Vulnerabilities)
+                        }
+                    }
+                }
+                
+                // Count vulnerabilities by severity and collect fixable vulnerabilities
+                def severityCounts = [:]
+                def fixableCount = 0
+                def fixableVulnerabilities = []
+                
+                vulnerabilities.each { vuln ->
+                    def severity = vuln.Severity ?: "Unknown"
+                    // Normalize severity to match grype format (capitalize first letter, rest lowercase)
+                    if (severity && severity.length() > 0) {
+                        severity = severity.substring(0, 1).toUpperCase() + severity.substring(1).toLowerCase()
+                    }
+                    severityCounts[severity] = (severityCounts[severity] ?: 0) + 1
+                    
+                    if (vuln.FixedVersion && vuln.FixedVersion != "") {
+                        fixableCount++
+                        fixableVulnerabilities.add([
+                            id: vuln.VulnerabilityID ?: "Unknown",
+                            severity: severity,
+                            package: vuln.PkgName ?: "Unknown",
+                            version: vuln.InstalledVersion ?: "Unknown",
+                            fixVersion: vuln.FixedVersion ?: "Unknown",
+                            description: vuln.Description ?: ""
+                        ])
+                    }
+                }
+                
+                // Store results for aggregation
+                def resultsFile = rootProject.layout.buildDirectory.file("trivy-results/${project.name}-trivy-results.json").get().asFile
+                resultsFile.parentFile.mkdirs()
+                
+                def results = [
+                    projectName: project.name,
+                    imageName: imageName,
+                    totalVulnerabilities: vulnerabilities.size(),
+                    severityCounts: severityCounts,
+                    fixableCount: fixableCount,
+                    fixableVulnerabilities: fixableVulnerabilities
+                ]
+                
+                resultsFile.text = new groovy.json.JsonBuilder(results).toPrettyString()
+                
+                // Display summary
+                def separator = "=================================================================================="
+                println "\n" + separator
+                println "TRIVY SCAN SUMMARY"
+                println separator
+                println "Image: ${imageName}"
+                println "Total vulnerabilities found: ${vulnerabilities.size()}"
+                
+                if (severityCounts.size() > 0) {
+                    println "\nVulnerabilities by severity:"
+                    def severityOrder = ["Critical", "High", "Medium", "Low", "Negligible", "Unknown"]
+                    severityOrder.each { severity ->
+                        if (severityCounts.containsKey(severity)) {
+                            println "  ${severity.padRight(12)}: ${severityCounts[severity]}"
+                        }
+                    }
+                    // Show any severities not in the standard order
+                    severityCounts.each { severity, count ->
+                        if (!severityOrder.contains(severity)) {
+                            println "  ${severity.padRight(12)}: ${count}"
+                        }
+                    }
+                }
+                
+                if (fixableCount > 0) {
+                    println "\nFixable vulnerabilities: ${fixableCount}"
+                }
+                
+                println separator + "\n"
+                
+            } catch (Exception e) {
+                println "\nWarning: Could not parse trivy JSON output for summary: ${e.message}"
+            }
+        }
+    }
+}
+
