@@ -2,6 +2,8 @@ FROM deltafi/deltafi-java-jre:21.0.9-alpine-1
 
 VOLUME /tmp
 
-COPY --chmod=0755 /build/libs/deltafi-plugin.jar /
+COPY /build/libs/deltafi-plugin.jar /
+# Avoiding COPY --chmod due to buildx compatibility issues
+RUN chmod 755 /deltafi-plugin.jar
 
 ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/deltafi-plugin.jar"]
