@@ -24,6 +24,11 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
@@ -152,6 +157,23 @@ class DeltaFiCoreApplicationTests {
 
 	private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
 			.registerModule(new JavaTimeModule());
+
+    static {
+        configureDockerApiVersion();
+    }
+
+    private static void configureDockerApiVersion() {
+        try {
+            DockerClientConfig standard = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+            ApacheDockerHttpClient.Builder clientBuilder = new ApacheDockerHttpClient.Builder().dockerHost(standard.getDockerHost());
+
+            DockerClient dockerClient = DockerClientImpl.getInstance(standard, clientBuilder.build());
+            String apiVersion = dockerClient.versionCmd().exec().getApiVersion();
+            System.setProperty("api.version", apiVersion);
+        } catch (Exception e) {
+            System.setProperty("api.version", "1.42");
+        }
+    }
 
     @DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
