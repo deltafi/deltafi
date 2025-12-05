@@ -22,4 +22,4 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- Upgrade to deltafi/valkey:9.0.0-0
+- Upgrade to deltafi/valkey:9.0.0-1

@@ -105,7 +105,7 @@ redis:
   fullnameOverride: deltafi-valkey
   image:
     repository: deltafi/valkey
-    tag: 9.0.0-0
+    tag: 9.0.0-1
   architecture: standalone
   auth:
     existingSecret: valkey-password
