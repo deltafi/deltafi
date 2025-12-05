@@ -44,7 +44,7 @@ type Orchestrator interface {
 type valuesData struct {
 	Tag                      string
 	Repo                     string `default:"deltafi"`
-	GrafanaContainer         string `default:"deltafi/grafana:12.3.0-0"`
+	GrafanaContainer         string `default:"deltafi/grafana:12.4.0-0"`
 	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.131.0"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
 	MinioContainer           string `default:"deltafi/minio:RELEASE.2025-10-15T17-29-55Z-2"`
