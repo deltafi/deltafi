@@ -1,0 +1,140 @@
+/*
+ *    DeltaFi - Data transformation and enrichment platform
+ *
+ *    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package org.deltafi.core.action.select;
+
+import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.test.asserters.TransformResultAssert;
+import org.deltafi.test.content.DeltaFiTestRunner;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+public class SelectContentTest {
+    SelectContent action = new SelectContent();
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
+    ActionContext context = runner.actionContext();
+
+    @Test
+    void testSelectByIndex() {
+        SelectContentParameters params = new SelectContentParameters();
+        params.setContentIndexes(List.of(0, 2));
+
+        TransformInput input = TransformInput.builder()
+                .content(List.of(
+                        runner.saveEmptyContent("file0.jpg", "image/jpeg"),
+                        runner.saveEmptyContent("file1.mp4", "video/mp4"),
+                        runner.saveEmptyContent("file2.png", "image/png")))
+                .build();
+        ResultType result = action.transform(context, params, input);
+
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(2)
+                .hasContentMatchingAt(0, content -> content.getName().equals("file0.jpg"))
+                .hasContentMatchingAt(1, content -> content.getName().equals("file2.png"));
+    }
+
+    @Test
+    void testSelectByMediaType() {
+        SelectContentParameters params = new SelectContentParameters();
+        params.setMediaTypes(List.of("image/*"));
+
+        TransformInput input = TransformInput.builder()
+                .content(List.of(
+                        runner.saveEmptyContent("file0.jpg", "image/jpeg"),
+                        runner.saveEmptyContent("file1.mp4", "video/mp4"),
+                        runner.saveEmptyContent("file2.png", "image/png")))
+                .build();
+        ResultType result = action.transform(context, params, input);
+
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(2)
+                .hasContentMatchingAt(0, content -> content.getName().equals("file0.jpg"))
+                .hasContentMatchingAt(1, content -> content.getName().equals("file2.png"));
+    }
+
+    @Test
+    void testSelectByFilePattern() {
+        SelectContentParameters params = new SelectContentParameters();
+        params.setFilePatterns(List.of("*.jpg", "*.png"));
+
+        TransformInput input = TransformInput.builder()
+                .content(List.of(
+                        runner.saveEmptyContent("file0.jpg", "image/jpeg"),
+                        runner.saveEmptyContent("file1.mp4", "video/mp4"),
+                        runner.saveEmptyContent("file2.png", "image/png")))
+                .build();
+        ResultType result = action.transform(context, params, input);
+
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(2)
+                .hasContentMatchingAt(0, content -> content.getName().equals("file0.jpg"))
+                .hasContentMatchingAt(1, content -> content.getName().equals("file2.png"));
+    }
+
+    @Test
+    void testSelectNone() {
+        SelectContentParameters params = new SelectContentParameters();
+        params.setMediaTypes(List.of("application/pdf"));
+
+        TransformInput input = TransformInput.builder()
+                .content(List.of(
+                        runner.saveEmptyContent("file0.jpg", "image/jpeg"),
+                        runner.saveEmptyContent("file1.mp4", "video/mp4")))
+                .build();
+        ResultType result = action.transform(context, params, input);
+
+        TransformResultAssert.assertThat(result).hasContentCount(0);
+    }
+
+    @Test
+    void testSelectAllWhenNoSelectionCriteria() {
+        SelectContentParameters params = new SelectContentParameters();
+
+        TransformInput input = TransformInput.builder()
+                .content(List.of(
+                        runner.saveEmptyContent("file0.jpg", "image/jpeg"),
+                        runner.saveEmptyContent("file1.mp4", "video/mp4"),
+                        runner.saveEmptyContent("file2.png", "image/png")))
+                .build();
+        ResultType result = action.transform(context, params, input);
+
+        TransformResultAssert.assertThat(result).hasContentCount(3);
+    }
+
+    @Test
+    void testExcludeByMediaType() {
+        SelectContentParameters params = new SelectContentParameters();
+        params.setMediaTypes(List.of("video/*"));
+        params.setExcludeMediaTypes(true);
+
+        TransformInput input = TransformInput.builder()
+                .content(List.of(
+                        runner.saveEmptyContent("file0.jpg", "image/jpeg"),
+                        runner.saveEmptyContent("file1.mp4", "video/mp4"),
+                        runner.saveEmptyContent("file2.png", "image/png")))
+                .build();
+        ResultType result = action.transform(context, params, input);
+
+        TransformResultAssert.assertThat(result)
+                .hasContentCount(2)
+                .hasContentMatchingAt(0, content -> content.getName().equals("file0.jpg"))
+                .hasContentMatchingAt(1, content -> content.getName().equals("file2.png"));
+    }
+}
