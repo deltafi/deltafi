@@ -72,7 +72,10 @@ public class StatsService {
         metricService.sendGauges(Map.of(
                 "gauge.deltafile.totalCount", stats.getTotalCount(),
                 "gauge.deltafile.inFlightCount", stats.getInFlightCount(),
-                "gauge.deltafile.inFlightBytes", stats.getInFlightBytes()
+                "gauge.deltafile.inFlightBytes", stats.getInFlightBytes(),
+                "gauge.deltafile.coldQueuedCount", stats.getColdQueuedCount(),
+                "gauge.deltafile.pausedCount", stats.getPausedCount(),
+                "gauge.deltafile.warmQueuedCount", stats.getWarmQueuedCount()
         ));
     }
 
