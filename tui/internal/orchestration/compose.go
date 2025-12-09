@@ -398,6 +398,7 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 	}
 
 	subdirs := []string{
+		"analytics",
 		"postgres",
 		"postgres-lookup",
 		"dirwatcher",
@@ -723,6 +724,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"DELTAFI_CORE_ACTIONS":               o.getValue(values, "deltafi.core_actions.image"),
 		"DELTAFI_DIRWATCHER":                 o.getValue(values, "deltafi.dirwatcher.image"),
 		"DELTAFI_EGRESS_SINK":                o.getValue(values, "deltafi.egress_sink.image"),
+		"DELTAFI_ANALYTICS":                  o.getValue(values, "deltafi.analytics.image"),
 		"DELTAFI_NODEMONITOR":                o.getValue(values, "deltafi.nodemonitor.image"),
 		"DELTAFI_SECRET_CA_CHAIN":            "certs",
 		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL": o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),

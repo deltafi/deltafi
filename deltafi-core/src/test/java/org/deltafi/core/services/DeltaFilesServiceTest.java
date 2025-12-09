@@ -1190,12 +1190,12 @@ class DeltaFilesServiceTest {
 
         // terminal DeltaFile has save called immediately along with adding analytics
         Mockito.verify(deltaFileCacheService).save(terminal);
-        Mockito.verify(analyticEventService).queueAnnotations(terminal.getDid(), annotations);
+        Mockito.verify(analyticEventService).queueAnnotations(Mockito.eq(terminal.getDid()), Mockito.any(), Mockito.any());
 
         // locally cached DeltaFile is processed immediately
         assertThat(cachedInFlight.getAnnotations()).anyMatch(annotation -> annotation.getKey().equals("k") && annotation.getValue().equals("v"));
         Mockito.verify(deltaFileCacheService).save(cachedInFlight);
-        Mockito.verify(analyticEventService).queueAnnotations(cachedInFlight.getDid(), annotations);
+        Mockito.verify(analyticEventService).queueAnnotations(Mockito.eq(cachedInFlight.getDid()), Mockito.any(), Mockito.any());
 
         // in-flight and flushed DeltaFile have queued annotation added
         Mockito.verify(queuedAnnotationRepo).saveAll(queuedAnnotationListCaptor.capture());

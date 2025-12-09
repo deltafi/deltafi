@@ -39,6 +39,8 @@ deltafi:
     enabled: true
     drop_metadata: false
     image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
+  analytics:
+    image: {{.Repo}}/deltafi-analytics:{{.Tag}}
   nodemonitor:
     image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
   plugins:

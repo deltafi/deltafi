@@ -553,7 +553,7 @@ public class DeltaFilesService {
                     transformEvent.getMetadata(), transformEvent.getDeleteMetadataKeys(), now);
             advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
             if (!transformEvent.getAnnotations().isEmpty()) {
-                analyticEventService.queueAnnotations(deltaFile.getDid(), transformEvent.getAnnotations());
+                analyticEventService.queueAnnotations(deltaFile.getDid(), transformEvent.getAnnotations(), deltaFile.getCreated());
             }
         } else {
             // remove the parent from the cache to ensure it is not marked completed until the children are persisted
@@ -812,14 +812,14 @@ public class DeltaFilesService {
     private void logFilterAnalytics(DeltaFile deltaFile, DeltaFileFlow flow, ActionEvent event) {
         analyticEventService.recordFilter(deltaFile, flow.getName(), flow.getType(), flow.lastAction().getName(), flow.getErrorOrFilterCause(), flow.getModified());
         if (!event.getFilter().getAnnotations().isEmpty()) {
-            analyticEventService.queueAnnotations(deltaFile.getDid(), event.getFilter().getAnnotations());
+            analyticEventService.queueAnnotations(deltaFile.getDid(), event.getFilter().getAnnotations(), deltaFile.getCreated());
         }
     }
 
     private void logErrorAnalytics(DeltaFile deltaFile, DeltaFileFlow flow, ActionEvent event) {
         analyticEventService.recordError(deltaFile, flow.getName(), flow.getType(), flow.lastAction().getName(), flow.getErrorOrFilterCause(), flow.getModified());
         if (!event.getError().getAnnotations().isEmpty()) {
-            analyticEventService.queueAnnotations(deltaFile.getDid(), event.getError().getAnnotations());
+            analyticEventService.queueAnnotations(deltaFile.getDid(), event.getError().getAnnotations(), deltaFile.getCreated());
         }
     }
 
@@ -926,7 +926,7 @@ public class DeltaFilesService {
 
         deltaFileCacheService.save(deltaFile);
 
-        analyticEventService.queueAnnotations(deltaFile.getDid(), deltaFile.annotationMap());
+        analyticEventService.queueAnnotations(deltaFile.getDid(), deltaFile.annotationMap(), deltaFile.getCreated());
     }
 
     /**

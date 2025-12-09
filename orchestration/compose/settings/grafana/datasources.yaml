@@ -28,3 +28,11 @@ datasources:
       postgresVersion: 1500
       timescaledb: true
       sslmode: disable
+  - name: Analytics
+    uid: deltafi-analytics
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    editable: false
+    url: http://deltafi-analytics:8080
+    jsonData:
+      oauthPassThru: false

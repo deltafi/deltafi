@@ -1,0 +1,42 @@
+# Changes on branch `duckdb`
+Document any changes on this branch here.
+### Added
+- Added Parquet Analytics (Beta) - a new analytics system using Parquet columnar storage and DuckDB queries. This reduces database load by decoupling analytics from PostgreSQL, where analytics queries previously competed with runtime DeltaFi processing
+- Added `deltafi-analytics` Go service for receiving, storing, and querying Parquet-based analytics
+- Added three new Grafana dashboards: "Dataflow Analytics (Parquet Beta)", "Error Analysis (Parquet Beta)", and "Filter Analysis (Parquet Beta)"
+- Parquet dashboards support filtering by multiple annotation key/value pairs simultaneously
+- The `analyticsGroupName` system property is used as the default grouping in Parquet dashboards, but can be changed on the fly via dashboard dropdown
+- Added system property `parquetAnalyticsEnabled` to enable the Parquet analytics collector (default: false)
+- Added system property `timescaleAnalyticsEnabled` to control TimescaleDB analytics storage (default: true)
+- Added system property `parquetAnalyticsAgeOffDays` to configure Parquet data retention (default: 30)
+
+### Changed
+- Renamed `metricsEnabled` system property description to clarify it controls VictoriaMetrics reporting
+
+### Fixed
+-
+
+### Removed
+-
+
+### Deprecated
+-
+
+### Security
+-
+
+### Tech-Debt/Refactor
+-
+
+### Upgrade and Migration
+- Upgrade grafana to deltafi/grafana:12.4.0-3
+- **Kubernetes**: New persistent volume `deltafi-analytics` required for analytics storage
+- **Parquet Analytics Migration Strategy**: The new Parquet analytics system runs in parallel with TimescaleDB analytics during the migration period:
+  1. Enable `parquetAnalyticsEnabled` to start collecting Parquet analytics alongside TimescaleDB
+  2. Run both systems in parallel to build historical data and validate accuracy
+  3. Compare the new Parquet dashboards against existing TimescaleDB dashboards
+  4. A future release will switch the default dashboards to Parquet Analytics and deprecate TimescaleDB analytics
+  5. A subsequent release will remove TimescaleDB analytics entirely
+
+  Historical TimescaleDB data will not be migrated to Parquet.
+- New system property `timescaleAnalyticsEnabled` defaults to the existing `metricsEnabled` value on upgrade, preserving current behavior

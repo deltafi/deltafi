@@ -43,6 +43,11 @@ deltafi:
     enabled: true
     drop_metadata: false
     image: deltafi/deltafi-egress-sink:2.42.0
+  analytics_collector:
+    enabled: true
+    image: deltafi/deltafi-analytics:2.42.0
+    persistence:
+      size: 50Gi
   nodemonitor:
     image: deltafi/deltafi-nodemonitor:2.42.0
     period: 9
@@ -146,7 +151,7 @@ kubernetes-dashboard:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 12.4.0-0
+    tag: 12.4.0-3
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -195,6 +200,8 @@ grafana:
       allow_embedding: true
     feature_toggles:
       enable: "newVizTooltips pdfTables returnToPrevious groupToNestedTableTransformation extraThemes regressionTransformation addFieldFromCalculationStatFunctions formatString"
+    plugins:
+      allow_loading_unsigned_plugins: yesoreyeram-infinity-datasource
   sidecar:
     dashboards:
       enabled: true
@@ -232,6 +239,14 @@ grafana:
           postgresVersion: 1500
           timescaledb: true
           sslmode: require
+      - name: Analytics
+        uid: deltafi-analytics
+        type: yesoreyeram-infinity-datasource
+        access: proxy
+        editable: false
+        url: http://deltafi-analytics:8080
+        jsonData:
+          oauthPassThru: false
 
 promtail:
   image:

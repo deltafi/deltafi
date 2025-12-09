@@ -3,6 +3,7 @@
 {{- $lokiEnabled := and .Values.enable.loki .Values.tags.logs }}
 {{- $graphiteEnabled := and .Values.enable.graphite .Values.tags.metrics }}
 {{- $egressSinkEnabled := .Values.deltafi.egress_sink.enabled }}
+{{- $analyticsEnabled := .Values.deltafi.analytics.enabled }}
 {{- $kubeDashboardEnabled := index .Values.enable "kubernetes-dashboard" }}
 {{- $redisEnabled := .Values.enable.redis }}
 
@@ -25,6 +26,9 @@ data:
     - deltafi-core-worker
     {{- if $egressSinkEnabled }}
     - deltafi-egress-sink
+    {{- end }}
+    {{- if $analyticsEnabled }}
+    - deltafi-analytics
     {{- end }}
     {{- if $grafanaEnabled }}
     - deltafi-grafana
@@ -53,6 +57,9 @@ data:
     {{- if $egressSinkEnabled }}
     - deltafi-egress-sink-service
     {{- end }}
+    {{- if $analyticsEnabled }}
+    - deltafi-analytics
+    {{- end }}
     {{- if $grafanaEnabled }}
     - deltafi-grafana
     - deltafi-victoriametrics
@@ -76,6 +83,9 @@ data:
   PersistentVolumeClaim: |
     {{- if $egressSinkEnabled }}
     - deltafi-egress-sink
+    {{- end }}
+    {{- if $analyticsEnabled }}
+    - deltafi-analytics
     {{- end }}
     {{- if $grafanaEnabled }}
     - deltafi-grafana

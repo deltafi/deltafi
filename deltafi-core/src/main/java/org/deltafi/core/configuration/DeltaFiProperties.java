@@ -61,14 +61,23 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum allowed number of threads", defaultValue = "8", dataType = VariableDataType.NUMBER)
     private int scheduledServiceThreads = 8;
 
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable reporting of metrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable reporting of metrics to VictoriaMetrics", defaultValue = "true", refreshable = false, dataType = VariableDataType.BOOLEAN)
     private boolean metricsEnabled = true;
+
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics storage in TimescaleDB", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean timescaleAnalyticsEnabled = true;
 
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
     private String analyticsGroupName;
 
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.LIST)
     private String allowedAnalyticsAnnotations;
+
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics export to the Parquet-based analytics collector", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    private boolean parquetAnalyticsEnabled = false;
+
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain Parquet analytics data before automatic deletion", defaultValue = "30", dataType = VariableDataType.NUMBER)
+    private int parquetAnalyticsAgeOffDays = 30;
 
     @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
     private int ageOffDays = 13;
@@ -381,6 +390,11 @@ public class DeltaFiProperties {
     public void setAgeOffDays(int ageOffDays) {
         minCheck(ageOffDays, 1, "ageOffDays");
         this.ageOffDays = ageOffDays;
+    }
+
+    public void setParquetAnalyticsAgeOffDays(int parquetAnalyticsAgeOffDays) {
+        minCheck(parquetAnalyticsAgeOffDays, 1, "parquetAnalyticsAgeOffDays");
+        this.parquetAnalyticsAgeOffDays = parquetAnalyticsAgeOffDays;
     }
 
     public void setDiskSpacePercentThreshold(double diskSpacePercentThreshold) {

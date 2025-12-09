@@ -150,3 +150,33 @@ metadata:
 data:
   dataflow-analytics.json: |-
 {{ .Files.Get "files/grafana/dashboards/dataflow-analytics.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parquet-analytics
+  labels:
+    grafana_dashboard: "1"
+data:
+  parquet-analytics.json: |-
+{{ .Files.Get "files/grafana/dashboards/parquet-analytics.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parquet-error-analysis
+  labels:
+    grafana_dashboard: "1"
+data:
+  parquet-error-analysis.json: |-
+{{ .Files.Get "files/grafana/dashboards/parquet-error-analysis.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parquet-filter-analysis
+  labels:
+    grafana_dashboard: "1"
+data:
+  parquet-filter-analysis.json: |-
+{{ .Files.Get "files/grafana/dashboards/parquet-filter-analysis.json" | indent 4 }}

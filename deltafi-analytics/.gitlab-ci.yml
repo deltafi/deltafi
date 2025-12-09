@@ -1,0 +1,14 @@
+.analytics:
+  needs: []
+  variables:
+    PROJECT_NAME: deltafi-analytics
+
+"🐳 Publish analytics (GitLab)":
+  extends:
+    - .analytics
+    - .docker
+
+"🐳 Publish analytics (docker.io)":
+  extends:
+    - .analytics
+    - .docker-multiarch

@@ -23,6 +23,7 @@ import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.AnalyticsRepo;
 import org.deltafi.core.repo.EventAnnotationsRepo;
 import org.deltafi.core.services.*;
+import org.deltafi.core.services.analytics.AnalyticsClient.AnalyticsEventRequest;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,7 @@ public class AnalyticEventService {
     private final ActionNameService actionNameService;
     private final ErrorCauseService errorCauseService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final AnalyticsClient analyticsClient;
     private final static String DEFAULT_EVENT_GROUP = "No Group";
     private final static int BATCH_SIZE = 1000;
     private final static int MAX_QUEUE_SIZE = 200000;
@@ -61,7 +63,21 @@ public class AnalyticEventService {
     private final ConcurrentLinkedDeque<QueuedEvent> eventQueue = new ConcurrentLinkedDeque<>();
 
     private boolean isDisabled() {
-        return !deltaFiPropertiesService.getDeltaFiProperties().isMetricsEnabled();
+        return !deltaFiPropertiesService.getDeltaFiProperties().isTimescaleAnalyticsEnabled();
+    }
+
+    private Map<String, String> filterAllowedAnnotations(Map<String, String> annotations) {
+        if (annotations == null || annotations.isEmpty()) {
+            return Map.of();
+        }
+        List<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().allowedAnalyticsAnnotationsList();
+        Map<String, String> filtered = new HashMap<>();
+        for (Map.Entry<String, String> entry : annotations.entrySet()) {
+            if (allowed.contains(entry.getKey())) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
     }
 
     /**
@@ -94,6 +110,13 @@ public class AnalyticEventService {
         entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
+
+        // Send to analytics collector
+        String ingressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
+        analyticsClient.writeEvent(AnalyticsEventRequest.from(
+                flow.getModified(), deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
+                "EGRESS", flow.lastContentSize(), 1, flow.getName(),
+                null, null, ingressType, filterAllowedAnnotations(annotations)));
     }
 
     /**
@@ -142,6 +165,11 @@ public class AnalyticEventService {
         if (!annotations.isEmpty()) {
             eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
         }
+
+        // Send to analytics collector (for ingress, created is both eventTime and creationTime)
+        analyticsClient.writeEvent(AnalyticsEventRequest.from(
+                created, created, did, dataSource, "INGRESS", ingressBytes, 1,
+                null, null, null, ingressType.name(), filterAllowedAnnotations(annotations)));
     }
 
     /**
@@ -188,6 +216,11 @@ public class AnalyticEventService {
         if (!annotations.isEmpty()) {
             eventQueue.add(new QueuedAnnotationEvent(id, new HashMap<>(annotations)));
         }
+
+        // Send to analytics collector (for survey, created is both eventTime and creationTime)
+        analyticsClient.writeEvent(AnalyticsEventRequest.from(
+                created, created, id, dataSource, "INGRESS", ingressBytes, count,
+                null, null, null, "SURVEY", filterAllowedAnnotations(annotations)));
     }
 
     /**
@@ -226,6 +259,13 @@ public class AnalyticEventService {
         entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
+
+        // Send to analytics collector
+        Map<String, String> annotations = Annotation.toMap(deltaFile.getAnnotations());
+        String ingressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
+        analyticsClient.writeEvent(AnalyticsEventRequest.from(
+                eventTime, deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
+                "ERROR", 0, 1, flowName, actionName, cause, ingressType, filterAllowedAnnotations(annotations)));
     }
 
     /**
@@ -263,6 +303,13 @@ public class AnalyticEventService {
         entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
+
+        // Send to analytics collector
+        Map<String, String> filterAnnotations = Annotation.toMap(deltaFile.getAnnotations());
+        String filterIngressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
+        analyticsClient.writeEvent(AnalyticsEventRequest.from(
+                eventTime, deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
+                "FILTER", 0, 1, flowName, actionName, cause, filterIngressType, filterAllowedAnnotations(filterAnnotations)));
     }
 
     /**
@@ -289,6 +336,13 @@ public class AnalyticEventService {
         entity.setAnalyticIngressType(deltaFile.getParentDids().isEmpty() ? AnalyticIngressTypeEnum.DATA_SOURCE : AnalyticIngressTypeEnum.CHILD);
 
         eventQueue.add(new QueuedAnalyticsEntity(entity));
+
+        // Send to analytics collector
+        Map<String, String> cancelAnnotations = Annotation.toMap(deltaFile.getAnnotations());
+        String cancelIngressType = deltaFile.getParentDids().isEmpty() ? "DATA_SOURCE" : "CHILD";
+        analyticsClient.writeEvent(AnalyticsEventRequest.from(
+                deltaFile.getModified(), deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
+                "CANCEL", 0, 1, null, null, null, cancelIngressType, filterAllowedAnnotations(cancelAnnotations)));
     }
 
     /**
@@ -325,10 +379,13 @@ public class AnalyticEventService {
      * Queue annotations for batch processing
      * @param did DeltaFile ID
      * @param annotations Map of annotations
+     * @param creationTime DeltaFile creation time for hour-based annotation partitioning
      */
-    public void queueAnnotations(UUID did, Map<String, String> annotations) {
+    public void queueAnnotations(UUID did, Map<String, String> annotations, OffsetDateTime creationTime) {
         if (isDisabled() || annotations.isEmpty()) return;
         eventQueue.add(new QueuedAnnotationEvent(did, new HashMap<>(annotations)));
+
+        analyticsClient.queueAnnotations(did, filterAllowedAnnotations(annotations), creationTime);
     }
 
     /**

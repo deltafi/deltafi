@@ -85,6 +85,9 @@ type DeltaFiProperties {
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
     metricsEnabled: Boolean!
+    timescaleAnalyticsEnabled: Boolean!
+    parquetAnalyticsEnabled: Boolean!
+    parquetAnalyticsAgeOffDays: Int!
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!
@@ -123,6 +126,9 @@ input DeltaFiPropertiesInput {
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
     metricsEnabled: Boolean!
+    timescaleAnalyticsEnabled: Boolean!
+    parquetAnalyticsEnabled: Boolean!
+    parquetAnalyticsAgeOffDays: Int!
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!

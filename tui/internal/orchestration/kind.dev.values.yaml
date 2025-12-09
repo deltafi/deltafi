@@ -12,6 +12,9 @@ deltafi:
     enabled: true
     drop_metadata: false
     image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
+  analytics:
+    enabled: true
+    image: {{.Repo}}/deltafi-analytics:{{.Tag}}
   nodemonitor:
     image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
     period: 9

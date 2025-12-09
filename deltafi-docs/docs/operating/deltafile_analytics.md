@@ -334,8 +334,64 @@ The analytics functions have been optimized for performance:
 
 For best performance:
 
-- Use reasonable time intervals appropriate to your data density 
-- Apply additional filtering (datasources, groups, annotations) when possible 
-- For summary tables, use a large interval (e.g., '100 years') to avoid unnecessary bucketing 
+- Use reasonable time intervals appropriate to your data density
+- Apply additional filtering (datasources, groups, annotations) when possible
+- For summary tables, use a large interval (e.g., '100 years') to avoid unnecessary bucketing
 - Only use gap filling for time series visualizations where it's needed
+
+## Parquet Analytics (Beta)
+
+DeltaFi includes a beta analytics system based on Parquet columnar storage and DuckDB queries, designed for high-volume deployments handling billions of analytics events.
+
+### Enabling Parquet Analytics
+
+Enable the beta analytics system by setting the `parquetAnalyticsEnabled` system property to `true` in the UI or TUI. When enabled, analytics events are sent to both the existing TimescaleDB system and the new Parquet collector. This parallel operation allows for A/B testing and data accumulation before a full cutover.
+
+To disable TimescaleDB analytics (e.g., after fully migrating to Parquet), set `timescaleAnalyticsEnabled` to `false`. This reduces database load by stopping analytics writes to TimescaleDB while continuing to send events to the Parquet collector.
+
+### Key Differences
+
+| Feature | TimescaleDB Analytics | Parquet Analytics |
+|---------|----------------------|-------------------|
+| Storage | PostgreSQL with TimescaleDB extension | Parquet files with DuckDB queries |
+| Query latency | Real-time | ~2 minutes (after compaction) |
+| Scale | Millions of events | Billions of events |
+| Dashboard | DeltaFile Analytics | Parquet Analytics |
+| Annotation filtering | Via SQL function parameters | Via MAP column access |
+
+### Parquet Analytics Dashboard
+
+A separate Grafana dashboard called "Parquet Analytics" is available in the DeltaFi folder. This dashboard uses the Infinity datasource to query the analytics collector HTTP API.
+
+Dashboard features:
+- Multi-select data source filtering
+- Up to two annotation key/value filters
+- Group-by annotation key (defaults to the configured `analyticsGroupName` if present)
+- Time series, pie charts, and summary tables for ingress, egress, errors, and filters
+
+### Data Flow
+
+1. **Event Collection**: deltafi-core buffers events (10k or 10 seconds) and sends them to the analytics collector
+2. **Parquet Writing**: The collector writes events to daily-partitioned Parquet files
+3. **Compaction**: Every minute, raw events are aggregated into 5-minute time buckets with annotations joined
+4. **Querying**: Grafana queries only the aggregated Parquet files via HTTP API
+
+### Data Retention
+
+| Data Type | Retention |
+|-----------|-----------|
+| Raw events and annotations | 3 days (then archived) |
+| Aggregated files | Indefinite (manual cleanup required) |
+
+### Migration Strategy
+
+The recommended approach for migrating to Parquet analytics:
+
+1. Enable `parquetAnalyticsEnabled` to run both systems in parallel
+2. Validate data accuracy by comparing dashboards for 30+ days
+3. When confident, switch primary dashboards to Parquet Analytics
+
+Running in parallel for an extended period builds up historical data in the Parquet system before cutover, since TimescaleDB metrics will not be migrated.
+
+A future DeltaFi release will replace the TimescaleDB analytics system with Parquet analytics
 

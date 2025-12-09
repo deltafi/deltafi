@@ -467,6 +467,8 @@ deltafi:
   egress_sink:
     enabled: true
     image: ${repo}/deltafi-egress-sink:${tag}
+  analytics:
+    image: ${repo}/deltafi-analytics:${tag}
   nodemonitor:
     image: ${repo}/deltafi-nodemonitor:${tag}
 # nginx domain
@@ -574,6 +576,7 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
   _append_startup_from_values "DELTAFI_DIRWATCHER" ".deltafi.dirwatcher.image"
   _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
+  _append_startup_from_values "DELTAFI_ANALYTICS" ".deltafi.analytics.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"

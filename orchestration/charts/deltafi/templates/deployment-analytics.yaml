@@ -1,0 +1,72 @@
+{{- if .Values.deltafi.analytics.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-analytics
+  labels:
+    app: deltafi-analytics
+    group: deltafi-core
+spec:
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-analytics
+      group: deltafi-core
+  template:
+    metadata:
+      labels:
+        app: deltafi-analytics
+        group: deltafi-core
+    spec:
+      volumes:
+        - name: deltafi-analytics
+          persistentVolumeClaim:
+            claimName: deltafi-analytics
+      containers:
+      - name: deltafi-analytics
+        image: {{ .Values.deltafi.analytics.image }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: LISTEN_ADDR
+          value: ":8080"
+        - name: OUTPUT_DIR
+          value: /data/analytics
+        - name: CORE_URL
+          value: http://deltafi-core-service
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 3
+          timeoutSeconds: 5
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 2
+        volumeMounts:
+          - name: deltafi-analytics
+            mountPath: /data/analytics
+      imagePullSecrets:
+      - name: docker-secret
+      nodeSelector:
+        node-role.deltafi.org/storage: "true"
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+  strategy:
+    type: RollingUpdate
+{{- end -}}
