@@ -43,7 +43,7 @@ deltafi:
     enabled: true
     drop_metadata: false
     image: deltafi/deltafi-egress-sink:2.42.0
-  analytics_collector:
+  analytics:
     enabled: true
     image: deltafi/deltafi-analytics:2.42.0
     persistence:
