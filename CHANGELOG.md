@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.42.0] - 2025-12-09
+
+### Added
+- Added the following metrics to the metrics system:
+  - `gauge.deltafile.coldQueuedCount` 
+  - `gauge.deltafile.pausedCount`
+  - `gauge.deltafile.warmQueuedCount`
+- Added a SelectContent action that keeps just the specified content (the inverse of DeleteContent) 
+
+### Upgrade and Migration
+- Upgrade Java base image to deltafi/deltafi-java-jre:21.0.9-alpine-3
+
 ## [2.41.0] - 2025-12-06
 
 ### Added
@@ -5143,7 +5155,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.41.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.42.0...main
+[2.42.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.41.0...2.42.0
 [2.41.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.40.0...2.41.0
 [2.40.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.39.0...2.40.0
 [2.39.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.38.0...2.39.0
