@@ -77,7 +77,5 @@
       { "text": "Leader Member", "link": "/advanced/leader_member" },
       { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" }
     ]
-  },
-  { "text": "Contributing to Core Development", "link": "/contributing" },
-  { "text": "Changelog", "link": "/CHANGELOG" }
+  }
 ]
