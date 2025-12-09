@@ -24,6 +24,7 @@ from typing import List
 
 import requests
 
+from deltafi.graphql import GraphQLExecutor
 from deltafi.types import PluginCoordinates
 
 
@@ -136,9 +137,7 @@ class LookupTableClient:
             'X-User-Permissions': 'Admin',
             'X-User-Name': 'deltafi-cli'
         }
-        self.graphql_url = f"{self.core_url}/graphql"
-        self.graphql_headers = self.common_headers.copy()
-        self.graphql_headers['Content-Type'] = 'application/json'
+        self.graphql_executor = GraphQLExecutor(self.core_url, self.common_headers)
 
     def create_lookup_table(self, lookup_table: LookupTable):
         if lookup_table.refresh_duration is None:
@@ -159,11 +158,7 @@ class LookupTableClient:
           }}
         }}"""
 
-        response = requests.post(self.graphql_url, headers=self.graphql_headers, json={"query": mutation})
-        if not response.ok:
-            raise RuntimeError(f"Unable to create lookup table {lookup_table.name}: {response.text}")
-
-        return json.loads(response.text)['data']['createLookupTable']
+        return self.graphql_executor.execute_query('createLookupTable', mutation)
 
     def get_lookup_tables(self):
         query = """
@@ -180,13 +175,9 @@ class LookupTableClient:
           }
         }"""
 
-        response = requests.post(self.graphql_url, headers=self.graphql_headers, json={"query": query})
-        if not response.ok:
-            raise RuntimeError(f"Unable to get lookup tables: {response.text}")
+        response_dict = self.graphql_executor.execute_query('getLookupTables', query)
 
-        response_dict = json.loads(response.text)
-
-        return [LookupTable.from_dict(lookup_table) for lookup_table in response_dict['data']['getLookupTables']]
+        return [LookupTable.from_dict(lookup_table) for lookup_table in response_dict]
 
     def lookup(self, lookup_table_name: str, lookup_options: LookupOptions):
         lookup_args = f"lookupTableName: \"{lookup_table_name}\""
@@ -208,6 +199,7 @@ class LookupTableClient:
           lookup(
             {lookup_args}
           ) {{
+            totalCount
             rows {{
               column
               value
@@ -215,14 +207,10 @@ class LookupTableClient:
           }}
         }}"""
 
-        response = requests.post(self.graphql_url, headers=self.graphql_headers, json={"query": query})
-        if not response.ok:
-            raise RuntimeError(f"Unable to lookup from {lookup_table_name}: {response.text}")
+        response_dict = self.graphql_executor.execute_query('lookup', query)
 
-        response_dict = json.loads(response.text)
-
-        return LookupResults(response_dict['data']['lookup']['totalCount'],
-            [to_dict(column_values) for column_values in response_dict['data']['lookup']['rows']])
+        return LookupResults(response_dict['totalCount'],
+            [to_dict(column_values) for column_values in response_dict['rows']])
 
     def upload_table(self, lookup_table_name: str, file_type: UploadFileType, file_contents: str):
         headers = self.common_headers.copy()

@@ -67,16 +67,16 @@ enum SortDirection {
 }
 
 extend type Query {
-  getLookupTables: [LookupTable!]!
+  getLookupTables: [LookupTable!]
   getLookupTable(lookupTableName: String!): LookupTable
   lookup(lookupTableName: String!, matchingColumnValues: [MatchingColumnValueInput!], resultColumns: [String!],
-    sortColumn: String, sortDirection: SortDirection, offset: Int, limit: Int): LookupResults!
+    sortColumn: String, sortDirection: SortDirection, offset: Int, limit: Int): LookupResults
 }
 
 extend type Mutation {
-  createLookupTable(lookupTableInput: LookupTableInput!): Result!
-  deleteLookupTable(lookupTableName: String!): Result!
-  upsertLookupTableRows(lookupTableName: String!, rows: [[ColumnValueInput!]!]!): Result!
-  removeLookupTableRows(lookupTableName: String!, rows: [[ColumnValueInput!]!]!): Result!
-  setLookupTableBackingServiceActive(lookupTableName: String!, active: Boolean!): Result!
+  createLookupTable(lookupTableInput: LookupTableInput!): Result
+  deleteLookupTable(lookupTableName: String!): Result
+  upsertLookupTableRows(lookupTableName: String!, rows: [[ColumnValueInput!]!]!): Result
+  removeLookupTableRows(lookupTableName: String!, rows: [[ColumnValueInput!]!]!): Result
+  setLookupTableBackingServiceActive(lookupTableName: String!, active: Boolean!): Result
 }

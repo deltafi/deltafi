@@ -81,13 +81,15 @@ public class LookupTableService implements PluginCleaner {
 
         loadLookupTables();
 
-        LookupTableRepo existingLookupTableRepo = getLookupTableRepoForValidation(lookupTable.getName());
-
-        if ((existingLookupTableRepo != null) && !existingLookupTableRepo.getLookupTable().getSourcePlugin()
-                .equalsIgnoreVersion(lookupTable.getSourcePlugin())) {
-            errors.add("Lookup table %s exists in another plugin: %s".formatted(lookupTable.getName(),
-                    existingLookupTableRepo.getLookupTable().getSourcePlugin()));
-        }
+        try {
+            LookupTable existingLookupTable = getLookupTableRepo(lookupTable.getName()).getLookupTable();
+            if ((existingLookupTable.getSourcePlugin() == null && lookupTable.getSourcePlugin() != null) ||
+                    (existingLookupTable.getSourcePlugin() != null &&
+                            !existingLookupTable.getSourcePlugin().equalsIgnoreVersion(lookupTable.getSourcePlugin()))) {
+                errors.add("Lookup table %s exists in another plugin: %s".formatted(lookupTable.getName(),
+                        existingLookupTable.getSourcePlugin()));
+            }
+        } catch (LookupTableServiceException ignored) {}
 
         return errors;
     }
@@ -98,21 +100,21 @@ public class LookupTableService implements PluginCleaner {
         if (validate) {
             List<String> errors = validateLookupTableCreation(lookupTable);
             if (!errors.isEmpty()) {
-                throw new LookupTableServiceException(errors);
+                throw new LookupTableServiceException(lookupTable.getName(), "Validation failed for table creation", errors);
             }
         }
 
-        LookupTableRepo existingLookupTableRepo = getLookupTableRepoForValidation(lookupTable.getName());
-        if (existingLookupTableRepo != null) {
-            if (existingLookupTableRepo.getLookupTable().getColumns().equals(lookupTable.getColumns())) {
-                if (existingLookupTableRepo.getLookupTable().isServiceBacked()) {
-                    existingLookupTableRepo.getLookupTable().setBackingServiceActive(true);
-                    saveLookupTable(existingLookupTableRepo.getLookupTable());
+        try {
+            LookupTable existingLookupTable = getLookupTableRepo(lookupTable.getName()).getLookupTable();
+            if (existingLookupTable.getColumns().equals(lookupTable.getColumns())) {
+                if (existingLookupTable.isServiceBacked()) {
+                    existingLookupTable.setBackingServiceActive(true);
+                    saveLookupTable(existingLookupTable);
                 }
                 return; // Already created with the same columns
             }
             deleteLookupTable(lookupTable.getName());
-        }
+        } catch (LookupTableServiceException ignored) {}
 
         LookupTableRepo lookupTableRepo = lookupTableRepoFactory.create(lookupTable);
         lookupTableRepo.create();
@@ -128,14 +130,6 @@ public class LookupTableService implements PluginCleaner {
                 .collect(Collectors.toMap(LookupTable::getName, lookupTableRepoFactory::create));
     }
 
-    private LookupTableRepo getLookupTableRepoForValidation(String name) {
-        try {
-            return getLookupTableRepo(name);
-        } catch (LookupTableServiceException e) {
-            return null;
-        }
-    }
-
     private LookupTableRepo getLookupTableRepo(String name) throws LookupTableServiceException {
         LookupTableRepo lookupTableRepo = lookupTableRepoMap.get(name);
 
@@ -145,7 +139,7 @@ public class LookupTableService implements PluginCleaner {
         }
 
         if (lookupTableRepo == null) {
-            throw new LookupTableServiceException("Lookup table doesn't exist: " + name);
+            throw new LookupTableServiceException(name, "Lookup table missing");
         }
 
         return lookupTableRepo;
@@ -157,12 +151,17 @@ public class LookupTableService implements PluginCleaner {
 
     public void deleteLookupTable(String lookupTableName) throws LookupTableServiceException {
         log.info("Deleting lookup table {}", lookupTableName);
+
+        if (!lookupTableRepoMap.containsKey(lookupTableName)) {
+            throw new LookupTableServiceException(lookupTableName, "Lookup table missing");
+        }
+
         lookupTablesRepo.deleteById(lookupTableName);
         lookupTableRepoMap.remove(lookupTableName);
         try (Connection connection = lookupDataSource.getConnection()) {
             connection.createStatement().execute("DROP TABLE " + lookupTableName + ";");
         } catch (SQLException e) {
-            throw new LookupTableServiceException("Failed to drop table " + lookupTableName + ": " + e.getMessage());
+            throw new LookupTableServiceException(lookupTableName, "Failed to drop table: " + e.getMessage());
         }
     }
 
@@ -190,7 +189,7 @@ public class LookupTableService implements PluginCleaner {
             rowsAdded += lookupTableRepo.upsert(row, OffsetDateTime.now(clock));
         }
         if (rowsAdded != rows.size()) {
-            throw new LookupTableServiceException("Failed to add rows to lookup table: " + name);
+            throw new LookupTableServiceException(name, "Failed to add rows");
         }
     }
 
@@ -201,7 +200,7 @@ public class LookupTableService implements PluginCleaner {
             rowsRemoved += lookupTableRepo.delete(row);
         }
         if (rowsRemoved != rows.size()) {
-            throw new LookupTableServiceException("Failed to remove rows from lookup table: " + name);
+            throw new LookupTableServiceException(name, "Failed to remove rows");
         }
     }
 
@@ -319,7 +318,7 @@ public class LookupTableService implements PluginCleaner {
                 lookupTable.setVariables(variables);
                 lookupTablesRepo.saveAndFlush(LookupTableEntity.fromLookupTable(lookupTable));
             } catch (LookupTableServiceException e) {
-                log.warn("Unable to set variables in lookup table. Lookup table not found: {}", lookupTableName);
+                log.warn("Unable to set variables in lookup table: {}", e.getMessage());
             }
         });
     }

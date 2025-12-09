@@ -17,16 +17,29 @@
  */
 package org.deltafi.core.lookup;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @RequiredArgsConstructor
 @Getter
 public class LookupTableServiceException extends Exception {
+    private final String name;
     private final List<String> errors;
 
-    public LookupTableServiceException(String error) {
-        this.errors = List.of(error);
+    public LookupTableServiceException(String name, String message) {
+        this(name, message, null);
+    }
+
+    public LookupTableServiceException(String name, String message, List<String> errors) {
+        super(message);
+        this.name = name;
+        this.errors = errors;
+    }
+
+    @Override
+    public String getMessage() {
+        return super.getMessage() + ": " + name;
     }
 }

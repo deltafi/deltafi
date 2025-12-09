@@ -56,23 +56,20 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
 
         this.errorCause = errorMessage;
 
-        if (errorDetails != null && throwable != null) {
+        String errorContext = errorDetails != null ? errorDetails : "";
+        if (throwable != null) {
             StringWriter stackWriter = new StringWriter();
             throwable.printStackTrace(new PrintWriter(stackWriter));
-            this.errorContext = errorDetails + "\n" + throwable + "\n" + stackWriter;
-            this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
-        } else if (errorDetails != null) {
-            this.errorContext = errorDetails;
-            this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorDetails;
-        } else if (throwable != null) {
-            StringWriter stackWriter = new StringWriter();
-            throwable.printStackTrace(new PrintWriter(stackWriter));
-            this.errorContext = throwable + "\n" + stackWriter;
-            this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
-        } else {
-            this.errorContext = "";
-            this.errorSummary = errorMessage + ": " + context.getDid();
+            errorContext += !errorContext.isEmpty() ? "\n" : "";
+            errorContext += stackWriter.toString();
         }
+        this.errorContext = errorContext;
+
+        String errorSummary = errorMessage + ": " + context.getDid();
+        if (!errorContext.isEmpty()) {
+            errorSummary += ("\n" + errorContext);
+        }
+        this.errorSummary = errorSummary;
     }
 
     /**

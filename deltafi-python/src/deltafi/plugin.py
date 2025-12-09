@@ -148,6 +148,10 @@ class ActionThread(object):
 LONG_RUNNING_TASK_DURATION = timedelta(seconds=5)
 
 
+def build_error_context(e: BaseException):
+    return f"{str(e)}\n\nTraceback (most recent call last):\n{'\n'.join(traceback.format_tb(e.__traceback__))}"
+
+
 class Plugin(object):
     def __init__(self, description: str, plugin_name: str = None, plugin_coordinates: PluginCoordinates = None,
                  actions: List = None, action_package: str = None, lookup_table_suppliers_package: str = None,
@@ -419,17 +423,12 @@ class Plugin(object):
                 try:
                     result = action_thread.clazz.execute_action(event)
                 except ExpectedContentException as e:
-                    result = ErrorResult(event.context,
-                                         f"Action attempted to look up element {e.index + 1} (index {e.index}) from "
-                                         f"content list of size {e.size}",
-                                         f"{str(e)}\n{traceback.format_exc()}")
+                    result = ErrorResult(event.context, f"Action attempted to look up element {e.index + 1} "
+                        f"(index {e.index}) from content list of size {e.size}", build_error_context(e))
                 except MissingMetadataException as e:
-                    result = ErrorResult(event.context,
-                                         f"Missing metadata with key {e.key}",
-                                         f"{str(e)}\n{traceback.format_exc()}")
+                    result = ErrorResult(event.context, f"Missing metadata with key {e.key}", build_error_context(e))
                 except BaseException as e:
-                    result = ErrorResult(event.context,
-                                         f"Action execution {type(e)} exception", f"{str(e)}\n{traceback.format_exc()}")
+                    result = ErrorResult(event.context, f"Action execution {type(e)} exception", build_error_context(e))
 
                 action_thread.execution = None
 
@@ -443,7 +442,7 @@ class Plugin(object):
                     topic += f"-{event.return_address}"
                 self.queue.put(topic, json.dumps(response))
             except BaseException as e:
-                action_logger.error(f"Unexpected {type(e)} error: {str(e)}\n{traceback.format_exc()}")
+                action_logger.error(f"Unexpected {type(e)} error: {build_error_context(e)}")
                 time.sleep(1)
 
     def _handle_lookup_table_supplier_events(self):

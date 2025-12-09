@@ -17,12 +17,11 @@
  */
 package org.deltafi.core.lookup;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.security.NeedsPermission;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;
@@ -31,19 +30,25 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-@ConditionalOnProperty("lookup.enabled")
 @RestController
 @RequestMapping("/api/v2/lookup")
-@RequiredArgsConstructor
 @Slf4j
 public class LookupTableRestController {
     private final LookupTableService lookupTableService;
+
+    public LookupTableRestController(@Nullable LookupTableService lookupTableService) {
+        this.lookupTableService = lookupTableService;
+    }
 
     @PostMapping(value = "/{lookupTableName}", consumes = MediaType.APPLICATION_JSON)
     @NeedsPermission.LookupTableUpdate
     public ResponseEntity<String> uploadTable(@PathVariable String lookupTableName,
             @RequestBody List<Map<String, String>> rows) throws LookupTableServiceException {
         log.info("Received JSON table for {}", lookupTableName);
+
+        if (lookupTableService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Lookup table service disabled");
+        }
 
         lookupTableService.updateTable(lookupTableName, rows);
 
@@ -55,6 +60,10 @@ public class LookupTableRestController {
     public ResponseEntity<String> uploadTableFromCsv(@PathVariable String lookupTableName, @RequestBody Resource csv)
             throws LookupTableServiceException, IOException {
         log.info("Received CSV table for {}", lookupTableName);
+
+        if (lookupTableService == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Lookup table service disabled");
+        }
 
         try (InputStream csvInputStream = csv.getInputStream()) {
             lookupTableService.updateTable(lookupTableName, csvInputStream);

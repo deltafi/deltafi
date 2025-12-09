@@ -18,40 +18,57 @@
 package org.deltafi.core.lookup;
 
 import com.netflix.graphql.dgs.*;
-import lombok.RequiredArgsConstructor;
+import com.netflix.graphql.types.errors.ErrorType;
+import graphql.GraphQLError;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.SortDirection;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.graphql.data.method.annotation.GraphQlExceptionHandler;
+import org.springframework.lang.Nullable;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@ConditionalOnProperty("lookup.enabled")
 @DgsComponent
-@RequiredArgsConstructor
+@ControllerAdvice
 public class LookupTableDatafetcher {
     private final LookupTableService lookupTableService;
 
-    @DgsQuery
-    @NeedsPermission.LookupTableRead
-    public List<LookupTable> getLookupTables() {
-        return lookupTableService.getLookupTables();
+    public LookupTableDatafetcher(@Nullable LookupTableService lookupTableService) {
+        this.lookupTableService = lookupTableService;
     }
 
     @DgsQuery
     @NeedsPermission.LookupTableRead
+    @SuppressWarnings("ConstantConditions")
+    public List<LookupTable> getLookupTables() {
+        verifyEnabled();
+        return lookupTableService.getLookupTables();
+    }
+
+    private void verifyEnabled() {
+        if (lookupTableService == null) {
+            throw new UnsupportedOperationException("Lookup table service disabled");
+        }
+    }
+
+    @DgsQuery
+    @NeedsPermission.LookupTableRead
+    @SuppressWarnings("ConstantConditions")
     public LookupTable getLookupTable(@InputArgument String lookupTableName) {
+        verifyEnabled();
         return lookupTableService.getLookupTable(lookupTableName);
     }
 
     @DgsMutation
     @NeedsPermission.LookupTableCreate
+    @SuppressWarnings("ConstantConditions")
     public Result createLookupTable(@InputArgument LookupTable lookupTableInput) {
+        verifyEnabled();
         try {
             lookupTableService.createLookupTable(lookupTableInput, true);
             return new Result(true, null, null);
@@ -62,25 +79,21 @@ public class LookupTableDatafetcher {
 
     @DgsMutation
     @NeedsPermission.LookupTableDelete
-    public Result deleteLookupTable(@InputArgument String lookupTableName) {
-        try {
-            lookupTableService.deleteLookupTable(lookupTableName);
-            return new Result(true, null, null);
-        } catch (LookupTableServiceException e) {
-            return new Result(false, null, List.of(e.getMessage()));
-        }
+    @SuppressWarnings("ConstantConditions")
+    public Result deleteLookupTable(@InputArgument String lookupTableName) throws LookupTableServiceException {
+        verifyEnabled();
+        lookupTableService.deleteLookupTable(lookupTableName);
+        return new Result(true, null, null);
     }
 
     @DgsMutation
     @NeedsPermission.LookupTableUpdate
+    @SuppressWarnings("ConstantConditions")
     public Result upsertLookupTableRows(@InputArgument String lookupTableName,
-            @InputArgument List<List<ColumnValueInput>> rows) {
-        try {
-            lookupTableService.upsertRows(lookupTableName, fromGraphQl(rows));
-            return new Result(true, null, null);
-        } catch (LookupTableServiceException e) {
-            return new Result(false, null, List.of(e.getMessage()));
-        }
+            @InputArgument List<List<ColumnValueInput>> rows) throws LookupTableServiceException {
+        verifyEnabled();
+        lookupTableService.upsertRows(lookupTableName, fromGraphQl(rows));
+        return new Result(true, null, null);
     }
 
     private List<Map<String, String>> fromGraphQl(List<List<ColumnValueInput>> rows) {
@@ -92,24 +105,23 @@ public class LookupTableDatafetcher {
 
     @DgsMutation
     @NeedsPermission.LookupTableUpdate
+    @SuppressWarnings("ConstantConditions")
     public Result removeLookupTableRows(@InputArgument String lookupTableName,
-            @InputArgument List<List<ColumnValueInput>> rows) {
-        try {
-            lookupTableService.removeRows(lookupTableName, fromGraphQl(rows));
-            return new Result(true, null, null);
-        } catch (LookupTableServiceException e) {
-            return new Result(false, null, List.of(e.getMessage()));
-        }
+            @InputArgument List<List<ColumnValueInput>> rows) throws LookupTableServiceException {
+        verifyEnabled();
+        lookupTableService.removeRows(lookupTableName, fromGraphQl(rows));
+        return new Result(true, null, null);
     }
 
     @DgsQuery
     @NeedsPermission.LookupTableRead
+    @SuppressWarnings("ConstantConditions")
     public LookupResults lookup(@InputArgument String lookupTableName,
             @InputArgument List<MatchingColumnValueInput> matchingColumnValues,
             @InputArgument List<String> resultColumns,
             @InputArgument String sortColumn, @InputArgument SortDirection sortDirection,
-            @InputArgument Integer offset, @InputArgument Integer limit)
-            throws LookupTableServiceException {
+            @InputArgument Integer offset, @InputArgument Integer limit) throws LookupTableServiceException {
+        verifyEnabled();
         Pair<Integer, List<Map<String, String>>> results = lookupTableService.lookup(lookupTableName,
                 fromGraphQlMatching(matchingColumnValues), resultColumns, sortColumn, sortDirection, offset, limit);
         return LookupResults.newBuilder()
@@ -139,13 +151,21 @@ public class LookupTableDatafetcher {
 
     @DgsMutation
     @NeedsPermission.Admin
+    @SuppressWarnings("ConstantConditions")
     public Result setLookupTableBackingServiceActive(@InputArgument String lookupTableName,
-            @InputArgument Boolean active) {
-        try {
-            lookupTableService.setBackingServiceActive(lookupTableName, active);
-            return new Result(true, null, null);
-        } catch (LookupTableServiceException e) {
-            return new Result(false, null, List.of(e.getMessage()));
-        }
+            @InputArgument Boolean active) throws LookupTableServiceException {
+        verifyEnabled();
+        lookupTableService.setBackingServiceActive(lookupTableName, active);
+        return new Result(true, null, null);
+    }
+
+    @GraphQlExceptionHandler
+    public GraphQLError handleLookupTableException(LookupTableServiceException e) {
+        return GraphQLError.newError().errorType(ErrorType.INTERNAL).message(e.getMessage()).build();
+    }
+
+    @GraphQlExceptionHandler
+    public GraphQLError handleUnsupportedOperationException(UnsupportedOperationException ignored) {
+        return GraphQLError.newError().errorType(ErrorType.UNAVAILABLE).message("Lookup table service disabled").build();
     }
 }

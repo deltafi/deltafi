@@ -46,7 +46,7 @@ public class GraphQLExecutor {
         GraphQLResponse response = graphQLClient.executeQuery(query, variables);
 
         if (response.hasErrors()) {
-            String errorMessage = "Error in DGS submission:\n\nOriginal query:\n" + query + "\n\n" +
+            String errorMessage = "Error executing GraphQL query:\n\nOriginal query:\n" + query + "\n\n" +
                     response.getErrors().stream().map(GraphQLError::getMessage).collect(Collectors.joining("\n"));
             throw new Exception(errorMessage);
         }
