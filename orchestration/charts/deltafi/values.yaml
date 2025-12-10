@@ -125,6 +125,23 @@ redis:
       enabled: false
     nodeSelector:
       node-role.deltafi.org/compute: "true"
+    # Use tcpSocket probes instead of default exec
+    customLivenessProbe:
+      tcpSocket:
+        port: 6379
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 5
+    customReadinessProbe:
+      tcpSocket:
+        port: 6379
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 5
 # Kubernetes Dashboard config
 kubernetes-dashboard:
   image:
