@@ -13,10 +13,11 @@
     url: https://dev.deltafi.org
   variables:
     DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
-    PROJECT_LIST: "deltafi-clustermonitor deltafi-core deltafi-core-actions deltafi-egress-sink deltafi-nodemonitor"
+    PROJECT_LIST: "deltafi-clustermonitor deltafi-core deltafi-core-actions deltafi-analytics deltafi-egress-sink deltafi-nodemonitor"
     deltafi_clustermonitor_HELM_IMAGE_PATH: deltafi.clustermonitor.image
     deltafi_core_HELM_IMAGE_PATH: deltafi.core.image
     deltafi_core_actions_HELM_IMAGE_PATH: deltafi.core_actions.image
+    deltafi_analytics_HELM_IMAGE_PATH: deltafi.analytics.image
     deltafi_egress_sink_HELM_IMAGE_PATH: deltafi.egress_sink.image
     deltafi_nodemonitor_HELM_IMAGE_PATH: deltafi.nodemonitor.image
   before_script:
