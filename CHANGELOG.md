@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.43.1] - 2025-12-11
+
+### Changed
+- Replaced the default exec probes for valkey pod with tcpSocket probes
+
+### Fixed
+- Fixed zombie process accumulation in valkey probe that was exhausting `bpf_jit_limit`
+
 ## [2.43.0] - 2025-12-10
 
 ### Added
@@ -5187,7 +5195,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.43.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.43.1...main
+[2.43.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.43.0...2.43.1
 [2.43.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.42.0...2.43.0
 [2.42.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.41.0...2.42.0
 [2.41.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.40.0...2.41.0
