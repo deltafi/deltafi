@@ -21,6 +21,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsData;
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.generated.types.TopicParticipant;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.Flow;
 
@@ -81,6 +82,18 @@ public class FlowDataFetcher {
     @DgsData(parentType = "DataSink", field = "pluginNotReadyReason")
     public String dataSinkPluginNotReadyReason(DgsDataFetchingEnvironment dfe) {
         return getPluginNotReadyReason(dfe.getSource());
+    }
+
+    @DgsData(parentType = "TopicParticipant", field = "pluginReady")
+    public boolean topicParticipantPluginReady(DgsDataFetchingEnvironment dfe) {
+        TopicParticipant participant = dfe.getSource();
+        return pluginService.isPluginReady(participant.getSourcePlugin());
+    }
+
+    @DgsData(parentType = "TopicParticipant", field = "pluginNotReadyReason")
+    public String topicParticipantPluginNotReadyReason(DgsDataFetchingEnvironment dfe) {
+        TopicParticipant participant = dfe.getSource();
+        return pluginService.getPluginNotReadyReason(participant.getSourcePlugin());
     }
 
     private boolean isPluginReady(Object source) {

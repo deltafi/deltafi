@@ -48,6 +48,7 @@ import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import useNotifications from "@/composables/useNotifications";
 import useRateLimiting from "@/composables/useRateLimiting";
 import { computed, inject, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import _ from "lodash";
 
@@ -58,6 +59,7 @@ import Ripple from "primevue/ripple";
 const overlayPanelPosition = ref({});
 const vRipple = Ripple;
 
+const router = useRouter();
 const { removeRestDataSourceRateLimit } = useRateLimiting();
 const notify = useNotifications();
 const emit = defineEmits(["reloadDataSources"]);
@@ -86,6 +88,14 @@ const concatMvnCoordinates = (sourcePlugin) => {
 };
 
 const items = ref([
+  {
+    label: "View Pipeline",
+    icon: "text-muted pi pi-sitemap",
+    visible: computed(() => hasPermission("FlowView")),
+    command: () => {
+      router.push(`/pipeline/${data.type}/${data.name}`);
+    },
+  },
   {
     label: "Edit",
     icon: "text-muted pi pi-pencil",

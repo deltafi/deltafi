@@ -103,12 +103,22 @@ const staticMenuItems = ref([
   { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/", visible: computed(() => hasPermission("DashboardView")) },
   {
     name: "System Map",
-    icon: "fas fa-hexagon-nodes fa-fw",
-    path: "/system-map",
-    badge: () => {
-      return betaBadge.value;
-    },
-    visible: computed(() => hasPermission("DashboardView")),
+    expand: true,
+    visible: computed(() => hasSomePermissions("DashboardView", "FlowView")),
+    children: [
+      {
+        name: "Full",
+        icon: "fas fa-hexagon-nodes fa-fw",
+        path: "/system-map",
+        visible: computed(() => hasPermission("DashboardView")),
+      },
+      {
+        name: "Detail",
+        icon: "fas fa-project-diagram fa-fw",
+        path: "/pipeline",
+        visible: computed(() => hasPermission("FlowView")),
+      },
+    ],
   },
   {
     name: "Fleet",
@@ -325,14 +335,6 @@ const errorsBadge = computed(() => {
     visible: errorCount.value > 0,
     class: "badge badge-danger badge-pill",
     value: errorCount.value,
-  };
-});
-
-const betaBadge = computed(() => {
-  return {
-    visible: true,
-    class: "badge badge-info badge-pill",
-    value: "BETA",
   };
 });
 

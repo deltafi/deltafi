@@ -134,7 +134,9 @@ public class FlowCacheService {
                 .type(flow.getType())
                 .state(flow.getFlowStatus().getState())
                 .valid(flow.getFlowStatus().getValid())
+                .errors(flow.getFlowStatus().getErrors())
                 .condition(condition)
+                .sourcePlugin(flow.getSourcePlugin())
                 .build();
     }
 

@@ -23,12 +23,9 @@
         <div v-for="(value, key) in infoFields" :key="key" class="col-12 col-md-6 col-xl-3 pb-0">
           <dl>
             <dt>{{ key }}</dt>
-            <dd :class="{ monospace: key === 'DID' }">
+            <dd>
               <span v-if="['Modified', 'Created'].includes(key)">
                 <Timestamp :timestamp="value" />
-              </span>
-              <span v-else-if="key.includes('Size') || key.includes('Bytes')">
-                <FormattedBytes :bytes="value" />
               </span>
               <span v-else-if="key === 'Stage'">
                 {{ value }}
@@ -54,13 +51,15 @@
 <script setup>
 import { computed, reactive } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import FormattedBytes from "@/components/FormattedBytes.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 import PendingAnnotationsBadge from "@/components/PendingAnnotationsBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import LogBadges from "@/components/DeltaFileViewer/LogBadges.vue";
+import useUtilFunctions from "@/composables/useUtilFunctions";
 import _ from "lodash";
+
+const { formattedBytes: formatBytes } = useUtilFunctions();
 
 const emit = defineEmits(["filterLogsBySeverity"]);
 const filterLogsBySeverity = (severity) => emit("filterLogsBySeverity", severity);
@@ -76,12 +75,9 @@ const deltaFile = reactive(props.deltaFileData);
 
 const infoFields = computed(() => {
   const fields = {};
-  fields["DID"] = deltaFile.did;
   fields["Data Source"] = deltaFile.dataSource;
   fields["Name"] = deltaFile.name;
-  fields["Ingress Size"] = deltaFile.ingressBytes;
-  fields["Reference Bytes"] = deltaFile.referencedBytes;
-  fields["Total Size"] = deltaFile.totalBytes;
+  fields["Ingress / Total / Reference Size"] = `${formatBytes(deltaFile.ingressBytes)} / ${formatBytes(deltaFile.totalBytes)} / ${formatBytes(deltaFile.referencedBytes)}`;
   fields["Stage"] = deltaFile.stage;
   fields["Created"] = deltaFile.created;
   fields["Modified"] = deltaFile.modified;

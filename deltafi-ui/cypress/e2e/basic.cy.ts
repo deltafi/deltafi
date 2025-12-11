@@ -48,12 +48,13 @@ describe("DeltaFile Viewer Page", () => {
 
   context("with a DID", () => {
     it("loads the DeltaFile", () => {
-      cy.visit("http://localhost:8080/deltafile/viewer/2ace8f8a-60d6-4211-894a-0cd7455bf59z");
+      cy.visit("http://localhost:8080/deltafile/viewer/2ace8f8a-60d6-4211-894a-0cd7455bf599");
       cy.get("span.p-panel-title").contains("Parent DeltaFiles");
       cy.get("span.p-panel-title").contains("Child DeltaFiles");
       cy.get("span.p-panel-title").contains("Annotations");
-      cy.get("span.p-panel-title").contains("Flows");
-      cy.get("span.p-panel-title").contains("Trace");
+      cy.get("span.p-tabview-title").contains("Flow Graph");
+      cy.get("span.p-tabview-title").contains("Flow Table");
+      cy.get("span.p-tabview-title").contains("Flow Trace");
       cy.get("strong").contains("View").click();
       cy.get("button.p-dialog-header-icon.p-dialog-header-close.p-link").click();
     });

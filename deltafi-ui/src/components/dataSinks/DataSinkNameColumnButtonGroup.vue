@@ -42,6 +42,7 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSinkRemoveButton from "@/components/dataSinks/DataSinkRemoveButton.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import { computed, inject, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import _ from "lodash";
 
@@ -49,6 +50,7 @@ import Button from "primevue/button";
 import Menu from "primevue/menu";
 import Ripple from "primevue/ripple";
 
+const router = useRouter();
 const hasPermission = inject("hasPermission");
 const emit = defineEmits(["reloadDataSinks"]);
 const vRipple = Ripple;
@@ -74,6 +76,14 @@ const concatMvnCoordinates = (sourcePlugin) => {
   return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
 };
 const items = ref([
+  {
+    label: "View Pipeline",
+    icon: "text-muted pi pi-sitemap",
+    visible: computed(() => hasPermission("FlowView")),
+    command: () => {
+      router.push(`/pipeline/${data.type}/${data.name}`);
+    },
+  },
   {
     label: "Edit",
     icon: "text-muted pi pi-pencil",

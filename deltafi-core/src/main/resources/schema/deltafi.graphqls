@@ -393,6 +393,14 @@ type TopicParticipant {
   state: FlowState!
   valid: Boolean!
   condition: String
+  "Configuration errors if flow is invalid"
+  errors: [FlowConfigError]
+  "Plugin that owns this flow"
+  sourcePlugin: PluginCoordinates!
+  "Whether the plugin that owns this flow is ready to process data"
+  pluginReady: Boolean!
+  "Reason why the plugin is not ready, or null if it is ready"
+  pluginNotReadyReason: String
 }
 
 input FlowTagFilter {

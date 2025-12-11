@@ -18,9 +18,9 @@
 
 <template>
   <div>
-    <CollapsiblePanel id="traceCollapsible" class="trace-panel" header="Trace">
+    <component :is="hideHeader ? 'div' : CollapsiblePanel" id="traceCollapsible" class="trace-panel" :header="hideHeader ? undefined : 'Trace'">
       <div id="traceChart" preserveAspectRatio="none" class="chart" />
-    </CollapsiblePanel>
+    </component>
   </div>
 </template>
 
@@ -39,6 +39,10 @@ const props = defineProps({
   deltaFileData: {
     type: Object,
     required: true,
+  },
+  hideHeader: {
+    type: Boolean,
+    default: false,
   },
 });
 

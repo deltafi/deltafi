@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <CollapsiblePanel header="Flows" class="actions-panel table-panel">
+    <component :is="hideHeader ? 'div' : CollapsiblePanel" :header="hideHeader ? undefined : 'Flows'" class="actions-panel table-panel">
       <DataTable v-model:expanded-rows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" data-key="name" @row-click="rowClick">
         <Column class="expander-column" :expander="true" />
         <Column field="name" header="Name" class="flow-name-column" :sortable="true">
@@ -80,7 +80,7 @@
           <span v-else>This flow has no actions.</span>
         </template>
       </DataTable>
-    </CollapsiblePanel>
+    </component>
     <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
   </div>
 </template>
@@ -109,6 +109,10 @@ const props = defineProps({
   deltaFileData: {
     type: Object,
     required: true,
+  },
+  hideHeader: {
+    type: Boolean,
+    default: false,
   },
 });
 

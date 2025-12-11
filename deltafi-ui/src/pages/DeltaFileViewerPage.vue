@@ -64,17 +64,22 @@
       </div>
       <div class="row mb-3">
         <div class="col-12">
-          <DeltaFileFlowsPanel :delta-file-data="deltaFile" />
+          <TabView>
+            <TabPanel header="Flow Graph">
+              <DeltaFileFlowGraphPanel :delta-file-data="deltaFile" hide-header />
+            </TabPanel>
+            <TabPanel header="Flow Table">
+              <DeltaFileFlowsPanel :delta-file-data="deltaFile" hide-header />
+            </TabPanel>
+            <TabPanel header="Flow Trace">
+              <DeltaFileTracePanel :delta-file-data="deltaFile" hide-header />
+            </TabPanel>
+          </TabView>
         </div>
       </div>
       <div class="row mb-3">
         <div class="col-12">
           <LogViewerPanel id="logViewerPanelId" :delta-file-data="deltaFile" :filter-log-severity="selectedLogSeverity" @refresh-page="loadDeltaFileData" />
-        </div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-12">
-          <DeltaFileTracePanel :delta-file-data="deltaFile" />
         </div>
       </div>
     </div>
@@ -99,6 +104,7 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DeltaFileFlowsPanel from "@/components/DeltaFileViewer/DeltaFileFlowsPanel.vue";
+import DeltaFileFlowGraphPanel from "@/components/DeltaFileViewer/DeltaFileFlowGraphPanel.vue";
 import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileViewer/DeltaFileParentChildPanel.vue";
@@ -127,6 +133,8 @@ import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
+import TabPanel from "primevue/tabpanel";
+import TabView from "primevue/tabview";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
@@ -505,6 +513,33 @@ const filterLogsBySeverity = (logSeverity) => {
         }
       }
     }
+  }
+
+  .p-tabview .p-tabview-nav {
+    background: rgb(239, 239, 239);
+    border: 1px solid #e5e7eb;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+
+  .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link {
+    background: #e9e9e9;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-bottom: none;
+    margin-bottom: -1px;
+  }
+
+  .p-tabview .p-tabview-panels {
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
   }
 }
 </style>

@@ -18,7 +18,7 @@
 
 <template>
   <div class="annotations-panel">
-    <CollapsiblePanel header="Annotations" class="links-panel pl-0">
+    <CollapsiblePanel :header="headerWithCount" :collapsed="isEmpty" class="links-panel pl-0">
       <div v-if="_.isEmpty(_.get(deltaFile, 'annotations', null))" class="d-flex w-100 justify-content-between no-data-panel-content">
         <span v-if="!_.isEmpty(props.deltaFileData.pendingAnnotations)" class="p-2">No Annotations Available. Expected Read Receipts: {{ props.deltaFileData.pendingAnnotations }}</span>
         <span v-else class="p-2">No Annotations Available</span>
@@ -58,6 +58,12 @@ const props = defineProps({
 
 const { pluralize } = useUtilFunctions();
 const deltaFile = reactive(props.deltaFileData);
+
+const annotationCount = computed(() => Object.keys(_.get(deltaFile, 'annotations', {})).length);
+
+const headerWithCount = computed(() => `Annotations (${annotationCount.value})`);
+
+const isEmpty = computed(() => annotationCount.value === 0);
 
 const annotations = computed(() => {
   if (_.isEmpty(deltaFile)) {

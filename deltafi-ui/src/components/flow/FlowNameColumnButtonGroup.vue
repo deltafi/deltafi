@@ -31,6 +31,7 @@
 import FlowRemoveButton from "@/components/flow/FlowRemoveButton.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import { computed, inject, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 
 const linkedTransform = useStorage("linked-transform-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
@@ -41,6 +42,7 @@ import Button from "primevue/button";
 import Menu from "primevue/menu";
 import Ripple from "primevue/ripple";
 
+const router = useRouter();
 const emit = defineEmits(["reloadTransforms", "removeTransformFromTable"]);
 
 const hasPermission = inject("hasPermission");
@@ -59,6 +61,14 @@ const horizontalEllipsis = ref(false);
 const menu = ref();
 
 const items = ref([
+    {
+        label: "View Pipeline",
+        icon: "text-muted pi pi-sitemap",
+        visible: computed(() => hasPermission("FlowView")),
+        command: () => {
+            router.push(`/pipeline/${data.type}/${data.name}`);
+        },
+    },
     {
         label: "Edit",
         icon: "text-muted pi pi-pencil",

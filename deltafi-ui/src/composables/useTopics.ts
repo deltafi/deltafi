@@ -27,31 +27,54 @@ const getAllTopicsQuery = {
       name: true,
       type: true,
       state: true,
-      condition: true
+      valid: true,
+      condition: true,
+      errors: {
+        message: true
+      },
+      sourcePlugin: {
+        groupId: true,
+        artifactId: true,
+        version: true
+      },
+      pluginReady: true,
+      pluginNotReadyReason: true
     },
     subscribers: {
       name: true,
       type: true,
       state: true,
-      condition: true
+      valid: true,
+      condition: true,
+      errors: {
+        message: true
+      },
+      sourcePlugin: {
+        groupId: true,
+        artifactId: true,
+        version: true
+      },
+      pluginReady: true,
+      pluginNotReadyReason: true
     }
   },
 }
 
+export type TopicParticipant = {
+  name: String,
+  type: String,
+  state: String,
+  valid: boolean,
+  condition: String,
+  errors?: Array<{ message: String }>,
+  pluginReady: boolean,
+  pluginNotReadyReason?: String
+};
+
 export type Topic = {
   name?: String,
-  publishers?: Array<{
-    name: String,
-    type: String,
-    state: String
-    condition: String
-  }>,
-  subscribers?: Array<{
-    name: String,
-    type: String,
-    state: String
-    condition: String
-  }>
+  publishers?: Array<TopicParticipant>,
+  subscribers?: Array<TopicParticipant>
 };
 
 const topics: Ref<Array<Topic>> = ref([]);

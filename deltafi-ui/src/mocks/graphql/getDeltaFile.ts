@@ -18,7 +18,7 @@
 
 const generateData = () => {
   const data = {
-    did: "2ace8f8a-60d6-4211-894a-0cd7455bf59z",
+    did: "2ace8f8a-60d6-4211-894a-0cd7455bf599",
     name: "hello-world-java-timed-data-source-28494",
     totalBytes: 0,
     ingressBytes: 24,
@@ -29,6 +29,7 @@ const generateData = () => {
       {
         name: "hello-world-java-timed-data-source",
         id: 0,
+        number: 0,
         type: "TIMED_DATA_SOURCE",
         state: "COMPLETE",
         created: "2024-05-30T11:31:55.653Z",
@@ -139,6 +140,7 @@ const generateData = () => {
       },
       {
         name: "hello-world-java-data-route-or-filter",
+        number: 1,
         type: "TRANSFORM",
         state: "COMPLETE",
         created: "2024-05-30T11:31:55.659Z",
@@ -167,7 +169,7 @@ const generateData = () => {
           topics: [
             "hello-world-java-data"
           ],
-          ancestorIds: []
+          ancestorIds: [0]
         },
         errorAcknowledged: null,
         errorAcknowledgedReason: null,

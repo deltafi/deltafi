@@ -20,7 +20,10 @@ package org.deltafi.core.services;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.types.ActionMetrics;
+import org.deltafi.core.types.FlowKey;
 import org.deltafi.core.types.FlowMetrics;
+import org.deltafi.core.types.PerFlowMetrics;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +34,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +98,123 @@ public class GraphiteQueryService {
             log.error("Failed to query flow metrics: {}", e.getMessage());
             return FlowMetrics.empty();
         }
+    }
+
+    /**
+     * Query action metrics for specific actions.
+     * Returns execution count and time for each action name provided.
+     *
+     * @param actionNames List of action names to query
+     * @param lastMinutes Time interval in minutes
+     */
+    public List<ActionMetrics> queryActionMetrics(List<String> actionNames, int lastMinutes) {
+        if (!enabled || actionNames == null || actionNames.isEmpty()) {
+            return List.of();
+        }
+
+        List<ActionMetrics> results = new ArrayList<>();
+
+        try {
+            Map<String, Long> execCount = queryMetricByTag("stats_counts.action_execution", "source", lastMinutes);
+            Map<String, Long> execTime = queryMetricByTag("stats_counts.action_execution_time_ms", "source", lastMinutes);
+
+            for (String actionName : actionNames) {
+                results.add(new ActionMetrics(
+                        actionName,
+                        execCount.getOrDefault(actionName, 0L),
+                        execTime.getOrDefault(actionName, 0L)
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Failed to query action metrics: {}", e.getMessage());
+            for (String actionName : actionNames) {
+                results.add(ActionMetrics.empty(actionName));
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Query per-flow metrics for specific flows.
+     * Returns files and bytes in/out for each flow provided.
+     * Different flow types use different metric names and tags:
+     * - Data sources: files_from_source/bytes_from_source tagged by dataSource
+     * - Transforms: files_in/out, bytes_in/out tagged by flowName
+     * - Data sinks: files_to_sink/bytes_to_sink tagged by dataSink
+     *
+     * @param flowKeys List of flow type/name pairs to query
+     * @param lastMinutes Time interval in minutes
+     */
+    public List<PerFlowMetrics> queryPerFlowMetrics(List<FlowKey> flowKeys, int lastMinutes) {
+        if (!enabled || flowKeys == null || flowKeys.isEmpty()) {
+            return List.of();
+        }
+
+        List<PerFlowMetrics> results = new ArrayList<>();
+
+        try {
+            // Query all metric types we might need
+            // Data source metrics (tagged by dataSource)
+            Map<String, Long> filesFromSource = queryMetricByTag("stats_counts.files_from_source", "dataSource", lastMinutes);
+            Map<String, Long> bytesFromSource = queryMetricByTag("stats_counts.bytes_from_source", "dataSource", lastMinutes);
+
+            // Transform metrics (tagged by flowName)
+            Map<String, Long> filesIn = queryMetricByTag("stats_counts.files_in", "flowName", lastMinutes);
+            Map<String, Long> filesOut = queryMetricByTag("stats_counts.files_out", "flowName", lastMinutes);
+            Map<String, Long> bytesIn = queryMetricByTag("stats_counts.bytes_in", "flowName", lastMinutes);
+            Map<String, Long> bytesOut = queryMetricByTag("stats_counts.bytes_out", "flowName", lastMinutes);
+
+            // Data sink metrics (tagged by dataSink)
+            Map<String, Long> filesToSink = queryMetricByTag("stats_counts.files_to_sink", "dataSink", lastMinutes);
+            Map<String, Long> bytesToSink = queryMetricByTag("stats_counts.bytes_to_sink", "dataSink", lastMinutes);
+
+            for (FlowKey flowKey : flowKeys) {
+                String flowType = flowKey.flowType();
+                String flowName = flowKey.flowName();
+
+                long fIn = 0, fOut = 0, bIn = 0, bOut = 0;
+
+                if (isDataSource(flowType)) {
+                    // Data sources: files/bytes from source (output only)
+                    fOut = filesFromSource.getOrDefault(flowName, 0L);
+                    bOut = bytesFromSource.getOrDefault(flowName, 0L);
+                } else if ("DATA_SINK".equals(flowType)) {
+                    // Data sinks: files/bytes to sink (input only)
+                    fIn = filesToSink.getOrDefault(flowName, 0L);
+                    bIn = bytesToSink.getOrDefault(flowName, 0L);
+                } else if ("TRANSFORM".equals(flowType)) {
+                    // Transforms: files/bytes in and out
+                    fIn = filesIn.getOrDefault(flowName, 0L);
+                    fOut = filesOut.getOrDefault(flowName, 0L);
+                    bIn = bytesIn.getOrDefault(flowName, 0L);
+                    bOut = bytesOut.getOrDefault(flowName, 0L);
+                }
+
+                results.add(new PerFlowMetrics(flowType, flowName, fIn, fOut, bIn, bOut));
+            }
+        } catch (Exception e) {
+            log.error("Failed to query per-flow metrics: {}", e.getMessage());
+            for (FlowKey flowKey : flowKeys) {
+                results.add(PerFlowMetrics.empty(flowKey.flowType(), flowKey.flowName()));
+            }
+        }
+
+        return results;
+    }
+
+    private boolean isDataSource(String flowType) {
+        return "REST_DATA_SOURCE".equals(flowType) ||
+               "TIMED_DATA_SOURCE".equals(flowType) ||
+               "ON_ERROR_DATA_SOURCE".equals(flowType);
+    }
+
+    /**
+     * Query a metric and sum all datapoints, grouped by a specific tag.
+     */
+    private Map<String, Long> queryMetricByTag(String metricName, String tagName, int lastMinutes) {
+        String target = String.format("seriesByTag('name=%s')", metricName);
+        return querySum(target, tagName, lastMinutes);
     }
 
     /**

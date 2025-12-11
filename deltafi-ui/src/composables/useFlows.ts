@@ -96,7 +96,6 @@ export default function useFlows() {
         },
       },
     };
-    console.log(query)
     return queryGraphQL(query, "setFlowState", "mutation");
   };
 

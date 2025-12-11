@@ -36,6 +36,7 @@ import TransformsPage from "@/pages/TransformsPage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
 import RolesPage from "@/pages/RolesPage.vue";
+import PipelineVisualizationPage from "@/pages/PipelineVisualizationPage.vue";
 import SystemMapPage from "@/pages/SystemMapPage.vue";
 import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
 import SystemPropertiesPage from "@/pages/SystemPropertiesPage.vue";
@@ -62,6 +63,14 @@ const routes: Array<RouteRecordRaw> = [
     component: SystemMapPage,
     meta: {
       permission: "DashboardView",
+    },
+  },
+  {
+    path: "/pipeline/:flowType?/:flowName?",
+    name: "Pipeline",
+    component: PipelineVisualizationPage,
+    meta: {
+      permission: "FlowView",
     },
   },
   {

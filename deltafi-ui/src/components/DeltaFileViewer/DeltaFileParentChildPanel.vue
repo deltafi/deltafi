@@ -18,7 +18,7 @@
 
 <template>
   <div class="deltafile-parent-child-panel">
-    <CollapsiblePanel :header="header" class="table-panel">
+    <CollapsiblePanel :header="headerWithCount" :collapsed="isEmpty" class="table-panel">
       <DataTable :paginator="didsList.length < 10 ? false : true" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="didsList" :loading="loading && !loaded" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}" data-key="did">
         <template v-if="!loading" #empty>
           {{ `No ${header} found.` }}
@@ -73,6 +73,12 @@ const header = computed(() => {
   const relationship = props.field === "parentDids" ? "Parent" : "Child";
   return `${relationship} DeltaFiles`;
 });
+
+const headerWithCount = computed(() => {
+  return `${header.value} (${didsList.value.length})`;
+});
+
+const isEmpty = computed(() => didsList.value.length === 0);
 
 const fetchDidsArrayData = async () => {
   const didLists = [];

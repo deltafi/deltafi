@@ -24,6 +24,7 @@ import org.deltafi.core.services.SystemService.Status;
 import org.deltafi.core.services.SystemService.Versions;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.Snapshot;
+
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -163,6 +164,38 @@ public class SystemRest {
         // Clamp to valid range: 1 minute to 1 day
         int clampedMinutes = Math.max(1, Math.min(minutes, 1440));
         return graphiteQueryService.queryFlowMetrics(clampedMinutes);
+    }
+
+    /**
+     * Query action metrics for the specified actions and time interval.
+     * Returns execution count and execution time per action.
+     *
+     * @param actionNames List of action names to query
+     * @param minutes Time interval in minutes (default 60, max 1440 = 1 day)
+     */
+    @PostMapping("/metrics/action")
+    @NeedsPermission.MetricsView
+    public List<ActionMetrics> actionMetrics(
+            @RequestBody List<String> actionNames,
+            @RequestParam(defaultValue = "60") int minutes) {
+        int clampedMinutes = Math.max(1, Math.min(minutes, 1440));
+        return graphiteQueryService.queryActionMetrics(actionNames, clampedMinutes);
+    }
+
+    /**
+     * Query per-flow metrics for the specified flows and time interval.
+     * Returns files in/out and bytes in/out per flow.
+     *
+     * @param flowKeys List of flow type/name pairs to query
+     * @param minutes Time interval in minutes (default 60, max 1440 = 1 day)
+     */
+    @PostMapping("/metrics/perflow")
+    @NeedsPermission.MetricsView
+    public List<PerFlowMetrics> perFlowMetrics(
+            @RequestBody List<FlowKey> flowKeys,
+            @RequestParam(defaultValue = "60") int minutes) {
+        int clampedMinutes = Math.max(1, Math.min(minutes, 1440));
+        return graphiteQueryService.queryPerFlowMetrics(flowKeys, clampedMinutes);
     }
 
     /**
