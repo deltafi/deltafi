@@ -26,21 +26,16 @@
     </ConfirmDialog>
     <FlowControlButtons v-model="rowData.flowStatus.state" class="control-buttons" @start="start()" @pause="pause()" @stop="stop()" />
   </span>
-  <span v-else>
-    <Button :label="rowData.flowStatus.state" :class="buttonClass" style="width: 5.5rem" disabled />
-  </span>
 </template>
 
 <script setup>
 import FlowControlButtons from "@/components/FlowControlButtons.vue";
 import useNotifications from "@/composables/useNotifications";
 import useFlows from "@/composables/useFlows";
-import { computed, toRefs } from "vue";
+import { toRefs } from "vue";
 
-import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
-import _ from "lodash";
 
 const confirm = useConfirm();
 const { setFlowState } = useFlows();
@@ -56,10 +51,6 @@ const props = defineProps({
 });
 
 const { rowDataProp: rowData } = toRefs(props);
-
-const buttonClass = computed(() => {
-  return _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "p-button-primary" : "p-button-secondary";
-});
 
 const start = async () => {
   const { name } = { name: rowData.value.name };

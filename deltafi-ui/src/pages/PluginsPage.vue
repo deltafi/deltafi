@@ -32,20 +32,23 @@
           <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" data-key="displayName">
             <template #empty> No Plugins found. </template>
             <template #loading> Loading Plugins. Please wait. </template>
-            <Column header="Name" field="displayName" :sortable="true" />
-            <Column header="Description" field="description" />
-            <Column header="Version" field="pluginCoordinates.version" />
-            <Column header="Action Kit Version" field="actionKitVersion" />
-            <Column :style="{ width: '5%' }" class="plugin-actions-column" :hidden="!$hasSomePermissions('PluginInstall', 'PluginUninstall')">
+            <Column header="Name" field="displayName" :style="{ width: '25%' }" :sortable="true">
               <template #body="{ data }">
-                <div v-if="!data.readOnly" class="d-flex justify-content-between">
-                  <DialogTemplate component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="40vw" :row-data-prop="data" @refresh-page="loadPlugins()">
-                    <Button v-has-permission:PluginInstall v-tooltip.top="`Update Plugin`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
-                  </DialogTemplate>
-                  <PluginRemoveButton v-has-permission:PluginUninstall :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" />
+                <div class="d-flex justify-content-between align-items-center">
+                  <span>{{ data.displayName }}</span>
+                  <PluginActionMenu v-if="!data.readOnly && $hasSomePermissions('PluginInstall', 'PluginUninstall')" :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" @retry="retryInstall" @rollback="rollback" @enable="enable" @disable="disable" />
                 </div>
               </template>
             </Column>
+            <Column header="Description" field="description" />
+            <Column header="Version" field="pluginCoordinates.version" />
+            <Column header="Status" field="installState" :sortable="true">
+              <template #body="{ data }">
+                <Tag :value="getStateLabel(data)" :severity="getStateSeverity(data)" />
+                <span v-if="data.installState === 'FAILED' && data.installError" v-tooltip.top="data.installError" class="ml-2 pi pi-info-circle text-red-500" />
+              </template>
+            </Column>
+            <Column header="Action Kit Version" field="actionKitVersion" />
           </DataTable>
         </SplitterPanel>
         <SplitterPanel :size="startingPanelTwoSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelTwoSize}`">
@@ -77,12 +80,12 @@
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PluginActionsPanel from "@/components/plugin/ActionsPanel.vue";
-import PluginRemoveButton from "@/components/plugin/PluginRemoveButton.vue";
+import PluginActionMenu from "@/components/plugin/PluginActionMenu.vue";
 import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import _ from "lodash";
 
@@ -94,6 +97,7 @@ import Message from "primevue/message";
 import Panel from "primevue/panel";
 import Splitter from "primevue/splitter";
 import SplitterPanel from "primevue/splitterpanel";
+import Tag from "primevue/tag";
 
 const selectedPlugin = ref(null);
 const dataTableIdRef = ref();
@@ -111,7 +115,7 @@ const errorOverlayDialog = ref(false);
 const route = useRoute();
 const router = useRouter();
 const notify = useNotifications();
-const { data: plugins, fetch: fetchPlugins, loading, loaded } = usePlugins();
+const { data: plugins, fetch: fetchPlugins, loading, loaded, retryPluginInstall, rollbackPlugin, disablePlugin, enablePlugin } = usePlugins();
 
 const showLoading = computed(() => !loaded.value && loading.value);
 
@@ -138,8 +142,42 @@ const loadPlugins = async () => {
   selectedPlugin.value = route.params.pluginCordinates ? pluginsList.value.find((e) => e.combinedPluginCoordinates == route.params.pluginCordinates) : null;
 };
 
+const autoRefreshInterval = ref(null);
+const IN_PROGRESS_STATES = ["PENDING", "INSTALLING", "REMOVING"];
+
+const hasInProgressPlugins = computed(() => {
+  if (!plugins.value?.plugins) return false;
+  return plugins.value.plugins.some(p => IN_PROGRESS_STATES.includes(p.installState));
+});
+
+const startAutoRefresh = () => {
+  if (autoRefreshInterval.value) return;
+  autoRefreshInterval.value = setInterval(() => {
+    fetchPlugins();
+  }, 5000);
+};
+
+const stopAutoRefresh = () => {
+  if (autoRefreshInterval.value) {
+    clearInterval(autoRefreshInterval.value);
+    autoRefreshInterval.value = null;
+  }
+};
+
+watch(hasInProgressPlugins, (inProgress) => {
+  if (inProgress) {
+    startAutoRefresh();
+  } else {
+    stopAutoRefresh();
+  }
+});
+
 onMounted(async () => {
   loadPlugins();
+});
+
+onUnmounted(() => {
+  stopAutoRefresh();
 });
 
 watch(route, () => {
@@ -152,7 +190,7 @@ watch(selectedPlugin, async (newItem) => {
   if (newItem === undefined) {
     notify.error("Plugin Not Found", route.params.pluginCordinates);
   }
-  let path = null;
+  let path;
   if (newItem === null || newItem === undefined) {
     panelOneSize.value = !userResized.value ? splitterSize(99) : panelOneSize.value;
     panelTwoSize.value = !userResized.value ? splitterSize(1) : panelTwoSize.value;
@@ -212,6 +250,76 @@ const hideErrorsDialog = () => {
 const clearUploadErrors = () => {
   errorsList.value = [];
 };
+
+const getStateLabel = (plugin) => {
+  if (plugin.disabled) return "Disabled";
+  switch (plugin.installState) {
+    case "PENDING": return "Pending";
+    case "INSTALLING": return "Installing";
+    case "INSTALLED": return "Installed";
+    case "FAILED": return "Failed";
+    case "REMOVING": return "Removing";
+    default: return plugin.installState;
+  }
+};
+
+const getStateSeverity = (plugin) => {
+  if (plugin.disabled) return "secondary";
+  switch (plugin.installState) {
+    case "PENDING": return "secondary";
+    case "INSTALLING": return "info";
+    case "INSTALLED": return "success";
+    case "FAILED": return "danger";
+    case "REMOVING": return "warn";
+    default: return "secondary";
+  }
+};
+
+const retryInstall = async (plugin) => {
+  const coords = plugin.pluginCoordinates;
+  const result = await retryPluginInstall(coords.groupId, coords.artifactId, coords.version);
+  if (result?.retryPluginInstall) {
+    notify.info("Retry Requested", `Retrying installation of ${plugin.displayName}`);
+    loadPlugins();
+    startAutoRefresh();
+  } else {
+    notify.error("Retry Failed", `Could not retry installation of ${plugin.displayName}`);
+  }
+};
+
+const rollback = async (plugin) => {
+  const coords = plugin.pluginCoordinates;
+  const result = await rollbackPlugin(coords.groupId, coords.artifactId, coords.version);
+  if (result?.rollbackPlugin) {
+    notify.info("Rollback Initiated", `Rolling back ${plugin.displayName} to version ${plugin.lastSuccessfulVersion}`);
+    loadPlugins();
+    startAutoRefresh();
+  } else {
+    notify.error("Rollback Failed", `Could not rollback ${plugin.displayName}`);
+  }
+};
+
+const disable = async (plugin) => {
+  const coords = plugin.pluginCoordinates;
+  const result = await disablePlugin(coords.groupId, coords.artifactId, coords.version);
+  if (result?.disablePlugin) {
+    notify.info("Plugin Disabled", `${plugin.displayName} has been disabled`);
+    loadPlugins();
+  } else {
+    notify.error("Disable Failed", `Could not disable ${plugin.displayName}`);
+  }
+};
+
+const enable = async (plugin) => {
+  const coords = plugin.pluginCoordinates;
+  const result = await enablePlugin(coords.groupId, coords.artifactId, coords.version);
+  if (result?.enablePlugin) {
+    notify.info("Plugin Enabled", `${plugin.displayName} is being re-enabled`);
+    loadPlugins();
+  } else {
+    notify.error("Enable Failed", `Could not enable ${plugin.displayName}`);
+  }
+};
 </script>
 
 <style>
@@ -249,6 +357,17 @@ const clearUploadErrors = () => {
         padding: 0.25rem !important;
         margin: 0 0 0 0.25rem !important;
       }
+    }
+
+    /* Make action menu button visible on selected (highlighted) rows */
+    tr.p-highlight .p-button-outlined {
+      border-color: rgba(255, 255, 255, 0.7);
+      color: white;
+    }
+
+    tr.p-highlight .p-button-outlined:hover {
+      border-color: white;
+      background-color: rgba(255, 255, 255, 0.1);
     }
   }
 }

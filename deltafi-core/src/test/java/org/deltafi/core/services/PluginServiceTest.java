@@ -26,7 +26,9 @@ import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.lookup.LookupTableService;
 import org.deltafi.core.repo.PluginRepository;
+import org.deltafi.core.types.GroupIdArtifactId;
 import org.deltafi.core.types.PluginEntity;
+import org.deltafi.common.types.PluginState;
 import org.deltafi.core.types.snapshot.PluginSnapshot;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.Result;
@@ -139,8 +141,11 @@ class PluginServiceTest {
         assertTrue(result.isSuccess());
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
-        plugin.setRegistrationHash(PluginService.hashRegistration(pluginRegistration));
-        assertEquals(plugin, pluginArgumentCaptor.getValue());
+        PluginEntity saved = pluginArgumentCaptor.getValue();
+        assertThat(saved.getPluginCoordinates()).isEqualTo(plugin.getPluginCoordinates());
+        assertThat(saved.getRegistrationHash()).isEqualTo(PluginService.hashRegistration(pluginRegistration));
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.INSTALLED);
+        assertThat(saved.getLastSuccessfulVersion()).isEqualTo("1.0.0");
     }
 
     @Test
@@ -274,8 +279,11 @@ class PluginServiceTest {
         assertTrue(result.isSuccess());
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
-        plugin.setRegistrationHash(PluginService.hashRegistration(pluginRegistration));
-        assertEquals(plugin, pluginArgumentCaptor.getValue());
+        PluginEntity saved = pluginArgumentCaptor.getValue();
+        assertThat(saved.getPluginCoordinates()).isEqualTo(plugin.getPluginCoordinates());
+        assertThat(saved.getRegistrationHash()).isEqualTo(PluginService.hashRegistration(pluginRegistration));
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.INSTALLED);
+        assertThat(saved.getLastSuccessfulVersion()).isEqualTo("1.0.0");
 
         Mockito.verify(integrationService).save(Mockito.any());
     }
@@ -554,5 +562,266 @@ class PluginServiceTest {
                 .expectedDeltaFiles(List.of(e1, e2))
                 .build();
 
+    }
+
+    // Tests for isPluginReady()
+
+    @Test
+    void isPluginReady_nullCoordinates_returnsTrue() {
+        // Core plugins don't have coordinates, always ready
+        assertThat(pluginService.isPluginReady(null)).isTrue();
+    }
+
+    @Test
+    void isPluginReady_systemPlugin_returnsTrue() {
+        // System plugin is always ready (runs in core)
+        PluginCoordinates coords = new PluginCoordinates("org.deltafi", "system-plugin", "1.0.0");
+        assertThat(pluginService.isPluginReady(coords)).isTrue();
+    }
+
+    @Test
+    void isPluginReady_coreActionsPlugin_returnsTrue() {
+        // Core-actions plugin is always ready (runs in core)
+        PluginCoordinates coords = new PluginCoordinates("org.deltafi", "deltafi-core-actions", "1.0.0");
+        assertThat(pluginService.isPluginReady(coords)).isTrue();
+    }
+
+    @Test
+    void isPluginReady_externalPluginNotFound_returnsFalse() {
+        // External plugin not in DB means it was removed - not ready
+        PluginCoordinates coords = new PluginCoordinates("org.test", "unknown", "1.0.0");
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId("org.test", "unknown")))
+                .thenReturn(Optional.empty());
+        assertThat(pluginService.isPluginReady(coords)).isFalse();
+    }
+
+    @Test
+    void isPluginReady_installedAndNotDisabled_returnsTrue() {
+        PluginEntity plugin = makePlugin();
+        plugin.setInstallState(PluginState.INSTALLED);
+        plugin.setDisabled(false);
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId(
+                PLUGIN_COORDINATES_1.getGroupId(), PLUGIN_COORDINATES_1.getArtifactId())))
+                .thenReturn(Optional.of(plugin));
+
+        assertThat(pluginService.isPluginReady(PLUGIN_COORDINATES_1)).isTrue();
+    }
+
+    @Test
+    void isPluginReady_installedButDisabled_returnsFalse() {
+        PluginEntity plugin = makePlugin();
+        plugin.setInstallState(PluginState.INSTALLED);
+        plugin.setDisabled(true);
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId(
+                PLUGIN_COORDINATES_1.getGroupId(), PLUGIN_COORDINATES_1.getArtifactId())))
+                .thenReturn(Optional.of(plugin));
+
+        assertThat(pluginService.isPluginReady(PLUGIN_COORDINATES_1)).isFalse();
+    }
+
+    @Test
+    void isPluginReady_pendingState_returnsFalse() {
+        PluginEntity plugin = makePlugin();
+        plugin.setInstallState(PluginState.PENDING);
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId(
+                PLUGIN_COORDINATES_1.getGroupId(), PLUGIN_COORDINATES_1.getArtifactId())))
+                .thenReturn(Optional.of(plugin));
+
+        assertThat(pluginService.isPluginReady(PLUGIN_COORDINATES_1)).isFalse();
+    }
+
+    @Test
+    void isPluginReady_installingState_returnsFalse() {
+        PluginEntity plugin = makePlugin();
+        plugin.setInstallState(PluginState.INSTALLING);
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId(
+                PLUGIN_COORDINATES_1.getGroupId(), PLUGIN_COORDINATES_1.getArtifactId())))
+                .thenReturn(Optional.of(plugin));
+
+        assertThat(pluginService.isPluginReady(PLUGIN_COORDINATES_1)).isFalse();
+    }
+
+    @Test
+    void isPluginReady_failedState_returnsFalse() {
+        PluginEntity plugin = makePlugin();
+        plugin.setInstallState(PluginState.FAILED);
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId(
+                PLUGIN_COORDINATES_1.getGroupId(), PLUGIN_COORDINATES_1.getArtifactId())))
+                .thenReturn(Optional.of(plugin));
+
+        assertThat(pluginService.isPluginReady(PLUGIN_COORDINATES_1)).isFalse();
+    }
+
+    // Tests for isPluginDisabled()
+
+    @Test
+    void isPluginDisabled_nullCoordinates_returnsFalse() {
+        assertThat(pluginService.isPluginDisabled(null)).isFalse();
+    }
+
+    @Test
+    void isPluginDisabled_pluginNotFound_returnsFalse() {
+        PluginCoordinates coords = new PluginCoordinates("org.test", "unknown", "1.0.0");
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId("org.test", "unknown")))
+                .thenReturn(Optional.empty());
+        assertThat(pluginService.isPluginDisabled(coords)).isFalse();
+    }
+
+    @Test
+    void isPluginDisabled_pluginEnabled_returnsFalse() {
+        PluginEntity plugin = makePlugin();
+        plugin.setDisabled(false);
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId(
+                PLUGIN_COORDINATES_1.getGroupId(), PLUGIN_COORDINATES_1.getArtifactId())))
+                .thenReturn(Optional.of(plugin));
+
+        assertThat(pluginService.isPluginDisabled(PLUGIN_COORDINATES_1)).isFalse();
+    }
+
+    @Test
+    void isPluginDisabled_pluginDisabled_returnsTrue() {
+        PluginEntity plugin = makePlugin();
+        plugin.setDisabled(true);
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId(
+                PLUGIN_COORDINATES_1.getGroupId(), PLUGIN_COORDINATES_1.getArtifactId())))
+                .thenReturn(Optional.of(plugin));
+
+        assertThat(pluginService.isPluginDisabled(PLUGIN_COORDINATES_1)).isTrue();
+    }
+
+    // Tests for createPendingPlugin(String image, String imagePullSecret)
+
+    @Test
+    void createPendingPlugin_newInstall_createsNewPlugin() {
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.empty());
+
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
+
+        ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(captor.capture());
+
+        PluginEntity saved = captor.getValue();
+        assertThat(saved.getImageName()).isEqualTo("registry.example.com/my-plugin");
+        assertThat(saved.getImageTag()).isEqualTo("1.0.0");
+        assertThat(saved.getImagePullSecret()).isEqualTo("docker-secret");
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.PENDING);
+        assertThat(saved.getKey().getGroupId()).isEqualTo("pending");
+        assertThat(saved.getKey().getArtifactId()).isEqualTo("my-plugin");
+    }
+
+    @Test
+    void createPendingPlugin_upgrade_updatesExistingPlugin() {
+        PluginEntity existing = makePlugin();
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("1.0.0");
+        existing.setInstallState(PluginState.INSTALLED);
+
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret");
+
+        ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(captor.capture());
+
+        PluginEntity saved = captor.getValue();
+        assertThat(saved.getImageName()).isEqualTo("registry.example.com/my-plugin");
+        assertThat(saved.getImageTag()).isEqualTo("2.0.0");
+        assertThat(saved.getImagePullSecret()).isEqualTo("docker-secret");
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.PENDING);
+        // Should be the same entity, not deleted and recreated
+        assertThat(saved).isSameAs(existing);
+    }
+
+    @Test
+    void createPendingPlugin_sameImageTagAlreadyInstalled_skips() {
+        PluginEntity existing = makePlugin();
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("1.0.0");
+        existing.setInstallState(PluginState.INSTALLED);
+
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
+
+        // Should not save - plugin already installed with same image:tag
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    void createPendingPlugin_existingPluginInstalling_doesNotTransitionToPending() {
+        PluginEntity existing = makePlugin();
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("1.0.0");
+        existing.setInstallState(PluginState.INSTALLING);
+
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret");
+
+        ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(captor.capture());
+
+        PluginEntity saved = captor.getValue();
+        // Should update image info but not change state from INSTALLING
+        assertThat(saved.getImageTag()).isEqualTo("2.0.0");
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.INSTALLING);
+    }
+
+    // Tests for createPendingPlugin(String image, String imagePullSecret, PluginCoordinates coordinates)
+
+    @Test
+    void createPendingPluginFromSnapshot_newInstall_createsNewPlugin() {
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.empty());
+
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
+
+        ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(captor.capture());
+
+        PluginEntity saved = captor.getValue();
+        assertThat(saved.getImageName()).isEqualTo("registry.example.com/my-plugin");
+        assertThat(saved.getImageTag()).isEqualTo("1.0.0");
+        assertThat(saved.getImagePullSecret()).isEqualTo("docker-secret");
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.PENDING);
+        // Should use placeholder coordinates since we don't know real version until registration
+        assertThat(saved.getKey().getGroupId()).isEqualTo("pending");
+    }
+
+    @Test
+    void createPendingPluginFromSnapshot_upgrade_updatesExistingPlugin() {
+        PluginEntity existing = makePlugin();
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("1.0.0");
+        existing.setInstallState(PluginState.INSTALLED);
+
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret");
+
+        ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(captor.capture());
+
+        PluginEntity saved = captor.getValue();
+        assertThat(saved.getImageTag()).isEqualTo("2.0.0");
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.PENDING);
+        // Should be the same entity - upgrade, not delete and recreate
+        assertThat(saved).isSameAs(existing);
+        // Should NOT have deleted the existing plugin
+        Mockito.verify(pluginRepository, Mockito.never()).deleteById(Mockito.any());
+    }
+
+    @Test
+    void createPendingPluginFromSnapshot_sameImageTagAlreadyInstalled_skips() {
+        PluginEntity existing = makePlugin();
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("1.0.0");
+        existing.setInstallState(PluginState.INSTALLED);
+
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
+
+        // Should not save - plugin already installed with same image:tag
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
     }
 }

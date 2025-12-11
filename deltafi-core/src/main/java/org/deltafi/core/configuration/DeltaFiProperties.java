@@ -112,11 +112,8 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "Default imagePullSecret used in plugin deployments")
     private String pluginImagePullSecret;
 
-    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "Rollback failed plugin deployments", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
-    private boolean pluginAutoRollback = false;
-
-    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT1M")
-    private Duration pluginDeployTimeout = Duration.ofMinutes(1);
+    @PropertyInfo(group = PropertyGroup.PLUGIN_CONTROLS, description = "[Duration or ISO 8601] Max time to wait for a plugin deployment to succeed", defaultValue = "PT3M")
+    private Duration pluginDeployTimeout = Duration.ofMinutes(3);
 
     @PropertyInfo(group = PropertyGroup.DATA_FLOW_CONTROLS, description = "[Duration or ISO 8601] Max time to allow an action to run before restarting the pod. Null (or 0) indicates disabled, which is the default. To enable, this value must be greater than 30 seconds and should be less than the requeueDuration. To disable this feature use 'Revert' (or set the value to 0)")
     private Duration actionExecutionTimeout;

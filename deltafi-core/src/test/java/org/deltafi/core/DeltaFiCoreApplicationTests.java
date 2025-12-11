@@ -430,6 +430,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFiPropertiesService.getDeltaFiProperties().setIngressEnabled(true);
 		deltaFiPropertiesService.upsertProperties();
 		resumePolicyService.refreshCache();
+		registerTestPlugin();
 		loadConfig();
 
 		Mockito.clearInvocations(coreEventQueue);
@@ -1627,9 +1628,17 @@ class DeltaFiCoreApplicationTests {
 		savePlugin(flowPlans, PLUGIN_COORDINATES);
 	}
 
+	void registerTestPlugin() {
+		PluginEntity pluginEntity = new PluginEntity();
+		pluginEntity.setPluginCoordinates(PLUGIN_COORDINATES);
+		pluginEntity.setInstallState(org.deltafi.common.types.PluginState.INSTALLED);
+		pluginRepository.save(pluginEntity);
+	}
+
 	void savePlugin(List<FlowPlan> flowPlans, PluginCoordinates pluginCoordinates) {
 		PluginEntity pluginEntity = new PluginEntity();
 		pluginEntity.setPluginCoordinates(pluginCoordinates);
+		pluginEntity.setInstallState(org.deltafi.common.types.PluginState.INSTALLED);
 		pluginEntity.setFlowPlans(flowPlans);
 		pluginRepository.save(pluginEntity);
 	}
@@ -1707,6 +1716,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetFlows() {
 		clearForFlowTests();
+		pluginRepository.deleteById(new GroupIdArtifactId(PLUGIN_COORDINATES.getGroupId(), PLUGIN_COORDINATES.getArtifactId()));
 
 		PluginCoordinates pluginCoordinates = PluginCoordinates.builder().artifactId("test-actions").groupId("org.deltafi").version("1.0").build();
 		Variable variable = Variable.builder().name("var").description("description").defaultValue("value").required(false).build();
@@ -2528,6 +2538,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void getsPlugins() throws IOException {
+		pluginRepository.deleteAll();
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class));
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
 
@@ -2544,6 +2555,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void registersPlugin() throws IOException {
+		pluginRepository.deleteAll();
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
 
@@ -2557,6 +2569,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void overwritesExistingPlugin() throws IOException {
+		pluginRepository.deleteAll();
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
 
@@ -2581,6 +2594,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void overwritesExistingPluginWithRemovedFlowPlan() throws IOException {
+		pluginRepository.deleteAll();
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
 
@@ -2618,6 +2632,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void registerPluginReplacesExistingPlugin() throws IOException {
+		pluginRepository.deleteAll();
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
 		PluginEntity existingPlugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class);
@@ -2638,6 +2653,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void registerPluginReturnsErrorsOnMissingDependencies() throws IOException {
+		pluginRepository.deleteAll();
 		PluginEntity plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class);
 		ResponseEntity<String> response = postPluginRegistration(plugin);
 
@@ -4968,6 +4984,7 @@ class DeltaFiCoreApplicationTests {
 		pluginVariableRepo.deleteAllInBatch();
 		pluginRepository.deleteAll();
 		pluginRepository.save(pluginService.createSystemPlugin());
+		registerTestPlugin();
 		refreshFlowCaches();
 	}
 
@@ -6395,9 +6412,9 @@ class DeltaFiCoreApplicationTests {
 
 		assertThat(properties.hasMembers()).isTrue();
 		assertThat(properties.getMemberConfigs()).hasSize(1);
-		assertThat(properties.getMemberConfigs().get(0).name()).isEqualTo("site1");
-		assertThat(properties.getMemberConfigs().get(0).url()).isEqualTo("https://site1.example.com");
-		assertThat(properties.getMemberConfigs().get(0).tags()).containsExactly("east", "production");
+		assertThat(properties.getMemberConfigs().getFirst().name()).isEqualTo("site1");
+		assertThat(properties.getMemberConfigs().getFirst().url()).isEqualTo("https://site1.example.com");
+		assertThat(properties.getMemberConfigs().getFirst().tags()).containsExactly("east", "production");
 	}
 
 	@Test
@@ -6420,10 +6437,10 @@ class DeltaFiCoreApplicationTests {
 
 		assertThat(properties.hasMembers()).isTrue();
 		assertThat(properties.getMemberConfigs()).hasSize(1);
-		assertThat(properties.getMemberConfigs().get(0).credentials()).isNotNull();
-		assertThat(properties.getMemberConfigs().get(0).credentials().type()).isEqualTo("basic");
-		assertThat(properties.getMemberConfigs().get(0).credentials().username()).isEqualTo("admin");
-		assertThat(properties.getMemberConfigs().get(0).credentials().passwordEnvVar()).isEqualTo("DEV_PASSWORD");
+		assertThat(properties.getMemberConfigs().getFirst().credentials()).isNotNull();
+		assertThat(properties.getMemberConfigs().getFirst().credentials().type()).isEqualTo("basic");
+		assertThat(properties.getMemberConfigs().getFirst().credentials().username()).isEqualTo("admin");
+		assertThat(properties.getMemberConfigs().getFirst().credentials().passwordEnvVar()).isEqualTo("DEV_PASSWORD");
 	}
 
 	@Test
@@ -6433,13 +6450,13 @@ class DeltaFiCoreApplicationTests {
 
 		var members1 = properties.getMemberConfigs();
 		assertThat(members1).hasSize(1);
-		assertThat(members1.get(0).name()).isEqualTo("site1");
+		assertThat(members1.getFirst().name()).isEqualTo("site1");
 
 		properties.setLeaderConfig("{\"site2\": {\"url\": \"https://site2.example.com\"}}");
 
 		var members2 = properties.getMemberConfigs();
 		assertThat(members2).hasSize(1);
-		assertThat(members2.get(0).name()).isEqualTo("site2");
+		assertThat(members2.getFirst().name()).isEqualTo("site2");
 		assertThat(members1).isNotSameAs(members2);
 	}
 

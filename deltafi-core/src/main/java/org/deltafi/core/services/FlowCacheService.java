@@ -63,6 +63,16 @@ public class FlowCacheService {
                 .toList();
     }
 
+    public List<Flow> getInvalidFlows() {
+        return flowCache.values().stream()
+                .filter(Flow::isInvalid)
+                .toList();
+    }
+
+    public List<Flow> getAllFlows() {
+        return new ArrayList<>(flowCache.values());
+    }
+
     public Flow getFlow(FlowType flowType, String flowName) {
         return flowCache.getOrDefault(new FlowKey(flowName, flowType), null);
     }

@@ -82,16 +82,23 @@ var listCmd = &cobra.Command{
 					image.WriteString(*plugin.ImageName)
 				}
 			}
+			status := string(plugin.InstallState)
+			if plugin.Disabled {
+				status = "DISABLED"
+			} else if plugin.InstallState == graphql.PluginStateFailed && plugin.CanRollback {
+				status = "FAILED (rollback available)"
+			}
 			rows = append(rows, []string{
 				plugin.DisplayName,
 				image.String(),
 				plugin.PluginCoordinates.Version,
+				status,
 			})
 			sort.Slice(rows, func(i, j int) bool {
 				return rows[i][0] < rows[j][0]
 			})
 		}
-		columns := []string{"Name", "Image", "Version"}
+		columns := []string{"Name", "Image", "Version", "Status"}
 
 		plain := cmd.Flags().Lookup("plain").Value.String() == "true"
 
@@ -103,15 +110,19 @@ var listCmd = &cobra.Command{
 
 var installCmd = &cobra.Command{
 	Use:   "install [flags] <image>",
-	Short: "Install plugins from container images",
-	Long: `Install one or more plugins from container registry images.
+	Short: "Install or upgrade plugins from container images",
+	Long: `Install or upgrade plugins from container registry images.
 
 The plugin image must be available in a container registry and contain
 the necessary DeltaFi plugin components. Installation will download
 the image and register the plugin with the system.
 
+To upgrade an existing plugin, simply install with a new image tag.
+The plugin will transition to PENDING and reinstall with the new version.
+
 Examples:
   deltafi plugin install my-plugin:latest
+  deltafi plugin install my-plugin:2.0.0              # Upgrade to new version
   deltafi plugin install plugin1:1.0 plugin2:2.0
   deltafi plugin install private-registry.com/my-plugin:latest --secret my-secret`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -141,7 +152,7 @@ Examples:
 					fmt.Println(styles.FAIL(image))
 					errored = true
 				} else {
-					fmt.Println(styles.OK(image))
+					fmt.Println(styles.OK(image + " queued for installation"))
 				}
 			}
 		}
@@ -487,12 +498,157 @@ Examples:
 	},
 }
 
+var disableCmd = &cobra.Command{
+	Use:   "disable <name>",
+	Short: "Disable a plugin",
+	Long: `Disable a plugin to stop it without losing configuration.
+
+The plugin container will be stopped but all flows and settings are preserved.
+Use 'deltafi plugin enable' to restart the plugin.
+
+Examples:
+  deltafi plugin disable my-plugin`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
+		pluginName := args[0]
+		plugin, err := findPluginByName(pluginName)
+		if err != nil {
+			return err
+		}
+
+		_, err = graphql.DisablePlugin(plugin.PluginCoordinates.GroupId, plugin.PluginCoordinates.ArtifactId, plugin.PluginCoordinates.Version)
+		if err != nil {
+			fmt.Println(styles.RenderError(err))
+			fmt.Println(styles.FAIL(pluginName))
+			os.Exit(1)
+		}
+
+		fmt.Println(styles.OK(pluginName + " disabled"))
+		return nil
+	},
+}
+
+var enableCmd = &cobra.Command{
+	Use:   "enable <name>",
+	Short: "Enable a disabled plugin",
+	Long: `Enable a previously disabled plugin.
+
+The plugin will be queued for installation and its container will be started.
+
+Examples:
+  deltafi plugin enable my-plugin`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
+		pluginName := args[0]
+		plugin, err := findPluginByName(pluginName)
+		if err != nil {
+			return err
+		}
+
+		_, err = graphql.EnablePlugin(plugin.PluginCoordinates.GroupId, plugin.PluginCoordinates.ArtifactId, plugin.PluginCoordinates.Version)
+		if err != nil {
+			fmt.Println(styles.RenderError(err))
+			fmt.Println(styles.FAIL(pluginName))
+			os.Exit(1)
+		}
+
+		fmt.Println(styles.OK(pluginName + " enabled"))
+		return nil
+	},
+}
+
+var rollbackCmd = &cobra.Command{
+	Use:   "rollback <name>",
+	Short: "Rollback a failed plugin to its last successful version",
+	Long: `Rollback a failed plugin upgrade to the last known working version.
+
+This is only available when a plugin upgrade has failed and there was a
+previous successful installation to roll back to.
+
+Examples:
+  deltafi plugin rollback my-plugin`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
+		pluginName := args[0]
+		plugin, err := findPluginByName(pluginName)
+		if err != nil {
+			return err
+		}
+
+		_, err = graphql.RollbackPlugin(plugin.PluginCoordinates.GroupId, plugin.PluginCoordinates.ArtifactId, plugin.PluginCoordinates.Version)
+		if err != nil {
+			fmt.Println(styles.RenderError(err))
+			fmt.Println(styles.FAIL(pluginName))
+			os.Exit(1)
+		}
+
+		fmt.Println(styles.OK(pluginName + " rollback initiated"))
+		return nil
+	},
+}
+
+var retryCmd = &cobra.Command{
+	Use:   "retry <name>",
+	Short: "Retry a failed plugin installation",
+	Long: `Retry installing a plugin that previously failed.
+
+This will attempt to install the plugin again with the same image.
+
+Examples:
+  deltafi plugin retry my-plugin`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		RequireRunningDeltaFi()
+
+		pluginName := args[0]
+		plugin, err := findPluginByName(pluginName)
+		if err != nil {
+			return err
+		}
+
+		_, err = graphql.RetryPluginInstall(plugin.PluginCoordinates.GroupId, plugin.PluginCoordinates.ArtifactId, plugin.PluginCoordinates.Version)
+		if err != nil {
+			fmt.Println(styles.RenderError(err))
+			fmt.Println(styles.FAIL(pluginName))
+			os.Exit(1)
+		}
+
+		fmt.Println(styles.OK(pluginName + " retry initiated"))
+		return nil
+	},
+}
+
+func findPluginByName(name string) (*graphql.GetPluginsPluginsPlugin, error) {
+	resp, err := graphql.GetPlugins()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get plugins: %w", err)
+	}
+
+	for _, plugin := range resp.Plugins {
+		if plugin.DisplayName == name {
+			return &plugin, nil
+		}
+	}
+
+	return nil, fmt.Errorf("plugin %s not found", name)
+}
+
 func init() {
 	rootCmd.AddCommand(pluginCmd)
 	pluginCmd.AddCommand(listCmd)
 	pluginCmd.AddCommand(installCmd)
 	pluginCmd.AddCommand(uninstallCmd)
 	pluginCmd.AddCommand(describeCmd)
+	pluginCmd.AddCommand(disableCmd)
+	pluginCmd.AddCommand(enableCmd)
+	pluginCmd.AddCommand(rollbackCmd)
+	pluginCmd.AddCommand(retryCmd)
 
 	listCmd.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 

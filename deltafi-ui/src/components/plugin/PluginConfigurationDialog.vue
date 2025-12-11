@@ -154,7 +154,7 @@ const pluginUpdateFlow = async () => {
     notify.error(`Installing ${model.value.image} failed`, `Plugin ${model.value.image} was not installed.`, 4000);
     return;
   } else {
-    notify.success(`Installed ${model.value.image}`, `Successfully installed ${model.value.image}.`, 4000);
+    notify.success(`Queued ${model.value.image}`, `Plugin queued for installation.`, 4000);
   }
 };
 

@@ -89,7 +89,8 @@ else
   else
     SUCCESS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.success")
     if [[ $SUCCESS == "true" ]]; then
-      cli_log "${green}Plugin ${bold}$IMAGE${normal}${green} was successfully installed${normal}"
+      cli_log "${green}Plugin ${bold}$IMAGE${normal}${green} was queued for installation${normal}"
+      cli_log "Use 'deltafi list-plugins' to check installation status"
     else
       ERRORS=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}.errors | join(\"\n\")")
       cli_log "${red}Installing $IMAGE failed:"

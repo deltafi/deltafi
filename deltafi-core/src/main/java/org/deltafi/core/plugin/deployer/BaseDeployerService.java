@@ -35,9 +35,7 @@ import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.*;
-import java.util.stream.Stream;
 
 @Slf4j
 public abstract class BaseDeployerService implements DeployerService {
@@ -140,11 +138,13 @@ public abstract class BaseDeployerService implements DeployerService {
     }
 
     /**
-     * Reset the system to the state in the Snapshot
+     * Reset the system to the state in the Snapshot.
+     * This method writes desired state to the database and returns immediately.
+     * The PluginReconciliationService handles actual deployment asynchronously.
      *
      * @param snapshot  snapshot that holds the system state at the time of the snapshot
      * @param hardReset when true reset all other custom settings before applying the system snapshot values
-     * @return the Result of the reset that will hold any errors or information about the reset
+     * @return the Result indicating plugins have been queued for installation
      */
     @Override
     public Result resetFromSnapshot(Snapshot snapshot, boolean hardReset) {
@@ -152,22 +152,43 @@ public abstract class BaseDeployerService implements DeployerService {
             return Result.builder().success(true).info(List.of("Skipping plugins section due to an older snapshot version")).build();
         }
 
+        List<PluginSnapshot> desiredPlugins = snapshot.getPlugins().stream()
+                .filter(p -> StringUtils.isNotBlank(p.imageName()) && !p.imageName().contains(PluginService.CORE_ACTIONS_ARTIFACT_ID))
+                .toList();
+
+        int pluginsQueued = 0;
+        int pluginsRemoving = 0;
+
         if (hardReset) {
-            pluginService.getPlugins()
-                    .stream().filter(this::isNotSystemOrCore)
-                    .forEach(this::uninstallPlugin);
+            // Mark existing non-system/core plugins for removal
+            for (PluginEntity plugin : pluginService.getPlugins().stream().filter(this::isNotSystemOrCore).toList()) {
+                boolean isInDesiredState = desiredPlugins.stream()
+                        .anyMatch(p -> p.pluginCoordinates().equalsIgnoreVersion(plugin.getPluginCoordinates()));
+                if (!isInDesiredState) {
+                    pluginService.markForRemoval(plugin.getPluginCoordinates());
+                    pluginsRemoving++;
+                }
+            }
         }
 
-        List<InstallDetails> installDetailsList = snapshot.getPlugins().stream()
-                .filter(p -> StringUtils.isNotBlank(p.imageName()) && !p.imageName().contains("deltafi-core-actions"))
-                .map(PluginSnapshot::toInstallDetails).toList();
+        // Create pending plugins for all desired plugins
+        for (PluginSnapshot pluginSnapshot : desiredPlugins) {
+            pluginService.createPendingPlugin(pluginSnapshot.imageName(), pluginSnapshot.imagePullSecret());
+            pluginsQueued++;
+        }
 
-        return Result.combine(installOrUpgradePlugins(installDetailsList).stream());
+        return Result.builder()
+                .success(true)
+                .info(List.of(
+                        "Queued " + pluginsQueued + " plugin(s) for installation",
+                        "Marked " + pluginsRemoving + " plugin(s) for removal"
+                ))
+                .build();
     }
 
     private boolean isNotSystemOrCore(PluginEntity plugin) {
         return !(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID.equals(plugin.getPluginCoordinates().getArtifactId()) ||
-                "deltafi-core-actions".equals(plugin.getPluginCoordinates().getArtifactId()));
+                PluginService.CORE_ACTIONS_ARTIFACT_ID.equals(plugin.getPluginCoordinates().getArtifactId()));
     }
 
     @Override
@@ -175,32 +196,8 @@ public abstract class BaseDeployerService implements DeployerService {
         return SnapshotRestoreOrder.PLUGIN_INSTALL_ORDER;
     }
 
-    protected Stream<InstallDetails> getAllPluginInstallInfo() {
-        return this.pluginService.getPlugins().stream()
-                .map(this::toInstallDetails)
-                .filter(Objects::nonNull);
-    }
-
-    private InstallDetails toInstallDetails(PluginEntity pluginEntity) {
-        String imageName = pluginEntity.getImageName();
-        if (StringUtils.isBlank(imageName)) {
-            return null;
-        }
-
-        String secretName = pluginEntity.getImagePullSecret();
-        if (StringUtils.isBlank(secretName)) {
-            secretName = deltaFiPropertiesService.getDeltaFiProperties().getPluginImagePullSecret();
-        }
-
-        if (StringUtils.isNotBlank(pluginEntity.getImageTag())) {
-            imageName += ":" + pluginEntity.getImageTag();
-        }
-
-        return InstallDetails.from(imageName, secretName);
-    }
-
     protected String getGroupName(String appName) {
-        return "deltafi-core-actions".equals(appName) ? "deltafi-core" : "deltafi-plugins";
+        return PluginService.CORE_ACTIONS_ARTIFACT_ID.equals(appName) ? PodService.DELTAFI_CORE_GROUP : PodService.DELTAFI_PLUGINS_GROUP;
     }
 
     private Callable<Result> toCallableDeploy(InstallDetails installDetails) {

@@ -59,6 +59,10 @@ query GetPlugins {
       version
     }
     actionKitVersion
+    installState
+    installError
+    disabled
+    canRollback
   }
 }
 
@@ -100,4 +104,20 @@ query GetPluginDetails {
       masked
     }
   }
+}
+
+mutation DisablePlugin($groupId: String!, $artifactId: String!, $version: String!) {
+  disablePlugin(pluginCoordinates: { groupId: $groupId, artifactId: $artifactId, version: $version })
+}
+
+mutation EnablePlugin($groupId: String!, $artifactId: String!, $version: String!) {
+  enablePlugin(pluginCoordinates: { groupId: $groupId, artifactId: $artifactId, version: $version })
+}
+
+mutation RollbackPlugin($groupId: String!, $artifactId: String!, $version: String!) {
+  rollbackPlugin(pluginCoordinates: { groupId: $groupId, artifactId: $artifactId, version: $version })
+}
+
+mutation RetryPluginInstall($groupId: String!, $artifactId: String!, $version: String!) {
+  retryPluginInstall(pluginCoordinates: { groupId: $groupId, artifactId: $artifactId, version: $version })
 }

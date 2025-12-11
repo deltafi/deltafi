@@ -18,15 +18,24 @@
 package org.deltafi.core.types.snapshot;
 
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.deployer.InstallDetails;
 import org.deltafi.core.types.PluginEntity;
 
-public record PluginSnapshot(String imageName, String imagePullSecret, PluginCoordinates pluginCoordinates) {
+public record PluginSnapshot(String imageName, String imagePullSecret, PluginCoordinates pluginCoordinates, Boolean disabled) {
     public PluginSnapshot(PluginEntity pluginEntity) {
-        this(pluginEntity.imageAndTag(), pluginEntity.getImagePullSecret(), pluginEntity.getPluginCoordinates());
+        this(pluginEntity.imageAndTag(), pluginEntity.getImagePullSecret(), pluginEntity.getPluginCoordinates(), pluginEntity.isDisabled());
     }
 
-    public InstallDetails toInstallDetails() {
-        return InstallDetails.from(this.imageName, this.imagePullSecret);
+    /**
+     * Constructor for backward compatibility with old snapshots missing disabled field.
+     */
+    public PluginSnapshot(String imageName, String imagePullSecret, PluginCoordinates pluginCoordinates) {
+        this(imageName, imagePullSecret, pluginCoordinates, false);
+    }
+
+    /**
+     * Returns whether the plugin is disabled, defaulting to false for old snapshots.
+     */
+    public boolean isDisabled() {
+        return disabled != null && disabled;
     }
 }

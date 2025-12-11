@@ -42,6 +42,8 @@ export default function useDataSource() {
       artifactId: true,
       version: true,
     },
+    pluginReady: true,
+    pluginNotReadyReason: true,
     annotationConfig: {
       annotations: true,
       metadataPatterns: true,

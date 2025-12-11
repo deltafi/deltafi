@@ -17,21 +17,23 @@
 -->
 
 <template>
-  <span v-if="$hasPermission('FlowUpdate')">
-    <ConfirmPopup />
-    <ConfirmPopup :group="rowData.flowType + '_testmode_' + rowData.name">
-      <template #message="slotProps">
-        <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
-          <p class="pl-2" v-html="slotProps.message.message" />
-        </div>
-      </template>
-    </ConfirmPopup>
-    <InputSwitch v-tooltip.top="tooltip" :model-value="rowData.flowStatus.testMode" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.testMode)" />
-  </span>
-  <span v-else class="pr-2 float-left">
-    <Button :label="testModeToolTip" :class="testModeButtonClass" style="width: 5.5rem" disabled />
-  </span>
+  <div class="d-flex justify-content-center">
+    <span v-if="$hasPermission('FlowUpdate')">
+      <ConfirmPopup />
+      <ConfirmPopup :group="rowData.flowType + '_testmode_' + rowData.name">
+        <template #message="slotProps">
+          <div class="flex btn-group p-4">
+            <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
+            <p class="pl-2" v-html="slotProps.message.message" />
+          </div>
+        </template>
+      </ConfirmPopup>
+      <InputSwitch v-tooltip.top="tooltip" :model-value="rowData.flowStatus.testMode" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.testMode)" />
+    </span>
+    <span v-else>
+      <Button :label="testModeToolTip" :class="testModeButtonClass" style="width: 5.5rem" disabled />
+    </span>
+  </div>
 </template>
 
 <script setup>

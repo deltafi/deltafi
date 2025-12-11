@@ -25,7 +25,6 @@ import org.deltafi.core.types.FlowMetrics;
 import org.deltafi.core.types.leader.AggregatedStats;
 import org.deltafi.core.types.leader.ConfigDiff;
 import org.deltafi.core.types.leader.LeaderDashboardData;
-import org.deltafi.core.types.leader.PluginInfo;
 import org.deltafi.core.types.leader.PluginsResponse;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +33,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Map;
 
 /**

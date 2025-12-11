@@ -17,9 +17,7 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.*;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -41,7 +39,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,21 +47,6 @@ class K8sDeployerServiceTest {
     private static final InstallDetails INSTALL_DETAILS = InstallDetails.from("docker.io/plugin:1.0.0", "docker-cred");
     private static final PluginCoordinates SYSTEM = new PluginCoordinates(PluginService.SYSTEM_PLUGIN_GROUP_ID, PluginService.SYSTEM_PLUGIN_ARTIFACT_ID, "1.0.0");
     private static final PluginCoordinates CORE_ACTIONS = new PluginCoordinates("org.deltafi", "deltafi-core-actions", "1.0.0");
-
-    @Mock
-    private NonNamespaceOperation<Deployment, DeploymentList, Resource<Deployment>> deploymentOperation;
-
-    @Mock
-    private MixedOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> deploymentMixedOp;
-
-    @Mock
-    private AppsAPIGroupDSL appsAPIGroupDSL;
-
-    @Mock
-    private RollableScalableResource<Deployment> deploymentResource;
-
-    @Mock
-    private NamespaceableResource<Deployment> namespaceableResource;
 
     final K8sDeployerService k8sDeployerService;
     final KubernetesClient k8sClient;
@@ -120,28 +102,25 @@ class K8sDeployerServiceTest {
 
         Mockito.when(pluginService.getPlugins()).thenReturn(List.of(system, coreActions, plugin));
 
-        setupK8Mocks();
-        Mockito.when(deploymentResource.delete()).thenReturn(Collections.singletonList(new StatusDetails()));
         k8sDeployerService.resetFromSnapshot(snapshot(), true);
         Mockito.verify(pluginService).getPlugins();
-        Mockito.verify(pluginService).uninstallPlugin(plugin.getPluginCoordinates());
-
-        // only one call should be made to uninstall
+        // Async model: marks for removal instead of immediate uninstall
+        Mockito.verify(pluginService).markForRemoval(plugin.getPluginCoordinates());
+        // Creates pending plugins for all snapshot plugins (excluding system/core-actions which have null imageName)
+        Mockito.verify(pluginService, Mockito.times(2)).createPendingPlugin(Mockito.anyString(), Mockito.any());
         Mockito.verifyNoMoreInteractions(pluginService);
     }
 
     @Test
     void testResetFromSnapshot_multiplePlugins() {
-        setupK8Mocks();
-        Mockito.when(deploymentResource.get()).thenReturn(null);
-        Mockito.when(k8sClient.resource(Mockito.any(Deployment.class))).thenReturn(namespaceableResource);
-        Mockito.when(namespaceableResource.serverSideApply()).thenReturn(new Deployment());
+        Mockito.when(pluginService.getPlugins()).thenReturn(List.of());
 
         Result result = k8sDeployerService.resetFromSnapshot(snapshot(), true);
         Assertions.assertThat(result.isSuccess()).isTrue();
 
-        // verify two deployments were applied
-        Mockito.verify(namespaceableResource, Mockito.times(2)).serverSideApply();
+        // Async model: creates pending plugins for reconciliation service to handle
+        // 2 non-system plugins in the snapshot (plugin1 and plugin2)
+        Mockito.verify(pluginService, Mockito.times(2)).createPendingPlugin(Mockito.anyString(), Mockito.any());
     }
 
     Deployment expectedDeployment() {
@@ -157,15 +136,9 @@ class K8sDeployerServiceTest {
         Snapshot snapshot = new Snapshot();
         PluginSnapshot system = new PluginSnapshot(null, null, SYSTEM);
         PluginSnapshot coreActions = new PluginSnapshot("deltafi-core-actions", null, CORE_ACTIONS);
-        PluginSnapshot plugin1 = new PluginSnapshot("image1", "docker-secret", new PluginCoordinates());
-        PluginSnapshot plugin2 = new PluginSnapshot("image2", null, new PluginCoordinates());
+        PluginSnapshot plugin1 = new PluginSnapshot("image1", "docker-secret", new PluginCoordinates("org.test", "plugin1", "1.0.0"));
+        PluginSnapshot plugin2 = new PluginSnapshot("image2", null, new PluginCoordinates("org.test", "plugin2", "1.0.0"));
         snapshot.setPlugins(List.of(system, coreActions, plugin1, plugin2));
         return snapshot;
-    }
-
-    private void setupK8Mocks() {
-        Mockito.when(k8sClient.apps()).thenReturn(appsAPIGroupDSL);
-        Mockito.when(appsAPIGroupDSL.deployments()).thenReturn(deploymentMixedOp);
-        Mockito.when(deploymentMixedOp.withName(Mockito.anyString())).thenReturn(deploymentResource);
     }
 }

@@ -118,6 +118,8 @@ public class DeltaFilesService {
     private final FlowDefinitionService flowDefinitionService;
     private final ParameterResolver parameterResolver;
     private final Optional<LocalContentStorageService> localContentStorageService;
+    private final PluginService pluginService;
+    private final FlowCacheService flowCacheService;
     private final org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue valkeyQueue;
 
     private ExecutorService executor;
@@ -321,7 +323,7 @@ public class DeltaFilesService {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
-        if (restDataSource.isPaused()) {
+        if (shouldQueue(restDataSource)) {
             deltaFile.firstFlow().setState(DeltaFileFlowState.PAUSED);
             deltaFile.setPaused(true);
             deltaFileRepo.insertOne(deltaFile);
@@ -489,7 +491,7 @@ public class DeltaFilesService {
                 .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.firstFlow()))
                 .toList();
 
-        if (dataSource.isPaused()) {
+        if (shouldQueue(dataSource)) {
             for (StateMachineInput stateMachineInput : stateMachineInputs) {
                 stateMachineInput.deltaFile().firstFlow().setState(DeltaFileFlowState.PAUSED);
                 stateMachineInput.deltaFile().setPaused(true);
@@ -700,12 +702,12 @@ public class DeltaFilesService {
         try {
             // Create metadata for the new DeltaFile
             Map<String, String> ingressMetadata = new HashMap<>();
-            
+
             // Add base metadata from the data source configuration
             if (dataSource.getMetadata() != null) {
                 ingressMetadata.putAll(dataSource.getMetadata());
             }
-            
+
             // Add error context metadata
             ingressMetadata.put("onError.sourceFlowName", sourceFlow.getName());
             ingressMetadata.put("onError.sourceFlowType", sourceFlow.getType().name());
@@ -717,7 +719,7 @@ public class DeltaFilesService {
             ingressMetadata.put("onError.sourceName", sourceFile.getName());
             ingressMetadata.put("onError.sourceDataSource", sourceFile.getDataSource());
             ingressMetadata.put("onError.eventTimestamp", event.getStart().toString());
-            
+
             // Include source metadata based on regex patterns
             if (dataSource.getIncludeSourceMetadataRegex() != null && sourceFlow.getMetadata() != null) {
                 String prefix = dataSource.getSourceMetadataPrefix() != null ?
@@ -731,12 +733,12 @@ public class DeltaFilesService {
 
             // Create annotations for the new DeltaFile
             Map<String, String> ingressAnnotations = new HashMap<>();
-            
+
             // Add base annotations from the data source configuration
             if (dataSource.getAnnotationConfig() != null && dataSource.getAnnotationConfig().getAnnotations() != null) {
                 ingressAnnotations.putAll(dataSource.getAnnotationConfig().getAnnotations());
             }
-            
+
             // Include source annotations based on regex patterns
             if (dataSource.getIncludeSourceAnnotationsRegex() != null && sourceFile.getAnnotations() != null) {
                 Map<String, String> sourceAnnotations = Annotation.toMap(sourceFile.getAnnotations());
@@ -786,7 +788,8 @@ public class DeltaFilesService {
             DeltaFile deltaFile = buildIngressDeltaFile(dataSource, ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now(),
                     INGRESS_ACTION, FlowType.ON_ERROR_DATA_SOURCE);
 
-            if (dataSource.isPaused()) {
+            boolean queue = shouldQueue(dataSource);
+            if (queue) {
                 deltaFile.firstFlow().setState(DeltaFileFlowState.PAUSED);
                 deltaFile.setPaused(true);
             }
@@ -796,13 +799,13 @@ public class DeltaFilesService {
             deltaFile.setParentDids(List.of(sourceFile.getDid()));
             deltaFile.firstFlow().setDepth(sourceFlow.getDepth() + 1);
 
-            if (!dataSource.isPaused()) {
+            if (!queue) {
                 advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.firstFlow())), false);
             }
-            
+
             log.debug("Created OnError ingress for data source '{}' triggered by error in flow '{}' action '{}'",
                     dataSource.getName(), sourceFlow.getName(), sourceAction.getName());
-                    
+
         } catch (Exception e) {
             log.error("Failed to create OnError ingress for data source '{}': {}", dataSource.getName(), e.getMessage(), e);
         }
@@ -1943,10 +1946,48 @@ public class DeltaFilesService {
         }
     }
 
-    private boolean canRequeuePaused(DeltaFileFlow flow, Map<FlowType, Set<String>> pausedFlows) {
-        return flow.getState() == DeltaFileFlowState.PAUSED &&
-                !pausedFlows.get(flow.getType()).contains(flow.getName()) &&
-                isNotSkipEgress(flow);
+    /**
+     * Determines if data for this flow should be queued instead of processed immediately.
+     * Data is queued when:
+     * - The flow is explicitly paused by the user
+     * - The flow is invalid (has configuration errors)
+     * - The flow's plugin is not ready (not installed or in a transitional state)
+     */
+    private boolean shouldQueue(Flow flow) {
+        return flow.isPaused()
+                || flow.isInvalid()
+                || !pluginService.isPluginReady(flow.getSourcePlugin());
+    }
+
+    /**
+     * Determines if a paused DeltaFileFlow can be requeued for processing.
+     * A flow can be requeued when:
+     * - The flow is in PAUSED state
+     * - The flow definition is no longer paused
+     * - The flow definition is valid
+     * - The flow's plugin is ready
+     * - Egress is not disabled for this flow
+     */
+    private boolean canRequeuePaused(DeltaFileFlow deltaFileFlow, Map<FlowType, Set<String>> pausedFlows) {
+        if (deltaFileFlow.getState() != DeltaFileFlowState.PAUSED) {
+            return false;
+        }
+        if (pausedFlows.get(deltaFileFlow.getType()).contains(deltaFileFlow.getName())) {
+            return false;
+        }
+        if (!isNotSkipEgress(deltaFileFlow)) {
+            return false;
+        }
+
+        // Check flow definition state
+        Flow flowDef = flowCacheService.getFlow(deltaFileFlow.getType(), deltaFileFlow.getName());
+        if (flowDef == null) {
+            return false; // Flow no longer exists
+        }
+        if (flowDef.isInvalid()) {
+            return false; // Flow has configuration errors
+        }
+        return pluginService.isPluginReady(flowDef.getSourcePlugin()); // Plugin not ready
     }
 
     private WrappedActionInput requeueActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action) {

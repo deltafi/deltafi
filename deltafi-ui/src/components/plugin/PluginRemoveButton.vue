@@ -18,30 +18,18 @@
 
 <template>
   <span>
-    <ConfirmPopup />
-    <ConfirmPopup :group="rowData.combinedPluginCoordinates">
-      <template #message="slotProps">
-        <div class="flex btn-group p-4">
-          <i :class="slotProps.message.icon" style="font-size: 1.5rem" />
-          <p class="pl-2">
-            {{ slotProps.message.message }}
-          </p>
-        </div>
-      </template>
-    </ConfirmPopup>
-    <Button v-tooltip.left="`Remove Plugin`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmationPopup($event, rowData.combinedPluginCoordinates, rowData.displayName, rowData.pluginCoordinates)" />
+    <ConfirmDialog :group="rowData.combinedPluginCoordinates" />
   </span>
 </template>
 
 <script setup>
 import usePlugins from "@/composables/usePlugins";
 import useNotifications from "@/composables/useNotifications";
-import { toRefs } from "vue";
+import { reactive } from "vue";
 
 import _ from "lodash";
 
-import ConfirmPopup from "primevue/confirmpopup";
-import Button from "primevue/button";
+import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
@@ -52,39 +40,46 @@ const notify = useNotifications();
 const props = defineProps({
   rowDataProp: {
     type: Object,
-    required: false,
-    default: null,
+    required: true,
   },
 });
 
-const { rowDataProp: rowData } = toRefs(props);
+const { rowDataProp: rowData } = reactive(props);
 
-const confirmationPopup = (event, combinedPluginCoordinates, displayName, pluginCoordinates) => {
+const confirmationPopup = () => {
   confirm.require({
-    target: event.currentTarget,
-    group: combinedPluginCoordinates,
-    message: `Remove ${displayName} Plugin?`,
+    position: "center",
+    group: rowData.combinedPluginCoordinates,
+    message: `Remove ${rowData.displayName} Plugin?`,
     acceptLabel: "Remove",
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",
     accept: () => {
-      notify.info("Removing Plugin", `Removing Plugin ${displayName}.`, 3000);
-      confirmedRemovePlugin(displayName, pluginCoordinates);
+      notify.info("Removing Plugin", `Removing Plugin ${rowData.displayName}.`, 3000);
+      confirmedRemovePlugin();
     },
     reject: () => { },
   });
 };
 
-const confirmedRemovePlugin = async (displayName, pluginCoordinates) => {
-  const response = await uninstallPlugin(pluginCoordinates.groupId, pluginCoordinates.artifactId, pluginCoordinates.version);
+const confirmedRemovePlugin = async () => {
+  const { groupId, artifactId, version } = rowData.pluginCoordinates;
+  const response = await uninstallPlugin(groupId, artifactId, version);
   const responseErrors = _.get(response.uninstallPlugin, "errors", null);
   if (!_.isEmpty(responseErrors)) {
-    notify.error(`Removing plugin ${displayName} failed`, `Plugin ${displayName} was not removed.`, 4000);
+    notify.error(`Removing plugin ${rowData.displayName} failed`, `Plugin ${rowData.displayName} was not removed.`, 4000);
     emit("pluginRemovalErrors", responseErrors);
   } else {
-    delete rowData.value;
-    notify.success(`Removed ${displayName}`, `Successfully Removed ${displayName}.`, 4000);
+    notify.success(`Removed ${rowData.displayName}`, `Successfully Removed ${rowData.displayName}.`, 4000);
     emit("reloadPlugins");
   }
 };
+
+const showDialog = () => {
+  confirmationPopup();
+};
+
+defineExpose({
+  showDialog,
+});
 </script>

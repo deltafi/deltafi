@@ -23,6 +23,7 @@ import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.FlowDefinitionService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
@@ -53,6 +54,7 @@ public class PublisherService {
     private final AnalyticEventService analyticEventService;
     private final FlowDefinitionService flowDefinitionService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final PluginService pluginService;
 
     /**
      * Create new DeltaFileFlows for each subscriber that accepts the Deltafile and return the set.
@@ -127,10 +129,27 @@ public class PublisherService {
             nextFlow.setTestMode(true);
             nextFlow.setTestModeReason(subscriber.getName());
         }
-        if (subscriber.isPaused()) {
+        if (shouldQueue(subscriber)) {
             nextFlow.setState(DeltaFileFlowState.PAUSED);
         }
         return nextFlow;
+    }
+
+    /**
+     * Determines if data for this subscriber should be queued instead of processed immediately.
+     * Data is queued when:
+     * - The subscriber is explicitly paused by the user
+     * - The subscriber is invalid (has configuration errors, including plugin not ready)
+     */
+    private boolean shouldQueue(Subscriber subscriber) {
+        if (subscriber.isPaused()) {
+            return true;
+        }
+        // All Subscriber implementations (TransformFlow, DataSink) extend Flow
+        if (subscriber instanceof Flow flow) {
+            return flow.isInvalid();
+        }
+        return false;
     }
 
     private Set<DeltaFileFlow> subscribers(Set<String> topics, DeltaFile deltaFile, DeltaFileFlow completedFlow) {

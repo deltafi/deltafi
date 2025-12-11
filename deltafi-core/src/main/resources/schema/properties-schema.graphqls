@@ -96,7 +96,6 @@ type DeltaFiProperties {
     ingressEnabled: Boolean!
     ingressDiskSpaceRequirementInMb: Long!
     pluginImagePullSecret: String
-    pluginAutoRollback: Boolean
     pluginDeployTimeout: String
     checkActionQueueSizeThreshold: Int!
     checkColdQueueMinimumGrowing: Int!
@@ -137,7 +136,6 @@ input DeltaFiPropertiesInput {
     ingressEnabled: Boolean!
     ingressDiskSpaceRequirementInMb: Long!
     pluginImagePullSecret: String
-    pluginAutoRollback: Boolean
     pluginDeployTimeout: String
     checkActionQueueSizeThreshold: Int!
     checkColdQueueMinimumGrowing: Int!

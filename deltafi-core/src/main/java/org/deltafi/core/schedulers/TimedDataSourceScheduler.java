@@ -44,11 +44,15 @@ public class TimedDataSourceScheduler {
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final SystemService systemService;
     private final ErrorCountService errorCountService;
+    private final PluginService pluginService;
     private final Clock clock;
 
     @Scheduled(fixedDelay = 1000)
     public void triggerTimedDataSources() {
         for (TimedDataSource dataSource : timedDataSourceService.getRunningFlows()) {
+            if (dataSource.isInvalid() || !pluginService.isPluginReady(dataSource.getSourcePlugin())) {
+                continue;
+            }
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled() &&
                     !systemService.isContentStorageDepleted()) {

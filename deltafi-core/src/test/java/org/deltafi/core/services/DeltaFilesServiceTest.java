@@ -29,6 +29,9 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
+import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.generated.types.FlowErrorType;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -81,6 +84,8 @@ class DeltaFilesServiceTest {
     private final AnalyticEventService analyticEventService;
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService;
     private final FullFlowExemplarService fullFlowExemplarService;
+    private final PluginService pluginService;
+    private final FlowCacheService flowCacheService;
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
@@ -108,7 +113,8 @@ class DeltaFilesServiceTest {
                           @Mock TimedDataSourceService timedDataSourceService, @Mock OnErrorDataSourceService onErrorDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
                           @Mock Environment environment, @Mock IdentityService identityService,
-                          @Mock ParameterResolver parameterResolver, @Mock ValkeyKeyedBlockingQueue valkeyQueue) {
+                          @Mock ParameterResolver parameterResolver, @Mock PluginService pluginService,
+                          @Mock FlowCacheService flowCacheService, @Mock ValkeyKeyedBlockingQueue valkeyQueue) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.dataSinkService = dataSinkService;
@@ -128,11 +134,13 @@ class DeltaFilesServiceTest {
         this.analyticEventService = analyticEventService;
         this.mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
         this.fullFlowExemplarService = new FullFlowExemplarService(flowDefinitionService, utilService);
+        this.pluginService = pluginService;
+        this.flowCacheService = flowCacheService;
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 onErrorDataSourceService, queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
-                flowDefinitionService, parameterResolver, Optional.empty(), valkeyQueue);
+                flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, valkeyQueue);
     }
 
     @AfterEach
@@ -222,6 +230,89 @@ class DeltaFilesServiceTest {
         assertEquals(did, deltaFile.getDid());
         assertTrue(ingressFlow.isTestMode());
         assertTrue(ingressFlow.lastCompleteAction().isPresent());
+    }
+
+    @Test
+    void ingressRest_queuesWhenFlowIsPaused() {
+        RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
+        dataSource.getFlowStatus().setState(FlowState.PAUSED);
+        when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
+
+        UUID did = UUID.randomUUID();
+        List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
+                Map.of(), content, Map.of());
+
+        DeltaFile deltaFile = deltaFilesService.ingressRest(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+
+        assertNotNull(deltaFile);
+        assertEquals(DeltaFileFlowState.PAUSED, deltaFile.firstFlow().getState());
+        assertTrue(deltaFile.getPaused());
+        verify(deltaFileRepo).insertOne(deltaFile);
+        verifyNoInteractions(stateMachine); // Should NOT advance when queued
+    }
+
+    @Test
+    void ingressRest_queuesWhenFlowIsInvalid() {
+        RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
+        dataSource.getFlowStatus().setErrors(List.of(new FlowConfigError("action", FlowErrorType.INVALID_CONFIG, "Validation error")));
+        when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
+
+        UUID did = UUID.randomUUID();
+        List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
+                Map.of(), content, Map.of());
+
+        DeltaFile deltaFile = deltaFilesService.ingressRest(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+
+        assertNotNull(deltaFile);
+        assertEquals(DeltaFileFlowState.PAUSED, deltaFile.firstFlow().getState());
+        assertTrue(deltaFile.getPaused());
+        verify(deltaFileRepo).insertOne(deltaFile);
+        verifyNoInteractions(stateMachine);
+    }
+
+    @Test
+    void ingressRest_queuesWhenPluginNotReady() {
+        RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
+        PluginCoordinates pluginCoords = new PluginCoordinates("org.test", "plugin", "1.0.0");
+        dataSource.setSourcePlugin(pluginCoords);
+        when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
+        when(pluginService.isPluginReady(pluginCoords)).thenReturn(false);
+
+        UUID did = UUID.randomUUID();
+        List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
+                Map.of(), content, Map.of());
+
+        DeltaFile deltaFile = deltaFilesService.ingressRest(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+
+        assertNotNull(deltaFile);
+        assertEquals(DeltaFileFlowState.PAUSED, deltaFile.firstFlow().getState());
+        assertTrue(deltaFile.getPaused());
+        verify(deltaFileRepo).insertOne(deltaFile);
+        verifyNoInteractions(stateMachine);
+    }
+
+    @Test
+    void ingressRest_advancesWhenPluginIsReady() {
+        RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
+        PluginCoordinates pluginCoords = new PluginCoordinates("org.test", "plugin", "1.0.0");
+        dataSource.setSourcePlugin(pluginCoords);
+        when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
+        when(pluginService.isPluginReady(pluginCoords)).thenReturn(true);
+
+        UUID did = UUID.randomUUID();
+        List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
+                Map.of(), content, Map.of());
+
+        DeltaFile deltaFile = deltaFilesService.ingressRest(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+
+        assertNotNull(deltaFile);
+        assertNotEquals(DeltaFileFlowState.PAUSED, deltaFile.firstFlow().getState());
+        assertFalse(deltaFile.getPaused());
+        verify(stateMachine).advance(Mockito.any()); // Should advance when not queued
     }
 
     @Test
@@ -1301,6 +1392,13 @@ class DeltaFilesServiceTest {
         Mockito.when(dataSinkService.getPausedFlows()).thenReturn(List.of());
         Mockito.when(deltaFileRepo.findPausedForRequeue(Set.of(), Set.of(), Set.of(), Set.of(), true, 5000))
                 .thenReturn(List.of(deltaFile));
+
+        // Mock flow definitions for canRequeuePaused checks - both flows are valid and plugin-ready
+        TransformFlow transformFlow = FlowBuilders.buildTransformFlow("sampleTransform", FlowState.RUNNING, Set.of());
+        Mockito.when(flowCacheService.getFlow(FlowType.TRANSFORM, "sampleTransform")).thenReturn(transformFlow);
+        DataSink dataSinkFlow = FlowBuilders.buildDataSink("sampleEgress", FlowState.RUNNING, Set.of());
+        Mockito.when(flowCacheService.getFlow(FlowType.DATA_SINK, "sampleEgress")).thenReturn(dataSinkFlow);
+        Mockito.when(pluginService.isPluginReady(Mockito.any())).thenReturn(true);
 
         mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(false);
         deltaFilesService.requeuePausedFlows();

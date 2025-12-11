@@ -37,4 +37,10 @@ public class Plugin {
   private List<Variable> variables;
   private List<FlowPlan> flowPlans;
   private List<LookupTable> lookupTables;
+  private PluginState installState;
+  private String installError;
+  private int installAttempts;
+  private String lastSuccessfulVersion;
+  private boolean canRollback;
+  private boolean disabled;
 }

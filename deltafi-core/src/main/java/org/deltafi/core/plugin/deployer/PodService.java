@@ -33,6 +33,7 @@ import static org.deltafi.core.plugin.deployer.K8sDeployerService.APP_LABEL_KEY;
 @RequiredArgsConstructor
 public class PodService {
     public static final String GROUP = "group";
+    public static final String DELTAFI_CORE_GROUP = "deltafi-core";
     public static final String DELTAFI_PLUGINS_GROUP = "deltafi-plugins";
     private final KubernetesClient k8sClient;
 

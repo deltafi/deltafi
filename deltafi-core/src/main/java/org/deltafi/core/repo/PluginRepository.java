@@ -38,4 +38,6 @@ public interface PluginRepository extends JpaRepository<PluginEntity, GroupIdArt
             "AND dep->>'version' = :#{#coords.version}" +
             ")", nativeQuery = true)
     List<PluginEntity> findPluginsWithDependency(PluginCoordinates coords);
+
+    Optional<PluginEntity> findByImageName(String imageName);
 }

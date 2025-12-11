@@ -114,6 +114,8 @@ export const dataSinkPlanFields = {
 
 export const transformFlow = {
   ...sourcePluginFields,
+  pluginReady: true,
+  pluginNotReadyReason: true,
   ...transformFlowFields,
 };
 
@@ -124,6 +126,8 @@ export const transformFlowPlan = {
 
 export const dataSink = {
   ...sourcePluginFields,
+  pluginReady: true,
+  pluginNotReadyReason: true,
   ...dataSinkFields,
 };
 

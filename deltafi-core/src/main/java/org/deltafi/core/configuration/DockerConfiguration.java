@@ -33,7 +33,6 @@ import org.deltafi.core.services.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
 
 @Configuration
 @Profile("!kubernetes")
@@ -62,7 +61,7 @@ public class DockerConfiguration {
 
     @Bean
     public DeployerService dockerDeployerService(DockerClient dockerClient, PluginService pluginService, SslSecretNames sslSecretNames, EventService eventService,
-                                                 EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService, Environment environment) {
-        return new DockerDeployerService(dockerClient, pluginService, sslSecretNames, eventService, environmentVariableHelper, deltaFiPropertiesService, environment);
+                                                 EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
+        return new DockerDeployerService(dockerClient, pluginService, sslSecretNames, eventService, environmentVariableHelper, deltaFiPropertiesService);
     }
 }

@@ -28,6 +28,7 @@ import org.deltafi.core.plugin.deployer.InstallDetails;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -51,13 +52,26 @@ public class PluginEntity {
     private String actionKitVersion;
     private String registrationHash;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private List<ActionDescriptor> actions;
+    @Enumerated(EnumType.STRING)
+    private PluginState installState = PluginState.INSTALLED;
+
+    private String installError;
+    private OffsetDateTime lastStateChange;
+    private int installAttempts;
+
+    private String lastSuccessfulVersion;
+    private String lastSuccessfulImage;
+    private String lastSuccessfulImageTag;
+
+    private boolean disabled;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<PluginCoordinates> dependencies;
+    private List<ActionDescriptor> actions = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<PluginCoordinates> dependencies = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -117,6 +131,12 @@ public class PluginEntity {
         plugin.setVariables(this.variables);
         plugin.setFlowPlans(this.flowPlans);
         plugin.setLookupTables(this.lookupTables);
+        plugin.setInstallState(this.installState != null ? this.installState : PluginState.INSTALLED);
+        plugin.setInstallError(this.installError);
+        plugin.setInstallAttempts(this.installAttempts);
+        plugin.setLastSuccessfulVersion(this.lastSuccessfulVersion);
+        plugin.setCanRollback(this.canRollback());
+        plugin.setDisabled(this.isDisabled());
         return plugin;
     }
 
@@ -139,5 +159,92 @@ public class PluginEntity {
 
     public String imageAndTag() {
         return StringUtils.isNotEmpty(imageTag) ? imageName + ":" + imageTag : imageName;
+    }
+
+    /**
+     * Transition to INSTALLING state.
+     * Increments install attempts unless this is an auto-restart from INSTALLED.
+     */
+    public void transitionToInstalling(boolean isAutoRestart) {
+        if (!isAutoRestart) {
+            this.installAttempts++;
+            // Clear fields that come from plugin registration - new container must re-register
+            this.registrationHash = null;
+            this.version = "loading";
+            this.actionKitVersion = "loading";
+        }
+        this.installState = PluginState.INSTALLING;
+        this.installError = null;
+        this.lastStateChange = OffsetDateTime.now();
+    }
+
+    /**
+     * Transition to INSTALLED state after successful registration.
+     * Saves current version/image as last successful for potential rollback.
+     */
+    public void transitionToInstalled() {
+        this.installState = PluginState.INSTALLED;
+        this.installError = null;
+        this.lastStateChange = OffsetDateTime.now();
+
+        // Save current version as last successful for rollback
+        this.lastSuccessfulVersion = this.version;
+        this.lastSuccessfulImage = this.imageName;
+        this.lastSuccessfulImageTag = this.imageTag;
+    }
+
+    /**
+     * Transition to FAILED state with an error message.
+     */
+    public void transitionToFailed(String error) {
+        this.installState = PluginState.FAILED;
+        this.installError = error;
+        this.lastStateChange = OffsetDateTime.now();
+    }
+
+    /**
+     * Transition to REMOVING state.
+     */
+    public void transitionToRemoving() {
+        this.installState = PluginState.REMOVING;
+        this.lastStateChange = OffsetDateTime.now();
+    }
+
+    /**
+     * Reset to PENDING state for retry.
+     */
+    public void transitionToPending() {
+        this.installState = PluginState.PENDING;
+        this.installError = null;
+        this.lastStateChange = OffsetDateTime.now();
+    }
+
+    /**
+     * Check if rollback to a previous version is available.
+     */
+    @Transient
+    public boolean canRollback() {
+        return installState == PluginState.FAILED &&
+               lastSuccessfulVersion != null &&
+               lastSuccessfulImage != null &&
+               !lastSuccessfulVersion.equals(version);
+    }
+
+    /**
+     * Rollback to the last successful version.
+     * Sets the image/version back to last successful and transitions to PENDING.
+     */
+    public void rollback() {
+        if (!canRollback()) {
+            return;
+        }
+
+        this.version = this.lastSuccessfulVersion;
+        this.imageName = this.lastSuccessfulImage;
+        this.imageTag = this.lastSuccessfulImageTag;
+        this.installState = PluginState.PENDING;
+        this.installError = null;
+        this.installAttempts = 0;
+        this.lastStateChange = OffsetDateTime.now();
     }
 }

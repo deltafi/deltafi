@@ -264,6 +264,10 @@ type DataSink {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  "Whether the plugin that owns this flow is ready to process data"
+  pluginReady: Boolean!
+  "Reason why the plugin is not ready, or null if it is ready"
+  pluginNotReadyReason: String
   flowStatus: FlowStatus!
   subscribe: [Rule!]!
   expectedAnnotations: [String]
@@ -283,6 +287,10 @@ interface DataSource {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  "Whether the plugin that owns this flow is ready to process data"
+  pluginReady: Boolean!
+  "Reason why the plugin is not ready, or null if it is ready"
+  pluginNotReadyReason: String
   maxErrors: Int!
   flowStatus: FlowStatus!
   topic: String!
@@ -296,6 +304,10 @@ type TimedDataSource implements DataSource {
   metadata: Metadata
   annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
+  "Whether the plugin that owns this flow is ready to process data"
+  pluginReady: Boolean!
+  "Reason why the plugin is not ready, or null if it is ready"
+  pluginNotReadyReason: String
   maxErrors: Int!
   flowStatus: FlowStatus!
   topic: String!
@@ -319,6 +331,10 @@ type RestDataSource implements DataSource {
   metadata: Metadata
   annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
+  "Whether the plugin that owns this flow is ready to process data"
+  pluginReady: Boolean!
+  "Reason why the plugin is not ready, or null if it is ready"
+  pluginNotReadyReason: String
   maxErrors: Int!
   rateLimit: RateLimit
   flowStatus: FlowStatus!
@@ -333,6 +349,10 @@ type OnErrorDataSource implements DataSource {
   metadata: Metadata
   annotationConfig: AnnotationConfig
   sourcePlugin: PluginCoordinates!
+  "Whether the plugin that owns this flow is ready to process data"
+  pluginReady: Boolean!
+  "Reason why the plugin is not ready, or null if it is ready"
+  pluginNotReadyReason: String
   maxErrors: Int!
   flowStatus: FlowStatus!
   topic: String!
@@ -352,6 +372,10 @@ type TransformFlow {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  "Whether the plugin that owns this flow is ready to process data"
+  pluginReady: Boolean!
+  "Reason why the plugin is not ready, or null if it is ready"
+  pluginNotReadyReason: String
   subscribe: [Rule!]!
   flowStatus: FlowStatus!
   transformActions: [ActionConfiguration!]

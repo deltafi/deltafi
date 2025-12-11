@@ -47,6 +47,17 @@ input PluginVariablesInput {
 }
 
 """
+Installation state of a plugin
+"""
+enum PluginState {
+    PENDING
+    INSTALLING
+    INSTALLED
+    FAILED
+    REMOVING
+}
+
+"""
 A Plugin is a collection of actions. It may depend on other Plugins.
 """
 type Plugin {
@@ -72,6 +83,18 @@ type Plugin {
     dependencies: [PluginCoordinates!]
     "Variables associated with this plugin"
     variables: [Variable]
+    "Current state"
+    installState: PluginState!
+    "Error message if installation failed"
+    installError: String
+    "Number of installation attempts"
+    installAttempts: Int!
+    "Last successfully installed version (for rollback)"
+    lastSuccessfulVersion: String
+    "Whether rollback to previous version is available"
+    canRollback: Boolean!
+    "Whether the plugin is disabled"
+    disabled: Boolean!
 }
 
 input PluginInput {
@@ -207,6 +230,29 @@ input DescriptionWithConditionsInput {
     conditions: [String!]
 }
 
+"""
+Summary of plugin status across all plugins
+"""
+type PluginStateSummary {
+    "Number of plugins in INSTALLED state"
+    installed: Int!
+    "Number of plugins in PENDING state"
+    pending: Int!
+    "Number of plugins in INSTALLING state"
+    installing: Int!
+    "Number of plugins in FAILED state"
+    failed: Int!
+    "Number of plugins in REMOVING state"
+    removing: Int!
+    "List of plugins that failed to install"
+    failedPlugins: [Plugin!]!
+}
+
+extend type Query {
+    "Get summary of plugin installation status"
+    pluginInstallStatus: PluginStateSummary!
+}
+
 extend type Mutation {
     "Install the plugin from the given image name"
     installPlugin(image: String!, imagePullSecret: String): Result!
@@ -219,6 +265,18 @@ extend type Mutation {
 
     "Restart the plugin with the given coordinates"
     restartPlugin(pluginName: String!, waitForSuccess: Boolean): Boolean!
+
+    "Retry installation of a failed plugin"
+    retryPluginInstall(pluginCoordinates: PluginCoordinatesInput!): Boolean!
+
+    "Rollback a failed plugin to its last successful version"
+    rollbackPlugin(pluginCoordinates: PluginCoordinatesInput!): Boolean!
+
+    "Disable a plugin - stops the container but preserves the database record"
+    disablePlugin(pluginCoordinates: PluginCoordinatesInput!): Boolean!
+
+    "Enable a previously disabled plugin - reinstalls it"
+    enablePlugin(pluginCoordinates: PluginCoordinatesInput!): Boolean!
 
     savePluginVariables(variables: [VariableInput]!) : Boolean!
     removePluginVariables: Boolean!

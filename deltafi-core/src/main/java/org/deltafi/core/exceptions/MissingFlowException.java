@@ -26,6 +26,7 @@ public class MissingFlowException extends RuntimeException {
     private static final String MISSING_FLOW_CAUSE = "The %s is no longer installed";
     private static final String NOT_RUNNING_CAUSE = "The %s is stopped";
     private static final String INVALID_CAUSE = "The %s is invalid";
+    private static final String PLUGIN_DISABLED_CAUSE = "The %s's plugin is disabled";
 
     private final String missingCause;
 
@@ -44,5 +45,9 @@ public class MissingFlowException extends RuntimeException {
 
     public static MissingFlowException invalid(String flowName, FlowType flowType) {
         return new MissingFlowException(flowType, flowName, "valid", INVALID_CAUSE);
+    }
+
+    public static MissingFlowException pluginDisabled(String flowName, FlowType flowType) {
+        return new MissingFlowException(flowType, flowName, "available", PLUGIN_DISABLED_CAUSE);
     }
 }

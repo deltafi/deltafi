@@ -108,11 +108,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public boolean stopFlow(String flowName) {
         FlowT flow = getFlowOrThrow(flowName);
 
-        if (flow.isInvalid()) {
-            log.warn("Tried to stop {} {} when it was in an invalid state", flowType, flowName);
-            throw new IllegalStateException("Flow: " + flowName + " cannot be stopped until configuration errors are resolved");
-        }
-
         if (flow.isStopped()) {
             log.warn("Tried to stop {} {} which was already stopped", flowType, flowName);
             return false;
@@ -128,11 +123,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     public boolean pauseFlow(String flowName) {
         FlowT flow = getFlowOrThrow(flowName);
-
-        if (flow.isInvalid()) {
-            log.warn("Tried to pause {} {} when it was in an invalid state", flowType, flowName);
-            throw new IllegalStateException("Flow: " + flowName + " cannot be paused until configuration errors are resolved");
-        }
 
         if (flow.isPaused()) {
             log.warn("Tried to pause {} {} which was already paused", flowType, flowName);
@@ -292,7 +282,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     /**
      * Find the running flow with the given name.
      * <p>
-     * Throws an exception if the given flow is not running
+     * Throws an exception if the flow does not exist or is explicitly stopped.
+     * Note: Invalid flows and flows with unavailable plugins are not rejected here -
+     * they are handled at the ingress/publish level to queue data instead of rejecting it.
      * @param flowName name of the flow to find
      * @return the flow with the given name
      */
@@ -300,11 +292,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         Flow flow = flowCacheService.getFlow(flowType, flowName);
         if (flow == null) {
             throw MissingFlowException.notFound(flowName, flowType);
-        } else if (flow.isInvalid()) {
-            throw MissingFlowException.invalid(flowName, flowType);
         } else if (flow.isStopped()){
             throw MissingFlowException.stopped(flowName, flowType);
         }
+        // Note: isInvalid() check removed - invalid flows should queue data, not reject it
 
         return flowClass.cast(flow);
     }
@@ -459,7 +450,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public void removeByName(String flowName, PluginCoordinates systemPlugin) {
         FlowT flow = flowRepo.findByNameAndType(flowName, flowType, flowClass).orElse(null);
         if (flow != null) {
-            if (flow.isRunning()) {
+            if (flow.isRunning() && !flow.isInvalid()) {
                 throw new IllegalStateException("Flow " + flowName + " cannot be removed while it is running");
             } else if (!systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
                 throw new IllegalArgumentException("Flow " + flowName + " is not a " + systemPlugin.getArtifactId() + " flow and cannot be removed");

@@ -107,8 +107,8 @@ public class GraphiteQueryService {
         for (GraphiteSeries s : series) {
             long sum = 0;
             for (List<Object> point : s.datapoints()) {
-                if (point.get(0) != null) {
-                    sum += ((Number) point.get(0)).longValue();
+                if (point.getFirst() != null) {
+                    sum += ((Number) point.getFirst()).longValue();
                 }
             }
             result.put(s.target(), sum);
@@ -128,7 +128,7 @@ public class GraphiteQueryService {
             // Find the latest non-null value
             Long latest = null;
             for (int i = s.datapoints().size() - 1; i >= 0; i--) {
-                Object value = s.datapoints().get(i).get(0);
+                Object value = s.datapoints().get(i).getFirst();
                 if (value != null) {
                     latest = ((Number) value).longValue();
                     break;

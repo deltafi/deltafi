@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span v-if="states.includes(rowData.flowStatus.state) && rowData.flowStatus.valid && $hasPermission('FlowUpdate')">
+  <span v-if="states.includes(rowData.flowStatus.state) && $hasPermission('FlowUpdate')">
     <ConfirmDialog :group="dataSourceType + '_' + rowData.name">
       <template #message="slotProps">
         <span class="p-confirm-dialog-icon pi pi-exclamation-triangle" />
@@ -26,9 +26,6 @@
     </ConfirmDialog>
     <FlowControlButtons v-model="rowData.flowStatus.state" class="control-buttons" @start="start()" @pause="pause()" @stop="stop()" />
   </span>
-  <span v-else class="pt-1">
-    <Tag v-tooltip.left="tooltip" class="ml-2" value="INVALID" severity="info" icon="pi pi-info-circle" :rounded="true" />
-  </span>
 </template>
 
 <script setup>
@@ -36,12 +33,10 @@ import FlowControlButtons from "@/components/FlowControlButtons.vue";
 import useNotifications from "@/composables/useNotifications";
 import useTopics from "@/composables/useTopics";
 import useFlows from "@/composables/useFlows";
-import { computed, toRefs, onBeforeMount, ref } from "vue";
+import { toRefs, onBeforeMount, ref } from "vue";
 
-import Tag from "primevue/tag";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
-import _ from "lodash";
 
 const { hasActiveSubscribers } = useTopics();
 const confirm = useConfirm();
@@ -149,14 +144,4 @@ const stop = async () => {
     }
   });
 }
-
-const tooltip = computed(() => {
-  let errorsList = _.map(rowData.value.flowStatus.errors, "message");
-
-  if (errorsList.toString().includes(";")) {
-    errorsList = errorsList.toString().split(";");
-  }
-
-  return ` Errors:\n •${errorsList.join("\n•")}`;
-});
 </script>

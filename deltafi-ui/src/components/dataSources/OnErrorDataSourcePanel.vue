@@ -41,7 +41,12 @@
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
-              <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
+              <span>
+                <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
+                <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: '/config/plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
+                  <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
+                </PermissionedRouterLink>
+              </span>
               <span>
                 <span class="d-flex align-items-center">
                   <DataSourceNameColumnButtonGroup key="name" :row-data-prop="data" @reload-data-sources="refresh" />
@@ -69,6 +74,11 @@
         <Column header="Test Mode" class="switch-column">
           <template #body="{ data }">
             <OnErrorDataSourceTestModeInputSwitch :row-data-prop="data" />
+          </template>
+        </Column>
+        <Column header="Status" :style="{ width: '7%' }">
+          <template #body="{ data }">
+            <FlowStatusBadge :row-data="data" />
           </template>
         </Column>
         <Column :style="{ width: '7%' }" class="switch-column">
@@ -126,7 +136,9 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DataSourceNameColumnButtonGroup from "@/components/dataSources/DataSourceNameColumnButtonGroup.vue";
+import FlowStatusBadge from "@/components/flow/FlowStatusBadge.vue";
 import OnErrorDataSourceTestModeInputSwitch from "@/components/dataSources/OnErrorDataSourceTestModeInputSwitch.vue";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import TopicSubscribers from "@/components/topics/TopicSubscribers.vue";
 import Timestamp from "@/components/Timestamp.vue";
@@ -227,6 +239,10 @@ const showAction = (actionName) => {
   viewDialogVisible.value = true;
 };
 // End Dialog
+
+const concatMvnCoordinates = (sourcePlugin) => {
+  return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
+};
 
 const refresh = async () => {
   // Do not refresh data while editing or confirming.

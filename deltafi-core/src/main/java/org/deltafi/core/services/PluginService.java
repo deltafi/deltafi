@@ -32,6 +32,7 @@ import org.deltafi.core.generated.types.SystemFlowPlans;
 import org.deltafi.core.integration.IntegrationService;
 import org.deltafi.core.lookup.LookupTableService;
 import org.deltafi.core.lookup.LookupTableServiceException;
+import org.deltafi.core.plugin.deployer.InstallDetails;
 import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.*;
@@ -53,6 +54,7 @@ import java.util.stream.Stream;
 public class PluginService implements Snapshotter {
     public static final String SYSTEM_PLUGIN_GROUP_ID = "org.deltafi";
     public static final String SYSTEM_PLUGIN_ARTIFACT_ID = "system-plugin";
+    public static final String CORE_ACTIONS_ARTIFACT_ID = "deltafi-core-actions";
     public static final GroupIdArtifactId SYSTEM_PLUGIN_ID
             = new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID);
 
@@ -82,6 +84,7 @@ public class PluginService implements Snapshotter {
 
     private Map<String, ActionDescriptor> actionDescriptorMap;
     private Map<String, String> actionsToPlugin;
+    private Map<String, String> pluginNotReadyReasons; // artifactId -> reason (null if ready)
 
     public PluginService(PluginRepository pluginRepo, PluginVariableService pluginVariableService,
             BuildProperties buildProperties, DataSinkService dataSinkService,
@@ -111,7 +114,7 @@ public class PluginService implements Snapshotter {
         this.pluginCleaners = pluginCleaners;
         this.lookupTableService = lookupTableService;
     }
-    
+
     @PostConstruct
     public void updateSystemPlugin() {
         if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
@@ -162,15 +165,46 @@ public class PluginService implements Snapshotter {
     }
 
     private void updateActionMapsNoLockCheck() {
-         Map<String, ActionDescriptor> nextActionDescriptorMap = new HashMap<>();
-         Map<String, String> nextActionsToPlugin = new HashMap<>();
+        Map<String, ActionDescriptor> nextActionDescriptorMap = new HashMap<>();
+        Map<String, String> nextActionsToPlugin = new HashMap<>();
+        Map<String, String> nextPluginNotReadyReasons = new HashMap<>();
 
-        pluginRepo.findAll().stream()
+        List<PluginEntity> allPlugins = pluginRepo.findAll();
+
+        // Build plugin ready status map
+        for (PluginEntity plugin : allPlugins) {
+            String artifactId = plugin.getPluginCoordinates().getArtifactId();
+            String notReadyReason = computePluginNotReadyReason(plugin);
+            nextPluginNotReadyReasons.put(artifactId, notReadyReason);
+        }
+
+        // Build action maps
+        allPlugins.stream()
                 .filter(pluginEntity -> pluginEntity.getActions() != null)
                 .forEach(entity -> updateMaps(entity, nextActionDescriptorMap, nextActionsToPlugin));
 
         actionDescriptorMap = nextActionDescriptorMap;
         actionsToPlugin = nextActionsToPlugin;
+        pluginNotReadyReasons = nextPluginNotReadyReasons;
+    }
+
+    private String computePluginNotReadyReason(PluginEntity entity) {
+        if (isSystemOrCorePlugin(entity.getPluginCoordinates())) {
+            return null; // System/core plugins are always ready
+        }
+        if (entity.isDisabled()) {
+            return "Plugin is disabled";
+        }
+        if (entity.getInstallState() != PluginState.INSTALLED) {
+            return switch (entity.getInstallState()) {
+                case PENDING -> "Plugin is pending install";
+                case INSTALLING -> "Plugin is installing";
+                case FAILED -> "Plugin install failed";
+                case REMOVING -> "Plugin is being removed";
+                default -> "Plugin is not ready";
+            };
+        }
+        return null; // Plugin is ready
     }
 
     private static void updateMaps(PluginEntity pluginEntity,
@@ -369,12 +403,36 @@ public class PluginService implements Snapshotter {
             return Result.builder().success(false).errors(validationErrors).build();
         }
 
-        Optional<PluginEntity> existingPlugin = getPlugin(plugin.getPluginCoordinates());
-        if (existingPlugin.isEmpty()) {
-            // delete non-matching versions of the plugin
-            pluginRepo.deleteById(new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(),
-                    plugin.getPluginCoordinates().getArtifactId()));
+        // Find existing plugin - first try by real coordinates, then by image name (for pending placeholders)
+        Optional<PluginEntity> existing = getPluginByKey(plugin.getPluginCoordinates());
+        if (existing.isEmpty() && pluginRegistration.getImage() != null) {
+            // Parse image to get imageName (without tag)
+            String image = pluginRegistration.getImage();
+            String imageName = image;
+            int lastColon = image.lastIndexOf(':');
+            int lastSlash = image.lastIndexOf('/');
+            if (lastColon > lastSlash) {
+                imageName = image.substring(0, lastColon);
+            }
+            existing = pluginRepo.findByImageName(imageName);
         }
+
+        if (existing.isPresent()) {
+            PluginEntity existingPlugin = existing.get();
+            // Preserve image info from the install request
+            plugin.setImageName(existingPlugin.getImageName());
+            plugin.setImageTag(existingPlugin.getImageTag());
+            plugin.setImagePullSecret(existingPlugin.getImagePullSecret());
+            // Preserve rollback info from previous successful install
+            plugin.setLastSuccessfulVersion(existingPlugin.getLastSuccessfulVersion());
+            plugin.setLastSuccessfulImage(existingPlugin.getLastSuccessfulImage());
+            plugin.setLastSuccessfulImageTag(existingPlugin.getLastSuccessfulImageTag());
+            // Delete the old record (it may have different key if it was a pending placeholder)
+            pluginRepo.delete(existingPlugin);
+            pluginRepo.flush();  // Ensure delete completes before insert with new key
+        }
+        // Mark as installed and save current version as last successful
+        plugin.transitionToInstalled();
 
         Map<String, ActionDescriptor> newActionDescriptors = new HashMap<>();
         if (plugin.getActions() != null) {
@@ -477,6 +535,83 @@ public class PluginService implements Snapshotter {
 
     public Optional<PluginEntity> getPlugin(PluginCoordinates pluginCoordinates) {
         return pluginRepo.findByKeyGroupIdAndKeyArtifactIdAndVersion(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion());
+    }
+
+    /**
+     * Get plugin by groupId and artifactId only (ignoring version).
+     * Used for state transitions where we want to find the plugin regardless of version.
+     */
+    private Optional<PluginEntity> getPluginByKey(PluginCoordinates pluginCoordinates) {
+        return pluginRepo.findById(new GroupIdArtifactId(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId()));
+    }
+
+    /**
+     * Check if the plugin for the given coordinates is ready to process data.
+     * A plugin is ready if it exists, is INSTALLED, and is not disabled.
+     * Core plugins (those without a PluginEntity) are always considered ready.
+     * Looks up by groupId+artifactId only (ignoring version) since we care about
+     * whether the plugin is ready, not whether a specific version exists.
+     */
+    public boolean isPluginReady(PluginCoordinates pluginCoordinates) {
+        if (pluginCoordinates == null) {
+            return true;
+        }
+        // System plugin and core-actions are always ready (they run in core)
+        if (isSystemOrCorePlugin(pluginCoordinates)) {
+            return true;
+        }
+        Optional<PluginEntity> plugin = getPluginByKey(pluginCoordinates);
+        if (plugin.isEmpty()) {
+            return false; // External plugin not found - was removed
+        }
+        PluginEntity entity = plugin.get();
+        return entity.getInstallState() == PluginState.INSTALLED && !entity.isDisabled();
+    }
+
+    private boolean isSystemOrCorePlugin(PluginCoordinates coords) {
+        return SYSTEM_PLUGIN_GROUP_ID.equals(coords.getGroupId()) &&
+                (SYSTEM_PLUGIN_ARTIFACT_ID.equals(coords.getArtifactId()) ||
+                 CORE_ACTIONS_ARTIFACT_ID.equals(coords.getArtifactId()));
+    }
+
+    /**
+     * Get the reason why a plugin is not ready, or null if it is ready.
+     */
+    public String getPluginNotReadyReason(PluginCoordinates pluginCoordinates) {
+        if (pluginCoordinates == null || isSystemOrCorePlugin(pluginCoordinates)) {
+            return null;
+        }
+        Optional<PluginEntity> plugin = getPluginByKey(pluginCoordinates);
+        if (plugin.isEmpty()) {
+            return "Plugin not found";
+        }
+        PluginEntity entity = plugin.get();
+        if (entity.isDisabled()) {
+            return "Plugin is disabled (data flow paused)";
+        }
+        if (entity.getInstallState() != PluginState.INSTALLED) {
+            return switch (entity.getInstallState()) {
+                case PENDING -> "Waiting for plugin install (data flow paused)";
+                case INSTALLING -> "Plugin is installing (data flow paused)";
+                case FAILED -> "Plugin install failed (data flow paused)";
+                case REMOVING -> "Plugin is being removed (data flow paused)";
+                default -> "Plugin is " + entity.getInstallState().name().toLowerCase();
+            };
+        }
+        return null;
+    }
+
+    /**
+     * Check if the plugin for the given coordinates is explicitly disabled.
+     * This represents an intentional user action to stop the plugin.
+     */
+    public boolean isPluginDisabled(PluginCoordinates pluginCoordinates) {
+        if (pluginCoordinates == null) {
+            return false;
+        }
+        return getPluginByKey(pluginCoordinates)
+                .map(PluginEntity::isDisabled)
+                .orElse(false);
     }
 
     public List<PluginEntity> getPlugins() {
@@ -641,6 +776,245 @@ public class PluginService implements Snapshotter {
         }
     }
 
+    /**
+     * Create a pending plugin from an image name (fresh install).
+     * Used when installing a plugin without known coordinates.
+     * The plugin will get proper coordinates when it registers.
+     */
+    @Transactional
+    public void createPendingPlugin(String image, String imagePullSecret) {
+        InstallDetails details = InstallDetails.from(image, imagePullSecret);
+        String imageName = details.image();
+        String appName = details.appName();
+
+        // Parse image tag from image string
+        String imageTag = null;
+        int lastColon = image.lastIndexOf(':');
+        int lastSlash = image.lastIndexOf('/');
+        if (lastColon > lastSlash) {
+            imageTag = image.substring(lastColon + 1);
+            imageName = image.substring(0, lastColon);
+        }
+
+        // Check if plugin already exists with same app name (any version)
+        Optional<PluginEntity> existing = pluginRepo.findByImageName(imageName);
+        if (existing.isPresent()) {
+            PluginEntity plugin = existing.get();
+
+            // Skip if same image:tag and already installed
+            if (plugin.getInstallState() == PluginState.INSTALLED
+                    && Objects.equals(plugin.getImageName(), imageName)
+                    && Objects.equals(plugin.getImageTag(), imageTag)) {
+                log.info("Plugin {} already installed with image {}:{}, skipping",
+                        plugin.getPluginCoordinates(), imageName, imageTag);
+                return;
+            }
+
+            plugin.setImageName(imageName);
+            plugin.setImageTag(imageTag);
+            plugin.setImagePullSecret(imagePullSecret);
+            if (plugin.getInstallState() != PluginState.INSTALLING) {
+                plugin.transitionToPending();
+            }
+            pluginRepo.save(plugin);
+            return;
+        }
+
+        // Create new plugin with placeholder coordinates (will be updated on registration)
+        PluginEntity plugin = new PluginEntity();
+        plugin.setKey(new GroupIdArtifactId("pending", appName));
+        plugin.setVersion("pending");
+        plugin.setActionKitVersion("pending");
+        plugin.setImageName(imageName);
+        plugin.setImageTag(imageTag);
+        plugin.setImagePullSecret(imagePullSecret);
+        plugin.setDisplayName(appName);
+        plugin.setDescription("Plugin pending installation");
+        plugin.transitionToPending();
+        pluginRepo.save(plugin);
+    }
+
+    /**
+     * Mark a plugin for removal by the reconciler.
+     */
+    @Transactional
+    public void markForRemoval(PluginCoordinates pluginCoordinates) {
+        getPlugin(pluginCoordinates).ifPresent(plugin -> {
+            plugin.transitionToRemoving();
+            pluginRepo.save(plugin);
+        });
+    }
+
+    /**
+     * Request retry of a failed plugin installation.
+     * Transitions the plugin directly to PENDING so the reconciler will pick it up.
+     */
+    @Transactional
+    public boolean requestRetry(PluginCoordinates pluginCoordinates) {
+        Optional<PluginEntity> maybePlugin = getPluginByKey(pluginCoordinates);
+        if (maybePlugin.isEmpty()) {
+            return false;
+        }
+
+        PluginEntity plugin = maybePlugin.get();
+        if (plugin.getInstallState() != PluginState.FAILED) {
+            return false;
+        }
+
+        plugin.transitionToPending();
+        pluginRepo.save(plugin);
+        return true;
+    }
+
+    /**
+     * Rollback a failed plugin to its last successful version.
+     * @return true if rollback was initiated, false if not available
+     */
+    @Transactional
+    public boolean rollbackPlugin(PluginCoordinates pluginCoordinates) {
+        Optional<PluginEntity> maybePlugin = getPluginByKey(pluginCoordinates);
+        if (maybePlugin.isEmpty()) {
+            return false;
+        }
+
+        PluginEntity plugin = maybePlugin.get();
+        if (!plugin.canRollback()) {
+            return false;
+        }
+
+        plugin.rollback();
+        pluginRepo.save(plugin);
+        return true;
+    }
+
+    /**
+     * Disable a plugin. The reconciler will stop the container but preserve the DB record.
+     * @return true if the plugin was disabled, false if not found or already disabled
+     */
+    @Transactional
+    public boolean disablePlugin(PluginCoordinates pluginCoordinates) {
+        Optional<PluginEntity> maybePlugin = getPluginByKey(pluginCoordinates);
+        if (maybePlugin.isEmpty()) {
+            return false;
+        }
+
+        PluginEntity plugin = maybePlugin.get();
+        if (plugin.isDisabled()) {
+            return false;
+        }
+
+        plugin.setDisabled(true);
+        pluginRepo.save(plugin);
+        return true;
+    }
+
+    /**
+     * Enable a previously disabled plugin. The reconciler will reinstall it.
+     * @return true if the plugin was enabled, false if not found or already enabled
+     */
+    @Transactional
+    public boolean enablePlugin(PluginCoordinates pluginCoordinates) {
+        Optional<PluginEntity> maybePlugin = getPluginByKey(pluginCoordinates);
+        if (maybePlugin.isEmpty()) {
+            return false;
+        }
+
+        PluginEntity plugin = maybePlugin.get();
+        if (!plugin.isDisabled()) {
+            return false;
+        }
+
+        plugin.setDisabled(false);
+        plugin.transitionToPending();
+        pluginRepo.save(plugin);
+        return true;
+    }
+
+    /**
+     * Update installation state after successful registration.
+     */
+    @Transactional
+    public void markInstalled(PluginCoordinates pluginCoordinates) {
+        getPluginByKey(pluginCoordinates).ifPresent(plugin -> {
+            plugin.transitionToInstalled();
+            pluginRepo.save(plugin);
+        });
+    }
+
+    /**
+     * Update installation state on failure.
+     */
+    @Transactional
+    public void markFailed(PluginCoordinates pluginCoordinates, String error) {
+        getPluginByKey(pluginCoordinates).ifPresent(plugin -> {
+            plugin.transitionToFailed(error);
+            pluginRepo.save(plugin);
+        });
+    }
+
+    /**
+     * Mark plugin as installing.
+     */
+    @Transactional
+    public void markInstalling(PluginCoordinates pluginCoordinates, boolean isAutoRestart) {
+        getPluginByKey(pluginCoordinates).ifPresent(plugin -> {
+            plugin.transitionToInstalling(isAutoRestart);
+            pluginRepo.save(plugin);
+        });
+    }
+
+    /**
+     * Get summary of plugin states for health status.
+     */
+    public PluginStateSummary getInstallSummary() {
+        List<PluginEntity> plugins = getPlugins().stream()
+                .filter(p -> !SYSTEM_PLUGIN_ID.equals(p.getKey()))
+                .toList();
+
+        int installed = 0;
+        int pending = 0;
+        int installing = 0;
+        int failed = 0;
+        int removing = 0;
+        List<PluginEntity> failedPlugins = new ArrayList<>();
+
+        for (PluginEntity plugin : plugins) {
+            switch (plugin.getInstallState()) {
+                case INSTALLED -> installed++;
+                case PENDING -> pending++;
+                case INSTALLING -> installing++;
+                case FAILED -> {
+                    failed++;
+                    failedPlugins.add(plugin);
+                }
+                case REMOVING -> removing++;
+            }
+        }
+
+        return new PluginStateSummary(installed, pending, installing, failed, removing, failedPlugins);
+    }
+
+    public record PluginStateSummary(
+            int installed,
+            int pending,
+            int installing,
+            int failed,
+            int removing,
+            List<PluginEntity> failedPlugins
+    ) {
+        public boolean allHealthy() {
+            return pending == 0 && installing == 0 && failed == 0 && removing == 0;
+        }
+
+        public boolean anyFailed() {
+            return failed > 0;
+        }
+
+        public boolean anyInProgress() {
+            return pending > 0 || installing > 0 || removing > 0;
+        }
+    }
+
     public Optional<ActionDescriptor> getByActionClass(String type) {
         ActionDescriptor actionDescriptor = actionDescriptorMap != null ? actionDescriptorMap.get(type) : null;
         return Optional.ofNullable(actionDescriptor);
@@ -652,6 +1026,20 @@ public class PluginService implements Snapshotter {
 
     public String getPluginWithAction(String clazz) {
         return actionsToPlugin.get(clazz);
+    }
+
+    /**
+     * Get the reason why a plugin providing the given action is not ready, or null if ready.
+     * Uses cached plugin state built during updateActionDescriptors().
+     * @param actionType the action class name
+     * @return reason string if not ready, null if ready or action not found
+     */
+    public String getActionPluginNotReadyReason(String actionType) {
+        String artifactId = actionsToPlugin.get(actionType);
+        if (artifactId == null) {
+            return null; // Action not found - separate error handled elsewhere
+        }
+        return pluginNotReadyReasons.get(artifactId);
     }
 
     private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<DataSinkPlan> dataSinkPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans, List<OnErrorDataSourcePlan> onErrorDataSourcePlans) {

@@ -77,14 +77,14 @@
             <FlowTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
+        <Column header="Status" class="flow-status-column">
+          <template #body="{ data }">
+            <FlowStatusBadge :row-data="data" />
+          </template>
+        </Column>
         <Column class="flow-state-column">
           <template #body="{ data }">
-            <template v-if="_.isEqual(data.flowStatus.valid, false)">
-              <FlowStateValidationButton :row-data-prop="data" @reload-transforms="refresh" />
-            </template>
-            <template v-else>
-              <FlowStateInputSwitch :row-data-prop="data" @change="refresh" />
-            </template>
+            <FlowStateInputSwitch :row-data-prop="data" @change="refresh" />
           </template>
         </Column>
       </DataTable>
@@ -104,7 +104,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import FlowNameColumnButtonGroup from "@/components/flow/FlowNameColumnButtonGroup.vue";
 import FlowStateInputSwitch from "@/components/flow/FlowStateInputSwitch.vue";
-import FlowStateValidationButton from "@/components/flow/FlowStateValidationButton.vue";
+import FlowStatusBadge from "@/components/flow/FlowStatusBadge.vue";
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
 import PublishCell from "@/components/PublishCell.vue";
@@ -312,8 +312,9 @@ const refresh = async () => {
   }
 
   th.test-mode-column,
-  th.flow-state-column {
-    width: 7rem !important;
+  th.flow-state-column,
+  th.flow-status-column {
+    width: 6rem !important;
   }
 
   td.test-mode-column,

@@ -31,6 +31,9 @@
                     {{ data.name }}
                   </span>
                 </DialogTemplate>
+                <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: '/config/plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
+                  <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
+                </PermissionedRouterLink>
               </span>
               <span>
                 <span class="d-flex align-items-center">
@@ -53,6 +56,11 @@
             <EgressTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
+        <Column header="Status" :style="{ width: '7%' }">
+          <template #body="{ data }">
+            <FlowStatusBadge :row-data="data" />
+          </template>
+        </Column>
         <Column :style="{ width: '7%' }" class="egress-action-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" @change="refresh" @confirm-start="confirming = true" @confirm-stop="confirming = false" />
@@ -68,6 +76,8 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DataSinkNameColumnButtonGroup from "@/components/dataSinks/DataSinkNameColumnButtonGroup.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import EgressTestModeInputSwitch from "@/components/dataSinks/DataSinkTestModeInputSwitch.vue";
+import FlowStatusBadge from "@/components/flow/FlowStatusBadge.vue";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import StateInputSwitch from "@/components/dataSinks/StateInputSwitch.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
 import useDataSink from "@/composables/useDataSink";
@@ -116,6 +126,10 @@ watch(
 
 const errorTooltip = (data) => {
   return _.isEmpty(data.flowStatus.errors) ? "" : " and errors";
+};
+
+const concatMvnCoordinates = (sourcePlugin) => {
+  return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
 };
 
 const refresh = async () => {

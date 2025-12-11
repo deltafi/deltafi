@@ -57,8 +57,25 @@ public class ActionConfigurationValidator {
 
     private List<FlowConfigError> validateAgainstSchema(ActionConfiguration actionConfiguration) {
         return pluginService.getByActionClass(actionConfiguration.getType())
-                .map(actionDescriptor -> validateAgainstSchema(actionDescriptor, actionConfiguration))
+                .map(actionDescriptor -> {
+                    List<FlowConfigError> errors = new ArrayList<>();
+                    // Check if the plugin providing this action is ready
+                    String notReadyReason = pluginService.getActionPluginNotReadyReason(actionConfiguration.getType());
+                    if (notReadyReason != null) {
+                        errors.add(pluginNotReadyError(actionConfiguration, notReadyReason));
+                    }
+                    errors.addAll(validateAgainstSchema(actionDescriptor, actionConfiguration));
+                    return errors;
+                })
                 .orElseGet(() -> Collections.singletonList(notRegisteredError(actionConfiguration)));
+    }
+
+    FlowConfigError pluginNotReadyError(ActionConfiguration actionConfiguration, String reason) {
+        FlowConfigError error = new FlowConfigError();
+        error.setConfigName(actionConfiguration.getName());
+        error.setErrorType(FlowErrorType.INVALID_CONFIG);
+        error.setMessage("Action " + actionConfiguration.getType() + " unavailable: " + reason);
+        return error;
     }
 
     public List<FlowConfigError> validateAgainstSchema(ActionDescriptor actionDescriptor, ActionConfiguration actionConfiguration) {

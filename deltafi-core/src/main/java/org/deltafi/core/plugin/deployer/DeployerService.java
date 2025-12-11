@@ -83,4 +83,19 @@ public interface DeployerService extends Snapshotter {
      * @return merged results from each install
      */
     List<Result> installOrUpgradePlugins(List<InstallDetails> installDetails);
+
+    /**
+     * Check if a plugin's container/pod is currently running.
+     * Used by the reconciler to detect actual state.
+     * @param imageName the image name of the plugin
+     * @return true if the plugin container/pod is running
+     */
+    boolean isPluginRunning(String imageName);
+
+    /**
+     * Remove a plugin's container/pod without unregistering from the database.
+     * Used by the reconciler during the REMOVING state.
+     * @param imageName the image name of the plugin
+     */
+    void removePlugin(String imageName);
 }

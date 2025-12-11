@@ -313,8 +313,9 @@ class SystemSnapshotServiceTest {
     }
 
     private static void setInstalledPlugins(Snapshot snapshot) {
+        // Use 4-arg constructor with null for disabled to match JSON deserialization of old snapshots without the field
         snapshot.setPlugins(List.of(
-                new PluginSnapshot("deltafi/deltafi-python-poc:1.0.0", "docker-secret", PluginCoordinates.builder().groupId("org.deltafi.python-poc").artifactId("deltafi-python-poc").version("main-9cc5379d").build())
+                new PluginSnapshot("deltafi/deltafi-python-poc:1.0.0", "docker-secret", PluginCoordinates.builder().groupId("org.deltafi.python-poc").artifactId("deltafi-python-poc").version("main-9cc5379d").build(), null)
         ));
     }
 

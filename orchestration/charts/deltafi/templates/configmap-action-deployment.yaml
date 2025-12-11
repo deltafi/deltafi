@@ -11,6 +11,8 @@ data:
         group: deltafi-plugins
     spec:
       revisionHistoryLimit: 0
+      strategy:
+        type: Recreate
       selector:
         matchLabels:
           group: deltafi-plugins

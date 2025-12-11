@@ -31,6 +31,12 @@ export default function usePlugins() {
         imageName: true,
         imageTag: true,
         imagePullSecret: true,
+        installState: true,
+        installError: true,
+        installAttempts: true,
+        lastSuccessfulVersion: true,
+        canRollback: true,
+        disabled: true,
         pluginCoordinates: {
           artifactId: true,
           groupId: true,
@@ -96,6 +102,66 @@ export default function usePlugins() {
     return sendGraphQLQuery(query, "uninstallPlugin", "mutation");
   };
 
+  const retryPluginInstall = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      retryPluginInstall: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "retryPluginInstall", "mutation");
+  };
+
+  const rollbackPlugin = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      rollbackPlugin: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "rollbackPlugin", "mutation");
+  };
+
+  const disablePlugin = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      disablePlugin: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disablePlugin", "mutation");
+  };
+
+  const enablePlugin = async (groupId: String, artifactId: String, version: String) => {
+    const query = {
+      enablePlugin: {
+        __args: {
+          pluginCoordinates: {
+            groupId: groupId,
+            artifactId: artifactId,
+            version: version,
+          },
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enablePlugin", "mutation");
+  };
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
@@ -114,6 +180,10 @@ export default function usePlugins() {
     response,
     installPlugin,
     uninstallPlugin,
+    retryPluginInstall,
+    rollbackPlugin,
+    disablePlugin,
+    enablePlugin,
     fetch,
     setPluginVariableValues,
   };

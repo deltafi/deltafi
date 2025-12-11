@@ -34,8 +34,8 @@ import java.util.List;
 public class PluginDataFetcher {
     private final PluginService pluginService;
     private final DeployerService deployerService;
-    private final SystemSnapshotService systemSnapshotService;
     private final CoreAuditLogger auditLogger;
+    private final FlowValidationService flowValidationService;
 
     @DgsQuery
     @NeedsPermission.PluginsView
@@ -46,9 +46,12 @@ public class PluginDataFetcher {
     @DgsMutation
     @NeedsPermission.PluginInstall
     public Result installPlugin(@InputArgument String image, @InputArgument String imagePullSecret) {
-        auditLogger.audit("installed plugin {}", image);
-        systemSnapshotService.createSnapshot(preUpgradeMessage(image));
-        return deployerService.installOrUpgradePlugin(image, imagePullSecret);
+        auditLogger.audit("queued plugin install {}", image);
+        pluginService.createPendingPlugin(image, imagePullSecret);
+        return Result.builder()
+                .success(true)
+                .info(List.of("Plugin queued for installation."))
+                .build();
     }
 
     @DgsMutation
@@ -79,15 +82,6 @@ public class PluginDataFetcher {
         return pluginService.getActionDescriptors();
     }
 
-    private String preUpgradeMessage(String imageName) {
-        String username = DeltaFiUserService.currentUsername();
-        String reason = "Deploying plugin from image: " + imageName;
-        if (username != null) {
-            reason += " triggered by " + username;
-        }
-        return reason;
-    }
-
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean savePluginVariables(@InputArgument List<Variable> variables) {
@@ -110,5 +104,43 @@ public class PluginDataFetcher {
         VariableUpdate variableUpdate = pluginService.setPluginVariableValues(pluginCoordinates, variables);
         auditLogger.audit("updated plugin variables: {}", CoreAuditLogger.listToString(variableUpdate.getUpdatedVariables(), VariableUpdate.Result::nameAndValue));
         return variableUpdate.isUpdated();
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginInstall
+    public boolean retryPluginInstall(@InputArgument PluginCoordinates pluginCoordinates) {
+        auditLogger.audit("retried plugin install {}", pluginCoordinates);
+        return pluginService.requestRetry(pluginCoordinates);
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginInstall
+    public boolean rollbackPlugin(@InputArgument PluginCoordinates pluginCoordinates) {
+        auditLogger.audit("rolled back plugin {}", pluginCoordinates);
+        return pluginService.rollbackPlugin(pluginCoordinates);
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginUninstall
+    public boolean disablePlugin(@InputArgument PluginCoordinates pluginCoordinates) {
+        auditLogger.audit("disabled plugin {}", pluginCoordinates);
+        boolean disabled = pluginService.disablePlugin(pluginCoordinates);
+        if (disabled) {
+            flowValidationService.revalidateFlowsForPlugin(pluginCoordinates);
+        }
+        return disabled;
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginInstall
+    public boolean enablePlugin(@InputArgument PluginCoordinates pluginCoordinates) {
+        auditLogger.audit("enabled plugin {}", pluginCoordinates);
+        return pluginService.enablePlugin(pluginCoordinates);
+    }
+
+    @DgsQuery
+    @NeedsPermission.PluginsView
+    public PluginService.PluginStateSummary pluginInstallStatus() {
+        return pluginService.getInstallSummary();
     }
 }

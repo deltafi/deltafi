@@ -488,7 +488,7 @@ public class MemberMonitorService {
                     config.credentials().passwordEnvVar(), config.name());
             } else {
                 log.debug("Building request for {} with username={}, password present={}",
-                    config.name(), config.credentials().username(), password != null && !password.isEmpty());
+                    config.name(), config.credentials().username(), !password.isEmpty());
                 String credentials = config.credentials().username() + ":" + password;
                 String encoded = Base64.getEncoder().encodeToString(credentials.getBytes());
                 builder.header("Authorization", "Basic " + encoded);
@@ -618,7 +618,7 @@ public class MemberMonitorService {
         if (cached != null && now - cached.timestamp() < FLOW_METRICS_CACHE_MAX_AGE_MS) {
             return cached.data();
         }
-        
+
         // Clean up expired cache entries periodically
         if (flowMetricsCache.size() > 10) {
             flowMetricsCache.entrySet().removeIf(entry -> now - entry.getValue().timestamp() >= FLOW_METRICS_CACHE_MAX_AGE_MS);

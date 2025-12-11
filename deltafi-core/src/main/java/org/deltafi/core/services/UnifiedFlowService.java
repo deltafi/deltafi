@@ -18,8 +18,11 @@
 package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.FlowStateUpdater;
 import org.deltafi.core.types.DataSink;
@@ -31,6 +34,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @AllArgsConstructor
+@Slf4j
 @Service
 public class UnifiedFlowService {
     private final TimedDataSourceService timedDataSourceService;
@@ -103,5 +107,39 @@ public class UnifiedFlowService {
 
     public List<Flow> findByTags(FlowTagFilter filter) {
         return flowStateUpdater.findByTags(filter);
+    }
+
+    /**
+     * Revalidate a flow by name and type.
+     * @param flowName the name of the flow
+     * @param flowType the type of the flow
+     */
+    public void revalidateFlow(String flowName, FlowType flowType) {
+        try {
+            switch (flowType) {
+                case REST_DATA_SOURCE -> restDataSourceService.validateAndSaveFlow(flowName);
+                case TIMED_DATA_SOURCE -> timedDataSourceService.validateAndSaveFlow(flowName);
+                case ON_ERROR_DATA_SOURCE -> onErrorDataSourceService.validateAndSaveFlow(flowName);
+                case TRANSFORM -> transformFlowService.validateAndSaveFlow(flowName);
+                case DATA_SINK -> dataSinkService.validateAndSaveFlow(flowName);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to revalidate flow {} of type {}: {}", flowName, flowType, e.getMessage());
+        }
+    }
+
+    /**
+     * Revalidate all invalid flows for a given plugin.
+     * @param pluginCoordinates the plugin whose flows should be revalidated
+     * @param invalidFlows the list of invalid flows to revalidate
+     */
+    public void revalidateFlowsForPlugin(PluginCoordinates pluginCoordinates, List<Flow> invalidFlows) {
+        if (invalidFlows.isEmpty()) {
+            return;
+        }
+        log.info("Revalidating {} invalid flow(s) for plugin {}", invalidFlows.size(), pluginCoordinates);
+        for (Flow flow : invalidFlows) {
+            revalidateFlow(flow.getName(), flow.getType());
+        }
     }
 }

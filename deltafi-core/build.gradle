@@ -127,6 +127,7 @@ generateJava {
             "Plugin"                        : "org.deltafi.common.types.Plugin",
             "PluginCoordinates"             : "org.deltafi.common.types.PluginCoordinates",
             "PluginCoordinatesInput"        : "org.deltafi.common.types.PluginCoordinates",
+            "PluginState"                   : "org.deltafi.common.types.PluginState",
             "PublishRules"                  : "org.deltafi.common.types.PublishRules",
             "PublishRulesInput"             : "org.deltafi.common.types.PublishRules",
             "RestDataSourcePlan"            : "org.deltafi.common.types.RestDataSourcePlan",

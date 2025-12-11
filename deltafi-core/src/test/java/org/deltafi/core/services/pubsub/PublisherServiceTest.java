@@ -23,6 +23,7 @@ import org.deltafi.common.test.time.TestClock;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.FlowDefinitionService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.common.types.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
@@ -84,6 +85,9 @@ class PublisherServiceTest {
 
     @Mock
     AnalyticEventService analyticEventService;
+
+    @Mock
+    PluginService pluginService;
 
     @Test
     void subscribers() {

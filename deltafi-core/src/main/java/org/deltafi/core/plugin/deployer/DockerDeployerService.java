@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.plugin.deployer;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
@@ -28,9 +30,6 @@ import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.Result;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -63,33 +62,15 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
     private final List<String> environmentVariables;
     private final String dataDir;
-    private final boolean isScheduledMaintenance;
 
     public DockerDeployerService(DockerClient dockerClient, PluginService pluginService, SslSecretNames sslSecretNames,
                                  EventService eventService, EnvironmentVariableHelper environmentVariableHelper,
-                                 DeltaFiPropertiesService deltaFiPropertiesService, Environment environment) {
+                                 DeltaFiPropertiesService deltaFiPropertiesService) {
         super(pluginService, eventService, deltaFiPropertiesService);
         this.dockerClient = dockerClient;
         this.sslSecretNames = sslSecretNames;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
         this.dataDir = environmentVariableHelper.getDataDir();
-        this.isScheduledMaintenance = environment.getProperty("schedule.maintenance", Boolean.class, true);
-    }
-
-    // wait for the app ready event so plugins can register when they are reinstalled
-    @EventListener(ApplicationReadyEvent.class)
-    public void reinstallPlugins() {
-        if (!isScheduledMaintenance) {
-            return;
-        }
-        try {
-            List<InstallDetails> missingInstalls = this.getAllPluginInstallInfo()
-                    .filter(this::notInstalled)
-                    .toList();
-            installOrUpgradePlugins(missingInstalls);
-        } catch (Exception e) {
-            log.error("Failed to reinstall missing deltafi-plugins", e);
-        }
     }
 
     @Override
@@ -112,16 +93,48 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
         try {
             if (isEmpty(existing)) {
+                log.info("No existing container found for {}, installing fresh", installDetails.appName());
                 install(installDetails);
             } else {
+                log.info("Found {} existing container(s) for {}, upgrading", existing.size(), installDetails.appName());
                 upgrade(existing.getFirst(), installDetails);
             }
 
             return new DeployResult();
         } catch (Exception e) {
-            log.error("Failed to install the  plugin with image: {}", installDetails.image(), e);
-            return DeployResult.builder().success(false).errors(List.of(e.getMessage())).build();
+            log.error("Failed to install the plugin with image: {}", installDetails.image(), e);
+            return DeployResult.builder().success(false).errors(List.of(extractDockerError(e))).build();
         }
+    }
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private String extractDockerError(Exception e) {
+        String message = e.getMessage();
+        if (message == null) {
+            return "Unknown error";
+        }
+        // Extract message from Docker JSON response: Status NNN: {"message":"..."}
+        // Keep the status code but extract the readable message
+        String prefix = "";
+        String jsonPart = message;
+        if (message.startsWith("Status ")) {
+            int colonIdx = message.indexOf(": ");
+            if (colonIdx != -1) {
+                prefix = message.substring(0, colonIdx + 2);
+                jsonPart = message.substring(colonIdx + 2);
+            }
+        }
+        try {
+            JsonNode json = OBJECT_MAPPER.readTree(jsonPart);
+            JsonNode msgNode = json.get("message");
+            if (msgNode != null && msgNode.isTextual()) {
+                return prefix + msgNode.asText();
+            }
+        } catch (Exception ignored) {
+            // Not valid JSON, return original message
+        }
+        return e.getMessage();
     }
 
     @Override
@@ -189,7 +202,10 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     }
 
     private void install(InstallDetails installDetails) {
-        Map<String, String> containerLabels = Map.of(APP_LABEL_KEY, installDetails.appName(), DELTAFI_GROUP, "deltafi-plugins", "logging", "promtail", "logging_jobname", "containerlogs");
+        // Remove any existing container with the same name to handle orphaned containers
+        removeContainerByName(installDetails.appName());
+
+        Map<String, String> containerLabels = Map.of(APP_LABEL_KEY, installDetails.appName(), DELTAFI_GROUP, getGroupName(installDetails.appName()), "logging", "promtail", "logging_jobname", "containerlogs");
 
         List<String> envVars = new ArrayList<>(environmentVariables);
         envVars.add(IMAGE + "=" + installDetails.image());
@@ -198,7 +214,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         }
         envVars.add("APP_NAME=" + installDetails.appName());
 
-        CreateContainerResponse containerResponse = null;
+        CreateContainerResponse containerResponse;
         try (CreateContainerCmd containerCmd = dockerClient.createContainerCmd(installDetails.image())
                 .withName(installDetails.appName())
                 .withEnv(envVars)
@@ -212,27 +228,22 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
             containerResponse = containerCmd.exec();
             dockerClient.startContainerCmd(containerResponse.getId()).exec();
             awaitHealthy(containerResponse.getId());
+        }
+    }
+
+    private void removeContainerByName(String containerName) {
+        try {
+            dockerClient.removeContainerCmd(containerName).withForce(true).exec();
+            log.info("Removed existing container: {}", containerName);
         } catch (Exception e) {
-            if (containerResponse != null && deltaFiPropertiesService.getDeltaFiProperties().isPluginAutoRollback()) {
-                stopAndRemoveContainer(containerResponse.getId());
-            }
-            throw e;
+            // Container doesn't exist or couldn't be removed - that's fine, we'll create a new one
+            log.debug("No existing container to remove for {}: {}", containerName, e.getMessage());
         }
     }
 
     private void upgrade(Container toUpgrade, InstallDetails installDetails) {
-        String originalName = toUpgrade.getNames().length > 0 ? toUpgrade.getNames()[0] : toUpgrade.getId();
-        String newName = originalName + "-upgrading";
-        dockerClient.renameContainerCmd(toUpgrade.getId()).withName(newName).exec();
-        try {
-            install(installDetails);
-            stopAndRemoveContainer(toUpgrade.getId());
-        } catch (Exception e) {
-            if (deltaFiPropertiesService.getDeltaFiProperties().isPluginAutoRollback()) {
-                dockerClient.renameContainerCmd(toUpgrade.getId()).withName(originalName).exec();
-            }
-            throw e;
-        }
+        stopAndRemoveContainer(toUpgrade.getId());
+        install(installDetails);
     }
 
     @Override
@@ -246,10 +257,6 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
         containers.stream().map(Container::getId).forEach(this::stopAndRemoveContainer);
         return new Result();
-    }
-
-    private boolean notInstalled(InstallDetails installDetails) {
-        return findExisting(installDetails.appName()).isEmpty();
     }
 
     private HostConfig hostConfig() {
@@ -274,19 +281,58 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
         // if the image was not found locally attempt to pull it
         if (images.isEmpty()) {
-            boolean pulled;
-            try {
-                pulled = dockerClient.pullImageCmd(image).exec(new PullImageResultCallback()).awaitCompletion(IMAGE_PULL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return "Interrupted while trying to pull the image: " + image;
-            }
-            if (!pulled) {
-                return "Could not pull image within image: " + image;
-            }
+            return pullImage(image);
         }
 
         return null;
+    }
+
+    private String pullImage(String image) {
+        try {
+            boolean completed = dockerClient.pullImageCmd(image)
+                    .exec(new PullImageResultCallback())
+                    .awaitCompletion(IMAGE_PULL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!completed) {
+                return "Image pull timed out: " + image;
+            }
+            // Verify the image now exists (async errors may not throw)
+            if (findImage(image).isEmpty()) {
+                return "Image not found after pull (check registry/tag): " + image;
+            }
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "Interrupted while pulling image: " + image;
+        } catch (Exception e) {
+            return extractPullError(image, e);
+        }
+    }
+
+    private String extractPullError(String image, Exception e) {
+        String message = e.getMessage();
+        if (message == null) {
+            return "Failed to pull image: " + image;
+        }
+        // Look for common Docker error patterns
+        if (message.contains("manifest unknown")) {
+            return "Image tag not found: " + image;
+        }
+        if (message.contains("unauthorized") || message.contains("403")) {
+            return "Unauthorized to pull image (check credentials): " + image;
+        }
+        if (message.contains("not found") || message.contains("404")) {
+            return "Image not found: " + image;
+        }
+        // For other errors, try to extract the meaningful part
+        int jsonStart = message.indexOf("{\"message\":");
+        if (jsonStart != -1) {
+            int msgStart = message.indexOf("\"message\":\"", jsonStart) + 11;
+            int msgEnd = message.indexOf("\"", msgStart);
+            if (msgEnd > msgStart) {
+                return "Failed to pull " + image + ": " + message.substring(msgStart, msgEnd);
+            }
+        }
+        return "Failed to pull " + image + ": " + message;
     }
 
     private List<Image> findImage(String name) {
@@ -298,8 +344,16 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     }
 
     void stopAndRemoveContainer(String containerId) {
-        dockerClient.stopContainerCmd(containerId).exec();
-        dockerClient.removeContainerCmd(containerId).exec();
+        try {
+            dockerClient.stopContainerCmd(containerId).exec();
+        } catch (Exception e) {
+            log.warn("Failed to stop container {}: {}", containerId, e.getMessage());
+        }
+        try {
+            dockerClient.removeContainerCmd(containerId).withForce(true).exec();
+        } catch (Exception e) {
+            log.error("Failed to remove container {}: {}", containerId, e.getMessage());
+        }
     }
 
     private List<Container> findExisting(String appName) {
@@ -317,8 +371,8 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     }
 
     private boolean awaitHealthy(String containerId) throws UnhealthyContainer {
-        // wait up to 30 seconds for the health check to pass
-        for (int i = 0; i < 30; i++) {
+        long timeoutSeconds = deltaFiPropertiesService.getDeltaFiProperties().getPluginDeployTimeout().toSeconds();
+        for (int i = 0; i < timeoutSeconds; i++) {
             if (isHealthy(containerId)) {
                 return true;
             }
@@ -389,4 +443,27 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         }
     }
 
+    @Override
+    public boolean isPluginRunning(String imageName) {
+        if (imageName == null) {
+            return false;
+        }
+        InstallDetails installDetails = InstallDetails.from(imageName);
+        List<Container> containers = findExisting(installDetails.appName());
+        if (isEmpty(containers)) {
+            return false;
+        }
+        // Check if any container is actually running (not just exists)
+        return containers.stream().anyMatch(container -> "running".equalsIgnoreCase(container.getState()));
+    }
+
+    @Override
+    public void removePlugin(String imageName) {
+        if (imageName == null) {
+            return;
+        }
+        InstallDetails installDetails = InstallDetails.from(imageName);
+        List<Container> containers = findExisting(installDetails.appName());
+        containers.stream().map(Container::getId).forEach(this::stopAndRemoveContainer);
+    }
 }

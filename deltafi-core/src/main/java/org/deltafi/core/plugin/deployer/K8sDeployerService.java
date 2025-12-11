@@ -31,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
-import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -41,7 +40,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 @Slf4j
 public class K8sDeployerService extends BaseDeployerService {
@@ -115,9 +113,7 @@ public class K8sDeployerService extends BaseDeployerService {
     private DeployResult createOrReplace(Deployment deployment, InstallDetails installDetails) {
         Deployment existingDeployment = k8sClient.apps().deployments().withName(deployment.getMetadata().getName()).get();
 
-        boolean isUpgrade = existingDeployment != null;
-
-        if (isUpgrade) {
+        if (existingDeployment != null) {
             preserveValues(deployment, existingDeployment);
         }
 
@@ -140,14 +136,7 @@ public class K8sDeployerService extends BaseDeployerService {
                 deployResult.setLogs(logs);
             }
 
-            if (deltaFiPropertiesService.getDeltaFiProperties().isPluginAutoRollback()) {
-                if (isUpgrade) {
-                    k8sClient.apps().deployments().resource(installed).rolling().undo();
-                } else {
-                    k8sClient.apps().deployments().resource(installed).delete();
-                }
-            }
-
+            // Leave failed deployment in place so user can inspect logs and see the error
             return deployResult;
         }
 
@@ -315,5 +304,32 @@ public class K8sDeployerService extends BaseDeployerService {
     private long getTimeoutInMillis() {
         Duration timeout = deltaFiPropertiesService.getDeltaFiProperties().getPluginDeployTimeout();
         return timeout != null ? timeout.toMillis() : 60_000L;
+    }
+
+    @Override
+    public boolean isPluginRunning(String imageName) {
+        if (imageName == null) {
+            return false;
+        }
+        InstallDetails installDetails = InstallDetails.from(imageName);
+        Deployment deployment = k8sClient.apps().deployments().withName(installDetails.appName()).get();
+        if (deployment == null) {
+            return false;
+        }
+        DeploymentStatus status = deployment.getStatus();
+        if (status == null) {
+            return false;
+        }
+        Integer availableReplicas = status.getAvailableReplicas();
+        return availableReplicas != null && availableReplicas > 0;
+    }
+
+    @Override
+    public void removePlugin(String imageName) {
+        if (imageName == null) {
+            return;
+        }
+        InstallDetails installDetails = InstallDetails.from(imageName);
+        k8sClient.apps().deployments().withName(installDetails.appName()).delete();
     }
 }

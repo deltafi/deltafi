@@ -34,6 +34,8 @@ export default function useDataSink() {
             artifactId: true,
             version: true,
           },
+          pluginReady: true,
+          pluginNotReadyReason: true,
           flowStatus: {
             state: true,
             valid: true,
