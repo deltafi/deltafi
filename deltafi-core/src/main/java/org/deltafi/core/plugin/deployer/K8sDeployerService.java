@@ -115,9 +115,10 @@ public class K8sDeployerService extends BaseDeployerService {
 
         if (existingDeployment != null) {
             preserveValues(deployment, existingDeployment);
+            k8sClient.apps().deployments().withName(deployment.getMetadata().getName()).delete();
         }
 
-        Deployment installed = k8sClient.resource(deployment).serverSideApply();
+        Deployment installed = k8sClient.resource(deployment).create();
 
         try {
             k8sClient.resource(installed).waitUntilCondition(this::rolloutSuccessful, getTimeoutInMillis(), TimeUnit.MILLISECONDS);
