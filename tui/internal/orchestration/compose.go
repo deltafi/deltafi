@@ -48,6 +48,7 @@ type ComposeOrchestrator struct {
 	BaseOrchestrator
 	distroPath        string
 	dataPath          string
+	logsPath          string
 	reposPath         string
 	orchestrationPath string
 	secretsPath       string
@@ -57,10 +58,11 @@ type ComposeOrchestrator struct {
 	deploymentMode    types.DeploymentMode
 }
 
-func NewComposeOrchestrator(distroPath string, dataPath string, reposPath string, configPath string, secretsPath string, sitePath string, orchestrationPath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) *ComposeOrchestrator {
+func NewComposeOrchestrator(distroPath string, dataPath string, logsPath string, reposPath string, configPath string, secretsPath string, sitePath string, orchestrationPath string, coreVersion *semver.Version, deploymentMode types.DeploymentMode) *ComposeOrchestrator {
 	co := &ComposeOrchestrator{
 		distroPath:        distroPath,
 		dataPath:          dataPath,
+		logsPath:          logsPath,
 		reposPath:         reposPath,
 		configPath:        configPath,
 		secretsPath:       secretsPath,
@@ -399,17 +401,17 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 
 	subdirs := []string{
 		"analytics",
-		"postgres",
-		"postgres-lookup",
+		"auth",
+		"certs",
 		"dirwatcher",
 		"egress-sink",
 		"entityResolver",
-		"victoriametrics",
 		"grafana",
-		"auth",
-		"loki",
+		"logs",
 		"minio",
-		"certs",
+		"postgres",
+		"postgres-lookup",
+		"victoriametrics",
 	}
 
 	for _, subdir := range subdirs {
@@ -588,6 +590,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"CONFIG_DIR":                         o.configPath,
 		"CORE_URL":                           "http://deltafi-core:8080",
 		"DATA_DIR":                           o.dataPath,
+		"LOGS_DIR":                           o.logsPath,
 		"DELTAFI_GRAFANA_URL":                "http://deltafi-grafana:3000",
 		"DELTAFI_MODE":                       "STANDALONE",
 		"DELTAFI_SECRET_CA_CHAIN":            "certs",
@@ -713,6 +716,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"ENV_DIR":                            o.configPath,
 		"CONFIG_DIR":                         o.configPath,
 		"DATA_DIR":                           o.dataPath,
+		"LOGS_DIR":                           o.logsPath,
 		"SITE_DIR":                           o.sitePath,
 		"REPOS_DIR":                          o.reposPath,
 		"COMPOSE_PROJECT_NAME":               "deltafi",
@@ -733,12 +737,19 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"DELTAFI_SECRET_PLUGINS_SSL":         o.getValueOr(values, "deltafi.plugins.ssl.secret", "ssl-secret"),
 		"GRAFANA":                            o.getValue(values, "dependencies.grafana"),
 		"VICTORIAMETRICS":                    o.getValue(values, "dependencies.victoriametrics"),
-		"LOKI":                               o.getValue(values, "dependencies.loki"),
+		"VECTOR":                             o.getValue(values, "dependencies.vector"),
+		"DELTAFI_LOG_AGGREGATION_ENABLED":    o.getValueOr(values, "deltafi.logs.enabled", "true"),
+		"LOGROTATE":                          o.getValue(values, "deltafi.logs.logrotate.image"),
+		"LOGROTATE_INTERVAL":                 o.getValueOr(values, "deltafi.logs.logrotate.interval", "daily"),
+		"LOGROTATE_KEEP_DAYS":                o.getValueOr(values, "deltafi.logs.logrotate.schedule.keep", "30"),
+		"LOGROTATE_AUDIT_KEEP_DAYS":          o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.keep", "365"),
+		"LOGROTATE_MAX_SIZE":                 o.getValueOr(values, "deltafi.logs.logrotate.schedule.max_size", "50M"),
+		"LOGROTATE_AUDIT_MAX_SIZE":           o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.max_size", "100M"),
+		"DOZZLE":                             o.getValue(values, "dependencies.dozzle"),
 		"LOOKUP_TABLES_ENABLED":              o.getValue(values, "deltafi.lookup.enabled"),
 		"MINIO":                              o.getValue(values, "dependencies.minio"),
 		"POSTGRES":                           o.getValue(values, "dependencies.postgres"),
 		"NGINX":                              o.getValue(values, "dependencies.nginx"),
-		"PROMTAIL":                           o.getValue(values, "dependencies.promtail"),
 		"VALKEY":                             o.getValue(values, "dependencies.valkey"),
 		"REDIS":                              o.getValue(values, "dependencies.valkey"),
 		"DOCKER_WEB_GUI":                     o.getValue(values, "dependencies.docker_web_gui"),
@@ -769,6 +780,9 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	}
 	if o.getValue(values, "deltafi.core_worker.enabled") == "true" {
 		profiles = append(profiles, "worker")
+	}
+	if o.getValue(values, "deltafi.logs.enabled") == "true" {
+		profiles = append(profiles, "logs")
 	}
 
 	if o.getValueOr(values, "enable.minio", "true") != "false" {

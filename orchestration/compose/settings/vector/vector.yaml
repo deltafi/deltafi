@@ -1,0 +1,188 @@
+# Data directory for Vector state
+data_dir: /var/lib/vector
+
+# Source: Collect logs from all Docker containers
+sources:
+  docker_logs:
+    type: docker_logs
+    docker_host: unix:///var/run/docker.sock
+    # Only collect logs from containers with deltafi-group label
+    include_labels:
+      - deltafi-group
+    # Exclude vector and logrotate containers from collection
+    exclude_containers:
+      - deltafi-vector
+      - deltafi-logrotate
+
+# Transform: Parse and route logs
+transforms:
+  # Parse JSON logs and add metadata
+  parse_logs:
+    type: remap
+    inputs:
+      - docker_logs
+    source: |
+      # Add timestamp
+      .timestamp = now()
+
+      # Extract container name (remove leading slash if present)
+      # Ensure container_name exists and clean it up
+      if exists(.container_name) {
+        .container_name = replace!(.container_name, r'^/', "")
+      } else {
+        # Fallback: try to get container name from other fields if available
+        .container_name = "unknown"
+      }
+
+      # Try to parse message as JSON
+      parsed, err = parse_json(.message)
+      if err == null {
+        .parsed_message = parsed
+        .is_json = true
+      } else {
+        .parsed_message = {}
+        .is_json = false
+      }
+
+      # Check if this is an audit log
+      .is_audit = false
+      if exists(.parsed_message.loggerName) {
+        if .parsed_message.loggerName == "AUDIT" {
+          .is_audit = true
+        }
+      }
+
+      # For audit logs, prepare cleaned audit log structure
+      if .is_audit {
+        # Start with parsed message and remove unwanted fields
+        .audit_log = .parsed_message
+        del(.audit_log.loggerName)
+        del(.audit_log.threadName)
+      } else {
+        # Prepare final log structure for regular logs (with metadata)
+        if .is_json {
+          # For JSON logs, merge parsed content with metadata
+          metadata = {
+            "timestamp": .timestamp,
+            "container": .container_name,
+            "stream": .stream
+          }
+          .final_log, merge_err = merge(.parsed_message, metadata)
+          if merge_err != null {
+            # If merge fails, just use the parsed message with metadata added manually
+            .final_log = .parsed_message
+            .final_log.timestamp = .timestamp
+            .final_log.container = .container_name
+            .final_log.stream = .stream
+          }
+        } else {
+          # For plain text logs, create simple structure
+          .final_log = {
+            "timestamp": .timestamp,
+            "container": .container_name,
+            "stream": .stream,
+            "message": .message
+          }
+        }
+      }
+
+  # Route: Split audit logs from regular logs
+  route_logs:
+    type: route
+    inputs:
+      - parse_logs
+    route:
+      audit: .is_audit == true
+      regular: .is_audit != true
+
+  # Transform: Flatten audit logs to remove wrapper
+  flatten_audit:
+    type: remap
+    inputs:
+      - route_logs.audit
+    source: |
+      # Extract audit_log content and merge into root
+      if exists(.audit_log) {
+        . = merge!(., .audit_log)
+        del(.audit_log)
+      }
+      # Clean up any remaining metadata fields (keep timestamp from audit_log as it's part of the content)
+      del(.parsed_message)
+      del(.is_json)
+      del(.is_audit)
+      del(.final_log)
+      del(.container_name)
+      del(.stream)
+      # Remove Docker source metadata fields
+      del(.container_created_at)
+      del(.container_id)
+      del(.host)
+      del(.image)
+      del(.label)
+      del(.source_type)
+      # Keep timestamp, level, message, user, etc. from audit_log (they're the audit log content)
+
+  # Transform: Flatten regular logs to remove final_log wrapper
+  flatten_regular:
+    type: remap
+    inputs:
+      - route_logs.regular
+    source: |
+      # Extract final_log content and merge into root
+      if exists(.final_log) {
+        . = merge!(., .final_log)
+        del(.final_log)
+      }
+      # Clean up any remaining metadata fields
+      del(.parsed_message)
+      del(.is_json)
+      del(.is_audit)
+      del(.container_name)
+      del(.stream)
+      # Remove Docker source metadata fields
+      del(.container_created_at)
+      del(.container_id)
+      del(.host)
+      del(.image)
+      del(.label)
+      del(.source_type)
+      # Keep the log content (level, message, timestamp, container, stream, etc.)
+      # Note: "container" field from final_log is used for the path template
+
+# Sink: Write regular container logs to individual files
+sinks:
+  container_logs:
+    type: file
+    inputs:
+      - flatten_regular
+    compression: none
+    encoding:
+      codec: json
+    path: /logs/{{ container }}.log
+    
+    # Buffer configuration for reliability
+    buffer:
+      type: memory
+      max_size: 268435488  # 256 MB
+      when_full: block
+
+  # Sink: Write all audit logs to a single audit.log file
+  audit_logs:
+    type: file
+    inputs:
+      - flatten_audit
+    compression: none
+    encoding:
+      codec: json
+    path: /logs/audit.log
+
+    # Buffer configuration for reliability
+    buffer:
+      type: memory
+      max_size: 268435488  # 256 MB
+      when_full: block
+
+# Health check endpoint
+api:
+  enabled: true
+  address: 0.0.0.0:8686

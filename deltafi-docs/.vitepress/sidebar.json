@@ -62,6 +62,7 @@
       { "text": "Error Handling", "link": "/operating/errors" },
       { "text": "Events API", "link": "/operating/events_api" },
       { "text": "Metrics", "link": "/operating/metrics" },
+      { "text": "Consolidated Logging in Compose", "link": "/operating/logging" },
       { "text": "DeltaFile Analytics and Survey", "link": "/operating/deltafile_analytics" }
     ]
   },

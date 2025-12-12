@@ -46,6 +46,9 @@ type valuesData struct {
 	Repo                     string `default:"deltafi"`
 	GrafanaContainer         string `default:"deltafi/grafana:12.4.0-3"`
 	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.131.0"`
+	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-1"`
+	VectorContainer          string `default:"deltafi/vector:0.51.1-alpine-0"`
+	DozzleContainer          string `default:"amir20/dozzle:v8.14.10"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
 	MinioContainer           string `default:"deltafi/minio:RELEASE.2025-10-15T17-29-55Z-2"`
 	NginxContainer           string `default:"deltafi/nginx:1.29.3-alpine3.22-1"`
@@ -68,8 +71,9 @@ func NewOrchestrator(mode OrchestrationMode, distroPath string, dataPath string,
 		return NewKindOrchestrator(distroPath, sitePath, dataPath, reposPath, installDirectory, coreVersion, deploymentMode)
 	default:
 		reposPath := filepath.Join(installDirectory, "repos")
+		logsPath := filepath.Join(dataPath, "logs")
 		configPath := filepath.Join(installDirectory, "config")
 		secretsPath := filepath.Join(configPath, "secrets")
-		return NewComposeOrchestrator(distroPath, dataPath, reposPath, configPath, secretsPath, sitePath, orchestrationPath, coreVersion, deploymentMode)
+		return NewComposeOrchestrator(distroPath, dataPath, logsPath, reposPath, configPath, secretsPath, sitePath, orchestrationPath, coreVersion, deploymentMode)
 	}
 }

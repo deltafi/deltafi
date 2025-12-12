@@ -301,6 +301,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("Admin") && uiConfig.clusterMode),
       },
       {
+        name: "Logs",
+        icon: "far fa-rectangle-list fa-fw",
+        url: "/logs",
+        visible: computed(() => hasPermission("Admin") && !uiConfig.clusterMode),
+      },
+      {
         name: "GraphiQL",
         icon: "icomoon graphql",
         url: computed(() => buildURL(null, "/graphiql")),

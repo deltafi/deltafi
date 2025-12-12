@@ -7,7 +7,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   system-overview.json: |-
-{{ .Files.Get "files/grafana/dashboards/system-overview.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/system-overview.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -17,7 +17,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   system-performance.json: |-
-{{ .Files.Get "files/grafana/dashboards/system-performance.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/system-performance.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -27,7 +27,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   diagnostic.json: |-
-{{ .Files.Get "files/grafana/dashboards/diagnostic.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/diagnostic.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -37,7 +37,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   data-source-summary.json: |-
-{{ .Files.Get "files/grafana/dashboards/data-source-summary.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/data-source-summary.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -47,7 +47,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   logs.json: |-
-{{ .Files.Get "files/grafana/dashboards/logs.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/logs/logs.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -57,7 +57,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   log-overview.json: |-
-{{ .Files.Get "files/grafana/dashboards/log-overview.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/logs/log-overview.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -67,7 +67,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   audit-logs.json: |-
-{{ .Files.Get "files/grafana/dashboards/audit-logs.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/logs/audit-logs.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -77,7 +77,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   action-logs.json: |-
-{{ .Files.Get "files/grafana/dashboards/action-logs.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/logs/action-logs.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -87,7 +87,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   processing-report.json: |-
-{{ .Files.Get "files/grafana/dashboards/processing-report.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/processing-report.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -97,7 +97,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   ui-charts.json: |-
-{{ .Files.Get "files/grafana/dashboards/ui-charts.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/ui-charts.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -107,7 +107,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   ui-charts-by-node.json: |-
-{{ .Files.Get "files/grafana/dashboards/ui-charts-by-node.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/ui-charts-by-node.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -117,7 +117,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   last-seen.json: |-
-{{ .Files.Get "files/grafana/dashboards/last-seen.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/last-seen.json" | indent 4 }}
 
 
 ---
@@ -129,7 +129,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   error-analysis.json: |-
-{{ .Files.Get "files/grafana/dashboards/error-analysis.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/error-analysis.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -139,7 +139,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   filter-analysis.json: |-
-{{ .Files.Get "files/grafana/dashboards/filter-analysis.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/filter-analysis.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -149,7 +149,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   dataflow-analytics.json: |-
-{{ .Files.Get "files/grafana/dashboards/dataflow-analytics.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/dataflow-analytics.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -159,7 +159,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   parquet-analytics.json: |-
-{{ .Files.Get "files/grafana/dashboards/parquet-analytics.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/parquet-analytics.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -169,7 +169,7 @@ metadata:
     grafana_dashboard: "1"
 data:
   parquet-error-analysis.json: |-
-{{ .Files.Get "files/grafana/dashboards/parquet-error-analysis.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/parquet-error-analysis.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -179,4 +179,4 @@ metadata:
     grafana_dashboard: "1"
 data:
   parquet-filter-analysis.json: |-
-{{ .Files.Get "files/grafana/dashboards/parquet-filter-analysis.json" | indent 4 }}
+{{ .Files.Get "files/grafana/dashboards/core/parquet-filter-analysis.json" | indent 4 }}

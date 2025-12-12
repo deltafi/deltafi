@@ -7,10 +7,6 @@ x-relaxed-health-probe: &relaxed-health-probe
     retries: 5
     start_interval: 1s
 
-x-logging-label: &logging-label
-  logging: "promtail"
-  logging_jobname: "containerlogs"
-
 networks:
   deltafi:
     external: true
@@ -46,7 +42,6 @@ services:
     <<: *relaxed-health-probe
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       deltafi:
         aliases:
@@ -86,7 +81,6 @@ services:
     <<: *relaxed-health-probe
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       deltafi:
         aliases:
@@ -107,7 +101,6 @@ services:
       - "${ENTITY_RESOLVER_PORT}"
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       - deltafi
     restart: unless-stopped
@@ -137,7 +130,6 @@ services:
     labels:
       app: deltafi-core-actions
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       - deltafi
     restart: unless-stopped
@@ -158,7 +150,6 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       - deltafi
     restart: unless-stopped
@@ -180,7 +171,6 @@ services:
     user: "${USER_ID}:${GROUP_ID}"
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     profiles: ["localStorage"]
     networks:
       - deltafi
@@ -204,7 +194,6 @@ services:
       - ${CONFIG_DIR}/dirwatcher.env
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       deltafi:
         aliases:
@@ -227,7 +216,6 @@ services:
       - "80"
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       deltafi:
         aliases:
@@ -254,7 +242,6 @@ services:
       start_interval: 1s
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       deltafi:
         aliases:
@@ -383,6 +370,8 @@ services:
       GF_PATHS_LOGS: /var/log/grafana
       GF_PATHS_PLUGINS: /var/lib/grafana-plugins
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_LOG_LEVEL: warn
+
     env_file:
       - ${SECRETS_DIR}/grafana.env
       - ${SECRETS_DIR}/postgres.env
@@ -398,10 +387,10 @@ services:
     volumes:
       - ${DATA_DIR}/grafana:/var/lib/grafana
       - ${DATA_DIR}/analytics:/data/analytics:ro
-      - ${SETTINGS_DIR}/grafana/grafana.ini:/etc/grafana/grafana.ini
-      - ${SETTINGS_DIR}/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
-      - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
+      - ${SETTINGS_DIR}/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ${SETTINGS_DIR}/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml:ro
+      - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards:ro
     restart: unless-stopped
     user: "${USER_ID}:${GROUP_ID}"
     healthcheck:
@@ -410,6 +399,27 @@ services:
       timeout: 5s
       retries: 20
       start_period: 30s
+
+  dozzle:
+    image: ${DOZZLE}
+    container_name: deltafi-dozzle
+    expose:
+      - 8080
+    environment:
+      PUBLIC_URL: /logs
+      DOZZLE_BASE: /logs
+      DOZZLE_HOSTNAME: DeltaFi
+      DOZZLE_ENABLE_ACTIONS: false
+      DOZZLE_ENABLE_SHELL: false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      deltafi:
+        aliases:
+          - "orchestration"
+    restart: unless-stopped
 
   deltafi-victoriametrics:
     image: ${VICTORIAMETRICS}
@@ -439,53 +449,7 @@ services:
     volumes:
       - ${DATA_DIR}/victoriametrics:/victoria-metrics-data
     user: "${USER_ID}:${GROUP_ID}"
-  deltafi-loki:
-    image: ${LOKI}
-    container_name: deltafi-loki
-    command: -config.file=/etc/loki/loki.yaml
-    expose:
-      - "3100"
-      - "9095"
-      - "7946"
-    labels:
-      deltafi-group: deltafi-dependency
-    networks:
-      - deltafi
-    restart: unless-stopped
-    volumes:
-      - ${SETTINGS_DIR}/loki/loki.yaml:/etc/loki/loki.yaml
-      - ${DATA_DIR}/loki:/data
-    user: "${USER_ID}:${GROUP_ID}"
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/loki/api/v1/status/buildinfo || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-      start_period: 40s
-  deltafi-promtail:
-    image: ${PROMTAIL}
-    container_name: deltafi-promtail
-    command: -config.file=/etc/promtail/promtail.yaml
-    depends_on:
-      deltafi-loki:
-        condition: service_healthy
-    expose:
-      - "3101"
-    labels:
-      deltafi-group: deltafi-dependency
-    networks:
-      - deltafi
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${SETTINGS_DIR}/promtail/promtail.yaml:/etc/promtail/promtail.yaml
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    healthcheck:
-      test: ["CMD-SHELL", "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/3101; exit $?;'"]
-      interval: 20s
-      retries: 30
-      timeout: 10s
-      start_period: 10s
+
   deltafi-nginx:
     image: ${NGINX}
     container_name: deltafi-nginx
@@ -532,7 +496,6 @@ services:
       - ${DOCKER_GID}
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       - deltafi
     restart: unless-stopped
@@ -552,6 +515,7 @@ services:
     stdin_open: true
     user: "${USER_ID}:${GROUP_ID}"
     profiles: ["java-devcontainer"]
+
   java-ide:
     image: ${DELTAFI_JAVA_IDE}
     container_name: java-ide
@@ -567,7 +531,6 @@ services:
       - ${DOCKER_GID}
     labels:
       deltafi-group: deltafi-core
-      <<: *logging-label
     networks:
       - deltafi
     restart: unless-stopped
@@ -587,3 +550,57 @@ services:
     stdin_open: true
     user: "${USER_ID}:${GROUP_ID}"
     profiles: ["java-ide"]
+
+  vector:
+    profiles: ["logs"]
+    image: ${VECTOR}
+    container_name: deltafi-vector
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${LOGS_DIR}:/logs
+      - ${SETTINGS_DIR}/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    restart: unless-stopped
+    group_add:
+      - ${DOCKER_GID}
+    user: "${USER_ID}:${GROUP_ID}"
+    networks:
+      - deltafi
+    ports:
+      - 8686:8686
+    labels:
+      deltafi-group: deltafi-dependency
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider 0.0.0.0:8686/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Logrotate container
+  logrotate:
+    profiles: ["logs"]
+    image: ${LOGROTATE}
+    container_name: deltafi-logrotate
+    volumes:
+      - ${LOGS_DIR}:/logs
+    environment:
+      - LOGROTATE_INTERVAL=${LOGROTATE_INTERVAL:-daily}
+      - LOGROTATE_KEEP_DAYS=${LOGROTATE_KEEP_DAYS:-7}
+      - AUDIT_KEEP_DAYS=${LOGROTATE_AUDIT_KEEP_DAYS:-365}
+      - LOGROTATE_MAX_SIZE=${LOGROTATE_MAX_SIZE:-50M}
+      - LOGROTATE_AUDIT_MAX_SIZE=${LOGROTATE_AUDIT_MAX_SIZE:-100M}
+    restart: unless-stopped
+    group_add:
+      - ${DOCKER_GID}
+    user: "${USER_ID}:${GROUP_ID}"
+    networks:
+      - deltafi
+    labels:
+      deltafi-group: deltafi-dependency
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -E '(entrypoint.sh|logrotate)' || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      start_interval: 1s

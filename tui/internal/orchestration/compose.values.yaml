@@ -48,6 +48,17 @@ deltafi:
       secret: ssl-secret
   lookup:
     enabled: false
+  logs:
+    enabled: true
+    logrotate:
+      image: {{.LogrotateContainer}}
+      interval: daily
+      schedule:
+        max_size: 50M
+        keep: 30
+      audit_schedule:
+        max_size: 100M
+        keep: 365
 
 # nginx domain
 ingress:
@@ -62,10 +73,10 @@ ingress:
 dependencies:
   grafana: {{.GrafanaContainer}}
   victoriametrics: {{.VictoriaMetricsContainer}}
-  loki: {{.LokiContainer}}
+  vector: {{.VectorContainer}}
+  dozzle: {{.DozzleContainer}}
   minio: {{.MinioContainer}}
   nginx: {{.NginxContainer}}
-  promtail: {{.PromtailContainer}}
   valkey: {{.ValkeyContainer}}
   postgres: {{.PostgresContainer}}
   postgres_lookup: {{.PostgresLookupContainer}}

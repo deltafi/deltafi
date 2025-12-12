@@ -58,7 +58,9 @@ default dashboards are included in a DeltaFi installation:
 * Last Seen on Flows - A list of flows with the most recent flow activity
 * Processing Report - A flow level report on flow activity for a given time period
 
-In addition, there are Dashboards with logs, audit logging information, and logging per action.
+In addition, there are Dashboards with logs, audit logging information, and logging per action (available in Kubernetes installations).
+
+> **Note for Compose deployments**: Log viewing in Compose deployments uses Dozzle rather than Grafana dashboards. See [Consolidated Logging (Compose)](/operating/logging) for details.
 
 ## Metrics APIs
 

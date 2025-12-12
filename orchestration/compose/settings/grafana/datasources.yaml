@@ -8,14 +8,6 @@ datasources:
     uid: deltafi-victoriametrics
     url: http://deltafi-victoriametrics:8428/graphite
     version: 2
-  - access: proxy
-    editable: false
-    isDefault: false
-    name: Loki
-    type: loki
-    uid: deltafi-loki
-    url: http://deltafi-loki:3100
-    version: 2
   - name: Postgres
     uid: deltafi-postgres
     type: postgres
