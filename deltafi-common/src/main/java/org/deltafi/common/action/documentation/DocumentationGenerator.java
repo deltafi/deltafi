@@ -185,19 +185,57 @@ public class DocumentationGenerator {
         propertiesNode.fields().forEachRemaining(fieldEntry -> {
             PropertyInfo propertyInfo = new PropertyInfo();
             propertyInfo.setName(fieldEntry.getKey());
-            JsonNode typeNode = fieldEntry.getValue().get("type");
-            if (typeNode != null) {
-                propertyInfo.setPropertyType(getPropertyType(fieldEntry.getValue()));
+            JsonNode fieldSchema = fieldEntry.getValue();
+
+            // Handle allOf wrapper (used when custom type has field-level description)
+            JsonNode allOfNode = fieldSchema.get("allOf");
+            if (allOfNode != null && allOfNode.isArray() && !allOfNode.isEmpty()) {
+                // First element contains the type definition, second may have field description
+                JsonNode typeSchema = allOfNode.get(0);
+                JsonNode typeNode = typeSchema.get("type");
+                if (typeNode != null) {
+                    propertyInfo.setPropertyType(getPropertyType(typeSchema));
+                } else {
+                    JsonNode xDeltafiType = typeSchema.get("x-deltafi-type");
+                    PropertyType fallbackType = new PropertyType();
+                    fallbackType.setType(xDeltafiType != null ? xDeltafiType.textValue() : "unknown");
+                    propertyInfo.setPropertyType(fallbackType);
+                }
+                // Get description from second allOf element if present, or from first
+                JsonNode descriptionNode = allOfNode.size() > 1 ? allOfNode.get(1).get("description") : null;
+                if (descriptionNode == null) {
+                    descriptionNode = typeSchema.get("description");
+                }
+                if (descriptionNode != null) {
+                    propertyInfo.setDescription(descriptionNode.textValue());
+                }
             } else {
-                JsonNode refNode = fieldEntry.getValue().get("$ref");
-                String defName = refNode.textValue().substring(8); // skip "#/$defs/"
-                propertyInfo.setPropertyType(defs.get(defName));
+                JsonNode typeNode = fieldSchema.get("type");
+                if (typeNode != null) {
+                    propertyInfo.setPropertyType(getPropertyType(fieldSchema));
+                } else {
+                    JsonNode refNode = fieldSchema.get("$ref");
+                    if (refNode != null) {
+                        String defName = refNode.textValue().substring(8); // skip "#/$defs/"
+                        propertyInfo.setPropertyType(defs.get(defName));
+                    } else {
+                        // Handle custom types that may have x-deltafi-type or other extensions
+                        PropertyType fallbackType = new PropertyType();
+                        JsonNode xDeltafiType = fieldSchema.get("x-deltafi-type");
+                        if (xDeltafiType != null) {
+                            fallbackType.setType(xDeltafiType.textValue());
+                        } else {
+                            fallbackType.setType("unknown");
+                        }
+                        propertyInfo.setPropertyType(fallbackType);
+                    }
+                }
+                JsonNode descriptionNode = fieldSchema.get("description");
+                if (descriptionNode != null) {
+                    propertyInfo.setDescription(descriptionNode.textValue());
+                }
             }
-            JsonNode descriptionNode = fieldEntry.getValue().get("description");
-            if (descriptionNode != null) {
-                propertyInfo.setDescription(descriptionNode.textValue());
-            }
-            JsonNode defaultNode = fieldEntry.getValue().get("default");
+            JsonNode defaultNode = fieldSchema.get("default");
             if (defaultNode != null) {
                 propertyInfo.setDefaultValue(defaultNode.asText());
             }

@@ -58,6 +58,7 @@
       { "text": "Ingress", "link": "/operating/ingress" },
       { "text": "TUI (Text User Interface)", "link": "/operating/TUI" },
       { "text": "GUI", "link": "/operating/GUI" },
+      { "text": "Site Configuration", "link": "/operating/site-configuration" },
       { "text": "Configuration", "link": "/operating/configuration" },
       { "text": "Error Handling", "link": "/operating/errors" },
       { "text": "Events API", "link": "/operating/events_api" },

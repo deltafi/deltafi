@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.deltafi.actionkit.action.ingress.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.parameters.EnvVar;
 import org.deltafi.common.ssl.SslContextProvider;
 import org.deltafi.common.ssl.SslContextProvider.SslException;
 import org.deltafi.common.types.*;
@@ -56,7 +57,11 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
         @JsonPropertyDescription("The user name")
         private String username;
 
-        @JsonPropertyDescription("The password. If not set, will use the private key from a configured keystore.")
+        @JsonPropertyDescription("Environment variable containing the password. If not set, will use the private key from a configured keystore.")
+        private EnvVar passwordEnvVar = new EnvVar();
+
+        @Deprecated
+        @JsonPropertyDescription("The password (DEPRECATED: use passwordEnvVar instead for security). If not set, will use the private key from a configured keystore.")
         private String password;
 
         @JsonProperty(required = true)
@@ -66,6 +71,18 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
         @JsonProperty(required = true)
         @JsonPropertyDescription("A regular expression that files must match to be ingressed")
         private String fileRegex;
+
+        /**
+         * Gets the password from the environment variable or falls back to the deprecated password field.
+         * @return the resolved password, or null if neither is configured
+         * @throws IllegalStateException if passwordEnvVar is configured but the environment variable is not set
+         */
+        public String resolvePassword() {
+            if (passwordEnvVar.isSet()) {
+                return passwordEnvVar.resolve();
+            }
+            return password;
+        }
     }
 
     private final JSch jSch;
@@ -86,8 +103,9 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
         try {
             Session session = jSch.getSession(params.getUsername(), params.getHost(), params.getPort());
             session.setConfig("StrictHostKeyChecking", "no");
-            if (params.getPassword() != null) {
-                session.setPassword(params.getPassword());
+            String resolvedPassword = params.resolvePassword();
+            if (resolvedPassword != null) {
+                session.setPassword(resolvedPassword);
             } else if (sslContextProvider.isConfigured()) {
                 // Use private key extracted from keystore provided in ssl properties
                 jSch.addIdentity(params.getUsername(), getPrivateKey(), null, null);
@@ -117,7 +135,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
                 ingressResult.addItem(resultItem);
                 channel.rm(lsEntry.getFilename());
             }
-        } catch (IllegalArgumentException | IOException | JSchException | SftpException | SslException e) {
+        } catch (IllegalArgumentException | IllegalStateException | IOException | JSchException | SftpException | SslException e) {
             ingressResult.setStatus(IngressStatus.UNHEALTHY);
             ingressResult.setStatusMessage("Unable to get files from SFTP server: " + e.getMessage());
             log.error("Unable to get files from SFTP server", e);

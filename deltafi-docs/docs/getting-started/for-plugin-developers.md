@@ -254,6 +254,7 @@ deltafi integration-test run --like "my-plugin"
 
 - [Creating a Plugin](/plugins) - Detailed plugin structure
 - [Actions](/actions) - Complete action API reference
+- [Action Parameters](/action_parameters) - Parameter types including secure EnvVar references
 - [Transform Actions](/actions/transform) - Transform action details
 - [Egress Actions](/actions/egress) - Egress action details
 - [Timed Ingress Actions](/actions/timed_ingress) - Ingress action details

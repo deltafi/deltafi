@@ -20,6 +20,7 @@ import ArrayListRenderer from '../components/jsonSchemaRenderers/defaultRenderer
 import PublishArrayListRenderer from '../components/jsonSchemaRenderers/publishRenderers/arrayRender/ArrayListRenderer.vue';
 import SubscribeArrayListRenderer from '../components/jsonSchemaRenderers/subscribeRenderers/arrayRender/ArrayListRenderer.vue';
 import BooleanRenderer from '../components/jsonSchemaRenderers/defaultRenderers/BooleanRenderer.vue';
+import EnvVarRenderer from '../components/jsonSchemaRenderers/defaultRenderers/EnvVarRenderer.vue';
 import IntegerRenderer from '../components/jsonSchemaRenderers/defaultRenderers/IntegerRenderer.vue';
 import ObjectRenderer from "../components/jsonSchemaRenderers/defaultRenderers/ObjectRenderer.vue";
 import PublishObjectRenderer from '../components/jsonSchemaRenderers/publishRenderers/ObjectRenderer.vue';
@@ -29,11 +30,51 @@ import PublishStringRenderer from '../components/jsonSchemaRenderers/publishRend
 import SubscribeStringRenderer from '../components/jsonSchemaRenderers/subscribeRenderers/StringRenderer.vue';
 import AdditionalPropertiesStringRenderer from '../components/jsonSchemaRenderers/defaultRenderers/AdditionalPropertiesStringRenderer.vue';
 import { vanillaRenderers } from "@jsonforms/vue-vanilla";
-import { rankWith, isObjectControl, isBooleanControl, isStringControl, isIntegerControl, schemaTypeIs } from "@jsonforms/core";
+import { rankWith, isObjectControl, isBooleanControl, isStringControl, isIntegerControl, schemaTypeIs, JsonSchema, UISchemaElement, isControl } from "@jsonforms/core";
+
+// Custom tester for EnvVar type
+// Detected via x-deltafi-type property in the field's schema
+const isEnvVarControl = (uischema: UISchemaElement, schema: JsonSchema): boolean => {
+  if (!isControl(uischema)) return false;
+
+  // The schema passed is the ROOT schema, not the field's schema
+  // We need to extract the field's schema using the uischema scope
+  const scope = (uischema as { scope?: string })?.scope || '';
+  const pathParts = scope.replace('#/properties/', '').split('/properties/');
+
+  // Navigate to the field's schema
+  type SchemaWithProps = JsonSchema & {
+    properties?: Record<string, JsonSchema & {
+      'x-deltafi-type'?: string;
+      allOf?: Array<{ 'x-deltafi-type'?: string }>;
+    }>;
+  };
+
+  let fieldSchema: SchemaWithProps | undefined = schema as SchemaWithProps;
+  for (const part of pathParts) {
+    if (fieldSchema?.properties?.[part]) {
+      fieldSchema = fieldSchema.properties[part] as SchemaWithProps;
+    } else {
+      return false;
+    }
+  }
+
+  if (!fieldSchema) return false;
+
+  const extFieldSchema = fieldSchema as { 'x-deltafi-type'?: string; allOf?: Array<{ 'x-deltafi-type'?: string }> };
+
+  // Check for x-deltafi-type at top level of field schema
+  if (extFieldSchema?.['x-deltafi-type'] === 'EnvVar') return true;
+  // Check for x-deltafi-type inside allOf (when field has its own description)
+  if (extFieldSchema?.allOf?.[0]?.['x-deltafi-type'] === 'EnvVar') return true;
+
+  return false;
+};
 
 export default function usePrimeVueJsonSchemaUIRenderers() {
   const rendererList = [
     ...vanillaRenderers,
+    { tester: rankWith(5, isEnvVarControl), renderer: EnvVarRenderer },
     { tester: rankWith(3, isObjectControl), renderer: ObjectRenderer },
     { tester: rankWith(3, isStringControl), renderer: StringRenderer },
     { tester: rankWith(3, isIntegerControl), renderer: IntegerRenderer },

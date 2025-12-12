@@ -46,6 +46,8 @@ After the wizard completes, you'll have a running DeltaFi system. For detailed g
 - [Plugin Developer's Guide](/getting-started/for-plugin-developers) - Building custom actions
 - [Core Developer's Guide](/getting-started/for-core-developers) - Contributing to DeltaFi
 
+For customizing your installation (environment variables, configuration overrides, etc.), see [Site Configuration](/operating/site-configuration).
+
 To use the command line interface, open a new shell or source your rc file:
 
 ```bash

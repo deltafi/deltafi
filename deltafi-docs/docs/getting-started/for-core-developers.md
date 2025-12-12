@@ -113,92 +113,9 @@ From the `repos/deltafi/` directory:
 
 ### Orchestration Modes
 
-DeltaFi supports two orchestration modes:
+DeltaFi supports two orchestration modes: **Compose** (Docker Compose, recommended for most development) and **KinD** (Kubernetes in Docker, for testing Helm charts). Switch between them with `deltafi config`.
 
-| Mode | Directory | Use Case |
-|------|-----------|----------|
-| **Compose** | `compose/` | Docker Compose deployment (simpler, recommended for most development) |
-| **KinD** | `charts/` | Kubernetes in Docker (for testing Helm charts and K8s-specific features) |
-
-To switch between modes:
-
-```bash
-deltafi config
-```
-
-**Important**: If you're making changes to orchestration files (`compose/` or `charts/`), you generally need to make parallel changes in both and test in both modes. This applies to:
-- Service definitions and configurations
-- Environment variables
-- Volume mounts
-- Network settings
-
-## Site Customization
-
-The `site/` directory contains site-specific overrides that persist across upgrades. Different files are used depending on your orchestration mode:
-
-| File | Mode | Purpose |
-|------|------|---------|
-| `site/values.yaml` | Compose | Override default configuration values |
-| `site/compose.yaml` | Compose | Override Docker Compose settings |
-| `site/kind.values.yaml` | KinD | Override Helm values for KinD |
-| `site/templates/` | KinD/K8s | Custom Helm templates |
-
-### values.yaml (Compose mode)
-
-Override configuration values for Docker Compose deployments:
-
-```yaml
-# site/values.yaml
-deltafi:
-  core_worker:
-    enabled: true
-    replicas: 4
-  core_actions:
-    replicas: 2
-  auth:
-    mode: basic  # basic, cert, or disabled
-  api:
-    workers: 16
-  dirwatcher:
-    enabled: true
-    maxFileSize: 4294967296  # 4GB
-ingress:
-  domain: local.deltafi.org
-  tls:
-    enabled: true
-```
-
-### compose.yaml (Compose mode)
-
-Override Docker Compose settings directly:
-
-```yaml
-# site/compose.yaml
-services:
-  deltafi-minio:
-    ports:
-      - 9000:9000  # Expose MinIO to host
-  deltafi-core:
-    environment:
-      - JAVA_OPTS=-Xmx4g
-```
-
-### kind.values.yaml (KinD mode)
-
-Override Helm values for KinD deployments:
-
-```yaml
-# site/kind.values.yaml
-deltafi:
-  core:
-    resources:
-      requests:
-        memory: "2Gi"
-```
-
-### Custom Helm Templates (KinD/K8s)
-
-Add custom Kubernetes resources by placing Helm templates in `site/templates/`. These templates have full access to the DeltaFi chart's helpers and values. See `templates_readme.md` in the chart for examples.
+**Important**: If you're making changes to orchestration files (`compose/` or `charts/`), you generally need to make parallel changes in both and test in both modes.
 
 ## Changing the Core Repository
 

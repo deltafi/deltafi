@@ -27,6 +27,7 @@ import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.parameters.DataSizeDefinitionProvider;
+import org.deltafi.actionkit.action.parameters.EnvVarDefinitionProvider;
 import org.deltafi.actionkit.action.parameters.SchemaGeneratorConfigCustomizer;
 import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.deltafi.actionkit.action.service.ActionRunner;
@@ -165,7 +166,9 @@ public class ActionKitAutoConfiguration {
             configBuilder.forTypesInGeneral()
                     .withAdditionalPropertiesResolver(scope ->
                             scope.getType().isInstanceOf(Map.class) ? scope.getTypeParameterFor(Map.class, 1) : null);
-        configBuilder.forTypesInGeneral().withCustomDefinitionProvider(new DataSizeDefinitionProvider());
+        configBuilder.forTypesInGeneral()
+                .withCustomDefinitionProvider(new DataSizeDefinitionProvider())
+                .withCustomDefinitionProvider(new EnvVarDefinitionProvider());
 
         if (schemaGeneratorCustomizer != null) {
             schemaGeneratorCustomizer.customize(configBuilder);

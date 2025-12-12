@@ -226,49 +226,10 @@ deltafi plugin generate --java my-plugin
 deltafi plugin generate --python my-plugin
 ```
 
-## Site Customization
-
-The `site/` directory in your DeltaFi installation contains site-specific overrides that persist across upgrades.
-
-### values.yaml
-
-Override default configuration values:
-
-```yaml
-# site/values.yaml
-deltafi:
-  core_worker:
-    enabled: true
-    replicas: 4
-  core_actions:
-    replicas: 2
-  auth:
-    mode: basic  # basic, cert, or disabled
-  api:
-    workers: 16
-ingress:
-  domain: my.domain.com
-  tls:
-    enabled: true
-```
-
-### compose.yaml
-
-Override Docker Compose settings:
-
-```yaml
-# site/compose.yaml
-services:
-  deltafi-minio:
-    ports:
-      - 9000:9000  # Expose MinIO to host
-```
-
-After modifying site files, run `deltafi up` to apply changes.
-
 ## Reference
 
 - [TUI Reference](/operating/TUI) - Complete command documentation
+- [Site Configuration](/operating/site-configuration) - Customizing your deployment
 - [Error Handling](/operating/errors) - Resume, replay, and acknowledge
 - [Metrics](/operating/metrics) - Grafana dashboards and metrics
 - [Configuration](/operating/configuration) - System configuration options

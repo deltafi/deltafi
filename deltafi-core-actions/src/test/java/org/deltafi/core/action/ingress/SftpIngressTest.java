@@ -41,6 +41,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.ssl.PemSslBundleProperties;
 
+import org.deltafi.actionkit.action.parameters.EnvVar;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -51,8 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SftpIngressTest {
     private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
@@ -213,6 +214,103 @@ class SftpIngressTest {
         assertEquals(IngressStatus.UNHEALTHY, ((IngressResult) ingressResultType).getStatus());
         assertEquals("Unable to get files from SFTP server: Test error message",
                 ((IngressResult) ingressResultType).getStatusMessage());
+    }
+
+    @Test
+    void ingressesUsingPasswordEnvVar() {
+        // Use an environment variable that exists in the test environment
+        String envVarName = System.getenv().keySet().stream()
+                .filter(k -> System.getenv(k) != null && !System.getenv(k).isEmpty())
+                .findFirst()
+                .orElse("PATH");  // PATH should always exist
+
+        SftpIngress sftpIngress = new SftpIngress(new JSch(), sslProperties());
+        SftpIngress.Parameters params = new SftpIngress.Parameters();
+        params.setHost("localhost");
+        params.setPort(sshServer.getPort());
+        params.setUsername(System.getProperty("user.name"));
+        params.setPasswordEnvVar(new EnvVar(envVarName));
+        params.setDirectory("/test");
+        params.setFileRegex(".*\\.c");
+        IngressResultType ingressResultType = sftpIngress.ingress(
+                ActionContext.builder()
+                        .contentStorageService(CONTENT_STORAGE_SERVICE)
+                        .did(UUID.randomUUID())
+                        .deltaFileName("test-delta-file")
+                        .dataSource("test-data-source")
+                        .flowName("test-flow-name")
+                        .build(), params);
+
+        // The mock SSH server accepts any password, so this should succeed
+        assertInstanceOf(IngressResult.class, ingressResultType);
+        assertEquals(2, ((IngressResult) ingressResultType).getIngressResultItems().size());
+    }
+
+    @Test
+    void unhealthyStatusWhenEnvVarNotSet() {
+        SftpIngress sftpIngress = new SftpIngress(new JSch(), new SslContextProvider(null));
+        SftpIngress.Parameters params = new SftpIngress.Parameters();
+        params.setHost("localhost");
+        params.setPort(sshServer.getPort());
+        params.setUsername(System.getProperty("user.name"));
+        params.setPasswordEnvVar(new EnvVar("NONEXISTENT_ENV_VAR_FOR_TESTING_12345"));
+        params.setDirectory("/test");
+        params.setFileRegex(".*\\.c");
+        IngressResultType ingressResultType = sftpIngress.ingress(
+                ActionContext.builder()
+                        .contentStorageService(CONTENT_STORAGE_SERVICE)
+                        .did(UUID.randomUUID())
+                        .deltaFileName("test-delta-file")
+                        .dataSource("test-data-source")
+                        .flowName("test-flow-name")
+                        .build(), params);
+
+        assertInstanceOf(IngressResult.class, ingressResultType);
+        assertEquals(IngressStatus.UNHEALTHY, ((IngressResult) ingressResultType).getStatus());
+        assertTrue(((IngressResult) ingressResultType).getStatusMessage()
+                .contains("NONEXISTENT_ENV_VAR_FOR_TESTING_12345"));
+    }
+
+    @Test
+    void resolvePasswordReturnsEnvVarValueWhenSet() {
+        // Use an env var that exists
+        String envVarName = "PATH";
+        String expectedValue = System.getenv(envVarName);
+
+        SftpIngress.Parameters params = new SftpIngress.Parameters();
+        params.setPasswordEnvVar(new EnvVar(envVarName));
+        params.setPassword("deprecated-password");
+
+        // Should use env var, not deprecated password
+        assertEquals(expectedValue, params.resolvePassword());
+    }
+
+    @Test
+    void resolvePasswordThrowsWhenEnvVarConfiguredButNotSet() {
+        SftpIngress.Parameters params = new SftpIngress.Parameters();
+        params.setPasswordEnvVar(new EnvVar("NONEXISTENT_ENV_VAR_FOR_TESTING_12345"));
+        params.setPassword("deprecated-password");
+
+        // Should throw, not fall back to deprecated password
+        IllegalStateException exception = assertThrows(IllegalStateException.class, params::resolvePassword);
+        assertTrue(exception.getMessage().contains("NONEXISTENT_ENV_VAR_FOR_TESTING_12345"));
+    }
+
+    @Test
+    void resolvePasswordFallsBackToDeprecatedPasswordWhenEnvVarNotConfigured() {
+        SftpIngress.Parameters params = new SftpIngress.Parameters();
+        // passwordEnvVar is not set (default empty EnvVar)
+        params.setPassword("deprecated-password");
+
+        assertEquals("deprecated-password", params.resolvePassword());
+    }
+
+    @Test
+    void resolvePasswordReturnsNullWhenNothingConfigured() {
+        SftpIngress.Parameters params = new SftpIngress.Parameters();
+        // Neither passwordEnvVar nor password is set
+
+        assertNull(params.resolvePassword());
     }
 
     private SslContextProvider sslProperties() {
