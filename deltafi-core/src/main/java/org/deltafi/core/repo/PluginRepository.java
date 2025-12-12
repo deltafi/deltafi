@@ -40,4 +40,6 @@ public interface PluginRepository extends JpaRepository<PluginEntity, GroupIdArt
     List<PluginEntity> findPluginsWithDependency(PluginCoordinates coords);
 
     Optional<PluginEntity> findByImageName(String imageName);
+
+    Optional<PluginEntity> findByKeyArtifactId(String artifactId);
 }

@@ -693,7 +693,7 @@ class PluginServiceTest {
 
     @Test
     void createPendingPlugin_newInstall_createsNewPlugin() {
-        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.empty());
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.empty());
 
         pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
 
@@ -712,11 +712,12 @@ class PluginServiceTest {
     @Test
     void createPendingPlugin_upgrade_updatesExistingPlugin() {
         PluginEntity existing = makePlugin();
+        existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
         existing.setImageTag("1.0.0");
         existing.setInstallState(PluginState.INSTALLED);
 
-        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
 
         pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret");
 
@@ -735,11 +736,12 @@ class PluginServiceTest {
     @Test
     void createPendingPlugin_sameImageTagAlreadyInstalled_skips() {
         PluginEntity existing = makePlugin();
+        existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
         existing.setImageTag("1.0.0");
         existing.setInstallState(PluginState.INSTALLED);
 
-        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
 
         pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
 
@@ -750,11 +752,12 @@ class PluginServiceTest {
     @Test
     void createPendingPlugin_existingPluginInstalling_doesNotTransitionToPending() {
         PluginEntity existing = makePlugin();
+        existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
         existing.setImageTag("1.0.0");
         existing.setInstallState(PluginState.INSTALLING);
 
-        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
 
         pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret");
 
@@ -771,7 +774,7 @@ class PluginServiceTest {
 
     @Test
     void createPendingPluginFromSnapshot_newInstall_createsNewPlugin() {
-        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.empty());
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.empty());
 
         pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
 
@@ -790,11 +793,12 @@ class PluginServiceTest {
     @Test
     void createPendingPluginFromSnapshot_upgrade_updatesExistingPlugin() {
         PluginEntity existing = makePlugin();
+        existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
         existing.setImageTag("1.0.0");
         existing.setInstallState(PluginState.INSTALLED);
 
-        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
 
         pluginService.createPendingPlugin("registry.example.com/my-plugin:2.0.0", "docker-secret");
 
@@ -813,11 +817,12 @@ class PluginServiceTest {
     @Test
     void createPendingPluginFromSnapshot_sameImageTagAlreadyInstalled_skips() {
         PluginEntity existing = makePlugin();
+        existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
         existing.setImageTag("1.0.0");
         existing.setInstallState(PluginState.INSTALLED);
 
-        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin")).thenReturn(Optional.of(existing));
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
 
         pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "docker-secret");
 

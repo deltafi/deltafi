@@ -796,8 +796,8 @@ public class PluginService implements Snapshotter {
             imageName = image.substring(0, lastColon);
         }
 
-        // Check if plugin already exists with same app name (any version)
-        Optional<PluginEntity> existing = pluginRepo.findByImageName(imageName);
+        // Check if plugin already exists with same artifact id (any version/registry)
+        Optional<PluginEntity> existing = pluginRepo.findByKeyArtifactId(appName);
         if (existing.isPresent()) {
             PluginEntity plugin = existing.get();
 
