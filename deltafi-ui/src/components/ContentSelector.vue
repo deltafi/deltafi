@@ -15,6 +15,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<!-- ABOUTME: Component for selecting content from a list and viewing it. -->
+<!-- ABOUTME: Builds ContentPointer from flow/action context and passes to ContentViewer. -->
 
 <template>
   <div class="content-selector-container">
@@ -22,7 +24,7 @@
       <Listbox v-model="selectedItem" :options="listboxItems" filter option-label="name" />
     </div>
     <div class="right-column">
-      <ContentViewer :content="selectedContent" />
+      <ContentViewer :content="selectedPointer" />
     </div>
   </div>
 </template>
@@ -34,28 +36,53 @@ import ContentViewer from "@/components/ContentViewer.vue";
 
 const emit = defineEmits(["contentSelected"]);
 const props = defineProps({
+  did: {
+    type: String,
+    required: true,
+  },
+  flowNumber: {
+    type: Number,
+    required: true,
+  },
+  actionIndex: {
+    type: Number,
+    default: undefined,
+  },
   content: {
     type: Array,
     required: true,
   },
 });
 
-const { content } = reactive(props);
+const { did, flowNumber, actionIndex, content } = reactive(props);
 const showListbox = computed(() => content.length > 1);
 const listboxItems = computed(() => {
-  return content.map((content, index) => {
+  return content.map((c, index) => {
     return {
       index: index,
-      name: `${index} : ${content.name}`,
+      name: `${index} : ${c.name}`,
     };
   });
 });
 const selectedItem = ref(listboxItems.value[0]);
-const selectedContent = computed(() => content[selectedItem.value.index]);
+
+const selectedPointer = computed(() => {
+  const c = content[selectedItem.value.index];
+  return {
+    did: did,
+    flowNumber: flowNumber,
+    actionIndex: actionIndex,
+    contentIndex: selectedItem.value.index,
+    name: c.name,
+    mediaType: c.mediaType,
+    totalSize: c.size,
+    tags: c.tags,
+  };
+});
 
 watch(selectedItem, (newItem, oldValue) => {
   if (newItem === null) selectedItem.value = oldValue;
-  emit("contentSelected", selectedContent.value);
+  emit("contentSelected", selectedPointer.value);
 });
 </script>
 

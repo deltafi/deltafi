@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: REST controller for fetching DeltaFile content by location pointer.
+// ABOUTME: Accepts base64-encoded JSON or direct JSON with content location, returns content stream.
 package org.deltafi.core.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +29,7 @@ import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.FetchContentService;
 import org.deltafi.core.types.ContentRequest;
+import org.deltafi.core.types.ContentResult;
 import org.deltafi.core.types.ErrorResponse;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -48,7 +51,7 @@ public class ContentRest {
             .registerModule(new JavaTimeModule());
 
     static final String BASE64_DECODE_ERROR = "Failed to decode base64 encoded json";
-    static final String JSON_PARSE_ERROR = "Failed to parse content object from json";
+    static final String JSON_PARSE_ERROR = "Failed to parse content request from json";
 
     private final FetchContentService fetchContentService;
 
@@ -65,7 +68,9 @@ public class ContentRest {
     }
 
     private ResponseEntity<InputStreamResource> buildResponse(ContentRequest contentRequest) throws ObjectStorageException {
-        String filename = contentRequest.name();
+        ContentResult result = fetchContentService.fetchContent(contentRequest);
+
+        String filename = result.name();
         if (StringUtils.isBlank(filename)) {
             filename = "content";
         }
@@ -74,11 +79,10 @@ public class ContentRest {
         headers.add("Content-Disposition", "attachment; filename=\"" + filename + "\";");
         headers.add("Content-Transfer-Encoding", "binary");
         headers.add("Cache-Control", "no-cache");
-        headers.add("Content-Type", contentRequest.mediaType());
-        headers.add("Content-Length", "" + contentRequest.size());
+        headers.add("Content-Type", result.mediaType());
+        headers.add("Content-Length", "" + result.size());
 
-        // note fetchContentService handles auditing access to the content
-        InputStreamResource body = new InputStreamResource(fetchContentService.streamContent(contentRequest));
+        InputStreamResource body = new InputStreamResource(result.stream());
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 

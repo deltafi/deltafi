@@ -15,6 +15,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<!-- ABOUTME: Component for viewing DeltaFile content with syntax highlighting. -->
+<!-- ABOUTME: Accepts a ContentPointer and fetches/displays content from the API. -->
 
 <template>
   <div class="content-viewer">
@@ -32,7 +34,7 @@
             <Button :label="content.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
             <Button class="p-button-text p-button-secondary" disabled>
-              <FormattedBytes :bytes="content.size" />
+              <FormattedBytes :bytes="content.totalSize" />
             </Button>
             <Divider layout="vertical" />
             <ContentViewerMenu :model="items" />
@@ -224,7 +226,7 @@ watch(
   () => loadContent()
 );
 
-const partialContent = computed(() => content.value.size > uiConfig.contentPreviewSize);
+const partialContent = computed(() => content.value.totalSize > uiConfig.contentPreviewSize);
 
 const embeddedContent = computed(() => "content" in content.value);
 
@@ -245,12 +247,7 @@ const download = () => {
   if (embeddedContent.value) {
     downloadEmbeddedContent();
   } else {
-    const request = {
-      ...content.value,
-      ...content.value.name.value,
-    };
-    delete request.tags;
-    const url = downloadURL(request);
+    const url = downloadURL(content.value);
     window.open(url);
   }
 };
@@ -263,9 +260,8 @@ const loadContent = async () => {
   }
   const request = {
     ...content.value,
-    size: partialContent.value ? uiConfig.contentPreviewSize : content.value.size,
+    size: partialContent.value ? uiConfig.contentPreviewSize : undefined,
   };
-  delete request.tags;
   try {
     await fetchContent(request);
   } catch {
@@ -277,7 +273,7 @@ const loadContent = async () => {
 
 const loadEmbeddedContent = () => {
   contentBuffer.value = encoder.encode(content.value.content);
-  content.value.size = content.value.content.length;
+  content.value.totalSize = content.value.content.length;
   contentLoaded.value = true;
 };
 

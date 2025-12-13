@@ -15,21 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-// ABOUTME: Request object for fetching DeltaFile content by location pointer.
-// ABOUTME: Identifies content by DeltaFile DID, flow number, action index, and content index.
+// ABOUTME: Result object returned when fetching DeltaFile content.
+// ABOUTME: Contains content metadata and input stream for the resolved content.
 package org.deltafi.core.types;
 
-import lombok.Builder;
+import java.io.InputStream;
 
-import java.util.UUID;
-
-@Builder
-public record ContentRequest(
-        UUID did,              // DeltaFile identifier
-        int flowNumber,        // Which flow (by number, not index)
-        Integer actionIndex,   // Which action (null = flow input, 0+ = action index)
-        int contentIndex,      // Which content piece in the list
-        Long offset,           // Byte offset for partial reads (null = start from beginning)
-        Long size              // Byte count for partial reads (null = read to end)
+public record ContentResult(
+        String name,
+        String mediaType,
+        long size,
+        InputStream stream
 ) {
 }

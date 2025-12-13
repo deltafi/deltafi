@@ -81,12 +81,12 @@
 
 <script setup>
 import useErrorCount from "@/composables/useErrorCount";
-import { computed, ref, watch, inject, onMounted } from "vue";
+import { computed, ref, watch, inject } from "vue";
 import { useRoute } from "vue-router";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 
 const route = useRoute();
-const { fetchErrorCount, errorCount } = useErrorCount();
+const { errorCount } = useErrorCount();
 const uiConfig = inject("uiConfig");
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -369,9 +369,6 @@ watch(
   }
 );
 
-onMounted(() => {
-  fetchErrorCount();
-});
 </script>
 
 <style scoped>

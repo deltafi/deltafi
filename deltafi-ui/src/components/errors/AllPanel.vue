@@ -66,7 +66,7 @@
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable v-model:expanded-rows="expandedRows" data-key="name" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
+            <DataTable v-model:expanded-rows="expandedRows" data-key="name" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="(e) => flowRowClick(e, error.data.did)">
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
@@ -82,7 +82,7 @@
               </Column>
               <template #expansion="slotProps">
                 <div class="errors-Subtable">
-                  <DataTable responsive-layout="scroll" data-key="name" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="slotProps.data.actions" :row-class="actionRowClass" @row-click="actionRowClick">
+                  <DataTable responsive-layout="scroll" data-key="name" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actionsWithIndex(slotProps.data.actions)" :row-class="actionRowClass" @row-click="(e) => actionRowClick(e, error.data.did, slotProps.data)">
                     <Column field="name" header="Action" :sortable="true" />
                     <Column field="state" header="State" class="state-column" :sortable="true" />
                     <Column field="created" header="Created" class="timestamp-column" :sortable="true">
@@ -104,7 +104,7 @@
         </template>
       </DataTable>
     </Panel>
-    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" @update="onRefresh" />
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :did="errorViewer.did" :flow-number="errorViewer.flowNumber" :action-index="errorViewer.actionIndex" :action="errorViewer.action" @update="onRefresh" />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
     <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
     <ResumeDialog ref="resumeDialog" :did="filterSelectedDids" @refresh-page="onRefresh" />
@@ -191,6 +191,9 @@ const props = defineProps({
 const errorViewer = ref({
   visible: false,
   action: {},
+  did: undefined,
+  flowNumber: undefined,
+  actionIndex: undefined,
 });
 const menuItems = ref([
   {
@@ -356,10 +359,49 @@ const actionRowClass = (action) => {
   if (action.state === "RETRIED") return "table-warning action-error";
 };
 
-const actionRowClick = (event) => {
-  const action = event.data.actions ? event.data.actions.slice(-1)[0] : event.data;
+const actionsWithIndex = (actions) => {
+  return actions.map((action, index) => ({ ...action, actionIndex: index }));
+};
+
+// Get the content list that was INPUT to an action (for display in the error viewer)
+// Server will resolve the actual content data using contentAtOrBefore()
+const getInputContentList = (flow, actionIndex) => {
+  if (actionIndex === 0) {
+    return flow.input?.content || [];
+  }
+  // Find last complete action before this one
+  for (let i = actionIndex - 1; i >= 0; i--) {
+    const prevAction = flow.actions[i];
+    if (prevAction.state === "COMPLETE" && prevAction.content?.length > 0) {
+      return prevAction.content;
+    }
+  }
+  return flow.input?.content || [];
+};
+
+const flowRowClick = (event, did) => {
+  const flow = event.data;
+  if (!flow.actions?.length) return;
+  const actionIndex = flow.actions.length - 1;
+  const action = flow.actions[actionIndex];
   if (["ERROR", "RETRIED"].includes(action.state)) {
-    errorViewer.value.action = action;
+    const inputContent = getInputContentList(flow, actionIndex);
+    errorViewer.value.action = { ...action, content: inputContent };
+    errorViewer.value.did = did;
+    errorViewer.value.flowNumber = flow.number;
+    errorViewer.value.actionIndex = actionIndex;
+    errorViewer.value.visible = true;
+  }
+};
+
+const actionRowClick = (event, did, flow) => {
+  const action = event.data;
+  if (["ERROR", "RETRIED"].includes(action.state)) {
+    const inputContent = getInputContentList(flow, action.actionIndex);
+    errorViewer.value.action = { ...action, content: inputContent };
+    errorViewer.value.did = did;
+    errorViewer.value.flowNumber = flow.number;
+    errorViewer.value.actionIndex = action.actionIndex;
     errorViewer.value.visible = true;
   }
 };

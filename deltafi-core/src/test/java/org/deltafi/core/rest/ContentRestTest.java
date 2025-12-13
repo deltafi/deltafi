@@ -21,11 +21,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.common.content.Segment;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.services.FetchContentService;
 import org.deltafi.core.types.ContentRequest;
+import org.deltafi.core.types.ContentResult;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +38,6 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.io.ByteArrayInputStream;
 import java.util.Base64;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -58,6 +57,7 @@ class ContentRestTest {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private static final String DATA = "data in content storage";
+    private static final UUID TEST_DID = UUID.randomUUID();
 
     @Autowired
     private MockMvc mockMvc;
@@ -68,7 +68,8 @@ class ContentRestTest {
     @Test
     void testGet() throws Exception {
         ContentRequest contentRequest = contentRequestObj();
-        Mockito.when(fetchContentService.streamContent(contentRequest)).thenReturn(new ByteArrayInputStream(DATA.getBytes()));
+        ContentResult result = new ContentResult("content.txt", MediaType.TEXT_PLAIN_VALUE, DATA.length(), new ByteArrayInputStream(DATA.getBytes()));
+        Mockito.when(fetchContentService.fetchContent(contentRequest)).thenReturn(result);
 
         String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
         MvcResult mvcResult = mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
@@ -76,29 +77,30 @@ class ContentRestTest {
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE))
                 .andReturn();
 
-        String result = new String(mvcResult.getResponse().getContentAsByteArray());
-        assertThat(result).isEqualTo(DATA);
+        String responseBody = new String(mvcResult.getResponse().getContentAsByteArray());
+        assertThat(responseBody).isEqualTo(DATA);
     }
 
     @Test
     void testPost() throws Exception {
         ContentRequest contentRequest = contentRequestObj();
-        Mockito.when(fetchContentService.streamContent(contentRequest)).thenReturn(new ByteArrayInputStream(DATA.getBytes()));
+        ContentResult result = new ContentResult("content.txt", MediaType.TEXT_PLAIN_VALUE, DATA.length(), new ByteArrayInputStream(DATA.getBytes()));
+        Mockito.when(fetchContentService.fetchContent(contentRequest)).thenReturn(result);
 
         MvcResult mvcResult = mockMvc.perform(post("/api/v2/content").content(json(contentRequest)).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE))
                 .andReturn();
 
-        String result = new String(mvcResult.getResponse().getContentAsByteArray());
-        assertThat(result).isEqualTo(DATA);
+        String responseBody = new String(mvcResult.getResponse().getContentAsByteArray());
+        assertThat(responseBody).isEqualTo(DATA);
     }
 
     @Test
     void testNotFound() throws Exception {
         String error = "Couldn't find it";
         ContentRequest contentRequest = contentRequestObj();
-        Mockito.when(fetchContentService.streamContent(contentRequest)).thenThrow(new EntityNotFound(error));
+        Mockito.when(fetchContentService.fetchContent(contentRequest)).thenThrow(new EntityNotFound(error));
 
         String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
         mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
@@ -112,7 +114,7 @@ class ContentRestTest {
     void testObjectStorageError() throws Exception {
         String error = "Couldn't get it";
         ContentRequest contentRequest = contentRequestObj();
-        Mockito.when(fetchContentService.streamContent(contentRequest)).thenThrow(new ObjectStorageException(error));
+        Mockito.when(fetchContentService.fetchContent(contentRequest)).thenThrow(new ObjectStorageException(error));
 
         String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
         mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
@@ -146,16 +148,11 @@ class ContentRestTest {
     }
 
     private ContentRequest contentRequestObj() {
-        Segment segment = new Segment();
-        segment.setDid(UUID.randomUUID());
-        segment.setOffset(0);
-        segment.setSize(DATA.length());
-
         return ContentRequest.builder()
-                .name("content.txt")
-                .mediaType(MediaType.TEXT_PLAIN_VALUE)
-                .size(segment.getSize())
-                .segments(List.of(segment))
+                .did(TEST_DID)
+                .flowNumber(0)
+                .actionIndex(0)
+                .contentIndex(0)
                 .build();
     }
 

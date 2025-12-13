@@ -15,6 +15,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<!-- ABOUTME: Dialog wrapper for viewing DeltaFile content via ContentSelector. -->
+<!-- ABOUTME: Accepts content location pointer and passes to ContentSelector. -->
 
 <template>
   <div>
@@ -22,7 +24,13 @@
       <slot />
     </span>
     <Dialog v-model:visible="dialogVisible" :header="header" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
-      <ContentSelector :content="content" @content-selected="handleContentSelected" />
+      <ContentSelector
+        :did="did"
+        :flow-number="flowNumber"
+        :action-index="actionIndex"
+        :content="content"
+        @content-selected="handleContentSelected"
+      />
     </Dialog>
   </div>
 </template>
@@ -33,24 +41,31 @@ import Dialog from "primevue/dialog";
 import ContentSelector from "@/components/ContentSelector.vue";
 
 const props = defineProps({
+  did: {
+    type: String,
+    required: true,
+  },
+  flowNumber: {
+    type: Number,
+    required: true,
+  },
+  actionIndex: {
+    type: Number,
+    default: undefined,
+  },
   content: {
     type: Array,
     required: true,
   },
-  action: {
-    type: String,
-    required: false,
-    default: null,
-  },
 });
 
-const { content, action } = reactive(props);
+const { content } = reactive(props);
 
 const dialogVisible = ref(false);
 const showDialog = () => (dialogVisible.value = true);
 
-const header = ref(content[0].name || `${content[0].did}-${action}`);
-const handleContentSelected = (content) => (header.value = content.name);
+const header = ref(content[0]?.name || "Content");
+const handleContentSelected = (pointer) => (header.value = pointer.name);
 </script>
 
 <style>

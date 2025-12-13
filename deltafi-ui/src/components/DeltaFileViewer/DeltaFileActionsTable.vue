@@ -45,7 +45,7 @@
       <Column v-if="!contentDeleted && $hasPermission('DeltaFileContentView')" header="Content" class="content-column">
         <template #body="{ data: action }">
           <span v-if="action.hasOwnProperty('content') && action.content.length > 0">
-            <ContentDialog :content="action.content" :action="action.name">
+            <ContentDialog :did="did" :flow-number="deltaFile.number" :action-index="action.actionIndex" :content="action.content">
               <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
             </ContentDialog>
           </span>
@@ -61,7 +61,7 @@
         </template>
       </Column>
     </DataTable>
-    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :did="did" :flow-number="deltaFile.number" :action-index="errorViewer.actionIndex" :action="errorViewer.action" />
   </div>
 </template>
 
@@ -83,6 +83,10 @@ import DataTable from "primevue/datatable";
 const hasPermission = inject("hasPermission");
 
 const props = defineProps({
+  did: {
+    type: String,
+    required: true,
+  },
   deltaFileData: {
     type: Object,
     required: true,
@@ -99,6 +103,7 @@ const deltaFile = reactive(props.deltaFileData);
 const errorViewer = reactive({
   visible: false,
   action: {},
+  actionIndex: undefined,
 });
 
 const contentDeleted = computed(() => {
@@ -107,12 +112,13 @@ const contentDeleted = computed(() => {
 });
 
 const actions = computed(() => {
-  return deltaFile.actions.map((action) => {
+  return deltaFile.actions.map((action, index) => {
     const timeElapsed = new Date(action.modified) - new Date(action.created);
     action.created = new Date(action.created).toISOString();
     action.modified = new Date(action.modified).toISOString();
     return {
       ...action,
+      actionIndex: index,
       elapsed: duration(timeElapsed),
     };
   });
@@ -144,6 +150,7 @@ const rowClick = (event) => {
 
   errorViewer.visible = true;
   errorViewer.action = action;
+  errorViewer.actionIndex = action.actionIndex;
 };
 </script>
 

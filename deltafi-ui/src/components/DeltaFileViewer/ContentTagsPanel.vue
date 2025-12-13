@@ -15,6 +15,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<!-- ABOUTME: Panel showing content tags from a DeltaFile's flows and actions. -->
+<!-- ABOUTME: Groups content by tag and provides content viewing dialog. -->
 
 <template>
   <div class="deltafile-content-tags-panel">
@@ -30,7 +32,7 @@
         </Column>
         <Column header="Content" class="content-column">
           <template #body="{ data }">
-            <ContentDialog :content="[data.content]" action="">
+            <ContentDialog :did="deltaFile.did" :flow-number="data.flowNumber" :action-index="data.actionIndex" :content="[data.content]">
               <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
             </ContentDialog>
           </template>
@@ -59,20 +61,27 @@ const props = defineProps({
 const deltaFile = reactive(props.deltaFileData);
 
 const contentTags = computed(() => {
-  const contentWithTags = _.chain(deltaFile.flows)
-    .flatMap('actions')
-    .flatMap('content')
-    .filter((item) => _.get(item, 'tags.length', 0) > 0)
-    .value();
   const results = [];
-  contentWithTags.forEach((content) => {
-    content.tags.forEach((tag) => {
-      results.push({
-        tag: tag,
-        content: content
-      })
-    })
-  })
+
+  deltaFile.flows.forEach((flow) => {
+    flow.actions.forEach((action, actionIndex) => {
+      if (action.content) {
+        action.content.forEach((content) => {
+          if (content.tags && content.tags.length > 0) {
+            content.tags.forEach((tag) => {
+              results.push({
+                tag: tag,
+                content: content,
+                flowNumber: flow.number,
+                actionIndex: actionIndex,
+              });
+            });
+          }
+        });
+      }
+    });
+  });
+
   return _.chain(results)
     .uniqBy((item) => JSON.stringify([item.tag, _.flatMap(item.content.segments, 'uuid')]))
     .sortBy((item) => item.tag)

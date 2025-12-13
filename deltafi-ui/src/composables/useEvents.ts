@@ -35,13 +35,11 @@ export default function useEvents() {
     try {
       if (options) {
         const params = new URLSearchParams(options);
-        console.log(apiEndpoint)
         await get(apiEndpoint, params);
       } else {
         await get(apiEndpoint);
       }
       if (counts) {
-        console.log(response.value);
         totalCount.value = response.value.totalCount;
         data.value = response.value.events;
       } else {

@@ -15,22 +15,31 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+// ABOUTME: Composable for fetching DeltaFile content by location pointer.
+// ABOUTME: Builds content requests and provides fetch/download URL functionality.
 
 import { ref, Ref } from 'vue'
 import useApi from './useApi'
 
-interface ContentSegment {
+export interface ContentPointer {
   did: string;
-  uuid: number;
-  size: number;
-  offset: number;
+  flowNumber: number;
+  actionIndex?: number;  // undefined for flow input
+  contentIndex: number;
+  size?: number;         // for partial reads
+  // Display fields (not sent to API):
+  name: string;
+  mediaType: string;
+  totalSize: number;
+  tags?: string[];
 }
 
-interface Content {
-  size: number;
-  mediaType: string;
-  name: string;
-  segments: Array<ContentSegment>
+interface ContentRequest {
+  did: string;
+  flowNumber: number;
+  actionIndex?: number;
+  contentIndex: number;
+  size?: number;
 }
 
 export default function useContent() {
@@ -38,20 +47,31 @@ export default function useContent() {
   const endpoint: string = 'content';
   const data: Ref<Blob | undefined> = ref();
 
-  const fetch = async (content: Content) => {
-    const params = buildParamString(content)
+  const fetch = async (pointer: ContentPointer) => {
+    const params = buildParamString(pointer)
     await get(endpoint, params, false);
     data.value = response.value;
     return data.value;
   }
 
-  const downloadURL = (content: Content) => {
-    const params = buildParamString(content)
+  const downloadURL = (pointer: ContentPointer) => {
+    const params = buildParamString(pointer)
     return buildURL(endpoint, params);
   }
 
-  const buildParamString = (content: Content) => {
-    const base64 = window.btoa(JSON.stringify(content))
+  const buildParamString = (pointer: ContentPointer) => {
+    const request: ContentRequest = {
+      did: pointer.did,
+      flowNumber: pointer.flowNumber,
+      contentIndex: pointer.contentIndex,
+    };
+    if (pointer.actionIndex !== undefined) {
+      request.actionIndex = pointer.actionIndex;
+    }
+    if (pointer.size !== undefined) {
+      request.size = pointer.size;
+    }
+    const base64 = window.btoa(JSON.stringify(request))
     return new URLSearchParams({ content: base64 });
   }
 

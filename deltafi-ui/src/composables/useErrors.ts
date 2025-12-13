@@ -83,12 +83,20 @@ export default function useErrors() {
           name: true,
           dataSource: true,
           flows: {
+            number: true,
             name: true,
             created: true,
             modified: true,
             state: true,
             errorAcknowledged: true,
             errorAcknowledgedReason: true,
+            input: {
+              content: {
+                name: true,
+                mediaType: true,
+                size: true,
+              },
+            },
             actions: {
               name: true,
               created: true,

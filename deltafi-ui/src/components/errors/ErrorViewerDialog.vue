@@ -15,6 +15,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<!-- ABOUTME: Dialog for viewing action error details including cause, context, and content. -->
+<!-- ABOUTME: Used to inspect errored/filtered actions in the DeltaFile viewer. -->
 
 <template>
   <Dialog v-bind="$attrs" :header="header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" :position="modelPosition">
@@ -55,10 +57,10 @@
         </div>
       </TabPanel>
       <TabPanel v-else header="Cause" :disabled="true" />
-      <TabPanel v-if="content" header="Content">
+      <TabPanel v-if="content && hasPointerContext" header="Content">
         <div class="error-row">
           <div class="error-col">
-            <ContentSelector :content="content" @content-selected="content" />
+            <ContentSelector :did="did" :flow-number="flowNumber" :action-index="actionIndex" :content="content" @content-selected="content" />
           </div>
         </div>
       </TabPanel>
@@ -83,6 +85,18 @@ import TabView from "primevue/tabview";
 const activeTab = ref(0);
 const attrs = useAttrs();
 const props = defineProps({
+  did: {
+    type: String,
+    default: undefined,
+  },
+  flowNumber: {
+    type: Number,
+    default: undefined,
+  },
+  actionIndex: {
+    type: Number,
+    default: undefined,
+  },
   action: {
     type: Object,
     required: true,
@@ -95,7 +109,11 @@ const modelPosition = computed(() => {
 const header = computed(() => props.action.name);
 const cause = computed(() => (["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorCause : props.action.filteredCause));
 const context = computed(() => (["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorContext : props.action.filteredContext));
-const content = computed(() => (props.action.content.length > 0 ? props.action.content : false));
+const content = computed(() => (props.action.content?.length > 0 ? props.action.content : false));
+const hasPointerContext = computed(() => {
+  // actionIndex can be null (for flow input) or a number, but must not be undefined
+  return props.did !== undefined && props.flowNumber !== undefined && props.actionIndex !== undefined;
+});
 </script>
 
 <style>

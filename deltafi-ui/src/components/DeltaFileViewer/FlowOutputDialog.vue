@@ -31,7 +31,12 @@
     <TabView>
       <TabPanel header="Content" :disabled="!hasContent">
         <div v-if="hasContent" class="content-panel">
-          <ContentSelector :content="outputContent" />
+          <ContentSelector
+            :did="did"
+            :flow-number="flowNumber"
+            :action-index="outputActionIndex"
+            :content="outputContent"
+          />
         </div>
         <div v-else class="empty-panel">
           No output content available
@@ -73,9 +78,12 @@ import TabPanel from "primevue/tabpanel";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import ContentSelector from "@/components/ContentSelector.vue";
-import _ from "lodash";
 
 const props = defineProps({
+  did: {
+    type: String,
+    required: true,
+  },
   flow: {
     type: Object,
     default: null,
@@ -85,10 +93,16 @@ const props = defineProps({
 const dialogVisible = ref(false);
 
 const flowName = computed(() => props.flow?.name || "Flow Output");
+const flowNumber = computed(() => props.flow?.number || 0);
+
+const lastActionIndex = computed(() => {
+  if (!props.flow?.actions?.length) return null;
+  return props.flow.actions.length - 1;
+});
 
 const lastAction = computed(() => {
-  if (!props.flow?.actions?.length) return null;
-  return props.flow.actions[props.flow.actions.length - 1];
+  if (lastActionIndex.value === null) return null;
+  return props.flow.actions[lastActionIndex.value];
 });
 
 const outputContent = computed(() => {
@@ -99,6 +113,13 @@ const outputContent = computed(() => {
     return props.flow.input.content;
   }
   return [];
+});
+
+const outputActionIndex = computed(() => {
+  if (lastAction.value?.content?.length > 0) {
+    return lastActionIndex.value;
+  }
+  return undefined;
 });
 
 const hasContent = computed(() => outputContent.value.length > 0);

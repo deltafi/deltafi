@@ -203,6 +203,41 @@ public class DeltaFileFlow {
                 .orElseGet(this::inputContent);
     }
 
+    /**
+     * Get the content at or before the given action index.
+     * If the action at the given index is COMPLETE, return its content.
+     * Otherwise, traverse backwards to find the last COMPLETE action's content.
+     * If no COMPLETE actions are found, return the flow input content.
+     *
+     * @param actionIndex the action index to start from, or null for flow input
+     * @return the content list
+     */
+    public List<Content> contentAtOrBefore(Integer actionIndex) {
+        if (actionIndex == null) {
+            return inputContent();
+        }
+        if (actionIndex < 0 || actionIndex >= actions.size()) {
+            return List.of();
+        }
+
+        // Check if the requested action is complete - if so, return its content
+        Action requestedAction = actions.get(actionIndex);
+        if (requestedAction.getState() == ActionState.COMPLETE) {
+            return requestedAction.getContent() != null ? requestedAction.getContent() : List.of();
+        }
+
+        // Action didn't complete - find the last complete action before it
+        for (int i = actionIndex - 1; i >= 0; i--) {
+            Action prevAction = actions.get(i);
+            if (prevAction.getState() == ActionState.COMPLETE) {
+                return prevAction.getContent() != null ? prevAction.getContent() : List.of();
+            }
+        }
+
+        // No complete actions found - use flow input
+        return inputContent();
+    }
+
     public long lastContentSize() {
         return lastContent().stream().map(Content::getSize).reduce(0L, Long::sum);
     }

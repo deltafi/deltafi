@@ -57,7 +57,7 @@
         <Column v-if="!contentDeleted && $hasPermission('DeltaFileContentView')" header="Input" class="content-column">
           <template #body="{ data: flow }">
             <span v-if="flow.input.hasOwnProperty('content') && flow.input.content.length > 0">
-              <ContentDialog :content="flow.input.content" :action="flow.input.content.name">
+              <ContentDialog :did="deltaFile.did" :flow-number="flow.number" :content="flow.input.content">
                 <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
               </ContentDialog>
             </span>
@@ -66,22 +66,22 @@
         <Column field="last_action_content" header="Output" class="content-column">
           <template #body="{ data: flow }">
             <span v-if="flow.actions.length > 0">
-              <ContentDialog v-if="lastAction(flow.actions).content.length > 0" :content="lastAction(flow.actions).content" :action="lastAction(flow.actions).name">
+              <ContentDialog v-if="lastAction(flow.actions).content.length > 0" :did="deltaFile.did" :flow-number="flow.number" :action-index="flow.actions.length - 1" :content="lastAction(flow.actions).content">
                 <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
               </ContentDialog>
             </span>
-            <ContentDialog v-else :content="flow.input.content" :action="flow.input.content.name">
+            <ContentDialog v-else :did="deltaFile.did" :flow-number="flow.number" :content="flow.input.content">
               <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
             </ContentDialog>
           </template>
         </Column>
         <template #expansion="flow">
-          <DeltaFileActionsTable v-if="flow.data.actions.length > 0" :delta-file-data="flow.data" :content-deleted="contentDeleted" />
+          <DeltaFileActionsTable v-if="flow.data.actions.length > 0" :did="deltaFile.did" :delta-file-data="flow.data" :content-deleted="contentDeleted" />
           <span v-else>This flow has no actions.</span>
         </template>
       </DataTable>
     </component>
-    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :did="errorViewer.did" :flow-number="errorViewer.flowNumber" :action-index="errorViewer.actionIndex" :action="errorViewer.action" />
   </div>
 </template>
 
@@ -125,6 +125,9 @@ const deltaFile = reactive(props.deltaFileData);
 const errorViewer = reactive({
   visible: false,
   action: {},
+  did: undefined,
+  flowNumber: undefined,
+  actionIndex: undefined,
 });
 
 const metadataAsArray = (metadataObject) => {
@@ -224,11 +227,16 @@ const rowClick = (event) => {
   // Don't interfere with expander
   if (event.originalEvent.target.nodeName === "svg") return;
 
-  const action = event.data.actions.length > 0 ? event.data.actions.slice(-1)[0] : event.data;
+  const flow = event.data;
+  const actionIndex = flow.actions.length > 0 ? flow.actions.length - 1 : undefined;
+  const action = actionIndex !== undefined ? flow.actions[actionIndex] : flow;
   if (!["ERROR", "RETRIED", "FILTERED"].includes(action.state)) return;
 
   errorViewer.visible = true;
   errorViewer.action = action;
+  errorViewer.did = deltaFile.did;
+  errorViewer.flowNumber = flow.number;
+  errorViewer.actionIndex = actionIndex;
 };
 </script>
 

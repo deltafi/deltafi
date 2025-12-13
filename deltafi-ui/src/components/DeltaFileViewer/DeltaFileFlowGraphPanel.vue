@@ -166,9 +166,9 @@
     </div>
 
     <!-- Flow output dialog -->
-    <FlowOutputDialog ref="flowOutputDialogRef" :flow="selectedFlow" />
+    <FlowOutputDialog ref="flowOutputDialogRef" :did="props.deltaFileData.did" :flow="selectedFlow" />
     <!-- Error viewer dialog -->
-    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :did="errorViewer.did" :flow-number="errorViewer.flowNumber" :action-index="errorViewer.actionIndex" :action="errorViewer.action" />
   </component>
 </template>
 
@@ -260,6 +260,9 @@ const openFlowOutput = (node) => {
 const errorViewer = reactive({
   visible: false,
   action: {},
+  did: undefined,
+  flowNumber: undefined,
+  actionIndex: undefined,
 });
 
 const nodeIsClickable = (node) => {
@@ -275,9 +278,13 @@ const onNodeClick = (node) => {
   if (!nodeIsClickable(node)) return;
 
   const flow = getFlowByNumber(node.number);
-  const action = flow.actions?.length > 0 ? flow.actions[flow.actions.length - 1] : flow;
+  const actionIndex = flow.actions?.length > 0 ? flow.actions.length - 1 : undefined;
+  const action = actionIndex !== undefined ? flow.actions[actionIndex] : flow;
   errorViewer.visible = true;
   errorViewer.action = action;
+  errorViewer.did = props.deltaFileData.did;
+  errorViewer.flowNumber = flow.number;
+  errorViewer.actionIndex = actionIndex;
 };
 
 // Build graph data from DeltaFile flows
