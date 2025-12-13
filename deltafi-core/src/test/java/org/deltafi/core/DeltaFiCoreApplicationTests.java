@@ -4375,6 +4375,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testGetFilteredSummaryByFlowDatafetcher() {
+		clearForFlowTests();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		List<UUID> dids = loadFilteredDeltaFiles(plusTwo);
 
@@ -4408,6 +4409,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testGetFilteredSummaryByMessageDatafetcher() {
+		clearForFlowTests();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		List<UUID> dids = loadFilteredDeltaFiles(plusTwo);
 
