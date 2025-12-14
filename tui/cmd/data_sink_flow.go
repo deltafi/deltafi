@@ -61,26 +61,44 @@ var getDataSinkFlow = &cobra.Command{
 }
 
 var loadDataSinkFlow = &cobra.Command{
-	Use:   "load",
+	Use:   "load [files...]",
 	Short: "Create or update a data sink",
-	Long: `Creates or update a data sink with the given input.
-If a sink already exists with the same name this will replace it.
-Otherwise, this command will create a new data sink with the given name.`,
+	Long: `Create or update data sinks from configuration files.
+
+If a sink already exists with the same name, it will be replaced.
+Otherwise, a new data sink will be created.
+
+Examples:
+  deltafi data-sink load sink.json
+  deltafi data-sink load sink1.yaml sink2.yaml
+  deltafi data-sink load *.yaml`,
+	Args:         cobra.MinimumNArgs(1),
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
-		var dataSinkPlan graphql.DataSinkPlanInput
-		var err = parseFile(cmd, &dataSinkPlan)
-		if err != nil {
-			return err
+
+		var lastErr error
+		for _, filename := range args {
+			var dataSinkPlan graphql.DataSinkPlanInput
+			if err := loadFile(filename, &dataSinkPlan); err != nil {
+				printLoadError(filename, err)
+				lastErr = err
+				continue
+			}
+
+			resp, err := graphql.SaveDataSink(dataSinkPlan)
+			if err != nil {
+				printLoadError(filename, err)
+				lastErr = err
+				continue
+			}
+
+			printLoadSuccess(filename)
+			if err := prettyPrint(cmd, resp); err != nil {
+				lastErr = err
+			}
 		}
-
-		resp, err := graphql.SaveDataSink(dataSinkPlan)
-
-		if err != nil {
-			return wrapInError("Error saving data sink", err)
-		}
-
-		return prettyPrint(cmd, resp)
+		return lastErr
 	},
 }
 
@@ -344,4 +362,6 @@ func init() {
 
 	setDataSinkTestMode.Flags().Bool("enable", false, "Enable test mode")
 	setDataSinkTestMode.Flags().Bool("disable", false, "Disable test mode")
+
+	AddFormatFlag(getDataSinkFlow)
 }

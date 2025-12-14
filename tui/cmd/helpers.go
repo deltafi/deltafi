@@ -100,6 +100,38 @@ func parseFile(cmd *cobra.Command, out interface{}) error {
 	return nil
 }
 
+// loadFile reads and parses a JSON or YAML file into the provided output struct.
+// Unlike parseFile, this takes the filename directly instead of from a command flag.
+func loadFile(filename string, out interface{}) error {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return wrapInError("Could not read the file", err)
+	}
+
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".json":
+		if err := json.Unmarshal(content, out); err != nil {
+			return wrapInError("Error reading JSON", err)
+		}
+	case ".yaml", ".yml":
+		if err := yaml.Unmarshal(content, out); err != nil {
+			return wrapInError("Error reading YAML", err)
+		}
+	default:
+		return newError("Unsupported file extension: "+ext, "The extension must be json, yaml, or yml")
+	}
+	return nil
+}
+
+func printLoadSuccess(filename string) {
+	fmt.Println(styles.OK(fmt.Sprintf("Loaded %s", filename)))
+}
+
+func printLoadError(filename string, err error) {
+	fmt.Println(styles.FAIL(fmt.Sprintf("Error loading %s: %v", filename, err)))
+}
+
 func prettyPrint(cmd *cobra.Command, data interface{}) error {
 	format, _ := cmd.Flags().GetString("format")
 	switch format {

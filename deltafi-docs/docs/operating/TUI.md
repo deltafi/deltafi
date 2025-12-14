@@ -134,9 +134,7 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
     - [data-source](#data-source)
       - [list](#data-source-list)
       - [get](#data-source-get)
-      - [load-on-error](#data-source-load-on-error)
-      - [load-rest](#data-source-load-rest)
-      - [load-timed](#data-source-load-timed)
+      - [load](#data-source-load)
       - [start](#data-source-start)
       - [stop](#data-source-stop)
       - [pause](#data-source-pause)
@@ -668,18 +666,11 @@ Manage data sources in DeltaFi.
   ```bash
   deltafi data-source get <name> [--format|-o <json|yaml>]
   ```
-- `load-on-error`: Create or update an on-error data source
+- `load [files...]`: Create or update data sources from configuration files
   ```bash
-  deltafi data-source load-on-error --file|-f <file>
+  deltafi data-source load <files...>
   ```
-- `load-rest`: Create or update a REST data source
-  ```bash
-  deltafi data-source load-rest --file|-f <file>
-  ```
-- `load-timed`: Create or update a timed data source
-  ```bash
-  deltafi data-source load-timed --file|-f <file>
-  ```
+  The type (REST_DATA_SOURCE, TIMED_DATA_SOURCE, or ON_ERROR_DATA_SOURCE) is automatically detected from the `type` field in the file.
 - `start [names...]`: Start one or more data sources
   ```bash
   deltafi data-source start <names...> [--all] [--all-actions|-a]
@@ -710,11 +701,11 @@ Manage data sinks in DeltaFi.
   ```
 - `get [name]`: Get details of a specific data sink
   ```bash
-  deltafi data-sink get <name>
+  deltafi data-sink get <name> [--format|-o <json|yaml>]
   ```
-- `load`: Create or update a data sink
+- `load [files...]`: Create or update data sinks from configuration files
   ```bash
-  deltafi data-sink load --file|-f <file>
+  deltafi data-sink load <files...>
   ```
 - `start [names...]`: Start one or more data sinks
   ```bash
@@ -748,9 +739,9 @@ Manage transform flows in DeltaFi.
   ```bash
   deltafi transform get <name> [--format|-o <json|yaml>]
   ```
-- `load`: Create or update a transform
+- `load [files...]`: Create or update transforms from configuration files
   ```bash
-  deltafi transform load --file|-f <file>
+  deltafi transform load <files...>
   ```
 - `start [names...]`: Start one or more transforms
   ```bash

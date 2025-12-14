@@ -61,27 +61,53 @@ var getTransformFlow = &cobra.Command{
 }
 
 var loadTransformFlow = &cobra.Command{
-	Use:   "load",
+	Use:   "load [files...]",
 	Short: "Create or update a transform flow",
-	Long: `Creates or update a transform flow with the given input.
-If the a flow already exists with the same name this will replace the flow.
-Otherwise, this command will create a new transform flow with the given name.`,
-	Aliases: []string{"transforms"},
+	Long: `Create or update transform flows from configuration files.
+
+If a flow already exists with the same name, it will be replaced.
+Otherwise, a new transform flow will be created.
+
+Examples:
+  deltafi transform load transform.json
+  deltafi transform load flow1.yaml flow2.yaml
+  deltafi transform load *.yaml`,
+	Aliases:      []string{"transforms"},
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
-		var transformFlowPlan graphql.TransformFlowPlanInput
-		var err = parseFile(cmd, &transformFlowPlan)
-		if err != nil {
-			return err
+
+		// Support legacy -f flag for backward compatibility
+		if fileFlag, _ := cmd.Flags().GetString("file"); fileFlag != "" {
+			args = append(args, fileFlag)
 		}
 
-		resp, err := graphql.SaveTransform(transformFlowPlan)
-
-		if err != nil {
-			return wrapInError("Error saving transform", err)
+		if len(args) == 0 {
+			return fmt.Errorf("at least one file must be specified")
 		}
 
-		return prettyPrint(cmd, resp.SaveTransformFlowPlan.TransformFlowFields)
+		var lastErr error
+		for _, filename := range args {
+			var transformFlowPlan graphql.TransformFlowPlanInput
+			if err := loadFile(filename, &transformFlowPlan); err != nil {
+				printLoadError(filename, err)
+				lastErr = err
+				continue
+			}
+
+			resp, err := graphql.SaveTransform(transformFlowPlan)
+			if err != nil {
+				printLoadError(filename, err)
+				lastErr = err
+				continue
+			}
+
+			printLoadSuccess(filename)
+			if err := prettyPrint(cmd, resp.SaveTransformFlowPlan.TransformFlowFields); err != nil {
+				lastErr = err
+			}
+		}
+		return lastErr
 	},
 }
 
@@ -373,5 +399,8 @@ func init() {
 	stopTransformFlow.Flags().Bool("all", false, "Stop all transform flows")
 
 	AddFormatFlag(getTransformFlow, validateTransformCmd)
-	AddLoadFlags(loadTransformFlow)
+
+	// Legacy -f flag for backward compatibility (deprecated - use positional args instead)
+	loadTransformFlow.Flags().StringP("file", "f", "", "Path to file to load (deprecated: use positional args)")
+	_ = loadTransformFlow.Flags().MarkHidden("file")
 }
