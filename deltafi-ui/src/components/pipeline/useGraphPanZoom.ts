@@ -208,10 +208,8 @@ export function useGraphPanZoom(
     userHasInteracted.value = true;
   }
 
-  // Zoom handler - only responds to pinch zoom (ctrlKey), lets regular scroll pass through
+  // Zoom handler - responds to scroll wheel for zooming the graph
   function doZoom(event: WheelEvent) {
-    if (!event.ctrlKey) return;
-
     event.preventDefault();
     const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
     zoomAtPoint(factor, event.clientX, event.clientY);
