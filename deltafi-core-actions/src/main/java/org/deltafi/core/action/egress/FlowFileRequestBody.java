@@ -25,6 +25,7 @@ import okio.Okio;
 import okio.Source;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.common.nifi.FlowFileInputStream;
+import org.deltafi.common.nifi.FlowFileVersion;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,6 +34,7 @@ import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 
 import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
+import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE_V_3;
 
 @RequiredArgsConstructor
 public class FlowFileRequestBody extends RequestBody {
@@ -40,23 +42,24 @@ public class FlowFileRequestBody extends RequestBody {
     private final ActionContext context;
     private final EgressInput input;
     private final ExecutorService executorService;
+    private final FlowFileVersion flowFileVersion;
 
     @Override
     public MediaType contentType() {
-        return MediaType.parse(APPLICATION_FLOWFILE);
+        return MediaType.parse(flowFileVersion == FlowFileVersion.V3 ? APPLICATION_FLOWFILE_V_3 : APPLICATION_FLOWFILE);
     }
 
     @Override
     public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
         if (input.getContent() == null) {
             // Write zero data when content is null
-            try (Source source = Okio.source(FlowFileInputStream.create(InputStream.nullInputStream(),
+            try (Source source = Okio.source(FlowFileInputStream.create(flowFileVersion, InputStream.nullInputStream(),
                     StandardEgressHeaders.buildMap(context, input), 0, executorService))) {
                 bufferedSink.writeAll(source);
             }
             return;
         }
-        try (Source source = Okio.source(FlowFileInputStream.create(input.getContent().loadInputStream(),
+        try (Source source = Okio.source(FlowFileInputStream.create(flowFileVersion, input.getContent().loadInputStream(),
                 StandardEgressHeaders.buildMap(context, input), input.getContent().getSize(), executorService))) {
             bufferedSink.writeAll(source);
         }

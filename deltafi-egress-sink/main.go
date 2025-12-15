@@ -51,6 +51,7 @@ func main() {
 	logger.Info("Starting server on :80")
 	http.HandleFunc("/probe", func(w http.ResponseWriter, r *http.Request) {})
 	http.HandleFunc("/blackhole", blackholeHandler)
+	http.HandleFunc("/capture", captureHandler)
 	http.HandleFunc("/", fileSinkHandler)
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
@@ -79,6 +80,28 @@ func blackholeHandler(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(latency)
 	}
 	logger.Info("Processed blackhole request")
+	w.Header().Set("Content-Length", "0")
+	w.WriteHeader(http.StatusOK)
+}
+
+func captureHandler(w http.ResponseWriter, r *http.Request) {
+	capturePath := filepath.Join(outputDir, "capture")
+	if err := os.MkdirAll(capturePath, os.ModePerm); err != nil {
+		logger.Error("Error creating capture directory: %v", err)
+		http.Error(w, fmt.Sprintf("Error creating directory: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	filename := fmt.Sprintf("%d.bin", time.Now().UnixNano())
+	filePath := filepath.Join(capturePath, filename)
+
+	if err := saveContent(filePath, r.Body); err != nil {
+		logger.Error("Error saving captured content: %v", err)
+		http.Error(w, fmt.Sprintf("Error saving content: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	logger.Info("Captured file saved: %s", filePath)
 	w.Header().Set("Content-Length", "0")
 	w.WriteHeader(http.StatusOK)
 }

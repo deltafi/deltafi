@@ -23,11 +23,14 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okio.Buffer;
+import org.apache.nifi.util.FlowFileUnpackager;
 import org.apache.nifi.util.FlowFileUnpackagerV1;
+import org.apache.nifi.util.FlowFileUnpackagerV3;
 import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
+import org.deltafi.common.nifi.FlowFileVersion;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +43,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
+import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE_V_3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
@@ -67,58 +72,75 @@ class FlowfileEgressTest {
     }
 
     @Test
-    void egresses() {
-        HttpEgressParameters httpEgressParameters = new HttpEgressParameters();
-        httpEgressParameters.setUrl("https://somewhere/api");
+    void egressesV1ByDefault() {
+        FlowfileEgressParameters params = new FlowfileEgressParameters();
+        params.setUrl("https://somewhere/api");
 
         EgressInput egressInput = EgressInput.builder()
                 .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
                 .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
                 .build();
 
-        EgressResultType egressResultType = action.egress(ACTION_CONTEXT, httpEgressParameters, egressInput);
+        EgressResultType egressResultType = action.egress(ACTION_CONTEXT, params, egressInput);
 
         assertInstanceOf(EgressResult.class, egressResultType);
 
-        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(this::verifyPopulatedFlowFileBody));
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(request -> {
+            assertEquals(APPLICATION_FLOWFILE, request.body().contentType().toString());
+            verifyFlowFile(request, "test-content", CONTENT, new FlowFileUnpackagerV1());
+        }));
     }
 
-    private void verifyPopulatedFlowFileBody(Request request) {
-        verifyFlowFile(request, "test-content", CONTENT);
+    @Test
+    void egressesV3WhenConfigured() {
+        FlowfileEgressParameters params = new FlowfileEgressParameters();
+        params.setUrl("https://somewhere/api");
+        params.setFlowFileVersion(FlowFileVersion.V3);
+
+        EgressInput egressInput = EgressInput.builder()
+                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
+                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
+                .build();
+
+        EgressResultType egressResultType = action.egress(ACTION_CONTEXT, params, egressInput);
+
+        assertInstanceOf(EgressResult.class, egressResultType);
+
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(request -> {
+            assertEquals(APPLICATION_FLOWFILE_V_3, request.body().contentType().toString());
+            verifyFlowFile(request, "test-content", CONTENT, new FlowFileUnpackagerV3());
+        }));
     }
 
     @Test
     void handlesNullContentGracefully() {
-        HttpEgressParameters httpEgressParameters = new HttpEgressParameters();
-        httpEgressParameters.setUrl("https://somewhere/api");
-        httpEgressParameters.setNoContentPolicy(NoContentPolicy.SEND_EMPTY);  // Explicitly set to send empty
+        FlowfileEgressParameters params = new FlowfileEgressParameters();
+        params.setUrl("https://somewhere/api");
+        params.setNoContentPolicy(NoContentPolicy.SEND_EMPTY);
 
         EgressInput egressInput = EgressInput.builder()
                 .content(null)
                 .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
                 .build();
 
-        EgressResultType egressResultType = action.egress(ACTION_CONTEXT, httpEgressParameters, egressInput);
+        EgressResultType egressResultType = action.egress(ACTION_CONTEXT, params, egressInput);
 
-        // Should succeed with zero data sent
         assertInstanceOf(EgressResult.class, egressResultType);
 
-        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(this::verifyEmptyFlowFile));
-    }
-
-    private void verifyEmptyFlowFile(Request request) {
-        // Content should be empty (zero bytes) and the filename should use empty string for null content
-        verifyFlowFile(request, "", "");
+        Mockito.verify(okHttpClient).newCall(Mockito.assertArg(request -> {
+            assertEquals(APPLICATION_FLOWFILE, request.body().contentType().toString());
+            verifyFlowFile(request, "", "", new FlowFileUnpackagerV1());
+        }));
     }
 
     @SneakyThrows
-    private void verifyFlowFile(Request request, String expectedFilename, String expectedBody) {
+    private void verifyFlowFile(Request request, String expectedFilename, String expectedBody,
+            FlowFileUnpackager unpackager) {
         Assertions.assertThat(request.body()).isNotNull();
         Buffer buffer = new Buffer();
         request.body().writeTo(buffer);
-        FlowFileUnpackagerV1 flowFileUnpackagerV1 = new FlowFileUnpackagerV1();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        Map<String, String> flowfileAttributes = flowFileUnpackagerV1.unpackageFlowFile(buffer.inputStream(), byteArrayOutputStream);
+        Map<String, String> flowfileAttributes = unpackager.unpackageFlowFile(buffer.inputStream(), byteArrayOutputStream);
 
         assertEquals(expectedBody, byteArrayOutputStream.toString());
 

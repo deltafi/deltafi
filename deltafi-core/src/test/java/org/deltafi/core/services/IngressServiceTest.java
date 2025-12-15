@@ -23,6 +23,7 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.ContentType;
 import org.deltafi.common.nifi.FlowFileInputStream;
+import org.deltafi.common.nifi.FlowFileVersion;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
@@ -277,7 +278,7 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "dataSource", "dataSource");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
-        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(FlowFileVersion.V1,
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
@@ -297,7 +298,7 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "dataSource", "dataSource");
-        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(FlowFileVersion.V1,
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
@@ -316,7 +317,7 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "filename", "filename");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
-        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(FlowFileVersion.V1,
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress("dataSource", null, ContentType.APPLICATION_FLOWFILE_V_1,
@@ -336,7 +337,7 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "filename", "filename");
-        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(FlowFileVersion.V1,
                 new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                 "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress("dataSource", null, ContentType.APPLICATION_FLOWFILE_V_1,
@@ -356,7 +357,7 @@ class IngressServiceTest {
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
         assertThrows(IngressMetadataException.class,
                 () -> {
-                    try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+                    try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(FlowFileVersion.V1,
                             new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
                             "content".length(), executorService)) {
                         ingressService.ingress("dataSource", null, ContentType.APPLICATION_FLOWFILE_V_1,

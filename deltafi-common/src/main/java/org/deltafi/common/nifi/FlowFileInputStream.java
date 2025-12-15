@@ -19,6 +19,7 @@ package org.deltafi.common.nifi;
 
 import org.apache.nifi.util.FlowFilePackager;
 import org.apache.nifi.util.FlowFilePackagerV1;
+import org.apache.nifi.util.FlowFilePackagerV3;
 import org.deltafi.common.io.WriterPipedInputStream;
 
 import java.io.IOException;
@@ -32,8 +33,9 @@ import java.util.concurrent.ExecutorService;
 public class FlowFileInputStream extends WriterPipedInputStream {
     /**
      * Creates a FlowFileInputStream that packages the content in the provided InputStream with the supplied attributes
-     * in a FlowFile V1, starting a separate thread for writing.
+     * using the specified FlowFile version, starting a separate thread for writing.
      *
+     * @param version the FlowFile format version to use
      * @param inputStream the InputStream containing the content
      * @param attributes the Map of attributes to include
      * @param fileSize the size of the content
@@ -41,9 +43,13 @@ public class FlowFileInputStream extends WriterPipedInputStream {
      * @return the FlowFileInputStream
      * @throws IOException if an I/O error occurs
      */
-    public static FlowFileInputStream create(InputStream inputStream, Map<String, String> attributes, long fileSize,
-            ExecutorService executorService) throws IOException {
-        return create(new FlowFilePackagerV1(), inputStream, attributes, fileSize, executorService);
+    public static FlowFileInputStream create(FlowFileVersion version, InputStream inputStream,
+            Map<String, String> attributes, long fileSize, ExecutorService executorService) throws IOException {
+        FlowFilePackager packager = switch (version) {
+            case V1 -> new FlowFilePackagerV1();
+            case V3 -> new FlowFilePackagerV3();
+        };
+        return create(packager, inputStream, attributes, fileSize, executorService);
     }
 
     /**

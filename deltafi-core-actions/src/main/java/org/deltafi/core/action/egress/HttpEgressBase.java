@@ -61,12 +61,12 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
                 case FILTER:
                     return new FilterResult(context, "Content is null - filtered by noContentPolicy");
                 case ERROR:
-                    return new ErrorResult(context, "Cannot perform egress: no content available", 
+                    return new ErrorResult(context, "Cannot perform egress: no content available",
                             "The egress action requires content but none was provided").logErrorTo(log);
                 case SEND_EMPTY:
                     break;
                 default:
-                    return new ErrorResult(context, "Unknown noContentPolicy: " + policy, 
+                    return new ErrorResult(context, "Unknown noContentPolicy: " + policy,
                             "The noContentPolicy value is not recognized").logErrorTo(log);
             }
         }
@@ -91,9 +91,9 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
         headers.forEach(requestBuilder::addHeader);
 
         switch (method) {
-            case POST -> requestBuilder.post(prepareRequestBody(context, input));
-            case PUT -> requestBuilder.put(prepareRequestBody(context, input));
-            case PATCH -> requestBuilder.patch(prepareRequestBody(context, input));
+            case POST -> requestBuilder.post(prepareRequestBody(context, params, input));
+            case PUT -> requestBuilder.put(prepareRequestBody(context, params, input));
+            case PATCH -> requestBuilder.patch(prepareRequestBody(context, params, input));
             case DELETE -> requestBuilder.delete();
             default -> throw new IllegalArgumentException("Unsupported HTTP method: " + method);
         }
@@ -114,15 +114,8 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
         return new ErrorResult(context, "Unsuccessful HTTP " + method + ": " + response.code(), errorBodyContent).logErrorTo(log);
     }
 
-    protected RequestBody prepareRequestBody(ActionContext context, EgressInput input){
+    protected RequestBody prepareRequestBody(ActionContext context, P params, EgressInput input) {
         return new InputStreamRequestBody(input);
-    }
-
-    protected String getMediaType(@NotNull EgressInput input) {
-        if (input.getContent() == null) {
-            return null;
-        }
-        return input.getContent().getMediaType();
     }
 
     protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull P params,

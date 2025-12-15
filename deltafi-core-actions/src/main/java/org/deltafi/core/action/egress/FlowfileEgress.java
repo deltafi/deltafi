@@ -22,31 +22,26 @@ import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.common.types.ActionContext;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
-
+/**
+ * Egresses content and metadata in NiFi FlowFile format.
+ */
 @Component
 @Slf4j
-public class FlowfileEgress extends HttpEgressBase<HttpEgressParameters> {
+public class FlowfileEgress extends HttpEgressBase<FlowfileEgressParameters> {
     private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public FlowfileEgress(OkHttpClient httpClient) {
-        super(String.format("Egresses content and metadata in a NiFi V1 FlowFile (%s).", APPLICATION_FLOWFILE),
+        super("Egresses content and metadata in NiFi FlowFile format (V1 default, V3 recommended).",
                 httpClient);
     }
 
     @Override
-    protected RequestBody prepareRequestBody(ActionContext context, EgressInput input){
-        return new FlowFileRequestBody(context, input, executorService);
-    }
-
-    @Override
-    protected String getMediaType(@NotNull EgressInput input) {
-        return APPLICATION_FLOWFILE;
+    protected RequestBody prepareRequestBody(ActionContext context, FlowfileEgressParameters params, EgressInput input) {
+        return new FlowFileRequestBody(context, input, executorService, params.getFlowFileVersion());
     }
 }
