@@ -1,8 +1,14 @@
-# Contributing to Core Development
+# Contributing to DeltaFi
 
 We welcome contributors to DeltaFi! See the guidance below to get started or [contact us](https://deltafi.org/#contact).
 
 To get started, follow the [Core Developer's Guide](/getting-started/for-core-developers) to set up your development environment. To understand how plugins consume the action kit, consider the [simple plugin tutorial](/getting-started/simple-plugin).
+
+## Project-Specific Guides
+
+Each project has its own patterns and conventions:
+
+- [deltafi-core](/contributing/deltafi-core) - Core service patterns, GraphQL, DeltaFile state model
 
 ## Working with the Repository and Submitting a Merge Request
 

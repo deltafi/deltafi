@@ -179,6 +179,20 @@ public class DeltaFileFlow {
         modified = time;
     }
 
+    public boolean terminateWithError(OffsetDateTime time, String cause, String context) {
+        if (state != DeltaFileFlowState.IN_FLIGHT) {
+            return false;
+        }
+        boolean terminated = actions.stream()
+                .map(a -> a.terminateWithError(time, cause, context))
+                .reduce(false, (a, b) -> a || b);
+        if (terminated) {
+            updateState();
+            modified = time;
+        }
+        return terminated;
+    }
+
     public boolean hasAutoResume() {
         return actions.stream().anyMatch(a -> a.getNextAutoResume() != null);
     }

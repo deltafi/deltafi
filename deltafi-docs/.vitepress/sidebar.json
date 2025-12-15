@@ -61,6 +61,7 @@
       { "text": "Site Configuration", "link": "/operating/site-configuration" },
       { "text": "Configuration", "link": "/operating/configuration" },
       { "text": "Error Handling", "link": "/operating/errors" },
+      { "text": "Emergency Operations", "link": "/operating/emergency-operations" },
       { "text": "Events API", "link": "/operating/events_api" },
       { "text": "Metrics", "link": "/operating/metrics" },
       { "text": "Consolidated Logging in Compose", "link": "/operating/logging" },
@@ -78,6 +79,14 @@
       { "text": "DeltaFile Annotations", "link": "/advanced/deltafile_annotations" },
       { "text": "Leader Member", "link": "/advanced/leader_member" },
       { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" }
+    ]
+  },
+  {
+    "text": "Contributing",
+    "collapsed": true,
+    "items": [
+      { "text": "Contributing Guide", "link": "/contributing" },
+      { "text": "deltafi-core", "link": "/contributing/deltafi-core" }
     ]
   }
 ]

@@ -500,6 +500,19 @@ public class DeltaFile {
     modified = now;
   }
 
+  public boolean terminateWithError(OffsetDateTime now, String cause, String context) {
+    if (stage != DeltaFileStage.IN_FLIGHT) {
+      return false;
+    }
+    boolean terminated = flows.stream()
+            .map(f -> f.terminateWithError(now, cause, context))
+            .reduce(false, (a, b) -> a || b);
+    if (terminated) {
+      updateState(now);
+    }
+    return terminated;
+  }
+
   public void incrementRequeueCount() {
     ++requeueCount;
   }

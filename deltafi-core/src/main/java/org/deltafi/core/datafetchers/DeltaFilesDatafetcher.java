@@ -244,6 +244,14 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileCancel
+  public TerminateAllWithErrorResult terminateAllWithError(@InputArgument String cause, @InputArgument String context,
+      @InputArgument OffsetDateTime createdBefore, @InputArgument Integer maxCount) {
+    auditLogger.audit("terminating all in-flight deltaFiles with error: {}", cause);
+    return deltaFilesService.terminateAllWithError(cause, context, createdBefore, maxCount);
+  }
+
+  @DgsMutation
   @NeedsPermission.DeltaFileUserNote
   public List<Result> userNote(@InputArgument List<UUID> dids, @InputArgument String message) {
     auditLogger.audit("adding user note to deltafiles with dids {}", CoreAuditLogger.listToString(dids));

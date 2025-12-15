@@ -353,6 +353,11 @@ type CancelResult {
   error: String
 }
 
+type TerminateAllWithErrorResult {
+  count: Int!
+  hasMore: Boolean!
+}
+
 type PinResult {
   did: UUID!
   success: Boolean!
@@ -524,6 +529,8 @@ type Mutation {
 
   cancel(dids: [UUID!]!) : [CancelResult!]!
   cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!
+
+  terminateAllWithError(cause: String!, context: String, createdBefore: DateTime, maxCount: Int): TerminateAllWithErrorResult!
 
   userNote(dids: [UUID!]!, message: String!) : [Result!]!
   userNoteMatching(filter: DeltaFilesFilter!, message: String!) : [Result!]!

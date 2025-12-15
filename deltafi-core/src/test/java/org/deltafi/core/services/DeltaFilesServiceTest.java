@@ -1415,4 +1415,77 @@ class DeltaFilesServiceTest {
         deltaFilesService.requeueColdQueueActions("egressAction", 1);
         verifyNoInteractions(deltaFileRepo);
     }
+
+    @Test
+    void terminateAllWithError_setsFilterCorrectly() {
+        ArgumentCaptor<DeltaFilesFilter> filterCaptor = ArgumentCaptor.forClass(DeltaFilesFilter.class);
+        Mockito.when(deltaFileRepo.deltaFiles(filterCaptor.capture(), eq(5000))).thenReturn(List.of());
+
+        deltaFilesService.terminateAllWithError("test cause", "test context", null, null);
+
+        DeltaFilesFilter filter = filterCaptor.getValue();
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.IN_FLIGHT);
+        assertThat(filter.getCreatedBefore()).isEqualTo(OffsetDateTime.now(testClock));
+    }
+
+    @Test
+    void terminateAllWithError_usesProvidedCreatedBefore() {
+        OffsetDateTime customCutoff = OffsetDateTime.now(testClock).minusHours(1);
+        ArgumentCaptor<DeltaFilesFilter> filterCaptor = ArgumentCaptor.forClass(DeltaFilesFilter.class);
+        Mockito.when(deltaFileRepo.deltaFiles(filterCaptor.capture(), eq(5000))).thenReturn(List.of());
+
+        deltaFilesService.terminateAllWithError("test cause", "test context", customCutoff, null);
+
+        DeltaFilesFilter filter = filterCaptor.getValue();
+        assertThat(filter.getCreatedBefore()).isEqualTo(customCutoff);
+    }
+
+    @Test
+    void terminateAllWithError_usesProvidedMaxCount() {
+        Mockito.when(deltaFileRepo.deltaFiles(any(DeltaFilesFilter.class), eq(100))).thenReturn(List.of());
+
+        deltaFilesService.terminateAllWithError("test cause", "test context", null, 100);
+
+        Mockito.verify(deltaFileRepo).deltaFiles(any(DeltaFilesFilter.class), eq(100));
+    }
+
+    @Test
+    void terminateAllWithError_returnsHasMoreWhenBatchFull() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(DID);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+        List<DeltaFile> fullBatch = Collections.nCopies(100, deltaFile);
+        Mockito.when(deltaFileRepo.deltaFiles(any(DeltaFilesFilter.class), eq(100))).thenReturn(fullBatch);
+
+        var result = deltaFilesService.terminateAllWithError("test cause", "test context", null, 100);
+
+        assertThat(result.getHasMore()).isTrue();
+    }
+
+    @Test
+    void terminateAllWithError_returnsNoMoreWhenBatchNotFull() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(DID);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+        Mockito.when(deltaFileRepo.deltaFiles(any(DeltaFilesFilter.class), eq(100))).thenReturn(List.of(deltaFile));
+
+        var result = deltaFilesService.terminateAllWithError("test cause", "test context", null, 100);
+
+        assertThat(result.getHasMore()).isFalse();
+    }
+
+    @Test
+    void terminateAllWithError_countsTerminatedFiles() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(DID);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+        // Set up flow as IN_FLIGHT with a queued action
+        DeltaFileFlow flow = deltaFile.getFlows().iterator().next();
+        flow.setState(DeltaFileFlowState.IN_FLIGHT);
+        flow.queueAction("testAction", "TestActionClass", ActionType.TRANSFORM, false, OffsetDateTime.now(testClock));
+
+        Mockito.when(deltaFileRepo.deltaFiles(any(DeltaFilesFilter.class), eq(5000))).thenReturn(List.of(deltaFile));
+
+        var result = deltaFilesService.terminateAllWithError("test cause", "test context", null, null);
+
+        assertThat(result.getCount()).isEqualTo(1);
+        Mockito.verify(deltaFileRepo).save(deltaFile);
+    }
 }

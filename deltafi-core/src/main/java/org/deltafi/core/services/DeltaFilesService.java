@@ -1519,6 +1519,51 @@ public class DeltaFilesService {
         return results;
     }
 
+    public TerminateAllWithErrorResult terminateAllWithError(String cause, String context, OffsetDateTime createdBefore, Integer maxCount) {
+        OffsetDateTime cutoff = createdBefore != null ? createdBefore : OffsetDateTime.now(clock);
+        int remaining = maxCount != null && maxCount > 0 ? maxCount : REQUEUE_BATCH_SIZE;
+
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        filter.setStage(DeltaFileStage.IN_FLIGHT);
+        filter.setCreatedBefore(cutoff);
+
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        int count = 0;
+        int skipped = 0;
+        boolean batchWasFull = false;
+
+        while (remaining > 0) {
+            int batchSize = Math.min(remaining, REQUEUE_BATCH_SIZE);
+            List<DeltaFile> batch = deltaFileRepo.deltaFiles(filter, batchSize);
+
+            if (batch.isEmpty()) {
+                break;
+            }
+
+            batchWasFull = batch.size() == batchSize;
+
+            for (DeltaFile deltaFile : batch) {
+                try {
+                    if (deltaFile.terminateWithError(now, cause, context)) {
+                        deltaFileRepo.save(deltaFile);
+                        count++;
+                    }
+                } catch (OptimisticLockingFailureException e) {
+                    log.warn("Unable to terminate DeltaFile {} with error due to concurrent modification", deltaFile.getDid());
+                    skipped++;
+                }
+            }
+
+            remaining -= batch.size();
+        }
+
+        boolean hasMore = batchWasFull || skipped > 0;
+        return TerminateAllWithErrorResult.newBuilder()
+                .count(count)
+                .hasMore(hasMore)
+                .build();
+    }
+
     public List<Result> userNote(DeltaFilesFilter filter, String message, String user) {
         // user notes cannot be added to DeltaFiles IN_FLIGHT
         if ((filter.getStage() != null && filter.getStage() == DeltaFileStage.IN_FLIGHT)) {

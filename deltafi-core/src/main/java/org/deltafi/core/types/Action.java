@@ -158,6 +158,14 @@ public class Action {
     modified = time;
   }
 
+  public boolean terminateWithError(OffsetDateTime time, String cause, String context) {
+    if (terminal()) {
+      return false;
+    }
+    error(time, time, time, cause, context);
+    return true;
+  }
+
   public void setFilteredActionState(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String filteredCause, String filteredContext) {
     this.filteredCause = filteredCause == null ? "" : filteredCause.substring(0, Math.min(filteredCause.length(), MAX_CAUSE_SIZE));
     this.filteredContext = filteredContext == null ? "" : filteredContext.substring(0, Math.min(filteredContext.length(), MAX_CAUSE_SIZE));
