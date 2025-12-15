@@ -291,6 +291,10 @@ const helperButtons = ref([
 
 .date-picker-container {
   position: relative;
+
+  .input-area-width {
+    width: 335px;
+  }
 }
 
 .refresh-range-input {

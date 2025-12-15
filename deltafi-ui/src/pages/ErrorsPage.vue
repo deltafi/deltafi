@@ -422,9 +422,5 @@ const formatFlowNames = () => {
     margin-left: -276px !important;
     position: fixed !important;
   }
-
-  .input-area-width {
-    width: 335px;
-  }
 }
 </style>

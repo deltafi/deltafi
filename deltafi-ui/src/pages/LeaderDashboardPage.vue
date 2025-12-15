@@ -40,7 +40,7 @@
     <CollapsiblePanel class="filters-panel mb-3" :collapsed="true">
       <template #header>
         <span class="filters-header">
-          <span class="p-panel-title">Filters</span>
+          <span class="p-panel-title">Member Filters</span>
           <Button v-tooltip.right="{ value: 'Clear filters', disabled: !hasActiveFilters }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${hasActiveFilters ? 'p-column-filter-menu-button-active' : ''}`" :disabled="!hasActiveFilters" @click.stop="clearFilters">
             <i class="pi pi-filter" style="font-size: 1rem" />
           </Button>

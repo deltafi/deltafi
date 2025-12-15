@@ -123,13 +123,19 @@ const staticMenuItems = ref([
   {
     name: "Fleet",
     expand: true,
-    visible: computed(() => uiConfig.leader && hasSomePermissions("StatusView", "SnapshotRead")),
+    visible: computed(() => uiConfig.leader && hasSomePermissions("StatusView", "SnapshotRead", "DeltaFileMetadataView")),
     children: [
       {
         name: "Dashboard",
         icon: "fas fa-chart-line fa-fw",
         path: "/fleet/dashboard",
         visible: computed(() => hasPermission("StatusView")),
+      },
+      {
+        name: "Search",
+        icon: "fas fa-search fa-fw",
+        path: "/fleet/search",
+        visible: computed(() => hasPermission("DeltaFileMetadataView")),
       },
       {
         name: "Config",

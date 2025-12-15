@@ -319,10 +319,6 @@ watch(endTimeDate, () => {
 
 <style>
 .events-page {
-  .input-area-width {
-    width: 335px;
-  }
-
   .vdpr-datepicker__calendar-dialog {
     margin-left: -275px;
   }

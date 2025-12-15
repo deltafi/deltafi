@@ -18,17 +18,24 @@
 package org.deltafi.core.rest;
 
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.AggregatedSearchOptionsService;
+import org.deltafi.core.services.FederatedSearchService;
 import org.deltafi.core.services.LeaderConfigService;
 import org.deltafi.core.services.MemberMonitorService;
 import org.deltafi.core.types.FlowMetrics;
 import org.deltafi.core.types.leader.AggregatedStats;
 import org.deltafi.core.types.leader.ConfigDiff;
 import org.deltafi.core.types.leader.LeaderDashboardData;
+import org.deltafi.core.types.leader.AggregatedSearchOptions;
+import org.deltafi.core.types.leader.FederatedSearchResponse;
 import org.deltafi.core.types.leader.PluginsResponse;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,6 +52,8 @@ import java.util.Map;
 public class LeaderRest {
     private final MemberMonitorService memberMonitorService;
     private final LeaderConfigService leaderConfigService;
+    private final FederatedSearchService federatedSearchService;
+    private final AggregatedSearchOptionsService aggregatedSearchOptionsService;
 
     @GetMapping("/members")
     @NeedsPermission.StatusView
@@ -117,5 +126,29 @@ public class LeaderRest {
     @NeedsPermission.SnapshotRead
     public ConfigDiff getConfigDiff(@PathVariable String memberName) {
         return leaderConfigService.computeDiff(memberName);
+    }
+
+    // --- Federated Search Endpoints ---
+
+    /**
+     * Execute a federated search across all members.
+     * Returns match counts per member for the given filter criteria.
+     *
+     * @param filter The search filter to apply
+     */
+    @PostMapping("/search/federated")
+    @NeedsPermission.DeltaFileMetadataView
+    public FederatedSearchResponse federatedSearch(@RequestBody DeltaFilesFilter filter) {
+        return federatedSearchService.search(filter);
+    }
+
+    /**
+     * Get aggregated search options from all members.
+     * Returns combined flow names, topics, and annotation keys.
+     */
+    @GetMapping("/search/options")
+    @NeedsPermission.DeltaFileMetadataView
+    public AggregatedSearchOptions getSearchOptions() {
+        return aggregatedSearchOptionsService.getAggregatedOptions();
     }
 }

@@ -150,6 +150,33 @@ Side-by-side comparison of leader and member configuration:
 
 Members not reporting config data are shown in the dropdown but disabled.
 
+## Fleet Search
+
+The **Fleet Search** page enables searching for DeltaFiles across all member systems from a single interface.
+
+### Search Filters
+
+The same filters available on the standard DeltaFile Search page can be applied:
+- Time range (modified date)
+- Stage (ingress, enrich, egress, complete, error, cancelled)
+- Data sources, transforms, and data sinks
+- Filename patterns
+- Annotations
+- And other advanced filters
+
+### Results
+
+Search results show aggregated counts per system:
+- **System**: Member name (click to open that member's search page with the same filters applied)
+- **Count**: Number of matching DeltaFiles on that member
+- **Tags**: Member tags for identification
+
+The summary bar shows the total count across all members and search status.
+
+### Filtering Results
+
+Use the search box to filter results by member name or tags.
+
 ## Connection States
 
 | State | Description |
