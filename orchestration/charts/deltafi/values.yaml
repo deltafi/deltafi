@@ -418,7 +418,7 @@ victoriametrics:
   server:
     fullnameOverride: deltafi-victoriametrics
     image:
-      tag: v1.131.0
+      tag: v1.132.0
     retentionPeriod: "720d"
     extraArgs:
       envflag.enable: "true"
