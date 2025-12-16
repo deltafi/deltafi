@@ -199,11 +199,12 @@
       <div class="last-updated">
         Last updated: <Timestamp :timestamp="member.lastUpdated" :showTimeAgo="true" />
       </div>
+
+      <!-- Status Details Dialog -->
+      <CheckDialog ref="checkDialog" :header="member.memberName + ' System Status Details'" :checks="member.status?.checks" :last-updated="member.status?.timestamp" :readonly="true" />
     </div>
   </Panel>
 
-  <!-- Status Details Dialog -->
-  <CheckDialog ref="checkDialog" :header="member.memberName + ' System Status Details'" :checks="member.status?.checks" :last-updated="member.status?.timestamp" :readonly="true" />
 </template>
 
 <script setup lang="ts">
