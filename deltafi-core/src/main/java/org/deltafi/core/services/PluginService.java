@@ -972,46 +972,41 @@ public class PluginService implements Snapshotter {
                 .toList();
 
         int installed = 0;
-        int pending = 0;
-        int installing = 0;
-        int failed = 0;
-        int removing = 0;
+        List<PluginEntity> pendingPlugins = new ArrayList<>();
+        List<PluginEntity> installingPlugins = new ArrayList<>();
         List<PluginEntity> failedPlugins = new ArrayList<>();
+        List<PluginEntity> removingPlugins = new ArrayList<>();
 
         for (PluginEntity plugin : plugins) {
             switch (plugin.getInstallState()) {
                 case INSTALLED -> installed++;
-                case PENDING -> pending++;
-                case INSTALLING -> installing++;
-                case FAILED -> {
-                    failed++;
-                    failedPlugins.add(plugin);
-                }
-                case REMOVING -> removing++;
+                case PENDING -> pendingPlugins.add(plugin);
+                case INSTALLING -> installingPlugins.add(plugin);
+                case FAILED -> failedPlugins.add(plugin);
+                case REMOVING -> removingPlugins.add(plugin);
             }
         }
 
-        return new PluginStateSummary(installed, pending, installing, failed, removing, failedPlugins);
+        return new PluginStateSummary(installed, pendingPlugins, installingPlugins, failedPlugins, removingPlugins);
     }
 
     public record PluginStateSummary(
             int installed,
-            int pending,
-            int installing,
-            int failed,
-            int removing,
-            List<PluginEntity> failedPlugins
+            List<PluginEntity> pendingPlugins,
+            List<PluginEntity> installingPlugins,
+            List<PluginEntity> failedPlugins,
+            List<PluginEntity> removingPlugins
     ) {
         public boolean allHealthy() {
-            return pending == 0 && installing == 0 && failed == 0 && removing == 0;
+            return pendingPlugins.isEmpty() && installingPlugins.isEmpty() && failedPlugins.isEmpty() && removingPlugins.isEmpty();
         }
 
         public boolean anyFailed() {
-            return failed > 0;
+            return !failedPlugins.isEmpty();
         }
 
         public boolean anyInProgress() {
-            return pending > 0 || installing > 0 || removing > 0;
+            return !pendingPlugins.isEmpty() || !installingPlugins.isEmpty() || !removingPlugins.isEmpty();
         }
     }
 

@@ -52,31 +52,30 @@ public class PluginInstallCheck extends StatusCheck {
             resultBuilder.code(CODE_RED);
             resultBuilder.addHeader("Failed Plugin Installations");
             for (PluginEntity plugin : summary.failedPlugins()) {
-                resultBuilder.addLine("\n - __" + plugin.getPluginCoordinates().groupAndArtifact() + "__");
+                resultBuilder.addLine("\n - __" + plugin.imageAndTag() + "__");
                 if (plugin.getInstallError() != null) {
                     resultBuilder.addLine("\n   - Error: " + plugin.getInstallError());
                 }
                 resultBuilder.addLine("\n   - Attempts: " + plugin.getInstallAttempts());
             }
-            resultBuilder.addLine("\n\nVisit the [Plugins](/config/plugins) page to retry failed installations.");
+            resultBuilder.addLine("\n\nRetry with `deltafi plugin retry <name>` or visit the [Plugins](/config/plugins) page.");
         }
 
         if (summary.anyInProgress()) {
             resultBuilder.code(CODE_YELLOW);
-            StringBuilder inProgress = new StringBuilder();
-            if (summary.pending() > 0) {
-                inProgress.append(summary.pending()).append(" pending");
-            }
-            if (summary.installing() > 0) {
-                if (!inProgress.isEmpty()) inProgress.append(", ");
-                inProgress.append(summary.installing()).append(" installing");
-            }
-            if (summary.removing() > 0) {
-                if (!inProgress.isEmpty()) inProgress.append(", ");
-                inProgress.append(summary.removing()).append(" removing");
-            }
             resultBuilder.addHeader("Plugins In Progress");
-            resultBuilder.addLine(inProgress.toString());
+            for (PluginEntity plugin : summary.pendingPlugins()) {
+                resultBuilder.addLine("\n - __" + plugin.imageAndTag() + "__ (pending)");
+            }
+            for (PluginEntity plugin : summary.installingPlugins()) {
+                resultBuilder.addLine("\n - __" + plugin.imageAndTag() + "__ (installing)");
+                if (plugin.getInstallAttempts() > 1) {
+                    resultBuilder.addLine("\n   - Attempt: " + plugin.getInstallAttempts());
+                }
+            }
+            for (PluginEntity plugin : summary.removingPlugins()) {
+                resultBuilder.addLine("\n - __" + plugin.imageAndTag() + "__ (removing)");
+            }
         }
 
         return result(resultBuilder);

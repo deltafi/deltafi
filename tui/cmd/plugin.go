@@ -73,7 +73,7 @@ var listCmd = &cobra.Command{
 		rows := [][]string{}
 
 		for _, plugin := range resp.Plugins {
-			//image := ""
+			// Build image:tag string
 			var image strings.Builder
 			if plugin.ImageName != nil {
 				if plugin.ImageTag != nil {
@@ -82,6 +82,29 @@ var listCmd = &cobra.Command{
 					image.WriteString(*plugin.ImageName)
 				}
 			}
+
+			// For non-installed states, use image as name identifier
+			name := plugin.DisplayName
+			if plugin.InstallState == graphql.PluginStatePending ||
+				plugin.InstallState == graphql.PluginStateInstalling ||
+				plugin.InstallState == graphql.PluginStateFailed {
+				if image.Len() > 0 {
+					name = image.String()
+				}
+			}
+
+			// For non-installed states, show imageTag as version
+			version := plugin.PluginCoordinates.Version
+			if plugin.InstallState == graphql.PluginStatePending ||
+				plugin.InstallState == graphql.PluginStateInstalling ||
+				plugin.InstallState == graphql.PluginStateFailed {
+				if plugin.ImageTag != nil {
+					version = *plugin.ImageTag
+				} else {
+					version = "-"
+				}
+			}
+
 			status := string(plugin.InstallState)
 			if plugin.Disabled {
 				status = "DISABLED"
@@ -89,9 +112,9 @@ var listCmd = &cobra.Command{
 				status = "FAILED (rollback available)"
 			}
 			rows = append(rows, []string{
-				plugin.DisplayName,
+				name,
 				image.String(),
-				plugin.PluginCoordinates.Version,
+				version,
 				status,
 			})
 			sort.Slice(rows, func(i, j int) bool {
@@ -105,6 +128,15 @@ var listCmd = &cobra.Command{
 		t := api.NewTable(columns, rows)
 
 		renderAsSimpleTable(t, plain)
+
+		// Check if any plugins failed and suggest where to find more info
+		for _, plugin := range resp.Plugins {
+			if plugin.InstallState == graphql.PluginStateFailed {
+				fmt.Println()
+				fmt.Println(styles.WarningStyle.Render("Some plugins failed to install. Run 'deltafi status' for error details."))
+				break
+			}
+		}
 	},
 }
 

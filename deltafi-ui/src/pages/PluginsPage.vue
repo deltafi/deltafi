@@ -35,13 +35,20 @@
             <Column header="Name" field="displayName" :style="{ width: '25%' }" :sortable="true">
               <template #body="{ data }">
                 <div class="d-flex justify-content-between align-items-center">
-                  <span>{{ data.displayName }}</span>
+                  <div>
+                    {{ getPluginDisplayName(data) }}
+                    <i v-if="data.imageName" class="fa-brands fa-docker docker-icon small" v-tooltip.top="getImageName(data)"></i>
+                  </div>
                   <PluginActionMenu v-if="!data.readOnly && $hasSomePermissions('PluginInstall', 'PluginUninstall')" :row-data-prop="data" @reload-plugins="loadPlugins()" @plugin-removal-errors="pluginRemovalErrors" @retry="retryInstall" @rollback="rollback" @enable="enable" @disable="disable" />
                 </div>
               </template>
             </Column>
             <Column header="Description" field="description" />
-            <Column header="Version" field="pluginCoordinates.version" />
+            <Column header="Version" :style="{ width: '10%' }">
+              <template #body="{ data }">
+                {{ getPluginVersion(data) }}
+              </template>
+            </Column>
             <Column header="Status" field="installState" :sortable="true">
               <template #body="{ data }">
                 <Tag :value="getStateLabel(data)" :severity="getStateSeverity(data)" />
@@ -54,7 +61,11 @@
         <SplitterPanel :size="startingPanelTwoSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelTwoSize}`">
           <div v-if="selectedPlugin !== null && selectedPlugin !== undefined" class="pt-4 pb-4 col">
             <div>
-              <h4>{{ selectedPlugin.displayName }}</h4>
+              <h4>{{ getPluginDisplayName(selectedPlugin) }}</h4>
+              <div v-if="getPluginSubtitle(selectedPlugin)" class="text-muted mb-2">
+                <i v-if="selectedPlugin.imageName" class="fa-brands fa-docker docker-icon small"></i>
+                {{ getPluginSubtitle(selectedPlugin) }}
+              </div>
             </div>
             <PluginActionsPanel :actions="selectedPlugin.actions" class="mb-3" />
             <PluginVariablesPanel :key="selectedPlugin.displayName" :plugin-coordinates-prop="selectedPlugin.pluginCoordinates" :variables-prop="selectedPlugin.variables" class="mb-3" @updated="loadPlugins()" />
@@ -120,7 +131,7 @@ const { data: plugins, fetch: fetchPlugins, loading, loaded, retryPluginInstall,
 const showLoading = computed(() => !loaded.value && loading.value);
 
 const pluginsList = computed(() => {
-  if (plugins.value) {
+  if (plugins.value?.plugins) {
     plugins.value.plugins.forEach((plugin) => {
       plugin["combinedPluginCoordinates"] = plugin.pluginCoordinates.groupId.concat(":", plugin.pluginCoordinates.artifactId, ":", plugin.pluginCoordinates.version);
       plugin["readOnly"] = isReadOnly(plugin);
@@ -320,6 +331,38 @@ const enable = async (plugin) => {
     notify.error("Enable Failed", `Could not enable ${plugin.displayName}`);
   }
 };
+
+const getPluginDisplayName = (plugin) => {
+  // For non-installed states, use image as the primary identifier
+  if (['PENDING', 'INSTALLING', 'FAILED'].includes(plugin.installState)) {
+    if (plugin.imageName) {
+      return plugin.imageTag ? `${plugin.imageName}:${plugin.imageTag}` : plugin.imageName;
+    }
+  }
+  // For installed (or fallback), use displayName
+  return plugin.displayName || plugin.pluginCoordinates?.artifactId || 'Unknown';
+};
+
+const getImageName = (plugin) => {
+  return plugin.imageTag ? `${plugin.imageName}:${plugin.imageTag}` : plugin.imageName;
+};
+
+const getPluginSubtitle = (plugin) => {
+  // Show image:tag as subtitle for installed plugins
+  if (plugin.installState === 'INSTALLED' && plugin.imageName) {
+    return getImageName(plugin);
+  }
+  return null;
+};
+
+
+const getPluginVersion = (plugin) => {
+  // For non-installed states, show imageTag (that's what the user specified)
+  if (['PENDING', 'INSTALLING', 'FAILED'].includes(plugin.installState)) {
+    return plugin.imageTag || '-';
+  }
+  return plugin.pluginCoordinates?.version || '-';
+};
 </script>
 
 <style>
@@ -330,6 +373,19 @@ const enable = async (plugin) => {
   }
 
   .plugin-table {
+    .docker-icon {
+      color: #98a0a8;
+    }
+
+    tr:hover .docker-icon {
+      color: #98a0a8;
+      text-shadow: none;
+    }
+
+    tr.p-highlight .docker-icon {
+      color: #cbd6e1;
+    }
+
     table tr th {
       border-top: none;
     }

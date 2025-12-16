@@ -20,13 +20,10 @@ package org.deltafi.core.plugin.deployer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.types.Result;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -49,17 +46,17 @@ public class DeployResult extends Result {
         result.getInfo().addAll(this.getInfo());
         result.getErrors().addAll(this.getErrors());
 
-        if (events != null) {
-            StringBuilder eventsMessage = new StringBuilder("Events:\n");
+        if (events != null && !events.isEmpty()) {
+            // Filter to Warning events and format as simple list
+            List<String> warnings = events.stream()
+                    .filter(row -> row.size() >= 5 && "Warning".equals(row.get(0)))
+                    .map(row -> row.get(1) + ": " + row.get(4)) // Reason: Message
+                    .distinct()
+                    .toList();
 
-            List<Integer> maxWidths = maxWidths();
-            eventsMessage.append(buildRow(K8sEventUtil.EVENT_COLUMNS, maxWidths)).append("\n");
-            List<String> separatorRow = K8sEventUtil.EVENT_COLUMNS.stream().map(header -> "-".repeat(header.length())).toList();
-            eventsMessage.append(buildRow(separatorRow, maxWidths)).append("\n");
-            String rows = events.stream().map(row -> buildRow(row, maxWidths)).collect(Collectors.joining("\n"));
-            eventsMessage.append(rows).append("\n\n");
-
-            result.getErrors().add(eventsMessage.toString());
+            if (!warnings.isEmpty()) {
+                result.getErrors().add(String.join("\n", warnings));
+            }
         }
 
         if (logs != null) {
@@ -67,31 +64,5 @@ public class DeployResult extends Result {
         }
 
         return result;
-    }
-
-    private String buildRow(List<String> values, List<Integer> maxWidth) {
-        StringBuilder row = new StringBuilder();
-        int lastValue = values.size() - 1;
-        for (int i = 0; i < values.size(); i++) {
-            String value = values.get(i);
-            if (i == lastValue) {
-                row.append(value);
-            } else {
-                row.append(StringUtils.rightPad(value, maxWidth.get(i))).append("\t");
-            }
-        }
-        return row.toString();
-    }
-
-    private List<Integer> maxWidths() {
-        List<Integer> maxWidth = new ArrayList<>(Collections.nCopies(K8sEventUtil.EVENT_COLUMNS.size() - 1, 0));
-
-        for (List<String> eventRow : events) {
-            for (int i = 0; i < maxWidth.size(); i++) {
-                maxWidth.set(i, Math.max(eventRow.get(i).length(), maxWidth.get(i)));
-            }
-        }
-
-        return maxWidth;
     }
 }
