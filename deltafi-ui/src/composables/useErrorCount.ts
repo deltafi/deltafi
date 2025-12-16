@@ -31,15 +31,19 @@ serverSentEvents.addEventListener('errorCount', (event: any) => {
 export default function useErrorCount(): {
   errorCount: Ref<number>
   fetchErrorCount: () => void;
-  fetchErrorCountSince: () => void
+  fetchErrorCountSince: (since: Date) => Promise<number>
 } {
   const { response, queryGraphQL } = useGraphQL();
 
-  const setErrorCount = ($errorCount: number) => {
-    return (errorCount.value = $errorCount);
+  const fetchErrorCount = async () => {
+    const query = {
+      countUnacknowledgedErrors: true
+    };
+    await queryGraphQL(query, "getErrorCount");
+    errorCount.value = response.value.data.countUnacknowledgedErrors;
   };
 
-  const buildQuery = async (since: Date = new Date(0)) => {
+  const fetchErrorCountSince = async (since: Date) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -52,17 +56,8 @@ export default function useErrorCount(): {
         totalCount: true,
       }
     };
-    await queryGraphQL(query, "getErrorCount");
+    await queryGraphQL(query, "getErrorCountSince");
     return response.value.data.deltaFiles.totalCount;
-  }
-
-  const fetchErrorCount = async (since: Date = new Date(0)) => {
-    const count = buildQuery(since);
-    setErrorCount(await count);
-  };
-
-  const fetchErrorCountSince = async (since: Date = new Date(0)) => {
-    return buildQuery(since);
   }
 
   return {

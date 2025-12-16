@@ -336,6 +336,9 @@ class DeltaFiCoreApplicationTests {
 	FlowCacheService flowCacheService;
 
 	@Autowired
+	ErrorCountService errorCountService;
+
+	@Autowired
 	List<FlowService<?, ?, ?, ?>> flowServices;
 
 	@Autowired
@@ -5642,6 +5645,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.insertBatch(deltaFiles, 1000);
 
 		assertEquals(505, deltaFileRepo.count());
+		errorCountService.populateErrorCounts(Set.of());
 		assertEquals(501, deltaFilesService.countUnacknowledgedErrors());
 	}
 

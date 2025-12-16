@@ -121,6 +121,7 @@ public class DeltaFilesService {
     private final PluginService pluginService;
     private final FlowCacheService flowCacheService;
     private final org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue valkeyQueue;
+    private final ErrorCountService errorCountService;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -245,7 +246,7 @@ public class DeltaFilesService {
     }
 
     public long countUnacknowledgedErrors() {
-        return deltaFileFlowRepo.countUnacknowledgedErrors();
+        return errorCountService.getTotalUnacknowledgedErrors();
     }
 
     private DeltaFile buildIngressDeltaFile(DataSource dataSource, IngressEventItem ingressEventItem,

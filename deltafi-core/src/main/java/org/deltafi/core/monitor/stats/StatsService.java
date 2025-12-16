@@ -25,6 +25,7 @@ import org.deltafi.core.generated.types.DeltaFileStats;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.ErrorCountService;
 import org.deltafi.core.services.EventService;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -43,6 +44,7 @@ public class StatsService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final DeltaFilesService deltaFilesService;
+    private final ErrorCountService errorCountService;
     private final EventService eventService;
     private final ValkeyKeyedBlockingQueue valkeyQueue;
     private final MetricService metricService;
@@ -60,7 +62,7 @@ public class StatsService {
 
     @Scheduled(fixedDelay = 5000)
     public void errorCount() {
-        publishData(ERROR_COUNT_CHANNEL, deltaFilesService.countUnacknowledgedErrors());
+        publishData(ERROR_COUNT_CHANNEL, errorCountService.getTotalUnacknowledgedErrors());
     }
 
     @Scheduled(fixedDelay = 5000)

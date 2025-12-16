@@ -54,7 +54,7 @@
         <div class="metric">
           <div class="metric-label">Errors</div>
           <div class="metric-value" :class="{ 'has-errors': (member.errorCount ?? 0) > 0 }">
-            {{ member.errorCount ?? "—" }}<span v-if="member.errorCount === 10000">+</span>
+            {{ member.errorCount ?? "—" }}
           </div>
         </div>
 

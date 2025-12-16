@@ -114,7 +114,8 @@ class DeltaFilesServiceTest {
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
                           @Mock Environment environment, @Mock IdentityService identityService,
                           @Mock ParameterResolver parameterResolver, @Mock PluginService pluginService,
-                          @Mock FlowCacheService flowCacheService, @Mock ValkeyKeyedBlockingQueue valkeyQueue) {
+                          @Mock FlowCacheService flowCacheService, @Mock ValkeyKeyedBlockingQueue valkeyQueue,
+                          @Mock ErrorCountService errorCountService) {
         this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.dataSinkService = dataSinkService;
@@ -140,7 +141,7 @@ class DeltaFilesServiceTest {
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 onErrorDataSourceService, queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
-                flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, valkeyQueue);
+                flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, valkeyQueue, errorCountService);
     }
 
     @AfterEach

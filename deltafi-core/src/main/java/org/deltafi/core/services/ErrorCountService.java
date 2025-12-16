@@ -36,6 +36,7 @@ public class ErrorCountService {
 
     private volatile Map<FlowKey, Integer> errorCounts = Collections.emptyMap();
     private volatile Map<FlowKey, String> exceededFlowErrors = Collections.emptyMap();
+    private volatile long totalUnacknowledgedErrors = 0;
 
     public ErrorCountService(DeltaFileFlowRepo deltaFileFlowRepo, @Lazy RestDataSourceService restDataSourceService,
                              @Lazy TimedDataSourceService timedDataSourceService) {
@@ -45,6 +46,7 @@ public class ErrorCountService {
     }
 
     public synchronized void populateErrorCounts(Set<String> dataSourceNames) {
+        totalUnacknowledgedErrors = deltaFileFlowRepo.countUnacknowledgedErrors();
         if (dataSourceNames.isEmpty()) {
             errorCounts = Collections.emptyMap();
             exceededFlowErrors = Collections.emptyMap();
@@ -104,6 +106,10 @@ public class ErrorCountService {
 
     public int errorsForFlow(FlowType flowType, String flow) {
         return errorCounts.getOrDefault(new FlowKey(flowType, flow), 0);
+    }
+
+    public long getTotalUnacknowledgedErrors() {
+        return totalUnacknowledgedErrors;
     }
 
     private record FlowKey(FlowType flowType, String flowName) {}
