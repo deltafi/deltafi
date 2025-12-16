@@ -37,7 +37,7 @@
           <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <div>
-          <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+          <small v-if="!_.isEmpty(schemaData.control.description)" v-html="markdownIt.render(schemaData.control.description)"></small>
         </div>
       </dd>
     </dl>

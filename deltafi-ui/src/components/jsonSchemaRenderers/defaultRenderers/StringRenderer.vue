@@ -34,7 +34,7 @@
           <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <div>
-          <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+          <small v-if="!_.isEmpty(schemaData.control.description)" v-html="markdownIt.render(schemaData.control.description)"></small>
         </div>
       </dd>
     </dl>
@@ -49,11 +49,16 @@ import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
 
 import _ from "lodash";
+import MarkdownIt from "markdown-it";
 
 import AutoComplete from "primevue/autocomplete";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
+
+const markdownIt = new MarkdownIt({
+  html: true,
+});
 
 const { useControl } = useSchemaComposition();
 
@@ -94,9 +99,9 @@ const undefinedStringCheck = (value: any) => {
 };
 
 const computedLabel = computed(() => {
-  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
+  let label = schemaData.control.config.defaultLabels ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 
-  label = (schemaData.control.required) ? label + "*" : label;
+  label = schemaData.control.required ? label + "*" : label;
 
   return label;
 });
@@ -114,7 +119,7 @@ const optionsDisplay = computed(() => {
 .auto-complete-input-width {
   width: 100% !important;
 
-  >.p-inputtext {
+  > .p-inputtext {
     width: 100% !important;
   }
 }
