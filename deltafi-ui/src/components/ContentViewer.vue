@@ -25,6 +25,7 @@
         <Toolbar>
           <template #start>
             <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
+            <slot name="toolbar-start" />
           </template>
           <template #end>
             <span class="mr-3">

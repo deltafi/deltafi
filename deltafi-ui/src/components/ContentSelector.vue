@@ -24,7 +24,11 @@
       <Listbox v-model="selectedItem" :options="listboxItems" filter option-label="name" />
     </div>
     <div class="right-column">
-      <ContentViewer :content="selectedPointer" />
+      <ContentViewer :content="selectedPointer">
+        <template v-if="$slots['toolbar-start']" #toolbar-start>
+          <slot name="toolbar-start" />
+        </template>
+      </ContentViewer>
     </div>
   </div>
 </template>

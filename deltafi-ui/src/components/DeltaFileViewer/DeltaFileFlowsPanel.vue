@@ -45,34 +45,11 @@
           </template>
         </Column>
         <Column field="elapsed" header="Elapsed" class="elapsed-column" />
-        <Column header="Metadata" class="metadata-column">
+        <Column class="file-icon-column">
           <template #body="{ data: flow }">
-            <span v-if="flow.input.hasOwnProperty('metadata') && Object.keys(flow.input.metadata).length > 0">
-              <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ [flow.name]: metadataAsArray(flow.input.metadata) }" :dismissable-mask="true">
-                <Button icon="fas fa-table" label="View" class="content-button p-button-link" />
-              </DialogTemplate>
-            </span>
-          </template>
-        </Column>
-        <Column v-if="!contentDeleted && $hasPermission('DeltaFileContentView')" header="Input" class="content-column">
-          <template #body="{ data: flow }">
-            <span v-if="flow.input.hasOwnProperty('content') && flow.input.content.length > 0">
-              <ContentDialog :did="deltaFile.did" :flow-number="flow.number" :content="flow.input.content">
-                <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
-              </ContentDialog>
-            </span>
-          </template>
-        </Column>
-        <Column field="last_action_content" header="Output" class="content-column">
-          <template #body="{ data: flow }">
-            <span v-if="flow.actions.length > 0">
-              <ContentDialog v-if="lastAction(flow.actions).content.length > 0" :did="deltaFile.did" :flow-number="flow.number" :action-index="flow.actions.length - 1" :content="lastAction(flow.actions).content">
-                <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
-              </ContentDialog>
-            </span>
-            <ContentDialog v-else :did="deltaFile.did" :flow-number="flow.number" :content="flow.input.content">
-              <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
-            </ContentDialog>
+            <FlowOutputDialog :did="deltaFile.did" :flow="flow" :parent-flow="getParentFlow(flow)">
+              <Button :icon="flowHasChanges(flow) ? 'fas fa-file-pen' : 'fas fa-file'" class="p-button-link file-button" />
+            </FlowOutputDialog>
           </template>
         </Column>
         <template #expansion="flow">
@@ -87,14 +64,13 @@
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import ContentDialog from "@/components/ContentDialog.vue";
 import DeltaFileActionsTable from "@/components/DeltaFileViewer/DeltaFileActionsTable.vue";
-import DialogTemplate from "@/components/DialogTemplate.vue";
+import FlowOutputDialog from "@/components/DeltaFileViewer/FlowOutputDialog.vue";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import TestModeBadge from "@/components/TestModeBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, reactive, ref, inject } from "vue";
+import { computed, reactive, ref } from "vue";
 
 import _ from "lodash";
 
@@ -102,7 +78,6 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 
-const hasPermission = inject("hasPermission");
 const expandedRows = ref([]);
 
 const props = defineProps({
@@ -130,8 +105,55 @@ const errorViewer = reactive({
   actionIndex: undefined,
 });
 
-const metadataAsArray = (metadataObject) => {
-  return Object.entries(metadataObject).map(([key, value]) => ({ key, value }));
+const getFlowByNumber = (flowNumber) => {
+  return deltaFile.flows.find((f) => f.number === flowNumber) || null;
+};
+
+const getParentFlow = (flow) => {
+  const parentNumber = flow.input?.ancestorIds?.[0];
+  return parentNumber != null ? getFlowByNumber(parentNumber) : null;
+};
+
+const computeOutputMetadata = (flow) => {
+  if (!flow) return {};
+  const result = { ...(flow.input?.metadata || {}) };
+  for (const action of flow.actions || []) {
+    if (action.metadata) Object.assign(result, action.metadata);
+    for (const key of action.deleteMetadataKeys || []) delete result[key];
+  }
+  return result;
+};
+
+const flowHasChanges = (flow) => {
+  // Data sources always create content, so they always have "changes"
+  if (flow.type.endsWith("DATA_SOURCE")) return true;
+  // Data sinks don't modify content, they just send it
+  if (flow.type !== "TRANSFORM") return false;
+  const parent = getParentFlow(flow);
+  if (!parent) return false;
+
+  // Check metadata changes
+  const currentMeta = computeOutputMetadata(flow);
+  const parentMeta = computeOutputMetadata(parent);
+  const currentKeys = Object.keys(currentMeta);
+  const parentKeys = Object.keys(parentMeta);
+  if (currentKeys.length !== parentKeys.length) return true;
+  for (const key of currentKeys) {
+    if (!(key in parentMeta) || currentMeta[key] !== parentMeta[key]) return true;
+  }
+
+  // Check content changes
+  const inputContent = flow.input?.content || [];
+  const outputContent = lastAction(flow.actions)?.content || [];
+  if (inputContent.length !== outputContent.length) return true;
+  for (let i = 0; i < inputContent.length; i++) {
+    const inp = inputContent[i];
+    const out = outputContent[i];
+    if (inp.name !== out.name || inp.mediaType !== out.mediaType || inp.size !== out.size) return true;
+    if (JSON.stringify(inp.segments) !== JSON.stringify(out.segments)) return true;
+  }
+
+  return false;
 };
 
 const topicsTooltip = (flow) => {
@@ -246,27 +268,22 @@ const rowClick = (event) => {
     cursor: pointer !important;
   }
 
-  .content-column,
-  .metadata-column {
+  .file-icon-column {
     width: 1%;
     padding: 0 0.5rem !important;
 
-    .content-button {
+    .file-button {
       cursor: pointer !important;
       padding: 0.1rem 0.4rem;
       margin: 0;
       color: #333333;
     }
 
-    .content-button:hover {
+    .file-button:hover {
       color: #666666 !important;
-
-      .p-button-label {
-        text-decoration: none !important;
-      }
     }
 
-    .content-button:focus {
+    .file-button:focus {
       outline: none !important;
       box-shadow: none !important;
     }

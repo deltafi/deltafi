@@ -128,7 +128,7 @@
                 text-anchor="middle"
                 dominant-baseline="middle"
                 @click.stop="openFlowOutput(node)"
-              >&#xf15b;</text>
+              >{{ flowHasChanges(node) ? '\uf31c' : '\uf15b' }}</text>
           </g>
         </g>
       </svg>
@@ -153,6 +153,8 @@
         <div v-if="presentTypes.has('ON_ERROR_DATA_SOURCE')" class="legend-item"><i class="fas fa-triangle-exclamation" /> Error Data Source</div>
         <div v-if="presentTypes.has('TRANSFORM')" class="legend-item"><i class="fas fa-project-diagram" /> Transform</div>
         <div v-if="presentTypes.has('DATA_SINK')" class="legend-item"><i class="fas fa-file-export" /> Data Sink</div>
+        <div class="legend-item"><i class="fas fa-file" /> View content/metadata</div>
+        <div class="legend-item"><i class="fas fa-file-pen" /> View modified content/metadata</div>
       </div>
 
       <!-- Custom tooltip -->
@@ -166,7 +168,7 @@
     </div>
 
     <!-- Flow output dialog -->
-    <FlowOutputDialog ref="flowOutputDialogRef" :did="props.deltaFileData.did" :flow="selectedFlow" />
+    <FlowOutputDialog ref="flowOutputDialogRef" :did="props.deltaFileData.did" :flow="selectedFlow" :parent-flow="selectedParentFlow" />
     <!-- Error viewer dialog -->
     <ErrorViewerDialog v-model:visible="errorViewer.visible" :did="errorViewer.did" :flow-number="errorViewer.flowNumber" :action-index="errorViewer.actionIndex" :action="errorViewer.action" />
   </component>
@@ -237,6 +239,7 @@ const hideTooltip = () => {
 // Flow output dialog
 const flowOutputDialogRef = ref(null);
 const selectedFlow = ref(null);
+const selectedParentFlow = ref(null);
 
 const flowHasOutput = (node) => {
   const flow = getFlowByNumber(node.number);
@@ -252,8 +255,60 @@ const getFlowByNumber = (flowNumber) => {
 };
 
 const openFlowOutput = (node) => {
-  selectedFlow.value = getFlowByNumber(node.number);
+  const flow = getFlowByNumber(node.number);
+  selectedFlow.value = flow;
+  // Find parent flow via ancestorIds
+  const parentNumber = flow?.input?.ancestorIds?.[0];
+  selectedParentFlow.value = parentNumber != null ? getFlowByNumber(parentNumber) : null;
   flowOutputDialogRef.value?.show();
+};
+
+const computeOutputMetadata = (flow) => {
+  if (!flow) return {};
+  const result = { ...(flow.input?.metadata || {}) };
+  for (const action of flow.actions || []) {
+    if (action.metadata) Object.assign(result, action.metadata);
+    for (const key of action.deleteMetadataKeys || []) delete result[key];
+  }
+  return result;
+};
+
+const flowHasChanges = (node) => {
+  const flow = getFlowByNumber(node.number);
+  if (!flow) return false;
+
+  // Data sources always create content, so they always have "changes"
+  if (flow.type.endsWith("DATA_SOURCE")) return true;
+  // Data sinks don't modify content, they just send it
+  if (flow.type !== "TRANSFORM") return false;
+
+  const parentNumber = flow.input?.ancestorIds?.[0];
+  const parent = parentNumber != null ? getFlowByNumber(parentNumber) : null;
+  if (!parent) return false;
+
+  // Check metadata changes
+  const currentMeta = computeOutputMetadata(flow);
+  const parentMeta = computeOutputMetadata(parent);
+  const currentKeys = Object.keys(currentMeta);
+  const parentKeys = Object.keys(parentMeta);
+  if (currentKeys.length !== parentKeys.length) return true;
+  for (const key of currentKeys) {
+    if (!(key in parentMeta) || currentMeta[key] !== parentMeta[key]) return true;
+  }
+
+  // Check content changes
+  const lastAction = flow.actions?.[flow.actions.length - 1];
+  const inputContent = flow.input?.content || [];
+  const outputContent = lastAction?.content || [];
+  if (inputContent.length !== outputContent.length) return true;
+  for (let i = 0; i < inputContent.length; i++) {
+    const inp = inputContent[i];
+    const out = outputContent[i];
+    if (inp.name !== out.name || inp.mediaType !== out.mediaType || inp.size !== out.size) return true;
+    if (JSON.stringify(inp.segments) !== JSON.stringify(out.segments)) return true;
+  }
+
+  return false;
 };
 
 // Error viewer dialog (same as table view)
