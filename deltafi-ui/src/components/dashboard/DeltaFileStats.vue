@@ -26,6 +26,9 @@
         <div v-for="label in statLabels" :key="label" class="stat-cell text-center">
           <div class="stat-label">
             {{ label }}
+            <span v-if="label === 'In-flight' && deltaFileStats.inFlightCount > 0 && deltaFileStats.oldestInFlightCreated" v-tooltip.top="oldestTooltip" class="oldest-clock" :class="{ clickable: deltaFileStats.oldestInFlightDid }" @click="viewOldestDeltaFile">
+              <i class="pi pi-clock" />
+            </span>
           </div>
         </div>
       </div>
@@ -43,11 +46,15 @@
 <script setup>
 import Panel from "primevue/panel";
 import { ref, onMounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useTimeAgo } from '@vueuse/core';
 import useServerSentEvents from "@/composables/useServerSentEvents";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import useDeltaFileStats from "@/composables/useDeltaFileStats";
 
-const { formattedBytes } = useUtilFunctions();
+const router = useRouter();
+
+const { formattedBytes, formatTimestamp } = useUtilFunctions();
 const { serverSentEvents } = useServerSentEvents();
 const { fetchDeltaFileStats } = useDeltaFileStats();
 const deltaFileStats = ref(null)
@@ -71,6 +78,22 @@ const statValues = computed(() => {
     (deltaFileStats.value.pausedCount ?? 0).toLocaleString("en-US")
   ]
 })
+
+const oldestTooltip = computed(() => {
+  const oldest = deltaFileStats.value?.oldestInFlightCreated;
+  if (!oldest) return "";
+  const timeAgo = useTimeAgo(oldest).value;
+  const timestamp = formatTimestamp(oldest, "MM/DD/YYYY, HH:mm:ss");
+  const clickHint = deltaFileStats.value?.oldestInFlightDid ? " — Click to view" : "";
+  return `Oldest: ${timeAgo} (${timestamp})${clickHint}`;
+})
+
+const viewOldestDeltaFile = () => {
+  const did = deltaFileStats.value?.oldestInFlightDid;
+  if (did) {
+    router.push(`/deltafile/viewer/${did}`);
+  }
+}
 
 serverSentEvents.addEventListener('deltafiStats', (event) => {
   try {
@@ -105,5 +128,22 @@ onMounted(async () => {
 .stat-label {
   padding-top: 0.4rem;
   font-size: small;
+}
+
+.oldest-clock {
+  margin-left: 4px;
+  cursor: help;
+  color: var(--text-color-secondary);
+  display: inline-flex;
+  align-items: center;
+  vertical-align: text-bottom;
+}
+
+.oldest-clock.clickable {
+  cursor: pointer;
+}
+
+.oldest-clock.clickable:hover {
+  color: var(--primary-color);
 }
 </style>

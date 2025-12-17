@@ -18,6 +18,8 @@
 package org.deltafi.core.monitor.stats;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
@@ -41,7 +43,9 @@ public class StatsService {
     private static final String DELTAFILE_STATS_CHANNEL = SSE_VALKEY_CHANNEL_PREFIX + ".deltafiStats";
     private static final String ERROR_COUNT_CHANNEL = SSE_VALKEY_CHANNEL_PREFIX + ".errorCount";
     private static final String NOTIFICATION_COUNT_CHANNEL = SSE_VALKEY_CHANNEL_PREFIX + ".notificationCount";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private final DeltaFilesService deltaFilesService;
     private final ErrorCountService errorCountService;

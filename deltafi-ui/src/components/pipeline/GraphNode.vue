@@ -25,6 +25,20 @@
     :class="{ selected: selected, focused: focused, [nodeTypeClass]: true }"
     @click="$emit('click', $event)"
   >
+    <!-- Queue indicator (left side, near incoming arrow) -->
+    <g
+      v-if="node.type !== 'TOPIC' && queueCounts && queueCounts.total > 0"
+      class="queue-indicator"
+      :transform="`translate(-${nodeWidth / 2 + (showInputMetrics ? metricsBoxWidth : 0) + 38}, 0)`"
+      @mouseenter="$emit('show-tooltip', $event, queueTooltip)"
+      @mouseleave="$emit('hide-tooltip')"
+    >
+      <rect x="-18" y="-10" width="36" height="20" rx="10" class="queue-indicator-bg" />
+      <text dy="0.35em" text-anchor="middle" class="queue-indicator-text">
+        {{ formatQueueCount(queueCounts.total) }}
+      </text>
+    </g>
+
     <!-- Expand upstream button (Detail view only) -->
     <g
       v-if="canExpandUpstream"
@@ -227,6 +241,7 @@ import {
   formatMetricNumber,
   formatBytesParts,
   formatErrorCount,
+  formatQueueCount,
 } from "./useGraphStyles";
 
 const props = defineProps({
@@ -265,6 +280,10 @@ const props = defineProps({
   errorCount: {
     type: Number,
     default: 0,
+  },
+  queueCounts: {
+    type: Object,
+    default: null,
   },
   metrics: {
     type: Object,
@@ -411,6 +430,17 @@ const statusBadge = computed(() => {
   }
 
   return null;
+});
+
+// Queue tooltip with warm/cold breakdown
+const queueTooltip = computed(() => {
+  const q = props.queueCounts;
+  if (!q || q.total === 0) return '';
+
+  const parts = [];
+  if (q.warm > 0) parts.push(`${q.warm.toLocaleString()} warm`);
+  if (q.cold > 0) parts.push(`${q.cold.toLocaleString()} cold`);
+  return `Queued: ${parts.join(', ')}`;
 });
 
 // Icon for node type (Font Awesome unicode)
@@ -617,6 +647,24 @@ const typeIcon = computed(() => {
 
 .expand-button:hover text {
   fill: white;
+}
+
+/* Queue indicator */
+.queue-indicator {
+  cursor: default;
+}
+
+.queue-indicator-bg {
+  fill: var(--surface-0);
+  stroke: var(--surface-400);
+  stroke-width: 1;
+}
+
+.queue-indicator-text {
+  fill: var(--text-color);
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
 }
 
 /* Metrics area background */

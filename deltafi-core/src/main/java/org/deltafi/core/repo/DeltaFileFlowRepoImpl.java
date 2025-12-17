@@ -26,6 +26,9 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -244,42 +247,19 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     @Override
     public List<String> distinctColdQueuedActions() {
-        String queryStr = """
-            SELECT DISTINCT dff.cold_queued_action
-            FROM delta_file_flows dff
-            WHERE dff.state = 'IN_FLIGHT'
-            AND dff.cold_queued_action IS NOT NULL
-        """;
+        String sql = "SELECT DISTINCT action_class FROM cold_queue_entries";
 
         @SuppressWarnings("unchecked")
-        List<String> results = entityManager.createNativeQuery(queryStr).getResultList();
+        List<String> results = entityManager.createNativeQuery(sql).getResultList();
         return results.stream().filter(Objects::nonNull).toList();
-    }
-
-    @Override
-    public boolean isColdQueued(String actionClass) {
-        String queryStr = """
-            SELECT 1 FROM delta_file_flows dff
-            WHERE dff.state = 'IN_FLIGHT'
-            AND dff.cold_queued_action = :actionClass
-            LIMIT 1
-        """;
-
-        Query query = entityManager.createNativeQuery(queryStr).setParameter("actionClass", actionClass);
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-
-        return !results.isEmpty();
     }
 
     @Override
     public Map<String, Integer> coldQueuedActionsCount() {
         String sql = """
-                SELECT cold_queued_action , COUNT(*) AS count
-                FROM delta_file_flows
-                WHERE state  = 'IN_FLIGHT'
-                AND cold_queued_action IS NOT NULL
-                GROUP BY cold_queued_action""";
+                SELECT action_class, COUNT(*) AS count
+                FROM cold_queue_entries
+                GROUP BY action_class""";
 
         Query query = entityManager.createNativeQuery(sql);
 
@@ -293,15 +273,50 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     public Long coldQueuedCount(int limit) {
         String sql = """
                 SELECT COUNT(*) AS count
-                FROM (SELECT 1 FROM delta_file_flows
-                WHERE state  = 'IN_FLIGHT'
-                AND cold_queued_action IS NOT NULL
-                LIMIT :limit) AS a""";
+                FROM (SELECT 1 FROM cold_queue_entries LIMIT :limit) AS a""";
 
         Query query = entityManager.createNativeQuery(sql)
                 .setParameter("limit", limit);
 
         return ((Number) query.getSingleResult()).longValue();
+    }
+
+    @Override
+    public List<ColdQueueMetrics> getColdQueueCounts() {
+        String sql = """
+                SELECT flow_name, flow_type, action_name, action_class,
+                       COUNT(*) as count, MIN(queued_at) as oldest_queued_at
+                FROM cold_queue_entries
+                GROUP BY flow_name, flow_type, action_name, action_class""";
+
+        Query query = entityManager.createNativeQuery(sql);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> resultList = query.getResultList();
+        return resultList.stream()
+                .map(row -> new ColdQueueMetrics(
+                        (String) row[0],
+                        (String) row[1],
+                        (String) row[2],
+                        (String) row[3],
+                        ((Number) row[4]).intValue(),
+                        row[5] != null ? ((Instant) row[5]).atOffset(ZoneOffset.UTC) : null))
+                .toList();
+    }
+
+    @Override
+    public Optional<OldestColdQueueEntry> getOldestColdQueueEntry() {
+        String sql = "SELECT delta_file_id, queued_at FROM cold_queue_entries ORDER BY queued_at ASC LIMIT 1";
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = entityManager.createNativeQuery(sql).getResultList();
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        Object[] row = results.get(0);
+        return Optional.of(new OldestColdQueueEntry(
+                (UUID) row[0],
+                row[1] != null ? ((Instant) row[1]).atOffset(ZoneOffset.UTC) : null));
     }
 
 }

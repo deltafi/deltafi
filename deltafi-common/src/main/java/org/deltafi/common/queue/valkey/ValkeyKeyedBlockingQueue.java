@@ -255,6 +255,28 @@ public class ValkeyKeyedBlockingQueue {
     }
 
     /**
+     * Scan through all items in a sorted set, invoking the consumer for each item.
+     * Uses cursor-based iteration to avoid loading all items into memory at once.
+     *
+     * @param key the name of the sorted set
+     * @param batchSize number of items to fetch per iteration
+     * @param consumer callback invoked for each tuple (value and score)
+     */
+    public void scanSortedSet(String key, int batchSize, java.util.function.Consumer<Tuple> consumer) {
+        ScanParams params = new ScanParams().count(batchSize);
+        try (Jedis jedis = jedisPool.getResource()) {
+            String cursor = ScanParams.SCAN_POINTER_START;
+            do {
+                ScanResult<Tuple> result = jedis.zscan(key, cursor, params);
+                for (Tuple tuple : result.getResult()) {
+                    consumer.accept(tuple);
+                }
+                cursor = result.getCursor();
+            } while (!cursor.equals(ScanParams.SCAN_POINTER_START));
+        }
+    }
+
+    /**
      * Retrieves a map of long-running tasks
      *
      * @return a map containing the long running tasks

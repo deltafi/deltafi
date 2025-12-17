@@ -115,7 +115,7 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     default DeltaFileStats deltaFileStats() {
         List<Object[]> rawStats = getRawDeltaFileStats();
         if (rawStats.isEmpty()) {
-            return new DeltaFileStats(0L, 0L, 0L, 0L, 0L, 0L);
+            return new DeltaFileStats(0L, 0L, 0L, 0L, 0L, 0L, null, null);
         }
         Object[] row = rawStats.getFirst();
         return new DeltaFileStats(
@@ -124,7 +124,9 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
                 Math.max(0, ((Number) row[2]).longValue()),
                 0L,  // warmQueuedCount - set by DeltaFilesService
                 0L,  // coldQueuedCount - set by DeltaFilesService
-                Math.max(0, ((Number) row[3]).longValue())  // pausedCount
+                Math.max(0, ((Number) row[3]).longValue()),  // pausedCount
+                null,  // oldestInFlightCreated - set by DeltaFilesService
+                null   // oldestInFlightDid - set by DeltaFilesService
         );
     }
 

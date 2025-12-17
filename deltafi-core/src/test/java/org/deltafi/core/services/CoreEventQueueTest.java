@@ -23,8 +23,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.test.time.TestClock;
+import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
+import org.deltafi.common.types.ActionInput;
+import io.valkey.resps.Tuple;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -276,6 +279,118 @@ class CoreEventQueueTest {
         CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
         coreEventQueue.removeExpiredLongRunningTasks();
         verify(valkeyKeyedBlockingQueue, times(1)).removeLongRunningTask("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1");
+    }
+
+    @Test
+    @SneakyThrows
+    void testStreamQueue() {
+        UUID did1 = UUID.randomUUID();
+        UUID did2 = UUID.randomUUID();
+        long score1 = System.currentTimeMillis() - 60000; // 1 minute ago
+        long score2 = System.currentTimeMillis();
+
+        String json1 = """
+                {
+                    "actionContext": {
+                        "did": "%s",
+                        "flowName": "flow1",
+                        "actionName": "action1"
+                    },
+                    "queueName": "%s"
+                }
+                """.formatted(did1.toString(), QUEUE_NAME);
+
+        String json2 = """
+                {
+                    "actionContext": {
+                        "did": "%s",
+                        "flowName": "flow2",
+                        "actionName": "action2"
+                    },
+                    "queueName": "%s"
+                }
+                """.formatted(did2.toString(), QUEUE_NAME);
+
+        Tuple tuple1 = mock(Tuple.class);
+        when(tuple1.getElement()).thenReturn(json1);
+        when(tuple1.getScore()).thenReturn((double) score1);
+
+        Tuple tuple2 = mock(Tuple.class);
+        when(tuple2.getElement()).thenReturn(json2);
+        when(tuple2.getScore()).thenReturn((double) score2);
+
+        doAnswer(invocation -> {
+            var consumer = invocation.<java.util.function.Consumer<Tuple>>getArgument(2);
+            consumer.accept(tuple1);
+            consumer.accept(tuple2);
+            return null;
+        }).when(valkeyKeyedBlockingQueue).scanSortedSet(eq(QUEUE_NAME), anyInt(), any());
+
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
+        List<CoreEventQueue.QueuedActionInfo> result = new ArrayList<>();
+        coreEventQueue.streamQueue(QUEUE_NAME, result::add);
+
+        assertEquals(2, result.size());
+
+        assertEquals("flow1", result.get(0).flowName());
+        assertEquals("action1", result.get(0).actionName());
+        assertEquals(did1, result.get(0).did());
+
+        assertEquals("flow2", result.get(1).flowName());
+        assertEquals("action2", result.get(1).actionName());
+        assertEquals(did2, result.get(1).did());
+    }
+
+    @Test
+    @SneakyThrows
+    void testStreamQueueEmpty() {
+        doAnswer(invocation -> null).when(valkeyKeyedBlockingQueue).scanSortedSet(eq(QUEUE_NAME), anyInt(), any());
+
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
+        List<CoreEventQueue.QueuedActionInfo> result = new ArrayList<>();
+        coreEventQueue.streamQueue(QUEUE_NAME, result::add);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @SneakyThrows
+    void testStreamQueueSkipsMalformedJson() {
+        UUID did1 = UUID.randomUUID();
+        long score1 = System.currentTimeMillis();
+
+        String validJson = """
+                {
+                    "actionContext": {
+                        "did": "%s",
+                        "flowName": "flow1",
+                        "actionName": "action1"
+                    },
+                    "queueName": "%s"
+                }
+                """.formatted(did1.toString(), QUEUE_NAME);
+
+        Tuple validTuple = mock(Tuple.class);
+        when(validTuple.getElement()).thenReturn(validJson);
+        when(validTuple.getScore()).thenReturn((double) score1);
+
+        Tuple malformedTuple = mock(Tuple.class);
+        when(malformedTuple.getElement()).thenReturn("not valid json {{{");
+
+        doAnswer(invocation -> {
+            var consumer = invocation.<java.util.function.Consumer<Tuple>>getArgument(2);
+            consumer.accept(malformedTuple);
+            consumer.accept(validTuple);
+            return null;
+        }).when(valkeyKeyedBlockingQueue).scanSortedSet(eq(QUEUE_NAME), anyInt(), any());
+
+        CoreEventQueue coreEventQueue = new CoreEventQueue(valkeyKeyedBlockingQueue, TEST_CLOCK);
+        List<CoreEventQueue.QueuedActionInfo> result = new ArrayList<>();
+        coreEventQueue.streamQueue(QUEUE_NAME, result::add);
+
+        // Should skip the malformed one and return just the valid one
+        assertEquals(1, result.size());
+        assertEquals("flow1", result.get(0).flowName());
     }
 
     private String getActionEventsArray() {

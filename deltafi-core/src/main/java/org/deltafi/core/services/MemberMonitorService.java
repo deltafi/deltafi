@@ -95,6 +95,7 @@ public class MemberMonitorService {
             Long warmQueuedCount = null;
             Long coldQueuedCount = null;
             Long pausedCount = null;
+            OffsetDateTime oldestInFlightCreated = null;
             Double cpuUsage = null;
             Double memoryUsage = null;
             Double diskUsage = null;
@@ -109,6 +110,7 @@ public class MemberMonitorService {
                 warmQueuedCount = report.warmQueuedCount();
                 coldQueuedCount = report.coldQueuedCount();
                 pausedCount = report.pausedCount();
+                oldestInFlightCreated = report.oldestInFlightCreated();
                 cpuUsage = report.cpuUsage();
                 memoryUsage = report.memoryUsage();
                 diskUsage = report.diskUsage();
@@ -120,7 +122,7 @@ public class MemberMonitorService {
                     status = fetchMemberStatus(memberConfig);
                     errorCount = fetchMemberErrorCount(memberConfig);
                     inFlightCount = fetchMemberInFlightCount(memberConfig);
-                    // warmQueuedCount, coldQueuedCount, pausedCount, system metrics, version will be null for legacy approach
+                    // warmQueuedCount, coldQueuedCount, pausedCount, oldestInFlightCreated, system metrics, version will be null for legacy approach
                 } else {
                     // Some other HTTP error, rethrow
                     throw e;
@@ -139,6 +141,7 @@ public class MemberMonitorService {
                 warmQueuedCount,
                 coldQueuedCount,
                 pausedCount,
+                oldestInFlightCreated,
                 cpuUsage,
                 memoryUsage,
                 diskUsage,
@@ -180,6 +183,7 @@ public class MemberMonitorService {
                 cachedStatus.warmQueuedCount(),
                 cachedStatus.coldQueuedCount(),
                 cachedStatus.pausedCount(),
+                cachedStatus.oldestInFlightCreated(),
                 cachedStatus.cpuUsage(),
                 cachedStatus.memoryUsage(),
                 cachedStatus.diskUsage(),
@@ -195,6 +199,7 @@ public class MemberMonitorService {
                 memberConfig.url(),
                 memberConfig.tags(),
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -241,6 +246,7 @@ public class MemberMonitorService {
             stats.getWarmQueuedCount(),
             stats.getColdQueuedCount(),
             stats.getPausedCount(),
+            stats.getOldestInFlightCreated(),
             cpuUsage,
             memoryUsage,
             diskUsage,

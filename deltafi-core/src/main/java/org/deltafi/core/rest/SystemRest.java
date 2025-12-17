@@ -71,6 +71,7 @@ public class SystemRest {
                 stats.getWarmQueuedCount(),
                 stats.getColdQueuedCount(),
                 stats.getPausedCount(),
+                stats.getOldestInFlightCreated(),
                 cpuUsage,
                 memoryUsage,
                 diskUsage,

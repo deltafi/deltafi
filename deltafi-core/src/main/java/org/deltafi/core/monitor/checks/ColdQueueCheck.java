@@ -19,12 +19,10 @@ package org.deltafi.core.monitor.checks;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
-import org.deltafi.core.generated.types.DeltaFileStats;
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
-import org.deltafi.core.repo.DeltaFileFlowRepo;
-import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.QueueManagementService;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -40,24 +38,21 @@ public class ColdQueueCheck extends StatusCheck {
     public static final String COLD_QUEUE_COUNT_KEY = "org.deltafi.cold.queue.count";
     // This is the max total cold queued items for counting per action
     static final int MAX_COLD_QUEUE_FOR_GROUPING = 250_000;
-    // This is the max total in flight for counting total cold queued
-    static final int MAX_IN_FLIGHT_COUNT = 3 * MAX_COLD_QUEUE_FOR_GROUPING;
     // last 1 minute when scheduler is every 5 sec
     static final int MAX_SIZE_HISTORY = 12;
     static final DecimalFormat FORMATTER = new DecimalFormat("##,###,###");
 
-    private final DeltaFileRepo deltaFileRepo;
-    private final DeltaFileFlowRepo deltaFileFlowRepo;
+    private final QueueManagementService queueManagementService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final ValkeyKeyedBlockingQueue valkeyQueue;
 
     private final Map<String, ColdQueueHistory> recentlyColdQueued = new HashMap<>();
 
-    public ColdQueueCheck(DeltaFileRepo deltaFileRepo, DeltaFileFlowRepo deltaFileFlowRepo,
-                          DeltaFiPropertiesService deltaFiPropertiesService, ValkeyKeyedBlockingQueue valkeyQueue) {
+    public ColdQueueCheck(QueueManagementService queueManagementService,
+                          DeltaFiPropertiesService deltaFiPropertiesService,
+                          ValkeyKeyedBlockingQueue valkeyQueue) {
         super("Cold Queued Actions Check");
-        this.deltaFileRepo = deltaFileRepo;
-        this.deltaFileFlowRepo = deltaFileFlowRepo;
+        this.queueManagementService = queueManagementService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.valkeyQueue = valkeyQueue;
     }
@@ -75,53 +70,39 @@ public class ColdQueueCheck extends StatusCheck {
 
     @Override
     public CheckResult check() {
-        // The more IN_FLIGHT DeltaFiles there are, the slower the queries to
-        // count COLD_QUEUED get. Mitigate slow postgres performance by
-        // checking other counts first
-        Long totalColdQueued = null;
-        DeltaFileStats stats = deltaFileRepo.deltaFileStats();
-        if (stats.getInFlightCount() < MAX_IN_FLIGHT_COUNT) {
-            totalColdQueued = deltaFileFlowRepo.coldQueuedCount(MAX_COLD_QUEUE_FOR_GROUPING);
+        long totalColdQueued = queueManagementService.coldQueuedCount();
+
+        // Publish count to Valkey for worker instances
+        try {
+            valkeyQueue.set(COLD_QUEUE_COUNT_KEY, String.valueOf(totalColdQueued));
+        } catch (Exception e) {
+            log.error("Failed to publish cold queue count to Valkey", e);
         }
 
-        // Store the result in Valkey for use by all instances
-        if (totalColdQueued != null) {
-            try {
-                valkeyQueue.set(COLD_QUEUE_COUNT_KEY, String.valueOf(totalColdQueued));
-            } catch (Exception e) {
-                log.error("Failed to store cold queue count in Valkey", e);
-            }
-        }
-
-        if (totalColdQueued == null || totalColdQueued >= MAX_COLD_QUEUE_FOR_GROUPING) {
+        if (totalColdQueued >= MAX_COLD_QUEUE_FOR_GROUPING) {
             recentlyColdQueued.clear();
-            return checkTotalOnly(totalColdQueued, stats.getInFlightCount());
+            return checkTotalOnly(totalColdQueued);
         } else {
             return checkWithHistory(totalColdQueued);
         }
     }
 
-    CheckResult checkTotalOnly(Long totalColdQueued, long inFlight) {
+    CheckResult checkTotalOnly(long totalColdQueued) {
         ResultBuilder resultBuilder = new ResultBuilder();
         resultBuilder.code(CODE_YELLOW);
         resultBuilder.addHeader("Actions with cold queues:");
-        List<String> coldQueuedActions = deltaFileFlowRepo.distinctColdQueuedActions();
-        for (String action : coldQueuedActions) {
+        for (String action : queueManagementService.distinctColdQueuedActions()) {
             resultBuilder.addLine("- " + action);
             resultBuilder.code(CODE_YELLOW);
         }
         resultBuilder.addLine("");
-        if (totalColdQueued != null) {
-            resultBuilder.addLine("There are at least " + FORMATTER.format(totalColdQueued) + " entries cold queued");
-        } else {
-            resultBuilder.addLine("Cold queue count not computed due to " + FORMATTER.format(inFlight) + " DeltaFiles In-flight");
-        }
+        resultBuilder.addLine("There are at least " + FORMATTER.format(totalColdQueued) + " entries cold queued");
         return result(resultBuilder);
     }
 
-    CheckResult checkWithHistory(Long totalColdQueued) {
+    CheckResult checkWithHistory(long totalColdQueued) {
         ResultBuilder resultBuilder = new ResultBuilder();
-        Map<String, Integer> coldQueues = deltaFileFlowRepo.coldQueuedActionsCount();
+        Map<String, Integer> coldQueues = queueManagementService.coldQueuedActionsCount();
         if (coldQueues.isEmpty()) {
             recentlyColdQueued.clear();
             return result(resultBuilder);

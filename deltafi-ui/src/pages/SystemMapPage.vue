@@ -58,6 +58,7 @@
         :edges="displayEdges"
         :selected-node-id="selectedNode?.id"
         :error-counts="errorsByFlow"
+        :queue-counts="queueCountsByFlow"
         :flow-metrics="perFlowMetricsMap"
         @select-node="onSelectNode"
         @error-badge-click="onErrorBadgeClick"
@@ -127,6 +128,17 @@
               </div>
               <div class="action-list">
                 <template v-for="(action, index) in selectedNodeActions" :key="action.name">
+                  <!-- Queue bubble before action -->
+                  <div
+                    v-if="actionQueueCounts[action.name]?.total > 0"
+                    v-tooltip.top="formatActionQueueTooltip(action.name)"
+                    class="action-queue-bubble"
+                  >
+                    {{ actionQueueCounts[action.name].total.toLocaleString() }}
+                  </div>
+                  <div v-if="actionQueueCounts[action.name]?.total > 0" class="action-arrow">
+                    <i class="pi pi-arrow-right" />
+                  </div>
                   <div v-tooltip.top="{ value: formatActionTooltip(action), escape: false }" class="action-item">
                     <div class="action-details">
                       <div class="action-name">{{ action.name }}</div>
@@ -238,6 +250,7 @@ import useActionMetrics from "@/composables/useActionMetrics";
 import useNotifications from "@/composables/useNotifications";
 import useTopics from "@/composables/useTopics";
 import usePerFlowMetrics from "@/composables/usePerFlowMetrics";
+import useQueueMetrics, { aggregateQueueCountsByFlow } from "@/composables/useQueueMetrics";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -255,6 +268,7 @@ const { getTransformFlowByName, getDataSinkByName } = useFlowQueryBuilder();
 const { getTimedDataSources } = useDataSource();
 const { data: actionMetrics, fetch: fetchActionMetrics } = useActionMetrics();
 const { data: perFlowMetrics, fetch: fetchPerFlowMetrics } = usePerFlowMetrics();
+const { data: queueMetrics, fetch: fetchQueueMetrics } = useQueueMetrics();
 const notify = useNotifications();
 
 // Metrics refresh interval (30 seconds)
@@ -283,6 +297,38 @@ const actionMetricsMap = computed(() => {
   }
   return map;
 });
+
+// Get queue counts per action for the selected flow
+const actionQueueCounts = computed(() => {
+  if (!selectedNode.value || !queueMetrics.value) return {};
+  const flowName = selectedNode.value.name;
+  const counts = {};
+
+  for (const q of queueMetrics.value.warmQueues || []) {
+    if (q.flowName === flowName) {
+      if (!counts[q.actionName]) counts[q.actionName] = { warm: 0, cold: 0, total: 0 };
+      counts[q.actionName].warm += q.count;
+      counts[q.actionName].total += q.count;
+    }
+  }
+  for (const q of queueMetrics.value.coldQueues || []) {
+    if (q.flowName === flowName) {
+      if (!counts[q.actionName]) counts[q.actionName] = { warm: 0, cold: 0, total: 0 };
+      counts[q.actionName].cold += q.count;
+      counts[q.actionName].total += q.count;
+    }
+  }
+  return counts;
+});
+
+function formatActionQueueTooltip(actionName) {
+  const q = actionQueueCounts.value[actionName];
+  if (!q || q.total === 0) return '';
+  const parts = [];
+  if (q.warm > 0) parts.push(`${q.warm.toLocaleString()} warm`);
+  if (q.cold > 0) parts.push(`${q.cold.toLocaleString()} cold`);
+  return `Queued: ${parts.join(', ')}`;
+}
 
 // Extract actions from selected node details
 const selectedNodeActions = computed(() => {
@@ -640,8 +686,7 @@ async function onFlowStateChange(node, newState) {
 }
 
 async function manualRefresh() {
-  await refreshFlowMetrics();
-  await fetchFlowErrors();
+  await Promise.all([refreshFlowMetrics(), fetchFlowErrors(), fetchQueueMetrics()]);
 }
 
 // Map per-flow metrics by flowName for easy lookup
@@ -652,6 +697,9 @@ const perFlowMetricsMap = computed(() => {
   }
   return map;
 });
+
+// Aggregate queue metrics by flow name
+const queueCountsByFlow = computed(() => aggregateQueueCountsByFlow(queueMetrics.value));
 
 // Refresh metrics for all visible flows
 async function refreshFlowMetrics() {
@@ -666,7 +714,7 @@ async function refreshFlowMetrics() {
 function startMetricsRefresh() {
   stopMetricsRefresh();
   metricsRefreshTimer = setInterval(async () => {
-    await Promise.all([refreshFlowMetrics(), fetchFlowErrors()]);
+    await Promise.all([refreshFlowMetrics(), fetchFlowErrors(), fetchQueueMetrics()]);
   }, METRICS_REFRESH_INTERVAL);
 }
 
@@ -712,7 +760,7 @@ watch(flowGraph, (newGraph) => {
 });
 
 onMounted(async () => {
-  await Promise.all([getAllTopics(), fetchFlowErrors()]);
+  await Promise.all([getAllTopics(), fetchFlowErrors(), fetchQueueMetrics()]);
   startMetricsRefresh();
 });
 
@@ -972,6 +1020,18 @@ onUnmounted(() => {
 
 .action-arrow .pi {
   font-size: 1.1rem;
+}
+
+.action-queue-bubble {
+  background: var(--surface-0);
+  border: 1px solid var(--surface-400);
+  border-radius: 12px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  cursor: default;
 }
 
 .action-details {

@@ -24,7 +24,9 @@ import org.deltafi.core.types.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 public interface DeltaFileFlowRepoCustom {
     /**
@@ -95,15 +97,6 @@ public interface DeltaFileFlowRepoCustom {
     List<String> distinctColdQueuedActions();
 
     /**
-     * Check if any DeltaFileFlows exist where the cold queued flag is true
-     * and the last action has a action class matching the given action class
-     *
-     * @param actionClass action class (queue name) to search for
-     * @return true if any DeltaFileFlow exist that is cold queued for the given action class
-     */
-    boolean isColdQueued(String actionClass);
-
-    /**
      * Retrieves each action with a cold queue, and a count of items in each queue
      *
      * @return A {@code Map<String, Integer>} where the key is the action class and the value is the count of items in that actions's cold queue.
@@ -117,5 +110,31 @@ public interface DeltaFileFlowRepoCustom {
      * @return A {@code Long} for the total number of cold queued items
      */
     Long coldQueuedCount(int limit);
+
+    /**
+     * Get cold queue counts per (flowName, actionName, actionClass) from the cold_queue_entries table.
+     * This uses the trigger-maintained entries for accurate counts and oldest timestamps.
+     *
+     * @return list of cold queue metrics
+     */
+    List<ColdQueueMetrics> getColdQueueCounts();
+
+    /**
+     * Cold queue metrics per flow/action.
+     */
+    record ColdQueueMetrics(String flowName, String flowType, String actionName, String actionClass,
+                            int count, java.time.OffsetDateTime oldestQueuedAt) {}
+
+    /**
+     * Get the oldest cold queue entry's info (DID and timestamp).
+     *
+     * @return optional containing the oldest entry info, or empty if no cold queue entries exist
+     */
+    Optional<OldestColdQueueEntry> getOldestColdQueueEntry();
+
+    /**
+     * Info about the oldest cold queue entry.
+     */
+    record OldestColdQueueEntry(UUID did, java.time.OffsetDateTime queuedAt) {}
 
 }

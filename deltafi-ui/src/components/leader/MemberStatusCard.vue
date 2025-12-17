@@ -78,6 +78,13 @@
             {{ member.pausedCount ?? "—" }}
           </div>
         </div>
+
+        <div class="metric">
+          <div class="metric-label">Oldest In-Flight</div>
+          <div class="metric-value metric-value-small">
+            <Timestamp :timestamp="member.oldestInFlightCreated" show-time-ago />
+          </div>
+        </div>
       </div>
 
       <!-- System Metrics -->
@@ -209,11 +216,17 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useTimeAgo } from "@vueuse/core";
 import type { MemberStatus, FlowMetrics } from "@/composables/useLeaderDashboard";
 import Panel from "primevue/panel";
 import Tag from "primevue/tag";
 import Timestamp from "@/components/Timestamp.vue";
 import CheckDialog from "@/components/CheckDialog.vue";
+
+const formatAge = (timestamp: string | null | undefined): string => {
+  if (!timestamp) return "";
+  return useTimeAgo(timestamp).value;
+};
 
 interface Props {
   member: MemberStatus;
@@ -255,21 +268,6 @@ const showDetails = () => {
 
 const openSite = () => {
   window.open(props.member.url, "_blank");
-};
-
-const formatAge = (timestamp: string) => {
-  const now = Date.now();
-  const then = new Date(timestamp).getTime();
-  const diffMs = now - then;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffDay > 0) return `${diffDay}d ago`;
-  if (diffHour > 0) return `${diffHour}h ago`;
-  if (diffMin > 0) return `${diffMin}m ago`;
-  return `${diffSec}s ago`;
 };
 
 // Parse connection error to extract message and URL
@@ -476,6 +474,11 @@ const formatBytes = (bytes: number | undefined): string => {
 
 .metric-value.has-paused {
   color: var(--yellow-500);
+}
+
+.metric-value.metric-value-small {
+  font-size: 1rem;
+  cursor: help;
 }
 
 .flow-metrics {

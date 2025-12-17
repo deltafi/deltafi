@@ -30,6 +30,7 @@ export interface MemberStatus {
   warmQueuedCount: number | null;
   coldQueuedCount: number | null;
   pausedCount: number | null;
+  oldestInFlightCreated: string | null;
   lastUpdated: string;
   connectionState: "CONNECTED" | "UNREACHABLE" | "STALE";
   connectionError: string | null;

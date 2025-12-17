@@ -20,6 +20,8 @@ package org.deltafi.core.types;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.time.OffsetDateTime;
+
 /**
  * Combined status report for leader-member monitoring.
  * Returns health status, error count, queue counts, system metrics, and version in a single response.
@@ -33,6 +35,7 @@ public record MemberReport(
         Long warmQueuedCount,
         Long coldQueuedCount,
         Long pausedCount,
+        OffsetDateTime oldestInFlightCreated,
         Double cpuUsage,
         Double memoryUsage,
         Double diskUsage,

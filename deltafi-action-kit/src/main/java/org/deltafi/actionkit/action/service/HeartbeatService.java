@@ -23,10 +23,10 @@ import org.deltafi.actionkit.service.ActionEventQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class HeartbeatService {
     @Autowired
@@ -35,8 +35,7 @@ public class HeartbeatService {
     @Autowired
     private ActionRunner actionRunner;
 
-    private static final Duration LONG_RUNNING_TASK_DURATION = Duration.ofSeconds(5);
-    private List<ActionExecution> longRunningActions = Collections.emptyList();
+    private List<ActionExecution> runningActions = Collections.emptyList();
 
     @Scheduled(fixedRate = 10000)
     void setHeartbeat() {
@@ -46,14 +45,15 @@ public class HeartbeatService {
     }
 
     @Scheduled(fixedRate = 5000)
-    void recordLongRunningTasks() {
-        List<ActionExecution> oldList = new ArrayList<>(longRunningActions);
-        longRunningActions = new ArrayList<>();
+    void recordRunningTasks() {
+        List<ActionExecution> oldList = new ArrayList<>(runningActions);
+        runningActions = new ArrayList<>();
 
-        actionRunner.getAllActions().stream().filter(action -> action.getActionExecution() != null &&
-                action.getActionExecution().exceedsDuration(LONG_RUNNING_TASK_DURATION)).forEach(action -> {
-                    ActionExecution actionExecution = action.getActionExecution();
-                    longRunningActions.add(actionExecution);
+        actionRunner.getAllActions().stream()
+                .map(Action::getActionExecution)
+                .filter(Objects::nonNull)
+                .forEach(actionExecution -> {
+                    runningActions.add(actionExecution);
                     oldList.remove(actionExecution);
                     actionEventQueue.recordLongRunningTask(actionExecution);
                 });

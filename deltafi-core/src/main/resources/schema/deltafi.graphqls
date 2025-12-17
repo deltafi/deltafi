@@ -377,6 +377,8 @@ type DeltaFileStats {
   warmQueuedCount: Long!
   coldQueuedCount: Long!
   pausedCount: Long!
+  oldestInFlightCreated: DateTime
+  oldestInFlightDid: UUID
 }
 
 input ResumeMetadata {

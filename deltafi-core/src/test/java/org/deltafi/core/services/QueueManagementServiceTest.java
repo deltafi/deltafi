@@ -19,8 +19,12 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.repo.DeltaFileFlowRepo;
+import org.deltafi.core.repo.DeltaFileFlowRepoCustom.OldestColdQueueEntry;
+import org.deltafi.core.repo.FlowDefinitionRepo;
+import org.deltafi.core.types.FlowDefinition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,8 +32,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -46,6 +53,9 @@ class QueueManagementServiceTest {
 
     @Mock
     DeltaFileFlowRepo deltaFileFlowRepo;
+
+    @Mock
+    FlowDefinitionRepo flowDefinitionRepo;
 
     @Mock
     UnifiedFlowService unifiedFlowService;
@@ -150,5 +160,185 @@ class QueueManagementServiceTest {
         queueManagementService.getColdQueues().add(QUEUE_NAME);
         when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         assertEquals(Set.of(ACTION_NAME), queueManagementService.coldQueueActions());
+    }
+
+    @Test
+    void testGetDetailedWarmQueueMetrics() {
+        // Setup queue with items from different flows
+        queueManagementService.getAllQueues().put(QUEUE_NAME, 3L);
+
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime older = now.minusMinutes(5);
+        OffsetDateTime oldest = now.minusMinutes(10);
+
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of(
+                FlowDefinition.builder().name("flow1").type(FlowType.TRANSFORM).build(),
+                FlowDefinition.builder().name("flow2").type(FlowType.DATA_SINK).build()
+        ));
+
+        // Mock streamQueue to invoke the consumer with test data
+        List<CoreEventQueue.QueuedActionInfo> testItems = List.of(
+                new CoreEventQueue.QueuedActionInfo("flow1", "action1", UUID.randomUUID(), oldest),
+                new CoreEventQueue.QueuedActionInfo("flow1", "action1", UUID.randomUUID(), older),
+                new CoreEventQueue.QueuedActionInfo("flow2", "action2", UUID.randomUUID(), now)
+        );
+        doAnswer(invocation -> {
+            var consumer = invocation.<java.util.function.Consumer<CoreEventQueue.QueuedActionInfo>>getArgument(1);
+            testItems.forEach(consumer);
+            return null;
+        }).when(coreEventQueue).streamQueue(eq(QUEUE_NAME), any());
+
+        List<QueueManagementService.WarmQueueMetrics> metrics = queueManagementService.getDetailedWarmQueueMetrics();
+
+        assertEquals(2, metrics.size());
+
+        // First entry (sorted by actionClass, flowName, actionName)
+        var flow1Metrics = metrics.stream()
+                .filter(m -> m.flowName().equals("flow1"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(QUEUE_NAME, flow1Metrics.actionClass());
+        assertEquals("action1", flow1Metrics.actionName());
+        assertEquals("TRANSFORM", flow1Metrics.flowType());
+        assertEquals(2, flow1Metrics.count());
+        assertEquals(oldest, flow1Metrics.oldestQueuedAt());
+
+        // Second entry
+        var flow2Metrics = metrics.stream()
+                .filter(m -> m.flowName().equals("flow2"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(QUEUE_NAME, flow2Metrics.actionClass());
+        assertEquals("action2", flow2Metrics.actionName());
+        assertEquals("DATA_SINK", flow2Metrics.flowType());
+        assertEquals(1, flow2Metrics.count());
+        assertEquals(now, flow2Metrics.oldestQueuedAt());
+    }
+
+    @Test
+    void testGetDetailedWarmQueueMetricsEmpty() {
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of());
+        List<QueueManagementService.WarmQueueMetrics> metrics = queueManagementService.getDetailedWarmQueueMetrics();
+        assertTrue(metrics.isEmpty());
+    }
+
+    @Test
+    void testGetDetailedWarmQueueMetricsCaching() {
+        queueManagementService.getAllQueues().put(QUEUE_NAME, 1L);
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of(
+                FlowDefinition.builder().name("flow1").type(FlowType.TRANSFORM).build()
+        ));
+        doAnswer(invocation -> {
+            var consumer = invocation.<java.util.function.Consumer<CoreEventQueue.QueuedActionInfo>>getArgument(1);
+            consumer.accept(new CoreEventQueue.QueuedActionInfo("flow1", "action1", UUID.randomUUID(), OffsetDateTime.now()));
+            return null;
+        }).when(coreEventQueue).streamQueue(eq(QUEUE_NAME), any());
+
+        // First call should fetch
+        queueManagementService.getDetailedWarmQueueMetrics();
+        verify(coreEventQueue, times(1)).streamQueue(eq(QUEUE_NAME), any());
+
+        // Second call within cache window should not fetch again
+        queueManagementService.getDetailedWarmQueueMetrics();
+        verify(coreEventQueue, times(1)).streamQueue(eq(QUEUE_NAME), any());
+    }
+
+    @Test
+    void testGetOldestQueuedInfo_bothEmpty_returnsNull() {
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of());
+        when(deltaFileFlowRepo.getOldestColdQueueEntry()).thenReturn(Optional.empty());
+
+        assertNull(queueManagementService.getOldestQueuedInfo());
+    }
+
+    @Test
+    void testGetOldestQueuedInfo_onlyWarmHasData_returnsWarmInfo() {
+        OffsetDateTime warmOldest = OffsetDateTime.now().minusHours(1);
+        UUID warmDid = UUID.randomUUID();
+
+        queueManagementService.getAllQueues().put(QUEUE_NAME, 1L);
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of(
+                FlowDefinition.builder().name("flow1").type(FlowType.TRANSFORM).build()
+        ));
+        doAnswer(invocation -> {
+            var consumer = invocation.<java.util.function.Consumer<CoreEventQueue.QueuedActionInfo>>getArgument(1);
+            consumer.accept(new CoreEventQueue.QueuedActionInfo("flow1", "action1", warmDid, warmOldest));
+            return null;
+        }).when(coreEventQueue).streamQueue(eq(QUEUE_NAME), any());
+        when(deltaFileFlowRepo.getOldestColdQueueEntry()).thenReturn(Optional.empty());
+
+        var result = queueManagementService.getOldestQueuedInfo();
+
+        assertNotNull(result);
+        assertEquals(warmOldest, result.timestamp());
+        assertEquals(warmDid, result.did());
+    }
+
+    @Test
+    void testGetOldestQueuedInfo_onlyColdHasData_returnsColdInfo() {
+        OffsetDateTime coldOldest = OffsetDateTime.now().minusHours(2);
+        UUID coldDid = UUID.randomUUID();
+
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of());
+        when(deltaFileFlowRepo.getOldestColdQueueEntry()).thenReturn(
+                Optional.of(new OldestColdQueueEntry(coldDid, coldOldest)));
+
+        var result = queueManagementService.getOldestQueuedInfo();
+
+        assertNotNull(result);
+        assertEquals(coldOldest, result.timestamp());
+        assertEquals(coldDid, result.did());
+    }
+
+    @Test
+    void testGetOldestQueuedInfo_warmIsOlder_returnsWarmInfo() {
+        OffsetDateTime warmOldest = OffsetDateTime.now().minusHours(3);
+        OffsetDateTime coldOldest = OffsetDateTime.now().minusHours(1);
+        UUID warmDid = UUID.randomUUID();
+        UUID coldDid = UUID.randomUUID();
+
+        queueManagementService.getAllQueues().put(QUEUE_NAME, 1L);
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of(
+                FlowDefinition.builder().name("flow1").type(FlowType.TRANSFORM).build()
+        ));
+        doAnswer(invocation -> {
+            var consumer = invocation.<java.util.function.Consumer<CoreEventQueue.QueuedActionInfo>>getArgument(1);
+            consumer.accept(new CoreEventQueue.QueuedActionInfo("flow1", "action1", warmDid, warmOldest));
+            return null;
+        }).when(coreEventQueue).streamQueue(eq(QUEUE_NAME), any());
+        when(deltaFileFlowRepo.getOldestColdQueueEntry()).thenReturn(
+                Optional.of(new OldestColdQueueEntry(coldDid, coldOldest)));
+
+        var result = queueManagementService.getOldestQueuedInfo();
+
+        assertNotNull(result);
+        assertEquals(warmOldest, result.timestamp());
+        assertEquals(warmDid, result.did());
+    }
+
+    @Test
+    void testGetOldestQueuedInfo_coldIsOlder_returnsColdInfo() {
+        OffsetDateTime warmOldest = OffsetDateTime.now().minusHours(1);
+        OffsetDateTime coldOldest = OffsetDateTime.now().minusHours(3);
+        UUID warmDid = UUID.randomUUID();
+        UUID coldDid = UUID.randomUUID();
+
+        queueManagementService.getAllQueues().put(QUEUE_NAME, 1L);
+        when(flowDefinitionRepo.findAll()).thenReturn(List.of(
+                FlowDefinition.builder().name("flow1").type(FlowType.TRANSFORM).build()
+        ));
+        doAnswer(invocation -> {
+            var consumer = invocation.<java.util.function.Consumer<CoreEventQueue.QueuedActionInfo>>getArgument(1);
+            consumer.accept(new CoreEventQueue.QueuedActionInfo("flow1", "action1", warmDid, warmOldest));
+            return null;
+        }).when(coreEventQueue).streamQueue(eq(QUEUE_NAME), any());
+        when(deltaFileFlowRepo.getOldestColdQueueEntry()).thenReturn(
+                Optional.of(new OldestColdQueueEntry(coldDid, coldOldest)));
+
+        var result = queueManagementService.getOldestQueuedInfo();
+
+        assertNotNull(result);
+        assertEquals(coldOldest, result.timestamp());
+        assertEquals(coldDid, result.did());
     }
 }

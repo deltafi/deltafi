@@ -40,6 +40,7 @@ import RolesPage from "@/pages/RolesPage.vue";
 import PipelineVisualizationPage from "@/pages/PipelineVisualizationPage.vue";
 import SystemMapPage from "@/pages/SystemMapPage.vue";
 import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
+import QueueMetricsPage from "@/pages/QueueMetricsPage.vue";
 import SystemPropertiesPage from "@/pages/SystemPropertiesPage.vue";
 import SystemSnapshotsPage from "@/pages/SystemSnapshotsPage.vue";
 import LookupTablePage from "@/pages/LookupTablePage.vue";
@@ -142,6 +143,14 @@ const routes: Array<RouteRecordRaw> = [
     path: "/metrics/system",
     name: "System Metrics",
     component: SystemMetricsPage,
+    meta: {
+      permission: "MetricsView",
+    },
+  },
+  {
+    path: "/metrics/queues",
+    name: "Queue Metrics",
+    component: QueueMetricsPage,
     meta: {
       permission: "MetricsView",
     },

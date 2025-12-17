@@ -197,6 +197,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("MetricsView")),
       },
       {
+        name: "Queue Metrics",
+        icon: "fas fa-layer-group fa-fw",
+        path: "/metrics/queues",
+        visible: computed(() => hasPermission("MetricsView")),
+      },
+      {
         name: "Grafana Dashboards",
         icon: "icomoon grafana",
         url: "/visualization/dashboards",

@@ -25,7 +25,7 @@ import sys
 import threading
 import time
 import traceback
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from importlib import metadata
 from os.path import isdir, isfile, join
 from pathlib import Path
@@ -145,7 +145,6 @@ class ActionThread(object):
         return f"{self.name}#{self.thread_num}"
 
 
-LONG_RUNNING_TASK_DURATION = timedelta(seconds=5)
 
 
 def build_error_context(e: BaseException):
@@ -361,30 +360,30 @@ class Plugin(object):
         hb_thread.join()
 
     def _heartbeat(self):
-        long_running_actions = set()
+        running_actions = set()
         while True:
             try:
                 # Set heartbeats
                 for action_thread in self.action_threads:
                     self.queue.heartbeat(action_thread.name)
 
-                # Record long running tasks
-                new_long_running_actions = set()
+                # Record running tasks
+                new_running_actions = set()
                 for action_thread in self.action_threads:
                     action_execution = action_thread.execution
-                    if action_execution and action_execution.exceeds_duration(LONG_RUNNING_TASK_DURATION):
-                        new_long_running_actions.add(action_execution)
+                    if action_execution:
+                        new_running_actions.add(action_execution)
                         self.queue.record_long_running_task(action_execution)
 
-                # Remove old long running tasks
-                tasks_to_remove = long_running_actions - new_long_running_actions
+                # Remove completed tasks
+                tasks_to_remove = running_actions - new_running_actions
                 for action_execution in tasks_to_remove:
                     self.queue.remove_long_running_task(action_execution)
 
-                long_running_actions = new_long_running_actions
+                running_actions = new_running_actions
 
             except Exception as e:
-                self.logger.error(f"Failed to register action queue heartbeat or record long running tasks: {e}", e)
+                self.logger.error(f"Failed to register action queue heartbeat or record running tasks: {e}", e)
             finally:
                 time.sleep(10)
 

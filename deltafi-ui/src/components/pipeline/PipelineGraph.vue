@@ -110,6 +110,7 @@
           :can-expand-upstream="node.canExpandUpstream"
           :can-expand-downstream="node.canExpandDownstream"
           :error-count="getErrorCount(node.name)"
+          :queue-counts="getQueueCount(node.name)"
           :metrics="getNodeMetrics(node.name)"
           :transform="`translate(${node.x}, ${node.y})`"
           @click="handleNodeClick(node)"
@@ -158,6 +159,10 @@ const props = defineProps({
     default: () => ({}),
   },
   errorCounts: {
+    type: Object,
+    default: () => ({}),
+  },
+  queueCounts: {
     type: Object,
     default: () => ({}),
   },
@@ -356,6 +361,10 @@ function getNodeMetrics(nodeName) {
 
 function getErrorCount(nodeName) {
   return getErrorCountFn(props.errorCounts, nodeName);
+}
+
+function getQueueCount(nodeName) {
+  return props.queueCounts[nodeName] || null;
 }
 
 function isEdgeActive(edge) {

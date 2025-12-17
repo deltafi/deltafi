@@ -150,6 +150,39 @@ public class CoreEventQueue {
     }
 
     /**
+     * Streams through a queue using cursor-based iteration, invoking the consumer for each item.
+     * This avoids loading all items into memory at once.
+     *
+     * @param queueName the action class name (queue key)
+     * @param consumer callback invoked for each parsed action info
+     */
+    public void streamQueue(String queueName, java.util.function.Consumer<QueuedActionInfo> consumer) {
+        valkeyKeyedBlockingQueue.scanSortedSet(queueName, 100, tuple -> {
+            try {
+                ActionInput input = OBJECT_MAPPER.readValue(tuple.getElement(), ActionInput.class);
+                var ctx = input.getActionContext();
+                if (ctx != null) {
+                    OffsetDateTime queuedAt = OffsetDateTime.ofInstant(
+                            Instant.ofEpochMilli((long) tuple.getScore()),
+                            ZoneOffset.UTC);
+                    consumer.accept(new QueuedActionInfo(
+                            ctx.getFlowName(),
+                            ctx.getActionName(),
+                            ctx.getDid(),
+                            queuedAt));
+                }
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to parse queued action input: {}", e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Information about a queued action item.
+     */
+    public record QueuedActionInfo(String flowName, String actionName, UUID did, OffsetDateTime queuedAt) {}
+
+    /**
      * Fetches and returns a list of tasks that have been running for longer
      * than the specified duration threshold.
      * <p>

@@ -20,18 +20,24 @@ package org.deltafi.core.services;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.ActionExecution;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.DeltaFileFlowRepo;
+import org.deltafi.core.repo.DeltaFileFlowRepoCustom;
+import org.deltafi.core.repo.FlowDefinitionRepo;
+import org.deltafi.core.types.FlowDefinition;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Set;
+import java.time.OffsetDateTime;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @EnableScheduling
@@ -47,8 +53,18 @@ public class QueueManagementService {
     @Getter
     private final ConcurrentHashMap<String, Long> allQueues = new ConcurrentHashMap<>();
 
+    private final AtomicReference<List<WarmQueueMetrics>> cachedWarmQueueMetrics = new AtomicReference<>(List.of());
+    private volatile OffsetDateTime warmQueueMetricsCacheTime = OffsetDateTime.MIN;
+
+    private final AtomicReference<List<DeltaFileFlowRepoCustom.ColdQueueMetrics>> cachedColdQueueMetrics = new AtomicReference<>(List.of());
+    private volatile OffsetDateTime coldQueueMetricsCacheTime = OffsetDateTime.MIN;
+
+    private final AtomicReference<List<ActionExecution>> cachedRunningTasks = new AtomicReference<>(List.of());
+    private volatile OffsetDateTime runningTasksCacheTime = OffsetDateTime.MIN;
+
     final CoreEventQueue coreEventQueue;
     final DeltaFileFlowRepo deltaFileFlowRepo;
+    final FlowDefinitionRepo flowDefinitionRepo;
     final UnifiedFlowService unifiedFlowService;
     final DeltaFilesService deltaFilesService;
     final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -56,12 +72,14 @@ public class QueueManagementService {
 
     public QueueManagementService(CoreEventQueue coreEventQueue,
                                   DeltaFileFlowRepo deltaFileFlowRepo,
+                                  FlowDefinitionRepo flowDefinitionRepo,
                                   UnifiedFlowService unifiedFlowService,
                                   @Lazy DeltaFilesService deltaFilesService,
                                   DeltaFiPropertiesService deltaFiPropertiesService,
                                   Environment env) {
         this.coreEventQueue = coreEventQueue;
         this.deltaFileFlowRepo = deltaFileFlowRepo;
+        this.flowDefinitionRepo = flowDefinitionRepo;
         this.unifiedFlowService = unifiedFlowService;
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
@@ -77,12 +95,14 @@ public class QueueManagementService {
         coldQueues.removeIf(q -> !keys.contains(q) || !actionNames.contains(q));
         allQueues.keySet().removeIf(q -> !keys.contains(q) || !actionNames.contains(q));
 
+        Set<String> dbColdQueuedActions = new HashSet<>(deltaFileFlowRepo.distinctColdQueuedActions());
+
         keys.stream().filter(actionNames::contains).forEach(k -> {
             long size = coreEventQueue.size(k);
             allQueues.put(k, size);
             if (coldQueues.contains(k)) {
                 // only move to normal when the backlog in the database is worked off
-                if (size <= maxQueueSize * 0.8 && !deltaFileFlowRepo.isColdQueued(k)) {
+                if (size <= maxQueueSize * 0.8 && !dbColdQueuedActions.contains(k)) {
                     coldQueues.remove(k);
                     log.info("Action queue {} has returned to normal operation.", k);
                 }
@@ -91,7 +111,7 @@ public class QueueManagementService {
                     warmToColdWarning(k, maxQueueSize);
                 }
                 coldQueues.add(k);
-            } else if (!coldQueues.contains(k) && deltaFileFlowRepo.isColdQueued(k)) {
+            } else if (!coldQueues.contains(k) && dbColdQueuedActions.contains(k)) {
                 // handle a scenario where a large split occurs, the queue can be below the maxQueueSize as DeltaFiles are worked off but cold-queued entries exist in the database
                 warmToColdWarning(k, maxQueueSize);
                 coldQueues.add(k);
@@ -155,4 +175,190 @@ public class QueueManagementService {
     private void warmToColdWarning(String queueName, long maxQueueSize) {
         log.warn("Action queue {} exceeded the maximum size of {}. Future events will be placed in a cold queue on disk until the queue is relieved.", queueName, maxQueueSize);
     }
+
+    /**
+     * Get detailed warm queue metrics aggregated by (actionClass, flowName, actionName).
+     * Uses streaming aggregation to avoid loading all queue items into memory.
+     * Results are cached for a few seconds to avoid excessive Valkey scanning.
+     *
+     * @return list of warm queue metrics per flow/action
+     */
+    public List<WarmQueueMetrics> getDetailedWarmQueueMetrics() {
+        OffsetDateTime now = OffsetDateTime.now();
+        // Cache for 5 seconds
+        if (warmQueueMetricsCacheTime.plusSeconds(5).isAfter(now)) {
+            return cachedWarmQueueMetrics.get();
+        }
+
+        // Build flow name to type lookup map
+        Map<String, String> flowTypeMap = flowDefinitionRepo.findAll().stream()
+                .collect(Collectors.toMap(FlowDefinition::getName, fd -> fd.getType().name(), (a, b) -> a));
+
+        Map<WarmQueueKey, WarmQueueAggregator> aggregation = new HashMap<>();
+
+        // Stream through each queue using cursor-based iteration
+        // Only the aggregation map stays in memory, not all queue items
+        for (String actionClass : allQueues.keySet()) {
+            coreEventQueue.streamQueue(actionClass, item -> {
+                WarmQueueKey key = new WarmQueueKey(actionClass, item.flowName(), item.actionName());
+                aggregation.computeIfAbsent(key, k -> new WarmQueueAggregator()).add(item.queuedAt(), item.did());
+            });
+        }
+
+        List<WarmQueueMetrics> result = aggregation.entrySet().stream()
+                .map(e -> new WarmQueueMetrics(
+                        e.getKey().actionClass(),
+                        e.getKey().flowName(),
+                        flowTypeMap.getOrDefault(e.getKey().flowName(), "UNKNOWN"),
+                        e.getKey().actionName(),
+                        e.getValue().count,
+                        e.getValue().oldest,
+                        e.getValue().oldestDid))
+                .sorted(Comparator.comparing(WarmQueueMetrics::actionClass)
+                        .thenComparing(WarmQueueMetrics::flowName)
+                        .thenComparing(WarmQueueMetrics::actionName))
+                .toList();
+
+        cachedWarmQueueMetrics.set(result);
+        warmQueueMetricsCacheTime = now;
+        return result;
+    }
+
+    private record WarmQueueKey(String actionClass, String flowName, String actionName) {}
+
+    private static class WarmQueueAggregator {
+        int count = 0;
+        OffsetDateTime oldest = null;
+        UUID oldestDid = null;
+
+        void add(OffsetDateTime queuedAt, UUID did) {
+            count++;
+            if (oldest == null || queuedAt.isBefore(oldest)) {
+                oldest = queuedAt;
+                oldestDid = did;
+            }
+        }
+    }
+
+    /**
+     * Warm queue metrics aggregated by action class, flow name, and action name.
+     */
+    public record WarmQueueMetrics(
+            String actionClass,
+            String flowName,
+            String flowType,
+            String actionName,
+            int count,
+            OffsetDateTime oldestQueuedAt,
+            UUID oldestDid) {}
+
+    /**
+     * Get total count of items in cold queues using cached metrics.
+     *
+     * @return total count of cold queued items
+     */
+    public long coldQueuedCount() {
+        return getCachedColdQueueCounts().stream()
+                .mapToLong(DeltaFileFlowRepoCustom.ColdQueueMetrics::count)
+                .sum();
+    }
+
+    /**
+     * Get cold queued counts grouped by action class using cached metrics.
+     *
+     * @return map of action class to count
+     */
+    public Map<String, Integer> coldQueuedActionsCount() {
+        return getCachedColdQueueCounts().stream()
+                .collect(Collectors.groupingBy(
+                        DeltaFileFlowRepoCustom.ColdQueueMetrics::actionClass,
+                        Collectors.summingInt(DeltaFileFlowRepoCustom.ColdQueueMetrics::count)));
+    }
+
+    /**
+     * Get distinct action classes that have cold queued items using cached metrics.
+     *
+     * @return set of action class names
+     */
+    public Set<String> distinctColdQueuedActions() {
+        return getCachedColdQueueCounts().stream()
+                .map(DeltaFileFlowRepoCustom.ColdQueueMetrics::actionClass)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Get cold queue metrics with caching to prevent hammering PostgreSQL.
+     * Results are cached for 5 seconds.
+     *
+     * @return list of cold queue metrics per flow/action
+     */
+    public List<DeltaFileFlowRepoCustom.ColdQueueMetrics> getCachedColdQueueCounts() {
+        OffsetDateTime now = OffsetDateTime.now();
+        if (coldQueueMetricsCacheTime.plusSeconds(5).isAfter(now)) {
+            return cachedColdQueueMetrics.get();
+        }
+        List<DeltaFileFlowRepoCustom.ColdQueueMetrics> result = deltaFileFlowRepo.getColdQueueCounts();
+        cachedColdQueueMetrics.set(result);
+        coldQueueMetricsCacheTime = now;
+        return result;
+    }
+
+    /**
+     * Get running tasks with caching to prevent hammering Valkey.
+     * Results are cached for 5 seconds.
+     *
+     * @return list of currently running action executions
+     */
+    public List<ActionExecution> getCachedRunningTasks() {
+        OffsetDateTime now = OffsetDateTime.now();
+        if (runningTasksCacheTime.plusSeconds(5).isAfter(now)) {
+            return cachedRunningTasks.get();
+        }
+        List<ActionExecution> result = coreEventQueue.getLongRunningTasks();
+        cachedRunningTasks.set(result);
+        runningTasksCacheTime = now;
+        return result;
+    }
+
+    /**
+     * Get the oldest queued info (timestamp and DID) across all warm and cold queues.
+     * Uses cached metrics for warm queue and queries for cold queue DID when needed.
+     *
+     * @return the oldest queued info, or null if no items are queued
+     */
+    public OldestQueuedInfo getOldestQueuedInfo() {
+        OffsetDateTime warmOldest = null;
+        UUID warmOldestDid = null;
+
+        for (WarmQueueMetrics m : getDetailedWarmQueueMetrics()) {
+            if (m.oldestQueuedAt() != null && (warmOldest == null || m.oldestQueuedAt().isBefore(warmOldest))) {
+                warmOldest = m.oldestQueuedAt();
+                warmOldestDid = m.oldestDid();
+            }
+        }
+
+        var coldEntry = deltaFileFlowRepo.getOldestColdQueueEntry();
+        OffsetDateTime coldOldest = coldEntry.map(DeltaFileFlowRepoCustom.OldestColdQueueEntry::queuedAt).orElse(null);
+        UUID coldOldestDid = coldEntry.map(DeltaFileFlowRepoCustom.OldestColdQueueEntry::did).orElse(null);
+
+        if (warmOldest == null && coldOldest == null) {
+            return null;
+        }
+
+        if (warmOldest == null) {
+            return new OldestQueuedInfo(coldOldest, coldOldestDid);
+        }
+        if (coldOldest == null) {
+            return new OldestQueuedInfo(warmOldest, warmOldestDid);
+        }
+
+        return warmOldest.isBefore(coldOldest)
+                ? new OldestQueuedInfo(warmOldest, warmOldestDid)
+                : new OldestQueuedInfo(coldOldest, coldOldestDid);
+    }
+
+    /**
+     * Info about the oldest queued item.
+     */
+    public record OldestQueuedInfo(OffsetDateTime timestamp, UUID did) {}
 }

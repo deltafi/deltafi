@@ -139,13 +139,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         String nativeQueryStr = """
-            SELECT DISTINCT dffi.delta_file_id FROM (
-                SELECT delta_file_id
-                FROM delta_file_flows dff
-                WHERE dff.state = 'IN_FLIGHT'
-                AND dff.cold_queued_action = :actionClass
-                LIMIT :limit
-            ) as dffi
+            SELECT delta_file_id
+            FROM cold_queue_entries
+            WHERE action_class = :actionClass
+            ORDER BY queued_at ASC
+            LIMIT :limit
         """;
 
         Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
@@ -154,7 +152,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = nativeQuery.getResultList();
-        return fetchByDidIn(dids);
+        // Dedupe while preserving order (duplicates rare - only if delta_file has multiple flows with same action class cold-queued)
+        List<UUID> uniqueDids = dids.stream().distinct().toList();
+        return fetchByDidIn(uniqueDids);
     }
 
     @Override

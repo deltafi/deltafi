@@ -131,8 +131,22 @@ export function formatErrorCount(count: number): string {
   return count.toString();
 }
 
+export function formatQueueCount(count: number): string {
+  if (count >= 1000000) {
+    return (count / 1000000).toFixed(1) + "M";
+  }
+  if (count >= 1000) {
+    return (count / 1000).toFixed(1) + "k";
+  }
+  return count.toString();
+}
+
 export function getErrorCount(errorCounts: Record<string, number>, nodeName: string): number {
   return errorCounts[nodeName] || 0;
+}
+
+export function getQueueCount(queueCounts: Record<string, number>, nodeName: string): number {
+  return queueCounts[nodeName] || 0;
 }
 
 export function getNodeMetrics(flowMetrics: Record<string, unknown>, nodeName: string): Record<string, number> | null {

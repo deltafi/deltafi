@@ -33,6 +33,9 @@ import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import io.minio.MinioClient;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.constant.DeltaFiConstants;
@@ -220,6 +223,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	EventAnnotationsRepo eventAnnotationsRepo;
+
+	@PersistenceContext
+	EntityManager entityManager;
 
 	@MockitoBean
 	ContentStorageService contentStorageService;
@@ -6332,8 +6338,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testAnyColdQueued() {
 		String actionClass = "org.plugin.SlowAction";
+		String actionName = "slowAction";
 		DeltaFile coldQueued = fullFlowExemplarService.postIngressDeltaFile(UUID.randomUUID());
 		coldQueued.lastFlow().lastAction().setActionClass(actionClass);
+		coldQueued.lastFlow().lastAction().setName(actionName);
 		coldQueued.lastFlow().lastAction().setState(ActionState.COLD_QUEUED);
 		coldQueued.lastFlow().setColdQueued(true);
         coldQueued.lastFlow().setColdQueuedAction(actionClass);
@@ -6347,14 +6355,24 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.insertOne(paused);
 
 		// inflight exists but it is not cold queued
-		assertThat(deltaFileFlowRepo.isColdQueued(actionClass)).isFalse();
+		assertThat(deltaFileFlowRepo.distinctColdQueuedActions()).doesNotContain(actionClass);
+		assertThat(deltaFileFlowRepo.getColdQueueCounts()).isEmpty();
 
 		// add new DeltaFile that is cold queued
 		deltaFileRepo.insertOne(coldQueued);
-		assertThat(deltaFileFlowRepo.isColdQueued(actionClass)).isTrue();
+		assertThat(deltaFileFlowRepo.distinctColdQueuedActions()).contains(actionClass);
 
 		// action name not found
-		assertThat(deltaFileFlowRepo.isColdQueued(actionClass+"1")).isFalse();
+		assertThat(deltaFileFlowRepo.distinctColdQueuedActions()).doesNotContain(actionClass + "1");
+
+		// verify getColdQueueCounts returns proper data including timestamp
+		var coldQueueCounts = deltaFileFlowRepo.getColdQueueCounts();
+		assertThat(coldQueueCounts).hasSize(1);
+		var metrics = coldQueueCounts.getFirst();
+		assertThat(metrics.actionClass()).isEqualTo(actionClass);
+		assertThat(metrics.actionName()).isEqualTo(actionName);
+		assertThat(metrics.count()).isEqualTo(1);
+		assertThat(metrics.oldestQueuedAt()).isNotNull();
 	}
 
 	@Test
@@ -6411,6 +6429,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	@Transactional
 	void testDeleteOldEventAnnotations() {
 		IntStream.range(0, 75).forEach(i -> {
 			UUID did = UUID.randomUUID();
@@ -6421,7 +6440,10 @@ class DeltaFiCoreApplicationTests {
 		});
 
 		assertEquals(75, eventAnnotationsRepo.count());
-		eventAnnotationsRepo.deleteOldEventAnnotations("0 seconds");
+		// Backdate records so they're eligible for deletion
+		entityManager.createNativeQuery("UPDATE event_annotations SET created = NOW() - INTERVAL '5 seconds'").executeUpdate();
+		entityManager.flush();
+		eventAnnotationsRepo.deleteOldEventAnnotations("1 second");
 		assertEquals(0, eventAnnotationsRepo.count());
 	}
 

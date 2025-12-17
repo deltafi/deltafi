@@ -128,6 +128,7 @@
         :focused-node-id="focusedNodeId"
         :flow-metrics="perFlowMetricsMap"
         :error-counts="errorsByFlow"
+        :queue-counts="queueCountsByFlow"
         @select-node="onSelectNode"
         @focus-node="onFocusNode"
         @expand-upstream="expandUpstream"
@@ -161,9 +162,39 @@
           </button>
         </div>
         <div class="panel-content">
-          <p v-if="selectedNode.type === 'TOPIC'" class="text-muted">
-            Topics connect publishers to subscribers. Click on connected flows to see their details.
-          </p>
+          <div v-if="selectedNode.type === 'TOPIC'">
+            <p class="text-muted">
+              Topics connect publishers to subscribers. Click on connected flows to see their details.
+            </p>
+            <div class="node-connections mt-3">
+              <div v-if="getPublishers(selectedNode.id).length > 0" class="connection-group">
+                <h6>Publishers</h6>
+                <div class="connection-list">
+                  <span
+                    v-for="pub in getPublishers(selectedNode.id)"
+                    :key="pub.id"
+                    class="connection-chip"
+                    @click="onFocusNode(pub)"
+                  >
+                    {{ pub.name }}
+                  </span>
+                </div>
+              </div>
+              <div v-if="getSubscribers(selectedNode.id).length > 0" class="connection-group">
+                <h6>Subscribers</h6>
+                <div class="connection-list">
+                  <span
+                    v-for="sub in getSubscribers(selectedNode.id)"
+                    :key="sub.id"
+                    class="connection-chip"
+                    @click="onFocusNode(sub)"
+                  >
+                    {{ sub.name }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div v-else-if="loadingDetails" class="loading-indicator">
             <i class="pi pi-spin pi-spinner" />
@@ -172,7 +203,7 @@
 
           <div v-else-if="selectedNodeDetails" class="flow-details">
             <p v-if="selectedNodeDetails.description" class="flow-description">
-              {{ selectedNodeDetails.description }}
+              <strong>Description:</strong> {{ selectedNodeDetails.description }}
             </p>
 
             <div v-if="selectedNodeActions.length > 0" class="action-chain">
@@ -182,6 +213,17 @@
             </div>
             <div class="action-list">
               <template v-for="(action, index) in selectedNodeActions" :key="action.name">
+                <!-- Queue bubble before action -->
+                <div
+                  v-if="actionQueueCounts[action.name]?.total > 0"
+                  v-tooltip.top="formatActionQueueTooltip(action.name)"
+                  class="action-queue-bubble"
+                >
+                  {{ actionQueueCounts[action.name].total.toLocaleString() }}
+                </div>
+                <div v-if="actionQueueCounts[action.name]?.total > 0" class="action-arrow">
+                  <i class="pi pi-arrow-right" />
+                </div>
                 <div v-tooltip.top="{ value: formatActionTooltip(action), escape: false }" class="action-item">
                   <div class="action-details">
                     <div class="action-name">{{ action.name }}</div>
@@ -212,6 +254,36 @@
             <p v-if="selectedNodeActions.length === 0" class="text-muted">
               This flow has no actions configured.
             </p>
+
+            <!-- Upstream/Downstream connections -->
+            <div class="node-connections mt-3">
+              <div v-if="getUpstream(selectedNode.id).length > 0" class="connection-group">
+                <h6>Upstream</h6>
+                <div class="connection-list">
+                  <span
+                    v-for="node in getUpstream(selectedNode.id)"
+                    :key="node.id"
+                    class="connection-chip"
+                    @click="onFocusNode(node)"
+                  >
+                    {{ node.name }}
+                  </span>
+                </div>
+              </div>
+              <div v-if="getDownstream(selectedNode.id).length > 0" class="connection-group">
+                <h6>Downstream</h6>
+                <div class="connection-list">
+                  <span
+                    v-for="node in getDownstream(selectedNode.id)"
+                    :key="node.id"
+                    class="connection-chip"
+                    @click="onFocusNode(node)"
+                  >
+                    {{ node.name }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <p v-else class="text-muted">
@@ -238,6 +310,7 @@ import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useDataSource from "@/composables/useDataSource";
 import useActionMetrics from "@/composables/useActionMetrics";
 import usePerFlowMetrics from "@/composables/usePerFlowMetrics";
+import useQueueMetrics, { aggregateQueueCountsByFlow } from "@/composables/useQueueMetrics";
 import useNotifications from "@/composables/useNotifications";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -259,6 +332,7 @@ const { getTransformFlowByName, getDataSinkByName } = useFlowQueryBuilder();
 const { getTimedDataSources } = useDataSource();
 const { data: actionMetrics, fetch: fetchActionMetrics } = useActionMetrics();
 const { data: perFlowMetrics, fetch: fetchPerFlowMetrics } = usePerFlowMetrics();
+const { data: queueMetrics, fetch: fetchQueueMetrics } = useQueueMetrics();
 const { errorsByFlow, fetch: fetchFlowErrors } = useFlowErrors();
 const notify = useNotifications();
 
@@ -304,6 +378,41 @@ const perFlowMetricsMap = computed(() => {
   }
   return map;
 });
+
+// Aggregate queue metrics by flow name
+const queueCountsByFlow = computed(() => aggregateQueueCountsByFlow(queueMetrics.value));
+
+// Get queue counts per action for the selected flow
+const actionQueueCounts = computed(() => {
+  if (!selectedNode.value || !queueMetrics.value) return {};
+  const flowName = selectedNode.value.name;
+  const counts = {};
+
+  for (const q of queueMetrics.value.warmQueues || []) {
+    if (q.flowName === flowName) {
+      if (!counts[q.actionName]) counts[q.actionName] = { warm: 0, cold: 0, total: 0 };
+      counts[q.actionName].warm += q.count;
+      counts[q.actionName].total += q.count;
+    }
+  }
+  for (const q of queueMetrics.value.coldQueues || []) {
+    if (q.flowName === flowName) {
+      if (!counts[q.actionName]) counts[q.actionName] = { warm: 0, cold: 0, total: 0 };
+      counts[q.actionName].cold += q.count;
+      counts[q.actionName].total += q.count;
+    }
+  }
+  return counts;
+});
+
+function formatActionQueueTooltip(actionName) {
+  const q = actionQueueCounts.value[actionName];
+  if (!q || q.total === 0) return '';
+  const parts = [];
+  if (q.warm > 0) parts.push(`${q.warm.toLocaleString()} warm`);
+  if (q.cold > 0) parts.push(`${q.cold.toLocaleString()} cold`);
+  return `Queued: ${parts.join(', ')}`;
+}
 
 // Show loading only on initial load, not during refreshes
 const showLoading = computed(() => !loaded.value);
@@ -619,6 +728,44 @@ function getDownstreamNodes(nodeId, graph) {
   return downstream;
 }
 
+// Get upstream neighbor nodes for display
+function getUpstream(nodeId) {
+  if (!flowGraph.value) return [];
+  const upstreamIds = getUpstreamNodes(nodeId, flowGraph.value);
+  return upstreamIds.map((id) => flowGraph.value.nodes[id]).filter(Boolean);
+}
+
+// Get downstream neighbor nodes for display
+function getDownstream(nodeId) {
+  if (!flowGraph.value) return [];
+  const downstreamIds = getDownstreamNodes(nodeId, flowGraph.value);
+  return downstreamIds.map((id) => flowGraph.value.nodes[id]).filter(Boolean);
+}
+
+// Get publishers for a topic
+function getPublishers(topicId) {
+  if (!flowGraph.value) return [];
+  const publishers = [];
+  for (const edge of flowGraph.value.edges) {
+    if (edge.target === topicId && flowGraph.value.nodes[edge.source]) {
+      publishers.push(flowGraph.value.nodes[edge.source]);
+    }
+  }
+  return publishers;
+}
+
+// Get subscribers for a topic
+function getSubscribers(topicId) {
+  if (!flowGraph.value) return [];
+  const subscribers = [];
+  for (const edge of flowGraph.value.edges) {
+    if (edge.source === topicId && flowGraph.value.nodes[edge.target]) {
+      subscribers.push(flowGraph.value.nodes[edge.target]);
+    }
+  }
+  return subscribers;
+}
+
 // Helper: calculate depth from focused node (negative = upstream, positive = downstream)
 function calculateDepthFromFocus(nodeId, focusId, graph) {
   if (nodeId === focusId) return 0;
@@ -764,7 +911,7 @@ function clearFocusedFlow() {
 }
 
 async function manualRefresh() {
-  await refreshFlowMetrics();
+  await Promise.all([refreshFlowMetrics(), fetchQueueMetrics()]);
   if (selectedNodeDetails.value) {
     const actionNames = extractActionNames(selectedNodeDetails.value);
     if (actionNames.length > 0) {
@@ -826,7 +973,7 @@ async function refreshFlowMetrics() {
 function startMetricsRefresh() {
   stopMetricsRefresh();
   metricsRefreshTimer = setInterval(async () => {
-    await Promise.all([refreshFlowMetrics(), fetchFlowErrors()]);
+    await Promise.all([refreshFlowMetrics(), fetchFlowErrors(), fetchQueueMetrics()]);
     // Also refresh action metrics if a node is selected
     if (selectedNodeDetails.value) {
       const actionNames = extractActionNames(selectedNodeDetails.value);
@@ -850,10 +997,19 @@ watch(
   () => route.params,
   (params) => {
     if (params.flowType && params.flowName) {
+      const wasSelected = selectedNode.value !== null;
       focusedFlowType.value = params.flowType;
       focusedFlowName.value = params.flowName;
       expandedUpstream.value = new Set();
       expandedDownstream.value = new Set();
+      // If panel was open, select the newly focused node and fetch its details
+      if (wasSelected && flowGraph.value) {
+        const nodeId = `${params.flowType}:${params.flowName}`;
+        const node = flowGraph.value.nodes[nodeId];
+        if (node) {
+          onSelectNode(node);
+        }
+      }
     } else {
       focusedFlowType.value = null;
       focusedFlowName.value = null;
@@ -924,7 +1080,7 @@ function setupScrollListeners() {
 }
 
 onMounted(async () => {
-  await Promise.all([getAllTopics(), fetchFlowErrors()]);
+  await Promise.all([getAllTopics(), fetchFlowErrors(), fetchQueueMetrics()]);
   startMetricsRefresh();
 });
 
@@ -1291,6 +1447,18 @@ onUnmounted(() => {
   font-size: 1.1rem;
 }
 
+.action-queue-bubble {
+  background: var(--surface-0);
+  border: 1px solid var(--surface-400);
+  border-radius: 12px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  cursor: default;
+}
+
 .action-details {
   flex: 1;
   min-width: 0;
@@ -1346,5 +1514,41 @@ onUnmounted(() => {
 
 .action-metrics .metric .pi {
   font-size: 0.75rem;
+}
+
+/* Node connections */
+.node-connections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.connection-group h6 {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+  font-weight: 500;
+}
+
+.connection-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.connection-chip {
+  background: var(--surface-100);
+  border: 1px solid var(--surface-border);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.connection-chip:hover {
+  background: var(--primary-100);
+  border-color: var(--primary-color);
+  color: var(--primary-700);
 }
 </style>

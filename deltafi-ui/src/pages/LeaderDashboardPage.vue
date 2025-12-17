@@ -74,7 +74,9 @@
         <!-- Filtered stats -->
         <div v-if="isFiltered" class="summary-section">
           <div class="summary-section-label">Filtered ({{ filteredMemberCount }} of {{ members.length }} members)</div>
-          <div class="summary-grid">
+          <!-- Health Status -->
+          <div class="summary-subsection-label">Health</div>
+          <div class="summary-grid summary-grid-health">
             <div class="summary-stat">
               <div class="summary-value healthy">{{ filteredHealthyCount }}</div>
               <div class="summary-label">Healthy</div>
@@ -83,6 +85,10 @@
               <div class="summary-value unhealthy">{{ filteredUnhealthyCount }}</div>
               <div class="summary-label">Unhealthy</div>
             </div>
+          </div>
+          <!-- Queue Metrics -->
+          <div class="summary-subsection-label">Queue Metrics</div>
+          <div class="summary-grid summary-grid-queues">
             <div class="summary-stat">
               <div class="summary-value">{{ filteredTotalInFlight.toLocaleString() }}</div>
               <div class="summary-label">In-Flight</div>
@@ -104,11 +110,17 @@
               <div class="summary-label">Paused</div>
             </div>
           </div>
+          <div v-if="filteredOldest" class="oldest-in-flight-row">
+            <span class="oldest-value">{{ formatOldestDuration(filteredOldest) }}</span>
+            <span class="oldest-label">Oldest In-Flight</span>
+          </div>
         </div>
         <!-- Fleet totals -->
         <div class="summary-section" :class="{ 'fleet-totals': isFiltered }">
           <div v-if="isFiltered" class="summary-section-label">Fleet Totals ({{ members.length }} members)</div>
-          <div class="summary-grid">
+          <!-- Health Status -->
+          <div class="summary-subsection-label">Health</div>
+          <div class="summary-grid summary-grid-health">
             <div v-if="!isFiltered" class="summary-stat">
               <div class="summary-value">{{ members.length }}</div>
               <div class="summary-label">Members</div>
@@ -121,6 +133,10 @@
               <div class="summary-value unhealthy">{{ aggregatedStats?.unhealthyCount ?? 0 }}</div>
               <div class="summary-label">Unhealthy</div>
             </div>
+          </div>
+          <!-- Queue Metrics -->
+          <div class="summary-subsection-label">Queue Metrics</div>
+          <div class="summary-grid summary-grid-queues">
             <div class="summary-stat">
               <div class="summary-value">{{ (aggregatedStats?.totalInFlight ?? 0).toLocaleString() }}</div>
               <div class="summary-label">In-Flight</div>
@@ -141,6 +157,10 @@
               <div class="summary-value" :class="{ 'has-paused': (aggregatedStats?.totalPaused ?? 0) > 0 }">{{ (aggregatedStats?.totalPaused ?? 0).toLocaleString() }}</div>
               <div class="summary-label">Paused</div>
             </div>
+          </div>
+          <div v-if="fleetOldest" class="oldest-in-flight-row">
+            <span class="oldest-value">{{ formatOldestDuration(fleetOldest) }}</span>
+            <span class="oldest-label">Oldest In-Flight</span>
           </div>
         </div>
       </Panel>
@@ -266,6 +286,12 @@
             <span v-else :class="getValueClass(col.field, data[col.field])">{{ formatBytesOrValue(data[col.field]) }}</span>
           </template>
         </Column>
+        <Column v-if="viewMode === 'summary'" field="oldest" header="Oldest In-Flight" style="min-width: 140px">
+          <template #body="{ data }">
+            <strong v-if="data.isTotal"><Timestamp :timestamp="data.oldest" show-time-ago /></strong>
+            <span v-else><Timestamp :timestamp="data.oldest" show-time-ago /></span>
+          </template>
+        </Column>
       </DataTable>
     </div>
 
@@ -286,6 +312,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import useLeaderDashboard from "@/composables/useLeaderDashboard";
+import useUtilFunctions from "@/composables/useUtilFunctions";
 import MemberStatusCard from "@/components/leader/MemberStatusCard.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import InputText from "primevue/inputtext";
@@ -315,6 +342,14 @@ const {
   fetchAll,
   fetchFlowMetrics,
 } = useLeaderDashboard();
+
+const { duration } = useUtilFunctions();
+
+const formatOldestDuration = (timestamp: string | null): string => {
+  if (!timestamp) return "—";
+  const ms = Date.now() - new Date(timestamp).getTime();
+  return duration(ms);
+};
 
 // Load persisted preferences from localStorage
 const STORAGE_KEY = "leaderDashboard";
@@ -479,6 +514,20 @@ const filteredTotalErrors = computed(() => sortedMembers.value.reduce((sum, m) =
 const filteredTotalWarmQueue = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.warmQueuedCount ?? 0), 0));
 const filteredTotalColdQueue = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.coldQueuedCount ?? 0), 0));
 const filteredTotalPaused = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.pausedCount ?? 0), 0));
+const filteredOldest = computed(() => {
+  const timestamps = sortedMembers.value
+    .map(m => m.oldestInFlightCreated)
+    .filter((t): t is string => t != null);
+  if (timestamps.length === 0) return null;
+  return timestamps.reduce((oldest, t) => t < oldest ? t : oldest);
+});
+const fleetOldest = computed(() => {
+  const timestamps = members.value
+    .map(m => m.oldestInFlightCreated)
+    .filter((t): t is string => t != null);
+  if (timestamps.length === 0) return null;
+  return timestamps.reduce((oldest, t) => t < oldest ? t : oldest);
+});
 
 const aggregatedFlowBreakdown = computed((): [string, number][] => {
   const totals: Record<string, number> = {};
@@ -577,6 +626,7 @@ const tableData = computed(() => {
         warmQueue: member.warmQueuedCount,
         coldQueue: member.coldQueuedCount,
         paused: member.pausedCount,
+        oldest: member.oldestInFlightCreated,
       });
       totalInFlight += member.inFlightCount ?? 0;
       totalErrors += member.errorCount ?? 0;
@@ -593,6 +643,7 @@ const tableData = computed(() => {
         warmQueue: totalWarm,
         coldQueue: totalCold,
         paused: totalPaused,
+        oldest: filteredOldest.value,
         isTotal: true,
       });
     }
@@ -1051,7 +1102,11 @@ const refresh = () => {
     }
 
     .summary-panel {
+      max-width: 800px;
+      margin: 0 auto;
+
       &.metric-panel {
+        max-width: none;
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -1073,13 +1128,54 @@ const refresh = () => {
     .summary-grid {
       display: flex;
       justify-content: center;
-      flex-wrap: wrap;
       gap: 2rem;
+      margin: 0 auto 1rem;
+    }
+
+    .summary-grid-health {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .summary-grid-queues {
+      margin-bottom: 0.5rem;
     }
 
     .summary-stat {
       text-align: center;
-      min-width: 100px;
+      min-width: 80px;
+    }
+
+    .summary-subsection-label {
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--text-color-secondary);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .oldest-in-flight-row {
+      text-align: center;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface-border);
+      margin-top: 1rem;
+    }
+
+    .oldest-value {
+      display: block;
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    .oldest-label {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--text-color-secondary);
+      text-transform: uppercase;
+      margin-top: 0.25rem;
     }
 
     .summary-value {
@@ -1093,6 +1189,7 @@ const refresh = () => {
       &.has-cold-queue { color: var(--orange-500); }
       &.has-paused { color: var(--yellow-500); }
       &.large { font-size: 3rem; }
+      &.summary-value-small { font-size: 1.25rem; }
     }
 
     .summary-label {

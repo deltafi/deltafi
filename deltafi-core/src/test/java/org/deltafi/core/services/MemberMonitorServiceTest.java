@@ -282,6 +282,7 @@ class MemberMonitorServiceTest {
                 warm,
                 cold,
                 0L,  // pausedCount
+                null,  // oldestInFlightCreated
                 null,
                 null,
                 null,

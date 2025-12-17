@@ -2421,13 +2421,16 @@ public class DeltaFilesService {
                 .mapToLong(Long::longValue)
                 .sum();
         long coldQueuedCount = getColdQueuedCountFromValkey();
+        var oldestInfo = queueManagementService.getOldestQueuedInfo();
         return new DeltaFileStats(
                 dbStats.getTotalCount(),
                 dbStats.getInFlightCount(),
                 dbStats.getInFlightBytes(),
                 warmQueuedCount,
                 coldQueuedCount,
-                dbStats.getPausedCount()
+                dbStats.getPausedCount(),
+                oldestInfo != null ? oldestInfo.timestamp() : null,
+                oldestInfo != null ? oldestInfo.did() : null
         );
     }
 
