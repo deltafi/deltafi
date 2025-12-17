@@ -286,7 +286,7 @@ const {
   setupNodeCountWatcher,
 } = useGraphPanZoom(graphContainer, layoutNodes, nodeWidth, nodeHeight, padding, containerWidth, containerHeight, {
   minZoom: 0.1,
-  maxZoom: 2,
+  maxZoom: 5,
   excludeSelectors: [".node-group"],
 });
 
