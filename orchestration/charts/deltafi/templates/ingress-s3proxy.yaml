@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: deltafi-minio
+  name: deltafi-s3proxy
   annotations:
   {{- include "defaultIngressAnnotations" . | nindent 4 }}
   {{- include "authAnnotations" . | nindent 4 }}
@@ -18,6 +18,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: deltafi-minio
+            name: deltafi-s3proxy
             port:
               number: 9000

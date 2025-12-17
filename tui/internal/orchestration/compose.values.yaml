@@ -1,3 +1,6 @@
+enable:
+  local_object_storage: true
+
 deltafi:
   java_ide:
     image: {{.JavaIDEContainer}}
@@ -73,9 +76,9 @@ ingress:
 dependencies:
   grafana: {{.GrafanaContainer}}
   victoriametrics: {{.VictoriaMetricsContainer}}
+  s3proxy: {{.S3ProxyContainer}}
   vector: {{.VectorContainer}}
   dozzle: {{.DozzleContainer}}
-  minio: {{.MinioContainer}}
   nginx: {{.NginxContainer}}
   valkey: {{.ValkeyContainer}}
   postgres: {{.PostgresContainer}}

@@ -15,13 +15,9 @@
 # Example of exposing a DeltaFi service to the host:
 # ---
 # services:
-#   deltafi-minio:
+#   deltafi-s3proxy:
 #     ports:
 #       - 9000:9000
-#       - 9001:9001
-#       - 9002:9002
-#       - 9003:9003
-#       - 9004:9004
 #
 # V V V   Put your overrides here   V V V
 

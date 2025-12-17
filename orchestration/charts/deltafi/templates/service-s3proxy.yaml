@@ -1,0 +1,24 @@
+{{- if include "localObjectStorageEnabled" . -}}
+# ABOUTME: Service for s3proxy (S3-compatible storage)
+# ABOUTME: Exposes port 9000 for S3 API access within the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: deltafi-s3proxy
+  namespace: deltafi
+  labels:
+    app: deltafi-s3proxy
+    group: deltafi-storage
+spec:
+  type: {{ .Values.s3proxy.service.type | default "ClusterIP" }}
+  ports:
+  - name: http
+    port: 9000
+    targetPort: 9000
+    protocol: TCP
+    {{- if and (eq .Values.s3proxy.service.type "NodePort") .Values.s3proxy.service.nodePort }}
+    nodePort: {{ .Values.s3proxy.service.nodePort }}
+    {{- end }}
+  selector:
+    app: deltafi-s3proxy
+{{- end -}}

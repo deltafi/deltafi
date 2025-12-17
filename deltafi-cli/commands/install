@@ -134,7 +134,6 @@ _postgres_operator_install() {
 _k8s_prerequisites() {
   cli_log "Initializing k8s prerequisites"
   _k8s_add_namespace deltafi
-  _k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
   VALKEY_PASSWORD="$(_random_password 16)"
   # Keeping redis-password around for backwards chart compatibility
   _k8s_add_secret valkey-password redis-password "$VALKEY_PASSWORD" valkey-password "$VALKEY_PASSWORD"

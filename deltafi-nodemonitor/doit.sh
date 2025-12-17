@@ -139,7 +139,7 @@ report_disk_metrics() {
         pods_json=$(curl -sS --cacert "$ca_file" -H "Authorization: Bearer $token" \
           "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/pods?fieldSelector=spec.nodeName=${NODE_NAME}")
 
-        if echo "$pods_json" | grep -q '"name":.*deltafi-minio' && [[ -d /data/deltafi/minio ]]; then
+        if echo "$pods_json" | grep -q '"name":.*deltafi-s3proxy' && [[ -d /data/deltafi/minio ]]; then
             has_minio=true
         fi
         if echo "$pods_json" | grep -q '"name":.*deltafi-postgres' && [[ -d /data/deltafi/postgres ]]; then

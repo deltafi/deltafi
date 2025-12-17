@@ -382,6 +382,8 @@ MINIO_ROOT_USER=deltafi
 MINIO_ROOT_PASSWORD=$minio_password
 MINIO_ACCESSKEY=deltafi
 MINIO_SECRETKEY=$minio_password
+S3PROXY_IDENTITY=deltafi
+S3PROXY_CREDENTIAL=$minio_password
 EOF
   fi
 
@@ -480,7 +482,7 @@ dependencies:
   grafana: deltafi/grafana:12.3.0-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
   loki: grafana/loki:2.9.17
-  minio: deltafi/minio:RELEASE.2025-10-15T17-29-55Z-2
+  s3proxy: andrewgaul/s3proxy:sha-59fb92e
   nginx: nginx:1.29.3-alpine3.22
   promtail: grafana/promtail:3.5.8
   valkey: valkey/valkey:9.0.0-alpine
@@ -581,7 +583,7 @@ _write_startup_file() {
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
   _append_startup_from_values "LOKI" ".dependencies.loki"
-  _append_startup_from_values "MINIO" ".dependencies.minio"
+  _append_startup_from_values "S3PROXY" ".dependencies.s3proxy"
   _append_startup_from_values "POSTGRES" ".dependencies.postgres"
   _append_startup_from_values "NGINX" ".dependencies.nginx"
   _append_startup_from_values "PROMTAIL" ".dependencies.promtail"
@@ -604,7 +606,7 @@ INGRESS_URL=http://deltafi-core:8080
 PERIOD="5"
 METRICS_PERIOD_SECONDS="10"
 MINIO_PARTSIZE="5242880"
-MINIO_URL=http://deltafi-minio:9000
+MINIO_URL=http://deltafi-s3proxy:9000
 RACK_ENV=production
 VALKEY_URL=http://deltafi-valkey:6379
 VALKEY_HOST=deltafi-valkey

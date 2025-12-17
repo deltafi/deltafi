@@ -16,7 +16,7 @@ When you run `deltafi up`, the TUI creates and manages the following directory s
 │   ├── values.yaml            # Generated merged values
 │   └── secrets/               # System secrets (auto-generated)
 │       ├── grafana.env        # Grafana admin credentials
-│       ├── minio.env          # MinIO access credentials
+│       ├── minio.env          # Object storage access credentials
 │       ├── postgres.env       # PostgreSQL credentials
 │       ├── valkey.env         # Valkey (Redis) credentials
 │       └── ssl.env            # SSL configuration
@@ -105,10 +105,9 @@ services:
 ```yaml
 # site/compose.yaml
 services:
-  deltafi-minio:
+  deltafi-s3proxy:
     ports:
       - 9000:9000
-      - 9001:9001
 ```
 
 #### Adding Custom Services
@@ -129,7 +128,7 @@ services:
 
 System secrets are stored in `config/secrets/` and are auto-generated on first run. These include credentials for:
 - **grafana.env** - Grafana admin user and password
-- **minio.env** - MinIO root user and access keys
+- **minio.env** - Object storage access keys
 - **postgres.env** - PostgreSQL database credentials
 - **valkey.env** - Valkey (Redis) password
 

@@ -1,0 +1,21 @@
+{{- if include "localObjectStorageEnabled" . -}}
+# ABOUTME: Alias service for backward compatibility with plugins using deltafi-minio hostname
+# ABOUTME: Points to s3proxy pods, allows existing plugins to work without reinstall
+apiVersion: v1
+kind: Service
+metadata:
+  name: deltafi-minio
+  namespace: deltafi
+  labels:
+    app: deltafi-s3proxy
+    group: deltafi-storage
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 9000
+    targetPort: 9000
+    protocol: TCP
+  selector:
+    app: deltafi-s3proxy
+{{- end -}}

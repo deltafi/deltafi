@@ -1,0 +1,78 @@
+{{- if include "localObjectStorageEnabled" . -}}
+# ABOUTME: S3-compatible storage proxy deployment using s3proxy
+# ABOUTME: Provides object storage API for DeltaFi content with filesystem backend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deltafi-s3proxy
+  namespace: deltafi
+  labels:
+    app: deltafi-s3proxy
+    group: deltafi-storage
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: deltafi-s3proxy
+  template:
+    metadata:
+      labels:
+        app: deltafi-s3proxy
+        group: deltafi-storage
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: s3proxy
+        image: {{ .Values.s3proxy.image }}
+        ports:
+        - name: http
+          containerPort: 9000
+        env:
+        - name: S3PROXY_AUTHORIZATION
+          value: "aws-v2-or-v4"
+        - name: S3PROXY_ENDPOINT
+          value: "http://0.0.0.0:9000"
+        - name: JCLOUDS_PROVIDER
+          value: "filesystem"
+        - name: JCLOUDS_FILESYSTEM_BASEDIR
+          value: "/data"
+        - name: S3PROXY_IDENTITY
+          value: "deltafi"
+        - name: S3PROXY_CREDENTIAL
+          valueFrom:
+            secretKeyRef:
+              name: minio-keys
+              key: rootPassword
+        resources:
+          requests:
+            memory: {{ .Values.s3proxy.resources.requests.memory | default "256Mi" }}
+          limits:
+            memory: {{ .Values.s3proxy.resources.limits.memory | default "1Gi" }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        livenessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+      {{- with .Values.s3proxy.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.s3proxy.persistence.existingClaim | default "deltafi-minio" }}
+{{- end -}}

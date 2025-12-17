@@ -17,45 +17,6 @@
  */
 package orchestration
 
-import (
-	"errors"
-	"fmt"
-	"os"
-	"os/exec"
-)
-
 type BaseOrchestrator struct {
 	Orchestrator
-}
-
-func (o BaseOrchestrator) ExecuteMinioCommand(cmd []string) error {
-	minioCliArgs := []string{"mc alias set deltafi http://deltafi-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD > /dev/null && "}
-
-	minioName, err := o.GetMinioName()
-	if err != nil {
-		return err
-	}
-	c, err := o.GetExecCmd(minioName, append(minioCliArgs, cmd...))
-	if err != nil {
-		return err
-	}
-
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-
-	err = c.Run()
-	if err == nil {
-		return nil
-	}
-
-	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		// Ignore common interrupt exit codes
-		if exitError.ExitCode() == 130 || exitError.ExitCode() == 2 {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("command execution failed: %w", err)
 }

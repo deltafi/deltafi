@@ -94,9 +94,9 @@ Override Docker Compose settings directly:
 
 ```yaml
 services:
-  deltafi-minio:
+  deltafi-s3proxy:
     ports:
-      - 9000:9000  # Expose MinIO to host
+      - 9000:9000  # Expose object storage to host
   deltafi-core:
     environment:
       - JAVA_OPTS=-Xmx4g

@@ -37,17 +37,14 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class MinioObjectStorageServiceTest {
     private static final String BUCKET = "bucket";
     private final MinioClient minioClient = Mockito.mock(MinioClient.class);
-    private final MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient, new MinioProperties(), true);
-    private final MinioObjectStorageService serviceWithoutSnowball = new MinioObjectStorageService(minioClient, new MinioProperties(), false);
+    private final MinioObjectStorageService minioObjectStorageService = new MinioObjectStorageService(minioClient, new MinioProperties());
     private final AtomicInteger putManyCount = new AtomicInteger(0);
 
     @Test
@@ -130,39 +127,21 @@ class MinioObjectStorageServiceTest {
 
     @Test
     @SneakyThrows
-    void putManySnowballOn() {
-        minioObjectStorageService.putObjects(BUCKET, putManyInput());
-        Mockito.verify(minioClient).uploadSnowballObjects(Mockito.assertArg(this::assertSnowball));
-    }
-
-    private void assertSnowball(UploadSnowballObjectsArgs snowballObjectsArgs) {
-        Assertions.assertThat(snowballObjectsArgs.objects()).hasSize(3);
-        Assertions.assertThat(snowballObjectsArgs.bucket()).isEqualTo(BUCKET);
-        Set<String> uploadedNames = StreamSupport.stream(snowballObjectsArgs.objects().spliterator(), false)
-                .filter(o -> o.size() == 5)
-                .map(SnowballObject::name).collect(Collectors.toSet());
-        Assertions.assertThat(uploadedNames).hasSize(3).contains("objectName0", "objectName1", "objectName2");
-    }
-
-    @Test
-    @SneakyThrows
-    void putManySnowballOff() {
+    void testPutObjects() {
         Mockito.when(minioClient.putObject(Mockito.any())).thenReturn(objectWriteResponse("objectName"));
-        serviceWithoutSnowball.putObjects(BUCKET, putManyInput());
-        Mockito.verify(minioClient, Mockito.never()).uploadSnowballObjects(Mockito.any());
+        minioObjectStorageService.putObjects(BUCKET, putManyInput());
         Mockito.verify(minioClient, Mockito.times(3)).putObject(Mockito.any());
     }
 
     @Test
     @SneakyThrows
-    void putManySnowballOff_partialFailure() {
+    void testPutObjects_partialFailure() {
         Mockito.when(minioClient.putObject(Mockito.any())).thenAnswer(this::answerPut);
         Map<ObjectReference, InputStream> input = putManyInput();
 
-        Assertions.assertThatThrownBy(() -> serviceWithoutSnowball.putObjects(BUCKET, input))
+        Assertions.assertThatThrownBy(() -> minioObjectStorageService.putObjects(BUCKET, input))
                 .isInstanceOf(ObjectStorageException.class)
                 .hasMessage("Failed to send incoming data to minio");
-        Mockito.verify(minioClient, Mockito.never()).uploadSnowballObjects(Mockito.any());
         // putObject will be called twice, where the second call throws an exception
         Mockito.verify(minioClient, Mockito.times(2)).putObject(Mockito.any());
         // there will be an attempt to remove the first object to avoid an orphaned object

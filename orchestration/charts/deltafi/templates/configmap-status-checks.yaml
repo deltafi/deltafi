@@ -1,4 +1,4 @@
-{{- $minioEnabled := .Values.enable.minio }}
+{{- $minioEnabled := include "localObjectStorageEnabled" . }}
 {{- $grafanaEnabled := and .Values.enable.grafana (or .Values.tags.metrics .Values.tags.logs) }}
 {{- $lokiEnabled := and .Values.enable.loki .Values.tags.logs }}
 {{- $graphiteEnabled := and .Values.enable.graphite .Values.tags.metrics }}
@@ -37,7 +37,7 @@ data:
     - deltafi-kubernetes-dashboard
     {{- end }}
     {{- if $minioEnabled }}
-    - deltafi-minio
+    - deltafi-s3proxy
     {{- end }}
   Ingress: |
     {{- if $grafanaEnabled }}
@@ -49,7 +49,7 @@ data:
     - deltafi-kubernetes-dashboard
     {{- end }}
     {{- if $minioEnabled }}
-    - deltafi-minio
+    - deltafi-s3proxy
     {{- end }}
     - deltafi-ui-ingress
   Service: |
@@ -74,7 +74,7 @@ data:
     - deltafi-loki-memberlist
     {{- end }}
     {{- if $minioEnabled }}
-    - deltafi-minio
+    - deltafi-s3proxy
     {{- end }}
     {{- if $redisEnabled }}
     - deltafi-valkey-headless

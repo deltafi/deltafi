@@ -1,6 +1,7 @@
 # toggle specific subcharts on (true) or off (false)
 enable:
-  minio: true
+  local_object_storage: true
+  minio: true # Deprecated: use local_object_storage instead
   redis: true
   kubernetes-dashboard: true
   promtail: true
@@ -62,10 +63,7 @@ deltafi:
       secret: ssl-secret
   storage:
     bucketName: storage
-    url: http://deltafi-minio:9000
-    # enabled by default, disabled when enable.minio is false unless overridden here
-    snowball:
-      enabled: ~
+    url: http://deltafi-s3proxy:9000
   lookup:
     enabled: false
 
@@ -77,33 +75,20 @@ ingress:
     # ssl_ciphers: "ECDHE-RSA-AES256-GCM-SHA384"
     secrets:
       default: local-deltafi-org
-# MinIO config
-minio:
-  environment:
-    # don't let trash files build up
-    MINIO_API_DELETE_CLEANUP_INTERVAL: 30s
-    # prioritize reads and writes over lifecycle events
-    MINIO_SCANNER_SPEED: slow
-    MINIO_BROWSER: off
-  image:
-    repository: deltafi/minio
-    tag: RELEASE.2025-10-15T17-29-55Z-2
-  mode: standalone
-  existingSecret: minio-keys
+# S3Proxy config (S3-compatible storage using filesystem backend)
+s3proxy:
+  image: deltafi/s3proxy:2.9.0-0
   resources:
     requests:
-      memory: 2Gi
-  replicas: 1
+      memory: 256Mi
+    limits:
+      memory: 1Gi
   persistence:
-    enabled: true
     existingClaim: deltafi-minio
   service:
     type: NodePort
   nodeSelector:
     node-role.deltafi.org/storage: "true"
-  metrics:
-    serviceMonitor:
-      public: true
 # Redis config
 redis:
   nameOverride: valkey

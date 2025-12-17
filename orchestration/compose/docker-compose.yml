@@ -250,31 +250,32 @@ services:
     volumes:
       - ${DATA_DIR}/analytics:/data/analytics
     user: "${USER_ID}:${GROUP_ID}"
-  deltafi-minio:
-    image: ${MINIO}
-    command: server /export -S /etc/minio/certs/ --address :9000 --console-address :9001
-    container_name: deltafi-minio
+  deltafi-s3proxy:
+    image: ${S3PROXY}
+    container_name: deltafi-s3proxy
     expose:
       - "9000"
-    ports:
-      - "9001:9001"
     environment:
-      MINIO_PROMETHEUS_AUTH_TYPE: public
-      MINIO_API_DELETE_CLEANUP_INTERVAL: 1s
+      S3PROXY_AUTHORIZATION: aws-v2-or-v4
+      S3PROXY_ENDPOINT: "http://0.0.0.0:9000"
+      JCLOUDS_PROVIDER: filesystem
+      JCLOUDS_FILESYSTEM_BASEDIR: /data
     env_file:
       - ${SECRETS_DIR}/minio.env
     labels:
       deltafi-group: deltafi-dependency
-      name: deltafi-minio
+      name: deltafi-s3proxy
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "deltafi-minio"
     profiles: ["localStorage"]
     restart: unless-stopped
     volumes:
-      - ${DATA_DIR}/minio:/export
+      - ${DATA_DIR}/minio:/data
     user: "${USER_ID}:${GROUP_ID}"
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: ["CMD-SHELL", "curl -s http://localhost:9000 | grep -q Error"]
       interval: 10s
       timeout: 2s
       retries: 5

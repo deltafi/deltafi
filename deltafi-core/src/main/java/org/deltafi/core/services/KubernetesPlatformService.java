@@ -58,7 +58,7 @@ public class KubernetesPlatformService implements PlatformService {
 
     @Override
     public List<String> contentNodeNames() {
-        return k8sClient.pods().withLabels(Map.of("app", "minio")).list()
+        return k8sClient.pods().withLabels(Map.of("app", "deltafi-s3proxy")).list()
                 .getItems().stream()
                 .map(this::extractNodeName)
                 .toList();

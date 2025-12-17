@@ -26,6 +26,6 @@ services:
       VALKEY_PASSWORD: ~
     ports:
       - "6379:6379"
-  deltafi-minio:
+  deltafi-s3proxy:
     ports:
       - "9000:9000"

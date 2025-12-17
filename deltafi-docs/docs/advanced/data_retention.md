@@ -1,6 +1,6 @@
 # Data Retention
 
-Data stored in DeltaFi consists of content stored in MinIO and metadata stored in PostgresSQL.
+Data stored in DeltaFi consists of content stored in object storage and metadata stored in PostgreSQL.
 Retention of these classes of data can be controlled through a global age-off rule as well as any number of
 customizable delete policies.
 
@@ -19,7 +19,7 @@ Add, remove, and edit delete policies on the Delete Policies page of the GUI.
 
 The System Properties page includes a few advanced settings that let you customize the overall delete policy behavior:
 - `delete.frequency` - how often each delete policy executes
-- `delete.policyBatchSize` - the maximum number of deltaFiles that will be removed from MinIO or MongoDB in a single bulk operation. Batches will be deleted back-to-back until all eligible DeltaFiles are deleted each `delete.frequency` cycle
+- `delete.policyBatchSize` - the maximum number of deltaFiles that will be removed from object storage or the database in a single bulk operation. Batches will be deleted back-to-back until all eligible DeltaFiles are deleted each `delete.frequency` cycle
 
 If you use the reinject, loadMany, or formatMany features of DeltaFi to create child DeltaFiles, be sure to allow enough time for children to complete before deleting parents.
 
@@ -39,7 +39,7 @@ The following additional options are available:
 
 ### Disk Space Delete Policies
 
-DeltaFi monitors disk space available on the node that hosts MinIO.
+DeltaFi monitors disk space available on the node that hosts object storage.
 Configure a disk space policy to delete data when the % of disk space used exceeds a specified threshold.
 The oldest completed DeltaFiles (by creation date) will be deleted first.
 

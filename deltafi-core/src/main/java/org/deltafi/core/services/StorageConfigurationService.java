@@ -46,16 +46,32 @@ public class StorageConfigurationService {
     public void ensureBucket() throws ObjectStorageException {
         if (!bucketExists(storageProperties.bucketName())) {
             createBucket(storageProperties.bucketName());
+        }
+        trySetExpiration();
+    }
+
+    private boolean lifecycleSupported = true;
+
+    private void trySetExpiration() {
+        try {
             setExpiration(storageProperties.bucketName());
-        } else {
-            updateAgeOffIfChanged();
+        } catch (Exception e) {
+            lifecycleSupported = false;
+            log.warn("Bucket lifecycle management not supported by storage backend - using DeltaFi delete policies instead");
         }
     }
 
-    @SneakyThrows
     public void updateAgeOffIfChanged() {
-        if (expirationChanged()) {
-            setExpiration(storageProperties.bucketName());
+        if (!lifecycleSupported) {
+            return;
+        }
+        try {
+            if (expirationChanged()) {
+                setExpiration(storageProperties.bucketName());
+            }
+        } catch (Exception e) {
+            lifecycleSupported = false;
+            log.warn("Bucket lifecycle management not supported by storage backend - using DeltaFi delete policies instead");
         }
     }
 

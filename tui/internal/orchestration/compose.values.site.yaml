@@ -1,6 +1,9 @@
 # Site values file
 # To restore to defaults, remove this file and run 'deltafi up'
 ---
+enable:
+  local_object_storage: true
+
 deltafi:
   core:
     ssl:

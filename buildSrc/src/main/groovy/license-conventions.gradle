@@ -11,7 +11,7 @@ license {
               "**/*.txt", "**/*.html", "**/*.json", "**/test/resources/**",
               "**/*.md", "**/*.png", "**/*.ico", "**/*.jar", "**/*.MF", "**/.gitkeep", "**/Dockerfile",
               "**/*.drawio", "**/.dockerignore", "**/.go",
-              "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**", "**/virtualenv/**",
+              "**/plugin-templates/**", "**/node_modules/**", "**/venv/**", "**/virtualenv/**",
               "**/db/migration/**", "**/db/lookup/migration/**"])
     strictCheck true
     mapping("java", "SLASHSTAR_STYLE")

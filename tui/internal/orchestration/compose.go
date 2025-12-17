@@ -130,10 +130,6 @@ func (o *ComposeOrchestrator) GetValkeyName() string {
 	return "deltafi-valkey"
 }
 
-func (o *ComposeOrchestrator) GetMinioName() (string, error) {
-	return "deltafi-minio", nil
-}
-
 func (o *ComposeOrchestrator) enforceSiteValuesDir() error {
 	if err := os.MkdirAll(o.sitePath, 0755); err != nil {
 		return fmt.Errorf("error creating site values directory: %w", err)
@@ -252,22 +248,6 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 	err = o.dockerCompose(dockerUpArgs)
 	if err != nil {
 		return err
-	}
-
-	minioEnabled := o.getValueOr(values, "enable.minio", "true")
-	if o.inDevelopment() && minioEnabled == "true" {
-		bucketName := o.getValueOr(values, "deltafi.storage.bucketName", "storage")
-		err := o.ExecuteMinioCommand([]string{fmt.Sprintf("mc mb -p deltafi/%s > /dev/null", bucketName)})
-		if err != nil {
-			fmt.Println(styles.ComposeFAIL("MinIO configured for development", "Error"))
-			return err
-		}
-		err = o.ExecuteMinioCommand([]string{fmt.Sprintf("mc anonymous set public deltafi/%s > /dev/null", bucketName)})
-		if err != nil {
-			fmt.Println(styles.ComposeFAIL("MinIO configured for development", "Error"))
-			return err
-		}
-		fmt.Println(styles.ComposeOK("MinIO configured for development", "Ready"))
 	}
 
 	return nil
@@ -566,6 +546,17 @@ func (o *ComposeOrchestrator) inDevelopment() bool {
 	return o.deploymentMode == types.PluginDevelopment || o.deploymentMode == types.CoreDevelopment
 }
 
+// localObjectStorageEnabled checks both enable.local_object_storage and the deprecated enable.minio flag.
+// Returns "true" or "false" as a string for use in environment variables.
+func (o *ComposeOrchestrator) localObjectStorageEnabled(values map[string]interface{}) string {
+	localStorage := o.getValueOr(values, "enable.local_object_storage", "true")
+	minio := o.getValueOr(values, "enable.minio", "true") // Deprecated: use local_object_storage
+	if localStorage != "false" || minio != "false" {
+		return "true"
+	}
+	return "false"
+}
+
 func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 	values, err := o.getMergedValues()
 	if err != nil {
@@ -577,13 +568,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		return fmt.Errorf("error getting hostname: %w", err)
 	}
 
-	localStorage := o.getValueOr(values, "enable.minio", "true")
-	snowballEnabled := o.getValue(values, "deltafi.storage.snowball.enabled")
-
-	// if the snowballEnabled override is not set, determine the value from enable.minio
-	if snowballEnabled == "" {
-		snowballEnabled = localStorage
-	}
+	localStorage := o.localObjectStorageEnabled(values)
 
 	envVars := map[string]string{
 		"AUTH_MODE":                          o.getValue(values, "deltafi.auth.mode"),
@@ -612,7 +597,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"LOCAL_STORAGE_CONTENT":              localStorage,
 		"METRICS_PERIOD_SECONDS":             "10",
 		"MINIO_PARTSIZE":                     "5242880",
-		"MINIO_URL":                          o.getValueOr(values, "deltafi.storage.url", "http://deltafi-minio:9000"),
+		"MINIO_URL":                          o.getValueOr(values, "deltafi.storage.url", "http://deltafi-s3proxy:9000"),
 		"NODE_NAME":                          hostname,
 		"ORCHESTRATION_DIR":                  o.orchestrationPath,
 		"PERIOD":                             "5",
@@ -623,7 +608,7 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"REPOS_DIR":                          o.reposPath,
 		"RUNNING_IN_CLUSTER":                 "false",
 		"SECRETS_DIR":                        o.secretsPath,
-		"SNOWBALL_ENABLED":                   snowballEnabled,
+		"SNOWBALL_ENABLED":                   "false", // Deprecated: only for backward compatibility with older plugins
 		"SITE_DIR":                           o.sitePath,
 		"STORAGE_BUCKET_NAME":                o.getValueOr(values, "deltafi.storage.bucketName", "storage"),
 		"VALKEY_HOST":                        "deltafi-valkey",
@@ -747,7 +732,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"LOGROTATE_AUDIT_MAX_SIZE":           o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.max_size", "100M"),
 		"DOZZLE":                             o.getValue(values, "dependencies.dozzle"),
 		"LOOKUP_TABLES_ENABLED":              o.getValue(values, "deltafi.lookup.enabled"),
-		"MINIO":                              o.getValue(values, "dependencies.minio"),
+		"S3PROXY":                            o.getValue(values, "dependencies.s3proxy"),
 		"POSTGRES":                           o.getValue(values, "dependencies.postgres"),
 		"NGINX":                              o.getValue(values, "dependencies.nginx"),
 		"VALKEY":                             o.getValue(values, "dependencies.valkey"),
@@ -785,7 +770,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		profiles = append(profiles, "logs")
 	}
 
-	if o.getValueOr(values, "enable.minio", "true") != "false" {
+	if o.localObjectStorageEnabled(values) == "true" {
 		profiles = append(profiles, "localStorage")
 	}
 
@@ -817,9 +802,37 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	minioPath := filepath.Join(secretsDir, "minio.env")
 	if _, err := os.Stat(minioPath); os.IsNotExist(err) {
 		minioPassword := randomPassword(40)
-		minioContent := fmt.Sprintf("MINIO_ROOT_USER='deltafi'\nMINIO_ROOT_PASSWORD='%s'\nMINIO_ACCESSKEY='deltafi'\nMINIO_SECRETKEY='%s'\n", minioPassword, minioPassword)
+		minioContent := fmt.Sprintf("MINIO_ROOT_USER='deltafi'\nMINIO_ROOT_PASSWORD='%s'\nMINIO_ACCESSKEY='deltafi'\nMINIO_SECRETKEY='%s'\nS3PROXY_IDENTITY='deltafi'\nS3PROXY_CREDENTIAL='%s'\n", minioPassword, minioPassword, minioPassword)
 		if err := os.WriteFile(minioPath, []byte(minioContent), 0600); err != nil {
 			return fmt.Errorf("error writing minio secrets: %w", err)
+		}
+	} else {
+		// Check if S3PROXY_CREDENTIAL exists, if not add s3proxy credentials using MINIO_SECRETKEY
+		content, err := os.ReadFile(minioPath)
+		if err != nil {
+			return fmt.Errorf("error reading minio secrets: %w", err)
+		}
+		if !strings.Contains(string(content), "S3PROXY_CREDENTIAL") {
+			// Extract MINIO_SECRETKEY value to reuse as S3PROXY_CREDENTIAL
+			var secretKey string
+			for _, line := range strings.Split(string(content), "\n") {
+				if strings.HasPrefix(line, "MINIO_SECRETKEY=") {
+					secretKey = strings.TrimPrefix(line, "MINIO_SECRETKEY=")
+					secretKey = strings.Trim(secretKey, "'\"")
+					break
+				}
+			}
+			if secretKey != "" {
+				s3proxyContent := fmt.Sprintf("S3PROXY_IDENTITY='deltafi'\nS3PROXY_CREDENTIAL='%s'\n", secretKey)
+				f, err := os.OpenFile(minioPath, os.O_APPEND|os.O_WRONLY, 0600)
+				if err != nil {
+					return fmt.Errorf("error opening minio secrets for append: %w", err)
+				}
+				defer f.Close()
+				if _, err := f.WriteString(s3proxyContent); err != nil {
+					return fmt.Errorf("error appending s3proxy credentials: %w", err)
+				}
+			}
 		}
 	}
 

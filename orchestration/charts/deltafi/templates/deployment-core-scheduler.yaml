@@ -39,7 +39,7 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: kubernetes,monitor
         - name: LOCAL_STORAGE_CONTENT
-          value: {{ .Values.enable.minio | quote }}
+          value: {{ include "localObjectStorageEnabled" . | quote }}
         {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080

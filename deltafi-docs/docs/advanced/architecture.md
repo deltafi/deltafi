@@ -7,8 +7,7 @@ created, queued for Action, has an Action completed, or reaches a new stage.
 
 ## Content Storage
 
-DeltaFile content is stored on disk using MinIO. MinIO is a distributed storage solution that implements an S3
-interface. 
+DeltaFile content is stored on disk using S3-compatible object storage. 
 
 ## Core
 

@@ -34,7 +34,6 @@ sync grafana https://gitlab.com/deltafi/helmcharts/grafana.git 7.0.17
 sync kubernetes-dashboard https://gitlab.com/deltafi/helmcharts/kubernetes-dashboard.git 6.0.8
 sync loki https://gitlab.com/deltafi/helmcharts/loki.git 2.16.0
 sync_oci victoria-metrics-single victoriametrics oci://ghcr.io/victoriametrics/helm-charts 0.25.4
-sync minio https://gitlab.com/deltafi/helmcharts/minio.git 5.0.9
 sync promtail https://gitlab.com/deltafi/helmcharts/promtail.git 6.15.2
 sync redis https://gitlab.com/deltafi/helmcharts/redis.git 18.4.0
 #sync postgresql https://gitlab.com/deltafi/helmcharts/postgresql.git 16.7.19

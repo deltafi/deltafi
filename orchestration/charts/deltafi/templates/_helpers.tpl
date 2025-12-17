@@ -138,20 +138,19 @@ initContainers:
       fieldPath: spec.nodeName
 {{- end -}}
 
-{{- define "storage.snowballEnabled" -}}
-{{- $override := .Values.deltafi.storage.snowball.enabled -}}
-{{- if ne $override nil -}}
-{{- $override | quote -}}
-{{- else -}}
-{{- .Values.enable.minio | quote | default "true" -}}
-{{- end -}}
+{{/*
+  Returns true if local object storage is enabled.
+  Checks both enable.local_object_storage and the deprecated enable.minio flag.
+*/}}
+{{- define "localObjectStorageEnabled" -}}
+{{- or .Values.enable.local_object_storage .Values.enable.minio -}}
 {{- end -}}
 
 {{- define "commonEnvVars" -}}
 - name: CORE_URL
   value: http://deltafi-core-service
 - name: MINIO_URL
-  value: {{ .Values.deltafi.storage.url | default "http://deltafi-minio:9000" }}
+  value: {{ .Values.deltafi.storage.url | default "http://deltafi-s3proxy:9000" }}
 - name: MINIO_PARTSIZE
   value: "5242880"
 - name: REDIS_URL
@@ -162,8 +161,9 @@ initContainers:
   value: "6379"
 - name: STORAGE_BUCKET_NAME
   value: {{ .Values.deltafi.storage.bucketName | default "storage" }}
+# Deprecated: SNOWBALL_ENABLED is only for backward compatibility with older plugins
 - name: SNOWBALL_ENABLED
-  value: {{ include "storage.snowballEnabled" . }}
+  value: "false"
 - name: VALKEY_URL
   value: http://deltafi-valkey-master:6379
 - name: DELTAFI_UI_DOMAIN

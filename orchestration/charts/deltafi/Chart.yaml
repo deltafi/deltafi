@@ -19,10 +19,6 @@ version: 2.43.1
 # follow Semantic Versioning. They should reflect the version the application is using.
 appVersion: 2.43.1
 dependencies:
-  - name: minio
-    version: 5.0.9
-    # repository: https://charts.min.io/
-    condition: enable.minio
   - name: redis
     version: 18.4.0
     # repository: https://charts.bitnami.com/bitnami

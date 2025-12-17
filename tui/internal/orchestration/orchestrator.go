@@ -34,8 +34,6 @@ type Orchestrator interface {
 	Environment() []string
 	GetExecCmd(string, []string) (exec.Cmd, error)
 	GetValkeyName() string
-	GetMinioName() (string, error)
-	ExecuteMinioCommand([]string) error
 	GetAPIBaseURL() (string, error)
 	Migrate(activeVersion *semver.Version) error
 	SslManagement
@@ -50,7 +48,7 @@ type valuesData struct {
 	VectorContainer          string `default:"deltafi/vector:0.51.1-alpine-0"`
 	DozzleContainer          string `default:"amir20/dozzle:v8.14.10"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
-	MinioContainer           string `default:"deltafi/minio:RELEASE.2025-10-15T17-29-55Z-2"`
+	S3ProxyContainer         string `default:"deltafi/s3proxy:2.9.0-0"`
 	NginxContainer           string `default:"deltafi/nginx:1.29.3-alpine3.22-1"`
 	PromtailContainer        string `default:"grafana/promtail:3.6.2"`
 	ValkeyContainer          string `default:"deltafi/valkey:9.0.0-1"`

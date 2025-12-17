@@ -1,5 +1,5 @@
-{{- if .Values.enable.minio -}}
-# Deploy a node-fastdelete instance per node for minio content cleanup
+{{- if include "localObjectStorageEnabled" . -}}
+# Deploy a node-fastdelete instance per node for local object storage cleanup
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

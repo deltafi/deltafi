@@ -117,11 +117,6 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
       - [list](#properties-list)
       - [get](#properties-get)
       - [set](#properties-set)
-    - [minio](#minio)
-      - [cli](#minio-cli)
-      - [exec](#minio-exec)
-      - [mc](#minio-mc)
-      - [watch](#minio-watch)
     - [valkey](#valkey)
       - [cli](#valkey-cli)
       - [latency](#valkey-latency)
@@ -561,26 +556,6 @@ Manage DeltaFi system properties.
 - `view`: Interactive properties viewer and editor
   ```bash
   deltafi properties view
-  ```
-
-#### `minio`
-Command line access to the running DeltaFi MinIO instance.
-
-- `cli`: Start an interactive MinIO TUI session
-  ```bash
-  deltafi minio cli
-  ```
-- `exec`: Execute MinIO TUI commands
-  ```bash
-  deltafi minio exec <commands...>
-  ```
-- `mc`: Execute a MinIO TUI command
-  ```bash
-  deltafi minio mc <command>
-  ```
-- `watch`: Watch a MinIO bucket
-  ```bash
-  deltafi minio watch [bucket]
   ```
 
 #### `valkey`

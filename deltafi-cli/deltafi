@@ -176,7 +176,6 @@ Commands:
   load-integration-test         load an integration test into the system
   load-policies                 load delete policies from a JSON file
   load-system-plans             load flow plans and variables for the system-plugin
-  minio-cli                     launch the minio CLI
   performance-test              run performance tests against DeltaFi
   plugin-init                   create a new plugin project
   postgres-cli                  launch the Postgres CLI
@@ -283,9 +282,6 @@ case "$1" in
     ;;
   load-system-plans)
     "$DELTAFICLI_WORKDIR/commands/load-system-plans" "$@"
-    ;;
-  minio-cli)
-    "$DELTAFICLI_WORKDIR/commands/minio-cli" "$@"
     ;;
   performance-test)
     BUNDLE_GEMFILE=$DELTAFICLI_WORKDIR/Gemfile bundle exec "$DELTAFICLI_WORKDIR/commands/performance-test" "$@"
