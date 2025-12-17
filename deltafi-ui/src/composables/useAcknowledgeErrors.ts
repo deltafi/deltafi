@@ -18,6 +18,7 @@
 
 import { ref } from 'vue'
 import useGraphQL from './useGraphQL'
+import { EnumType } from "json-to-graphql-query"
 
 export default function useAcknowledgeErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
@@ -39,5 +40,40 @@ export default function useAcknowledgeErrors() {
     data.value = response.value.data;
   };
 
-  return { data, loading, loaded, post, errors };
+  const postByFlow = async (flowType: string, flowName: string, reason: string, limit: number = 1000) => {
+    const query = {
+      acknowledgeByFlow: {
+        __args: {
+          flowType: new EnumType(flowType),
+          flowName: flowName,
+          reason: reason,
+          limit: limit
+        },
+        did: true,
+        success: true,
+        error: true
+      },
+    };
+    await queryGraphQL(query, "acknowledgeByFlow", "mutation");
+    return response.value.data;
+  };
+
+  const postByMessage = async (errorCause: string, reason: string, limit: number = 1000) => {
+    const query = {
+      acknowledgeByMessage: {
+        __args: {
+          errorCause: errorCause,
+          reason: reason,
+          limit: limit
+        },
+        did: true,
+        success: true,
+        error: true
+      },
+    };
+    await queryGraphQL(query, "acknowledgeByMessage", "mutation");
+    return response.value.data;
+  };
+
+  return { data, loading, loaded, post, postByFlow, postByMessage, errors };
 }

@@ -171,6 +171,43 @@ class DeltaFileTest {
     }
 
     @Test
+    void testRetryErrorsWithNullFlowAndAction() {
+        OffsetDateTime now = OffsetDateTime.now();
+        Action action1 = Action.builder()
+                .name("action1")
+                .type(ActionType.TRANSFORM)
+                .state(ActionState.ERROR)
+                .build();
+        DeltaFileFlow flow1 = DeltaFileFlow.builder()
+                .flowDefinition(FlowDefinition.builder().name("flow1").build())
+                .actions(new ArrayList<>(List.of(action1)))
+                .build();
+        Action action2 = Action.builder()
+                .name("action2")
+                .type(ActionType.TRANSFORM)
+                .state(ActionState.ERROR)
+                .build();
+        DeltaFileFlow flow2 = DeltaFileFlow.builder()
+                .flowDefinition(FlowDefinition.builder().name("flow2").build())
+                .actions(new ArrayList<>(List.of(action2)))
+                .build();
+
+        DeltaFile deltaFile = DeltaFile.builder()
+                .flows(new LinkedHashSet<>(List.of(flow1, flow2)))
+                .build();
+
+        // null flow and action should match all errored flows/actions
+        List<DeltaFileFlow> retried = deltaFile.resumeErrors(List.of(
+                new ResumeMetadata(null, null, Map.of("key", "value"), List.of())), false, now);
+
+        assertEquals(2, retried.size());
+        assertEquals(ActionState.RETRIED, action1.getState());
+        assertEquals(Map.of("key", "value"), action1.getMetadata());
+        assertEquals(ActionState.RETRIED, action2.getState());
+        assertEquals(Map.of("key", "value"), action2.getMetadata());
+    }
+
+    @Test
     void testRecalculateBytes() {
         UUID uuid1 = UUID.randomUUID();
         UUID uuid2 = UUID.randomUUID();

@@ -230,6 +230,20 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileAcknowledge
+  public List<AcknowledgeResult> acknowledgeByFlow(@InputArgument FlowType flowType, @InputArgument String flowName, @InputArgument String reason, @InputArgument Integer limit) {
+    auditLogger.audit("acknowledging deltaFiles by flow {} {}", flowType, flowName);
+    return deltaFilesService.acknowledgeByFlow(flowType, flowName, reason, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileAcknowledge
+  public List<AcknowledgeResult> acknowledgeByMessage(@InputArgument String errorCause, @InputArgument String reason, @InputArgument Integer limit) {
+    auditLogger.audit("acknowledging deltaFiles by error cause");
+    return deltaFilesService.acknowledgeByMessage(errorCause, reason, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
   @NeedsPermission.DeltaFileCancel
   public List<CancelResult> cancel(@InputArgument List<UUID> dids) {
     auditLogger.audit("canceled {} deltaFiles", dids.size());
@@ -310,6 +324,20 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileMetadataWrite
+  public int annotateByFlow(@InputArgument FlowType flowType, @InputArgument String flowName, List<KeyValue> annotations, boolean allowOverwrites, @InputArgument Integer limit) {
+    auditLogger.audit("annotated deltaFiles by flow {} {} with {}", flowType, flowName, CoreAuditLogger.listToString(annotations));
+    return deltaFilesService.annotateByFlow(flowType, flowName, KeyValueConverter.convertKeyValues(annotations), allowOverwrites, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileMetadataWrite
+  public int annotateByMessage(@InputArgument String errorCause, List<KeyValue> annotations, boolean allowOverwrites, @InputArgument Integer limit) {
+    auditLogger.audit("annotated deltaFiles by error cause with {}", CoreAuditLogger.listToString(annotations));
+    return deltaFilesService.annotateByMessage(errorCause, KeyValueConverter.convertKeyValues(annotations), allowOverwrites, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
   @NeedsPermission.ResumePolicyApply
   public Result applyResumePolicies(@InputArgument List<String> names) {
     auditLogger.audit("applied resume policies: {}", String.join(", ", names));
@@ -325,14 +353,14 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileResume
-  public List<RetryResult> resumeByFlow(@InputArgument FlowType flowType, @InputArgument String name, @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Boolean includeAcknowledged) {
-    return deltaFilesService.resumeByFlowTypeAndName(flowType, name, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged));
+  public List<RetryResult> resumeByFlow(@InputArgument FlowType flowType, @InputArgument String name, @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Boolean includeAcknowledged, @InputArgument Integer limit) {
+    return deltaFilesService.resumeByFlowTypeAndName(flowType, name, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged), limit != null ? limit : 1000);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileResume
-  public List<RetryResult> resumeByErrorCause(@InputArgument String errorCause, @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Boolean includeAcknowledged) {
-    return deltaFilesService.resumeByErrorCause(errorCause, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged));
+  public List<RetryResult> resumeByErrorCause(@InputArgument String errorCause, @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Boolean includeAcknowledged, @InputArgument Integer limit) {
+    return deltaFilesService.resumeByErrorCause(errorCause, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged), limit != null ? limit : 1000);
   }
 
   @DgsMutation
@@ -344,12 +372,14 @@ public class DeltaFilesDatafetcher {
     return deltaFilesService.taskTimedDataSource(name, memo, useMemo);
   }
 
+  @Deprecated
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
   public List<PerActionUniqueKeyValues> errorMetadataUnion(@InputArgument List<UUID> dids) {
     return deltaFilesService.errorMetadataUnion(dids);
   }
 
+  @Deprecated
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
   public List<UniqueKeyValues> sourceMetadataUnion(@InputArgument List<UUID> dids) {

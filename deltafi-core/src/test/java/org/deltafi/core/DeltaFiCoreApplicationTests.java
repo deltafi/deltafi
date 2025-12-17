@@ -2871,6 +2871,98 @@ class DeltaFiCoreApplicationTests {
 		assertThat(deltaFileRepo.findForResumeByErrorCause("transform failed", true, 1)).hasSize(1);
 	}
 
+	@Test
+	void testAcknowledgeByFlow() {
+		DeltaFile shouldAck = makeErroredDeltaFile();
+		DeltaFile alreadyAcked = makeErroredDeltaFile();
+		alreadyAcked.lastFlow().setErrorAcknowledged(NOW);
+
+		DeltaFile differentFlowName = makeErroredDeltaFile();
+		differentFlowName.lastFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("differentFlowName", differentFlowName.lastFlow().getFlowDefinition().getType()));
+
+		DeltaFile differentFlowType = makeEgressErroredDeltaFile();
+
+		deltaFileRepo.insertBatch(List.of(shouldAck, alreadyAcked, differentFlowName, differentFlowType), 1000);
+
+		var results = deltaFilesService.acknowledgeByFlow(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME, "test reason", 1000);
+
+		assertThat(results).hasSize(1);
+		assertThat(results.getFirst().getDid()).isEqualTo(shouldAck.getDid());
+		assertThat(results.getFirst().getSuccess()).isTrue();
+
+		DeltaFile updated = deltaFilesService.getDeltaFile(shouldAck.getDid());
+		assertThat(updated.lastFlow().getErrorAcknowledged()).isNotNull();
+		assertThat(updated.lastFlow().getErrorAcknowledgedReason()).isEqualTo("test reason");
+	}
+
+	@Test
+	void testAcknowledgeByMessage() {
+		DeltaFile shouldAck = makeErroredDeltaFile();
+		DeltaFile alreadyAcked = makeErroredDeltaFile();
+		alreadyAcked.lastFlow().setErrorAcknowledged(NOW);
+
+		DeltaFile differentCause = makeErroredDeltaFile();
+		differentCause.lastFlow().setErrorOrFilterCause("different error cause");
+
+		deltaFileRepo.insertBatch(List.of(shouldAck, alreadyAcked, differentCause), 1000);
+
+		var results = deltaFilesService.acknowledgeByMessage("transform failed", "test reason", 1000);
+
+		assertThat(results).hasSize(1);
+		assertThat(results.getFirst().getDid()).isEqualTo(shouldAck.getDid());
+		assertThat(results.getFirst().getSuccess()).isTrue();
+
+		DeltaFile updated = deltaFilesService.getDeltaFile(shouldAck.getDid());
+		assertThat(updated.lastFlow().getErrorAcknowledged()).isNotNull();
+		assertThat(updated.lastFlow().getErrorAcknowledgedReason()).isEqualTo("test reason");
+	}
+
+	@Test
+	void testAnnotateByFlow() {
+		DeltaFile shouldAnnotate = makeErroredDeltaFile();
+		DeltaFile alsoAnnotate = makeErroredDeltaFile();
+		alsoAnnotate.lastFlow().setErrorAcknowledged(NOW);
+
+		DeltaFile differentFlowName = makeErroredDeltaFile();
+		differentFlowName.lastFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("differentFlowName", differentFlowName.lastFlow().getFlowDefinition().getType()));
+
+		deltaFileRepo.insertBatch(List.of(shouldAnnotate, alsoAnnotate, differentFlowName), 1000);
+
+		deltaFilesService.annotateByFlow(FlowType.TRANSFORM, TRANSFORM_FLOW_NAME, Map.of("key", "value"), false, 1000);
+
+		// Both matching files should be annotated (includeAcknowledged=true for annotate)
+		DeltaFile updated1 = deltaFilesService.getDeltaFile(shouldAnnotate.getDid());
+		DeltaFile updated2 = deltaFilesService.getDeltaFile(alsoAnnotate.getDid());
+		DeltaFile notUpdated = deltaFilesService.getDeltaFile(differentFlowName.getDid());
+
+		assertThat(Annotation.toMap(updated1.getAnnotations()).get("key")).isEqualTo("value");
+		assertThat(Annotation.toMap(updated2.getAnnotations()).get("key")).isEqualTo("value");
+		assertThat(Annotation.toMap(notUpdated.getAnnotations()).get("key")).isNull();
+	}
+
+	@Test
+	void testAnnotateByMessage() {
+		DeltaFile shouldAnnotate = makeErroredDeltaFile();
+		DeltaFile alsoAnnotate = makeErroredDeltaFile();
+		alsoAnnotate.lastFlow().setErrorAcknowledged(NOW);
+
+		DeltaFile differentCause = makeErroredDeltaFile();
+		differentCause.lastFlow().setErrorOrFilterCause("different error cause");
+
+		deltaFileRepo.insertBatch(List.of(shouldAnnotate, alsoAnnotate, differentCause), 1000);
+
+		deltaFilesService.annotateByMessage("transform failed", Map.of("key", "value"), false, 1000);
+
+		// Both matching files should be annotated (includeAcknowledged=true for annotate)
+		DeltaFile updated1 = deltaFilesService.getDeltaFile(shouldAnnotate.getDid());
+		DeltaFile updated2 = deltaFilesService.getDeltaFile(alsoAnnotate.getDid());
+		DeltaFile notUpdated = deltaFilesService.getDeltaFile(differentCause.getDid());
+
+		assertThat(Annotation.toMap(updated1.getAnnotations()).get("key")).isEqualTo("value");
+		assertThat(Annotation.toMap(updated2.getAnnotations()).get("key")).isEqualTo("value");
+		assertThat(Annotation.toMap(notUpdated.getAnnotations()).get("key")).isNull();
+	}
+
 	private DeltaFile makeErroredDeltaFile() {
 		return makeFlowsUnique(fullFlowExemplarService.postTransformHadErrorDeltaFile(UUID.randomUUID()));
 	}
@@ -4198,9 +4290,6 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, firstPage.countPerFlow().getFirst().getCount());
 		assertEquals(1, firstPage.countPerFlow().get(1).getCount());
 
-		assertTrue(firstPage.countPerFlow().getFirst().getDids().containsAll(List.of(deltaFile1.getDid(), deltaFile4.getDid())));
-		assertTrue(firstPage.countPerFlow().get(1).getDids().contains(deltaFile3.getDid()));
-
 		SummaryByFlow secondPage = deltaFilesService.getErrorSummaryByFlow(
 				2, 2, null, null, null);
 
@@ -4211,7 +4300,6 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals("flow3", secondPage.countPerFlow().getFirst().getFlow());
 		assertEquals(1, secondPage.countPerFlow().getFirst().getCount());
-		assertTrue(secondPage.countPerFlow().getFirst().getDids().contains(deltaFile5.getDid()));
 
 		DeltaFile deltaFile6 = utilService.buildDeltaFile(UUID.randomUUID(), "flow3", DeltaFileStage.ERROR, now, minusTwo);
 		deltaFileRepo.save(deltaFile6);
@@ -4318,7 +4406,6 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, resultsAck.countPerFlow().size());
 		assertEquals(1, resultsAck.countPerFlow().getFirst().getCount());
 		assertEquals("f3", resultsAck.countPerFlow().getFirst().getFlow());
-		assertTrue(resultsAck.countPerFlow().getFirst().getDids().contains(DIDS.get(5)));
 
 		ErrorSummaryFilter filterNoAck = ErrorSummaryFilter.builder()
 				.errorAcknowledged(false)
@@ -4332,7 +4419,6 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, resultsNoAck.countPerFlow().size());
 		assertEquals(2, resultsNoAck.countPerFlow().getFirst().getCount());
 		assertEquals("f3", resultsNoAck.countPerFlow().getFirst().getFlow());
-		assertTrue(resultsNoAck.countPerFlow().getFirst().getDids().containsAll(List.of(DIDS.get(6), DIDS.get(7))));
 
 		ErrorSummaryFilter filterFlowOnly = ErrorSummaryFilter.builder()
 				.flow("f3")
@@ -4345,7 +4431,6 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, resultsForFlow.countPerFlow().size());
 		assertEquals(3, resultsForFlow.countPerFlow().getFirst().getCount());
 		assertEquals("f3", resultsForFlow.countPerFlow().getFirst().getFlow());
-		assertTrue(resultsForFlow.countPerFlow().getFirst().getDids().containsAll(List.of(DIDS.get(5), DIDS.get(6), DIDS.get(7))));
 	}
 
 	@Test
@@ -4401,20 +4486,19 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0, actual.offset());
 		assertEquals(2, actual.totalCount());
 		assertEquals(2, actual.countPerFlow().size());
-		List<UUID> expectedDids = List.of(dids.getFirst());
 		CountPerFlow message0 = actual.countPerFlow().getFirst();
 		assertThat(message0.getFlow()).isEqualTo(TIMED_DATA_SOURCE_NAME);
-		assertThat(message0.getDids()).isEqualTo(expectedDids);
+		assertThat(message0.getDids()).isNull();
 		CountPerFlow message1 = actual.countPerFlow().getLast();
 		assertThat(message1.getFlow()).isEqualTo(DATA_SINK_FLOW_NAME);
-		assertThat(message1.getDids()).isEqualTo(expectedDids);
+		assertThat(message1.getDids()).isNull();
 	}
 
 	@Test
 	void testGetFilteredSummaryByMessageDatafetcher() {
 		clearForFlowTests();
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
-		List<UUID> dids = loadFilteredDeltaFiles(plusTwo);
+		loadFilteredDeltaFiles(plusTwo);
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new FilteredSummaryByMessageGraphQLQuery.Builder()
@@ -4435,12 +4519,11 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0, actual.offset());
 		assertEquals(2, actual.totalCount());
 		assertEquals(2, actual.countPerMessage().size());
-		List<UUID> expectedDids = List.of(dids.getFirst());
 		CountPerMessage message0 = actual.countPerMessage().getFirst();
 		CountPerMessage message1 = actual.countPerMessage().get(1);
-		assertThat(message0.getDids()).isEqualTo(expectedDids);
+		assertThat(message0.getDids()).isNull();
 		assertThat(Stream.of(message0.getMessage(), message1.getMessage()).sorted().toList()).isEqualTo(List.of("filtered one", "filtered two"));
-		assertThat(message1.getDids()).isEqualTo(expectedDids);
+		assertThat(message1.getDids()).isNull();
 	}
 
 	private List<UUID> loadFilteredDeltaFiles(OffsetDateTime plusTwo) {
@@ -4501,13 +4584,13 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(7, fullSummary.totalCount());
 		assertEquals(7, fullSummary.countPerMessage().size());
 
-		matchesCounterPerMessage(fullSummary, 0, "causeY", "extraFlow", List.of(DIDS.get(2)));
-		matchesCounterPerMessage(fullSummary, 1, "causeA", "f1", List.of(DIDS.get(3), DIDS.get(4)));
-		matchesCounterPerMessage(fullSummary, 2, "causeX", "f1", List.of(DIDS.get(1)));
-		matchesCounterPerMessage(fullSummary, 3, "causeZ", "f1", List.of(DIDS.get(8)));
-		matchesCounterPerMessage(fullSummary, 4, "causeX", "f2", List.of(DIDS.get(0), DIDS.get(2)));
-		matchesCounterPerMessage(fullSummary, 5, "causeZ", "f2", List.of(DIDS.get(9)));
-		matchesCounterPerMessage(fullSummary, 6, "causeZ", "f3", List.of(DIDS.get(5), DIDS.get(6), DIDS.get(7)));
+		matchesCounterPerMessage(fullSummary, 0, "causeY", "extraFlow", 1);
+		matchesCounterPerMessage(fullSummary, 1, "causeA", "f1", 2);
+		matchesCounterPerMessage(fullSummary, 2, "causeX", "f1", 1);
+		matchesCounterPerMessage(fullSummary, 3, "causeZ", "f1", 1);
+		matchesCounterPerMessage(fullSummary, 4, "causeX", "f2", 2);
+		matchesCounterPerMessage(fullSummary, 5, "causeZ", "f2", 1);
+		matchesCounterPerMessage(fullSummary, 6, "causeZ", "f3", 3);
 	}
 
 	@Test
@@ -4525,10 +4608,10 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(7, orderByFlow.totalCount());
 		assertEquals(4, orderByFlow.countPerMessage().size());
 
-		matchesCounterPerMessage(orderByFlow, 0, "causeY", "extraFlow", List.of(DIDS.get(2)));
-		matchesCounterPerMessage(orderByFlow, 1, "causeA", "f1", List.of(DIDS.get(3), DIDS.get(4)));
-		matchesCounterPerMessage(orderByFlow, 2, "causeX", "f1", List.of(DIDS.get(1)));
-		matchesCounterPerMessage(orderByFlow, 3, "causeZ", "f1", List.of(DIDS.get(8)));
+		matchesCounterPerMessage(orderByFlow, 0, "causeY", "extraFlow", 1);
+		matchesCounterPerMessage(orderByFlow, 1, "causeA", "f1", 2);
+		matchesCounterPerMessage(orderByFlow, 2, "causeX", "f1", 1);
+		matchesCounterPerMessage(orderByFlow, 3, "causeZ", "f1", 1);
 
 		SummaryByFlowAndMessage orderByCountDesc = deltaFilesService.getErrorSummaryByMessage(
 				0, 4, null, DeltaFileDirection.DESC, SummaryByMessageSort.COUNT);
@@ -4538,10 +4621,10 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(7, orderByCountDesc.totalCount());
 		assertEquals(4, orderByCountDesc.countPerMessage().size());
 
-		matchesCounterPerMessage(orderByCountDesc, 0, "causeZ", "f3", List.of(DIDS.get(6), DIDS.get(5), DIDS.get(7)));
-		matchesCounterPerMessage(orderByCountDesc, 1, "causeX", "f2", List.of(DIDS.get(0), DIDS.get(2)));
-		matchesCounterPerMessage(orderByCountDesc, 2, "causeA", "f1", List.of(DIDS.get(4), DIDS.get(3)));
-		matchesCounterPerMessage(orderByCountDesc, 3, "causeZ", "f2", List.of(DIDS.get(9)));
+		matchesCounterPerMessage(orderByCountDesc, 0, "causeZ", "f3", 3);
+		matchesCounterPerMessage(orderByCountDesc, 1, "causeX", "f2", 2);
+		matchesCounterPerMessage(orderByCountDesc, 2, "causeA", "f1", 2);
+		matchesCounterPerMessage(orderByCountDesc, 3, "causeZ", "f2", 1);
 	}
 
 	@Test
@@ -4564,12 +4647,12 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(6, resultsBefore.countPerMessage().size());
 
 		// no 'causeA' entry
-		matchesCounterPerMessage(resultsBefore, 0, "causeY", "extraFlow", List.of(DIDS.get(2)));
-		matchesCounterPerMessage(resultsBefore, 1, "causeX", "f1", List.of(DIDS.get(1)));
-		matchesCounterPerMessage(resultsBefore, 2, "causeZ", "f1", List.of(DIDS.get(8)));
-		matchesCounterPerMessage(resultsBefore, 3, "causeX", "f2", List.of(DIDS.get(0), DIDS.get(2)));
-		matchesCounterPerMessage(resultsBefore, 4, "causeZ", "f2", List.of(DIDS.get(9)));
-		matchesCounterPerMessage(resultsBefore, 5, "causeZ", "f3", List.of(DIDS.get(5), DIDS.get(6), DIDS.get(7)));
+		matchesCounterPerMessage(resultsBefore, 0, "causeY", "extraFlow", 1);
+		matchesCounterPerMessage(resultsBefore, 1, "causeX", "f1", 1);
+		matchesCounterPerMessage(resultsBefore, 2, "causeZ", "f1", 1);
+		matchesCounterPerMessage(resultsBefore, 3, "causeX", "f2", 2);
+		matchesCounterPerMessage(resultsBefore, 4, "causeZ", "f2", 1);
+		matchesCounterPerMessage(resultsBefore, 5, "causeZ", "f3", 3);
 
 		ErrorSummaryFilter filterAfter = ErrorSummaryFilter.builder()
 				.modifiedAfter(plusOne).build();
@@ -4581,7 +4664,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, resultAfter.count());
 		assertEquals(1, resultAfter.totalCount());
 		assertEquals(1, resultAfter.countPerMessage().size());
-		matchesCounterPerMessage(resultAfter, 0, "causeA", "f1", List.of(DIDS.get(3), DIDS.get(4)));
+		matchesCounterPerMessage(resultAfter, 0, "causeA", "f1", 2);
 	}
 
 	@Test
@@ -4602,8 +4685,8 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, firstPage.count());
 		assertEquals(3, firstPage.totalCount());
 		assertEquals(2, firstPage.countPerMessage().size());
-		matchesCounterPerMessage(firstPage, 0, "causeZ", "f1", List.of(DIDS.get(8)));
-		matchesCounterPerMessage(firstPage, 1, "causeX", "f1", List.of(DIDS.get(1)));
+		matchesCounterPerMessage(firstPage, 0, "causeZ", "f1", 1);
+		matchesCounterPerMessage(firstPage, 1, "causeX", "f1", 1);
 
 		SummaryByFlowAndMessage pageTwo = deltaFilesService.getErrorSummaryByMessage(
 				2, 2, filter, DeltaFileDirection.DESC, null);
@@ -4612,7 +4695,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, pageTwo.count());
 		assertEquals(3, pageTwo.totalCount());
 		assertEquals(1, pageTwo.countPerMessage().size());
-		matchesCounterPerMessage(pageTwo, 0, "causeA", "f1", List.of(DIDS.get(3), DIDS.get(4)));
+		matchesCounterPerMessage(pageTwo, 0, "causeA", "f1", 2);
 
 		SummaryByFlowAndMessage invalidPage = deltaFilesService.getErrorSummaryByMessage(
 				4, 2, filter, DeltaFileDirection.DESC, null);

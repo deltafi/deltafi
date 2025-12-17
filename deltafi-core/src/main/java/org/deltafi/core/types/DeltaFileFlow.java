@@ -379,7 +379,7 @@ public class DeltaFileFlow {
     }
 
     private boolean metadataFlowMatches(ResumeMetadata resumeMetadata) {
-        return resumeMetadata.getFlow().equals(flowDefinition.getName());
+        return resumeMetadata.getFlow() == null || resumeMetadata.getFlow().equals(flowDefinition.getName());
     }
 
     public boolean hasActionInState(ActionState actionState) {

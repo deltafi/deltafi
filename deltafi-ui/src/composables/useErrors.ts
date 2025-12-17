@@ -60,7 +60,6 @@ export default function useErrors() {
           offset: offSet,
           filter: {
             ...flowFilters,
-            stage: new EnumType("ERROR"),
             errorAcknowledged: showAcknowledged,
             errorCause: errorCause,
             filteredCause: filteredCause,

@@ -25,18 +25,25 @@
       <div v-if="!displayBatchingDialog" class="metadata-body">Replay {{ pluralized }}?</div>
       <div v-else-if="displayBatchingDialog">
         <div>
-          <p>Replay in progress. Please do not refresh the page!</p>
+          <p v-if="!stopped">Replay in progress.<span v-if="props.did.length > 1"> If you navigate away, the operation will stop after the current batch.</span></p>
+          <p v-else>{{ props.did.length > 1 ? 'Completing current batch...' : 'Completing...' }}</p>
           <ProgressBar :value="batchCompleteValue" />
+          <p class="mt-2 text-center">{{ totalProcessedCount.toLocaleString() }} / {{ expectedTotalCount.toLocaleString() }} DeltaFiles</p>
         </div>
       </div>
       <template #footer>
-        <Button icon="fas fa-database fa-fw" label="Modify Metadata" class="p-button-secondary p-button-outlined" @click="showMetadataDialog" />
-        <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeConfirmDialog" />
-        <Button label="Replay" icon="fas fa-play" @click="replayClean" />
+        <template v-if="!displayBatchingDialog">
+          <Button icon="fas fa-database fa-fw" label="Modify Metadata" class="p-button-secondary p-button-outlined" @click="showMetadataDialog" />
+          <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeConfirmDialog" />
+          <Button label="Replay" icon="fas fa-play" @click="replayClean" />
+        </template>
+        <template v-else>
+          <Button label="Stop" icon="pi pi-stop" class="p-button-danger" :disabled="stopped" @click="stopBatching" />
+        </template>
       </template>
     </Dialog>
   </div>
-  <DialogTemplate ref="modifyMetadataDialog" component-name="ReplayUpdateMetadataDialog" header="Modify Metadata" dialog-width="30vw" :did="props.did" @refresh-page="$emit('refreshPage')" />
+  <DialogTemplate ref="modifyMetadataDialog" component-name="ReplayUpdateMetadataDialog" header="Modify Metadata" dialog-width="30vw" model-position="center" :did="props.did" @submit-with-metadata="handleMetadataSubmit" @refresh-and-close="closeMetadataDialogOnly" />
 </template>
 
 <script setup>
@@ -56,8 +63,11 @@ const emit = defineEmits(["refreshPage"]);
 const { pluralize } = useUtilFunctions();
 const maxSuccessDisplay = 10;
 const displayBatchingDialog = ref(false);
-const notify = useNotifications();
 const batchCompleteValue = ref(0);
+const totalProcessedCount = ref(0);
+const expectedTotalCount = ref(0);
+const stopped = ref(false);
+const notify = useNotifications();
 const props = defineProps({
   did: {
     type: Array,
@@ -83,51 +93,68 @@ const showConfirmDialog = async () => {
 
 const closeConfirmDialog = () => {
   confirmDialogVisible.value = false;
+  emit("refreshPage");
+};
+
+const closeMetadataDialogOnly = () => {
+  // Just close the metadata dialog without refreshing
+};
+
+const stopBatching = () => {
+  stopped.value = true;
 };
 
 const replayClean = async () => {
-  await requestReplay();
-  closeConfirmDialog();
+  await requestReplay([], []);
 };
 
-const requestReplay = async () => {
-  let response;
+const handleMetadataSubmit = async (metadata) => {
+  // Show the progress dialog in this component
+  confirmDialogVisible.value = true;
+  await requestReplay(metadata.removeMetadataKeys, metadata.replaceMetadata);
+};
+
+const requestReplay = async (removeMetadataKeys, replaceMetadata) => {
   const batchedDids = getBatchDids(props.did);
-  let success = false;
-  let completedBatches = 0;
+  let totalProcessed = 0;
+  const expectedTotal = props.did.length;
+
   try {
     displayBatchingDialog.value = true;
     batchCompleteValue.value = 0;
-    const newDids = new Array();
+    totalProcessedCount.value = 0;
+    expectedTotalCount.value = expectedTotal;
+    stopped.value = false;
+
+    const newDids = [];
     for (const dids of batchedDids) {
-      response = await replay(dids, [], []);
+      if (stopped.value) break;
+
+      const response = await replay(dids, removeMetadataKeys, replaceMetadata);
       if (response.value.data !== undefined && response.value.data !== null) {
-        const successReplayBatch = new Array();
         for (const replayStatus of response.value.data.replay) {
           if (replayStatus.success) {
-            successReplayBatch.push(replayStatus);
             newDids.push(replayStatus.did);
           } else {
             notify.error(`Replay request failed for ${replayStatus.did}`, replayStatus.error);
           }
         }
-        if (successReplayBatch.length > 0) {
-          success = true;
-        }
       }
-      completedBatches += dids.length;
-      batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
+      totalProcessed += dids.length;
+      totalProcessedCount.value = totalProcessed;
+      batchCompleteValue.value = Math.round((totalProcessed / expectedTotal) * 100);
     }
-    displayBatchingDialog.value = false;
-    batchCompleteValue.value = 0;
-    if (success) {
+
+    if (newDids.length > 0) {
       const pluralized = pluralize(newDids.length, "DeltaFile");
       const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+      if (newDids.length > maxSuccessDisplay) links.push("...");
       notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
-      emit("refreshPage");
     }
-  } catch (error) {
+  } finally {
     displayBatchingDialog.value = false;
+    batchCompleteValue.value = 0;
+    closeConfirmDialog();
   }
 };
 

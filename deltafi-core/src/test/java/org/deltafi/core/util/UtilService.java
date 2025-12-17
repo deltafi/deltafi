@@ -324,12 +324,10 @@ public class UtilService {
                 .build();
     }
 
-    public static void matchesCounterPerMessage(SummaryByFlowAndMessage result, int index, String cause, String flow, List<UUID> dids) {
+    public static void matchesCounterPerMessage(SummaryByFlowAndMessage result, int index, String cause, String flow, int expectedCount) {
         assertEquals(cause, result.countPerMessage().get(index).getMessage());
         assertEquals(flow, result.countPerMessage().get(index).getFlow());
-        assertEquals(dids.size(), result.countPerMessage().get(index).getCount());
-        assertEquals(dids.size(), result.countPerMessage().get(index).getDids().size());
-        assertTrue(result.countPerMessage().get(index).getDids().containsAll(dids));
+        assertEquals(expectedCount, result.countPerMessage().get(index).getCount());
     }
 
     private static OffsetDateTime now() {

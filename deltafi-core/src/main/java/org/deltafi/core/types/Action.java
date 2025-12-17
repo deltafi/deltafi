@@ -221,7 +221,7 @@ public class Action {
   }
 
   private boolean metadataActionMatches(ResumeMetadata resumeMetadata) {
-    return  resumeMetadata.getAction().equals(name);
+    return resumeMetadata.getAction() == null || resumeMetadata.getAction().equals(name);
   }
 
   public boolean acknowledgeError(OffsetDateTime now) {

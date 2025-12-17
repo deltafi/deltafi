@@ -41,7 +41,7 @@
         },
       }"
     >
-      <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" @refresh-and-close="refreshAndClose" />
+      <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" @refresh-and-close="refreshAndClose" @submit-with-metadata="submitWithMetadata" />
     </Dialog>
   </div>
 </template>
@@ -52,7 +52,7 @@ import Dialog from "primevue/dialog";
 import _ from "lodash";
 
 const components = import.meta.glob("@/components/**/*.vue");
-const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate", "refreshPage"]);
+const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate", "refreshPage", "submitWithMetadata"]);
 const hasPermission = inject("hasPermission");
 const dialogTemplate = ref(null);
 
@@ -114,6 +114,11 @@ const showDialog = async () => {
 
 const refreshAndClose = () => {
   emit("refreshPage");
+  closeDialog();
+};
+
+const submitWithMetadata = (metadata) => {
+  emit("submitWithMetadata", metadata);
   closeDialog();
 };
 

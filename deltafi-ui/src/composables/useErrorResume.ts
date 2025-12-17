@@ -37,13 +37,14 @@ export default function useErrorResume() {
     return sendGraphQLQuery(query, "errorsResume", "mutation");
   };
 
-  const resumeByErrorCause = async (errorCause: string, metadata: Array<Object> = [], includeAcknowledged: boolean = false) => {
+  const resumeByErrorCause = async (errorCause: string, metadata: Array<Object> = [], includeAcknowledged: boolean = false, limit: number = 1000) => {
     const query = {
       resumeByErrorCause: {
         __args: {
           errorCause: errorCause,
           resumeMetadata: metadata,
           includeAcknowledged: includeAcknowledged,
+          limit: limit,
         },
         did: true,
         success: true,
@@ -53,7 +54,7 @@ export default function useErrorResume() {
     return sendGraphQLQuery(query, "resumeByErrorCause", "mutation");
   };
 
-  const resumeByFlow = async (flowType: string, name: string, metadata: Array<Object> = [], includeAcknowledged: boolean = false) => {
+  const resumeByFlow = async (flowType: string, name: string, metadata: Array<Object> = [], includeAcknowledged: boolean = false, limit: number = 1000) => {
     const query = {
       resumeByFlow: {
         __args: {
@@ -61,6 +62,7 @@ export default function useErrorResume() {
           name: name,
           resumeMetadata: metadata,
           includeAcknowledged: includeAcknowledged,
+          limit: limit,
         },
         did: true,
         success: true,

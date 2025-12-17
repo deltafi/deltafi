@@ -18,44 +18,60 @@
 
 <template>
   <div class="update-metadata-dialog">
-    <div v-if="modifiedMetadata !== 'undefined' && metadataDialogVisible && !displayBatchingDialog" class="metadata-body">
+    <div v-if="metadataDialogVisible" class="metadata-body">
       <Message v-if="hasDuplicateKeys" severity="error" :closable="false"> No duplicate keys permitted </Message>
-      <Message v-if="modifiedMetadata.length == 0" severity="info" :closable="false"> No metadata to display </Message>
-      <CollapsiblePanel v-for="actions in modifiedMetadata" :key="actions" :header="actions.flow + '.' + actions.action" class="mb-3">
-        <div v-for="pairs in actions.keyVals" :key="pairs">
-          <div v-if="pairs.changed !== 'deleted'" class="row p-fluid mb-4">
-            <div class="col-5">
-              <InputText v-if="pairs.changed === 'new'" v-model="pairs.key" type="text" placeholder="Key" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
-              <InputText v-else v-model="pairs.key" type="text" placeholder="Key" disabled class="p-valid" />
-            </div>
-            <div class="col-5">
-              <InputText v-if="pairs.changed === 'multiple'" v-model="pairs.values" type="text" placeholder="Multiple values not shown" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
-              <InputText v-else v-model="pairs.values" type="text" placeholder="Value" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
-            </div>
-            <div class="col-2 text-right">
-              <Button icon="pi pi-times" @click="removeMetadataField(pairs, actions.flow, actions.action)" />
-            </div>
+
+      <!-- Batch mode: simple key/value inputs that apply to all -->
+      <template v-if="isBatchMode">
+        <Message v-if="batchMetadata.length === 0" severity="info" :closable="false">
+          Enter key/value pairs below to add or override metadata for all resumed DeltaFiles.
+        </Message>
+        <div v-for="(field, index) in batchMetadata" :key="index" class="row p-fluid mb-4">
+          <div class="col-5">
+            <InputText v-model="field.key" type="text" placeholder="Key" @change="onBatchInputChange" />
+          </div>
+          <div class="col-5">
+            <InputText v-model="field.value" type="text" placeholder="Value" />
+          </div>
+          <div class="col-2 text-right">
+            <Button icon="pi pi-times" @click="removeBatchField(index)" />
           </div>
         </div>
-        <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addMetadataField(actions.flow, actions.action)" />
-      </CollapsiblePanel>
+        <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addBatchField" />
+      </template>
+
+      <!-- Single DeltaFile mode: flow/action structure -->
+      <template v-else>
+        <Message v-if="modifiedMetadata.length === 0" severity="info" :closable="false"> No metadata to display </Message>
+        <CollapsiblePanel v-for="actions in modifiedMetadata" :key="actions" :header="actions.flow + '.' + actions.action" class="mb-3">
+          <div v-for="pairs in actions.keyVals" :key="pairs">
+            <div v-if="pairs.changed !== 'deleted'" class="row p-fluid mb-4">
+              <div class="col-5">
+                <InputText v-if="pairs.changed === 'new'" v-model="pairs.key" type="text" placeholder="Key" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
+                <InputText v-else v-model="pairs.key" type="text" placeholder="Key" disabled class="p-valid" />
+              </div>
+              <div class="col-5">
+                <InputText v-model="pairs.values" type="text" placeholder="Value" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
+              </div>
+              <div class="col-2 text-right">
+                <Button icon="pi pi-times" @click="removeMetadataField(pairs, actions.flow, actions.action)" />
+              </div>
+            </div>
+          </div>
+          <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addMetadataField(actions.flow, actions.action)" />
+        </CollapsiblePanel>
+      </template>
     </div>
     <div v-else-if="displayFetchingMetadataDialog">
       <div>
-        <p>Metadata loading in progress. Please do not refresh the page!</p>
-        <ProgressBar :value="batchCompleteValue" />
-      </div>
-    </div>
-    <div v-else-if="displayBatchingDialog">
-      <div>
-        <p>Resume in progress. Please do not refresh the page!</p>
-        <ProgressBar :value="batchCompleteValue" />
+        <p>Loading metadata...</p>
+        <ProgressBar mode="indeterminate" />
       </div>
     </div>
     <teleport v-if="isMounted && metadataDialogVisible" to="#dialogTemplate">
       <div class="p-dialog-footer">
         <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeMetadataDialog" />
-        <Button label="Resume" icon="fas fa-play" :disabled="hasDuplicateKeys" @click="submitResume" />
+        <Button label="Resume" icon="fas fa-play" :disabled="hasDuplicateKeys" @click="submitMetadata" />
       </div>
     </teleport>
   </div>
@@ -64,10 +80,7 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
-import useErrorResume from "@/composables/useErrorResume";
-import useMetadata from "@/composables/useMetadata";
-import useNotifications from "@/composables/useNotifications";
-import useUtilFunctions from "@/composables/useUtilFunctions";
+import useDeltaFiles from "@/composables/useDeltaFiles";
 import { computed, onBeforeMount, ref } from "vue";
 import { useMounted } from "@vueuse/core";
 
@@ -77,13 +90,9 @@ import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 
-const emit = defineEmits(["refreshAndClose"]);
+const emit = defineEmits(["refreshAndClose", "submitWithMetadata"]);
 const isMounted = ref(useMounted());
-const { pluralize } = useUtilFunctions();
-const displayBatchingDialog = ref(false);
 const displayFetchingMetadataDialog = ref(false);
-const notify = useNotifications();
-const batchCompleteValue = ref(0);
 const props = defineProps({
   flowInfo: {
     type: Array,
@@ -100,18 +109,23 @@ const props = defineProps({
   },
 });
 
-const did = ref(_.flatten([...new Set(_.map(props.flowInfo, "dids"))]));
+const dids = computed(() => _.flatten([...new Set(_.map(props.flowInfo, "dids"))]).filter(Boolean));
 
-const { resumeByErrorCause, resumeByFlow } = useErrorResume();
+const { getDeltaFile, data: deltaFileData } = useDeltaFiles();
 
-const { fetchAll: meta, data: batchMetadata } = useMetadata();
-
+// Single DeltaFile mode data
 const modifiedMetadata = ref([]);
-const metadataDialogVisible = ref(false);
-const confirmDialogVisible = ref(false);
-const pluralized = ref();
-const batchSize = 500;
 const allMetadata = ref([]);
+
+// Batch mode data - simple key/value pairs
+const batchMetadata = ref([]);
+
+const metadataDialogVisible = ref(false);
+
+// Batch mode when no DIDs available (by flow/by message tabs) or multiple DIDs selected
+const isBatchMode = computed(() => {
+  return dids.value.length !== 1;
+});
 
 onBeforeMount(async () => {
   displayFetchingMetadataDialog.value = true;
@@ -120,26 +134,46 @@ onBeforeMount(async () => {
 });
 
 const getAllMeta = async () => {
-  const batchedDids = getBatchDids(did.value);
-  batchCompleteValue.value = 0;
-  let completedBatches = 0;
   allMetadata.value = [];
-  for (const dids of batchedDids) {
-    await meta(dids);
-    if (batchMetadata.value.length > 0) {
-      const tmp = [...batchMetadata.value, ...allMetadata.value];
-      allMetadata.value = tmp;
-    }
-    completedBatches += dids.length;
-    batchCompleteValue.value = Math.round((completedBatches / did.value.length) * 100);
-  }
-  displayFetchingMetadataDialog.value = false;
-};
 
-const showConfirmDialog = async () => {
-  modifiedMetadata.value = [];
-  pluralized.value = pluralize(did.value.length, "DeltaFile");
-  confirmDialogVisible.value = true;
+  if (isBatchMode.value) {
+    displayFetchingMetadataDialog.value = false;
+    return;
+  }
+
+  // Single DeltaFile mode - fetch it and extract errored flow's metadata
+  const did = dids.value[0];
+  await getDeltaFile(did);
+
+  if (deltaFileData && deltaFileData.flows) {
+    // Find the first flow with an active error
+    const erroredFlow = deltaFileData.flows.find((flow) => flow.state === "ERROR" && flow.actions && flow.actions.length > 0);
+
+    if (erroredFlow) {
+      const lastAction = erroredFlow.actions[erroredFlow.actions.length - 1];
+      if (lastAction && lastAction.state === "ERROR") {
+        // Get the flow's input metadata merged with action metadata
+        const flowMetadata = erroredFlow.input?.metadata || {};
+        const actionMetadata = lastAction.metadata || {};
+        const mergedMetadata = { ...flowMetadata, ...actionMetadata };
+
+        const keyVals = Object.entries(mergedMetadata).map(([key, value]) => ({
+          key,
+          values: [value],
+        }));
+
+        allMetadata.value = [
+          {
+            flow: erroredFlow.name,
+            action: lastAction.name,
+            keyVals,
+          },
+        ];
+      }
+    }
+  }
+
+  displayFetchingMetadataDialog.value = false;
 };
 
 const closeMetadataDialog = () => {
@@ -147,6 +181,20 @@ const closeMetadataDialog = () => {
   emit("refreshAndClose");
 };
 
+// Batch mode functions
+const addBatchField = () => {
+  batchMetadata.value.push({ key: "", value: "" });
+};
+
+const removeBatchField = (index) => {
+  batchMetadata.value.splice(index, 1);
+};
+
+const onBatchInputChange = () => {
+  // Trigger reactivity for duplicate check
+};
+
+// Single DeltaFile mode functions
 const addMetadataField = (flowValue, actionValue) => {
   const index = modifiedMetadata.value.findIndex((action) => action.flow === flowValue && action.action === actionValue);
   modifiedMetadata.value[index].keyVals.push({
@@ -159,20 +207,17 @@ const addMetadataField = (flowValue, actionValue) => {
 const removeMetadataField = (keyVal, flow, action) => {
   const index = modifiedMetadata.value.findIndex((object) => object.flow === flow && object.action === action);
   const field = modifiedMetadata.value[index].keyVals.findIndex((object) => object.key === keyVal.key);
-  if (field.changed !== "new" && field.changed !== "error") {
+  const keyValObj = modifiedMetadata.value[index].keyVals[field];
+  if (keyValObj.changed !== "new" && keyValObj.changed !== "error") {
     modifiedMetadata.value[index].keyVals[field].changed = "deleted";
   } else {
     modifiedMetadata.value[index].keyVals.splice(field, 1);
   }
 };
 
-const submitResume = async () => {
-  if (_.isEqual(props.bundleRequestType, "resumeByErrorCause")) {
-    await requestResumeByErrorCause();
-  } else if (_.isEqual(props.bundleRequestType, "resumeByFlow")) {
-    await requestResumeByFlow();
-  }
-  closeMetadataDialog();
+const submitMetadata = () => {
+  emit("submitWithMetadata", getResumeMetadata());
+  emit("refreshAndClose");
 };
 
 const onCellEditComplete = (keyVal, flow, action) => {
@@ -196,130 +241,87 @@ const checkDuplicates = (key, actionIndex) => {
 };
 
 const hasDuplicateKeys = computed(() => {
-  let isError = false;
-  modifiedMetadata.value.map((metadata) => {
-    const keys = metadata.keyVals.map((object) => object.key);
-    if (isError === true) {
-      return true;
-    } else {
-      isError = _.some(Object.values(_.countBy(keys)), (count) => count > 1);
-    }
-  });
-  return isError;
+  if (isBatchMode.value) {
+    const keys = batchMetadata.value.map((field) => field.key).filter(Boolean);
+    return _.some(Object.values(_.countBy(keys)), (count) => count > 1);
+  } else {
+    let isError = false;
+    modifiedMetadata.value.forEach((metadata) => {
+      const keys = metadata.keyVals.map((object) => object.key);
+      if (!isError) {
+        isError = _.some(Object.values(_.countBy(keys)), (count) => count > 1);
+      }
+    });
+    return isError;
+  }
 });
 
 const formatMetadata = async () => {
   await getAllMeta();
-  if (allMetadata.value !== undefined) {
-    modifiedMetadata.value = JSON.parse(JSON.stringify(allMetadata.value)).map((metadata) => {
-      return {
-        flow: metadata.flow,
-        action: metadata.action,
-        keyVals: metadata.keyVals.map((keyVal) => {
-          return {
-            values: keyVal.values.length > 1 ? "multiple" : keyVal.values.toString(),
-            changed: keyVal.values.length > 1 ? "multiple" : "no",
-            key: keyVal.key,
-          };
-        }),
-      };
-    });
+  if (allMetadata.value !== undefined && allMetadata.value.length > 0) {
+    modifiedMetadata.value = JSON.parse(JSON.stringify(allMetadata.value)).map((metadata) => ({
+      flow: metadata.flow,
+      action: metadata.action,
+      keyVals: metadata.keyVals.map((keyVal) => ({
+        values: keyVal.values.length > 1 ? "" : keyVal.values.toString(),
+        changed: keyVal.values.length > 1 ? "multiple" : "no",
+        key: keyVal.key,
+      })),
+    }));
   }
 };
 
-const requestResumeByErrorCause = async () => {
-  let response;
-  let completedBatches = 0;
-  try {
-    displayBatchingDialog.value = true;
-    batchCompleteValue.value = 0;
-    for (const flow of props.flowInfo) {
-      response = await resumeByErrorCause(flow.message, _.find(getModifiedMetadata(), { flow: flow.flowName, flowType: flow.flowType }), includeAcknowledged.value);
-      if (response.data !== undefined && response.data !== null) {
-        for (const resumeStatus of response.data.resumeByErrorCause) {
-          if (resumeStatus.success) {
-            notify.success(`Resume request sent successfully`, `Successfully Resumed ${flow.flowName}`);
-          } else {
-            notify.error(`Resume request failed for ${flow.flowName}`, resumeStatus.error);
+const getResumeMetadata = () => {
+  if (isBatchMode.value) {
+    // Batch mode: send metadata with null flow/action to apply to all
+    const metadata = batchMetadata.value
+      .filter((field) => field.key && field.key.trim())
+      .map((field) => ({ key: field.key, value: field.value }));
+
+    if (metadata.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        flow: null,
+        action: null,
+        metadata,
+        deleteMetadataKeys: [],
+      },
+    ];
+  } else {
+    // Single DeltaFile mode: include flow/action targeting
+    const results = [];
+    modifiedMetadata.value.forEach((metadata) => {
+      const removedMetadata = [];
+      const cleanMetadata = [];
+      metadata.keyVals.forEach((keyVal) => {
+        if (keyVal.changed === "deleted") {
+          removedMetadata.push(keyVal.key);
+        } else if (keyVal.changed === "yes" || keyVal.changed === "new") {
+          if (keyVal.key) {
+            cleanMetadata.push({
+              key: keyVal.key,
+              value: keyVal.values,
+            });
           }
         }
-      }
-      completedBatches++;
-      batchCompleteValue.value = Math.round((completedBatches / props.flowInfo.length) * 100);
-    }
-    displayBatchingDialog.value = false;
-    batchCompleteValue.value = 0;
-  } catch (error) {
-    displayBatchingDialog.value = false;
-  }
-};
-
-const requestResumeByFlow = async () => {
-  let response;
-  let completedBatches = 0;
-  try {
-    displayBatchingDialog.value = true;
-    batchCompleteValue.value = 0;
-    for (const flow of props.flowInfo) {
-      response = await resumeByFlow(flow.flowType, flow.flowName, _.find(getModifiedMetadata(), { flow: flow.flowName, flowType: flow.flowType }), includeAcknowledged.value);
-      if (response.data !== undefined && response.data !== null) {
-        for (const resumeStatus of response.data.resumeByFlow) {
-          if (resumeStatus.success) {
-            notify.success(`Resume request sent successfully`, `Successfully Resumed ${flow.flowName}`);
-          } else {
-            notify.error(`Resume request failed for ${flow.flowName}`, resumeStatus.error);
-          }
-        }
-      }
-      completedBatches++;
-      batchCompleteValue.value = Math.round((completedBatches / props.flowInfo.length) * 100);
-    }
-    displayBatchingDialog.value = false;
-    batchCompleteValue.value = 0;
-  } catch (error) {
-    displayBatchingDialog.value = false;
-  }
-};
-
-const getModifiedMetadata = () => {
-  const results = [];
-  modifiedMetadata.value.forEach((metadata) => {
-    const removedMetadata = [];
-    const cleanMetadata = [];
-    metadata.keyVals.forEach((keyVal) => {
-      if (keyVal.changed === "deleted") {
-        removedMetadata.push(keyVal.key);
-      } else if (keyVal.changed === "yes" || keyVal.changed === "new") {
-        cleanMetadata.push({
-          key: keyVal.key,
-          value: keyVal.values,
+      });
+      if (cleanMetadata.length > 0 || removedMetadata.length > 0) {
+        results.push({
+          flow: metadata.flow,
+          action: metadata.action,
+          metadata: cleanMetadata,
+          deleteMetadataKeys: removedMetadata,
         });
       }
     });
-    results.push({
-      flow: metadata.flow,
-      action: metadata.action,
-      metadata: cleanMetadata,
-      deleteMetadataKeys: removedMetadata,
-    });
-  });
-  return results;
-};
-
-const includeAcknowledged = computed(() => {
-  if (props.acknowledged === true || _.isNull(props.acknowledged)) {
-    return true;
+    return results;
   }
-  return false;
-});
-
-const getBatchDids = (allDids) => {
-  return _.chunk(allDids, batchSize);
 };
 
-defineExpose({
-  showConfirmDialog,
-});
+defineExpose({});
 </script>
 
 <style />

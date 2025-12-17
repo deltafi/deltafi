@@ -17,10 +17,13 @@
 -->
 
 <template>
-  <div class="update-meatadata-dialog">
-    <div v-if="modifiedMetadata !== 'undefined' && metadataDialogVisible" class="metadata-body">
+  <div class="update-metadata-dialog">
+    <div v-if="metadataDialogVisible" class="metadata-body">
       <Message v-if="hasDuplicateKeys" severity="error" :closable="false"> No duplicate keys permitted </Message>
-      <Message v-if="modifiedMetadata.length == 0" severity="info" :closable="false"> No metadata to display </Message>
+      <Message v-if="isBatchMode && modifiedMetadata.length === 0" severity="info" :closable="false">
+        No metadata preview available for batch operations. Enter key/value pairs below to add or override metadata.
+      </Message>
+      <Message v-else-if="!isBatchMode && modifiedMetadata.length === 0" severity="info" :closable="false"> No metadata to display </Message>
       <div v-for="field in modifiedMetadata" :key="field" class="row p-fluid mb-4">
         <div class="col-5">
           <InputText v-if="field.changed === 'new'" v-model="field.key" type="text" placeholder="Key" @change="onInputChange(field)" />
@@ -28,8 +31,7 @@
           <InputText v-else v-model="field.key" type="text" placeholder="Key" disabled class="p-valid" />
         </div>
         <div class="col-5">
-          <InputText v-if="field.changed === 'multiple'" v-model="field.values" type="text" placeholder="Multiple values not shown" @change="onInputChange(field)" />
-          <InputText v-else v-model="field.values" type="text" placeholder="Value" @change="onInputChange(field)" />
+          <InputText v-model="field.values" type="text" placeholder="Value" @change="onInputChange(field)" />
         </div>
         <div class="col-2 text-right">
           <Button icon="pi pi-times" @click="removeMetadataField(field)" />
@@ -38,21 +40,15 @@
     </div>
     <div v-else-if="displayFetchingMetadataDialog">
       <div>
-        <p>Metadata loading in progress. Please do not refresh the page!</p>
-        <ProgressBar :value="batchCompleteValue" />
-      </div>
-    </div>
-    <div v-else-if="displayBatchingMetadataDialog">
-      <div>
-        <p>Replay in progress. Please do not refresh the page!</p>
-        <ProgressBar :value="batchCompleteValue" />
+        <p>Loading metadata...</p>
+        <ProgressBar mode="indeterminate" />
       </div>
     </div>
     <teleport v-if="isMounted && metadataDialogVisible" to="#dialogTemplate">
       <div class="p-dialog-footer">
         <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addMetadataField" />
         <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeMetadataDialog" />
-        <Button :label="`Replay`" icon="fas fa-play" @click="submitClick" />
+        <Button label="Replay" icon="fas fa-play" :disabled="hasDuplicateKeys" @click="submitMetadata" />
       </div>
     </teleport>
   </div>
@@ -60,11 +56,8 @@
 
 <script setup>
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
-import useMetadata from "@/composables/useMetadata";
-import useNotifications from "@/composables/useNotifications";
-import useReplay from "@/composables/useReplay";
-import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, nextTick, onBeforeMount, reactive, ref } from "vue";
+import useDeltaFiles from "@/composables/useDeltaFiles";
+import { computed, nextTick, onBeforeMount, ref } from "vue";
 import { useMounted } from "@vueuse/core";
 
 import _ from "lodash";
@@ -73,15 +66,9 @@ import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 
-const emit = defineEmits(["refreshAndClose"]);
+const emit = defineEmits(["refreshAndClose", "submitWithMetadata"]);
 const isMounted = ref(useMounted());
-const { pluralize } = useUtilFunctions();
-const invalidKey = ref(false);
-const maxSuccessDisplay = 10;
 const displayFetchingMetadataDialog = ref(false);
-const displayBatchingMetadataDialog = ref(false);
-const notify = useNotifications();
-const batchCompleteValue = ref(0);
 const props = defineProps({
   did: {
     type: Array,
@@ -89,15 +76,13 @@ const props = defineProps({
   },
 });
 
-const { replay } = useReplay();
-const { fetch: meta, data: batchMetadata } = useMetadata();
+const { getDeltaFile, data: deltaFileData } = useDeltaFiles();
 
 const modifiedMetadata = ref([]);
 const removedMetadata = ref([]);
 const metadataDialogVisible = ref(false);
-const pluralized = ref();
-const batchSize = 500;
-const allMetadata = ref([]);
+
+const isBatchMode = computed(() => props.did.length !== 1);
 
 onBeforeMount(async () => {
   displayFetchingMetadataDialog.value = true;
@@ -106,47 +91,29 @@ onBeforeMount(async () => {
 });
 
 const getAllMeta = async () => {
-  const batchedDids = getBatchDids(props.did);
-  batchCompleteValue.value = 0;
-  let completedBatches = 0;
-  allMetadata.value = [];
-  for (const dids of batchedDids) {
-    await meta(dids);
-    if (batchMetadata.value.length > 0) {
-      const tmp = [...batchMetadata.value, ...allMetadata.value];
-      allMetadata.value = tmp;
-    }
-    completedBatches += dids.length;
-    batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
+  if (isBatchMode.value) {
+    displayFetchingMetadataDialog.value = false;
+    return [];
   }
 
-  allMetadata.value = await getUniqueMetadataKeys(allMetadata.value);
+  // Single DeltaFile mode - fetch it and extract source metadata from flow 0
+  const did = props.did[0];
+  await getDeltaFile(did);
+
+  if (deltaFileData && deltaFileData.flows && deltaFileData.flows.length > 0) {
+    // Flow 0 is the source flow - get its accumulated metadata
+    const sourceFlow = deltaFileData.flows[0];
+    const sourceMetadata = sourceFlow.input?.metadata || {};
+
+    displayFetchingMetadataDialog.value = false;
+    return Object.entries(sourceMetadata).map(([key, value]) => ({
+      key,
+      values: value,
+    }));
+  }
+
   displayFetchingMetadataDialog.value = false;
-};
-
-const getUniqueMetadataKeys = async (originalMetadata) => {
-  const data = JSON.parse(JSON.stringify(originalMetadata));
-  let current = [];
-  for (let i = 0; i < data.length; i++) {
-    current = data[i];
-    for (let j = data.length - 1; j > i; j--) {
-      if (current.key === data[j].key) {
-        if (Array.isArray(current.value)) {
-          current.values = current.value.concat([data[j].value]);
-        } else {
-          current.values = "Multiple";
-        }
-        data.splice(j, 1);
-      }
-    }
-  }
-  return data;
-};
-
-const showConfirmDialog = async () => {
-  modifiedMetadata.value = [];
-  removedMetadata.value = [];
-  pluralized.value = pluralize(props.did.length, "DeltaFile");
+  return [];
 };
 
 const closeMetadataDialog = () => {
@@ -158,20 +125,25 @@ const addMetadataField = async () => {
   modifiedMetadata.value.push({ key: "", values: "", changed: "new" });
   await nextTick();
   const replayDialogElement = document.getElementById("dialogTemplateContent");
-  replayDialogElement.scrollTo(0, replayDialogElement.scrollHeight);
+  if (replayDialogElement) {
+    replayDialogElement.scrollTo(0, replayDialogElement.scrollHeight);
+  }
 };
 
 const removeMetadataField = (field) => {
-  if (field.changed !== "new") {
+  if (field.changed !== "new" && field.changed !== "error") {
     removedMetadata.value.push(field.key);
   }
   const index = modifiedMetadata.value.indexOf(field);
   modifiedMetadata.value.splice(index, 1);
 };
 
-const submitClick = () => {
-  submit();
-  closeMetadataDialog();
+const submitMetadata = () => {
+  emit("submitWithMetadata", {
+    removeMetadataKeys: removedMetadata.value,
+    replaceMetadata: getModifiedMetadata(),
+  });
+  emit("refreshAndClose");
 };
 
 const onInputChange = (field) => {
@@ -181,7 +153,6 @@ const onInputChange = (field) => {
   } else {
     modifiedMetadata.value[index].changed = "yes";
   }
-  invalidKey.value = modifiedMetadata.value.map((object) => object.changed).indexOf("error") === -1 ? false : true;
 };
 
 const checkDuplicates = (key) => {
@@ -200,80 +171,29 @@ const hasDuplicateKeys = computed(() => {
 });
 
 const formatMetadata = async () => {
-  await getAllMeta();
-  if (allMetadata.value !== undefined) {
-    modifiedMetadata.value = JSON.parse(JSON.stringify(allMetadata.value)).map((metadata) => {
-      return {
-        values: metadata.values.length > 1 ? "" : metadata.values,
-        changed: metadata.values.length > 1 ? "multiple" : "no",
-        key: metadata.key,
-      };
-    });
-  }
-};
-
-const submit = async () => {
-  let response;
-  const batchedDids = getBatchDids(props.did);
-  let success = false;
-  let completedBatches = 0;
-  try {
-    displayBatchingMetadataDialog.value = true;
-    batchCompleteValue.value = 0;
-    const newDids = new Array();
-    for (const dids of batchedDids) {
-      response = await replay(dids, removedMetadata.value, getModifiedMetadata());
-      if (response.value.data !== undefined && response.value.data !== null) {
-        const successfulBatch = new Array();
-        for (const responseStatus of response.value.data.replay) {
-          if (responseStatus.success) {
-            successfulBatch.push(responseStatus);
-            newDids.push(responseStatus.did);
-          } else {
-            notify.error(`Replay request failed for ${responseStatus.did}`, responseStatus.error);
-          }
-        }
-        if (successfulBatch.length > 0) {
-          success = true;
-        }
-      }
-      completedBatches += dids.length;
-      batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
-    }
-    displayBatchingMetadataDialog.value = false;
-    batchCompleteValue.value = 0;
-    if (success) {
-      const pluralized = pluralize(newDids.length, "DeltaFile");
-      const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
-      notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
-      emit("refreshAndClose");
-    }
-  } catch (error) {
-    displayBatchingMetadataDialog.value = false;
+  const allMetadata = await getAllMeta();
+  if (allMetadata && allMetadata.length > 0) {
+    modifiedMetadata.value = allMetadata.map((metadata) => ({
+      values: metadata.values,
+      changed: "no",
+      key: metadata.key,
+    }));
   }
 };
 
 const getModifiedMetadata = () => {
   if (modifiedMetadata.value !== null) {
     const filteredMetadata = modifiedMetadata.value.filter((metadata) => metadata.changed === "new" || metadata.changed === "yes");
-    return filteredMetadata.map((metadata) => {
-      return {
-        key: metadata.key,
-        value: metadata.values,
-      };
-    });
+    return filteredMetadata.map((metadata) => ({
+      key: metadata.key,
+      value: metadata.values,
+    }));
   } else {
     return [];
   }
 };
 
-const getBatchDids = (allDids) => {
-  return _.chunk(allDids, batchSize);
-};
-
-defineExpose({
-  showConfirmDialog,
-});
+defineExpose({});
 </script>
 
 <style />

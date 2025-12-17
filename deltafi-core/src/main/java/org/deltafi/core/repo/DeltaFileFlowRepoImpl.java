@@ -76,7 +76,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField, DeltaFileFlowState deltaFileFlowState) {
         StringBuilder sql = new StringBuilder("""
-                SELECT fd.name, fd.type, COUNT(dff.id) AS count, ARRAY_AGG(dff.delta_file_id) AS dids
+                SELECT fd.name, fd.type, COUNT(dff.id) AS count
                 FROM delta_file_flows dff
                 LEFT JOIN flow_definitions fd
                 ON dff.flow_definition_id = fd.id
@@ -98,7 +98,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
         List<CountPerFlow> countPerFlow = resultList.stream()
-                .map(row -> new CountPerFlow((String) row[0], FlowType.valueOf((String) row[1]), ((Number) row[2]).intValue(), Arrays.stream((UUID[]) row[3]).sorted().distinct().toList()))
+                .map(row -> new CountPerFlow((String) row[0], FlowType.valueOf((String) row[1]), ((Number) row[2]).intValue(), null))
                 .collect(Collectors.toList());
 
         Long totalCount = totalCountByFlow(filter, deltaFileFlowState);
@@ -108,7 +108,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
-            SELECT dff.error_or_filter_cause, fd.name, fd.type, COUNT(dff.id) AS count, ARRAY_AGG(dff.delta_file_id) AS dids
+            SELECT dff.error_or_filter_cause, fd.name, fd.type, COUNT(dff.id) AS count
             FROM delta_file_flows dff
             JOIN flow_definitions fd
             ON dff.flow_definition_id = fd.id
@@ -130,7 +130,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
         List<CountPerMessage> countPerMessage = resultList.stream()
-                .map(row -> new CountPerMessage((String) row[0], (String) row[1], FlowType.valueOf((String) row[2]),((Number) row[3]).intValue(), Arrays.stream((UUID[]) row[4]).sorted().distinct().toList()))
+                .map(row -> new CountPerMessage((String) row[0], (String) row[1], FlowType.valueOf((String) row[2]), ((Number) row[3]).intValue(), null))
                 .collect(Collectors.toList());
 
         Long totalCount = totalCountByFlowAndMessage(filter, flowState);

@@ -19,6 +19,7 @@
 import useNotifications from "./useNotifications";
 import useUtilFunctions from './useUtilFunctions';
 import useGraphQL from "./useGraphQL";
+import { EnumType } from "json-to-graphql-query";
 
 const maxSuccessDisplay = 20;
 
@@ -72,5 +73,36 @@ export default function useAnnotate() {
     return response.value.data.annotationKeys;
   };
 
-  return { annotate, getAnnotationKeys };
+  const annotateByFlow = async (flowType: string, flowName: string, annotations: Array<{key: string, value: string}>, allowOverwrites: boolean, limit: number = 1000) => {
+    const query = {
+      annotateByFlow: {
+        __args: {
+          flowType: new EnumType(flowType),
+          flowName: flowName,
+          annotations: annotations,
+          allowOverwrites: allowOverwrites,
+          limit: limit
+        },
+      },
+    };
+    await queryGraphQL(query, "annotateByFlow", "mutation");
+    return response.value.data.annotateByFlow;
+  };
+
+  const annotateByMessage = async (errorCause: string, annotations: Array<{key: string, value: string}>, allowOverwrites: boolean, limit: number = 1000) => {
+    const query = {
+      annotateByMessage: {
+        __args: {
+          errorCause: errorCause,
+          annotations: annotations,
+          allowOverwrites: allowOverwrites,
+          limit: limit
+        },
+      },
+    };
+    await queryGraphQL(query, "annotateByMessage", "mutation");
+    return response.value.data.annotateByMessage;
+  };
+
+  return { annotate, annotateByFlow, annotateByMessage, getAnnotationKeys };
 }

@@ -1062,27 +1062,15 @@ public class DeltaFilesService {
     }
 
     @Transactional
-    public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged) {
-        List<RetryResult> retryResults = new ArrayList<>();
-        int numFound = REQUEUE_BATCH_SIZE;
-        while (numFound == REQUEUE_BATCH_SIZE) {
-            List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged, REQUEUE_BATCH_SIZE);
-            numFound = deltaFiles.size();
-            retryResults.addAll(this.resumeDeltaFiles(deltaFiles, resumeMetadata));
-        }
-        return retryResults;
+    public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged, limit);
+        return this.resumeDeltaFiles(deltaFiles, resumeMetadata);
     }
 
     @Transactional
-    public List<RetryResult> resumeByErrorCause(String errorCause, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged) {
-        List<RetryResult> retryResults = new ArrayList<>();
-        int numFound = REQUEUE_BATCH_SIZE;
-        while (numFound == REQUEUE_BATCH_SIZE) {
-            List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, REQUEUE_BATCH_SIZE);
-            numFound = deltaFiles.size();
-            retryResults.addAll(this.resumeDeltaFiles(deltaFiles, resumeMetadata));
-        }
-        return retryResults;
+    public List<RetryResult> resumeByErrorCause(String errorCause, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, includeAcknowledged, limit);
+        return this.resumeDeltaFiles(deltaFiles, resumeMetadata);
     }
 
     public List<RetryResult> resumeDeltaFiles(@NotNull List<DeltaFile> deltaFiles, List<ResumeMetadata> resumeMetadata) {
@@ -1451,6 +1439,32 @@ public class DeltaFilesService {
         return results;
     }
 
+    @Transactional
+    public List<AcknowledgeResult> acknowledgeByFlow(FlowType flowType, String flowName, String reason, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false, limit);
+        Map<UUID, DeltaFile> toAck = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+        return acknowledge(toAck, reason);
+    }
+
+    @Transactional
+    public List<AcknowledgeResult> acknowledgeByMessage(String errorCause, String reason, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit);
+        Map<UUID, DeltaFile> toAck = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+        return acknowledge(toAck, reason);
+    }
+
+    public int annotateByFlow(FlowType flowType, String flowName, Map<String, String> annotations, boolean allowOverwrites, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, true, limit);
+        annotateMatching(deltaFiles, annotations, allowOverwrites);
+        return deltaFiles.size();
+    }
+
+    public int annotateByMessage(String errorCause, Map<String, String> annotations, boolean allowOverwrites, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, true, limit);
+        annotateMatching(deltaFiles, annotations, allowOverwrites);
+        return deltaFiles.size();
+    }
+
     public List<CancelResult> cancel(DeltaFilesFilter filter) {
         // if the stage is not null or IN_FLIGHT there is nothing to cancel
         if ((filter.getStage() != null && filter.getStage() != DeltaFileStage.IN_FLIGHT)) {
@@ -1690,8 +1704,8 @@ public class DeltaFilesService {
         return Result.successResult();
     }
 
+    @Deprecated
     public List<PerActionUniqueKeyValues> errorMetadataUnion(List<UUID> dids) {
-        // TODO: limit fields returned
         List<DeltaFile> deltaFiles = deltaFileRepo.findByIdsIn(dids);
 
         Map<PerActionUniqueKeyValues.Key, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
@@ -1708,8 +1722,8 @@ public class DeltaFilesService {
         return new ArrayList<>(actionKeyValues.values());
     }
 
+    @Deprecated
     public List<UniqueKeyValues> sourceMetadataUnion(List<UUID> dids) {
-        // TODO: limit fields returned
         List<DeltaFileFlow> deltaFileFlows = deltaFileFlowRepo.findAllByDeltaFileIdsAndFlowZero(dids);
 
         Map<String, UniqueKeyValues> keyValues = new HashMap<>();

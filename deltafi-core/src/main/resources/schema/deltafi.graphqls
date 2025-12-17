@@ -257,7 +257,7 @@ type CountPerFlow {
   flow: String!
   type: FlowType!
   count: Int!
-  dids: [UUID!]!
+  dids: [UUID!] @deprecated(reason: "Use acknowledgeByFlow/annotateByFlow mutations instead")
 }
 
 type CountPerMessage {
@@ -265,7 +265,7 @@ type CountPerMessage {
   flow: String!
   type: FlowType!
   count: Int!
-  dids: [UUID!]!
+  dids: [UUID!] @deprecated(reason: "Use acknowledgeByMessage/annotateByMessage mutations instead")
 }
 
 type ErrorsByFlow {
@@ -380,8 +380,8 @@ type DeltaFileStats {
 }
 
 input ResumeMetadata {
-  flow: String!
-  action: String!
+  flow: String
+  action: String
   metadata: [KeyValueInput!]
   deleteMetadataKeys: [String!]
 }
@@ -464,8 +464,8 @@ type Query {
   filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByFlowSort): FilteredByFlow!
   filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection, sortField: SummaryByMessageSort): FilteredByMessage!
 
-  errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]!
-  sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]!
+  errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]! @deprecated(reason: "Use deltaFile query for single DeltaFile metadata")
+  sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]! @deprecated(reason: "Use deltaFile query for single DeltaFile metadata")
 
   actionDescriptors: [ActionDescriptor!]!
   exportConfigAsYaml: String!
@@ -518,14 +518,16 @@ type Mutation {
 
   taskTimedDataSource(name: String!, memo: String) : Boolean!
   resume(dids: [UUID!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
-  resumeByFlow(flowType: FlowType!, name: String!, resumeMetadata: [ResumeMetadata], includeAcknowledged: Boolean): [RetryResult]!
-  resumeByErrorCause(errorCause: String!, resumeMetadata: [ResumeMetadata], includeAcknowledged: Boolean): [RetryResult]!
+  resumeByFlow(flowType: FlowType!, name: String!, resumeMetadata: [ResumeMetadata], includeAcknowledged: Boolean, limit: Int): [RetryResult]!
+  resumeByErrorCause(errorCause: String!, resumeMetadata: [ResumeMetadata], includeAcknowledged: Boolean, limit: Int): [RetryResult]!
   resumeMatching(filter: DeltaFilesFilter!, resumeMetadata: [ResumeMetadata!]) : [RetryResult]!
   replay(dids: [UUID!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   replayMatching(filter: DeltaFilesFilter!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput]) : [RetryResult!]!
 
   acknowledge(dids: [UUID!]!, reason: String) : [AcknowledgeResult!]!
   acknowledgeMatching(filter: DeltaFilesFilter!, reason: String) : [AcknowledgeResult]!
+  acknowledgeByFlow(flowType: FlowType!, flowName: String!, reason: String, limit: Int): [AcknowledgeResult]!
+  acknowledgeByMessage(errorCause: String!, reason: String, limit: Int): [AcknowledgeResult]!
 
   cancel(dids: [UUID!]!) : [CancelResult!]!
   cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!
@@ -542,6 +544,8 @@ type Mutation {
 
   addAnnotations(did: UUID!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
   annotateMatching(filter: DeltaFilesFilter!, annotations: [KeyValueInput]!, allowOverwrites: Boolean!) : Boolean!
+  annotateByFlow(flowType: FlowType!, flowName: String!, annotations: [KeyValueInput]!, allowOverwrites: Boolean!, limit: Int) : Int!
+  annotateByMessage(errorCause: String!, annotations: [KeyValueInput]!, allowOverwrites: Boolean!, limit: Int) : Int!
 
   stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!
   stressTestAnalyticEvents(numRecords: Int!, hours: Int!) : Int!

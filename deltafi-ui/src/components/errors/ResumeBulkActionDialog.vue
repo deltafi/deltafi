@@ -18,25 +18,32 @@
 
 <template>
   <div class="resume-dialog">
-    <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true">
+    <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true" :style="{ width: '30vw' }">
       <template #header>
         <strong>Resume</strong>
       </template>
       <div v-if="!displayBatchingDialog" class="metadata-body">Resume {{ pluralized }}?</div>
       <div v-else-if="displayBatchingDialog">
         <div>
-          <p>Resume in progress. Please do not refresh the page!</p>
+          <p v-if="!stopped">Resume in progress.<span v-if="expectedTotalCount > 1"> If you navigate away, the operation will stop after the current batch.</span></p>
+          <p v-else>{{ expectedTotalCount > 1 ? 'Completing current batch...' : 'Completing...' }}</p>
           <ProgressBar :value="batchCompleteValue" />
+          <p class="mt-2 text-center">{{ totalProcessedCount.toLocaleString() }} / {{ expectedTotalCount.toLocaleString() }} DeltaFiles</p>
         </div>
       </div>
       <template #footer>
-        <Button label="Modify Metadata" icon="fas fa-database fa-fw" class="p-button-secondary p-button-outlined" @click="showMetadataDialog" />
-        <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeConfirmDialog" />
-        <Button label="Resume" icon="fas fa-play" @click="resumeSubmit" />
+        <template v-if="!displayBatchingDialog">
+          <Button label="Modify Metadata" icon="fas fa-database fa-fw" class="p-button-secondary p-button-outlined" @click="showMetadataDialog" />
+          <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeConfirmDialog" />
+          <Button label="Resume" icon="fas fa-play" @click="resumeSubmit" />
+        </template>
+        <template v-else>
+          <Button label="Stop" icon="pi pi-stop" class="p-button-danger" :disabled="stopped" @click="stopBatching" />
+        </template>
       </template>
     </Dialog>
   </div>
-  <DialogTemplate ref="modifyBulkActionMetadataDialog" component-name="errors/ResumeBulkActionUpdateMetadataDialog" header="Modify Metadata" dialog-width="30vw" :flow-info="props.flowInfo" :bundleRequestType="props.bundleRequestType" :acknowledged="props.acknowledged" @refresh-page="refreshPage()" />
+  <DialogTemplate ref="modifyBulkActionMetadataDialog" component-name="errors/ResumeBulkActionUpdateMetadataDialog" header="Modify Metadata" dialog-width="30vw" model-position="center" :flow-info="props.flowInfo" :bundleRequestType="props.bundleRequestType" :acknowledged="props.acknowledged" @submit-with-metadata="handleMetadataSubmit" @refresh-and-close="closeMetadataDialogOnly" />
 </template>
 
 <script setup>
@@ -55,8 +62,11 @@ import Dialog from "primevue/dialog";
 const emit = defineEmits(["refreshPage"]);
 const { pluralize } = useUtilFunctions();
 const displayBatchingDialog = ref(false);
-const notify = useNotifications();
 const batchCompleteValue = ref(0);
+const totalProcessedCount = ref(0);
+const expectedTotalCount = ref(0);
+const stopped = ref(false);
+const notify = useNotifications();
 const props = defineProps({
   flowInfo: {
     type: Array,
@@ -73,7 +83,7 @@ const props = defineProps({
   },
 });
 
-const { resumeByErrorCause, resumeByFlow, resumeMatching } = useErrorResume();
+const { resumeByErrorCause, resumeByFlow } = useErrorResume();
 
 const modifyBulkActionMetadataDialog = ref(null);
 const confirmDialogVisible = ref(false);
@@ -85,7 +95,8 @@ const showMetadataDialog = async () => {
 };
 
 const showConfirmDialog = async () => {
-  pluralized.value = pluralize(_.flatten([...new Set(_.map(props.flowInfo, "dids"))]).length, "DeltaFile");
+  const totalCount = _.sumBy(props.flowInfo, "count") || 0;
+  pluralized.value = pluralize(totalCount, "DeltaFile");
   confirmDialogVisible.value = true;
 };
 
@@ -94,112 +105,108 @@ const closeConfirmDialog = () => {
   refreshPage();
 };
 
+const stopBatching = () => {
+  stopped.value = true;
+};
+
+const closeMetadataDialogOnly = () => {
+  // Just close the metadata dialog without refreshing
+};
+
+const handleMetadataSubmit = async (resumeMetadata) => {
+  // Show the progress dialog in this component
+  confirmDialogVisible.value = true;
+  await resumeWithMetadata(resumeMetadata);
+};
+
 const resumeSubmit = async () => {
+  await resumeWithMetadata([]);
+};
+
+const resumeWithMetadata = async (resumeMetadata) => {
   if (_.isEqual(props.bundleRequestType, "resumeByErrorCause")) {
-    await requestResumeByErrorCause();
+    await requestResumeByErrorCause(resumeMetadata);
   } else if (_.isEqual(props.bundleRequestType, "resumeByFlow")) {
-    await requestResumeByFlow();
+    await requestResumeByFlow(resumeMetadata);
   }
   closeConfirmDialog();
 };
 
-const mergeGroupedMessages = computed(() => {
-  const mergedMap = new Map();
-  const result = [];
-
-  for (const item of props.flowInfo) {
-    const { messageGrouping, message, flowType, dids } = item;
-
-    if (messageGrouping === "ALL") {
-      const key = `${messageGrouping}|${message}|${flowType}`;
-      if (!mergedMap.has(key)) {
-        mergedMap.set(key, {
-          messageGrouping,
-          flowType,
-          message,
-          dids: [...dids], // clone to avoid mutating original
-        });
-      } else {
-        // Merge dids
-        mergedMap.get(key).dids.push(...dids);
-      }
-    } else {
-      // Leave SINGLE items as is
-      result.push(item);
-    }
-  }
-
-  // Add merged ALL items to result
-  result.push(...mergedMap.values());
-
-  return result;
-});
-
-const requestResumeByErrorCause = async () => {
-  let response;
-  let completedBatches = 0;
+const requestResumeByErrorCause = async (resumeMetadata) => {
+  const batchSize = 200;
+  let totalProcessed = 0;
+  const expectedTotal = _.sumBy(props.flowInfo, "count") || 0;
 
   try {
     displayBatchingDialog.value = true;
     batchCompleteValue.value = 0;
-    for (const flow of mergeGroupedMessages.value) {
-      if (flow.messageGrouping === "ALL") {
-        response = await resumeByErrorCause(flow.message, [], includeAcknowledged.value);
-        response = response.data.resumeByErrorCause;
-      } else {
-        const keyVal = _.isEqual(flow.flowType, "REST_DATA_SOURCE") || _.isEqual(flow.flowType, "TIMED_DATA_SOURCE") ? "dataSources" : _.camelCase(flow.flowType) + "s";
+    totalProcessedCount.value = 0;
+    expectedTotalCount.value = expectedTotal;
+    stopped.value = false;
 
-        const filterParams = {
-          dids: flow.dids,
-          errorCause: flow.message,
-          [`${keyVal}`]: flow.flowName,
-        };
-        response = await resumeMatching(JSON.parse(JSON.stringify(filterParams)), []);
-        response = response.data.resumeMatching;
-      }
-      if (response !== undefined && response !== null) {
-        for (const resumeStatus of response) {
-          if (resumeStatus.success) {
-            notify.success(`Resume request sent successfully`, `Successfully Resumed ${flow.flowName || ""}`);
-          } else {
-            notify.error(`Resume request failed for ${flow.flowName || ""}`, resumeStatus.error);
-          }
+    for (const item of props.flowInfo) {
+      while (!stopped.value && totalProcessed < expectedTotal) {
+        const response = await resumeByErrorCause(item.errorCause, resumeMetadata, includeAcknowledged.value, batchSize);
+        const results = response?.data?.resumeByErrorCause || [];
+
+        if (results.length === 0) break;
+
+        totalProcessed += results.length;
+        totalProcessedCount.value = totalProcessed;
+        batchCompleteValue.value = Math.round((totalProcessed / expectedTotal) * 100);
+
+        const failures = results.filter((r) => !r.success);
+        if (failures.length > 0) {
+          notify.error(`Resume failed for ${failures.length} DeltaFiles`);
         }
       }
-      completedBatches++;
-      batchCompleteValue.value = Math.round((completedBatches / props.flowInfo.length) * 100);
+      if (stopped.value) break;
     }
+    notify.success(`Resumed ${totalProcessed} DeltaFiles`);
+  } finally {
     displayBatchingDialog.value = false;
     batchCompleteValue.value = 0;
-  } catch (error) {
-    displayBatchingDialog.value = false;
   }
 };
 
-const requestResumeByFlow = async () => {
-  let response;
-  let completedBatches = 0;
+const requestResumeByFlow = async (resumeMetadata) => {
+  const batchSize = 200;
+  let totalProcessed = 0;
+  const expectedTotal = _.sumBy(props.flowInfo, "count") || 0;
+
   try {
     displayBatchingDialog.value = true;
     batchCompleteValue.value = 0;
+    totalProcessedCount.value = 0;
+    expectedTotalCount.value = expectedTotal;
+    stopped.value = false;
+
     for (const flow of props.flowInfo) {
-      response = await resumeByFlow(flow.flowType, flow.flowName, [], includeAcknowledged.value);
-      if (response.data !== undefined && response.data !== null) {
-        for (const resumeStatus of response.data.resumeByFlow) {
-          if (resumeStatus.success) {
-            notify.success(`Resume request sent successfully`, `Successfully Resumed ${flow.flowName}`);
-          } else {
-            notify.error(`Resume request failed for ${flow.flowName}`, resumeStatus.error);
-          }
+      let flowProcessed = 0;
+      const flowExpected = flow.count || 0;
+
+      while (!stopped.value && flowProcessed < flowExpected && totalProcessed < expectedTotal) {
+        const response = await resumeByFlow(flow.flowType, flow.flowName, resumeMetadata, includeAcknowledged.value, batchSize);
+        const results = response?.data?.resumeByFlow || [];
+
+        if (results.length === 0) break;
+
+        flowProcessed += results.length;
+        totalProcessed += results.length;
+        totalProcessedCount.value = totalProcessed;
+        batchCompleteValue.value = Math.round((totalProcessed / expectedTotal) * 100);
+
+        const failures = results.filter((r) => !r.success);
+        if (failures.length > 0) {
+          notify.error(`Resume failed for ${failures.length} DeltaFiles in ${flow.flowName}`);
         }
       }
-      completedBatches++;
-      batchCompleteValue.value = Math.round((completedBatches / props.flowInfo.length) * 100);
+      if (stopped.value) break;
     }
+    notify.success(`Resumed ${totalProcessed} DeltaFiles`);
+  } finally {
     displayBatchingDialog.value = false;
     batchCompleteValue.value = 0;
-  } catch (error) {
-    displayBatchingDialog.value = false;
   }
 };
 

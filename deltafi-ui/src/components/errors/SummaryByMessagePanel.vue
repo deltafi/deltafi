@@ -58,9 +58,9 @@
       </template>
     </DataTable>
   </Panel>
-  <ResumeBulkActionDialog ref="resumeBulkActionDialog" :flow-info="filterSelectedDidsBulkAction" bundle-request-type="resumeByErrorCause" :acknowledged="props.acknowledged" @refresh-page="onRefresh()" />
-  <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
-  <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
+  <ResumeBulkActionDialog ref="resumeBulkActionDialog" :flow-info="filterSelectedMessageInfo" bundle-request-type="resumeByErrorCause" :acknowledged="props.acknowledged" @refresh-page="onRefresh()" />
+  <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :message-info="ackErrorsDialog.messageInfo" @acknowledged="onAcknowledged" />
+  <AnnotateDialog ref="annotateDialog" :message-info="filterSelectedMessageInfo" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
     <span id="summaryMessageAutoResumeDialog" />
   </DialogTemplate>
@@ -112,7 +112,7 @@ const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
 
 const ackErrorsDialog = ref({
-  dids: [],
+  messageInfo: [],
   visible: false,
 });
 const props = defineProps({
@@ -210,22 +210,14 @@ const showErrors = (errorMessage, flowName, flowType) => {
   emit("changeTab:showErrors", errorMessage, flowName, flowType);
 };
 
-const filterSelectedDids = computed(() => {
-  const dids = selectedErrors.value.map((selectedError) => {
-    return selectedError.dids;
-  });
-
-  return _.flatten([...new Set(dids)]);
-});
-
-const filterSelectedDidsBulkAction = computed(() => {
-  const flowInfo = selectedErrors.value.map((selectedError) => {
-    const foundObject = _.find(selectedErrorGroups.value, { message: selectedError.message });
-    const messageGrouping = foundObject ? "ALL" : "SINGLE";
-    return { messageGrouping: messageGrouping, flowType: selectedError.type, flowName: selectedError.flow, dids: selectedError.dids, message: selectedError.message };
-  });
-
-  return flowInfo;
+const filterSelectedMessageInfo = computed(() => {
+  // Group by error cause and sum counts
+  const messageCountMap = new Map();
+  for (const selectedError of selectedErrors.value) {
+    const currentCount = messageCountMap.get(selectedError.message) || 0;
+    messageCountMap.set(selectedError.message, currentCount + selectedError.count);
+  }
+  return Array.from(messageCountMap.entries()).map(([message, count]) => ({ errorCause: message, count }));
 });
 
 const fetchErrorsMessages = async () => {
@@ -290,16 +282,16 @@ const onSort = (event) => {
 };
 
 const acknowledgeClickConfirm = () => {
-  ackErrorsDialog.value.dids = JSON.parse(JSON.stringify(filterSelectedDids.value));
+  ackErrorsDialog.value.messageInfo = JSON.parse(JSON.stringify(filterSelectedMessageInfo.value));
   ackErrorsDialog.value.visible = true;
 };
 
-const onAcknowledged = (dids, reason) => {
+const onAcknowledged = (messageInfo, reason) => {
   unSelectAllRows();
-  ackErrorsDialog.value.dids = [];
+  ackErrorsDialog.value.messageInfo = [];
   ackErrorsDialog.value.visible = false;
-  const pluralized = pluralize(dids.length, "Error");
-  notify.success(`Successfully acknowledged ${pluralized}`, reason);
+  const pluralized = pluralize(messageInfo.length, "Message");
+  notify.success(`Successfully acknowledged errors for ${pluralized}`, reason);
   fetchErrorCount();
   emit("refreshErrors");
 };
