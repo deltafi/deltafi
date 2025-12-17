@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.44.1] - 2025-12-17
+
+### Added
+- Unified flow output dialog with three tabs: Metadata (default), Input Content, and Output Content
+- Metadata diff view showing added/removed/modified entries
+- Different icons in flow table and graph to indicate content/metadata changes: file icon (unchanged) vs file-pen icon (modified)
+
+### Changed
+- Plugin SNAPSHOT builds now use timestamped tags (e.g., `2.44.1-SNAPSHOT-20251217-143022`) to ensure each build gets a unique image tag
+- Plugin gradle builds automatically prune old SNAPSHOT images before building (keeps 3 most recent)
+- Made plugin jar builds reproducible by excluding build timestamp and normalizing file order
+- Increased maximum zoom level on full system map from 2x to 5x
+- System map layout now groups disconnected dataflows into separate visual clusters
+- System map uses barycenter ordering to minimize edge crossings instead of alphabetical ordering
+
+### Fixed
+- Fixed issue where `./gradlew install` in plugin projects would not restart the plugin container even when the image changed (now uses unique tags so core naturally detects the change)
+- Fixed issue where `./gradlew install` did not respect the overridden docker image name in the Gradle `docker { }` configuration
+
 ## [2.44.0] - 2025-12-17
 
 ### Added
@@ -5326,7 +5345,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.44.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.44.1...main
+[2.44.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.44.0...2.44.1
 [2.44.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.43.1...2.44.0
 [2.43.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.43.0...2.43.1
 [2.43.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.42.0...2.43.0
