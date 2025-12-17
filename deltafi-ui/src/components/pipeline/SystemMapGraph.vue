@@ -199,68 +199,182 @@ function getTopicCategory(topicId, edges, nodes) {
   return hasTransformPublisher ? "TOPIC_TRANSFORM" : "TOPIC_SOURCE";
 }
 
-// Group nodes by column type
-const nodesByColumn = computed(() => {
+// Find disconnected subgraphs using bidirectional flood-fill
+function findConnectedComponents(nodes, edges) {
+  const visited = new Set();
+  const components = [];
+
+  for (const node of nodes) {
+    if (visited.has(node.id)) continue;
+
+    const component = new Set([node.id]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const edge of edges) {
+        if (component.has(edge.source) && !component.has(edge.target)) {
+          component.add(edge.target);
+          changed = true;
+        }
+        if (component.has(edge.target) && !component.has(edge.source)) {
+          component.add(edge.source);
+          changed = true;
+        }
+      }
+    }
+
+    component.forEach((id) => visited.add(id));
+    components.push(component);
+  }
+
+  return components;
+}
+
+// Group a subset of nodes into columns by type
+function groupNodesIntoColumns(nodes, edges) {
   const columns = {};
   for (const type of columnOrder) {
     columns[type] = [];
   }
 
-  for (const node of props.nodes) {
+  for (const node of nodes) {
     if (node.type === "TOPIC") {
-      const category = getTopicCategory(node.id, props.edges, props.nodes);
+      const category = getTopicCategory(node.id, edges, nodes);
       columns[category].push(node);
     } else if (dataSourceTypes.includes(node.type)) {
-      // All data source types go in the combined DATA_SOURCE column
       columns["DATA_SOURCE"].push(node);
     } else if (columns[node.type]) {
       columns[node.type].push(node);
     }
   }
 
-  // Sort each column alphabetically by name
+  // Initial alphabetical sort as seed for barycenter
   for (const type of columnOrder) {
     columns[type].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
   }
 
   return columns;
-});
+}
 
-// Calculate layout positions
-const layoutNodes = computed(() => {
-  if (!props.nodes.length) return [];
+// Compute barycenter (average position of neighbors in adjacent columns)
+function computeBarycenter(nodeId, edges, columns, adjacentColTypes) {
+  const neighbors = [];
+  for (const edge of edges) {
+    const neighborId = edge.source === nodeId ? edge.target : edge.target === nodeId ? edge.source : null;
+    if (!neighborId) continue;
 
+    for (const colType of adjacentColTypes) {
+      const idx = columns[colType]?.findIndex((n) => n.id === neighborId);
+      if (idx !== -1) neighbors.push(idx);
+    }
+  }
+
+  if (neighbors.length === 0) return Infinity;
+  return neighbors.reduce((a, b) => a + b, 0) / neighbors.length;
+}
+
+// Reorder columns using barycenter heuristic to minimize edge crossings
+function orderColumnsByBarycenter(columns, edges, iterations = 3) {
+  for (let iter = 0; iter < iterations; iter++) {
+    // Left-to-right pass
+    for (let i = 1; i < columnOrder.length; i++) {
+      const col = columnOrder[i];
+      if (!columns[col]?.length) continue;
+
+      columns[col].sort((a, b) => {
+        const aBC = computeBarycenter(a.id, edges, columns, columnOrder.slice(0, i));
+        const bBC = computeBarycenter(b.id, edges, columns, columnOrder.slice(0, i));
+        if (aBC === bBC) return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        return aBC - bBC;
+      });
+    }
+
+    // Right-to-left pass
+    for (let i = columnOrder.length - 2; i >= 0; i--) {
+      const col = columnOrder[i];
+      if (!columns[col]?.length) continue;
+
+      columns[col].sort((a, b) => {
+        const aBC = computeBarycenter(a.id, edges, columns, columnOrder.slice(i + 1));
+        const bBC = computeBarycenter(b.id, edges, columns, columnOrder.slice(i + 1));
+        if (aBC === bBC) return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        return aBC - bBC;
+      });
+    }
+  }
+}
+
+// Layout nodes for a single component, starting at the given Y offset
+function layoutComponentNodes(columns, startY) {
   const result = [];
-  let currentX = padding;
 
-  // Find the maximum column height to center vertically
+  // Find max column height for this component
   let maxColumnHeight = 0;
   for (const type of columnOrder) {
-    const columnNodes = nodesByColumn.value[type];
+    const columnNodes = columns[type];
     if (columnNodes.length > 0) {
       const height = columnNodes.length * nodeHeight + (columnNodes.length - 1) * verticalGap;
       maxColumnHeight = Math.max(maxColumnHeight, height);
     }
   }
 
-  for (const type of columnOrder) {
-    const columnNodes = nodesByColumn.value[type];
+  for (let colIndex = 0; colIndex < columnOrder.length; colIndex++) {
+    const type = columnOrder[colIndex];
+    const columnNodes = columns[type];
     if (columnNodes.length === 0) continue;
 
-    // Calculate column height and starting Y position
+    // Calculate X based on column index, not incrementally
+    const columnX = padding + colIndex * (nodeWidth + horizontalGap);
     const columnHeight = columnNodes.length * nodeHeight + (columnNodes.length - 1) * verticalGap;
-    const startY = (maxColumnHeight - columnHeight) / 2 + nodeHeight / 2 + padding;
+    const columnStartY = startY + (maxColumnHeight - columnHeight) / 2 + nodeHeight / 2;
 
     for (let i = 0; i < columnNodes.length; i++) {
       const node = columnNodes[i];
       result.push({
         ...node,
-        x: currentX + nodeWidth / 2,
-        y: startY + i * (nodeHeight + verticalGap),
+        x: columnX + nodeWidth / 2,
+        y: columnStartY + i * (nodeHeight + verticalGap),
       });
     }
+  }
 
-    currentX += nodeWidth + horizontalGap;
+  return { nodes: result, height: maxColumnHeight };
+}
+
+// Calculate layout positions with connected component grouping and barycenter ordering
+const layoutNodes = computed(() => {
+  if (!props.nodes.length) return [];
+
+  // Find connected components
+  const components = findConnectedComponents(props.nodes, props.edges);
+
+  // Sort components for deterministic layout (by first node ID alphabetically)
+  components.sort((a, b) => {
+    const aFirst = [...a].sort()[0];
+    const bFirst = [...b].sort()[0];
+    return aFirst.localeCompare(bFirst);
+  });
+
+  const result = [];
+  let currentY = padding;
+  const componentGap = 40;
+
+  for (const componentIds of components) {
+    // Filter nodes and edges for this component
+    const componentNodes = props.nodes.filter((n) => componentIds.has(n.id));
+    const componentEdges = props.edges.filter((e) => componentIds.has(e.source) && componentIds.has(e.target));
+
+    // Group into columns
+    const columns = groupNodesIntoColumns(componentNodes, componentEdges);
+
+    // Apply barycenter ordering to minimize edge crossings
+    orderColumnsByBarycenter(columns, componentEdges);
+
+    // Layout this component
+    const { nodes: laidOutNodes, height } = layoutComponentNodes(columns, currentY);
+    result.push(...laidOutNodes);
+
+    currentY += height + componentGap;
   }
 
   return result;
