@@ -84,6 +84,9 @@ From the `repos/deltafi/` directory:
 
 # Build the TUI
 ./gradlew tui
+
+# Publish gradle-plugin to local Maven (for testing plugin changes)
+./gradlew :gradle-plugin:publishToMavenLocal
 ```
 
 ### Running Tests
@@ -107,6 +110,7 @@ From the `repos/deltafi/` directory:
 | `deltafi-action-kit/` | SDK for building actions (Java) |
 | `deltafi-core-actions/` | Built-in actions |
 | `deltafi-common/` | Shared types and utilities |
+| `gradle-plugin/` | Gradle plugin for building DeltaFi plugins |
 | `tui/` | Command-line interface (Go) |
 | `charts/` | Helm charts for Kubernetes |
 | `compose/` | Docker Compose configuration |

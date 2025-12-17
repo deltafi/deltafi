@@ -81,12 +81,15 @@ springBoot {
                     actionKitVersion: deltafiVersion
             ]
         }
+        excludes = ['time']
     }
 }
 
 bootJar {
     dependsOn checkDeltafiPlugin
     setArchiveFileName "deltafi-plugin.jar"
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
 }
 
 // Copy the standard plugin Dockerfile from the gradle-plugin jar resources to the build directory after the bootJar is
@@ -142,8 +145,14 @@ allprojects {
     }
 }
 
+// For SNAPSHOT versions, add timestamp to ensure unique tags for each build
+ext.dockerTag = project.version.toString().contains('SNAPSHOT')
+    ? "${project.version}-${new Date().format('yyyyMMdd-HHmmss')}"
+    : project.version.toString()
+ext.dockerImageName = "deltafi/${project.name}"
+
 docker {
-    name "deltafi/${project.name}:${project.version}"
+    name "${dockerImageName}:${dockerTag}"
     copySpec.from(bootJar.archiveFile).into("build/libs/")
     dockerfile file("${buildDir}/Dockerfile")
 }
@@ -181,12 +190,32 @@ ext.deltafiConfig = loadDeltafiConfig();
 if (!deltafiConfig.isEmpty()) {
     var orchestrationMode = deltafiConfig['orchestrationMode'] ? deltafiConfig['orchestrationMode'].toLowerCase() : null
 
+    // Task to clean up old SNAPSHOT images to prevent disk bloat
+    task pruneOldSnapshots(type: Exec) {
+        group = 'install'
+        description = 'Remove old SNAPSHOT images for this plugin, keeping the 3 most recent'
+        ignoreExitValue = true
+        doFirst {
+            def imageName = docker.name.toString().split(':')[0]
+            commandLine 'sh', '-c', """
+                docker images '${imageName}' --format '{{.CreatedAt}}\\t{{.Repository}}:{{.Tag}}' | \
+                grep 'SNAPSHOT' | \
+                sort -r | \
+                tail -n +4 | \
+                cut -f2 | \
+                xargs -r docker rmi 2>/dev/null || true
+            """
+        }
+    }
+
     if (orchestrationMode == 'kind') {
         task pushToKind(type: Exec) {
             group = 'install'
             description = 'Push docker image to KinD cluster'
-            dependsOn "dockerTag${project.version}"
-            commandLine "deltafi", "kind", "load", "deltafi/${project.name}:${project.version}"
+            dependsOn "docker"
+            doFirst {
+                commandLine "deltafi", "kind", "load", docker.name.toString()
+            }
         }
     }
 
@@ -196,9 +225,9 @@ if (!deltafiConfig.isEmpty()) {
             description = 'build and push docker images for ' + orchestrationMode + ' deployment'
         }
         if (orchestrationMode == 'compose') {
-            dependsOn "dockerTag${project.version}"
+            dependsOn "pruneOldSnapshots", "docker"
         } else if (orchestrationMode == 'kind') {
-            dependsOn "pushToKind"
+            dependsOn "pruneOldSnapshots", "pushToKind"
         } else {
             println ('WARNING: Cannot install docker images for orchestration mode:' + deltafiConfig['orchestrationMode'])
         }
@@ -209,7 +238,9 @@ if (!deltafiConfig.isEmpty()) {
     if (orchestrationMode == 'compose' || orchestrationMode == 'kind') {
         task installPlugin(type: Exec) {
             workingDir deltafiConfig['installDirectory']
-            commandLine 'deltafi', 'plugin', 'install', "deltafi/${project.name}:${project.version}"
+            doFirst {
+                commandLine 'deltafi', 'plugin', 'install', docker.name.toString()
+            }
         }
         installPlugin.dependsOn 'deployPluginImage'
         install.dependsOn 'installPlugin'
