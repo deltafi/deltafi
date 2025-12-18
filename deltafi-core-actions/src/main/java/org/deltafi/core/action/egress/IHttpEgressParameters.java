@@ -17,7 +17,21 @@
  */
 package org.deltafi.core.action.egress;
 
+import org.deltafi.actionkit.action.parameters.EnvVar;
+
 public interface IHttpEgressParameters {
     String getUrl();
     NoContentPolicy getNoContentPolicy();
+
+    default String getProxyUrl() {
+        return null;
+    }
+
+    default String getProxyUsername() {
+        return null;
+    }
+
+    default EnvVar getProxyPassword() {
+        return null;
+    }
 }

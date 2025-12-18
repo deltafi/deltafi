@@ -26,6 +26,7 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.parameters.EnvVar;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.asserters.ErrorResultAssert;
 import org.deltafi.test.asserters.FilterResultAssert;
@@ -247,5 +248,44 @@ class HttpEgressBaseTest {
         Mockito.when(okHttpClient.newCall(Mockito.any())).thenReturn(mockCall);
         Mockito.when(mockCall.execute()).thenReturn(mockResponse);
         return mockResponse;
+    }
+
+    @Test
+    void egressesWithoutProxyUsesOriginalClient() {
+        Response mockResponse = getMockResponse();
+        Mockito.when(mockResponse.isSuccessful()).thenReturn(true);
+        EgressInput egressInput = EgressInput.builder()
+                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
+                .build();
+
+        HttpEgressParameters params = new HttpEgressParameters();
+        params.setUrl(URL);
+        // No proxy configured
+
+        EgressResultType egressResultType = action.egress(runner.actionContext(), params, egressInput);
+
+        assertInstanceOf(EgressResult.class, egressResultType);
+        Mockito.verify(okHttpClient, Mockito.never()).newBuilder();
+        Mockito.verify(okHttpClient).newCall(Mockito.any());
+    }
+
+    @Test
+    void proxyParametersCanBeSet() {
+        HttpEgressParameters params = new HttpEgressParameters();
+        params.setProxyUrl("http://proxy.example.com:8080");
+        params.setProxyUsername("testuser");
+        params.setProxyPassword(new EnvVar("MY_PROXY_PASSWORD"));
+
+        assertEquals("http://proxy.example.com:8080", params.getProxyUrl());
+        assertEquals("testuser", params.getProxyUsername());
+        assertEquals("MY_PROXY_PASSWORD", params.getProxyPassword().getName());
+    }
+
+    @Test
+    void proxyUrlDefaultsToNull() {
+        HttpEgressParameters params = new HttpEgressParameters();
+        Assertions.assertThat(params.getProxyUrl()).isNull();
+        Assertions.assertThat(params.getProxyUsername()).isNull();
+        Assertions.assertThat(params.getProxyPassword()).isNull();
     }
 }

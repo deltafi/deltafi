@@ -19,10 +19,7 @@ package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
@@ -30,11 +27,15 @@ import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.parameters.EnvVar;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionOptions;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 
@@ -72,8 +73,9 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
         }
 
         try {
+            OkHttpClient clientToUse = getClientWithProxy(params);
             Request request = buildOkHttpRequest(context, params, input, method);
-            try (Response response = httpClient.newCall(request).execute()) {
+            try (Response response = clientToUse.newCall(request).execute()) {
                 return response.isSuccessful() ? new EgressResult(context) : processError(context, response, method);
             }
         } catch (IOException e) {
@@ -81,6 +83,36 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
         } catch (Exception e) {
             return new ErrorResult(context, "Unexpected error during " + method + " request", e.getMessage(), e).logErrorTo(log);
         }
+    }
+
+    private OkHttpClient getClientWithProxy(P params) {
+        String proxyUrl = params.getProxyUrl();
+        if (proxyUrl == null || proxyUrl.isBlank()) {
+            return httpClient;
+        }
+
+        URI proxyUri = URI.create(proxyUrl);
+        int port = proxyUri.getPort();
+        if (port == -1) {
+            port = proxyUri.getScheme().equalsIgnoreCase("https") ? 443 : 80;
+        }
+
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyUri.getHost(), port));
+        OkHttpClient.Builder builder = httpClient.newBuilder().proxy(proxy);
+
+        String username = params.getProxyUsername();
+        EnvVar passwordEnvVar = params.getProxyPassword();
+        if (username != null && !username.isBlank() && passwordEnvVar != null && passwordEnvVar.isSet()) {
+            String password = passwordEnvVar.resolve();
+            builder.proxyAuthenticator((route, response) -> {
+                String credential = Credentials.basic(username, password);
+                return response.request().newBuilder()
+                        .header("Proxy-Authorization", credential)
+                        .build();
+            });
+        }
+
+        return builder.build();
     }
 
     private Request buildOkHttpRequest(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input, @NotNull HttpRequestMethod method) throws IOException {

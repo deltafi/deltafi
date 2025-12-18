@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.parameters.EnvVar;
 
 @Data
 @ToString(callSuper = true)
@@ -42,4 +43,13 @@ public class HttpEgressParameters extends ActionParameters implements IHttpEgres
     @JsonProperty(defaultValue = "ERROR")
     @JsonPropertyDescription("Policy for handling null content: FILTER (return FilterResult), ERROR (return ErrorResult), or SEND_EMPTY (continue with zero data)")
     private NoContentPolicy noContentPolicy = NoContentPolicy.ERROR;
+
+    @JsonPropertyDescription("HTTP proxy URL (e.g., http://proxy.example.com:8080)")
+    private String proxyUrl;
+
+    @JsonPropertyDescription("Username for proxy authentication")
+    private String proxyUsername;
+
+    @JsonPropertyDescription("Environment variable containing the proxy password")
+    private EnvVar proxyPassword;
 }
