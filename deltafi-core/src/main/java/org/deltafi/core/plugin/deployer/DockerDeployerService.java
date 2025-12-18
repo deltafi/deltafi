@@ -466,4 +466,22 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         List<Container> containers = findExisting(installDetails.appName());
         containers.stream().map(Container::getId).forEach(this::stopAndRemoveContainer);
     }
+
+    @Override
+    public String getRunningPluginImage(String imageName) {
+        if (imageName == null) {
+            return null;
+        }
+        InstallDetails installDetails = InstallDetails.from(imageName);
+        List<Container> containers = findExisting(installDetails.appName());
+        if (isEmpty(containers)) {
+            return null;
+        }
+        // Get the image from the first running container
+        return containers.stream()
+                .filter(container -> "running".equalsIgnoreCase(container.getState()))
+                .findFirst()
+                .map(Container::getImage)
+                .orElse(null);
+    }
 }

@@ -156,7 +156,57 @@ public class PluginReconciliationService {
 
             pluginService.markInstalling(plugin.getPluginCoordinates(), true);
             startInstall(plugin);
+            return;
         }
+
+        // Verify the running container has the correct image
+        String expectedImage = plugin.imageAndTag();
+        String runningImage = deployerService.getRunningPluginImage(plugin.getImageName());
+        if (runningImage != null && !imagesMatch(expectedImage, runningImage)) {
+            log.warn("Plugin {} image mismatch: expected {} but found {}, redeploying",
+                    plugin.getPluginCoordinates(), expectedImage, runningImage);
+            pluginService.markInstalling(plugin.getPluginCoordinates(), false);
+            startInstall(plugin);
+        }
+    }
+
+    /**
+     * Compare two image names for equality, ignoring registry prefixes.
+     * Docker may return image names with or without registry prefix depending on how they were pulled.
+     */
+    private boolean imagesMatch(String expected, String running) {
+        if (expected == null || running == null) {
+            return expected == null && running == null;
+        }
+        if (expected.equals(running)) {
+            return true;
+        }
+        // Normalize both images by extracting name:tag
+        String expectedNameTag = extractNameAndTag(expected);
+        String runningNameTag = extractNameAndTag(running);
+        return expectedNameTag.equals(runningNameTag);
+    }
+
+    /**
+     * Extract the image name and tag portion from a full image reference.
+     * e.g., "registry.example.com/org/image:tag" -> "org/image:tag"
+     * e.g., "docker.io/library/image:tag" -> "library/image:tag"
+     */
+    private String extractNameAndTag(String image) {
+        // Find the last slash that's part of the registry (before the org/name)
+        int firstSlash = image.indexOf('/');
+        if (firstSlash == -1) {
+            return image;
+        }
+
+        // Check if the part before the first slash looks like a registry (contains . or :)
+        String beforeSlash = image.substring(0, firstSlash);
+        if (beforeSlash.contains(".") || beforeSlash.contains(":")) {
+            // This is a registry prefix, strip it
+            return image.substring(firstSlash + 1);
+        }
+
+        return image;
     }
 
     private void handleFailed(PluginEntity plugin) {

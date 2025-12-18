@@ -134,4 +134,58 @@ class DockerDeployerServiceTest {
         verify(dockerClient, never()).stopContainerCmd(anyString());
         verify(dockerClient, never()).removeContainerCmd(anyString());
     }
+
+    @Test
+    void getRunningPluginImage_returnsImageFromRunningContainer() {
+        Container container = mock(Container.class);
+        when(container.getState()).thenReturn("running");
+        when(container.getImage()).thenReturn("registry.example.com/test-plugin:1.0.0");
+
+        ListContainersCmd listContainersCmd = mock(ListContainersCmd.class);
+        when(dockerClient.listContainersCmd()).thenReturn(listContainersCmd);
+        when(listContainersCmd.withShowAll(true)).thenReturn(listContainersCmd);
+        when(listContainersCmd.withNameFilter(any(Set.class))).thenReturn(listContainersCmd);
+        when(listContainersCmd.exec()).thenReturn(List.of(container));
+
+        String runningImage = dockerDeployerService.getRunningPluginImage("registry.example.com/test-plugin:1.0.0");
+
+        assertThat(runningImage).isEqualTo("registry.example.com/test-plugin:1.0.0");
+    }
+
+    @Test
+    void getRunningPluginImage_returnsNullForStoppedContainer() {
+        Container container = mock(Container.class);
+        when(container.getState()).thenReturn("exited");
+
+        ListContainersCmd listContainersCmd = mock(ListContainersCmd.class);
+        when(dockerClient.listContainersCmd()).thenReturn(listContainersCmd);
+        when(listContainersCmd.withShowAll(true)).thenReturn(listContainersCmd);
+        when(listContainersCmd.withNameFilter(any(Set.class))).thenReturn(listContainersCmd);
+        when(listContainersCmd.exec()).thenReturn(List.of(container));
+
+        String runningImage = dockerDeployerService.getRunningPluginImage("registry.example.com/test-plugin:1.0.0");
+
+        assertThat(runningImage).isNull();
+    }
+
+    @Test
+    void getRunningPluginImage_returnsNullForNoContainer() {
+        ListContainersCmd listContainersCmd = mock(ListContainersCmd.class);
+        when(dockerClient.listContainersCmd()).thenReturn(listContainersCmd);
+        when(listContainersCmd.withShowAll(true)).thenReturn(listContainersCmd);
+        when(listContainersCmd.withNameFilter(any(Set.class))).thenReturn(listContainersCmd);
+        when(listContainersCmd.exec()).thenReturn(List.of());
+
+        String runningImage = dockerDeployerService.getRunningPluginImage("registry.example.com/test-plugin:1.0.0");
+
+        assertThat(runningImage).isNull();
+    }
+
+    @Test
+    void getRunningPluginImage_handlesNullImageName() {
+        String runningImage = dockerDeployerService.getRunningPluginImage(null);
+
+        assertThat(runningImage).isNull();
+        verify(dockerClient, never()).listContainersCmd();
+    }
 }

@@ -98,4 +98,12 @@ public interface DeployerService extends Snapshotter {
      * @param imageName the image name of the plugin
      */
     void removePlugin(String imageName);
+
+    /**
+     * Get the image currently running for a plugin.
+     * Used by the reconciler to detect image mismatches.
+     * @param imageName the expected image name (used to locate the container/pod by appName)
+     * @return the actual image running, or null if not running
+     */
+    String getRunningPluginImage(String imageName);
 }

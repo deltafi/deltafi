@@ -333,4 +333,21 @@ public class K8sDeployerService extends BaseDeployerService {
         InstallDetails installDetails = InstallDetails.from(imageName);
         k8sClient.apps().deployments().withName(installDetails.appName()).delete();
     }
+
+    @Override
+    public String getRunningPluginImage(String imageName) {
+        if (imageName == null) {
+            return null;
+        }
+        InstallDetails installDetails = InstallDetails.from(imageName);
+        Deployment deployment = k8sClient.apps().deployments().withName(installDetails.appName()).get();
+        if (deployment == null) {
+            return null;
+        }
+        // Get the image from the first container in the deployment spec
+        return deployment.getSpec().getTemplate().getSpec().getContainers().stream()
+                .findFirst()
+                .map(Container::getImage)
+                .orElse(null);
+    }
 }

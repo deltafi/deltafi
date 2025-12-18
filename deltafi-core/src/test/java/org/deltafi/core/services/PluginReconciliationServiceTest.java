@@ -120,15 +120,45 @@ class PluginReconciliationServiceTest {
     }
 
     @Test
-    void reconcile_installedPlugin_noActionIfRunning() {
+    void reconcile_installedPlugin_noActionIfRunningCorrectImage() {
         PluginEntity plugin = createPlugin(PluginState.INSTALLED);
         when(pluginService.getPlugins()).thenReturn(List.of(plugin));
         when(deployerService.isPluginRunning(anyString())).thenReturn(true);
+        when(deployerService.getRunningPluginImage(anyString())).thenReturn("registry.example.com/test-plugin:1.0.0");
 
         reconciliationService.reconcile();
 
         verify(pluginService, never()).markInstalling(any(), anyBoolean());
         verify(pluginService, never()).markFailed(any(), anyString());
+    }
+
+    @Test
+    void reconcile_installedPlugin_redeploysIfWrongImage() {
+        PluginEntity plugin = createPlugin(PluginState.INSTALLED);
+        plugin.setImageTag("2.0.0");  // Expected: registry.example.com/test-plugin:2.0.0
+        when(pluginService.getPlugins()).thenReturn(List.of(plugin));
+        when(deployerService.isPluginRunning(anyString())).thenReturn(true);
+        when(deployerService.getRunningPluginImage(anyString())).thenReturn("registry.example.com/test-plugin:1.0.0");  // Running: old version
+        when(deployerService.installOrUpgradePlugin(anyString(), any())).thenReturn(new Result());
+
+        reconciliationService.reconcile();
+
+        verify(pluginService).markInstalling(eq(TEST_COORDS), eq(false));  // isAutoRestart = false (this is a version change)
+        verify(deployerService).installOrUpgradePlugin(eq("registry.example.com/test-plugin:2.0.0"), any());
+    }
+
+    @Test
+    void reconcile_installedPlugin_matchesImageWithDifferentRegistryPrefix() {
+        PluginEntity plugin = createPlugin(PluginState.INSTALLED);
+        when(pluginService.getPlugins()).thenReturn(List.of(plugin));
+        when(deployerService.isPluginRunning(anyString())).thenReturn(true);
+        // Docker sometimes returns images without registry prefix
+        when(deployerService.getRunningPluginImage(anyString())).thenReturn("test-plugin:1.0.0");
+
+        reconciliationService.reconcile();
+
+        // Should recognize this as matching (same name:tag, different registry prefix)
+        verify(pluginService, never()).markInstalling(any(), anyBoolean());
     }
 
     @Test
