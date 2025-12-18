@@ -27,6 +27,7 @@ import DataSourcePage from "@/pages/DataSourcePage.vue";
 import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
 import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
 import DeltaFileUploadPage from "@/pages/DeltaFileUploadPage.vue";
+import DeltaFileImportPage from "@/pages/DeltaFileImportPage.vue";
 import DeltaFileViewerPage from "@/pages/DeltaFileViewerPage.vue";
 import ErrorsPage from "@/pages/ErrorsPage.vue";
 import EventsPage from "@/pages/EventsPage.vue";
@@ -137,6 +138,14 @@ const routes: Array<RouteRecordRaw> = [
     component: DeltaFileUploadPage,
     meta: {
       permission: "DeltaFileIngress",
+    },
+  },
+  {
+    path: "/deltafile/import",
+    name: "DeltaFile Import",
+    component: DeltaFileImportPage,
+    meta: {
+      permission: "DeltaFileImport",
     },
   },
   {

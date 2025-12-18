@@ -140,6 +140,18 @@ public class MinioObjectStorageService implements ObjectStorageService {
         return !hasError;
     }
 
+    @Override
+    public long getTotalSize(ObjectReference objectReference) {
+        try {
+            StatObjectResponse stat = minioClient.statObject(StatObjectArgs.builder()
+                    .bucket(objectReference.getBucket()).object(objectReference.getName()).build());
+            return stat.size();
+        } catch (ErrorResponseException | ServerException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | XmlParserException e) {
+            log.error("Failed to stat object {} in bucket {}", objectReference.getName(), objectReference.getBucket());
+            return -1;
+        }
+    }
+
     private void rollbackPartialFailure(List<ObjectReference> objectReferences) {
         for (ObjectReference objectReference : objectReferences) {
             try {

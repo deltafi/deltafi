@@ -18,8 +18,13 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"os"
 
+	"github.com/deltafi/tui/internal/api"
+	"github.com/deltafi/tui/internal/app"
 	"github.com/spf13/cobra"
 )
 
@@ -130,10 +135,65 @@ func runErrorList(cmd *cobra.Command, args []string) error {
 	}
 }
 
+var exportErrorsCmd = &cobra.Command{
+	Use:          "export",
+	Short:        "Export unacknowledged errored DeltaFile",
+	Long:         `Export unacknowledged errored DeltaFile. This will mark all exported DeltaFiles as acknowledged by default. The result set is limited to 100 errored DeltaFiles by default.`,
+	SilenceUsage: true,
+	RunE:         executeExportErrors,
+}
+
+var exportedErrorsPath, acknowledgeReason string
+
+func executeExportErrors(cmd *cobra.Command, _ []string) error {
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+	skipAcknowledged, _ := cmd.Flags().GetBool("no-acknowledge")
+	limit, _ := cmd.Flags().GetInt("limit")
+
+	req := api.ExportErrorsRequest{
+		Acknowledge: !skipAcknowledged,
+		Limit:       limit,
+		Reason:      acknowledgeReason,
+	}
+	body, suggestedFilename, err := client.ExportErroredDeltaFile(req)
+	if err != nil {
+		if errors.Is(err, api.ErrNoneFound) {
+			return err
+		}
+		return fmt.Errorf("failed to export errored DeltaFiles: %w", err)
+	}
+	defer func(body io.ReadCloser) {
+		_ = body.Close()
+	}(body)
+
+	// Use suggested filename if no output path specified
+	if exportedErrorsPath == "" {
+		exportedErrorsPath = suggestedFilename
+	}
+
+	file, err := os.Create(exportedErrorsPath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
+	bytesWritten, err := io.Copy(file, body)
+	if err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	fmt.Printf("Exported up to %d errored DeltaFiles (%d bytes) to %s\n", limit, bytesWritten, exportedErrorsPath)
+	return nil
+}
+
 func init() {
 	rootCmd.AddCommand(errorCmd)
-	errorCmd.AddCommand(errorViewCmd)
-	errorCmd.AddCommand(errorListCmd)
+	errorCmd.AddCommand(errorViewCmd, errorListCmd, exportErrorsCmd)
 
 	searchParams.addSearchFlagsAndCompletions(errorViewCmd)
 	errorViewCmd.Flags().MarkHidden("stage")
@@ -157,4 +217,9 @@ func init() {
 	errorListCmd.Flags().Int("offset", 0, "Offset the results")
 	errorListCmd.Flags().BoolP("verbose", "v", false, "Show verbose output (JSON and YAML only)")
 	errorListCmd.Flags().Bool("terse", false, "Hide table header and footer")
+
+	exportErrorsCmd.Flags().IntP("limit", "l", 100, "Maximum number of errors to export")
+	exportErrorsCmd.Flags().BoolP("no-acknowledge", "n", false, "Do not acknowledge the errors for exported DeltaFiles")
+	exportErrorsCmd.Flags().StringVarP(&exportedErrorsPath, "output", "o", "", "output file name")
+	exportErrorsCmd.Flags().StringVarP(&acknowledgeReason, "reason", "r", "", "acknowledge reason")
 }

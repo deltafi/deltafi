@@ -47,6 +47,19 @@ public class Segment {
         return objectName(did, uuid);
     }
 
+    public Segment(String objectName, long size) {
+        String[] parts = objectName.split("/");
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Invalid object name format: " + objectName);
+        }
+
+        Segment segment = new Segment();
+        segment.setDid(UUID.fromString(parts[1]));
+        segment.setUuid(UUID.fromString(parts[2]));
+        segment.setOffset(0);
+        segment.setSize(size);
+    }
+
     public static String objectName(UUID did, UUID objectId) {
         return did.toString().substring(0, 3) + "/" + did + "/" + objectId;
     }

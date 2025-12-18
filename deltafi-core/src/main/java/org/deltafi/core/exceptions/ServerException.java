@@ -15,21 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.test.content;
+package org.deltafi.core.exceptions;
 
-import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-/**
- * Test ContentStorageService that uses an InMemoryObjectStorageService
- */
-public class InMemoryContentStorageService extends ActionContentStorageService {
-    public InMemoryContentStorageService() {
-        super(new InMemoryObjectStorageService(), "storage");
-    }
-
-    public InMemoryContentStorageService(ObjectStorageService objectStorageService) {
-        super(objectStorageService, "storage");
+@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+public class ServerException extends RuntimeException {
+    public ServerException(String message) {
+        super(message);
     }
 }

@@ -148,7 +148,7 @@ const staticMenuItems = ref([
   {
     name: "DeltaFiles",
     expand: true,
-    visible: computed(() => hasSomePermissions("DeltaFileMetadataView", "DeltaFileIngress")),
+    visible: computed(() => hasSomePermissions("DeltaFileMetadataView", "DeltaFileIngress", "DeltaFileImport")),
     children: [
       {
         name: "Search",
@@ -182,6 +182,12 @@ const staticMenuItems = ref([
         icon: "fas fa-upload fa-fw",
         path: "/deltafile/upload/",
         visible: computed(() => hasPermission("DeltaFileIngress")),
+      },
+      {
+        name: "Import",
+        icon: "fas fa-file-import fa-fw",
+        path: "/deltafile/import",
+        visible: false, // Hidden until we flesh out the docs. Should be: computed(() => hasPermission("DeltaFileImport")),
       },
     ],
   },

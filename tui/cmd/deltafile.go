@@ -19,6 +19,8 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 	"time"
 
@@ -27,38 +29,131 @@ import (
 	"github.com/charmbracelet/lipgloss/tree"
 	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
+	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/ui/components"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
-var (
-	deltafileCmd = &cobra.Command{
-		Use:     "deltafile",
-		Short:   "View DeltaFile details",
-		Long:    `View detailed information about a DeltaFile, including its flows, actions, and status.`,
-		GroupID: "deltafile",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 1 {
-				return fmt.Errorf("deltafile ID is required")
-			}
-			did, err := uuid.Parse(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid DeltaFile ID: %v", err)
-			}
-			output, err := RenderDeltaFile(did)
-			if err != nil {
-				return err
-			}
-			fmt.Print(output)
-			return nil
-		},
+var deltafileCmd = &cobra.Command{
+	Use:          "deltafile",
+	Short:        "View and manage DeltaFiles",
+	Long:         `View and manage DeltaFiles`,
+	GroupID:      "deltafile",
+	SilenceUsage: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		_ = cmd.Help()
+		return fmt.Errorf("subcommand is required")
+	},
+}
+
+var viewDeltaFileCmd = &cobra.Command{
+	Use:   "view",
+	Short: "View DeltaFile details",
+	Long:  `View detailed information about a DeltaFile, including its flows, actions, and status.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		did, err := parseDid(args)
+		if err != nil {
+			return err
+		}
+		output, err := RenderDeltaFile(did)
+		if err != nil {
+			return err
+		}
+		fmt.Print(output)
+		return nil
+	},
+}
+
+var exportedDeltaFilePath string
+var exportDeltaFileCmd = &cobra.Command{
+	Use:   "export",
+	Short: "Export a DeltaFile",
+	Long:  `Export a DeltaFile to a file. The file is a tar file that contains the metadata and content.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		did, err := parseDid(args)
+		if err != nil {
+			return err
+		}
+
+		return executeExportDeltaFile(did)
+	},
+}
+
+var importDeltaFilesCmd = &cobra.Command{
+	Use:   "import",
+	Short: "Import DeltaFiles",
+	Long:  `Import one or more DeltaFiles from a file. The file is expected to be a tar file that contains the metadata and content for one or more DeltaFiles.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return fmt.Errorf("must specify a file to import")
+		}
+
+		plain, _ := cmd.Flags().GetBool("plain")
+		return executeDeltaFileImport(args[0], plain)
+	},
+}
+
+func executeExportDeltaFile(did uuid.UUID) error {
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
 	}
-)
+	body, suggestedFilename, err := client.ExportDeltaFile(did.String())
+	if err != nil {
+		return fmt.Errorf("failed to export deltafile: %w", err)
+	}
+	defer func(body io.ReadCloser) {
+		_ = body.Close()
+	}(body)
+
+	// Use suggested filename if no output path specified
+	if exportedDeltaFilePath == "" {
+		exportedDeltaFilePath = suggestedFilename
+	}
+
+	file, err := os.Create(exportedDeltaFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
+	bytesWritten, err := io.Copy(file, body)
+	if err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	fmt.Printf("Exported %s (%d bytes) to %s\n", did, bytesWritten, exportedDeltaFilePath)
+	return nil
+}
+
+func executeDeltaFileImport(archivePath string, plain bool) error {
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+
+	resp, err := client.ImportDeltaFile(archivePath)
+	if err != nil {
+		return err
+	}
+
+	err = printJSON(resp, plain)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func init() {
 	rootCmd.AddCommand(deltafileCmd)
+	deltafileCmd.AddCommand(viewDeltaFileCmd, exportDeltaFileCmd, importDeltaFilesCmd)
+	exportDeltaFileCmd.Flags().StringVarP(&exportedDeltaFilePath, "output", "o", "", "output file name")
+	importDeltaFilesCmd.Flags().BoolP("plain", "p", false, "use plain to return non-colorized json output")
 }
 
 func RenderDeltaFile(did uuid.UUID) (string, error) {
@@ -307,4 +402,16 @@ func formatBytes(bytes int64) string {
 	} else {
 		return fmt.Sprintf("%.1f GB", float64(bytes)/(1024*1024*1024))
 	}
+}
+
+func parseDid(args []string) (uuid.UUID, error) {
+	var did uuid.UUID
+	if len(args) < 1 {
+		return did, fmt.Errorf("deltafile ID is required")
+	}
+	did, err := uuid.Parse(args[0])
+	if err != nil {
+		return did, fmt.Errorf("invalid DeltaFile ID: %v", err)
+	}
+	return did, nil
 }

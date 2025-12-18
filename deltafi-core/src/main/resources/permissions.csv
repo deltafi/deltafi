@@ -19,6 +19,8 @@ DeltaFiles,DeltaFileCancel,Cancel processing of a DeltaFile
 DeltaFiles,DeltaFileUserNote,Add user notes to a DeltaFile
 DeltaFiles,DeltaFilePinning,Pin or unpin a DeltaFile
 DeltaFiles,DeltaFileIngress,Ingress DeltaFiles
+DeltaFiles,DeltaFileExport,Export DeltaFiles
+DeltaFiles,DeltaFileImport,Import DeltaFiles
 Flows,FlowView,View flows
 Flows,FlowValidate,Validate flows
 Flows,FlowUpdate,Change flow state and update flows

@@ -48,4 +48,11 @@ public interface ObjectStorageService {
     void removeObject(ObjectReference objectReference);
 
     boolean removeObjects(String bucket, List<String> objectNames);
+
+    /**
+     * Get the size of the given object reference
+     * @param objectReference to lookup
+     * @return size of the object reference or -1 if it was not found
+     */
+    long getTotalSize(ObjectReference objectReference);
 }

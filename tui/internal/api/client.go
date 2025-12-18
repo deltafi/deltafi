@@ -21,8 +21,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"os"
@@ -139,9 +141,9 @@ func (c *Client) DoWithBody(method string, path string, requestBody interface{},
 	var req *http.Request
 	var err error
 
-	// Check if the request body is a bytes.Buffer (multipart form data)
-	if buf, ok := requestBody.(*bytes.Buffer); ok {
-		req, err = http.NewRequest(method, c.baseURL+path, buf)
+	// Check if the request body is an io.Reader, which include bytes.Buffer (multipart form data)
+	if reader, ok := requestBody.(io.Reader); ok {
+		req, err = http.NewRequest(method, c.baseURL+path, reader)
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err)
 		}
@@ -249,6 +251,99 @@ func (c *Client) CreatEvent(event Event) (*Event, error) {
 	var newEvent Event
 	err := c.Post("/api/v2/events", event, &newEvent, nil)
 	return &newEvent, err
+}
+
+func (c *Client) ExportDeltaFile(did string) (io.ReadCloser, string, error) {
+	resp, err := c.HttpClient.Get(c.baseURL + "/api/v2/deltafile/export/" + did)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		_ = resp.Body.Close()
+		return nil, "", fmt.Errorf("export failed with status: %d", resp.StatusCode)
+	}
+
+	filename := extractFilename(resp.Header)
+
+	if filename == "" {
+		filename = did + ".tar"
+	}
+
+	return resp.Body, filename, nil
+}
+
+var ErrNoneFound = errors.New("No DeltaFiles were found with unacknowledged errors to export")
+
+type ExportErrorsRequest struct {
+	Acknowledge bool   `json:"acknowledge"`
+	Limit       int    `json:"limit"`
+	Reason      string `json:"reason"`
+}
+
+func (c *Client) ExportErroredDeltaFile(request ExportErrorsRequest) (io.ReadCloser, string, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to encode request body: %w", err)
+	}
+
+	resp, err := c.HttpClient.Post(c.baseURL+"/api/v2/deltafile/export/errors", "application/json", bytes.NewReader(requestBody))
+	if err != nil {
+		return nil, "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		_ = resp.Body.Close()
+		if resp.StatusCode == 404 {
+			return nil, "", ErrNoneFound
+		}
+		return nil, "", fmt.Errorf("export failed with status: %d", resp.StatusCode)
+	}
+
+	filename := extractFilename(resp.Header)
+	if filename == "" {
+		timestamp := time.Now().Format("2006-01-02_150405-000")
+		filename = fmt.Sprintf("errored_delta_files_%s.tar", timestamp)
+	}
+
+	return resp.Body, filename, nil
+}
+
+// Extract filename from Content-Disposition header if present
+func extractFilename(header http.Header) string {
+	if cd := header.Get("Content-Disposition"); cd != "" {
+		if _, params, err := mime.ParseMediaType(cd); err == nil {
+			if name, ok := params["filename"]; ok {
+				return name
+			}
+		}
+	}
+	return ""
+}
+
+type ImportResponse struct {
+	DeltaFileCount int   `json:"count"`
+	ContentBytes   int64 `json:"bytes"`
+}
+
+func (c *Client) ImportDeltaFile(archivePath string) (*ImportResponse, error) {
+	file, err := os.Open(archivePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open archive: %w", err)
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
+	opts := &RequestOpts{
+		Headers: map[string]string{
+			"Content-Type": "application/x-tar",
+		},
+	}
+
+	var result ImportResponse
+	err = c.Post("/api/v2/deltafile/import", file, &result, opts)
+	return &result, err
 }
 
 type PasswordUpdate struct {

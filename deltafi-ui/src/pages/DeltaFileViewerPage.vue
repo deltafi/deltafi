@@ -146,7 +146,7 @@ const uuidRegex = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][
 const route = useRoute();
 const router = useRouter();
 const uiConfig = inject("uiConfig");
-const { data: deltaFile, getDeltaFile, getRawDeltaFile, cancelDeltaFile, pin, unpin, loaded, loading } = useDeltaFiles();
+const { data: deltaFile, getDeltaFile, getRawDeltaFile, cancelDeltaFile, pin, unpin, loaded, loading, exportDeltaFileUrl } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
 const notify = useNotifications();
 const { pendingAnnotations } = useDeltaFilesQueryBuilder();
@@ -247,6 +247,14 @@ const staticMenuItems = reactive([
       document.getElementById("autoResumeDialog").click();
     },
     visible: computed(() => isError.value && hasPermission("ResumePolicyCreate")),
+  },
+  {
+    label: "Export DeltaFile",
+    icon: "fas fa-download fa-fw",
+    visible: () => hasPermission("DeltaFileExport"),
+    command: () => {
+      exportDeltaFile();
+    },
   },
 ]);
 
@@ -463,6 +471,11 @@ const onUnpin = async () => {
   } else {
     notify.error("Failed to unpin DeltaFile", response[0].info);
   }
+};
+
+const exportDeltaFile = () => {
+  const url = exportDeltaFileUrl(did.value);
+  window.open(url);
 };
 
 const latestError = (deltaFile) => {

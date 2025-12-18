@@ -18,9 +18,12 @@
 
 import { reactive, ref } from "vue";
 import useGraphQL from "./useGraphQL";
+import useApi from './useApi'
 
 export default function useDeltaFiles() {
   const { response, queryGraphQL, loading, errors } = useGraphQL();
+  const { buildURL } = useApi();
+
   const loaded = ref(false);
   const data = reactive({});
 
@@ -194,5 +197,9 @@ export default function useDeltaFiles() {
     return response.value.data.unpin;
   };
 
-  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, cancelDeltaFile, pin, unpin, errors };
+  const exportDeltaFileUrl = (did: String) => {
+        return buildURL("deltafile/export/" + did);
+  }
+
+  return { data, loading, loaded, getDeltaFile, getRawDeltaFile, cancelDeltaFile, pin, unpin, exportDeltaFileUrl, errors };
 }

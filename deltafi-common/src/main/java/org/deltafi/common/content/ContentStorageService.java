@@ -148,6 +148,10 @@ public class ContentStorageService {
         }
     }
 
+    public long getTotalSize(Segment segment) {
+        return objectStorageService.getTotalSize(buildObjectReference(segment));
+    }
+
     private ObjectReference buildObjectReference(Segment segment) {
         return new ObjectReference(contentBucket, segment.objectName(),
                 segment.getOffset(), segment.getSize());

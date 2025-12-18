@@ -92,4 +92,19 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
         }
         return true;
     }
+
+    /**
+     * Get the size of the given object reference
+     *
+     * @param objectReference to lookup
+     * @return size of the object reference or -1 if it was not found
+     */
+    @Override
+    public long getTotalSize(ObjectReference objectReference) {
+        Map<String, byte[]> entry = objects.get(objectReference.getBucket());
+        if (entry != null && entry.containsKey(objectReference.getName())) {
+            return entry.get(objectReference.getName()).length;
+        }
+        return -1;
+    }
 }

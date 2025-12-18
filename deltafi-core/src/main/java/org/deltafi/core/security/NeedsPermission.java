@@ -102,6 +102,16 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('DeltaFileIngress'" + OR_ADMIN)
     public @interface DeltaFileIngress {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileExport'" + OR_ADMIN)
+    public @interface DeltaFileExport {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('DeltaFileImport'" + OR_ADMIN)
+    public @interface DeltaFileImport {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

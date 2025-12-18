@@ -22,32 +22,44 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.ImportResponse;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
 import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.DeltaFileExporter;
+import org.deltafi.core.services.DeltaFileImporter;
 import org.deltafi.core.services.IngressService;
+import org.deltafi.core.types.ExportErrorsRequest;
 import org.deltafi.core.types.IngressResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v2/deltafile/ingress")
+@RequestMapping("/api/v2/deltafile")
 @RequiredArgsConstructor
 @Slf4j
-public class IngressRest {
+public class DeltaFileRest {
+    private final CoreAuditLogger auditLogger;
     private final IngressService ingressService;
+    private final DeltaFileExporter deltaFileExporter;
+    private final DeltaFileImporter deltaFileImporter;
 
     @NeedsPermission.DeltaFileIngress
-    @PostMapping(consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
+    @PostMapping(value = "ingress", consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
     public ResponseEntity<String> ingressData(InputStream dataStream,
             @RequestHeader(value = "Filename", required = false) String filename,
             @RequestHeader(value = "DataSource", required = false) String dataSource,
@@ -71,5 +83,34 @@ public class IngressRest {
         } catch (Throwable e) { // includes IngressException
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
+    }
+
+    @NeedsPermission.DeltaFileExport
+    @GetMapping(value = "export/{did}", produces = "application/x-tar")
+    public ResponseEntity<StreamingResponseBody> exportDeltaFile(@PathVariable UUID did) {
+        auditLogger.audit("exporting DeltaFile with a did of '{}'", did);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"%s.tar\"".formatted(did))
+                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                .body(deltaFileExporter.exportDeltaFile(did));
+    }
+
+    @NeedsPermission.DeltaFileImport
+    @PostMapping("import")
+    public ResponseEntity<ImportResponse> importDeltaFiles(InputStream dataStream) {
+        auditLogger.audit("importing DeltaFile(s)");
+        return ResponseEntity.ok(deltaFileImporter.importDeltaFile(dataStream));
+    }
+
+    @NeedsPermission.DeltaFileExport
+    @PostMapping(value = "export/errors", produces = "application/x-tar", consumes = MediaType.APPLICATION_JSON)
+    public ResponseEntity<StreamingResponseBody> exportErroredDeltaFiles(@RequestBody ExportErrorsRequest request) {
+        auditLogger.audit("exporting up to {} errored DeltaFiles{}", request.getLimit(), request.isAcknowledge() ? " and acknowledged the errors" : "");
+        String filename = String.format("errored_delta_files_%s.tar",
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss-SSS")));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"%s\"".formatted(filename))
+                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                .body(deltaFileExporter.exportDeltaFiles(request));
     }
 }
