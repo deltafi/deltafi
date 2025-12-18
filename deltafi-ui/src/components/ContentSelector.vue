@@ -21,7 +21,17 @@
 <template>
   <div class="content-selector-container">
     <div v-if="showListbox" class="left-column">
-      <Listbox v-model="selectedItem" :options="listboxItems" filter option-label="name" />
+      <Listbox v-model="selectedItem" :options="listboxItems" filter option-label="name">
+        <template #option="{ option }">
+          <div class="listbox-item">
+            <span class="listbox-item-name">{{ option.name }}</span>
+            <span v-if="option.tags?.length" class="listbox-item-tags">
+              <span class="badge badge-pill badge-primary tag-badge">{{ truncateTag(option.tags[0]) }}</span>
+              <span v-if="option.tags.length > 1" class="badge badge-pill badge-secondary tag-badge">+{{ option.tags.length - 1 }}</span>
+            </span>
+          </div>
+        </template>
+      </Listbox>
     </div>
     <div class="right-column">
       <ContentViewer :content="selectedPointer">
@@ -52,22 +62,32 @@ const props = defineProps({
     type: Number,
     default: undefined,
   },
+  contentIndex: {
+    type: Number,
+    default: undefined,
+  },
   content: {
     type: Array,
     required: true,
   },
 });
 
-const { did, flowNumber, actionIndex, content } = reactive(props);
+const { did, flowNumber, actionIndex, contentIndex, content } = reactive(props);
 const showListbox = computed(() => content.length > 1);
 const listboxItems = computed(() => {
   return content.map((c, index) => {
     return {
       index: index,
       name: `${index} : ${c.name}`,
+      tags: c.tags,
     };
   });
 });
+
+const truncateTag = (tag, maxLength = 12) => {
+  if (!tag || tag.length <= maxLength) return tag;
+  return tag.substring(0, maxLength) + "…";
+};
 const selectedItem = ref(listboxItems.value[0]);
 
 const selectedPointer = computed(() => {
@@ -76,7 +96,7 @@ const selectedPointer = computed(() => {
     did: did,
     flowNumber: flowNumber,
     actionIndex: actionIndex,
-    contentIndex: selectedItem.value.index,
+    contentIndex: contentIndex ?? selectedItem.value.index,
     name: c.name,
     mediaType: c.mediaType,
     totalSize: c.size,
@@ -109,6 +129,41 @@ watch(selectedItem, (newItem, oldValue) => {
 
   .right-column {
     flex: 5;
+  }
+
+  .listbox-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .listbox-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .listbox-item-tags {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+  }
+
+  .tag-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .p-listbox-item.p-highlight .tag-badge.badge-primary {
+    background-color: white !important;
+    color: var(--primary-color, #007bff) !important;
+  }
+
+  .p-listbox-item.p-highlight .tag-badge.badge-secondary {
+    background-color: white !important;
+    color: #6c757d !important;
   }
 }
 </style>

@@ -28,6 +28,7 @@
         :did="did"
         :flow-number="flowNumber"
         :action-index="actionIndex"
+        :content-index="contentIndex"
         :content="content"
         @content-selected="handleContentSelected"
       />
@@ -50,6 +51,10 @@ const props = defineProps({
     required: true,
   },
   actionIndex: {
+    type: Number,
+    default: undefined,
+  },
+  contentIndex: {
     type: Number,
     default: undefined,
   },

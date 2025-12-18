@@ -32,7 +32,7 @@
         </Column>
         <Column header="Content" class="content-column">
           <template #body="{ data }">
-            <ContentDialog :did="deltaFile.did" :flow-number="data.flowNumber" :action-index="data.actionIndex" :content="[data.content]">
+            <ContentDialog :did="deltaFile.did" :flow-number="data.flowNumber" :action-index="data.actionIndex" :content-index="data.contentIndex" :content="[data.content]">
               <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
             </ContentDialog>
           </template>
@@ -66,7 +66,7 @@ const contentTags = computed(() => {
   deltaFile.flows.forEach((flow) => {
     flow.actions.forEach((action, actionIndex) => {
       if (action.content) {
-        action.content.forEach((content) => {
+        action.content.forEach((content, contentIndex) => {
           if (content.tags && content.tags.length > 0) {
             content.tags.forEach((tag) => {
               results.push({
@@ -74,6 +74,7 @@ const contentTags = computed(() => {
                 content: content,
                 flowNumber: flow.number,
                 actionIndex: actionIndex,
+                contentIndex: contentIndex,
               });
             });
           }
