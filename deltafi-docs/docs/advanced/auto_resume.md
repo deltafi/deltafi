@@ -1,120 +1,265 @@
 # Automatic Resume
 
-A DeltaFile may encounter an error during action execution. When this occurs, the DeltaFile is placed in an ERROR stage,
-and no further actions will be executed. A DeltaFile can be manually resumed using the UI, which will attempt the failed
-action again. This works well for the occasional error, but for errors that occur regularly, an automatic resume policy
-can be created. This allows the DeltaFile to be scheduled for an automatic resume based on configurable delay settings.
+A DeltaFile may encounter an error during action execution. When this occurs, the DeltaFile is placed in an ERROR stage, and no further actions will be executed. A DeltaFile can be manually resumed using the UI, which will attempt the failed action again. This works well for the occasional error, but for errors that occur regularly, an automatic resume policy can be created. This allows the DeltaFile to be scheduled for an automatic resume based on configurable delay settings.
 
-## Resume Policies
+## Resume Policy Fields
 
-A Resume Policy consist of the following:
+A Resume Policy consists of the following fields:
 
-* id (auto-generated UUID)
-* name
-* errorSubstring
-* flow (sourceInfo flow)
-* action (full action name)
-* actionType
-* maxAttempts
-* priority
-* backOff
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | No | Auto-generated UUID if not provided |
+| `name` | Yes | Unique name for the policy |
+| `errorSubstring` | No* | Substring to match in the error cause |
+| `dataSource` | No* | Data source name to match |
+| `action` | No* | Full action name to match (e.g., `my-flow.MyAction`) |
+| `maxAttempts` | Yes | Maximum number of retry attempts (must be > 1) |
+| `priority` | No | Priority for matching (higher = matched first). Auto-calculated if not provided |
+| `backOff` | Yes | Back-off configuration for retry delays |
 
-The backOff properties are:
+*At least one of `errorSubstring`, `dataSource`, or `action` must be specified.
 
-* delay
-* maxDelay
-* multiplier
-* random
+### BackOff Configuration
 
-## Behavior
+| Field | Required | Description |
+|-------|----------|-------------|
+| `delay` | Yes | Base delay in seconds before retry |
+| `maxDelay` | No | Maximum delay in seconds (required if `random` is true) |
+| `multiplier` | No | Multiply delay by this value times the attempt number |
+| `random` | No | If true, use a random delay between `delay` and `maxDelay` |
 
-When an action error occurs, the details of the error are compared to all resume policies in decreasing priority order. In order for there to be a match, the error cause, sourceInfo flow, action, and/or action type from the action error must match
-the set of those fields included in the resume policy.
-For the error cause search, the comparison uses a substring match of the policy `errorSubstring`;
-the other fields require an exact match.
-In addition, the number of attempt for that action must be below the `maxAttempts` value of the resume policy.
-The value for `action` must include prefixed flow name (e.g., `smoke.SmokeFormatAction`). A resume policy for `NoDataSinkConfiguredAction` does not require the flow name prefix.
+## Matching Behavior
 
-It is possible for more than one resume policy to match an action error. Only the first policy that matches will be applied to the DeltaFile. Because of this, careful consideration should be used when setting the `priority` of your resume policy. An initial  `priority` will be calculated for each resume rule upon creation based on the complexity of the match criteria.
-The more specific the policy, the higher the priority.
-Calculated priority ranges from 5o to 250.
-An `errorSubstring` with at least 11 characters is worth 100; shorter values are worth 50.
-If the `action` is specified, that is worth 100.
-However, if `action` is not included,  `actionType` is worth 50 when set.
-If the `flow` is specified, that is worth 50.
+When an action error occurs, the details of the error are compared to all resume policies in decreasing priority order. For a policy to match:
 
+1. The number of attempts for that action must be below `maxAttempts`
+2. If `errorSubstring` is set, the error cause must contain it (substring match)
+3. If `dataSource` is set, it must exactly match the DeltaFile's data source
+4. If `action` is set, it must exactly match the action name (including flow prefix)
 
-When a resume policy match is found, an automatic resume of the DeltaFile is scheduled. The `name` of the resume policy which was applied is recorded in the DeltaFile `nextAutoResumeReason` field.
+All specified criteria must match (AND logic). Only the first matching policy is applied.
 
-Scheduling is determined using the `backOff` properties. The only required property is `delay`. When this is the only
-field present, the DeltaFile is scheduled for automatic resume by adding the `delay` (in seconds) to the stop time of
-the action which encountered the error.
+### Priority Calculation
 
-When `random` is TRUE, the calculated delay is a random value between `delay` and `maxDelay`. `maxDelay` is required
-when `random` is TRUE.
+If `priority` is not specified, it is automatically calculated based on the specificity of the match criteria:
 
-When `multiplier` is set, the delay is calculated by multiplying the `delay`, `multiplier`, and number of attempts for
-that action. Optionally, this can be capped when the `maxDelay` is set.
+| Criteria | Points |
+|----------|--------|
+| `errorSubstring` with 11+ characters | 100 |
+| `errorSubstring` with fewer characters | 50 |
+| `action` specified | 100 |
+| `dataSource` specified | 50 |
 
-For instance, if the backOff is:
+More specific policies should have higher priority to ensure they match before less specific ones.
 
+## Delay Calculation
+
+The retry delay is calculated based on the `backOff` configuration:
+
+**Fixed delay:**
 ```json
-{
-  "delay": 100,
-  "maxDelay": 500,
-  "multiplier": 2,
-  "random": false
-}
+{ "delay": 60 }
 ```
+Always waits 60 seconds before retry.
 
-Then the delays will be computed as follows:
+**Exponential backoff:**
+```json
+{ "delay": 30, "maxDelay": 300, "multiplier": 2 }
+```
+- Attempt 1: 30 × 2 × 1 = 60 seconds
+- Attempt 2: 30 × 2 × 2 = 120 seconds
+- Attempt 3: 30 × 2 × 3 = 180 seconds
+- Attempt 4: 30 × 2 × 4 = 240 seconds
+- Attempt 5: 30 × 2 × 5 = 300 seconds (capped at maxDelay)
 
-* 1 attempt: 200; 100 * 2 * 1
-* 2 attempts: 400; 100 * 2 * 2
-* 3 attempts: 500; 100 * 2 * 3 (600), but `maxDelay` is 500
+**Random jitter:**
+```json
+{ "delay": 60, "maxDelay": 120, "random": true }
+```
+Each retry waits a random time between 60 and 120 seconds. Useful for avoiding thundering herd problems with rate limits.
 
-## Task
+## Background Task
 
-DeltaFi will frequently search for DeltaFiles that are ready to be automatically resumed. This frequency is controlled
-by the `autoResumeCheckFrequency` system property. Because this search does not run constantly, there may be a small
-delay between a DeltaFile's scheduled automatic resume time, and the actual time it is resumed.
+DeltaFi periodically searches for DeltaFiles ready for automatic resume. This frequency is controlled by the `autoResumeCheckFrequency` system property. There may be a small delay between a DeltaFile's scheduled resume time and the actual resume.
 
 ## Examples
 
-The following automatic resume policy will match on any action in the `passthrough` flow. It will allow an errored
-action to be RETRIED up to 10 times. The scheduling for attempts will increase by one minute (60 seconds) each time, up
-to a maximum of 5 minutes (300 seconds).
+### Retry Timeouts
+
+Retry any action that fails with a timeout error, up to 3 times with a 1-minute delay:
 
 ```json
 {
-  "id": "88bc7429-7adf-4bb1-b23f-3922993e0a1a",
-  "name": "auto-resume-passthrough",
-  "flow": "passthrough",
-  "maxAttempts": 10,
-  "priority": 50,
+  "name": "retry-timeouts",
+  "errorSubstring": "timeout",
+  "maxAttempts": 3,
   "backOff": {
-    "delay": 60,
-    "maxDelay": 300,
-    "multiplier": 1
+    "delay": 60
   }
 }
 ```
 
-The automatic resume policy below will be triggered by any ENRICH action that produces an error cause containing the
-string `JsonException`. The action will be attempted up to 4 times, with a random delay between 60-120 seconds.
+### Retry Connection Errors with Exponential Backoff
+
+Retry connection errors with increasing delays:
 
 ```json
 {
-  "id": "a2b08968-866a-4080-bc28-1d7e7c81ada8",
-  "name": "resume-json-errors",
-  "errorSubstring": "JsonException",
-  "actionType": "TRANSFORM",
-  "maxAttempts": 4,
-  "priority": 150,
+  "name": "retry-connection-errors",
+  "errorSubstring": "connection refused",
+  "maxAttempts": 5,
+  "backOff": {
+    "delay": 30,
+    "maxDelay": 300,
+    "multiplier": 2
+  }
+}
+```
+
+### Retry Rate Limits with Jitter
+
+Retry rate limit errors with random delays to avoid synchronized retries:
+
+```json
+{
+  "name": "retry-rate-limits",
+  "errorSubstring": "429",
+  "maxAttempts": 10,
   "backOff": {
     "delay": 60,
-    "maxDelay": 120,
+    "maxDelay": 300,
     "random": true
   }
 }
 ```
+
+### Retry Specific Data Source
+
+Retry all errors from a flaky external API:
+
+```json
+{
+  "name": "retry-external-api",
+  "dataSource": "external-api-source",
+  "maxAttempts": 5,
+  "backOff": {
+    "delay": 120,
+    "maxDelay": 600,
+    "multiplier": 2
+  }
+}
+```
+
+### Retry Specific Action
+
+Retry failures from a specific egress action:
+
+```json
+{
+  "name": "retry-http-egress",
+  "action": "my-flow.HttpEgressAction",
+  "maxAttempts": 3,
+  "backOff": {
+    "delay": 60
+  }
+}
+```
+
+### High-Priority Specific Match
+
+A specific error in a specific flow, with high priority to match before generic rules:
+
+```json
+{
+  "name": "partner-validation-retry",
+  "dataSource": "partner-feed",
+  "action": "partner-feed.ValidateAction",
+  "errorSubstring": "schema validation failed",
+  "maxAttempts": 2,
+  "priority": 200,
+  "backOff": {
+    "delay": 300
+  }
+}
+```
+
+## CLI Management
+
+Auto resume rules can be managed using the `deltafi auto-resume` command (alias: `deltafi ar`).
+
+### Listing Rules
+
+```bash
+deltafi auto-resume list
+```
+
+### Creating Rules
+
+Save your rule definition to a JSON or YAML file and load it:
+
+```bash
+deltafi auto-resume load my-rule.json
+```
+
+You can load multiple files at once, or a file containing an array of rules:
+
+```bash
+deltafi auto-resume load rule1.json rule2.json rule3.json
+```
+
+To replace all existing rules with a new set:
+
+```bash
+deltafi auto-resume load --replace-all rules.json
+```
+
+### Viewing a Rule
+
+```bash
+deltafi auto-resume get my-rule
+deltafi auto-resume get my-rule -o yaml
+```
+
+### Exporting Rules
+
+Export all rules for backup or migration:
+
+```bash
+deltafi auto-resume export > rules.json
+deltafi auto-resume export -o yaml > rules.yaml
+```
+
+### Deleting Rules
+
+Delete a specific rule by name:
+
+```bash
+deltafi auto-resume delete my-rule
+```
+
+Delete all rules:
+
+```bash
+deltafi auto-resume clear
+```
+
+Use `-f` to skip confirmation prompts.
+
+### Applying Rules to Existing Errors
+
+When you create a new rule, it will only apply to future errors. To apply rules to existing errored DeltaFiles:
+
+```bash
+deltafi auto-resume apply my-rule
+deltafi auto-resume apply rule1 rule2 rule3
+```
+
+### Testing Rules
+
+Test a rule against existing errors without saving it:
+
+```bash
+deltafi auto-resume dry-run my-rule.json
+```
+
+This will report how many DeltaFiles would match the rule.

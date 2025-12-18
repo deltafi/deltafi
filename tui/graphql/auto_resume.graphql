@@ -1,0 +1,71 @@
+query GetAllResumePolicies {
+    getAllResumePolicies {
+        id
+        name
+        errorSubstring
+        dataSource
+        action
+        maxAttempts
+        priority
+        backOff {
+            delay
+            maxDelay
+            multiplier
+            random
+        }
+    }
+}
+
+query GetResumePolicy($id: UUID!) {
+    getResumePolicy(id: $id) {
+        id
+        name
+        errorSubstring
+        dataSource
+        action
+        maxAttempts
+        priority
+        backOff {
+            delay
+            maxDelay
+            multiplier
+            random
+        }
+    }
+}
+
+query ResumePolicyDryRun($policy: ResumePolicyInput!) {
+    resumePolicyDryRun(resumePolicyInput: $policy) {
+        success
+        info
+        errors
+    }
+}
+
+mutation LoadResumePolicies($replaceAll: Boolean!, $policies: [ResumePolicyInput!]!) {
+    loadResumePolicies(replaceAll: $replaceAll, policies: $policies) {
+        success
+        info
+        errors
+    }
+}
+
+mutation RemoveResumePolicy($id: UUID!) {
+    removeResumePolicy(id: $id)
+}
+
+mutation UpdateResumePolicy($policy: ResumePolicyInput!) {
+    updateResumePolicy(resumePolicy: $policy) {
+        success
+        info
+        errors
+    }
+}
+
+mutation ApplyResumePolicies($names: [String!]!) {
+    applyResumePolicies(names: $names) {
+        success
+        info
+        errors
+    }
+}

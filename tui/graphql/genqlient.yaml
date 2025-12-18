@@ -17,6 +17,7 @@ operations:
 - properties.graphql
 - deltafile_stats.graphql
 - delete_policies.graphql
+- auto_resume.graphql
 - deltafile_search.graphql
 - testing.graphql
 - ssl.graphql

@@ -113,6 +113,15 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
       - [start](#delete-policies-start)
       - [stop](#delete-policies-stop)
       - [delete](#delete-policies-delete)
+    - [auto-resume](#auto-resume)
+      - [list](#auto-resume-list)
+      - [get](#auto-resume-get)
+      - [export](#auto-resume-export)
+      - [load](#auto-resume-load)
+      - [delete](#auto-resume-delete)
+      - [clear](#auto-resume-clear)
+      - [apply](#auto-resume-apply)
+      - [dry-run](#auto-resume-dry-run)
     - [properties](#properties)
       - [list](#properties-list)
       - [get](#properties-get)
@@ -538,6 +547,43 @@ Manage the delete policies in DeltaFi.
 - `delete [policyName]`: Remove a delete policy
   ```bash
   deltafi delete-policies delete <policyName>
+  ```
+
+#### `auto-resume`
+Manage auto resume rules that automatically retry errored DeltaFiles. See [Automatic Resume](../advanced/auto_resume.md) for details on how auto resume rules work.
+
+- `list`: List all auto resume rules
+  ```bash
+  deltafi auto-resume list [--plain|-p]
+  ```
+- `get [name-or-id]`: Get an auto resume rule by name or UUID
+  ```bash
+  deltafi auto-resume get <name-or-id> [--format|-o <json|yaml>]
+  ```
+- `export`: Export all auto resume rules
+  ```bash
+  deltafi auto-resume export [--format|-o <json|yaml>]
+  ```
+- `load [files...]`: Load auto resume rules from JSON or YAML files
+  ```bash
+  deltafi auto-resume load <files...> [--replace-all|-r]
+  ```
+  Files can contain a single rule or an array of rules.
+- `delete [name-or-id]`: Delete an auto resume rule
+  ```bash
+  deltafi auto-resume delete <name-or-id> [--force|-f]
+  ```
+- `clear`: Delete all auto resume rules
+  ```bash
+  deltafi auto-resume clear [--force|-f]
+  ```
+- `apply [names...]`: Apply auto resume rules to existing errored DeltaFiles
+  ```bash
+  deltafi auto-resume apply <names...>
+  ```
+- `dry-run [file]`: Test an auto resume rule against existing errors without saving
+  ```bash
+  deltafi auto-resume dry-run <file>
   ```
 
 #### `properties`
