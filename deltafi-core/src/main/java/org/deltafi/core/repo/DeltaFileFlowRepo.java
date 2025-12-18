@@ -42,6 +42,7 @@ public interface DeltaFileFlowRepo extends JpaRepository<DeltaFileFlow, UUID>, D
             nativeQuery = true)
     List<DeltaFileFlow> findAllByDeltaFileIdsAndFlowZero(List<UUID> deltaFileIds);
 
-    @Query("SELECT COUNT(*) FROM DeltaFileFlow df WHERE df.errorAcknowledged IS NULL AND df.state = 'ERROR'")
+    @Query(value = "SELECT COUNT(DISTINCT delta_file_id) FROM delta_file_flows WHERE error_acknowledged IS NULL AND state = 'ERROR'",
+            nativeQuery = true)
     long countUnacknowledgedErrors();
 }

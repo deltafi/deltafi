@@ -324,9 +324,8 @@ public class UtilService {
                 .build();
     }
 
-    public static void matchesCounterPerMessage(SummaryByFlowAndMessage result, int index, String cause, String flow, int expectedCount) {
+    public static void matchesCounterPerMessage(SummaryByFlowAndMessage result, int index, String cause, int expectedCount) {
         assertEquals(cause, result.countPerMessage().get(index).getMessage());
-        assertEquals(flow, result.countPerMessage().get(index).getFlow());
         assertEquals(expectedCount, result.countPerMessage().get(index).getCount());
     }
 

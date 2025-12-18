@@ -79,7 +79,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private SummaryByFlow getSummaryByFlow(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByFlowSort sortField, DeltaFileFlowState deltaFileFlowState) {
         StringBuilder sql = new StringBuilder("""
-                SELECT fd.name, fd.type, COUNT(dff.id) AS count
+                SELECT fd.name, fd.type, COUNT(DISTINCT dff.delta_file_id) AS count
                 FROM delta_file_flows dff
                 LEFT JOIN flow_definitions fd
                 ON dff.flow_definition_id = fd.id
@@ -110,18 +110,23 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
     }
 
     private SummaryByFlowAndMessage getSummaryByFlowAndMessage(Integer offset, int limit, SummaryFilter filter, DeltaFileDirection direction, SummaryByMessageSort sortField, DeltaFileFlowState flowState) {
+        // Step 1: Get distinct messages with counts (paginated)
         StringBuilder sql = new StringBuilder("""
-            SELECT dff.error_or_filter_cause, fd.name, fd.type, COUNT(dff.id) AS count
+            SELECT dff.error_or_filter_cause, COUNT(DISTINCT dff.delta_file_id) AS count
             FROM delta_file_flows dff
-            JOIN flow_definitions fd
+            LEFT JOIN flow_definitions fd
             ON dff.flow_definition_id = fd.id
-            WHERE dff.state = CAST(:state AS dff_state_enum)\s""");
+            WHERE dff.state = CAST(:state AS dff_state_enum)
+            AND dff.error_or_filter_cause IS NOT NULL\s""");
 
         addFilterClauses(sql, filter);
 
-        sql.append("GROUP BY dff.error_or_filter_cause, fd.name, fd.type ");
+        sql.append("GROUP BY dff.error_or_filter_cause ");
 
-        addFooterClauses(sql, sortField == SummaryByMessageSort.MESSAGE ? "error_or_filter_cause" : sortField.toString().toLowerCase(), direction, true);
+        sql.append("ORDER BY ");
+        sql.append(sortField == SummaryByMessageSort.MESSAGE ? "error_or_filter_cause" : "count");
+        sql.append(direction == null || direction == DeltaFileDirection.ASC ? " ASC " : " DESC ");
+        sql.append("LIMIT :limit OFFSET :offset");
 
         Query query = entityManager.createNativeQuery(sql.toString())
                 .setParameter("state", flowState.toString())
@@ -132,13 +137,65 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
         @SuppressWarnings("unchecked")
         List<Object[]> resultList = query.getResultList();
+
+        // Step 2: Get per-flow breakdown for these messages
+        List<String> messages = resultList.stream()
+                .map(row -> (String) row[0])
+                .toList();
+        Map<String, List<CountPerFlow>> flowsByMessage = getFlowsForMessages(messages, filter, flowState);
+
+        // Step 3: Combine results
         List<CountPerMessage> countPerMessage = resultList.stream()
-                .map(row -> new CountPerMessage((String) row[0], (String) row[1], FlowType.valueOf((String) row[2]), ((Number) row[3]).intValue(), null))
+                .map(row -> {
+                    String message = (String) row[0];
+                    int count = ((Number) row[1]).intValue();
+                    List<CountPerFlow> flows = flowsByMessage.getOrDefault(message, List.of());
+                    return new CountPerMessage(message, null, null, count, flows, null);
+                })
                 .collect(Collectors.toList());
 
         Long totalCount = totalCountByFlowAndMessage(filter, flowState);
 
         return new SummaryByFlowAndMessage(offset != null ? offset : 0, countPerMessage.size(), totalCount.intValue(), countPerMessage);
+    }
+
+    private Map<String, List<CountPerFlow>> getFlowsForMessages(List<String> messages, SummaryFilter filter, DeltaFileFlowState flowState) {
+        if (messages.isEmpty()) {
+            return Map.of();
+        }
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT dff.error_or_filter_cause, fd.name, fd.type, COUNT(DISTINCT dff.delta_file_id) AS count
+            FROM delta_file_flows dff
+            LEFT JOIN flow_definitions fd
+            ON dff.flow_definition_id = fd.id
+            WHERE dff.state = CAST(:state AS dff_state_enum)
+            AND dff.error_or_filter_cause IN (:messages)\s""");
+
+        addFilterClauses(sql, filter);
+
+        sql.append("GROUP BY dff.error_or_filter_cause, fd.name, fd.type ");
+        sql.append("ORDER BY dff.error_or_filter_cause, fd.name");
+
+        Query query = entityManager.createNativeQuery(sql.toString())
+                .setParameter("state", flowState.toString())
+                .setParameter("messages", messages);
+
+        addSummaryFilterParameters(query, filter);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> resultList = query.getResultList();
+
+        return resultList.stream()
+                .collect(Collectors.groupingBy(
+                        row -> (String) row[0],
+                        Collectors.mapping(
+                                row -> new CountPerFlow(
+                                        (String) row[1],
+                                        FlowType.valueOf((String) row[2]),
+                                        ((Number) row[3]).intValue(),
+                                        null),
+                                Collectors.toList())));
     }
 
     private void addFilterClauses(StringBuilder sql, SummaryFilter filter) {
@@ -190,7 +247,7 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         StringBuilder sql = new StringBuilder("""
             SELECT COUNT(*)
             FROM (
-              SELECT DISTINCT fd.name
+              SELECT DISTINCT fd.name, fd.type
               FROM delta_file_flows dff
               LEFT JOIN flow_definitions fd
               ON dff.flow_definition_id = fd.id
@@ -210,18 +267,14 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     private Long totalCountByFlowAndMessage(SummaryFilter filter, DeltaFileFlowState flowState) {
         StringBuilder sql = new StringBuilder("""
-            SELECT COUNT(*)
-            FROM (
-              SELECT DISTINCT dff.error_or_filter_cause, fd.name
-              FROM delta_file_flows dff
-              JOIN flow_definitions fd
-              ON dff.flow_definition_id = fd.id
-              WHERE dff.error_or_filter_cause IS NOT NULL
-              AND dff.state = CAST(:state AS dff_state_enum)\s""");
+            SELECT COUNT(DISTINCT dff.error_or_filter_cause)
+            FROM delta_file_flows dff
+            LEFT JOIN flow_definitions fd
+            ON dff.flow_definition_id = fd.id
+            WHERE dff.error_or_filter_cause IS NOT NULL
+            AND dff.state = CAST(:state AS dff_state_enum)\s""");
 
         addFilterClauses(sql, filter);
-
-        sql.append(")");
 
         Query query = entityManager.createNativeQuery(sql.toString())
                 .setParameter("state", flowState.toString());

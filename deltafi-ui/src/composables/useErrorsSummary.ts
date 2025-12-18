@@ -50,9 +50,11 @@ export default function useErrors() {
         countPerMessage: {
           count: true,
           message: true,
-          flow: true,
-          type: true,
-          dids: true,
+          flows: {
+            flow: true,
+            type: true,
+            count: true,
+          },
         },
       },
     };

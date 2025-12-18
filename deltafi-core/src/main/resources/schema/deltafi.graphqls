@@ -262,9 +262,10 @@ type CountPerFlow {
 
 type CountPerMessage {
   message: String!
-  flow: String!
-  type: FlowType!
+  flow: String @deprecated(reason: "Use flows field instead")
+  type: FlowType @deprecated(reason: "Use flows field instead")
   count: Int!
+  flows: [CountPerFlow!]!
   dids: [UUID!] @deprecated(reason: "Use acknowledgeByMessage/annotateByMessage mutations instead")
 }
 

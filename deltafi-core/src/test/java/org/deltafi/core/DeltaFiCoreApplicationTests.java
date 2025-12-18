@@ -4461,10 +4461,11 @@ class DeltaFiCoreApplicationTests {
 				SummaryByFlowAndMessage.class
 		);
 
-		assertEquals(5, actual.count());
+		// Now grouped by message only: causeA, causeX, causeY, causeZ = 4 unique messages
+		assertEquals(4, actual.count());
 		assertEquals(0, actual.offset());
-		assertEquals(7, actual.totalCount());
-		assertEquals(5, actual.countPerMessage().size());
+		assertEquals(4, actual.totalCount());
+		assertEquals(4, actual.countPerMessage().size());
 	}
 
 	@Test
@@ -4586,17 +4587,15 @@ class DeltaFiCoreApplicationTests {
 				0, 99, null, null, null);
 
 		assertEquals(0, fullSummary.offset());
-		assertEquals(7, fullSummary.count());
-		assertEquals(7, fullSummary.totalCount());
-		assertEquals(7, fullSummary.countPerMessage().size());
+		assertEquals(4, fullSummary.count());
+		assertEquals(4, fullSummary.totalCount());
+		assertEquals(4, fullSummary.countPerMessage().size());
 
-		matchesCounterPerMessage(fullSummary, 0, "causeY", "extraFlow", 1);
-		matchesCounterPerMessage(fullSummary, 1, "causeA", "f1", 2);
-		matchesCounterPerMessage(fullSummary, 2, "causeX", "f1", 1);
-		matchesCounterPerMessage(fullSummary, 3, "causeZ", "f1", 1);
-		matchesCounterPerMessage(fullSummary, 4, "causeX", "f2", 2);
-		matchesCounterPerMessage(fullSummary, 5, "causeZ", "f2", 1);
-		matchesCounterPerMessage(fullSummary, 6, "causeZ", "f3", 3);
+		// Grouped by message only, default sort is by count ASC
+		matchesCounterPerMessage(fullSummary, 0, "causeY", 1);
+		matchesCounterPerMessage(fullSummary, 1, "causeA", 2);
+		matchesCounterPerMessage(fullSummary, 2, "causeX", 3);
+		matchesCounterPerMessage(fullSummary, 3, "causeZ", 5);
 	}
 
 	@Test
@@ -4606,31 +4605,34 @@ class DeltaFiCoreApplicationTests {
 
 		loadDeltaFilesWithActionErrors(now, plusTwo);
 
-		SummaryByFlowAndMessage orderByFlow = deltaFilesService.getErrorSummaryByMessage(
+		// sortField=null defaults to COUNT, direction=ASC
+		SummaryByFlowAndMessage orderByCountAsc = deltaFilesService.getErrorSummaryByMessage(
 				0, 4, null, DeltaFileDirection.ASC, null);
 
-		assertEquals(0, orderByFlow.offset());
-		assertEquals(4, orderByFlow.count());
-		assertEquals(7, orderByFlow.totalCount());
-		assertEquals(4, orderByFlow.countPerMessage().size());
+		assertEquals(0, orderByCountAsc.offset());
+		assertEquals(4, orderByCountAsc.count());
+		assertEquals(4, orderByCountAsc.totalCount());
+		assertEquals(4, orderByCountAsc.countPerMessage().size());
 
-		matchesCounterPerMessage(orderByFlow, 0, "causeY", "extraFlow", 1);
-		matchesCounterPerMessage(orderByFlow, 1, "causeA", "f1", 2);
-		matchesCounterPerMessage(orderByFlow, 2, "causeX", "f1", 1);
-		matchesCounterPerMessage(orderByFlow, 3, "causeZ", "f1", 1);
+		// Sorted by count ASC
+		matchesCounterPerMessage(orderByCountAsc, 0, "causeY", 1);
+		matchesCounterPerMessage(orderByCountAsc, 1, "causeA", 2);
+		matchesCounterPerMessage(orderByCountAsc, 2, "causeX", 3);
+		matchesCounterPerMessage(orderByCountAsc, 3, "causeZ", 5);
 
 		SummaryByFlowAndMessage orderByCountDesc = deltaFilesService.getErrorSummaryByMessage(
 				0, 4, null, DeltaFileDirection.DESC, SummaryByMessageSort.COUNT);
 
 		assertEquals(0, orderByCountDesc.offset());
 		assertEquals(4, orderByCountDesc.count());
-		assertEquals(7, orderByCountDesc.totalCount());
+		assertEquals(4, orderByCountDesc.totalCount());
 		assertEquals(4, orderByCountDesc.countPerMessage().size());
 
-		matchesCounterPerMessage(orderByCountDesc, 0, "causeZ", "f3", 3);
-		matchesCounterPerMessage(orderByCountDesc, 1, "causeX", "f2", 2);
-		matchesCounterPerMessage(orderByCountDesc, 2, "causeA", "f1", 2);
-		matchesCounterPerMessage(orderByCountDesc, 3, "causeZ", "f2", 1);
+		// Sorted by count DESC
+		matchesCounterPerMessage(orderByCountDesc, 0, "causeZ", 5);
+		matchesCounterPerMessage(orderByCountDesc, 1, "causeX", 3);
+		matchesCounterPerMessage(orderByCountDesc, 2, "causeA", 2);
+		matchesCounterPerMessage(orderByCountDesc, 3, "causeY", 1);
 	}
 
 	@Test
@@ -4648,17 +4650,14 @@ class DeltaFiCoreApplicationTests {
 				0, 99, filterBefore, null, null);
 
 		assertEquals(0, resultsBefore.offset());
-		assertEquals(6, resultsBefore.count());
-		assertEquals(6, resultsBefore.totalCount());
-		assertEquals(6, resultsBefore.countPerMessage().size());
+		assertEquals(3, resultsBefore.count());
+		assertEquals(3, resultsBefore.totalCount());
+		assertEquals(3, resultsBefore.countPerMessage().size());
 
-		// no 'causeA' entry
-		matchesCounterPerMessage(resultsBefore, 0, "causeY", "extraFlow", 1);
-		matchesCounterPerMessage(resultsBefore, 1, "causeX", "f1", 1);
-		matchesCounterPerMessage(resultsBefore, 2, "causeZ", "f1", 1);
-		matchesCounterPerMessage(resultsBefore, 3, "causeX", "f2", 2);
-		matchesCounterPerMessage(resultsBefore, 4, "causeZ", "f2", 1);
-		matchesCounterPerMessage(resultsBefore, 5, "causeZ", "f3", 3);
+		// no 'causeA' entry (it was modified at `later`), sorted by count ASC
+		matchesCounterPerMessage(resultsBefore, 0, "causeY", 1);
+		matchesCounterPerMessage(resultsBefore, 1, "causeX", 3);
+		matchesCounterPerMessage(resultsBefore, 2, "causeZ", 5);
 
 		ErrorSummaryFilter filterAfter = ErrorSummaryFilter.builder()
 				.modifiedAfter(plusOne).build();
@@ -4670,7 +4669,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, resultAfter.count());
 		assertEquals(1, resultAfter.totalCount());
 		assertEquals(1, resultAfter.countPerMessage().size());
-		matchesCounterPerMessage(resultAfter, 0, "causeA", "f1", 2);
+		matchesCounterPerMessage(resultAfter, 0, "causeA", 2);
 	}
 
 	@Test
@@ -4684,6 +4683,8 @@ class DeltaFiCoreApplicationTests {
 				.errorAcknowledged(false)
 				.flow("f1").build();
 
+		// With flow filter "f1": causeA (2), causeX (1), causeZ (1) = 3 messages
+		// sortField=null defaults to count, direction=DESC → count DESC
 		SummaryByFlowAndMessage firstPage = deltaFilesService.getErrorSummaryByMessage(
 				0, 2, filter, DeltaFileDirection.DESC, null);
 
@@ -4691,8 +4692,12 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, firstPage.count());
 		assertEquals(3, firstPage.totalCount());
 		assertEquals(2, firstPage.countPerMessage().size());
-		matchesCounterPerMessage(firstPage, 0, "causeZ", "f1", 1);
-		matchesCounterPerMessage(firstPage, 1, "causeX", "f1", 1);
+		// causeA has highest count (2), then causeX or causeZ (both 1)
+		matchesCounterPerMessage(firstPage, 0, "causeA", 2);
+		// When counts are equal, order is database-dependent; check either X or Z is present
+		String secondMessage = firstPage.countPerMessage().get(1).getMessage();
+		assertTrue(secondMessage.equals("causeX") || secondMessage.equals("causeZ"));
+		assertEquals(1, firstPage.countPerMessage().get(1).getCount());
 
 		SummaryByFlowAndMessage pageTwo = deltaFilesService.getErrorSummaryByMessage(
 				2, 2, filter, DeltaFileDirection.DESC, null);
@@ -4701,7 +4706,8 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, pageTwo.count());
 		assertEquals(3, pageTwo.totalCount());
 		assertEquals(1, pageTwo.countPerMessage().size());
-		matchesCounterPerMessage(pageTwo, 0, "causeA", "f1", 2);
+		// The remaining message (whichever wasn't on page 1)
+		assertEquals(1, pageTwo.countPerMessage().getFirst().getCount());
 
 		SummaryByFlowAndMessage invalidPage = deltaFilesService.getErrorSummaryByMessage(
 				4, 2, filter, DeltaFileDirection.DESC, null);

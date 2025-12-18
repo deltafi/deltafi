@@ -227,6 +227,17 @@ const fetchErrorsMessages = async () => {
   await fetchErrorSummaryByMessage(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
   errorsMessage.value = response.value.countPerMessage;
   totalErrorsMessage.value = response.value.totalCount;
+
+  // If offset exceeds total count, reset to page 1 and re-fetch
+  if (errorsMessage.value.length === 0 && totalErrorsMessage.value > 0 && offset.value >= totalErrorsMessage.value) {
+    offset.value = 0;
+    page.value = 1;
+    setPersistedParams();
+    await fetchErrorSummaryByMessage(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
+    errorsMessage.value = response.value.countPerMessage;
+    totalErrorsMessage.value = response.value.totalCount;
+  }
+
   loading.value = false;
 };
 
@@ -308,24 +319,16 @@ const autoResumeSelected = computed(() => {
 });
 
 const groupErrorMessageData = computed(() => {
-  const grouped = {};
-
-  for (const error of errorsMessage.value) {
-    const { message } = error;
-
-    if (!grouped[message]) {
-      grouped[message] = {
-        count: 0,
-        message,
-        flows: [],
-      };
-    }
-
-    grouped[message].count += error.count;
-    grouped[message].flows.push(error);
-  }
-
-  return Object.values(grouped);
+  // Backend now returns data pre-grouped by message with flows nested
+  // Inject parent message into each flow item for the expansion table
+  return errorsMessage.value.map((error) => ({
+    message: error.message,
+    count: error.count,
+    flows: (error.flows || []).map((flow) => ({
+      ...flow,
+      message: error.message,
+    })),
+  }));
 });
 
 const setupWatchers = () => {

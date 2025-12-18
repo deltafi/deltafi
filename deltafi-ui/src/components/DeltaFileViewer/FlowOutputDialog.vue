@@ -167,6 +167,10 @@ const outputContent = computed(() => {
   if (lastAction.value?.content?.length > 0) {
     return lastAction.value.content;
   }
+  // If no actions at all, output is the same as input (passthrough)
+  if (!props.flow?.actions?.length) {
+    return inputContent.value;
+  }
   return [];
 });
 

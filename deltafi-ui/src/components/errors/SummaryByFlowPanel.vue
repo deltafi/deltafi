@@ -191,6 +191,17 @@ const fetchErrorsFlow = async () => {
   await fetchErrorSummaryByFlow(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
+
+  // If offset exceeds total count, reset to page 1 and re-fetch
+  if (errorsFlow.value.length === 0 && totalErrorsFlow.value > 0 && offset.value >= totalErrorsFlow.value) {
+    offset.value = 0;
+    page.value = 1;
+    setPersistedParams();
+    await fetchErrorSummaryByFlow(props.queryParams, props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, flowName);
+    errorsFlow.value = response.value.countPerFlow;
+    totalErrorsFlow.value = response.value.totalCount;
+  }
+
   loading.value = false;
 };
 
