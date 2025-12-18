@@ -96,7 +96,7 @@ import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import _ from "lodash";
 
@@ -109,6 +109,9 @@ import Panel from "primevue/panel";
 import Splitter from "primevue/splitter";
 import SplitterPanel from "primevue/splitterpanel";
 import Tag from "primevue/tag";
+
+const editingPlugin = ref(false);
+provide("isEditingPlugin", editingPlugin);
 
 const selectedPlugin = ref(null);
 const dataTableIdRef = ref();
@@ -158,12 +161,13 @@ const IN_PROGRESS_STATES = ["PENDING", "INSTALLING", "REMOVING"];
 
 const hasInProgressPlugins = computed(() => {
   if (!plugins.value?.plugins) return false;
-  return plugins.value.plugins.some(p => IN_PROGRESS_STATES.includes(p.installState));
+  return plugins.value.plugins.some((p) => IN_PROGRESS_STATES.includes(p.installState));
 });
 
 const startAutoRefresh = () => {
   if (autoRefreshInterval.value) return;
   autoRefreshInterval.value = setInterval(() => {
+    if (editingPlugin.value) return; // Don't refresh while updating plugin
     fetchPlugins();
   }, 5000);
 };
@@ -265,24 +269,36 @@ const clearUploadErrors = () => {
 const getStateLabel = (plugin) => {
   if (plugin.disabled) return "Disabled";
   switch (plugin.installState) {
-    case "PENDING": return "Pending";
-    case "INSTALLING": return "Installing";
-    case "INSTALLED": return "Installed";
-    case "FAILED": return "Failed";
-    case "REMOVING": return "Removing";
-    default: return plugin.installState;
+    case "PENDING":
+      return "Pending";
+    case "INSTALLING":
+      return "Installing";
+    case "INSTALLED":
+      return "Installed";
+    case "FAILED":
+      return "Failed";
+    case "REMOVING":
+      return "Removing";
+    default:
+      return plugin.installState;
   }
 };
 
 const getStateSeverity = (plugin) => {
   if (plugin.disabled) return "secondary";
   switch (plugin.installState) {
-    case "PENDING": return "secondary";
-    case "INSTALLING": return "info";
-    case "INSTALLED": return "success";
-    case "FAILED": return "danger";
-    case "REMOVING": return "warn";
-    default: return "secondary";
+    case "PENDING":
+      return "secondary";
+    case "INSTALLING":
+      return "info";
+    case "INSTALLED":
+      return "success";
+    case "FAILED":
+      return "danger";
+    case "REMOVING":
+      return "warn";
+    default:
+      return "secondary";
   }
 };
 
@@ -334,13 +350,13 @@ const enable = async (plugin) => {
 
 const getPluginDisplayName = (plugin) => {
   // For non-installed states, use image as the primary identifier
-  if (['PENDING', 'INSTALLING', 'FAILED'].includes(plugin.installState)) {
+  if (["PENDING", "INSTALLING", "FAILED"].includes(plugin.installState)) {
     if (plugin.imageName) {
       return plugin.imageTag ? `${plugin.imageName}:${plugin.imageTag}` : plugin.imageName;
     }
   }
   // For installed (or fallback), use displayName
-  return plugin.displayName || plugin.pluginCoordinates?.artifactId || 'Unknown';
+  return plugin.displayName || plugin.pluginCoordinates?.artifactId || "Unknown";
 };
 
 const getImageName = (plugin) => {
@@ -349,19 +365,18 @@ const getImageName = (plugin) => {
 
 const getPluginSubtitle = (plugin) => {
   // Show image:tag as subtitle for installed plugins
-  if (plugin.installState === 'INSTALLED' && plugin.imageName) {
+  if (plugin.installState === "INSTALLED" && plugin.imageName) {
     return getImageName(plugin);
   }
   return null;
 };
 
-
 const getPluginVersion = (plugin) => {
   // For non-installed states, show imageTag (that's what the user specified)
-  if (['PENDING', 'INSTALLING', 'FAILED'].includes(plugin.installState)) {
-    return plugin.imageTag || '-';
+  if (["PENDING", "INSTALLING", "FAILED"].includes(plugin.installState)) {
+    return plugin.imageTag || "-";
   }
-  return plugin.pluginCoordinates?.version || '-';
+  return plugin.pluginCoordinates?.version || "-";
 };
 </script>
 

@@ -29,7 +29,7 @@
       </template>
     </Menu>
     <Button ref="optionsButton" type="button" v-tooltip.top="`Actions`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
-    <DialogTemplate ref="updatePluginDialog" component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="40vw" :row-data-prop="data" @refresh-page="refresh" />
+    <DialogTemplate ref="updatePluginDialog" component-name="plugin/PluginConfigurationDialog" header="Update Plugin" required-permission="PluginInstall" dialog-width="40vw" :row-data-prop="data" @refresh-page="refresh" @close-dialog-template="closeUpdatePluginDialog" @open-dialog-template="openUpdatePluginDialog" />
     <PluginRemoveButton ref="removePluginButton" :row-data-prop="data" @reload-plugins="refresh" @plugin-removal-errors="emitPluginRemovalErrors" />
   </span>
 </template>
@@ -47,6 +47,7 @@ const vRipple = Ripple;
 
 const emit = defineEmits(["reloadPlugins", "pluginRemovalErrors", "retry", "rollback", "enable", "disable"]);
 const hasPermission = inject("hasPermission");
+const editingPlugin = inject("isEditingPlugin");
 const menu = ref();
 const horizontalEllipsis = ref(false);
 const updatePluginDialog = ref(null);
@@ -132,5 +133,13 @@ const refresh = () => {
 
 const emitPluginRemovalErrors = (errors) => {
   emit("pluginRemovalErrors", errors);
+};
+
+const closeUpdatePluginDialog = () => {
+  editingPlugin.value = false;
+};
+
+const openUpdatePluginDialog = () => {
+  editingPlugin.value = true;
 };
 </script>
