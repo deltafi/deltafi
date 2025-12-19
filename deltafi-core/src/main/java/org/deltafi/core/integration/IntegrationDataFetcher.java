@@ -29,6 +29,7 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.TestStatus;
 import org.deltafi.common.types.integration.IntegrationTest;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.integration.TestResult;
@@ -45,6 +46,7 @@ public class IntegrationDataFetcher {
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .registerModule(new JavaTimeModule());
 
+    private final CoreAuditLogger auditLogger;
     private final IntegrationService integrationService;
 
     @DgsQuery
@@ -77,12 +79,14 @@ public class IntegrationDataFetcher {
     @DgsMutation
     @NeedsPermission.IntegrationTestDelete
     public boolean removeIntegrationTest(@InputArgument String name) {
+        auditLogger.auditAndEvent("removing integration test {}", name);
         return integrationService.removeTest(name);
     }
 
     @DgsMutation
     @NeedsPermission.IntegrationTestDelete
     public boolean removeTestResult(@InputArgument String id) {
+        auditLogger.auditAndEvent("removing integration test result {}", id);
         return integrationService.removeResult(id);
     }
 
@@ -92,6 +96,7 @@ public class IntegrationDataFetcher {
         List<String> errors = new ArrayList<>();
         try {
             IntegrationTest integrationTest = YAML_MAPPER.readValue(configYaml, IntegrationTest.class);
+            auditLogger.auditAndEvent("loading integration test {}", integrationTest.getName());
             return integrationService.save(integrationTest);
         } catch (Exception e) {
             errors.add("Unable to parse YAML: " + e.getMessage());
@@ -105,14 +110,18 @@ public class IntegrationDataFetcher {
     @DgsMutation
     @NeedsPermission.IntegrationTestUpdate
     public Result saveIntegrationTest(@InputArgument IntegrationTest testCase) {
+        auditLogger.auditAndEvent("saving integration test {}", testCase.getName());
         return integrationService.save(testCase);
     }
 
     @DgsMutation
     @NeedsPermission.IntegrationTestUpdate
     public TestResult startIntegrationTest(@InputArgument String name) {
+        auditLogger.auditAndEvent("starting integration test {}", name);
         Optional<IntegrationTest> integrationTest = integrationService.getIntegrationTest(name);
         if (integrationTest.isPresent()) {
+            auditLogger.auditAndEvent("starting flows for integration test. {}",
+                    integrationTest.get().flowNames());
             return integrationService.runTest(integrationTest.get());
         }
 

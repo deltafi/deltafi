@@ -39,4 +39,18 @@ public class IntegrationTest {
     private List<TestCaseIngress> inputs;
     private String timeout;
     private List<ExpectedDeltaFile> expectedDeltaFiles;
+
+    public String flowNames() {
+        String result = "";
+        if (dataSources != null && !dataSources.isEmpty()) {
+            result = "data-sources: " + String.join(", ", dataSources) + " ";
+        }
+        if (transformationFlows != null && !transformationFlows.isEmpty()) {
+            result += "transforms: " + String.join(", ", transformationFlows) + " ";
+        }
+        if (dataSinks != null && !dataSinks.isEmpty()) {
+            result += "data-sinks: " + String.join(", ", dataSinks) + " ";
+        }
+        return result.trim();
+    }
 }
