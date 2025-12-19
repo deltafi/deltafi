@@ -1489,4 +1489,22 @@ class DeltaFilesServiceTest {
         assertThat(result.getCount()).isEqualTo(1);
         Mockito.verify(deltaFileRepo).save(deltaFile);
     }
+
+    @Test
+    void terminateAllWithError_terminatesPausedFlows() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(DID);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+        DeltaFileFlow flow = deltaFile.getFlows().iterator().next();
+        flow.setState(DeltaFileFlowState.PAUSED);
+        flow.queueAction("testAction", "TestActionClass", ActionType.TRANSFORM, false, OffsetDateTime.now(testClock));
+        deltaFile.setPaused(true);
+
+        Mockito.when(deltaFileRepo.deltaFiles(any(DeltaFilesFilter.class), eq(5000))).thenReturn(List.of(deltaFile));
+
+        var result = deltaFilesService.terminateAllWithError("test cause", "test context", null, null);
+
+        assertThat(result.getCount()).isEqualTo(1);
+        assertThat(flow.getState()).isEqualTo(DeltaFileFlowState.ERROR);
+        Mockito.verify(deltaFileRepo).save(deltaFile);
+    }
 }

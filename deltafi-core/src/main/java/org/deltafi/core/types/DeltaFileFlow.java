@@ -180,7 +180,7 @@ public class DeltaFileFlow {
     }
 
     public boolean terminateWithError(OffsetDateTime time, String cause, String context) {
-        if (state != DeltaFileFlowState.IN_FLIGHT) {
+        if (state != DeltaFileFlowState.IN_FLIGHT && state != DeltaFileFlowState.PAUSED) {
             return false;
         }
         boolean terminated = actions.stream()
