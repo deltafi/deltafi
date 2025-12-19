@@ -44,7 +44,7 @@ type valuesData struct {
 	Repo                     string `default:"deltafi"`
 	GrafanaContainer         string `default:"deltafi/grafana:12.4.0-3"`
 	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.132.0"`
-	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-1"`
+	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-2"`
 	VectorContainer          string `default:"deltafi/vector:0.51.1-alpine-0"`
 	DozzleContainer          string `default:"amir20/dozzle:v8.14.10"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
