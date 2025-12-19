@@ -16,7 +16,7 @@
  *    limitations under the License.
  */
 // ABOUTME: Fetches configuration from deltafi-core via GraphQL.
-// ABOUTME: Provides analyticsGroupName and parquetAnalyticsAgeOffDays for runtime configuration.
+// ABOUTME: Provides analyticsGroupName, parquetAnalyticsAgeOffDays, and provenanceAgeOffDays for runtime configuration.
 
 package config
 
@@ -33,21 +33,24 @@ import (
 )
 
 const DefaultAgeOffDays = 30
+const DefaultProvenanceAgeOffDays = 3
 
 type CoreConfig struct {
-	coreURL            string
-	analyticsGroupName string
-	ageOffDays         int
-	mu                 sync.RWMutex
-	logger             *slog.Logger
-	client             *http.Client
+	coreURL               string
+	analyticsGroupName    string
+	ageOffDays            int
+	provenanceAgeOffDays  int
+	mu                    sync.RWMutex
+	logger                *slog.Logger
+	client                *http.Client
 }
 
 func NewCoreConfig(coreURL string, logger *slog.Logger) *CoreConfig {
 	c := &CoreConfig{
-		coreURL:    coreURL,
-		ageOffDays: DefaultAgeOffDays,
-		logger:     logger,
+		coreURL:              coreURL,
+		ageOffDays:           DefaultAgeOffDays,
+		provenanceAgeOffDays: DefaultProvenanceAgeOffDays,
+		logger:               logger,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -87,6 +90,13 @@ func (c *CoreConfig) GetAgeOffDays() int {
 	return c.ageOffDays
 }
 
+// GetProvenanceAgeOffDays returns the cached provenanceAgeOffDays
+func (c *CoreConfig) GetProvenanceAgeOffDays() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.provenanceAgeOffDays
+}
+
 func (c *CoreConfig) refresh() {
 	if c.coreURL == "" {
 		c.logger.Debug("no core URL configured, skipping config refresh")
@@ -104,14 +114,18 @@ func (c *CoreConfig) refresh() {
 	if props.ageOffDays > 0 {
 		c.ageOffDays = props.ageOffDays
 	}
+	if props.provenanceAgeOffDays > 0 {
+		c.provenanceAgeOffDays = props.provenanceAgeOffDays
+	}
 	c.mu.Unlock()
 
-	c.logger.Info("fetched config from core", "analyticsGroupName", props.analyticsGroupName, "ageOffDays", c.ageOffDays)
+	c.logger.Info("fetched config from core", "analyticsGroupName", props.analyticsGroupName, "ageOffDays", c.ageOffDays, "provenanceAgeOffDays", c.provenanceAgeOffDays)
 }
 
 type coreProperties struct {
-	analyticsGroupName string
-	ageOffDays         int
+	analyticsGroupName   string
+	ageOffDays           int
+	provenanceAgeOffDays int
 }
 
 func (c *CoreConfig) fetchProperties() (coreProperties, error) {
@@ -160,6 +174,10 @@ func (c *CoreConfig) fetchProperties() (coreProperties, error) {
 			case "parquetAnalyticsAgeOffDays":
 				if days, err := strconv.Atoi(p.Value); err == nil && days > 0 {
 					props.ageOffDays = days
+				}
+			case "provenanceAgeOffDays":
+				if days, err := strconv.Atoi(p.Value); err == nil && days > 0 {
+					props.provenanceAgeOffDays = days
 				}
 			}
 		}

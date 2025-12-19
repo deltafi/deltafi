@@ -397,6 +397,7 @@ public class DeltaFilesService {
                                     .build());
                     generateMetrics(metrics, event, deltaFile, flow, action, actionConfiguration);
                     analyticEventService.recordEgress(deltaFile, flow);
+                    analyticEventService.recordProvenance(deltaFile, flow);
                 }
                 case ERROR -> {
                     error(deltaFile, flow, action, event);
@@ -562,6 +563,7 @@ public class DeltaFilesService {
             // remove the parent from the cache to ensure it is not marked completed until the children are persisted
             deltaFileCacheService.remove(deltaFile.getDid());
             action.changeState(ActionState.SPLIT, event.getStart(), event.getStop(), now);
+            analyticEventService.recordProvenanceForSplit(deltaFile, flow);
             List<StateMachineInput> inputs = new ArrayList<>();
             inputs.add(new StateMachineInput(deltaFile, flow));
             List<StateMachineInput> childInputs =
@@ -649,6 +651,7 @@ public class DeltaFilesService {
             final DeltaFileStage endingStage = deltaFile.getStage();
             if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.CANCELLED)) {
                 analyticEventService.recordCancel(deltaFile);
+                analyticEventService.recordProvenanceForCancel(deltaFile);
             }
             deltaFileCacheService.save(deltaFile);
         } else {
@@ -815,6 +818,7 @@ public class DeltaFilesService {
 
     private void logFilterAnalytics(DeltaFile deltaFile, DeltaFileFlow flow, ActionEvent event) {
         analyticEventService.recordFilter(deltaFile, flow.getName(), flow.getType(), flow.lastAction().getName(), flow.getErrorOrFilterCause(), flow.getModified());
+        analyticEventService.recordProvenance(deltaFile, flow);
         if (!event.getFilter().getAnnotations().isEmpty()) {
             analyticEventService.queueAnnotations(deltaFile.getDid(), event.getFilter().getAnnotations(), deltaFile.getCreated());
         }
@@ -822,6 +826,7 @@ public class DeltaFilesService {
 
     private void logErrorAnalytics(DeltaFile deltaFile, DeltaFileFlow flow, ActionEvent event) {
         analyticEventService.recordError(deltaFile, flow.getName(), flow.getType(), flow.lastAction().getName(), flow.getErrorOrFilterCause(), flow.getModified());
+        analyticEventService.recordProvenance(deltaFile, flow);
         if (!event.getError().getAnnotations().isEmpty()) {
             analyticEventService.queueAnnotations(deltaFile.getDid(), event.getError().getAnnotations(), deltaFile.getCreated());
         }
@@ -1518,6 +1523,7 @@ public class DeltaFilesService {
                             final DeltaFileStage endingStage = deltaFile.getStage();
                             if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.CANCELLED)) {
                                 analyticEventService.recordCancel(deltaFile);
+                                analyticEventService.recordProvenanceForCancel(deltaFile);
                             }
 
                             changedDeltaFiles.add(deltaFile);

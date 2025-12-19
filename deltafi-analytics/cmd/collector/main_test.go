@@ -64,8 +64,9 @@ func newTestHandler(t *testing.T, eventFlush buffer.FlushFunc[schema.Event], ann
 
 	eventBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "events"}, eventFlush, testLogger())
 	annotationBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "annotations"}, annotationFlush, testLogger())
+	provenanceBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "provenance"}, func(p []schema.Provenance) error { return nil }, testLogger())
 
-	return newHandler(eventBuf, annotationBuf, nil, w, testLogger())
+	return newHandler(eventBuf, annotationBuf, provenanceBuf, nil, w, testLogger())
 }
 
 func TestHandler_Health(t *testing.T) {
@@ -106,7 +107,8 @@ func TestHandler_SingleEvent(t *testing.T) {
 	w, _ := writer.New(writer.Config{OutputDir: tmpDir}, testLogger())
 	eventBuf := buffer.New(buffer.Config{FlushCount: 1, Name: "events"}, eventFlush, testLogger())
 	annotationBuf := buffer.New(buffer.Config{FlushCount: 1, Name: "annotations"}, annotationFlush, testLogger())
-	h := newHandler(eventBuf, annotationBuf, nil, w, testLogger())
+	provenanceBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "provenance"}, func(p []schema.Provenance) error { return nil }, testLogger())
+	h := newHandler(eventBuf, annotationBuf, provenanceBuf, nil, w, testLogger())
 
 	now := time.Now()
 	eventReq := schema.EventRequest{
@@ -165,7 +167,8 @@ func TestHandler_BatchEvents(t *testing.T) {
 	w, _ := writer.New(writer.Config{OutputDir: tmpDir}, testLogger())
 	eventBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "events"}, eventFlush, testLogger())
 	annotationBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "annotations"}, func(a []schema.Annotation) error { return nil }, testLogger())
-	h := newHandler(eventBuf, annotationBuf, nil, w, testLogger())
+	provenanceBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "provenance"}, func(p []schema.Provenance) error { return nil }, testLogger())
+	h := newHandler(eventBuf, annotationBuf, provenanceBuf, nil, w, testLogger())
 
 	now := time.Now().UnixMilli()
 	events := []schema.EventRequest{
@@ -224,7 +227,8 @@ func TestHandler_Annotations(t *testing.T) {
 	w, _ := writer.New(writer.Config{OutputDir: tmpDir}, testLogger())
 	eventBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "events"}, func(e []schema.Event) error { return nil }, testLogger())
 	annotationBuf := buffer.New(buffer.Config{FlushCount: 1, Name: "annotations"}, annotationFlush, testLogger())
-	h := newHandler(eventBuf, annotationBuf, nil, w, testLogger())
+	provenanceBuf := buffer.New(buffer.Config{FlushCount: 100, Name: "provenance"}, func(p []schema.Provenance) error { return nil }, testLogger())
+	h := newHandler(eventBuf, annotationBuf, provenanceBuf, nil, w, testLogger())
 
 	annotationReqs := []schema.AnnotationRequest{
 		{

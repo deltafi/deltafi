@@ -1075,3 +1075,368 @@ func (s *Service) buildGroupBySelect(groupBy string) string {
 		return fmt.Sprintf("COALESCE(annotations['%s'][1], 'not present')", groupBy)
 	}
 }
+
+// ProvenanceStats contains summary statistics for provenance data
+type ProvenanceStats struct {
+	TotalRecords int64            `json:"total_records"`
+	ByFinalState map[string]int64 `json:"by_final_state"`
+	BySystemName map[string]int64 `json:"by_system_name"`
+	ByDataSource map[string]int64 `json:"by_data_source"`
+	OldestRecord *time.Time       `json:"oldest_record,omitempty"`
+	NewestRecord *time.Time       `json:"newest_record,omitempty"`
+}
+
+// ProvenanceQueryRequest defines filters for querying provenance records
+type ProvenanceQueryRequest struct {
+	DID             string    `json:"did"`
+	ParentDID       string    `json:"parent_did"`
+	SystemName      string    `json:"system_name"`
+	DataSource      string    `json:"data_source"`
+	DataSink        string    `json:"data_sink"`
+	Filename        string    `json:"filename"`
+	FinalState      string    `json:"final_state"`
+	AnnotationKey   string    `json:"annotation_key"`
+	AnnotationValue string    `json:"annotation_value"`
+	From            time.Time `json:"from"`
+	To              time.Time `json:"to"`
+	Limit           int       `json:"limit"`
+}
+
+// ProvenanceRecord represents a single provenance record in query results
+type ProvenanceRecord struct {
+	DID         string            `json:"did"`
+	ParentDID   string            `json:"parent_did"`
+	SystemName  string            `json:"system_name"`
+	DataSource  string            `json:"data_source"`
+	Filename    string            `json:"filename"`
+	Transforms  string            `json:"transforms"` // JSON array as string for simplicity
+	DataSink    string            `json:"data_sink"`
+	FinalState  string            `json:"final_state"`
+	Created     time.Time         `json:"created"`
+	Completed   time.Time         `json:"completed"`
+	Annotations map[string]string `json:"annotations"`
+}
+
+// getProvenanceFiles returns all provenance files (both raw and compacted)
+func (s *Service) getProvenanceFiles() []string {
+	var files []string
+
+	// Raw files: provenance/raw/YYYYMMDD/HH/*.parquet
+	rawPattern := filepath.Join(s.dataDir, "provenance", "raw", "*", "*", "*.parquet")
+	if rawFiles, err := filepath.Glob(rawPattern); err == nil {
+		files = append(files, rawFiles...)
+	}
+
+	// Compacted files: provenance/compacted/{system_name}/YYYYMMDD/*.parquet
+	compactedPattern := filepath.Join(s.dataDir, "provenance", "compacted", "*", "*", "*.parquet")
+	if compactedFiles, err := filepath.Glob(compactedPattern); err == nil {
+		files = append(files, compactedFiles...)
+	}
+
+	return files
+}
+
+// ProvenanceStatsRequest defines filters for stats queries
+type ProvenanceStatsRequest struct {
+	DID             string `json:"did"`
+	ParentDID       string `json:"parent_did"`
+	DataSource      string `json:"data_source"`
+	DataSink        string `json:"data_sink"`
+	Filename        string `json:"filename"`
+	AnnotationKey   string `json:"annotation_key"`
+	AnnotationValue string `json:"annotation_value"`
+}
+
+// GetProvenanceStats returns summary statistics for provenance data
+func (s *Service) GetProvenanceStats(req ProvenanceStatsRequest) (*ProvenanceStats, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// Find all provenance files (raw + compacted)
+	files := s.getProvenanceFiles()
+
+	if len(files) == 0 {
+		// Return empty stats if no files
+		return &ProvenanceStats{
+			ByFinalState: make(map[string]int64),
+			BySystemName: make(map[string]int64),
+			ByDataSource: make(map[string]int64),
+		}, nil
+	}
+
+	stats := &ProvenanceStats{
+		ByFinalState: make(map[string]int64),
+		BySystemName: make(map[string]int64),
+		ByDataSource: make(map[string]int64),
+	}
+
+	fileList := formatFileList(files)
+
+	// Build WHERE clause from filters
+	var filters []string
+	if req.DID != "" {
+		filters = append(filters, fmt.Sprintf("did = '%s'", escapeSQL(req.DID)))
+	}
+	if req.ParentDID != "" {
+		filters = append(filters, fmt.Sprintf("parent_did = '%s'", escapeSQL(req.ParentDID)))
+	}
+	if req.DataSource != "" {
+		filters = append(filters, fmt.Sprintf("data_source = '%s'", escapeSQL(req.DataSource)))
+	}
+	if req.DataSink != "" {
+		filters = append(filters, fmt.Sprintf("data_sink = '%s'", escapeSQL(req.DataSink)))
+	}
+	if req.Filename != "" {
+		filters = append(filters, fmt.Sprintf("filename = '%s'", escapeSQL(req.Filename)))
+	}
+	if req.AnnotationKey != "" && req.AnnotationValue != "" {
+		filters = append(filters, fmt.Sprintf("annotations['%s'][1] = '%s'", escapeSQL(req.AnnotationKey), escapeSQL(req.AnnotationValue)))
+	}
+
+	whereClause := ""
+	if len(filters) > 0 {
+		whereClause = "WHERE " + strings.Join(filters, " AND ")
+	}
+
+	// Query total and time range
+	totalQuery := fmt.Sprintf(`
+		SELECT
+			COUNT(*) as total,
+			MIN(completed) as oldest,
+			MAX(completed) as newest
+		FROM read_parquet([%s])
+		%s
+	`, fileList, whereClause)
+
+	var oldest, newest sql.NullTime
+	if err := s.db.QueryRow(totalQuery).Scan(&stats.TotalRecords, &oldest, &newest); err != nil {
+		return nil, fmt.Errorf("querying provenance totals: %w", err)
+	}
+	if oldest.Valid {
+		stats.OldestRecord = &oldest.Time
+	}
+	if newest.Valid {
+		stats.NewestRecord = &newest.Time
+	}
+
+	// Query by final_state
+	stateWhereClause := "WHERE final_state IS NOT NULL"
+	if len(filters) > 0 {
+		stateWhereClause += " AND " + strings.Join(filters, " AND ")
+	}
+	stateQuery := fmt.Sprintf(`
+		SELECT final_state, COUNT(*) as cnt
+		FROM read_parquet([%s])
+		%s
+		GROUP BY final_state
+	`, fileList, stateWhereClause)
+	rows, err := s.db.Query(stateQuery)
+	if err != nil {
+		return nil, fmt.Errorf("querying final_state: %w", err)
+	}
+	for rows.Next() {
+		var state string
+		var cnt int64
+		if err := rows.Scan(&state, &cnt); err == nil {
+			stats.ByFinalState[state] = cnt
+		}
+	}
+	rows.Close()
+
+	// Query by system_name
+	sysWhereClause := "WHERE system_name IS NOT NULL AND system_name != ''"
+	if len(filters) > 0 {
+		sysWhereClause += " AND " + strings.Join(filters, " AND ")
+	}
+	sysQuery := fmt.Sprintf(`
+		SELECT system_name, COUNT(*) as cnt
+		FROM read_parquet([%s])
+		%s
+		GROUP BY system_name
+		ORDER BY cnt DESC
+		LIMIT 50
+	`, fileList, sysWhereClause)
+	rows, err = s.db.Query(sysQuery)
+	if err != nil {
+		return nil, fmt.Errorf("querying system_name: %w", err)
+	}
+	for rows.Next() {
+		var name string
+		var cnt int64
+		if err := rows.Scan(&name, &cnt); err == nil {
+			stats.BySystemName[name] = cnt
+		}
+	}
+	rows.Close()
+
+	// Query by data_source
+	dsWhereClause := "WHERE data_source IS NOT NULL AND data_source != ''"
+	if len(filters) > 0 {
+		dsWhereClause += " AND " + strings.Join(filters, " AND ")
+	}
+	dsQuery := fmt.Sprintf(`
+		SELECT data_source, COUNT(*) as cnt
+		FROM read_parquet([%s])
+		%s
+		GROUP BY data_source
+		ORDER BY cnt DESC
+		LIMIT 50
+	`, fileList, dsWhereClause)
+	rows, err = s.db.Query(dsQuery)
+	if err != nil {
+		return nil, fmt.Errorf("querying data_source: %w", err)
+	}
+	for rows.Next() {
+		var ds string
+		var cnt int64
+		if err := rows.Scan(&ds, &cnt); err == nil {
+			stats.ByDataSource[ds] = cnt
+		}
+	}
+	rows.Close()
+
+	return stats, nil
+}
+
+// QueryProvenance returns provenance records matching the given filters
+func (s *Service) QueryProvenance(req ProvenanceQueryRequest) ([]ProvenanceRecord, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// Find all provenance files (raw + compacted)
+	files := s.getProvenanceFiles()
+
+	if len(files) == 0 {
+		return []ProvenanceRecord{}, nil
+	}
+
+	// Build WHERE clause
+	var filters []string
+	filters = append(filters, "1=1") // Always true base
+
+	if req.DID != "" {
+		filters = append(filters, fmt.Sprintf("did = '%s'", escapeSQL(req.DID)))
+	}
+	if req.ParentDID != "" {
+		filters = append(filters, fmt.Sprintf("parent_did = '%s'", escapeSQL(req.ParentDID)))
+	}
+	if req.SystemName != "" {
+		filters = append(filters, fmt.Sprintf("system_name = '%s'", escapeSQL(req.SystemName)))
+	}
+	if req.DataSource != "" {
+		filters = append(filters, fmt.Sprintf("data_source = '%s'", escapeSQL(req.DataSource)))
+	}
+	if req.DataSink != "" {
+		filters = append(filters, fmt.Sprintf("data_sink = '%s'", escapeSQL(req.DataSink)))
+	}
+	if req.Filename != "" {
+		filters = append(filters, fmt.Sprintf("filename = '%s'", escapeSQL(req.Filename)))
+	}
+	if req.FinalState != "" {
+		filters = append(filters, fmt.Sprintf("final_state = '%s'", escapeSQL(req.FinalState)))
+	}
+	if req.AnnotationKey != "" && req.AnnotationValue != "" {
+		filters = append(filters, fmt.Sprintf("annotations['%s'][1] = '%s'", escapeSQL(req.AnnotationKey), escapeSQL(req.AnnotationValue)))
+	}
+	if !req.From.IsZero() {
+		filters = append(filters, fmt.Sprintf("completed >= '%s'", req.From.Format(time.RFC3339)))
+	}
+	if !req.To.IsZero() {
+		filters = append(filters, fmt.Sprintf("completed <= '%s'", req.To.Format(time.RFC3339)))
+	}
+
+	limit := req.Limit
+	if limit <= 0 || limit > 1000 {
+		limit = 100
+	}
+
+	fileList := formatFileList(files)
+
+	query := fmt.Sprintf(`
+		SELECT
+			did,
+			COALESCE(parent_did, '') as parent_did,
+			system_name,
+			data_source,
+			filename,
+			CAST(transforms AS VARCHAR) as transforms,
+			COALESCE(data_sink, '') as data_sink,
+			final_state,
+			created,
+			completed,
+			CAST(annotations AS VARCHAR) as annotations
+		FROM read_parquet([%s])
+		WHERE %s
+		ORDER BY completed DESC
+		LIMIT %d
+	`, fileList, strings.Join(filters, " AND "), limit)
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("querying provenance: %w", err)
+	}
+	defer rows.Close()
+
+	var results []ProvenanceRecord
+	for rows.Next() {
+		var rec ProvenanceRecord
+		var annotationsStr string
+		if err := rows.Scan(
+			&rec.DID,
+			&rec.ParentDID,
+			&rec.SystemName,
+			&rec.DataSource,
+			&rec.Filename,
+			&rec.Transforms,
+			&rec.DataSink,
+			&rec.FinalState,
+			&rec.Created,
+			&rec.Completed,
+			&annotationsStr,
+		); err != nil {
+			s.logger.Warn("failed to scan provenance row", "error", err)
+			continue
+		}
+		// Parse annotations from DuckDB MAP string format: {key1=value1, key2=value2}
+		rec.Annotations = parseAnnotationsString(annotationsStr)
+		results = append(results, rec)
+	}
+
+	return results, nil
+}
+
+// escapeSQL escapes single quotes for SQL string literals
+func escapeSQL(s string) string {
+	return strings.ReplaceAll(s, "'", "''")
+}
+
+// parseAnnotationsString parses DuckDB MAP string format into a map
+// Format: {key1=value1, key2=value2} or empty string
+func parseAnnotationsString(s string) map[string]string {
+	if s == "" || s == "{}" {
+		return nil
+	}
+	// Remove surrounding braces
+	s = strings.TrimPrefix(s, "{")
+	s = strings.TrimSuffix(s, "}")
+	if s == "" {
+		return nil
+	}
+
+	result := make(map[string]string)
+	// Split by ", " (comma-space) to handle values that might contain commas
+	pairs := strings.Split(s, ", ")
+	for _, pair := range pairs {
+		// Split on first "=" only (value might contain "=")
+		idx := strings.Index(pair, "=")
+		if idx > 0 {
+			key := pair[:idx]
+			value := pair[idx+1:]
+			result[key] = value
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}

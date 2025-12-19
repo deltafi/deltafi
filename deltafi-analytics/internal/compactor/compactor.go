@@ -47,11 +47,12 @@ type Metadata struct {
 }
 
 type Config struct {
-	DataDir          string
-	CheckInterval    time.Duration // How often to check for compaction eligibility
-	MemoryLimit      string        // DuckDB memory limit (e.g., "1GB")
-	ArchiveThreshold time.Duration // How old data must be before archiving (default 72h)
-	AgeOffDaysFunc   func() int    // Returns number of days to retain data (0 = disabled)
+	DataDir                   string
+	CheckInterval             time.Duration // How often to check for compaction eligibility
+	MemoryLimit               string        // DuckDB memory limit (e.g., "1GB")
+	ArchiveThreshold          time.Duration // How old data must be before archiving (default 72h)
+	AgeOffDaysFunc            func() int    // Returns number of days to retain analytics data (0 = disabled)
+	ProvenanceAgeOffDaysFunc  func() int    // Returns number of days to retain provenance data (0 = disabled)
 }
 
 type Compactor struct {
@@ -146,6 +147,13 @@ func (c *Compactor) CheckAndRun() error {
 		// Continue with compaction even if age-off fails
 	}
 
+	// Compact provenance files (simple merge, no aggregation)
+	// During normal operation, skip current hour since it may still receive data
+	if err := c.compactProvenance(false); err != nil {
+		c.logger.Error("provenance compaction failed", "error", err)
+		// Continue with regular compaction even if provenance fails
+	}
+
 	dates, err := c.eligibleDates()
 	if err != nil {
 		return err
@@ -156,6 +164,35 @@ func (c *Compactor) CheckAndRun() error {
 	}
 
 	c.logger.Debug("compaction check", "eligible_dates", len(dates))
+	return c.compact(dates)
+}
+
+// CheckAndRunAll runs compaction including the current hour.
+// Use this for graceful shutdown when no more data will be received.
+func (c *Compactor) CheckAndRunAll() error {
+	// Skip if already running
+	if !c.running.TryLock() {
+		c.logger.Debug("compaction already running, skipping")
+		return nil
+	}
+	defer c.running.Unlock()
+
+	c.logger.Info("running full compaction (including current hour)")
+
+	// Compact provenance files including current hour
+	if err := c.compactProvenance(true); err != nil {
+		c.logger.Error("provenance compaction failed", "error", err)
+	}
+
+	dates, err := c.eligibleDates()
+	if err != nil {
+		return err
+	}
+
+	if len(dates) == 0 {
+		return nil
+	}
+
 	return c.compact(dates)
 }
 
@@ -963,52 +1000,121 @@ func formatBytes(bytes int64) string {
 
 // ageOff removes data directories older than the configured retention period
 func (c *Compactor) ageOff() error {
-	if c.cfg.AgeOffDaysFunc == nil {
-		return nil
-	}
+	// Age off analytics data
+	if c.cfg.AgeOffDaysFunc != nil {
+		days := c.cfg.AgeOffDaysFunc()
+		if days > 0 {
+			cutoff := time.Now().AddDate(0, 0, -days)
+			cutoffDate := cutoff.Format("20060102")
 
-	days := c.cfg.AgeOffDaysFunc()
-	if days <= 0 {
-		return nil
-	}
-
-	cutoff := time.Now().AddDate(0, 0, -days)
-	cutoffDate := cutoff.Format("20060102")
-
-	// Directories to age off: events, annotations, preagg (date/hour structure)
-	// and aggregated (date structure for both hourly dirs and daily files)
-	dateDirs := []string{"events", "annotations", "preagg"}
-	for _, dir := range dateDirs {
-		basePath := filepath.Join(c.cfg.DataDir, dir)
-		entries, err := os.ReadDir(basePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				continue
+			// Directories to age off: events, annotations, preagg (date/hour structure)
+			dateDirs := []string{"events", "annotations", "preagg"}
+			for _, dir := range dateDirs {
+				c.ageOffDateDirs(filepath.Join(c.cfg.DataDir, dir), cutoffDate)
 			}
-			return fmt.Errorf("reading %s: %w", dir, err)
+
+			// Handle aggregated directory - has hourly subdirs (YYYYMMDD/HH/) and daily files (YYYYMMDD.parquet)
+			c.ageOffAggregated(cutoffDate)
+		}
+	}
+
+	// Age off provenance data (separate retention period)
+	if c.cfg.ProvenanceAgeOffDaysFunc != nil {
+		days := c.cfg.ProvenanceAgeOffDaysFunc()
+		if days > 0 {
+			cutoff := time.Now().AddDate(0, 0, -days)
+			cutoffDate := cutoff.Format("20060102")
+
+			// provenance/raw has structure: YYYYMMDD/HH/*.parquet
+			c.ageOffDateDirs(filepath.Join(c.cfg.DataDir, "provenance", "raw"), cutoffDate)
+
+			// provenance/compacted has structure: {system_name}/YYYYMMDD/HH.parquet
+			c.ageOffProvenanceCompacted(cutoffDate)
+		}
+	}
+
+	return nil
+}
+
+// ageOffDateDirs removes date directories older than cutoffDate
+func (c *Compactor) ageOffDateDirs(basePath, cutoffDate string) {
+	entries, err := os.ReadDir(basePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			c.logger.Error("failed to read directory for age-off", "path", basePath, "error", err)
+		}
+		return
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		// Directory name is YYYYMMDD
+		if entry.Name() < cutoffDate {
+			path := filepath.Join(basePath, entry.Name())
+			c.logger.Info("aging off old data", "path", path, "cutoff", cutoffDate)
+			if err := os.RemoveAll(path); err != nil {
+				c.logger.Error("failed to remove old directory", "path", path, "error", err)
+			}
+		}
+	}
+}
+
+// ageOffProvenanceCompacted handles provenance/compacted/{system_name}/YYYYMMDD structure
+func (c *Compactor) ageOffProvenanceCompacted(cutoffDate string) {
+	compactedPath := filepath.Join(c.cfg.DataDir, "provenance", "compacted")
+	systemDirs, err := os.ReadDir(compactedPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			c.logger.Error("failed to read provenance compacted directory", "error", err)
+		}
+		return
+	}
+
+	for _, systemEntry := range systemDirs {
+		if !systemEntry.IsDir() || strings.HasSuffix(systemEntry.Name(), ".deleting") {
+			continue
 		}
 
-		for _, entry := range entries {
-			if !entry.IsDir() {
+		systemPath := filepath.Join(compactedPath, systemEntry.Name())
+		dateDirs, err := os.ReadDir(systemPath)
+		if err != nil {
+			continue
+		}
+
+		for _, dateEntry := range dateDirs {
+			if !dateEntry.IsDir() {
 				continue
 			}
 			// Directory name is YYYYMMDD
-			if entry.Name() < cutoffDate {
-				path := filepath.Join(basePath, entry.Name())
-				c.logger.Info("aging off old data", "path", path, "cutoff", cutoffDate)
+			if dateEntry.Name() < cutoffDate {
+				path := filepath.Join(systemPath, dateEntry.Name())
+				c.logger.Info("aging off old provenance data", "path", path, "cutoff", cutoffDate)
 				if err := os.RemoveAll(path); err != nil {
-					c.logger.Error("failed to remove old directory", "path", path, "error", err)
+					c.logger.Error("failed to remove old provenance directory", "path", path, "error", err)
 				}
 			}
 		}
-	}
 
-	// Handle aggregated directory - has hourly subdirs (YYYYMMDD/HH/) and daily files (YYYYMMDD.parquet)
+		// Clean up empty system directory
+		if entries, err := os.ReadDir(systemPath); err == nil && len(entries) == 0 {
+			os.Remove(systemPath)
+		}
+	}
+}
+
+// ageOffAggregated handles the aggregated directory with hourly subdirs and daily files
+func (c *Compactor) ageOffAggregated(cutoffDate string) {
 	aggregatedPath := filepath.Join(c.cfg.DataDir, "aggregated")
 	entries, err := os.ReadDir(aggregatedPath)
-	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("reading aggregated: %w", err)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			c.logger.Error("failed to read aggregated directory", "error", err)
+		}
+		return
 	}
+
 	for _, entry := range entries {
 		name := entry.Name()
 		var dateStr string
@@ -1030,8 +1136,6 @@ func (c *Compactor) ageOff() error {
 			}
 		}
 	}
-
-	return nil
 }
 
 // safeRemoveDir safely removes a directory by:
@@ -1319,4 +1423,214 @@ func maxFileMtime(fileLists ...[]string) time.Time {
 		}
 	}
 	return maxTime
+}
+
+// compactProvenance merges raw provenance parquet files into single files per hour.
+// No aggregation - just file consolidation for easier export.
+// If includeCurrentHour is true, also compacts the current hour (for graceful shutdown).
+func (c *Compactor) compactProvenance(includeCurrentHour bool) error {
+	rawDir := filepath.Join(c.cfg.DataDir, "provenance", "raw")
+	compactedDir := filepath.Join(c.cfg.DataDir, "provenance", "compacted")
+
+	// Find all date directories
+	dateDirs, err := os.ReadDir(rawDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("reading provenance raw dir: %w", err)
+	}
+
+	// Create temp directory for DuckDB
+	tempDir := filepath.Join(c.cfg.DataDir, ".duckdb_provenance_temp")
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return fmt.Errorf("creating temp dir: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Open DuckDB
+	dbPath := filepath.Join(tempDir, "provenance.duckdb")
+	db, err := sql.Open("duckdb", dbPath)
+	if err != nil {
+		return fmt.Errorf("opening duckdb: %w", err)
+	}
+	defer db.Close()
+
+	db.Exec(fmt.Sprintf("SET memory_limit='%s'", c.cfg.MemoryLimit))
+	db.Exec(fmt.Sprintf("SET temp_directory='%s'", tempDir))
+
+	var hoursCompacted int
+
+	for _, dateEntry := range dateDirs {
+		if !dateEntry.IsDir() || strings.HasSuffix(dateEntry.Name(), ".deleting") {
+			continue
+		}
+		date := dateEntry.Name()
+
+		// Find all hour directories for this date
+		hourDirs, err := os.ReadDir(filepath.Join(rawDir, date))
+		if err != nil {
+			continue
+		}
+
+		// Get current date/hour to skip compacting the current hour
+		now := time.Now().UTC()
+		currentDate := now.Format("20060102")
+		currentHour := now.Format("15")
+
+		for _, hourEntry := range hourDirs {
+			if !hourEntry.IsDir() || strings.HasSuffix(hourEntry.Name(), ".deleting") {
+				continue
+			}
+			hour := hourEntry.Name()
+
+			// Skip the current hour unless includeCurrentHour is set (graceful shutdown)
+			if !includeCurrentHour && date == currentDate && hour == currentHour {
+				continue
+			}
+
+			hourPath := filepath.Join(rawDir, date, hour)
+
+			// Get raw files for this hour
+			rawFiles, _ := filepath.Glob(filepath.Join(hourPath, "*.parquet"))
+			if len(rawFiles) == 0 {
+				continue
+			}
+
+			// Check if compacted file exists and is newer than all raw files
+			compactedPath := filepath.Join(compactedDir, date, hour+".parquet")
+			if c.provenanceHourIsCompacted(compactedPath, rawFiles) {
+				continue
+			}
+
+			// Compact this hour
+			if err := c.compactProvenanceHour(db, date, hour, rawFiles, compactedDir); err != nil {
+				c.logger.Warn("provenance hour compaction failed", "date", date, "hour", hour, "error", err)
+				continue
+			}
+			hoursCompacted++
+
+			// Remove raw files after successful compaction
+			for _, f := range rawFiles {
+				os.Remove(f)
+			}
+
+			// Clean up empty hour directory
+			os.Remove(hourPath)
+		}
+
+		// Clean up empty date directory
+		dateDir := filepath.Join(rawDir, date)
+		if entries, err := os.ReadDir(dateDir); err == nil && len(entries) == 0 {
+			os.Remove(dateDir)
+		}
+	}
+
+	if hoursCompacted > 0 {
+		c.logger.Info("provenance compaction complete", "hours_compacted", hoursCompacted)
+	}
+
+	return nil
+}
+
+// provenanceHourIsCompacted checks if a compacted file exists and is newer than all raw files
+func (c *Compactor) provenanceHourIsCompacted(compactedPath string, rawFiles []string) bool {
+	info, err := os.Stat(compactedPath)
+	if err != nil {
+		return false // No compacted file
+	}
+	compactedMtime := info.ModTime()
+
+	// Check if any raw file is newer than compacted
+	for _, f := range rawFiles {
+		if info, err := os.Stat(f); err == nil {
+			if info.ModTime().After(compactedMtime) {
+				return false // Raw file is newer
+			}
+		}
+	}
+	return true
+}
+
+// compactProvenanceHour merges raw provenance files into compacted files, partitioned by system_name.
+// Output structure: compacted/{system_name}/YYYYMMDD/HH.parquet
+func (c *Compactor) compactProvenanceHour(db *sql.DB, date, hour string, rawFiles []string, compactedDir string) error {
+	c.logger.Info("compacting provenance hour",
+		"date", date,
+		"hour", hour,
+		"raw_files", len(rawFiles),
+	)
+
+	// Load raw files into staging table
+	fileList := "[" + quoteFiles(rawFiles) + "]"
+	loadQuery := fmt.Sprintf(`
+		CREATE OR REPLACE TABLE provenance_staging AS
+		SELECT * FROM read_parquet(%s)
+	`, fileList)
+	if _, err := db.Exec(loadQuery); err != nil {
+		return fmt.Errorf("loading provenance files: %w", err)
+	}
+	defer db.Exec("DROP TABLE IF EXISTS provenance_staging")
+
+	// Find distinct system names
+	rows, err := db.Query("SELECT DISTINCT system_name FROM provenance_staging WHERE system_name IS NOT NULL AND system_name != ''")
+	if err != nil {
+		return fmt.Errorf("querying system names: %w", err)
+	}
+
+	var systemNames []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err == nil {
+			systemNames = append(systemNames, name)
+		}
+	}
+	rows.Close()
+
+	if len(systemNames) == 0 {
+		c.logger.Warn("no system names found in provenance data", "date", date, "hour", hour)
+		return nil
+	}
+
+	// Write separate file for each system
+	for _, systemName := range systemNames {
+		outputDir := filepath.Join(compactedDir, systemName, date)
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			return fmt.Errorf("creating output dir for %s: %w", systemName, err)
+		}
+
+		outputPath := filepath.Join(outputDir, hour+".parquet")
+		tmpPath := outputPath + ".tmp"
+
+		// If compacted file exists, merge with it
+		var mergeClause string
+		if fileExists(outputPath) {
+			mergeClause = fmt.Sprintf(`
+				UNION ALL
+				SELECT * FROM read_parquet('%s')
+			`, outputPath)
+		}
+
+		query := fmt.Sprintf(`
+			COPY (
+				SELECT * FROM provenance_staging WHERE system_name = '%s'
+				%s
+			) TO '%s' (FORMAT PARQUET, COMPRESSION SNAPPY)
+		`, systemName, mergeClause, tmpPath)
+
+		if _, err := db.Exec(query); err != nil {
+			os.Remove(tmpPath)
+			c.logger.Warn("failed to compact provenance for system", "system", systemName, "error", err)
+			continue
+		}
+
+		if err := os.Rename(tmpPath, outputPath); err != nil {
+			os.Remove(tmpPath)
+			return fmt.Errorf("renaming temp file for %s: %w", systemName, err)
+		}
+
+		c.logger.Debug("provenance compacted for system", "system", systemName, "date", date, "hour", hour)
+	}
+
+	return nil
 }

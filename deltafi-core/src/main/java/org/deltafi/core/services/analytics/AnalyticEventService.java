@@ -19,6 +19,7 @@ package org.deltafi.core.services.analytics;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.AnalyticsRepo;
 import org.deltafi.core.repo.EventAnnotationsRepo;
@@ -52,6 +53,7 @@ public class AnalyticEventService {
     private final ErrorCauseService errorCauseService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final AnalyticsClient analyticsClient;
+    private final ProvenanceClient provenanceClient;
     private final static String DEFAULT_EVENT_GROUP = "No Group";
     private final static int BATCH_SIZE = 1000;
     private final static int MAX_QUEUE_SIZE = 200000;
@@ -71,6 +73,23 @@ public class AnalyticEventService {
             return Map.of();
         }
         List<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().allowedAnalyticsAnnotationsList();
+        Map<String, String> filtered = new HashMap<>();
+        for (Map.Entry<String, String> entry : annotations.entrySet()) {
+            if (allowed.contains(entry.getKey())) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
+    }
+
+    private Map<String, String> filterProvenanceAnnotations(Map<String, String> annotations) {
+        if (annotations == null || annotations.isEmpty()) {
+            return Map.of();
+        }
+        List<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().provenanceAnnotationsAllowedList();
+        if (allowed.isEmpty()) {
+            return Map.of();
+        }
         Map<String, String> filtered = new HashMap<>();
         for (Map.Entry<String, String> entry : annotations.entrySet()) {
             if (allowed.contains(entry.getKey())) {
@@ -343,6 +362,108 @@ public class AnalyticEventService {
         analyticsClient.writeEvent(AnalyticsEventRequest.from(
                 deltaFile.getModified(), deltaFile.getCreated(), deltaFile.getDid(), deltaFile.getDataSource(),
                 "CANCEL", 0, 1, null, null, null, cancelIngressType, filterAllowedAnnotations(cancelAnnotations)));
+    }
+
+    /**
+     * Record a provenance event for DeltaFile lineage tracking.
+     * Called when a DeltaFile reaches a terminal state (complete, error, filter, cancel).
+     *
+     * @param deltaFile the DeltaFile
+     * @param terminalFlow the flow that reached a terminal state
+     */
+    public void recordProvenance(DeltaFile deltaFile, DeltaFileFlow terminalFlow) {
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isProvenanceEnabled()) {
+            return;
+        }
+
+        String systemName = deltaFiPropertiesService.getDeltaFiProperties().getSystemName();
+        List<String> transforms = buildTransformPath(deltaFile, terminalFlow);
+        Map<String, String> annotations = filterProvenanceAnnotations(Annotation.toMap(deltaFile.getAnnotations()));
+        String dataSink = terminalFlow.isDataSink() ? terminalFlow.getName() : null;
+        String finalState = terminalFlow.getState().name();
+        UUID parentDid = deltaFile.getParentDids().isEmpty() ? null : deltaFile.getParentDids().getFirst();
+
+        provenanceClient.writeRecord(ProvenanceClient.ProvenanceRecord.from(
+                deltaFile.getDid(),
+                parentDid,
+                systemName,
+                deltaFile.getDataSource(),
+                deltaFile.getName(),
+                transforms,
+                dataSink,
+                finalState,
+                deltaFile.getCreated(),
+                terminalFlow.getModified(),
+                annotations
+        ));
+    }
+
+    /**
+     * Record provenance for all cancelled flows in a DeltaFile.
+     * Called when a DeltaFile is cancelled.
+     *
+     * @param deltaFile the cancelled DeltaFile
+     */
+    public void recordProvenanceForCancel(DeltaFile deltaFile) {
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isProvenanceEnabled()) {
+            return;
+        }
+
+        for (DeltaFileFlow flow : deltaFile.getFlows()) {
+            if (flow.getState() == DeltaFileFlowState.CANCELLED) {
+                recordProvenance(deltaFile, flow);
+            }
+        }
+    }
+
+    /**
+     * Record provenance for a split event.
+     * Called when a DeltaFile is split into children.
+     *
+     * @param deltaFile the parent DeltaFile that was split
+     * @param flow the flow where the split occurred
+     */
+    public void recordProvenanceForSplit(DeltaFile deltaFile, DeltaFileFlow flow) {
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isProvenanceEnabled()) {
+            return;
+        }
+
+        String systemName = deltaFiPropertiesService.getDeltaFiProperties().getSystemName();
+        List<String> transforms = buildTransformPath(deltaFile, flow);
+        Map<String, String> annotations = filterProvenanceAnnotations(Annotation.toMap(deltaFile.getAnnotations()));
+        UUID parentDid = deltaFile.getParentDids().isEmpty() ? null : deltaFile.getParentDids().getFirst();
+
+        provenanceClient.writeRecord(ProvenanceClient.ProvenanceRecord.from(
+                deltaFile.getDid(),
+                parentDid,
+                systemName,
+                deltaFile.getDataSource(),
+                deltaFile.getName(),
+                transforms,
+                null,  // No data sink for splits
+                "SPLIT",
+                deltaFile.getCreated(),
+                flow.getModified(),
+                annotations
+        ));
+    }
+
+    /**
+     * Build the list of transform flow names that led to the given terminal flow.
+     * Walks backwards through ancestorIds to build the path.
+     */
+    private List<String> buildTransformPath(DeltaFile deltaFile, DeltaFileFlow terminalFlow) {
+        List<String> transforms = new ArrayList<>();
+        if (terminalFlow.getInput() == null || terminalFlow.getInput().getAncestorIds() == null) {
+            return transforms;
+        }
+        for (int ancestorId : terminalFlow.getInput().getAncestorIds()) {
+            DeltaFileFlow ancestor = deltaFile.getFlow(ancestorId);
+            if (ancestor != null && ancestor.getType() == FlowType.TRANSFORM) {
+                transforms.add(ancestor.getName());
+            }
+        }
+        return transforms;
     }
 
     /**

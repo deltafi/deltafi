@@ -117,3 +117,35 @@ type AnnotationRequest struct {
 	Annotations  map[string]string `json:"annotations"`
 	CreationTime int64             `json:"creationTime,omitempty"` // DeltaFile creation time (Unix millis) for hour-based partitioning
 }
+
+// Provenance represents a DeltaFile lineage record for export.
+// One record per terminal event (egress, error, filter, cancel, split).
+// Not aggregated - preserves individual records for "find my data" queries.
+type Provenance struct {
+	DID         string            `parquet:"did"`
+	ParentDID   string            `parquet:"parent_did,optional"`
+	SystemName  string            `parquet:"system_name"`
+	DataSource  string            `parquet:"data_source"`
+	Filename    string            `parquet:"filename"`
+	Transforms  []string          `parquet:"transforms,list"`
+	DataSink    string            `parquet:"data_sink,optional"`
+	FinalState  string            `parquet:"final_state"` // COMPLETE, ERROR, FILTERED, CANCELLED, SPLIT
+	Created     time.Time         `parquet:"created,timestamp(millisecond)"`
+	Completed   time.Time         `parquet:"completed,timestamp(millisecond)"`
+	Annotations map[string]string `parquet:"annotations,optional"`
+}
+
+// ProvenanceRequest is the JSON structure received via HTTP POST for provenance
+type ProvenanceRequest struct {
+	DID         string            `json:"did"`
+	ParentDID   string            `json:"parentDid,omitempty"`
+	SystemName  string            `json:"systemName"`
+	DataSource  string            `json:"dataSource"`
+	Filename    string            `json:"filename"`
+	Transforms  []string          `json:"transforms"`
+	DataSink    string            `json:"dataSink,omitempty"`
+	FinalState  string            `json:"finalState"`
+	Created     int64             `json:"created"`   // Unix millis
+	Completed   int64             `json:"completed"` // Unix millis
+	Annotations map[string]string `json:"annotations,omitempty"`
+}

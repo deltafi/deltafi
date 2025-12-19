@@ -51,7 +51,7 @@ func New(cfg Config, logger *slog.Logger) (*ParquetWriter, error) {
 	}
 
 	// Create subdirectories
-	for _, subdir := range []string{"events", "annotations", "aggregated"} {
+	for _, subdir := range []string{"events", "annotations", "aggregated", "provenance/raw", "provenance/compacted"} {
 		if err := os.MkdirAll(filepath.Join(cfg.OutputDir, subdir), 0755); err != nil {
 			return nil, fmt.Errorf("failed to create %s directory: %w", subdir, err)
 		}
@@ -242,4 +242,91 @@ func (w *ParquetWriter) AnnotationsDir() string {
 // AggregatedDir returns the aggregated directory
 func (w *ParquetWriter) AggregatedDir() string {
 	return filepath.Join(w.outputDir, "aggregated")
+}
+
+// ProvenanceRawDir returns the provenance raw directory
+func (w *ParquetWriter) ProvenanceRawDir() string {
+	return filepath.Join(w.outputDir, "provenance", "raw")
+}
+
+// ProvenanceCompactedDir returns the provenance compacted directory
+func (w *ParquetWriter) ProvenanceCompactedDir() string {
+	return filepath.Join(w.outputDir, "provenance", "compacted")
+}
+
+// WriteProvenance writes a batch of provenance records to Parquet files, partitioned by completed time.
+// Directory structure: provenance/raw/YYYYMMDD/HH/filename.parquet
+func (w *ParquetWriter) WriteProvenance(records []schema.Provenance) error {
+	if len(records) == 0 {
+		return nil
+	}
+
+	// Group records by their Completed time date and hour
+	// Key format: "YYYYMMDD/HH"
+	recordsByDateHour := make(map[string][]schema.Provenance)
+	for _, r := range records {
+		dateHourKey := r.Completed.UTC().Format("20060102/15")
+		recordsByDateHour[dateHourKey] = append(recordsByDateHour[dateHourKey], r)
+	}
+
+	// Write a separate file for each date/hour
+	now := time.Now().UTC()
+	for dateHourKey, hourRecords := range recordsByDateHour {
+		if err := w.writeProvenanceForDateHour(dateHourKey, hourRecords, now); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// writeProvenanceForDateHour writes provenance records for a single date/hour partition
+func (w *ParquetWriter) writeProvenanceForDateHour(dateHourKey string, records []schema.Provenance, now time.Time) error {
+	// dateHourKey format: "YYYYMMDD/HH"
+	hourDir := filepath.Join(w.outputDir, "provenance", "raw", dateHourKey)
+	if err := os.MkdirAll(hourDir, 0755); err != nil {
+		return fmt.Errorf("failed to create provenance hour directory: %w", err)
+	}
+
+	filename := fmt.Sprintf("%s_%d.parquet", now.Format("150405"), now.UnixNano()%1000000)
+	finalPath := filepath.Join(hourDir, filename)
+	tmpPath := filepath.Join(hourDir, "."+filename+".tmp")
+
+	w.logger.Info("writing provenance parquet file", "path", finalPath, "count", len(records))
+
+	// Write to temp file first
+	file, err := os.Create(tmpPath)
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+
+	writer := parquet.NewGenericWriter[schema.Provenance](file,
+		parquet.Compression(&parquet.Snappy),
+	)
+
+	if _, err := writer.Write(records); err != nil {
+		file.Close()
+		os.Remove(tmpPath)
+		return fmt.Errorf("failed to write provenance: %w", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		file.Close()
+		os.Remove(tmpPath)
+		return fmt.Errorf("failed to close writer: %w", err)
+	}
+
+	if err := file.Close(); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("failed to close file: %w", err)
+	}
+
+	// Atomic rename to final path
+	if err := os.Rename(tmpPath, finalPath); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("failed to rename temp file: %w", err)
+	}
+
+	w.logger.Info("provenance parquet file written", "path", finalPath, "count", len(records))
+	return nil
 }

@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -62,9 +63,10 @@ func main() {
 
 	// Create compactor (triggered after buffer flushes, not on timer)
 	comp := compactor.New(compactor.Config{
-		DataDir:          cfg.OutputDir,
-		ArchiveThreshold: cfg.ArchiveThreshold,
-		AgeOffDaysFunc:   coreConfig.GetAgeOffDays,
+		DataDir:                  cfg.OutputDir,
+		ArchiveThreshold:         cfg.ArchiveThreshold,
+		AgeOffDaysFunc:           coreConfig.GetAgeOffDays,
+		ProvenanceAgeOffDaysFunc: coreConfig.GetProvenanceAgeOffDays,
 	}, logger)
 
 	// Wrap write functions to trigger compaction after flush
@@ -96,6 +98,13 @@ func main() {
 		Name:          "annotations",
 	}, writeAnnotationsAndCompact, logger)
 
+	// Provenance buffer flushes every minute - compaction will consolidate files hourly
+	provenanceBuffer := buffer.New(buffer.Config{
+		FlushCount:    cfg.FlushCount,
+		FlushInterval: time.Minute,
+		Name:          "provenance",
+	}, parquetWriter.WriteProvenance, logger)
+
 	queryService, err := query.NewService(cfg.OutputDir, coreConfig, logger)
 	if err != nil {
 		logger.Error("failed to create query service", "error", err)
@@ -106,6 +115,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	eventBuffer.StartPeriodicFlush(ctx)
 	annotationBuffer.StartPeriodicFlush(ctx)
+	provenanceBuffer.StartPeriodicFlush(ctx)
 
 	// Start periodic compaction (runs age-off and compaction on timer)
 	comp.Start(ctx)
@@ -113,7 +123,10 @@ func main() {
 	// Start periodic config refresh
 	coreConfig.StartPeriodicRefresh(ctx.Done())
 
-	handler := newHandler(eventBuffer, annotationBuffer, queryService, parquetWriter, logger)
+	// Watch for .flush file signal (used during graceful shutdown)
+	go watchFlushFile(ctx, cfg.OutputDir, eventBuffer, annotationBuffer, provenanceBuffer, comp, logger)
+
+	handler := newHandler(eventBuffer, annotationBuffer, provenanceBuffer, queryService, parquetWriter, logger)
 
 	server := &http.Server{
 		Addr:         cfg.ListenAddr,
@@ -190,9 +203,51 @@ func loadConfig() appConfig {
 	return cfg
 }
 
+// watchFlushFile polls for a .flush file and flushes all buffers when found.
+// After flushing, runs full compaction (including current hour) since this is
+// typically used for graceful shutdown. Removes the file after completion.
+func watchFlushFile(ctx context.Context, outputDir string, eventBuf *buffer.Buffer[schema.Event], annotationBuf *buffer.Buffer[schema.Annotation], provenanceBuf *buffer.Buffer[schema.Provenance], comp *compactor.Compactor, logger *slog.Logger) {
+	flushPath := filepath.Join(outputDir, ".flush")
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if _, err := os.Stat(flushPath); err == nil {
+				logger.Info("flush file detected, flushing all buffers")
+
+				if err := eventBuf.Flush(); err != nil {
+					logger.Error("event buffer flush failed", "error", err)
+				}
+				if err := annotationBuf.Flush(); err != nil {
+					logger.Error("annotation buffer flush failed", "error", err)
+				}
+				if err := provenanceBuf.Flush(); err != nil {
+					logger.Error("provenance buffer flush failed", "error", err)
+				}
+
+				// Run full compaction including current hour
+				if err := comp.CheckAndRunAll(); err != nil {
+					logger.Error("compaction failed", "error", err)
+				}
+
+				if err := os.Remove(flushPath); err != nil {
+					logger.Error("failed to remove flush file", "error", err)
+				} else {
+					logger.Info("flush and compaction complete, flush file removed")
+				}
+			}
+		}
+	}
+}
+
 type handler struct {
 	eventBuffer      *buffer.Buffer[schema.Event]
 	annotationBuffer *buffer.Buffer[schema.Annotation]
+	provenanceBuffer *buffer.Buffer[schema.Provenance]
 	queryService     *query.Service
 	writer           *writer.ParquetWriter
 	logger           *slog.Logger
@@ -206,12 +261,13 @@ func loggingMiddleware(logger *slog.Logger, next http.Handler) http.Handler {
 	})
 }
 
-func newHandler(eventBuf *buffer.Buffer[schema.Event], annotationBuf *buffer.Buffer[schema.Annotation], qs *query.Service, w *writer.ParquetWriter, logger *slog.Logger) http.Handler {
-	h := &handler{eventBuffer: eventBuf, annotationBuffer: annotationBuf, queryService: qs, writer: w, logger: logger}
+func newHandler(eventBuf *buffer.Buffer[schema.Event], annotationBuf *buffer.Buffer[schema.Annotation], provenanceBuf *buffer.Buffer[schema.Provenance], qs *query.Service, w *writer.ParquetWriter, logger *slog.Logger) http.Handler {
+	h := &handler{eventBuffer: eventBuf, annotationBuffer: annotationBuf, provenanceBuffer: provenanceBuf, queryService: qs, writer: w, logger: logger}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /events", h.handleEvents)
 	mux.HandleFunc("POST /event", h.handleEvent)
 	mux.HandleFunc("POST /annotations", h.handleAnnotations)
+	mux.HandleFunc("POST /provenance", h.handleProvenance)
 	mux.HandleFunc("GET /health", h.handleHealth)
 	mux.HandleFunc("POST /query", h.handleQuery)
 	mux.HandleFunc("GET /query/parquet-glob", h.handleParquetGlob)
@@ -225,6 +281,10 @@ func newHandler(eventBuf *buffer.Buffer[schema.Event], annotationBuf *buffer.Buf
 	mux.HandleFunc("GET /analytics/annotation-keys", h.handleAnnotationKeys)
 	mux.HandleFunc("GET /analytics/annotation-values", h.handleAnnotationValues)
 	mux.HandleFunc("GET /analytics/stats", h.handleStats)
+
+	// Provenance endpoints
+	mux.HandleFunc("GET /provenance/stats", h.handleProvenanceStats)
+	mux.HandleFunc("GET /provenance/query", h.handleProvenanceQuery)
 	return loggingMiddleware(logger, mux)
 }
 
@@ -345,6 +405,39 @@ func (h *handler) handleAnnotations(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "internal error", http.StatusInternalServerError)
 				return
 			}
+		}
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte("accepted"))
+}
+
+func (h *handler) handleProvenance(w http.ResponseWriter, r *http.Request) {
+	var requests []schema.ProvenanceRequest
+	if err := json.NewDecoder(r.Body).Decode(&requests); err != nil {
+		h.logger.Error("failed to decode provenance request", "error", err)
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	for _, req := range requests {
+		record := schema.Provenance{
+			DID:         req.DID,
+			ParentDID:   req.ParentDID,
+			SystemName:  req.SystemName,
+			DataSource:  req.DataSource,
+			Filename:    req.Filename,
+			Transforms:  req.Transforms,
+			DataSink:    req.DataSink,
+			FinalState:  req.FinalState,
+			Created:     time.UnixMilli(req.Created),
+			Completed:   time.UnixMilli(req.Completed),
+			Annotations: req.Annotations,
+		}
+		if err := h.provenanceBuffer.Add(record); err != nil {
+			h.logger.Error("failed to buffer provenance record", "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -677,6 +770,70 @@ func (h *handler) handleStats(w http.ResponseWriter, r *http.Request) {
 	stats := h.queryService.GetDataStats()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stats)
+}
+
+func (h *handler) handleProvenanceStats(w http.ResponseWriter, r *http.Request) {
+	req := query.ProvenanceStatsRequest{
+		DID:             r.URL.Query().Get("did"),
+		ParentDID:       r.URL.Query().Get("parent_did"),
+		DataSource:      r.URL.Query().Get("data_source"),
+		DataSink:        r.URL.Query().Get("data_sink"),
+		Filename:        r.URL.Query().Get("filename"),
+		AnnotationKey:   r.URL.Query().Get("annotation_key"),
+		AnnotationValue: r.URL.Query().Get("annotation_value"),
+	}
+
+	stats, err := h.queryService.GetProvenanceStats(req)
+	if err != nil {
+		h.logger.Error("failed to get provenance stats", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+func (h *handler) handleProvenanceQuery(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	req := query.ProvenanceQueryRequest{
+		DID:             r.URL.Query().Get("did"),
+		ParentDID:       r.URL.Query().Get("parent_did"),
+		SystemName:      r.URL.Query().Get("system_name"),
+		DataSource:      r.URL.Query().Get("data_source"),
+		DataSink:        r.URL.Query().Get("data_sink"),
+		Filename:        r.URL.Query().Get("filename"),
+		FinalState:      r.URL.Query().Get("final_state"),
+		AnnotationKey:   r.URL.Query().Get("annotation_key"),
+		AnnotationValue: r.URL.Query().Get("annotation_value"),
+		Limit:           100, // Default limit
+	}
+
+	// Parse time range
+	if from := r.URL.Query().Get("from"); from != "" {
+		if ms, err := strconv.ParseInt(from, 10, 64); err == nil {
+			req.From = time.UnixMilli(ms)
+		}
+	}
+	if to := r.URL.Query().Get("to"); to != "" {
+		if ms, err := strconv.ParseInt(to, 10, 64); err == nil {
+			req.To = time.UnixMilli(ms)
+		}
+	}
+	if limit := r.URL.Query().Get("limit"); limit != "" {
+		if l, err := strconv.Atoi(limit); err == nil && l > 0 && l <= 1000 {
+			req.Limit = l
+		}
+	}
+
+	results, err := h.queryService.QueryProvenance(req)
+	if err != nil {
+		h.logger.Error("provenance query failed", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
 }
 
 func parseTimeRange(r *http.Request) (time.Time, time.Time) {

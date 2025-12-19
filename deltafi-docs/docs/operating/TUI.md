@@ -122,6 +122,8 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
       - [latency](#valkey-latency)
       - [stat](#valkey-stat)
       - [monitor](#valkey-monitor)
+    - [provenance](#provenance)
+      - [flush](#provenance-flush)
   - [DeltaFi Flow Management](#deltafi-flow-management)
     - [system-flow-plans](#system-flow-plans)
       - [export](#system-flow-plans-export)
@@ -576,6 +578,43 @@ Command line access to the running DeltaFi Valkey instance.
 - `monitor`: Start the Valkey TUI monitor command
   ```bash
   deltafi valkey monitor
+  ```
+
+#### `provenance`
+Manage provenance data in the analytics system.
+
+- `flush`: Flush and compact provenance data
+  ```bash
+  deltafi provenance flush [--verbose|-v]
+  ```
+  - `--verbose, -v`: List compacted provenance files after flush
+
+  This command signals the analytics collector to flush all buffered provenance data and compact it into parquet files. It waits for the operation to complete before returning.
+
+  **Use cases:**
+  - Before exporting provenance data to external storage
+  - During graceful shutdown sequences
+  - After ingesting a batch of data when immediate export is needed
+
+  **Examples:**
+  ```bash
+  # Flush and compact provenance data
+  deltafi provenance flush
+
+  # Flush with verbose output showing compacted files
+  deltafi provenance flush --verbose
+  ```
+
+  **Output:**
+  ```
+  Flushing... done
+
+  # With --verbose:
+  Flushing... done
+
+  Compacted provenance files:
+    my-system/20251219/14.parquet (125.3 KB)
+    my-system/20251219/15.parquet (89.7 KB)
   ```
 
 #### `graphql`

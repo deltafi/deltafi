@@ -79,6 +79,15 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain Parquet analytics data before automatic deletion", defaultValue = "30", dataType = VariableDataType.NUMBER)
     private int parquetAnalyticsAgeOffDays = 30;
 
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable provenance tracking for DeltaFile lineage export", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
+    private boolean provenanceEnabled = false;
+
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain provenance data before automatic deletion", defaultValue = "3", dataType = VariableDataType.NUMBER)
+    private int provenanceAgeOffDays = 3;
+
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of annotation keys to include in provenance records", dataType = VariableDataType.LIST)
+    private String provenanceAnnotationsAllowed;
+
     @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)
     private int ageOffDays = 13;
 
@@ -394,6 +403,11 @@ public class DeltaFiProperties {
         this.parquetAnalyticsAgeOffDays = parquetAnalyticsAgeOffDays;
     }
 
+    public void setProvenanceAgeOffDays(int provenanceAgeOffDays) {
+        minCheck(provenanceAgeOffDays, 1, "provenanceAgeOffDays");
+        this.provenanceAgeOffDays = provenanceAgeOffDays;
+    }
+
     public void setDiskSpacePercentThreshold(double diskSpacePercentThreshold) {
         if (diskSpacePercentThreshold < 0.0 || diskSpacePercentThreshold > 100.0) {
             throw new IllegalArgumentException("The diskSpacePercentThreshold property must be between 0 and 100");
@@ -522,6 +536,16 @@ public class DeltaFiProperties {
             return Collections.emptyList();
         }
         return Arrays.stream(allowedAnalyticsAnnotations.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    public List<String> provenanceAnnotationsAllowedList() {
+        if (provenanceAnnotationsAllowed == null || provenanceAnnotationsAllowed.isBlank()) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(provenanceAnnotationsAllowed.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();

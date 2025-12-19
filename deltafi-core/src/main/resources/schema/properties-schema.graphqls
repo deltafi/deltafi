@@ -88,6 +88,9 @@ type DeltaFiProperties {
     timescaleAnalyticsEnabled: Boolean!
     parquetAnalyticsEnabled: Boolean!
     parquetAnalyticsAgeOffDays: Int!
+    provenanceEnabled: Boolean!
+    provenanceAgeOffDays: Int!
+    provenanceAnnotationsAllowed: String
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!
@@ -128,6 +131,9 @@ input DeltaFiPropertiesInput {
     timescaleAnalyticsEnabled: Boolean!
     parquetAnalyticsEnabled: Boolean!
     parquetAnalyticsAgeOffDays: Int!
+    provenanceEnabled: Boolean!
+    provenanceAgeOffDays: Int!
+    provenanceAnnotationsAllowed: String
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!

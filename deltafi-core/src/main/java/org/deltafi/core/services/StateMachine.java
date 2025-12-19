@@ -158,6 +158,7 @@ public class StateMachine {
         action.setFilteredCause(FILTERED_TEST_MODE_CAUSE);
         action.setFilteredContext("Filtered by test mode with a reason of - " + input.flow().getTestModeReason());
         analyticEventService.recordFilter(input.deltaFile(), input.flow().getName(), input.flow().getType(), action.getName(), FILTERED_TEST_MODE_CAUSE, action.getModified());
+        analyticEventService.recordProvenance(input.deltaFile(), input.flow());
         return Collections.emptyList();
     }
 
