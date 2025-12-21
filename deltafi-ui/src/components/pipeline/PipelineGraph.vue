@@ -44,6 +44,20 @@
       </button>
     </div>
 
+    <!-- Pan indicators -->
+    <div v-if="canPanLeft" class="pan-indicator pan-indicator-left" @click="panLeft" title="Pan left">
+      <i class="fas fa-chevron-left" />
+    </div>
+    <div v-if="canPanRight" class="pan-indicator pan-indicator-right" @click="panRight" title="Pan right">
+      <i class="fas fa-chevron-right" />
+    </div>
+    <div v-if="canPanUp" class="pan-indicator pan-indicator-up" @click="panUp" title="Pan up">
+      <i class="fas fa-chevron-up" />
+    </div>
+    <div v-if="canPanDown" class="pan-indicator pan-indicator-down" @click="panDown" title="Pan down">
+      <i class="fas fa-chevron-down" />
+    </div>
+
     <!-- Custom tooltip -->
     <div
       v-if="tooltip.visible"
@@ -291,6 +305,10 @@ const {
   svgHeight,
   viewBoxString,
   isViewModified,
+  canPanLeft,
+  canPanRight,
+  canPanUp,
+  canPanDown,
   resetView,
   startPan,
   doPan,
@@ -298,6 +316,10 @@ const {
   doZoom,
   zoomIn,
   zoomOut,
+  panLeft,
+  panRight,
+  panUp,
+  panDown,
   showTooltip,
   hideTooltip,
   setupNodeCountWatcher,
@@ -306,7 +328,7 @@ const {
 } = useGraphPanZoom(graphContainer, layoutNodes, nodeWidth, nodeHeight, padding, containerWidth, containerHeight, {
   minZoom: 0.25,
   maxZoom: 2,
-  excludeSelectors: [".node-group", ".expand-button"],
+  excludeSelectors: [".node-group", ".expand-button", ".pan-indicator"],
 });
 
 // Setup resize observer and node count watcher
@@ -518,6 +540,55 @@ svg {
   width: 14px;
   text-align: center;
   color: var(--text-color);
+}
+
+/* Pan indicators */
+.pan-indicator {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color-secondary);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pan-indicator:hover {
+  opacity: 1;
+  background: var(--surface-hover);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.pan-indicator-left {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pan-indicator-right {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pan-indicator-up {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.pan-indicator-down {
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 </style>

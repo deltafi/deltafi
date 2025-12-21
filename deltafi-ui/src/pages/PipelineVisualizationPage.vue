@@ -120,25 +120,27 @@
       </div>
     </div>
 
-    <div v-if="!showLoading && focusedFlowName && !flowNotFound" class="pipeline-container" :class="{ 'panel-open': selectedNode }">
-      <PipelineGraph
-        ref="pipelineGraphRef"
-        :nodes="visibleNodes"
-        :edges="visibleEdges"
-        :focused-node-id="focusedNodeId"
-        :flow-metrics="perFlowMetricsMap"
-        :error-counts="errorsByFlow"
-        :queue-counts="queueCountsByFlow"
-        @select-node="onSelectNode"
-        @focus-node="onFocusNode"
-        @expand-upstream="expandUpstream"
-        @expand-downstream="expandDownstream"
-        @flow-state-change="onFlowStateChange"
-        @error-badge-click="onErrorBadgeClick"
-      />
+    <div v-if="!showLoading && focusedFlowName && !flowNotFound" class="pipeline-container">
+      <div class="graph-wrapper">
+        <PipelineGraph
+          ref="pipelineGraphRef"
+          :nodes="visibleNodes"
+          :edges="visibleEdges"
+          :focused-node-id="focusedNodeId"
+          :flow-metrics="perFlowMetricsMap"
+          :error-counts="errorsByFlow"
+          :queue-counts="queueCountsByFlow"
+          @select-node="onSelectNode"
+          @focus-node="onFocusNode"
+          @expand-upstream="expandUpstream"
+          @expand-downstream="expandDownstream"
+          @flow-state-change="onFlowStateChange"
+          @error-badge-click="onErrorBadgeClick"
+        />
+      </div>
 
       <!-- Bottom panel for selected node details -->
-      <div v-if="selectedNode" ref="detailsPanelRef" class="details-panel">
+      <div v-if="selectedNode" class="details-panel">
         <div class="panel-header">
           <div class="panel-header-left">
             <div class="panel-title">
@@ -312,7 +314,7 @@ import useActionMetrics from "@/composables/useActionMetrics";
 import usePerFlowMetrics from "@/composables/usePerFlowMetrics";
 import useQueueMetrics, { aggregateQueueCountsByFlow } from "@/composables/useQueueMetrics";
 import useNotifications from "@/composables/useNotifications";
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import Button from "primevue/button";
@@ -352,7 +354,6 @@ const selectedNodeDetails = ref(null);
 const loadingDetails = ref(false);
 const refreshing = ref(false);
 const pipelineGraphRef = ref(null);
-const detailsPanelRef = ref(null);
 
 // Metrics interval state
 const metricsInterval = ref(60);
@@ -1096,17 +1097,6 @@ watch(
   { immediate: true }
 );
 
-// Adjust viewport when details panel opens/closes
-watch(selectedNode, (node) => {
-  nextTick(() => {
-    if (node && detailsPanelRef.value) {
-      const panelHeight = detailsPanelRef.value.offsetHeight;
-      pipelineGraphRef.value?.setDetailPanelOffset(panelHeight);
-    } else {
-      pipelineGraphRef.value?.setDetailPanelOffset(0);
-    }
-  });
-});
 
 onUnmounted(() => {
   stopMetricsRefresh();
@@ -1145,8 +1135,15 @@ onUnmounted(() => {
 .pipeline-container {
   flex: 1;
   min-height: 500px;
-  position: relative;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+}
+
+.graph-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 200px;
 }
 
 /* Flow picker container */
@@ -1251,18 +1248,13 @@ onUnmounted(() => {
 
 /* Bottom details panel */
 .details-panel {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex: 0 0 40%;
   background: var(--surface-card);
   border-top: 1px solid var(--surface-border);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-  max-height: 45%;
-  min-height: 200px;
   display: flex;
   flex-direction: column;
-  z-index: 10;
+  overflow: hidden;
 }
 
 .panel-header {

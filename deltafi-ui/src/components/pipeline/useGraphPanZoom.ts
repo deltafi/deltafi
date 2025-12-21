@@ -25,6 +25,8 @@ export interface PanZoomOptions {
   minZoom?: number;
   maxZoom?: number;
   excludeSelectors?: string[];
+  minReadableNodeHeight?: number;
+  maxZoomViewBoxHeight?: number;
 }
 
 export interface LayoutNode {
@@ -58,13 +60,15 @@ export function useGraphPanZoom(
   containerHeight: Ref<number>,
   options: PanZoomOptions = {}
 ) {
-  const { minZoom = 0.25, maxZoom = 2, excludeSelectors = [".node-group"] } = options;
+  const { minZoom = 0.25, maxZoom = 2, excludeSelectors = [".node-group"], minReadableNodeHeight = 30, maxZoomViewBoxHeight = 300 } = options;
 
   // Pan and zoom state
   const panOffset = ref({ x: 0, y: 0 });
   const zoomLevel = ref(1);
+  const initialZoomComputed = ref(false);
   const isPanning = ref(false);
   const panStart = ref({ x: 0, y: 0 });
+  const panStartOffset = ref({ x: 0, y: 0 });
   const userHasInteracted = ref(false);
 
   // Tooltip state
@@ -103,13 +107,59 @@ export function useGraphPanZoom(
     };
   });
 
+  // Calculate dynamic max zoom so that max zoom always shows roughly the same view
+  // (tight on a handful of nodes, regardless of total graph size)
+  // Height varies with # of flows; width is fixed by 5-column layout
+  const effectiveMaxZoom = computed(() => {
+    const base = baseViewBox.value;
+    if (base.height <= 0) return maxZoom;
+    // At max zoom, viewBox height should be ~maxZoomViewBoxHeight (enough for ~5 node rows)
+    const dynamicMax = base.height / maxZoomViewBoxHeight;
+    // Use the larger of dynamic or configured max, with a reasonable floor
+    return Math.max(maxZoom, dynamicMax, 2);
+  });
+
+  // Calculate minimum zoom needed for readable node sizes
+  // nodeScreenHeight = nodeHeight × containerHeight / (baseViewBox.height / zoomLevel)
+  // For readable size: zoomLevel >= baseViewBox.height × minReadableNodeHeight / (nodeHeight × containerHeight)
+  const minReadableZoom = computed(() => {
+    if (!layoutNodes.value.length || containerHeight.value <= 0) return 1;
+    const base = baseViewBox.value;
+    const requiredZoom = (base.height * minReadableNodeHeight) / (nodeHeight * containerHeight.value);
+    return Math.max(1, Math.min(effectiveMaxZoom.value, requiredZoom));
+  });
+
+  // Calculate pan offset that centers the view at a given zoom level
+  // At zoom > 1, panOffset={0,0} shows top-left corner, not center
+  function getCenteredPanOffset(zoom: number, verticalOffset = 0): { x: number; y: number } {
+    const base = baseViewBox.value;
+    return {
+      x: -base.width * (zoom - 1) / 2,
+      y: -base.height * (zoom - 1) / 2 + verticalOffset,
+    };
+  }
+
+  // Constrain pan offset to keep viewBox within baseViewBox bounds
+  // At zoom Z, valid range is: -base.dimension * (Z - 1) <= panOffset <= 0
+  function clampPanOffset(offset: { x: number; y: number }, zoom: number): { x: number; y: number } {
+    const base = baseViewBox.value;
+    const minX = -base.width * (zoom - 1);
+    const maxX = 0;
+    const minY = -base.height * (zoom - 1);
+    const maxY = 0;
+    return {
+      x: Math.max(minX, Math.min(maxX, offset.x)),
+      y: Math.max(minY, Math.min(maxY, offset.y)),
+    };
+  }
+
   // Detail panel offset - call setDetailPanelOffset when detail panel opens/closes
   const detailPanelOffset = ref(0);
 
   function setDetailPanelOffset(offset: number) {
     detailPanelOffset.value = offset;
     if (!userHasInteracted.value) {
-      panOffset.value = { x: 0, y: -offset / 2 };
+      panOffset.value = getCenteredPanOffset(zoomLevel.value, -offset / 2);
     }
   }
 
@@ -125,6 +175,33 @@ export function useGraphPanZoom(
   });
 
   const isViewModified = computed(() => userHasInteracted.value);
+
+  // Indicators for which directions have more content (for pan hints)
+  const canPanLeft = computed(() => {
+    const base = baseViewBox.value;
+    const viewBoxX = base.x - panOffset.value.x / zoomLevel.value;
+    return viewBoxX > base.x + 1; // +1 for floating point tolerance
+  });
+
+  const canPanRight = computed(() => {
+    const base = baseViewBox.value;
+    const viewBoxX = base.x - panOffset.value.x / zoomLevel.value;
+    const viewBoxWidth = base.width / zoomLevel.value;
+    return viewBoxX + viewBoxWidth < base.x + base.width - 1;
+  });
+
+  const canPanUp = computed(() => {
+    const base = baseViewBox.value;
+    const viewBoxY = base.y - panOffset.value.y / zoomLevel.value;
+    return viewBoxY > base.y + 1;
+  });
+
+  const canPanDown = computed(() => {
+    const base = baseViewBox.value;
+    const viewBoxY = base.y - panOffset.value.y / zoomLevel.value;
+    const viewBoxHeight = base.height / zoomLevel.value;
+    return viewBoxY + viewBoxHeight < base.y + base.height - 1;
+  });
 
   // ResizeObserver setup - call setupResizeObserver() after component mounts
   let resizeObserver: ResizeObserver | null = null;
@@ -151,8 +228,9 @@ export function useGraphPanZoom(
 
   // Reset view
   function resetView() {
-    panOffset.value = { x: 0, y: -detailPanelOffset.value / 2 };
-    zoomLevel.value = 1;
+    const zoom = minReadableZoom.value;
+    zoomLevel.value = zoom;
+    panOffset.value = getCenteredPanOffset(zoom, -detailPanelOffset.value / 2);
     userHasInteracted.value = false;
   }
 
@@ -165,15 +243,21 @@ export function useGraphPanZoom(
       }
     }
     isPanning.value = true;
-    panStart.value = { x: event.clientX - panOffset.value.x, y: event.clientY - panOffset.value.y };
+    panStart.value = { x: event.clientX, y: event.clientY };
+    panStartOffset.value = { x: panOffset.value.x, y: panOffset.value.y };
   }
 
   function doPan(event: MouseEvent) {
     if (!isPanning.value) return;
-    panOffset.value = {
-      x: event.clientX - panStart.value.x,
-      y: event.clientY - panStart.value.y,
+    // Scale drag delta by zoom so panning feels 1:1 with mouse movement
+    // (compensates for the division by zoomLevel in viewBoxString)
+    const dx = (event.clientX - panStart.value.x) * zoomLevel.value;
+    const dy = (event.clientY - panStart.value.y) * zoomLevel.value;
+    const newOffset = {
+      x: panStartOffset.value.x + dx,
+      y: panStartOffset.value.y + dy,
     };
+    panOffset.value = clampPanOffset(newOffset, zoomLevel.value);
     userHasInteracted.value = true;
   }
 
@@ -190,7 +274,7 @@ export function useGraphPanZoom(
     const cursorY = clientY - rect.top;
 
     const oldZoom = zoomLevel.value;
-    const newZoom = Math.max(minZoom, Math.min(maxZoom, oldZoom * factor));
+    const newZoom = Math.max(minZoom, Math.min(effectiveMaxZoom.value, oldZoom * factor));
     const zoomRatio = newZoom / oldZoom;
 
     // Scale cursor from pixels to viewBox units (panOffset is in viewBox units)
@@ -198,11 +282,12 @@ export function useGraphPanZoom(
     const scaledCursorX = cursorX * base.width / containerWidth.value;
     const scaledCursorY = cursorY * base.height / containerHeight.value;
 
-    // Adjust pan to keep cursor point stationary
-    panOffset.value = {
+    // Adjust pan to keep cursor point stationary, then clamp to bounds
+    const newOffset = {
       x: scaledCursorX - (scaledCursorX - panOffset.value.x) * zoomRatio,
       y: scaledCursorY - (scaledCursorY - panOffset.value.y) * zoomRatio,
     };
+    panOffset.value = clampPanOffset(newOffset, newZoom);
 
     zoomLevel.value = newZoom;
     userHasInteracted.value = true;
@@ -216,14 +301,51 @@ export function useGraphPanZoom(
   }
 
   function zoomIn() {
-    const newZoom = Math.min(maxZoom, zoomLevel.value * 1.2);
+    const newZoom = Math.min(effectiveMaxZoom.value, zoomLevel.value * 1.2);
     zoomLevel.value = newZoom;
+    panOffset.value = clampPanOffset(panOffset.value, newZoom);
     userHasInteracted.value = true;
   }
 
   function zoomOut() {
     const newZoom = Math.max(minZoom, zoomLevel.value / 1.2);
     zoomLevel.value = newZoom;
+    panOffset.value = clampPanOffset(panOffset.value, newZoom);
+    userHasInteracted.value = true;
+  }
+
+  // Pan by a percentage of the visible area in each direction
+  const panStepFactor = 0.25; // 25% of visible area per click
+
+  function panLeft() {
+    const base = baseViewBox.value;
+    const step = base.width * panStepFactor;
+    const newOffset = { x: panOffset.value.x + step, y: panOffset.value.y };
+    panOffset.value = clampPanOffset(newOffset, zoomLevel.value);
+    userHasInteracted.value = true;
+  }
+
+  function panRight() {
+    const base = baseViewBox.value;
+    const step = base.width * panStepFactor;
+    const newOffset = { x: panOffset.value.x - step, y: panOffset.value.y };
+    panOffset.value = clampPanOffset(newOffset, zoomLevel.value);
+    userHasInteracted.value = true;
+  }
+
+  function panUp() {
+    const base = baseViewBox.value;
+    const step = base.height * panStepFactor;
+    const newOffset = { x: panOffset.value.x, y: panOffset.value.y + step };
+    panOffset.value = clampPanOffset(newOffset, zoomLevel.value);
+    userHasInteracted.value = true;
+  }
+
+  function panDown() {
+    const base = baseViewBox.value;
+    const step = base.height * panStepFactor;
+    const newOffset = { x: panOffset.value.x, y: panOffset.value.y - step };
+    panOffset.value = clampPanOffset(newOffset, zoomLevel.value);
     userHasInteracted.value = true;
   }
 
@@ -255,8 +377,10 @@ export function useGraphPanZoom(
         if (newCount !== lastCount) {
           lastCount = newCount;
           if (!userHasInteracted.value) {
-            panOffset.value = { x: 0, y: -detailPanelOffset.value / 2 };
-            zoomLevel.value = 1;
+            const zoom = minReadableZoom.value;
+            zoomLevel.value = zoom;
+            panOffset.value = getCenteredPanOffset(zoom, -detailPanelOffset.value / 2);
+            initialZoomComputed.value = true;
           }
         }
       },
@@ -264,10 +388,12 @@ export function useGraphPanZoom(
     );
   }
 
-  // Watch for container height changes
-  watch(containerHeight, () => {
-    if (!userHasInteracted.value) {
-      panOffset.value = { x: 0, y: -detailPanelOffset.value / 2 };
+  // Watch for container size changes to recalculate initial zoom
+  watch([containerWidth, containerHeight], () => {
+    if (!userHasInteracted.value && initialZoomComputed.value) {
+      const zoom = minReadableZoom.value;
+      zoomLevel.value = zoom;
+      panOffset.value = getCenteredPanOffset(zoom, -detailPanelOffset.value / 2);
     }
   });
 
@@ -283,6 +409,10 @@ export function useGraphPanZoom(
     baseViewBox,
     viewBoxString,
     isViewModified,
+    canPanLeft,
+    canPanRight,
+    canPanUp,
+    canPanDown,
 
     // Methods
     resetView,
@@ -292,6 +422,10 @@ export function useGraphPanZoom(
     doZoom,
     zoomIn,
     zoomOut,
+    panLeft,
+    panRight,
+    panUp,
+    panDown,
     showTooltip,
     hideTooltip,
     setupResizeObserver,

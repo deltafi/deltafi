@@ -52,19 +52,21 @@
 
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
 
-    <div v-if="!showLoading" class="map-container" :class="{ 'panel-open': selectedNode }">
-      <SystemMapGraph
-        :nodes="displayNodes"
-        :edges="displayEdges"
-        :selected-node-id="selectedNode?.id"
-        :error-counts="errorsByFlow"
-        :queue-counts="queueCountsByFlow"
-        :flow-metrics="perFlowMetricsMap"
-        @select-node="onSelectNode"
-        @error-badge-click="onErrorBadgeClick"
-        @flow-state-change="onFlowStateChange"
-        @show-dataflow="onShowDataflow"
-      />
+    <div v-if="!showLoading" class="map-container">
+      <div class="graph-wrapper">
+        <SystemMapGraph
+          :nodes="displayNodes"
+          :edges="displayEdges"
+          :selected-node-id="selectedNode?.id"
+          :error-counts="errorsByFlow"
+          :queue-counts="queueCountsByFlow"
+          :flow-metrics="perFlowMetricsMap"
+          @select-node="onSelectNode"
+          @error-badge-click="onErrorBadgeClick"
+          @flow-state-change="onFlowStateChange"
+          @show-dataflow="onShowDataflow"
+        />
+      </div>
 
       <!-- Details panel -->
       <div v-if="selectedNode" class="details-panel">
@@ -759,6 +761,7 @@ watch(flowGraph, (newGraph) => {
   }
 });
 
+
 onMounted(async () => {
   await Promise.all([getAllTopics(), fetchFlowErrors(), fetchQueueMetrics()]);
   startMetricsRefresh();
@@ -793,24 +796,26 @@ onUnmounted(() => {
 .map-container {
   flex: 1;
   min-height: 400px;
-  position: relative;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+}
+
+.graph-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 200px;
 }
 
 /* Details panel */
 .details-panel {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex: 0 0 40%;
   background: var(--surface-card);
   border-top: 1px solid var(--surface-border);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-  max-height: 40%;
-  min-height: 150px;
   display: flex;
   flex-direction: column;
-  z-index: 10;
+  overflow: hidden;
 }
 
 .panel-header {
