@@ -33,7 +33,6 @@ ext {
     // Paths to exclude from all distributions
     excludePaths = [
         '**/data/**',
-        '**/logs/**',
         '**/compose/settings/env/common.env',
         '**/compose/settings/env/startup.env',
     ]
