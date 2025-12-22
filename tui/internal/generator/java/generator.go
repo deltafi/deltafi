@@ -23,11 +23,11 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/deltafi/tui/internal/app"
 	"github.com/deltafi/tui/internal/generator"
+	"github.com/deltafi/tui/internal/types"
 )
 
 // JavaGenerator implements the Generator interface for Java plugins
@@ -53,9 +53,15 @@ func getTemplateFiles(groupIDPath, className string) map[string]string {
 		"gradlew.tmpl":                                  "gradlew",
 		"gradlew.bat.tmpl":                              "gradlew.bat",
 		"gradle/wrapper/gradle-wrapper.properties.tmpl": filepath.Join("gradle", "wrapper", "gradle-wrapper.properties"),
+		"gradle/wrapper/gradle-wrapper.jar":             filepath.Join("gradle", "wrapper", "gradle-wrapper.jar"),
 		"flows/variables.json.tmpl":                     filepath.Join("src", "main", "resources", "flows", "variables.json"),
 		"flows/data_source.json.tmpl":                   filepath.Join("src", "main", "resources", "flows", "data-source.json"),
 	}
+}
+
+// isBinaryFile returns true if the template path is a binary file that should be copied without template processing
+func isBinaryFile(templatePath string) bool {
+	return strings.HasSuffix(templatePath, ".jar")
 }
 
 // GeneratePlugin generates a new Java plugin project
@@ -89,7 +95,7 @@ func (g *JavaGenerator) GeneratePlugin(pluginName string, options *generator.Plu
 	}
 
 	// Get DeltaFi version from TUI
-	deltaFiVersion := adjustVersionForSnapshot(app.GetVersion())
+	deltaFiVersion := getDeltaFiVersion()
 
 	className := PluginNameToClassName(pluginName)
 
@@ -115,13 +121,18 @@ func (g *JavaGenerator) GeneratePlugin(pluginName string, options *generator.Plu
 
 	// Generate files
 	for templatePath, outputPath := range files {
-		content, err := RenderTemplate(templatePath, data)
+		var content []byte
+		var err error
+
+		if isBinaryFile(templatePath) {
+			// Binary files are copied directly without template processing
+			content, err = ReadRawFile(templatePath)
+		} else {
+			content, err = RenderTemplate(templatePath, data)
+		}
+
 		if err != nil {
-			// Skip gradle-wrapper.jar as it's a binary file that needs special handling
-			if strings.Contains(templatePath, "gradle-wrapper.jar") {
-				continue
-			}
-			return fmt.Errorf("failed to render template %s: %w", templatePath, err)
+			return fmt.Errorf("failed to process %s: %w", templatePath, err)
 		}
 
 		fullPath := filepath.Join(pluginDir, outputPath)
@@ -138,53 +149,6 @@ func (g *JavaGenerator) GeneratePlugin(pluginName string, options *generator.Plu
 		if err := os.WriteFile(fullPath, content, perm); err != nil {
 			return fmt.Errorf("failed to write file %s: %w", outputPath, err)
 		}
-	}
-
-	// Copy gradle-wrapper.jar from reference (deltafi-java-hello-world)
-	if err := copyGradleWrapperJar(pluginDir); err != nil {
-		return fmt.Errorf("failed to copy gradle-wrapper.jar: %w", err)
-	}
-
-	return nil
-}
-
-// copyGradleWrapperJar copies the gradle-wrapper.jar from the reference plugin
-func copyGradleWrapperJar(pluginDir string) error {
-	config := app.GetInstance().GetConfig()
-	repoPath := config.Development.RepoPath
-	if repoPath == "" {
-		return fmt.Errorf("repoPath not configured")
-	}
-
-	// Try to copy from deltafi-java-hello-world
-	referencePath := filepath.Join(repoPath, "deltafi-java-hello-world", "gradle", "wrapper", "gradle-wrapper.jar")
-	if _, err := os.Stat(referencePath); err == nil {
-		content, err := os.ReadFile(referencePath)
-		if err != nil {
-			return fmt.Errorf("failed to read reference gradle-wrapper.jar: %w", err)
-		}
-
-		targetPath := filepath.Join(pluginDir, "gradle", "wrapper", "gradle-wrapper.jar")
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-			return fmt.Errorf("failed to create gradle wrapper directory: %w", err)
-		}
-
-		if err := os.WriteFile(targetPath, content, 0644); err != nil {
-			return fmt.Errorf("failed to write gradle-wrapper.jar: %w", err)
-		}
-		return nil
-	}
-
-	// If reference doesn't exist, create an empty file as placeholder
-	// The user will need to run gradle wrapper to generate it
-	targetPath := filepath.Join(pluginDir, "gradle", "wrapper", "gradle-wrapper.jar")
-	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-		return fmt.Errorf("failed to create gradle wrapper directory: %w", err)
-	}
-
-	// Create empty file - user will need to run gradle wrapper
-	if err := os.WriteFile(targetPath, []byte{}, 0644); err != nil {
-		return fmt.Errorf("failed to create placeholder gradle-wrapper.jar: %w", err)
 	}
 
 	return nil
@@ -407,7 +371,7 @@ func (g *JavaGenerator) UpdatePlugin(pluginName string, options *generator.Updat
 	}
 
 	// Get DeltaFi version from TUI
-	deltaFiVersion := adjustVersionForSnapshot(app.GetVersion())
+	deltaFiVersion := getDeltaFiVersion()
 
 	className := PluginNameToClassName(pluginName)
 
@@ -693,46 +657,30 @@ func preserveBuildGradleDependencies(oldContent, newContent []byte) []byte {
 	return []byte(newContentStr)
 }
 
-// adjustVersionForSnapshot adjusts a SNAPSHOT version to use the previous patch version
-// For example: 2.34.5-SNAPSHOT -> 2.34.4, 2.34.0-SNAPSHOT -> 2.34.0
-func adjustVersionForSnapshot(version string) string {
+// getDeltaFiVersion returns the DeltaFi version to use for plugin dependencies.
+// In CoreDevelopment mode, uses the TUI version (what `deltafi up` will install).
+// In PluginDevelopment mode, queries the running DeltaFi system for its version.
+func getDeltaFiVersion() string {
+	config := app.GetInstance().GetConfig()
+
+	// In plugin development mode, use the version of the running DeltaFi system
+	// since that's what the plugin will be built against
+	if config.DeploymentMode == types.PluginDevelopment {
+		client, err := app.GetInstance().GetAPIClient()
+		if err == nil {
+			status, err := client.Status()
+			if err == nil && status.Status.Version != "" {
+				return status.Status.Version
+			}
+		}
+	}
+
+	// In core development mode (or if we can't reach the API), use the TUI version
+	version := app.GetVersion()
 	if version == "" {
-		return "0.0.0" // Fallback if version not set
+		return "0.0.0"
 	}
-
-	// Check if version is a SNAPSHOT
-	if !strings.Contains(version, "-SNAPSHOT") {
-		return version
-	}
-
-	// Extract the version part before -SNAPSHOT
-	versionPart := strings.Split(version, "-SNAPSHOT")[0]
-
-	// Parse major.minor.patch
-	versionRe := regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
-	matches := versionRe.FindStringSubmatch(versionPart)
-	if len(matches) != 4 {
-		// If we can't parse it, return as-is
-		return versionPart
-	}
-
-	// Extract version components
-	major := matches[1]
-	minor := matches[2]
-	patch := matches[3]
-
-	// Decrement patch version (but not below 0)
-	patchInt, err := strconv.Atoi(patch)
-	if err != nil {
-		// If we can't parse the patch version, return as-is
-		return versionPart
-	}
-	if patchInt > 0 {
-		patchInt--
-	}
-
-	// Reconstruct version
-	return fmt.Sprintf("%s.%s.%d", major, minor, patchInt)
+	return version
 }
 
 // writeFile writes content to a file, creating directories as needed

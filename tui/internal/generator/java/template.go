@@ -45,6 +45,12 @@ type TemplateData struct {
 	DeltaFiVersion  string // DeltaFi SDK version (from TUI version)
 }
 
+// ReadRawFile reads a file from the template directory without template processing
+func ReadRawFile(filePath string) ([]byte, error) {
+	fullPath := filepath.Join("template", filePath)
+	return templateFiles.ReadFile(fullPath)
+}
+
 // RenderTemplate renders a template file with the given data
 func RenderTemplate(templatePath string, data *TemplateData) ([]byte, error) {
 	// templatePath is relative to the template/ directory
