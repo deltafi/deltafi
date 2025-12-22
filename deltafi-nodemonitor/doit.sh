@@ -22,6 +22,16 @@ GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
 VALKEY_HOST=${VALKEY_HOST:-deltafi-valkey-master}
 VALKEY_PORT=${VALKEY_PORT:-6379}
 PERIOD=${PERIOD:-5}
+POD_CACHE_TTL=${POD_CACHE_TTL:-60}
+
+# Cached pod lookup results
+CACHED_HAS_MINIO=""
+CACHED_HAS_POSTGRES=""
+LAST_POD_CHECK=0
+
+# Accumulated Valkey commands
+VALKEY_COMMANDS=""
+NC_TIMEOUT=2
 
 _log() {
     local log_level="$1"
@@ -58,7 +68,7 @@ exterminate() {
 
 trap exterminate SIGTERM
 
-send_to_valkey() {
+queue_valkey_command() {
     local metric_name="$1"
     local hostname="$2"
     local metric_value="$3"
@@ -67,9 +77,16 @@ send_to_valkey() {
     # Optional 5th param to store partition name
     if [[ -n "$5" ]]; then
         local partition="$5"
-        echo -e "AUTH ${VALKEY_PASSWORD}\nHSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}, \\\"${partition}\\\"]\"" | nc -N "${VALKEY_HOST}" "${VALKEY_PORT}" >/dev/null
+        VALKEY_COMMANDS+="HSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}, \\\"${partition}\\\"]\"\n"
     else
-        echo -e "AUTH ${VALKEY_PASSWORD}\nHSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}]\"" | nc -N "${VALKEY_HOST}" "${VALKEY_PORT}" >/dev/null
+        VALKEY_COMMANDS+="HSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}]\"\n"
+    fi
+}
+
+flush_to_valkey() {
+    if [[ -n "$VALKEY_COMMANDS" ]]; then
+        echo -e "AUTH ${VALKEY_PASSWORD}\n${VALKEY_COMMANDS}" | nc -w "$NC_TIMEOUT" -N "${VALKEY_HOST}" "${VALKEY_PORT}" >/dev/null 2>&1
+        VALKEY_COMMANDS=""
     fi
 }
 
@@ -111,8 +128,8 @@ report_cpu_metrics() {
     metrics+="gauge.node.cpu.iowait;hostname=$NODE_NAME $DIFF_IOWAIT_UNITS $TIMESTAMP\n"
     metrics+="gauge.node.cpu.limit;hostname=$NODE_NAME $TOTAL_CPU_UNITS $TIMESTAMP\n"
 
-    send_to_valkey "gauge.node.cpu.usage" "$NODE_NAME" "$DIFF_USAGE_UNITS" "$TIMESTAMP"
-    send_to_valkey "gauge.node.cpu.limit" "$NODE_NAME" "$TOTAL_CPU_UNITS" "$TIMESTAMP"
+    queue_valkey_command "gauge.node.cpu.usage" "$NODE_NAME" "$DIFF_USAGE_UNITS" "$TIMESTAMP"
+    queue_valkey_command "gauge.node.cpu.limit" "$NODE_NAME" "$TOTAL_CPU_UNITS" "$TIMESTAMP"
 
     _debug "$NODE_NAME: Using ${DIFF_USAGE_UNITS} of ${TOTAL_CPU_UNITS} CPU units"
 }
@@ -128,44 +145,59 @@ report_disk_metrics() {
     local token_file="/var/run/secrets/kubernetes.io/serviceaccount/token"
     local ca_file="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
     local has_minio= has_postgres=
+    local now
+    now=$(date +%s)
 
     if [[ ! -f "$token_file" || ! -f "$ca_file" ]]; then
         _debug "No Kubernetes token/CA found, assuming node has minio and postgres."
         has_minio=true
         has_postgres=true
+    elif [[ $((now - LAST_POD_CHECK)) -lt $POD_CACHE_TTL && -n "$LAST_POD_CHECK" && "$LAST_POD_CHECK" -gt 0 ]]; then
+        has_minio=$CACHED_HAS_MINIO
+        has_postgres=$CACHED_HAS_POSTGRES
+        _debug "Using cached pod lookup (age: $((now - LAST_POD_CHECK))s)"
     else
         local token pods_json
         token=$(cat "$token_file")
-        pods_json=$(curl -sS --cacert "$ca_file" -H "Authorization: Bearer $token" \
-          "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/pods?fieldSelector=spec.nodeName=${NODE_NAME}")
+        pods_json=$(curl -sS --connect-timeout 5 --max-time 8 --cacert "$ca_file" -H "Authorization: Bearer $token" \
+          "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}/api/v1/pods?fieldSelector=spec.nodeName=${NODE_NAME}" 2>/dev/null)
 
-        if echo "$pods_json" | grep -q '"name":.*deltafi-s3proxy' && [[ -d /data/deltafi/minio ]]; then
-            has_minio=true
-        fi
-        if echo "$pods_json" | grep -q '"name":.*deltafi-postgres' && [[ -d /data/deltafi/postgres ]]; then
-            has_postgres=true
+        if [[ -z "$pods_json" ]]; then
+            _warn "Failed to query Kubernetes API, using cached values"
+            has_minio=$CACHED_HAS_MINIO
+            has_postgres=$CACHED_HAS_POSTGRES
+        else
+            if echo "$pods_json" | grep -q '"name":.*deltafi-s3proxy' && [[ -d /data/deltafi/minio ]]; then
+                has_minio=true
+            fi
+            if echo "$pods_json" | grep -q '"name":.*deltafi-postgres' && [[ -d /data/deltafi/postgres ]]; then
+                has_postgres=true
+            fi
+            CACHED_HAS_MINIO=$has_minio
+            CACHED_HAS_POSTGRES=$has_postgres
+            LAST_POD_CHECK=$now
         fi
     fi
 
     local TIMESTAMP
     TIMESTAMP=$(date +%s)
 
-    # Lookup minio values and send valkey metrics immediately.
+    # Lookup minio values and queue valkey metrics.
     if [[ $has_minio ]]; then
         minio_limit=$(df /data/deltafi/minio -P -B 1 | tail -1 | awk '{print $2}')
         minio_usage=$(df /data/deltafi/minio -P -B 1 | tail -1 | awk '{print $3}')
         minio_part=$(df /data/deltafi/minio -P -B 1 | tail -1 | awk '{print $1}')
-        send_to_valkey "gauge.node.disk-minio.usage" "$NODE_NAME" "$minio_usage" "$TIMESTAMP" "$minio_part"
-        send_to_valkey "gauge.node.disk-minio.limit" "$NODE_NAME" "$minio_limit" "$TIMESTAMP" "$minio_part"
+        queue_valkey_command "gauge.node.disk-minio.usage" "$NODE_NAME" "$minio_usage" "$TIMESTAMP" "$minio_part"
+        queue_valkey_command "gauge.node.disk-minio.limit" "$NODE_NAME" "$minio_limit" "$TIMESTAMP" "$minio_part"
     fi
 
-    # Lookup postgres values and send valkey metrics immediately.
+    # Lookup postgres values and queue valkey metrics.
     if [[ $has_postgres ]]; then
         pg_limit=$(df /data/deltafi/postgres -P -B 1 | tail -1 | awk '{print $2}')
         pg_usage=$(df /data/deltafi/postgres -P -B 1 | tail -1 | awk '{print $3}')
         pg_part=$(df /data/deltafi/postgres -P -B 1 | tail -1 | awk '{print $1}')
-        send_to_valkey "gauge.node.disk-postgres.usage" "$NODE_NAME" "$pg_usage" "$TIMESTAMP" "$pg_part"
-        send_to_valkey "gauge.node.disk-postgres.limit" "$NODE_NAME" "$pg_limit" "$TIMESTAMP" "$pg_part"
+        queue_valkey_command "gauge.node.disk-postgres.usage" "$NODE_NAME" "$pg_usage" "$TIMESTAMP" "$pg_part"
+        queue_valkey_command "gauge.node.disk-postgres.limit" "$NODE_NAME" "$pg_limit" "$TIMESTAMP" "$pg_part"
     fi
 
     local used_parts=""
@@ -214,12 +246,11 @@ report_memory_metrics() {
     AVAILABLE=$(grep ^MemAvailable: < /proc/meminfo | awk '{print $2}')
     LIMIT=$((TOTAL * 1000))
     USAGE=$(((TOTAL - AVAILABLE) * 1000))
-    TIMESTAMP=$(date +%s)
     metrics+="gauge.node.memory.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP\n"
     metrics+="gauge.node.memory.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP\n"
 
-    send_to_valkey "gauge.node.memory.usage" "$NODE_NAME" "$USAGE" "$TIMESTAMP"
-    send_to_valkey "gauge.node.memory.limit" "$NODE_NAME" "$LIMIT" "$TIMESTAMP"
+    queue_valkey_command "gauge.node.memory.usage" "$NODE_NAME" "$USAGE" "$TIMESTAMP"
+    queue_valkey_command "gauge.node.memory.limit" "$NODE_NAME" "$LIMIT" "$TIMESTAMP"
 
     _debug "$NODE_NAME: Using $USAGE of $LIMIT bytes of Memory"
 }
@@ -280,7 +311,8 @@ while true; do
     report_memory_metrics
     report_container_metrics
 
-    printf "%b" "${metrics}" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    flush_to_valkey
+    printf "%b" "${metrics}" | nc -w "$NC_TIMEOUT" -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
 
     sleep "$PERIOD"
 done
