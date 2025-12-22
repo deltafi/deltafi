@@ -381,7 +381,7 @@ up() {
   _create_volume deltafi-kind-cache
 
   if is_kind_cluster_instantiated; then
-    _ok "KinD ${CLUSTER_NAME} cluster already instantiated"
+    _ok "KinD ${CLUSTER_NAME} cluster already running"
   else
     _conditional "KinD ${CLUSTER_NAME} cluster initialized" _annotated_subshell -v "•" -v "Not sure" -h "Build KinD cluster" instantiate_kind_cluster || _fatal "Check for hung docker containers and network connectivity"
   fi
@@ -561,14 +561,70 @@ _k8s_init() {
   _ok "Kubernetes prerequisites"
 }
 
-describe down "Shut down the KinD cluster"
+describe down "Uninstall DeltaFi from the KinD cluster (use -d to destroy cluster)"
 down() {
-  _attention "Shutting down KinD cluster"
-  if is_kind_cluster_instantiated; then
-    _annotated_subshell destroy_kind_cluster
-    _down "KinD Cluster"
+  local destroy=false
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -d|--destroy)
+        destroy=true
+        shift
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
+
+  if $destroy; then
+    _attention "Destroying KinD cluster"
+    if is_kind_cluster_instantiated; then
+      _annotated_subshell destroy_kind_cluster
+      _down "KinD Cluster destroyed"
+    else
+      _fail "No deltafi cluster instantiated"
+    fi
   else
-    _fail "No deltafi cluster instantiated"
+    _attention "Uninstalling DeltaFi from KinD cluster"
+    if ! is_kind_cluster_instantiated; then
+      _fail "No deltafi cluster instantiated"
+      return 1
+    fi
+    # Capture postgres secrets before helm uninstall (operator will delete them)
+    declare -A pg_secrets
+    for secret in deltafi.deltafi-postgres postgres.deltafi-postgres standby.deltafi-postgres; do
+      pg_secrets[$secret]=$(kubectl get secret "$secret" -n deltafi -o yaml 2>/dev/null)
+    done
+
+    # Uninstall deltafi helm release but leave postgres-operator and cluster running
+    if helm status deltafi -n deltafi > /dev/null 2>&1; then
+      _conditional "Uninstall DeltaFi" _annotated_subshell helm uninstall deltafi -n deltafi --wait
+    else
+      _ok "DeltaFi not installed"
+    fi
+
+    # Wait for pods to terminate (except postgres-operator)
+    echo -n "Waiting for pods to terminate"
+    while kubectl get pods -n deltafi --no-headers 2>/dev/null | grep -v postgres-operator | grep -q .; do
+      echo -n "."
+      sleep 2
+    done
+    echo " done"
+
+    # Restore postgres secrets (operator deleted them with the CR)
+    for secret in deltafi.deltafi-postgres postgres.deltafi-postgres standby.deltafi-postgres; do
+      if [[ -n "${pg_secrets[$secret]}" ]]; then
+        echo "${pg_secrets[$secret]}" | kubectl apply -f - >/dev/null 2>&1 && \
+          _ok "Restored secret $secret"
+      fi
+    done
+
+    # Clear claimRef on Released PVs so they can rebind on next up
+    for pv in $(kubectl get pv -o jsonpath='{range .items[?(@.status.phase=="Released")]}{.metadata.name}{"\n"}{end}' 2>/dev/null | grep deltafi); do
+      kubectl patch pv "$pv" -p '{"spec":{"claimRef": null}}' >/dev/null 2>&1 && \
+        _ok "Cleared claimRef on PV $pv"
+    done
+    _down "DeltaFi uninstalled (cluster preserved)"
   fi
 }
 
@@ -579,7 +635,7 @@ images() {
 
 describe destroy "Shut down the KinD cluster and remove persistent volume data"
 destroy() {
-  down "$@"
+  down -d
 
   destroy_registries "$@"
 

@@ -20,13 +20,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deltafi/tui/internal/app"
-	"github.com/deltafi/tui/internal/orchestration"
 	"github.com/deltafi/tui/internal/ui/styles"
 	"github.com/spf13/cobra"
 )
@@ -72,22 +70,15 @@ Examples:
 			return err
 		}
 
-		destroyData = destroyData || app.GetOrchestrationMode() == orchestration.Kind
-
 		if !force {
+			var warning string
 			if destroyData {
-				cmd.Printf("☠️  WARNING: This command will take down the DeltaFi cluster and all persistent data!  ☠️\n")
+				warning = "☠️  WARNING: This command will take down the DeltaFi cluster and all persistent data!  ☠️"
 			} else {
-				cmd.Printf("⚠️  WARNING: This command will take down the DeltaFi cluster!  Persistent data will not be removed.\n")
+				warning = "⚠️  WARNING: This command will take down the DeltaFi cluster!  Persistent data will not be removed."
 			}
-			cmd.Printf("Are you sure you want to continue? [y/N]: ")
-
-			var response string
-			if _, err := fmt.Scanln(&response); err != nil {
-				return err
-			}
-
-			if !strings.EqualFold(response, "y") {
+			cmd.Println(warning)
+			if !ConfirmPrompt("Are you sure you want to continue?") {
 				return fmt.Errorf("operation cancelled by user")
 			}
 		}
@@ -97,7 +88,11 @@ Examples:
 }
 
 func down(destroyData bool) error {
-	if err := app.GetOrchestrator().Down([]string{}); err != nil {
+	var args []string
+	if destroyData {
+		args = []string{"-d"}
+	}
+	if err := app.GetOrchestrator().Down(args); err != nil {
 		return err
 	}
 

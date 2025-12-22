@@ -113,7 +113,7 @@ WARNING: This will permanently delete all data in the KinD cluster.`,
 			return fmt.Errorf("orchestrator is not a KindOrchestrator")
 		}
 
-		if err := kindOrchestrator.StopKind(); err != nil {
+		if err := kindOrchestrator.StopKind([]string{"-d"}); err != nil {
 			return fmt.Errorf("failed to stop KinD cluster: %w", err)
 		}
 

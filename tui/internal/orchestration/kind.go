@@ -78,10 +78,11 @@ func (o *KindOrchestrator) Load(args []string) error {
 	return executeShellCommand(executable, arglist, o.Environment())
 }
 
-func (o *KindOrchestrator) StopKind() error {
+func (o *KindOrchestrator) StopKind(args []string) error {
 	executable := filepath.Join(o.distroPath, "orchestration", "kind", "kind")
-	args := []string{"down"}
-	return executeShellCommand(executable, args, o.Environment())
+	cmdArgs := []string{"down"}
+	cmdArgs = append(cmdArgs, args...)
+	return executeShellCommand(executable, cmdArgs, o.Environment())
 }
 
 func (o *KindOrchestrator) DestroyKind() error {
@@ -178,8 +179,7 @@ func (o *KindOrchestrator) Up(args []string) error {
 }
 
 func (o *KindOrchestrator) Down(args []string) error {
-
-	return o.StopKind()
+	return o.StopKind(args)
 }
 
 func (o *KindOrchestrator) Environment() []string {
