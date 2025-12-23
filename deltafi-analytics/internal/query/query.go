@@ -238,12 +238,12 @@ func (s *Service) buildAnalyticsQuery(req AnalyticsRequest) string {
 			WHERE false`
 	}
 
-	return s.buildAggregatedQuery(aggregatedFiles, timeFrom, timeTo, intervalSeconds, req.DataSources, req.FlowNames, req.Annotations, req.GroupByAnnotation, eventTypeFilter)
+	return s.buildAggregatedQuery(aggregatedFiles, timeFrom, timeTo, intervalSeconds, req.DataSources, req.FlowNames, req.Annotations, req.GroupByAnnotation, req.IngressTypes, eventTypeFilter)
 }
 
 // buildAggregatedQuery builds query for compacted aggregated parquet files
-func (s *Service) buildAggregatedQuery(files []string, timeFrom, timeTo string, intervalSeconds int64, dataSources, flowNames []string, annotations map[string][]string, groupByAnnotation, eventTypeFilter string) string {
-	// Aggregated files have: bucket, data_source, event_type, flow_name, action_name, cause, annotations (MAP), event_count, total_bytes, total_file_count
+func (s *Service) buildAggregatedQuery(files []string, timeFrom, timeTo string, intervalSeconds int64, dataSources, flowNames []string, annotations map[string][]string, groupByAnnotation string, ingressTypes []string, eventTypeFilter string) string {
+	// Aggregated files have: bucket, data_source, event_type, flow_name, action_name, cause, ingress_type, annotations (MAP), event_count, total_bytes, total_file_count
 	// When groupByAnnotation is set, combine data_source with annotation value
 	dataSourceSelect := s.buildDataSourceSelect(groupByAnnotation)
 	annotationSelect := s.buildAnnotationSelect(groupByAnnotation)
@@ -265,6 +265,10 @@ func (s *Service) buildAggregatedQuery(files []string, timeFrom, timeTo string, 
 	if len(flowNames) > 0 && !containsAll(flowNames) {
 		quoted := quoteStrings(flowNames)
 		filters = append(filters, fmt.Sprintf("flow_name IN (%s)", strings.Join(quoted, ", ")))
+	}
+	if len(ingressTypes) > 0 && !containsAll(ingressTypes) {
+		quoted := quoteStrings(ingressTypes)
+		filters = append(filters, fmt.Sprintf("ingress_type IN (%s)", strings.Join(quoted, ", ")))
 	}
 
 	// Add multi-annotation filters (expand Grafana multi-value format)
