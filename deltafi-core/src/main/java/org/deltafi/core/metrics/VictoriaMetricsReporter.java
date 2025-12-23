@@ -24,6 +24,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
@@ -53,18 +54,19 @@ public class VictoriaMetricsReporter extends ScheduledReporter {
 
         final long timestamp = System.currentTimeMillis() / 1000; // Unix epoch in seconds
         StringBuilder metrics = new StringBuilder();
+        Map<Counter, Long> reportedValues = new LinkedHashMap<>();
 
         for (Map.Entry<String, Counter> entry : counters.entrySet()) {
             long value = entry.getValue().getCount();
             String metricName = "stats_counts." + entry.getKey();
             metrics.append(formatMetric(metricName, value, timestamp));
-
-            // Reset counter after reporting (delta counter behavior)
-            entry.getValue().dec(value);
+            reportedValues.put(entry.getValue(), value);
         }
 
-        if (!metrics.isEmpty()) {
-            sendMetrics(metrics.toString());
+        if (!metrics.isEmpty() && sendMetrics(metrics.toString())) {
+            for (Map.Entry<Counter, Long> entry : reportedValues.entrySet()) {
+                entry.getKey().dec(entry.getValue());
+            }
         }
     }
 
@@ -87,7 +89,7 @@ public class VictoriaMetricsReporter extends ScheduledReporter {
         return String.format("%s %d %d\n", metricName, value, timestamp);
     }
 
-    private void sendMetrics(String metrics) {
+    private boolean sendMetrics(String metrics) {
         try (Socket socket = new Socket(victoriametricsHost, victoriametricsPort);
              BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
@@ -97,8 +99,10 @@ public class VictoriaMetricsReporter extends ScheduledReporter {
 
             log.debug("Successfully sent {} bytes of metrics to VictoriaMetrics at {}:{}",
                     metrics.length(), victoriametricsHost, victoriametricsPort);
+            return true;
         } catch (IOException e) {
             log.error("Could not send metrics to VictoriaMetrics at {}:{}", victoriametricsHost, victoriametricsPort, e);
+            return false;
         }
     }
 

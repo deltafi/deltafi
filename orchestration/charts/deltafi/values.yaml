@@ -412,6 +412,8 @@ victoriametrics:
       httpListenAddr: ":8428"
       graphiteListenAddr: ":2003"
       search.graphiteStorageStep: "10s"
+      search.maxConcurrentRequests: "8"
+      search.maxQueueDuration: "30s"
     persistentVolume:
       enabled: true
       existingClaim: deltafi-victoriametrics
@@ -425,11 +427,11 @@ victoriametrics:
           protocol: TCP
     resources:
       limits:
-        cpu: 500m
-        memory: 1024Mi
+        cpu: "2"
+        memory: 2Gi
       requests:
-        cpu: 200m
-        memory: 512Mi
+        cpu: 500m
+        memory: 1Gi
     nodeSelector:
       node-role.deltafi.org/storage: "true"
 
