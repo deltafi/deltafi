@@ -22,6 +22,9 @@ import org.deltafi.common.types.ErrorSourceFilter;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.OnErrorDataSourcePlan;
 import org.deltafi.core.converters.OnErrorDataSourcePlanConverter;
+import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.generated.types.FlowErrorType;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.OnErrorDataSourceRepo;
 import org.deltafi.core.types.OnErrorDataSource;
 import org.deltafi.core.types.snapshot.OnErrorDataSourceSnapshot;
@@ -30,6 +33,7 @@ import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -129,5 +133,27 @@ public class OnErrorDataSourceService extends DataSourceService<OnErrorDataSourc
     @Override
     public List<OnErrorDataSourceSnapshot> getFlowSnapshots(Snapshot snapshot) {
         return snapshot.getOnErrorDataSources();
+    }
+
+    @Override
+    protected OnErrorDataSource createPlaceholderFlow(OnErrorDataSourceSnapshot snapshot) {
+        OnErrorDataSource flow = new OnErrorDataSource();
+        flow.setName(snapshot.getName());
+        flow.setDescription("Placeholder for " + snapshot.getName() + " - waiting for plugin to install");
+        flow.setSourcePlugin(snapshot.getSourcePlugin());
+        flow.getFlowStatus().setState(snapshot.isRunning() ? FlowState.RUNNING : FlowState.STOPPED);
+        flow.getFlowStatus().setTestMode(snapshot.isTestMode());
+        flow.getFlowStatus().setValid(false);
+        flow.getFlowStatus().setErrors(new ArrayList<>(List.of(
+            FlowConfigError.newBuilder()
+                .configName(snapshot.getName())
+                .errorType(FlowErrorType.INVALID_CONFIG)
+                .message("Waiting for plugin " + snapshot.getSourcePlugin() + " to install")
+                .build()
+        )));
+        flow.getFlowStatus().setPlaceholder(true);
+        flow.setTopic(snapshot.getTopic());
+        flow.setMaxErrors(snapshot.getMaxErrors());
+        return flow;
     }
 }

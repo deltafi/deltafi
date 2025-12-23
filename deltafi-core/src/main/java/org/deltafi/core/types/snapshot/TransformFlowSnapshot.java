@@ -41,5 +41,6 @@ public class TransformFlowSnapshot extends FlowSnapshot {
         this(transformFlow.getName());
         setRunning(transformFlow.isRunning());
         setTestMode(transformFlow.isTestMode());
+        setSourcePlugin(transformFlow.getSourcePlugin());
     }
 }

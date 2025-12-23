@@ -185,18 +185,37 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public void upgradeFlows(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
         Map<String, FlowT> existingFlows = getByPlugin(sourcePlugin);
 
+        // Also check for system-plugin placeholders that can be claimed by this plugin
+        List<String> incomingFlowNames = flowPlans.stream().map(FlowPlan::getName).toList();
+        Map<String, FlowT> systemPluginPlaceholders = getSystemPluginPlaceholders(incomingFlowNames);
+
+        // Merge: prefer existing plugin flows, fall back to system-plugin placeholders
+        Map<String, FlowT> allExistingFlows = new HashMap<>(systemPluginPlaceholders);
+        allExistingFlows.putAll(existingFlows);
+
         // recreates each flow maintaining the original flow id and state for pre-existing flows
-        List<FlowT> flows = flowPlans.stream().map(flow -> buildFlow(existingFlows, flow)).toList();
-        List<String> incomingFlowNames = flows.stream().map(Flow::getName).toList();
+        List<FlowT> flows = flowPlans.stream().map(flow -> buildFlow(allExistingFlows, flow)).toList();
 
         // delete the old versions of the flow prior to saving the new versions
-        List<FlowT> deleteFlows = existingFlows.values().stream().filter(e -> !incomingFlowNames.contains(e.getName())).toList();
+        List<FlowT> deleteFlows = existingFlows.values().stream()
+                .filter(e -> !incomingFlowNames.contains(e.getName())).toList();
         flowRepo.deleteAll(deleteFlows);
+
+        // delete any system-plugin placeholders that were claimed
+        flowRepo.deleteAll(systemPluginPlaceholders.values());
 
         // save the replacement flows
         flowRepo.saveAll(flows);
 
         refreshCache();
+    }
+
+    private Map<String, FlowT> getSystemPluginPlaceholders(List<String> flowNames) {
+        PluginCoordinates systemPlugin = getSystemPluginCoordinates();
+        return getByPlugin(systemPlugin).entrySet().stream()
+                .filter(e -> e.getValue().getFlowStatus().getPlaceholder())
+                .filter(e -> flowNames.contains(e.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private FlowT buildFlow(Map<String, FlowT> existingFlows, FlowPlanT flowPlan) {
@@ -256,6 +275,8 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 invalidFlowEvent(flow, originalState);
             }
             flow.getFlowStatus().setValid(false);
+        } else {
+            flow.getFlowStatus().setValid(true);
         }
 
         return save(flow);
@@ -394,18 +415,38 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
             return result;
         }
 
+        List<FlowT> placeholdersToCreate = new ArrayList<>();
+
         for (FlowSnapshotT flowSnapshotT : flowSnapshots) {
             FlowT existing = allFlows.get(flowSnapshotT.getName());
 
-            if (existing == null) {
-                result.getInfo().add("Flow " + flowSnapshotT.getName() + " is no longer installed");
-            } else if (updateFromSnapshot(existing, flowSnapshotT, result)) {
-                updatedFlows.put(existing.getName(), existing);
+            if (existing != null) {
+                // Flow exists - update state
+                if (updateFromSnapshot(existing, flowSnapshotT, result)) {
+                    updatedFlows.put(existing.getName(), existing);
+                }
+            } else {
+                // Flow doesn't exist - create placeholder
+                // For old snapshots without sourcePlugin, use system-plugin so it can be claimed later
+                if (flowSnapshotT.getSourcePlugin() == null) {
+                    flowSnapshotT.setSourcePlugin(getSystemPluginCoordinates());
+                }
+                FlowT placeholder = createPlaceholderFlow(flowSnapshotT);
+                placeholdersToCreate.add(placeholder);
+                result.getInfo().add("Created placeholder for flow " + flowSnapshotT.getName() +
+                    " (waiting for plugin " + flowSnapshotT.getSourcePlugin() + ")");
             }
         }
 
         if (!updatedFlows.isEmpty()) {
             saveAll(updatedFlows.values());
+        }
+
+        if (!placeholdersToCreate.isEmpty()) {
+            flowRepo.saveAll(placeholdersToCreate);
+        }
+
+        if (!updatedFlows.isEmpty() || !placeholdersToCreate.isEmpty()) {
             refreshCache();
         }
 
@@ -415,6 +456,21 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
 
     public abstract List<FlowSnapshotT> getFlowSnapshots(Snapshot snapshot);
+
+    /**
+     * Create a placeholder flow from a snapshot. The placeholder will have the correct
+     * sourcePlugin, name, running state, and testMode, but will be marked as invalid
+     * with empty actions/config until the plugin registers and claims it.
+     *
+     * @param snapshot the flow snapshot to create a placeholder from
+     * @return the placeholder flow
+     */
+    protected abstract FlowT createPlaceholderFlow(FlowSnapshotT snapshot);
+
+    protected PluginCoordinates getSystemPluginCoordinates() {
+        return new PluginCoordinates(PluginService.SYSTEM_PLUGIN_GROUP_ID,
+                PluginService.SYSTEM_PLUGIN_ARTIFACT_ID, buildProperties.getVersion());
+    }
 
     public boolean updateFromSnapshot(FlowT flow, FlowSnapshotT flowSnapshot, Result result) {
         boolean changed = false;

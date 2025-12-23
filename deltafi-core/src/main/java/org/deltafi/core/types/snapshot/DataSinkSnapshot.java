@@ -44,6 +44,7 @@ public class DataSinkSnapshot extends FlowSnapshot implements HasExpectedAnnotat
         this(dataSink.getName());
         setRunning(dataSink.isRunning());
         setTestMode(dataSink.isTestMode());
+        setSourcePlugin(dataSink.getSourcePlugin());
         setExpectedAnnotations(dataSink.getExpectedAnnotations());
     }
 }

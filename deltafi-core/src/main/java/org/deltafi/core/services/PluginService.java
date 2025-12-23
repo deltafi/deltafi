@@ -403,7 +403,7 @@ public class PluginService implements Snapshotter {
             return Result.builder().success(false).errors(validationErrors).build();
         }
 
-        // Find existing plugin - first try by real coordinates, then by image name (for pending placeholders)
+        // Find existing plugin - try multiple strategies to find pending placeholders
         Optional<PluginEntity> existing = getPluginByKey(plugin.getPluginCoordinates());
         if (existing.isEmpty() && pluginRegistration.getImage() != null) {
             // Parse image to get imageName (without tag)
@@ -416,9 +416,26 @@ public class PluginService implements Snapshotter {
             }
             existing = pluginRepo.findByImageName(imageName);
         }
+        // Also check for pending entries by artifact ID (user may have changed image before registration)
+        if (existing.isEmpty()) {
+            existing = pluginRepo.findByKeyGroupIdAndKeyArtifactId("pending", plugin.getPluginCoordinates().getArtifactId());
+        }
 
         if (existing.isPresent()) {
             PluginEntity existingPlugin = existing.get();
+
+            // Reject registration if the wrong image is trying to register (user changed the desired image)
+            if (existingPlugin.getImageName() != null && pluginRegistration.getImage() != null) {
+                String desiredImage = existingPlugin.imageAndTag();
+                String registeringImage = pluginRegistration.getImage();
+                if (!imagesMatch(desiredImage, registeringImage)) {
+                    log.info("Rejecting registration from {} - expected image {}", registeringImage, desiredImage);
+                    return Result.builder().success(false)
+                            .errors(List.of("Registration rejected: expected image " + desiredImage + " but got " + registeringImage))
+                            .build();
+                }
+            }
+
             // Preserve image info from the install request
             plugin.setImageName(existingPlugin.getImageName());
             plugin.setImageTag(existingPlugin.getImageTag());
@@ -810,10 +827,13 @@ public class PluginService implements Snapshotter {
                 return;
             }
 
+            boolean imageChanged = !Objects.equals(plugin.getImageName(), imageName)
+                    || !Objects.equals(plugin.getImageTag(), imageTag);
             plugin.setImageName(imageName);
             plugin.setImageTag(imageTag);
             plugin.setImagePullSecret(imagePullSecret);
-            if (plugin.getInstallState() != PluginState.INSTALLING) {
+            // Transition to PENDING to trigger (re)deploy - even if already INSTALLING with different image
+            if (plugin.getInstallState() != PluginState.INSTALLING || imageChanged) {
                 plugin.transitionToPending();
             }
             pluginRepo.save(plugin);
@@ -1069,10 +1089,11 @@ public class PluginService implements Snapshotter {
                     }
                 });
 
-        // Check against existing data sources, excluding those from the same plugin
+        // Check against existing data sources, excluding those from the same plugin or placeholders (which can be claimed)
         Stream.of(restDataSourceService.getAll().stream(), timedDataSourceService.getAll().stream(), onErrorDataSourceService.getAll().stream())
                 .flatMap(stream -> stream)
                 .filter(existing -> !existing.getSourcePlugin().equalsIgnoreVersion(incomingPluginCoordinates))
+                .filter(existing -> !existing.getFlowStatus().getPlaceholder())
                 .map(DataSource::getName)
                 .filter(incomingNames::contains)
                 .forEach(conflictingNames::add);
@@ -1130,5 +1151,44 @@ public class PluginService implements Snapshotter {
         if (actionDescriptor != null) {
             actionConfiguration.setParameterSchema(ParameterUtil.toJsonNode(actionDescriptor.getSchema()));
         }
+    }
+
+    /**
+     * Compare two image names for equality, ignoring registry prefixes.
+     * Docker may return image names with or without registry prefix depending on how they were pulled.
+     */
+    private boolean imagesMatch(String expected, String running) {
+        if (expected == null || running == null) {
+            return expected == null && running == null;
+        }
+        if (expected.equals(running)) {
+            return true;
+        }
+        // Normalize both images by extracting name:tag
+        String expectedNameTag = extractNameAndTag(expected);
+        String runningNameTag = extractNameAndTag(running);
+        return expectedNameTag.equals(runningNameTag);
+    }
+
+    /**
+     * Extract the image name and tag portion from a full image reference.
+     * e.g., "registry.example.com/org/image:tag" -> "org/image:tag"
+     * e.g., "docker.io/library/image:tag" -> "library/image:tag"
+     */
+    private String extractNameAndTag(String image) {
+        // Find the last slash that's part of the registry (before the org/name)
+        int firstSlash = image.indexOf('/');
+        if (firstSlash == -1) {
+            return image;
+        }
+
+        // Check if the part before the first slash looks like a registry (contains . or :)
+        String beforeSlash = image.substring(0, firstSlash);
+        if (beforeSlash.contains(".") || beforeSlash.contains(":")) {
+            // This is a registry prefix, strip it
+            return image.substring(firstSlash + 1);
+        }
+
+        return image;
     }
 }

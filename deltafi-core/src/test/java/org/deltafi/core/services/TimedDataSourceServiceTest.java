@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.DataSourceErrorState;
+import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TimedDataSourceRepo;
@@ -28,6 +29,7 @@ import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.validation.FlowValidator;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -53,11 +55,15 @@ class TimedDataSourceServiceTest {
     FlowValidator flowValidator;
 
     @Mock
-    @SuppressWarnings("unused")
     BuildProperties buildProperties;
 
     @InjectMocks
     TimedDataSourceService timedDataSourceService;
+
+    @BeforeEach
+    void setUp() {
+        Mockito.lenient().when(buildProperties.getVersion()).thenReturn("1.0.0");
+    }
 
     @Mock
     ErrorCountService errorCountService;
@@ -162,8 +168,11 @@ class TimedDataSourceServiceTest {
 
         Result result = timedDataSourceService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
-        Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()
+        Mockito.verify(timedDataSourceRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
+
+        // First call is for updated flows, second is for placeholders
+        List<Collection<TimedDataSource>> allSaves = flowCaptor.getAllValues();
+        Map<String, DataSource> updatedFlows = allSaves.get(0).stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(4);
@@ -197,9 +206,83 @@ class TimedDataSourceServiceTest {
         assertThat(updatedInvalid.getCronSchedule()).isEqualTo("0 */3 * * * *");
         assertThat(updatedInvalid.getMaxErrors()).isEqualTo(1);
 
+        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Collection<TimedDataSource> placeholders = allSaves.get(1);
+        assertThat(placeholders).hasSize(1);
+        TimedDataSource missingPlaceholder = placeholders.iterator().next();
+        assertThat(missingPlaceholder.getName()).isEqualTo("missing");
+        assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
+        assertThat(missingPlaceholder.isRunning()).isFalse();
+        assertThat(missingPlaceholder.isTestMode()).isTrue();
+
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getInfo()).hasSize(1)
-                .contains("Flow missing is no longer installed");
+                .anyMatch(info -> info.contains("Created placeholder for flow missing"));
+    }
+
+    @Test
+    void testResetFromSnapshot_createsPlaceholderForMissingFlowWithSourcePlugin() {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId("org.deltafi")
+                .artifactId("test-plugin")
+                .version("1.0.0")
+                .build();
+
+        TimedDataSourceSnapshot runningSnapshot = new TimedDataSourceSnapshot("pending-running");
+        runningSnapshot.setRunning(true);
+        runningSnapshot.setTestMode(false);
+        runningSnapshot.setSourcePlugin(pluginCoordinates);
+        runningSnapshot.setCronSchedule("0 */5 * * * *");
+        runningSnapshot.setMaxErrors(10);
+        runningSnapshot.setTopic("test-topic");
+
+        TimedDataSourceSnapshot stoppedSnapshot = new TimedDataSourceSnapshot("pending-stopped");
+        stoppedSnapshot.setRunning(false);
+        stoppedSnapshot.setTestMode(true);
+        stoppedSnapshot.setSourcePlugin(pluginCoordinates);
+        stoppedSnapshot.setCronSchedule("0 */10 * * * *");
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setTimedDataSources(List.of(runningSnapshot, stoppedSnapshot));
+
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(List.of());
+
+        Result result = timedDataSourceService.resetFromSnapshot(snapshot, true);
+
+        Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
+
+        Map<String, TimedDataSource> savedFlows = flowCaptor.getValue().stream()
+                .collect(Collectors.toMap(Flow::getName, f -> (TimedDataSource) f));
+
+        assertThat(savedFlows).hasSize(2);
+
+        // Verify running placeholder
+        TimedDataSource runningPlaceholder = savedFlows.get("pending-running");
+        assertThat(runningPlaceholder).isNotNull();
+        assertThat(runningPlaceholder.isRunning()).isTrue();
+        assertThat(runningPlaceholder.isTestMode()).isFalse();
+        assertThat(runningPlaceholder.isInvalid()).isTrue();
+        assertThat(runningPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+        assertThat(runningPlaceholder.getCronSchedule()).isEqualTo("0 */5 * * * *");
+        assertThat(runningPlaceholder.getMaxErrors()).isEqualTo(10);
+        assertThat(runningPlaceholder.getTopic()).isEqualTo("test-topic");
+        assertThat(runningPlaceholder.getFlowStatus().getErrors()).hasSize(1);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getMessage()).contains("Waiting for plugin");
+
+        // Verify stopped placeholder with testMode
+        TimedDataSource stoppedPlaceholder = savedFlows.get("pending-stopped");
+        assertThat(stoppedPlaceholder).isNotNull();
+        assertThat(stoppedPlaceholder.isRunning()).isFalse();
+        assertThat(stoppedPlaceholder.isTestMode()).isTrue();
+        assertThat(stoppedPlaceholder.isInvalid()).isTrue();
+        assertThat(stoppedPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+        assertThat(stoppedPlaceholder.getCronSchedule()).isEqualTo("0 */10 * * * *");
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInfo()).hasSize(2)
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-running"))
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-stopped"));
     }
 
     @Test

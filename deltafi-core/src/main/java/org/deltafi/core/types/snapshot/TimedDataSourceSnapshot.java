@@ -38,6 +38,7 @@ public class TimedDataSourceSnapshot extends DataSourceSnapshot {
         this(dataSource.getName());
         setRunning(dataSource.isRunning());
         setTestMode(dataSource.isTestMode());
+        setSourcePlugin(dataSource.getSourcePlugin());
         setTopic(dataSource.getTopic());
         setCronSchedule(dataSource.getCronSchedule());
         setMaxErrors(dataSource.getMaxErrors());

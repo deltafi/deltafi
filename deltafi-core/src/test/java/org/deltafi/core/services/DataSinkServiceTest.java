@@ -18,6 +18,8 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.DataSinkRepo;
@@ -27,8 +29,10 @@ import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.DataSink;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.info.BuildProperties;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -51,11 +55,19 @@ class DataSinkServiceTest {
     @Mock
     DataSinkRepo dataSinkRepo;
 
+    @Mock
+    BuildProperties buildProperties;
+
     @Captor
     ArgumentCaptor<Collection<DataSink>> flowCaptor;
 
     @Mock
     FlowCacheService flowCacheService;
+
+    @BeforeEach
+    void setUp() {
+        Mockito.lenient().when(buildProperties.getVersion()).thenReturn("1.0.0");
+    }
 
     @Test
     void updateSnapshot() {
@@ -107,9 +119,11 @@ class DataSinkServiceTest {
 
         Result result = dataSinkService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(dataSinkRepo).saveAll(flowCaptor.capture());
+        Mockito.verify(dataSinkRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
 
-        Map<String, DataSink> updatedFlows = flowCaptor.getValue().stream()
+        // First call is for updated flows, second is for placeholders
+        List<Collection<DataSink>> allSaves = flowCaptor.getAllValues();
+        Map<String, DataSink> updatedFlows = allSaves.get(0).stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(3);
@@ -127,9 +141,73 @@ class DataSinkServiceTest {
         assertThat(updatedFlows.get("invalid").isInvalid()).isTrue();
         assertThat(updatedFlows.get("invalid").isTestMode()).isFalse();
 
+        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Collection<DataSink> placeholders = allSaves.get(1);
+        assertThat(placeholders).hasSize(1);
+        DataSink missingPlaceholder = placeholders.iterator().next();
+        assertThat(missingPlaceholder.getName()).isEqualTo("missing");
+        assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
+        assertThat(missingPlaceholder.isRunning()).isTrue();
+        assertThat(missingPlaceholder.isTestMode()).isTrue();
+
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getInfo()).hasSize(1)
-                .contains("Flow missing is no longer installed");
+                .anyMatch(info -> info.contains("Created placeholder for flow missing"));
+    }
+
+    @Test
+    void testResetFromSnapshot_createsPlaceholderForMissingFlowWithSourcePlugin() {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId("org.deltafi")
+                .artifactId("test-plugin")
+                .version("1.0.0")
+                .build();
+
+        DataSinkSnapshot runningSnapshot = new DataSinkSnapshot("pending-running", true, false);
+        runningSnapshot.setSourcePlugin(pluginCoordinates);
+        runningSnapshot.setExpectedAnnotations(Set.of("annotation1"));
+
+        DataSinkSnapshot stoppedSnapshot = new DataSinkSnapshot("pending-stopped", false, true);
+        stoppedSnapshot.setSourcePlugin(pluginCoordinates);
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDataSinks(List.of(runningSnapshot, stoppedSnapshot));
+
+        Mockito.when(flowCacheService.flowsOfType(FlowType.DATA_SINK)).thenReturn(List.of());
+
+        Result result = dataSinkService.resetFromSnapshot(snapshot, true);
+
+        Mockito.verify(dataSinkRepo).saveAll(flowCaptor.capture());
+
+        Map<String, DataSink> savedFlows = flowCaptor.getValue().stream()
+                .collect(Collectors.toMap(Flow::getName, Function.identity()));
+
+        assertThat(savedFlows).hasSize(2);
+
+        // Verify running placeholder
+        DataSink runningPlaceholder = savedFlows.get("pending-running");
+        assertThat(runningPlaceholder).isNotNull();
+        assertThat(runningPlaceholder.isRunning()).isTrue();
+        assertThat(runningPlaceholder.isTestMode()).isFalse();
+        assertThat(runningPlaceholder.isInvalid()).isTrue();
+        assertThat(runningPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+        assertThat(runningPlaceholder.getExpectedAnnotations()).containsExactly("annotation1");
+        assertThat(runningPlaceholder.getFlowStatus().getErrors()).hasSize(1);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getMessage()).contains("Waiting for plugin");
+
+        // Verify stopped placeholder with testMode
+        DataSink stoppedPlaceholder = savedFlows.get("pending-stopped");
+        assertThat(stoppedPlaceholder).isNotNull();
+        assertThat(stoppedPlaceholder.isRunning()).isFalse();
+        assertThat(stoppedPlaceholder.isTestMode()).isTrue();
+        assertThat(stoppedPlaceholder.isInvalid()).isTrue();
+        assertThat(stoppedPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInfo()).hasSize(2)
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-running"))
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-stopped"));
     }
 
     DataSink dataSink(String name, FlowState flowState, boolean testMode, Set<String> expectedAnnotations) {

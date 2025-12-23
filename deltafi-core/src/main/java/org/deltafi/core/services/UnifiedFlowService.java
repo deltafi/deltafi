@@ -53,6 +53,7 @@ public class UnifiedFlowService {
     public List<ActionConfiguration> runningEgressActions() {
         return new ArrayList<>(dataSinkService.getRunningFlows().stream()
                 .map(DataSink::getEgressAction)
+                .filter(Objects::nonNull)
                 .toList());
     }
 

@@ -20,8 +20,16 @@ import { ref } from 'vue'
 import useGraphQL from './useGraphQL'
 import { EnumType } from "json-to-graphql-query";
 
+interface SnapshotData {
+  id: string;
+  reason: string | null;
+  created: string;
+  schemaVersion: number;
+  snapshot: any;
+}
+
 export default function useSystemSnapshots() {
-  const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
+  const { response, queryGraphQL, queryGraphQLWithVariables, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
   const mutationData = ref(null);
   const totalCount = ref(0);
@@ -83,16 +91,19 @@ export default function useSystemSnapshots() {
     mutationData.value = response.value.data.resetFromSnapshotWithId;
   };
 
-  const importSnapshot = async (snapshot: JSON) => {
-    const query = {
-      importSnapshot: {
-        __args: {
-          snapshot: snapshot
-        },
-        ...snapshotFields
-      },
-    };
-    await queryGraphQL(query, "postImportSystemSnapshot", "mutation", true);
+  const importSnapshot = async (snapshot: SnapshotData) => {
+    const mutation = `
+      mutation postImportSystemSnapshot($snapshot: SystemSnapshotInput!) {
+        importSnapshot(snapshot: $snapshot) {
+          id
+          reason
+          created
+          schemaVersion
+          snapshot
+        }
+      }
+    `;
+    await queryGraphQLWithVariables(mutation, { snapshot }, "postImportSystemSnapshot");
     mutationData.value = response.value.data.importSnapshot;
   };
 

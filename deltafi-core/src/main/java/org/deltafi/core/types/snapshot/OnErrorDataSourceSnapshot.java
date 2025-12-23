@@ -39,6 +39,7 @@ public class OnErrorDataSourceSnapshot extends DataSourceSnapshot {
         super(dataSource.getName());
         setRunning(dataSource.isRunning());
         setTestMode(dataSource.isTestMode());
+        setSourcePlugin(dataSource.getSourcePlugin());
         setTopic(dataSource.getTopic());
         setMaxErrors(dataSource.getMaxErrors());
     }

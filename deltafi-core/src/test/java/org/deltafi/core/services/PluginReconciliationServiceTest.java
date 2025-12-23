@@ -75,7 +75,8 @@ class PluginReconciliationServiceTest {
         reconciliationService.reconcile();
 
         verify(pluginService).markInstalling(eq(TEST_COORDS), eq(false));
-        verify(deployerService).installOrUpgradePlugin(eq("registry.example.com/test-plugin:1.0.0"), any());
+        // Deploy runs async, use timeout to wait for it
+        verify(deployerService, timeout(1000)).installOrUpgradePlugin(eq("registry.example.com/test-plugin:1.0.0"), any());
     }
 
     @Test
@@ -86,11 +87,32 @@ class PluginReconciliationServiceTest {
 
         when(pluginService.getPlugins()).thenReturn(List.of(plugin));
         when(deployerService.isPluginRunning(anyString())).thenReturn(true);
+        when(deployerService.getRunningPluginImage(anyString())).thenReturn("registry.example.com/test-plugin:1.0.0");
 
         reconciliationService.reconcile();
 
         verify(pluginService).markInstalled(TEST_COORDS);
         verify(flowValidationService).revalidateFlowsForPlugin(TEST_COORDS);
+    }
+
+    @Test
+    void reconcile_installingPlugin_redeploysWhenWrongImageRunning() {
+        PluginEntity plugin = createPlugin(PluginState.INSTALLING);
+        plugin.setRegistrationHash("abc123");  // Plugin has registered
+        plugin.setImageTag("2.0.0");  // Expected: registry.example.com/test-plugin:2.0.0
+        plugin.setLastStateChange(OffsetDateTime.now());
+
+        when(pluginService.getPlugins()).thenReturn(List.of(plugin));
+        when(deployerService.isPluginRunning(anyString())).thenReturn(true);
+        when(deployerService.getRunningPluginImage(anyString())).thenReturn("registry.example.com/test-plugin:1.0.0");  // Wrong version running
+        when(deployerService.installOrUpgradePlugin(anyString(), any())).thenReturn(new Result());
+
+        reconciliationService.reconcile();
+
+        // Should NOT mark installed - wrong image is running
+        verify(pluginService, never()).markInstalled(any());
+        // Should redeploy with correct image (async)
+        verify(deployerService, timeout(1000)).installOrUpgradePlugin(eq("registry.example.com/test-plugin:2.0.0"), any());
     }
 
     @Test
@@ -117,6 +139,8 @@ class PluginReconciliationServiceTest {
         reconciliationService.reconcile();
 
         verify(pluginService).markInstalling(eq(TEST_COORDS), eq(true));  // isAutoRestart = true
+        // Deploy runs async
+        verify(deployerService, timeout(1000)).installOrUpgradePlugin(eq("registry.example.com/test-plugin:1.0.0"), any());
     }
 
     @Test
@@ -144,7 +168,8 @@ class PluginReconciliationServiceTest {
         reconciliationService.reconcile();
 
         verify(pluginService).markInstalling(eq(TEST_COORDS), eq(false));  // isAutoRestart = false (this is a version change)
-        verify(deployerService).installOrUpgradePlugin(eq("registry.example.com/test-plugin:2.0.0"), any());
+        // Deploy runs async
+        verify(deployerService, timeout(1000)).installOrUpgradePlugin(eq("registry.example.com/test-plugin:2.0.0"), any());
     }
 
     @Test
@@ -205,8 +230,9 @@ class PluginReconciliationServiceTest {
 
         reconciliationService.reconcile();
 
+        // markFailed is called from async task
         ArgumentCaptor<String> errorCaptor = ArgumentCaptor.forClass(String.class);
-        verify(pluginService).markFailed(eq(TEST_COORDS), errorCaptor.capture());
+        verify(pluginService, timeout(1000)).markFailed(eq(TEST_COORDS), errorCaptor.capture());
         assertThat(errorCaptor.getValue()).contains("403 Forbidden");
     }
 
@@ -225,18 +251,18 @@ class PluginReconciliationServiceTest {
     }
 
     @Test
-    void reconcile_skipsConcurrentReconciliation() {
-        // This test verifies that concurrent reconciliation calls are skipped
-        // We can't easily test this without multi-threading, so we just verify the basic flow works
+    void reconcile_processesMultipleCallsSequentially() {
+        // Sequential reconcile calls should both run (no global lock)
         PluginEntity plugin = createPlugin(PluginState.INSTALLED);
         when(pluginService.getPlugins()).thenReturn(List.of(plugin));
         when(deployerService.isPluginRunning(anyString())).thenReturn(true);
+        when(deployerService.getRunningPluginImage(anyString())).thenReturn("registry.example.com/test-plugin:1.0.0");
 
         // Call twice in sequence
         reconciliationService.reconcile();
         reconciliationService.reconcile();
 
-        // Should be called twice (sequential, not concurrent)
+        // Should be called twice (no blocking between calls)
         verify(pluginService, times(2)).getPlugins();
     }
 

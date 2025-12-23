@@ -224,6 +224,7 @@ type FlowStatus {
   errors: [FlowConfigError]
   testMode: Boolean!
   valid: Boolean!
+  placeholder: Boolean!
 }
 
 type Flows {
@@ -271,7 +272,7 @@ type DataSink {
   flowStatus: FlowStatus!
   subscribe: [Rule!]!
   expectedAnnotations: [String]
-  egressAction: ActionConfiguration!
+  egressAction: ActionConfiguration
   variables: [Variable]!
   tags: [String]
 }

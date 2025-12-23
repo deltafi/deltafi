@@ -750,7 +750,7 @@ class PluginServiceTest {
     }
 
     @Test
-    void createPendingPlugin_existingPluginInstalling_doesNotTransitionToPending() {
+    void createPendingPlugin_existingPluginInstalling_imageChanged_transitionsToPending() {
         PluginEntity existing = makePlugin();
         existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
         existing.setImageName("registry.example.com/my-plugin");
@@ -765,8 +765,31 @@ class PluginServiceTest {
         Mockito.verify(pluginRepository).save(captor.capture());
 
         PluginEntity saved = captor.getValue();
-        // Should update image info but not change state from INSTALLING
+        // When image changes, should transition to PENDING to trigger redeploy
         assertThat(saved.getImageTag()).isEqualTo("2.0.0");
+        assertThat(saved.getInstallState()).isEqualTo(PluginState.PENDING);
+    }
+
+    @Test
+    void createPendingPlugin_existingPluginInstalling_sameImage_staysInstalling() {
+        PluginEntity existing = makePlugin();
+        existing.setKey(new GroupIdArtifactId("org.mock", "my-plugin"));
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("1.0.0");
+        existing.setInstallState(PluginState.INSTALLING);
+
+        Mockito.when(pluginRepository.findByKeyArtifactId("my-plugin")).thenReturn(Optional.of(existing));
+
+        // Same image, only secret changes
+        pluginService.createPendingPlugin("registry.example.com/my-plugin:1.0.0", "new-docker-secret");
+
+        ArgumentCaptor<PluginEntity> captor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(pluginRepository).save(captor.capture());
+
+        PluginEntity saved = captor.getValue();
+        // Same image - should stay INSTALLING, just update secret
+        assertThat(saved.getImageTag()).isEqualTo("1.0.0");
+        assertThat(saved.getImagePullSecret()).isEqualTo("new-docker-secret");
         assertThat(saved.getInstallState()).isEqualTo(PluginState.INSTALLING);
     }
 
@@ -828,5 +851,95 @@ class PluginServiceTest {
 
         // Should not save - plugin already installed with same image:tag
         Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    // Tests for registration rejection when wrong image tries to register
+
+    @Test
+    void register_rejectsWrongImage() {
+        // Create a pending plugin entry expecting a specific image
+        PluginEntity existing = new PluginEntity();
+        existing.setKey(new GroupIdArtifactId("pending", "my-plugin"));
+        existing.setVersion("pending");
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("2.0.0");
+        existing.setInstallState(PluginState.INSTALLING);
+
+        // The old image is trying to register
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(new PluginCoordinates("org.test", "my-plugin", "1.0.0"))
+                .image("registry.example.com/my-plugin:1.0.0")
+                .build();
+
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId("org.test", "my-plugin")))
+                .thenReturn(Optional.empty());
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin"))
+                .thenReturn(Optional.of(existing));
+
+        Result result = pluginService.register(pluginRegistration, integrationService);
+
+        assertFalse(result.isSuccess());
+        assertThat(result.getErrors()).hasSize(1);
+        assertThat(result.getErrors().get(0)).contains("Registration rejected");
+        assertThat(result.getErrors().get(0)).contains("expected image");
+        Mockito.verify(pluginRepository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    void register_acceptsCorrectImage() {
+        Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of());
+
+        // Create a pending plugin entry expecting a specific image
+        PluginEntity existing = new PluginEntity();
+        existing.setKey(new GroupIdArtifactId("pending", "my-plugin"));
+        existing.setVersion("pending");
+        existing.setImageName("registry.example.com/my-plugin");
+        existing.setImageTag("2.0.0");
+        existing.setInstallState(PluginState.INSTALLING);
+
+        // Correct image is registering
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(new PluginCoordinates("org.test", "my-plugin", "2.0.0"))
+                .image("registry.example.com/my-plugin:2.0.0")
+                .build();
+
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId("org.test", "my-plugin")))
+                .thenReturn(Optional.empty());
+        Mockito.when(pluginRepository.findByImageName("registry.example.com/my-plugin"))
+                .thenReturn(Optional.of(existing));
+
+        Result result = pluginService.register(pluginRegistration, integrationService);
+
+        assertTrue(result.isSuccess());
+        Mockito.verify(pluginRepository).save(Mockito.any());
+    }
+
+    @Test
+    void register_acceptsImageWithDifferentRegistryPrefix() {
+        Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of());
+
+        // Pending entry was created with docker.io prefix
+        PluginEntity existing = new PluginEntity();
+        existing.setKey(new GroupIdArtifactId("pending", "my-plugin"));
+        existing.setVersion("pending");
+        existing.setImageName("docker.io/deltafi/my-plugin");
+        existing.setImageTag("2.0.0");
+        existing.setInstallState(PluginState.INSTALLING);
+
+        // Plugin registers with just deltafi/my-plugin (no registry prefix)
+        PluginRegistration pluginRegistration = PluginRegistration.builder()
+                .pluginCoordinates(new PluginCoordinates("org.test", "my-plugin", "2.0.0"))
+                .image("deltafi/my-plugin:2.0.0")
+                .build();
+
+        Mockito.when(pluginRepository.findById(new GroupIdArtifactId("org.test", "my-plugin")))
+                .thenReturn(Optional.empty());
+        Mockito.when(pluginRepository.findByImageName("deltafi/my-plugin"))
+                .thenReturn(Optional.of(existing));
+
+        Result result = pluginService.register(pluginRegistration, integrationService);
+
+        assertTrue(result.isSuccess());
+        Mockito.verify(pluginRepository).save(Mockito.any());
     }
 }

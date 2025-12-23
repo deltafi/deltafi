@@ -103,7 +103,7 @@ public class FlowCacheService {
                 addPublisher(topicMap, dataSource.getTopic(), flow, null);
             }
 
-            if (flow instanceof Publisher publisher) {
+            if (flow instanceof Publisher publisher && publisher.publishRules() != null) {
                 for (Rule rule : publisher.publishRules().getRules()) {
                     addPublisher(topicMap, rule.getTopic(), flow, rule.getCondition());
                 }

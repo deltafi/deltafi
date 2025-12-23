@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.DataSourceErrorState;
+import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.OnErrorDataSourceRepo;
@@ -27,10 +28,12 @@ import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.OnErrorDataSourceSnapshot;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.info.BuildProperties;
 
 import java.util.*;
 import java.util.function.Function;
@@ -45,8 +48,16 @@ class OnErrorDataSourceServiceTest {
     @Mock
     OnErrorDataSourceRepo onErrorDataSourceRepo;
 
+    @Mock
+    BuildProperties buildProperties;
+
     @InjectMocks
     OnErrorDataSourceService onErrorDataSourceService;
+
+    @BeforeEach
+    void setUp() {
+        Mockito.lenient().when(buildProperties.getVersion()).thenReturn("1.0.0");
+    }
 
     @Mock
     ErrorCountService errorCountService;
@@ -340,8 +351,11 @@ class OnErrorDataSourceServiceTest {
 
         Result result = onErrorDataSourceService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(onErrorDataSourceRepo).saveAll(flowCaptor.capture());
-        Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()
+        Mockito.verify(onErrorDataSourceRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
+
+        // First call is for updated flows, second is for placeholders
+        List<Collection<OnErrorDataSource>> allSaves = flowCaptor.getAllValues();
+        Map<String, DataSource> updatedFlows = allSaves.get(0).stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(2);
@@ -359,9 +373,79 @@ class OnErrorDataSourceServiceTest {
         assertThat(updatedStopped.isTestMode()).isTrue();
         assertThat(updatedStopped.getErrorMessageRegex()).isEqualTo(".*exception.*");
 
+        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Collection<OnErrorDataSource> placeholders = allSaves.get(1);
+        assertThat(placeholders).hasSize(1);
+        OnErrorDataSource missingPlaceholder = placeholders.iterator().next();
+        assertThat(missingPlaceholder.getName()).isEqualTo("missing");
+        assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
+        assertThat(missingPlaceholder.isRunning()).isFalse();
+        assertThat(missingPlaceholder.isTestMode()).isTrue();
+
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getInfo()).hasSize(1)
-                .contains("Flow missing is no longer installed");
+                .anyMatch(info -> info.contains("Created placeholder for flow missing"));
+    }
+
+    @Test
+    void testResetFromSnapshot_createsPlaceholderForMissingFlowWithSourcePlugin() {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId("org.deltafi")
+                .artifactId("test-plugin")
+                .version("1.0.0")
+                .build();
+
+        OnErrorDataSourceSnapshot runningSnapshot = new OnErrorDataSourceSnapshot("pending-running");
+        runningSnapshot.setRunning(true);
+        runningSnapshot.setTestMode(false);
+        runningSnapshot.setSourcePlugin(pluginCoordinates);
+        runningSnapshot.setTopic("test-topic");
+        runningSnapshot.setMaxErrors(10);
+
+        OnErrorDataSourceSnapshot stoppedSnapshot = new OnErrorDataSourceSnapshot("pending-stopped");
+        stoppedSnapshot.setRunning(false);
+        stoppedSnapshot.setTestMode(true);
+        stoppedSnapshot.setSourcePlugin(pluginCoordinates);
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setOnErrorDataSources(List.of(runningSnapshot, stoppedSnapshot));
+
+        Mockito.when(flowCacheService.flowsOfType(FlowType.ON_ERROR_DATA_SOURCE)).thenReturn(List.of());
+
+        Result result = onErrorDataSourceService.resetFromSnapshot(snapshot, true);
+
+        Mockito.verify(onErrorDataSourceRepo).saveAll(flowCaptor.capture());
+
+        Map<String, OnErrorDataSource> savedFlows = flowCaptor.getValue().stream()
+                .collect(Collectors.toMap(Flow::getName, f -> (OnErrorDataSource) f));
+
+        assertThat(savedFlows).hasSize(2);
+
+        // Verify running placeholder
+        OnErrorDataSource runningPlaceholder = savedFlows.get("pending-running");
+        assertThat(runningPlaceholder).isNotNull();
+        assertThat(runningPlaceholder.isRunning()).isTrue();
+        assertThat(runningPlaceholder.isTestMode()).isFalse();
+        assertThat(runningPlaceholder.isInvalid()).isTrue();
+        assertThat(runningPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+        assertThat(runningPlaceholder.getTopic()).isEqualTo("test-topic");
+        assertThat(runningPlaceholder.getMaxErrors()).isEqualTo(10);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors()).hasSize(1);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getMessage()).contains("Waiting for plugin");
+
+        // Verify stopped placeholder with testMode
+        OnErrorDataSource stoppedPlaceholder = savedFlows.get("pending-stopped");
+        assertThat(stoppedPlaceholder).isNotNull();
+        assertThat(stoppedPlaceholder.isRunning()).isFalse();
+        assertThat(stoppedPlaceholder.isTestMode()).isTrue();
+        assertThat(stoppedPlaceholder.isInvalid()).isTrue();
+        assertThat(stoppedPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInfo()).hasSize(2)
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-running"))
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-stopped"));
     }
 
     @Test

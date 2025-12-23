@@ -51,7 +51,7 @@ class RestDataSourceSnapshotTest {
     @Test
     void testCreateSnapshotWithFilesRateLimit() {
         RestDataSource restDataSource = FlowBuilders.buildDataSource("test-source-files");
-        restDataSource.setFlowStatus(new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false, true));
+        restDataSource.setFlowStatus(new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false, true, false));
         restDataSource.setTestMode(true);
         restDataSource.setMaxErrors(5);
 
@@ -205,6 +205,6 @@ class RestDataSourceSnapshotTest {
     }
 
     private FlowStatus running() {
-        return new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false, true);
+        return new FlowStatus(FlowState.RUNNING, new ArrayList<>(), false, true, false);
     }
 }

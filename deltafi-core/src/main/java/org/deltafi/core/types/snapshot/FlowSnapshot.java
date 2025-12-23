@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.deltafi.common.types.PluginCoordinates;
 
 @Data
 @ToString
@@ -30,6 +31,7 @@ public abstract class FlowSnapshot {
     private String name;
     private boolean running;
     private boolean testMode;
+    private PluginCoordinates sourcePlugin;
 
     protected FlowSnapshot() {
 
@@ -37,5 +39,11 @@ public abstract class FlowSnapshot {
 
     protected FlowSnapshot(String name) {
         this.name = name;
+    }
+
+    protected FlowSnapshot(String name, boolean running, boolean testMode) {
+        this.name = name;
+        this.running = running;
+        this.testMode = testMode;
     }
 }

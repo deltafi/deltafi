@@ -23,6 +23,9 @@ import org.deltafi.common.types.DataSinkPlan;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.DataSinkPlanConverter;
+import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.generated.types.FlowErrorType;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.DataSinkRepo;
 import org.deltafi.core.services.pubsub.SubscriberService;
 import org.deltafi.core.types.snapshot.Snapshot;
@@ -90,6 +93,28 @@ class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapsh
     @Override
     public List<DataSinkSnapshot> getFlowSnapshots(Snapshot snapshot) {
         return snapshot.getDataSinks();
+    }
+
+    @Override
+    protected DataSink createPlaceholderFlow(DataSinkSnapshot snapshot) {
+        DataSink flow = new DataSink();
+        flow.setName(snapshot.getName());
+        flow.setDescription("Placeholder for " + snapshot.getName() + " - waiting for plugin to install");
+        flow.setSourcePlugin(snapshot.getSourcePlugin());
+        flow.getFlowStatus().setState(snapshot.isRunning() ? FlowState.RUNNING : FlowState.STOPPED);
+        flow.getFlowStatus().setTestMode(snapshot.isTestMode());
+        flow.getFlowStatus().setValid(false);
+        flow.getFlowStatus().setErrors(new ArrayList<>(List.of(
+            FlowConfigError.newBuilder()
+                .configName(snapshot.getName())
+                .errorType(FlowErrorType.INVALID_CONFIG)
+                .message("Waiting for plugin " + snapshot.getSourcePlugin() + " to install")
+                .build()
+        )));
+        flow.getFlowStatus().setPlaceholder(true);
+        flow.setSubscribe(Set.of());
+        flow.setExpectedAnnotations(snapshot.getExpectedAnnotations());
+        return flow;
     }
 
     @Override

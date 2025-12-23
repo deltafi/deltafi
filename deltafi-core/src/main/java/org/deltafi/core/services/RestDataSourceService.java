@@ -22,6 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.core.converters.RestDataSourcePlanConverter;
+import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.generated.types.FlowErrorType;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.RateLimit;
 import org.deltafi.core.generated.types.RateLimitInput;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,6 +38,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -70,6 +74,29 @@ public class RestDataSourceService extends DataSourceService<RestDataSourcePlan,
     @Override
     public List<RestDataSourceSnapshot> getFlowSnapshots(Snapshot snapshot) {
         return snapshot.getRestDataSources();
+    }
+
+    @Override
+    protected RestDataSource createPlaceholderFlow(RestDataSourceSnapshot snapshot) {
+        RestDataSource flow = new RestDataSource();
+        flow.setName(snapshot.getName());
+        flow.setDescription("Placeholder for " + snapshot.getName() + " - waiting for plugin to install");
+        flow.setSourcePlugin(snapshot.getSourcePlugin());
+        flow.getFlowStatus().setState(snapshot.isRunning() ? FlowState.RUNNING : FlowState.STOPPED);
+        flow.getFlowStatus().setTestMode(snapshot.isTestMode());
+        flow.getFlowStatus().setValid(false);
+        flow.getFlowStatus().setErrors(new ArrayList<>(List.of(
+            FlowConfigError.newBuilder()
+                .configName(snapshot.getName())
+                .errorType(FlowErrorType.INVALID_CONFIG)
+                .message("Waiting for plugin " + snapshot.getSourcePlugin() + " to install")
+                .build()
+        )));
+        flow.getFlowStatus().setPlaceholder(true);
+        flow.setTopic(snapshot.getTopic());
+        flow.setMaxErrors(snapshot.getMaxErrors());
+        flow.setRateLimit(snapshot.getRateLimit());
+        return flow;
     }
 
     @Override

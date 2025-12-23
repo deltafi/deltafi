@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TransformFlowRepo;
@@ -30,7 +31,9 @@ import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.validation.FlowValidator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.info.BuildProperties;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -50,6 +53,9 @@ class TransformFlowServiceTest {
     @Mock
     FlowValidator flowValidator;
 
+    @Mock
+    BuildProperties buildProperties;
+
     @InjectMocks
     TransformFlowService transformFlowService;
 
@@ -58,6 +64,11 @@ class TransformFlowServiceTest {
 
     @Mock
     FlowCacheService flowCacheService;
+
+    @BeforeEach
+    void setUp() {
+        Mockito.lenient().when(buildProperties.getVersion()).thenReturn("1.0.0");
+    }
 
     @Test
     void buildFlow() {
@@ -126,9 +137,11 @@ class TransformFlowServiceTest {
 
         Result result = transformFlowService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
+        Mockito.verify(transformFlowRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
 
-        Map<String, TransformFlow> updatedFlows = flowCaptor.getValue().stream()
+        // First call is for updated flows, second is for placeholders
+        List<Collection<TransformFlow>> allSaves = flowCaptor.getAllValues();
+        Map<String, TransformFlow> updatedFlows = allSaves.get(0).stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(3);
@@ -146,9 +159,71 @@ class TransformFlowServiceTest {
         assertThat(updatedFlows.get("running").isInvalid()).isTrue();
         assertThat(updatedFlows.get("running").isTestMode()).isFalse();
 
+        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Collection<TransformFlow> placeholders = allSaves.get(1);
+        assertThat(placeholders).hasSize(1);
+        TransformFlow missingPlaceholder = placeholders.iterator().next();
+        assertThat(missingPlaceholder.getName()).isEqualTo("missing");
+        assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
+        assertThat(missingPlaceholder.isRunning()).isTrue();
+        assertThat(missingPlaceholder.isTestMode()).isTrue();
+
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getInfo()).hasSize(1)
-                .contains("Flow missing is no longer installed");
+                .anyMatch(info -> info.contains("Created placeholder for flow missing"));
+    }
+
+    @Test
+    void testResetFromSnapshot_createsPlaceholderForMissingFlowWithSourcePlugin() {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId("org.deltafi")
+                .artifactId("test-plugin")
+                .version("1.0.0")
+                .build();
+
+        TransformFlowSnapshot runningSnapshot = new TransformFlowSnapshot("pending-running", true, false);
+        runningSnapshot.setSourcePlugin(pluginCoordinates);
+
+        TransformFlowSnapshot stoppedSnapshot = new TransformFlowSnapshot("pending-stopped", false, true);
+        stoppedSnapshot.setSourcePlugin(pluginCoordinates);
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setTransformFlows(List.of(runningSnapshot, stoppedSnapshot));
+
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(List.of());
+
+        Result result = transformFlowService.resetFromSnapshot(snapshot, true);
+
+        Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
+
+        Map<String, TransformFlow> savedFlows = flowCaptor.getValue().stream()
+                .collect(Collectors.toMap(Flow::getName, Function.identity()));
+
+        assertThat(savedFlows).hasSize(2);
+
+        // Verify running placeholder
+        TransformFlow runningPlaceholder = savedFlows.get("pending-running");
+        assertThat(runningPlaceholder).isNotNull();
+        assertThat(runningPlaceholder.isRunning()).isTrue();
+        assertThat(runningPlaceholder.isTestMode()).isFalse();
+        assertThat(runningPlaceholder.isInvalid()).isTrue();
+        assertThat(runningPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors()).hasSize(1);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
+        assertThat(runningPlaceholder.getFlowStatus().getErrors().get(0).getMessage()).contains("Waiting for plugin");
+
+        // Verify stopped placeholder with testMode
+        TransformFlow stoppedPlaceholder = savedFlows.get("pending-stopped");
+        assertThat(stoppedPlaceholder).isNotNull();
+        assertThat(stoppedPlaceholder.isRunning()).isFalse();
+        assertThat(stoppedPlaceholder.isTestMode()).isTrue();
+        assertThat(stoppedPlaceholder.isInvalid()).isTrue();
+        assertThat(stoppedPlaceholder.getSourcePlugin()).isEqualTo(pluginCoordinates);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getInfo()).hasSize(2)
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-running"))
+                .anyMatch(info -> info.contains("Created placeholder for flow pending-stopped"));
     }
 
     @Test

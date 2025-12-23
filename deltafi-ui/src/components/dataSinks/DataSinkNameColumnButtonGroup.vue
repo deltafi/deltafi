@@ -95,7 +95,7 @@ const items = ref([
   {
     label: "Clone",
     icon: "text-muted pi pi-clone",
-    visible: computed(() => hasPermission("FlowPlanCreate")),
+    visible: computed(() => hasPermission("FlowPlanCreate") && !data.flowStatus?.placeholder),
     command: () => {
       cloneDataSink.value.showDialog();
     },

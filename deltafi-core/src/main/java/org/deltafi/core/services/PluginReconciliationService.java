@@ -30,7 +30,10 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 @Slf4j
@@ -45,7 +48,8 @@ public class PluginReconciliationService {
     private final DeployerService deployerService;
     private final FlowValidationService flowValidationService;
     private final SystemSnapshotService systemSnapshotService;
-    private final AtomicBoolean reconciling = new AtomicBoolean(false);
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final Set<String> deploysInProgress = ConcurrentHashMap.newKeySet();
 
     public PluginReconciliationService(PluginService pluginService, DeployerService deployerService,
                                        FlowValidationService flowValidationService,
@@ -59,39 +63,25 @@ public class PluginReconciliationService {
     /**
      * Main reconciliation loop that runs on a schedule.
      * Compares desired state (DB) to actual state (containers/pods) and takes action.
+     * Each plugin is reconciled independently - no global lock needed since operations are idempotent.
      */
-    @Scheduled(fixedDelayString = "${deltafi.plugin.reconciliation.interval:15000}")
+    @Scheduled(fixedDelayString = "${deltafi.plugin.reconciliation.interval:5000}")
     public void reconcile() {
-        if (!reconciling.compareAndSet(false, true)) {
-            log.debug("Reconciliation already in progress, skipping");
-            return;
-        }
-
-        try {
-            doReconcile();
-        } catch (Exception e) {
-            log.error("Error during plugin reconciliation", e);
-        } finally {
-            reconciling.set(false);
-        }
-    }
-
-    private void doReconcile() {
-        List<PluginEntity> plugins = pluginService.getPlugins().stream()
+        pluginService.getPlugins().stream()
                 .filter(p -> !PluginService.SYSTEM_PLUGIN_ID.equals(p.getKey()))
                 .filter(p -> p.getImageName() != null)
-                .toList();
+                .forEach(this::reconcilePluginSafely);
+    }
 
-        for (PluginEntity plugin : plugins) {
-            try {
-                if (plugin.isDisabled()) {
-                    handleDisabled(plugin);
-                } else {
-                    reconcilePlugin(plugin);
-                }
-            } catch (Exception e) {
-                log.error("Error reconciling plugin {}: {}", plugin.getPluginCoordinates(), e.getMessage());
+    private void reconcilePluginSafely(PluginEntity plugin) {
+        try {
+            if (plugin.isDisabled()) {
+                handleDisabled(plugin);
+            } else {
+                reconcilePlugin(plugin);
             }
+        } catch (Exception e) {
+            log.error("Error reconciling plugin {}: {}", plugin.getPluginCoordinates(), e.getMessage());
         }
     }
 
@@ -135,6 +125,15 @@ public class PluginReconciliationService {
         // Check if container is running and plugin has registered
         boolean containerRunning = deployerService.isPluginRunning(plugin.getImageName());
         if (containerRunning && plugin.getRegistrationHash() != null) {
+            // Verify the running container matches the expected image (user may have changed it)
+            String expectedImage = plugin.imageAndTag();
+            String runningImage = deployerService.getRunningPluginImage(plugin.getImageName());
+            if (!imagesMatch(expectedImage, runningImage)) {
+                log.info("Plugin {} registered but wrong image is running (expected {}, found {}), redeploying",
+                        plugin.getPluginCoordinates(), expectedImage, runningImage);
+                startInstall(plugin);
+                return;
+            }
             log.info("Plugin {} is now installed and registered", plugin.getPluginCoordinates());
             pluginService.markInstalled(plugin.getPluginCoordinates());
             flowValidationService.revalidateFlowsForPlugin(plugin.getPluginCoordinates());
@@ -233,20 +232,34 @@ public class PluginReconciliationService {
     }
 
     private void startInstall(PluginEntity plugin) {
+        String pluginKey = plugin.getKey().toString();
+
+        // Prevent concurrent deploys of the same plugin
+        if (!deploysInProgress.add(pluginKey)) {
+            log.debug("Deploy already in progress for {}, skipping", plugin.getPluginCoordinates());
+            return;
+        }
+
         String imagePullSecret = plugin.getImagePullSecret();
         String image = plugin.imageAndTag();
 
         log.info("Deploying plugin {} from image {}", plugin.getPluginCoordinates(), image);
 
-        Result result = deployerService.installOrUpgradePlugin(image, imagePullSecret);
-        if (!result.isSuccess()) {
-            String error = result.getErrors() != null && !result.getErrors().isEmpty()
-                    ? String.join("; ", result.getErrors())
-                    : "Unknown installation error";
-            log.error("Failed to install plugin {}: {}", plugin.getPluginCoordinates(), error);
-            pluginService.markFailed(plugin.getPluginCoordinates(), error);
-        }
-        // On success, we stay in INSTALLING state until the plugin registers
+        executor.submit(() -> {
+            try {
+                Result result = deployerService.installOrUpgradePlugin(image, imagePullSecret);
+                if (!result.isSuccess()) {
+                    String error = result.getErrors() != null && !result.getErrors().isEmpty()
+                            ? String.join("; ", result.getErrors())
+                            : "Unknown installation error";
+                    log.error("Failed to install plugin {}: {}", plugin.getPluginCoordinates(), error);
+                    pluginService.markFailed(plugin.getPluginCoordinates(), error);
+                }
+                // On success, we stay in INSTALLING state until the plugin registers
+            } finally {
+                deploysInProgress.remove(pluginKey);
+            }
+        });
     }
 
     /**

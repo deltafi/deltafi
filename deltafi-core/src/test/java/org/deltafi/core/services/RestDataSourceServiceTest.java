@@ -20,26 +20,35 @@ package org.deltafi.core.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.common.types.FlowType;
-
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.exceptions.MissingFlowException;
+import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.RateLimit;
 import org.deltafi.core.generated.types.RateLimitInput;
 import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.repo.RestDataSourceRepo;
+import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.snapshot.RestDataSourceSnapshot;
+import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.validation.FlowValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.info.BuildProperties;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -72,6 +81,9 @@ class RestDataSourceServiceTest {
 
     @Mock
     private RateLimitService rateLimitService;
+
+    @Captor
+    private ArgumentCaptor<Collection<RestDataSource>> flowCaptor;
 
     private RestDataSourceService restDataSourceService;
 
@@ -491,5 +503,72 @@ class RestDataSourceServiceTest {
         verify(rateLimitService).updateLimit("flow1", 100L, Duration.ofSeconds(60));
         verify(rateLimitService).updateLimit("flow2", 500L, Duration.ofSeconds(30));
         verify(rateLimitService, never()).updateLimit(eq("flow3"), anyLong(), any());
+    }
+
+    @Test
+    void testResetFromSnapshot_createsPlaceholderForMissingFlowWithSourcePlugin() {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId("org.deltafi")
+                .artifactId("test-plugin")
+                .version("1.0.0")
+                .build();
+
+        RestDataSourceSnapshot runningSnapshot = new RestDataSourceSnapshot("pending-running");
+        runningSnapshot.setRunning(true);
+        runningSnapshot.setTestMode(false);
+        runningSnapshot.setSourcePlugin(pluginCoordinates);
+        runningSnapshot.setTopic("test-topic");
+        runningSnapshot.setMaxErrors(10);
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build();
+        runningSnapshot.setRateLimit(rateLimit);
+
+        RestDataSourceSnapshot stoppedSnapshot = new RestDataSourceSnapshot("pending-stopped");
+        stoppedSnapshot.setRunning(false);
+        stoppedSnapshot.setTestMode(true);
+        stoppedSnapshot.setSourcePlugin(pluginCoordinates);
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setRestDataSources(List.of(runningSnapshot, stoppedSnapshot));
+
+        when(flowCacheService.flowsOfType(FlowType.REST_DATA_SOURCE)).thenReturn(List.of());
+
+        Result result = restDataSourceService.resetFromSnapshot(snapshot, true);
+
+        verify(restDataSourceRepo).saveAll(flowCaptor.capture());
+
+        Map<String, RestDataSource> savedFlows = flowCaptor.getValue().stream()
+                .collect(Collectors.toMap(Flow::getName, Function.identity()));
+
+        assertEquals(2, savedFlows.size());
+
+        // Verify running placeholder
+        RestDataSource runningPlaceholder = savedFlows.get("pending-running");
+        assertNotNull(runningPlaceholder);
+        assertTrue(runningPlaceholder.isRunning());
+        assertFalse(runningPlaceholder.isTestMode());
+        assertTrue(runningPlaceholder.isInvalid());
+        assertEquals(pluginCoordinates, runningPlaceholder.getSourcePlugin());
+        assertEquals("test-topic", runningPlaceholder.getTopic());
+        assertEquals(10, runningPlaceholder.getMaxErrors());
+        assertEquals(rateLimit, runningPlaceholder.getRateLimit());
+        assertEquals(1, runningPlaceholder.getFlowStatus().getErrors().size());
+        assertEquals(FlowErrorType.INVALID_CONFIG, runningPlaceholder.getFlowStatus().getErrors().get(0).getErrorType());
+        assertTrue(runningPlaceholder.getFlowStatus().getErrors().get(0).getMessage().contains("Waiting for plugin"));
+
+        // Verify stopped placeholder with testMode
+        RestDataSource stoppedPlaceholder = savedFlows.get("pending-stopped");
+        assertNotNull(stoppedPlaceholder);
+        assertFalse(stoppedPlaceholder.isRunning());
+        assertTrue(stoppedPlaceholder.isTestMode());
+        assertTrue(stoppedPlaceholder.isInvalid());
+        assertEquals(pluginCoordinates, stoppedPlaceholder.getSourcePlugin());
+
+        assertTrue(result.isSuccess());
+        assertTrue(result.getInfo().stream().anyMatch(info -> info.contains("Created placeholder for flow pending-running")));
+        assertTrue(result.getInfo().stream().anyMatch(info -> info.contains("Created placeholder for flow pending-stopped")));
     }
 }

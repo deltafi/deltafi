@@ -42,4 +42,6 @@ public interface PluginRepository extends JpaRepository<PluginEntity, GroupIdArt
     Optional<PluginEntity> findByImageName(String imageName);
 
     Optional<PluginEntity> findByKeyArtifactId(String artifactId);
+
+    Optional<PluginEntity> findByKeyGroupIdAndKeyArtifactId(String groupId, String artifactId);
 }

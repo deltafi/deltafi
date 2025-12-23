@@ -56,7 +56,7 @@ public abstract class Flow {
 
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false, true);
+    protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false, true, false);
 
     // list of variables that are applicable to this dataSource
     @Type(JsonBinaryType.class)

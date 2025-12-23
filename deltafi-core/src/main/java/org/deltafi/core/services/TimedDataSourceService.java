@@ -22,6 +22,8 @@ import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.IngressStatus;
 import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.converters.TimedDataSourcePlanConverter;
+import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.types.snapshot.Snapshot;
@@ -34,8 +36,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -66,6 +70,29 @@ public class TimedDataSourceService extends DataSourceService<TimedDataSourcePla
     @Override
     public List<TimedDataSourceSnapshot> getFlowSnapshots(Snapshot snapshot) {
         return snapshot.getTimedDataSources();
+    }
+
+    @Override
+    protected TimedDataSource createPlaceholderFlow(TimedDataSourceSnapshot snapshot) {
+        TimedDataSource flow = new TimedDataSource();
+        flow.setName(snapshot.getName());
+        flow.setDescription("Placeholder for " + snapshot.getName() + " - waiting for plugin to install");
+        flow.setSourcePlugin(snapshot.getSourcePlugin());
+        flow.getFlowStatus().setState(snapshot.isRunning() ? FlowState.RUNNING : FlowState.STOPPED);
+        flow.getFlowStatus().setTestMode(snapshot.isTestMode());
+        flow.getFlowStatus().setValid(false);
+        flow.getFlowStatus().setErrors(new ArrayList<>(List.of(
+            FlowConfigError.newBuilder()
+                .configName(snapshot.getName())
+                .errorType(FlowErrorType.INVALID_CONFIG)
+                .message("Waiting for plugin " + snapshot.getSourcePlugin() + " to install")
+                .build()
+        )));
+        flow.getFlowStatus().setPlaceholder(true);
+        flow.setTopic(snapshot.getTopic());
+        flow.setMaxErrors(snapshot.getMaxErrors());
+        flow.setCronSchedule(snapshot.getCronSchedule());
+        return flow;
     }
 
     @Override

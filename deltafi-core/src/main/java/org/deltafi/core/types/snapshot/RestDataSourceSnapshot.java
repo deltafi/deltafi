@@ -37,6 +37,7 @@ public class RestDataSourceSnapshot extends DataSourceSnapshot {
         this(dataSource.getName());
         setRunning(dataSource.isRunning());
         setTestMode(dataSource.isTestMode());
+        setSourcePlugin(dataSource.getSourcePlugin());
         setTopic(dataSource.getTopic());
         setMaxErrors(dataSource.getMaxErrors());
         setRateLimit(dataSource.getRateLimit());
