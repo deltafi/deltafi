@@ -441,7 +441,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, time, start => $__timeFrom(), finish => $__timeTo()) AS time,\n  CASE \n    WHEN $annotationKey = 'All' THEN datasource_name || ' - ' || group_name\n    ELSE datasource_name || ' - ' || group_name || ' - ' || annotation_value\n  END AS series_name,\n  COALESCE(SUM(ingress_bytes), 0) AS ingress_bytes,\n  COALESCE(SUM(ingress_files), 0) AS ingress_files,\n  COALESCE(SUM(egress_bytes), 0) AS egress_bytes,\n  COALESCE(SUM(egress_files), 0) AS egress_files,\n  COALESCE(SUM(error_files), 0) AS error_files,\n  COALESCE(SUM(filter_files), 0) AS filter_files\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms')\n)\nGROUP BY 1, 2\nORDER BY 1",
+          "rawSql": "SELECT \n  time_bucket_gapfill(($__interval_ms || ' ms')::interval, time, start => $__timeFrom(), finish => $__timeTo()) AS time,\n  CASE \n    WHEN '${annotationKey}' = 'All' THEN datasource_name || ' - ' || group_name\n    ELSE datasource_name || ' - ' || group_name || ' - ' || annotation_value\n  END AS series_name,\n  COALESCE(SUM(ingress_bytes), 0) AS ingress_bytes,\n  COALESCE(SUM(ingress_files), 0) AS ingress_files,\n  COALESCE(SUM(egress_bytes), 0) AS egress_bytes,\n  COALESCE(SUM(egress_files), 0) AS egress_files,\n  COALESCE(SUM(error_files), 0) AS error_files,\n  COALESCE(SUM(filter_files), 0) AS filter_files\nFROM get_analytics_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  ($__interval_ms || ' ms')\n)\nGROUP BY 1, 2\nORDER BY 1",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2548,7 +2548,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n  datasource_name AS \"Data Source\",\n  group_name AS \"Group\",\n  CASE \n    WHEN $annotationKey != 'All' THEN annotation_value \n  END AS \"Annotation Value\",\n  SUM(ingress_bytes) AS \"Ingress Bytes\",\n  SUM(ingress_files) AS \"Ingress Files\",\n  SUM(egress_bytes) AS \"Egress Bytes\",\n  SUM(egress_files) AS \"Egress Files\",\n  SUM(error_files) AS \"Errored\",\n  SUM(filter_files) AS \"Filtered\"\nFROM get_analytics_data(\n  $annotationKey,\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years'\n)\nGROUP BY \n  datasource_name, \n  group_name,\n  CASE \n    WHEN $annotationKey != 'All' THEN annotation_value \n  END\nORDER BY \"Data Source\", \"Group\", \"Annotation Value\";",
+          "rawSql": "SELECT\n  datasource_name AS \"Data Source\",\n  group_name AS \"Group\",\n  CASE \n    WHEN '${annotationKey}' != 'All' THEN annotation_value \n  END AS \"Annotation Value\",\n  SUM(ingress_bytes) AS \"Ingress Bytes\",\n  SUM(ingress_files) AS \"Ingress Files\",\n  SUM(egress_bytes) AS \"Egress Bytes\",\n  SUM(egress_files) AS \"Egress Files\",\n  SUM(error_files) AS \"Errored\",\n  SUM(filter_files) AS \"Filtered\"\nFROM get_analytics_data(\n  '${annotationKey}',\n  ARRAY[$annotationValues],\n  ARRAY[$dataSources],\n  ARRAY[$groups],\n  ARRAY[$analyticIngressTypes],\n  $__timeFrom(),\n  $__timeTo(),\n  '100 years'\n)\nGROUP BY \n  datasource_name, \n  group_name,\n  CASE \n    WHEN '${annotationKey}' != 'All' THEN annotation_value \n  END\nORDER BY \"Data Source\", \"Group\", \"Annotation Value\";",
           "refId": "A",
           "sql": {
             "columns": [
@@ -2693,7 +2693,7 @@
         "type": "query"
       },
       {
-        "allValue": "'All'",
+        "allValue": "All",
         "current": {
           "text": "All",
           "value": "$__all"
@@ -2728,13 +2728,13 @@
           "type": "grafana-postgresql-datasource",
           "uid": "${database}"
         },
-        "definition": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))\n  AND ak.key_name = $annotationKey \n  AND $annotationKey != 'All'",
+        "definition": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))\n  AND ak.key_name = '${annotationKey}' \n  AND '${annotationKey}' != 'All'",
         "includeAll": true,
         "label": "Annotation Values",
         "multi": true,
         "name": "annotationValues",
         "options": [],
-        "query": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))\n  AND ak.key_name = $annotationKey \n  AND $annotationKey != 'All'",
+        "query": "SELECT DISTINCT\n  av.value_text AS __text,\n  av.value_text AS __value\nFROM analytics_5m_anno aa\nJOIN flow_definitions fd ON aa.data_source_id = fd.id\nJOIN event_groups eg ON aa.event_group_id = eg.id\nJOIN annotation_keys ak ON aa.annotation_key_id = ak.id\nJOIN annotation_values av ON aa.annotation_value_id = av.id\nWHERE $__timeFilter(aa.bucket_start)\n  AND ('All' IN ($dataSources) OR fd.name IN ($dataSources))\n  AND ('All' IN ($groups) OR eg.name IN ($groups))\n  AND ak.key_name = '${annotationKey}' \n  AND '${annotationKey}' != 'All'",
         "refresh": 2,
         "regex": "",
         "sort": 5,
