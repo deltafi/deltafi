@@ -73,7 +73,7 @@
         "defaults": {
           "color": {
             "fixedColor": "green",
-            "mode": "fixed"
+            "mode": "continuous-GrYlRd"
           },
           "displayName": "In Flight DeltaFiles",
           "mappings": [],
@@ -89,7 +89,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "locale"
         },
         "overrides": []
       },
@@ -103,7 +104,7 @@
       "maxDataPoints": 99999,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -116,7 +117,7 @@
         },
         "showPercentChange": false,
         "textMode": "value_and_name",
-        "wideLayout": true
+        "wideLayout": false
       },
       "pluginVersion": "11.2.2+security-01",
       "targets": [
@@ -148,9 +149,8 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "",
+            "axisLabel": "In Flight DeltaFiles",
             "axisPlacement": "left",
-            "axisWidth": -6,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -168,7 +168,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -229,6 +229,7 @@
         }
       ],
       "transparent": true,
+      "title": "In-Flight DeltaFiles",
       "type": "timeseries"
     },
     {
