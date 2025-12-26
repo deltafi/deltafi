@@ -21,6 +21,7 @@ import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -32,5 +33,6 @@ public interface UiLinkRepo extends JpaRepository<Link, UUID> {
      * @param name name of the link to delete
      * @param linkType type of link to delete
      */
+    @Transactional
     void deleteByNameAndLinkType(String name, LinkType linkType);
 }
