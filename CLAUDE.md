@@ -102,6 +102,8 @@ This creates `CHANGELOG/unreleased/<branch-name>.md`. Keep all section headers i
 
 The core exposes both GraphQL (via Netflix DGS) and REST endpoints. Schema files are in `deltafi-core/src/main/resources/schema/`.
 
+Local development server runs on **HTTP** (not HTTPS): `http://local.deltafi.org/api/v2/graphql`
+
 ## Testing Notes
 
 - Core tests use Spring Boot test slices

@@ -256,29 +256,30 @@ public class PluginService implements Snapshotter {
 
     public boolean removeFlowPlanFromSystemPlugin(String flowPlanName, FlowType flowPlanType) {
         PluginEntity systemPlugin = getSystemPlugin();
-        if (systemPlugin.getFlowPlans() == null) {
-            return false;
-        }
-        FlowPlan flowPlan = systemPlugin.getFlowPlans().stream().filter(fp -> fp.getName().equals(flowPlanName) && fp.getType() == flowPlanType).findFirst().orElse(null);
-        if (flowPlan == null) {
-            return false;
-        }
-        systemPlugin.getFlowPlans().remove(flowPlan);
+        PluginCoordinates systemPluginCoords = systemPlugin.getPluginCoordinates();
 
-        if (flowPlan.getType() == FlowType.DATA_SINK) {
-            dataSinkService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
-        } else if (flowPlan.getType() == FlowType.REST_DATA_SOURCE) {
-            restDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
-        } else if (flowPlan.getType() == FlowType.TIMED_DATA_SOURCE) {
-            timedDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
-        } else if (flowPlan.getType() == FlowType.ON_ERROR_DATA_SOURCE) {
-            onErrorDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
-        } else if (flowPlan.getType() == FlowType.TRANSFORM) {
-            transformFlowService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
+        // Try to find and remove the flow plan
+        FlowPlan flowPlan = null;
+        if (systemPlugin.getFlowPlans() != null) {
+            flowPlan = systemPlugin.getFlowPlans().stream()
+                    .filter(fp -> fp.getName().equals(flowPlanName) && fp.getType() == flowPlanType)
+                    .findFirst().orElse(null);
+            if (flowPlan != null) {
+                systemPlugin.getFlowPlans().remove(flowPlan);
+                pluginRepo.save(systemPlugin);
+            }
         }
 
-        pluginRepo.save(systemPlugin);
-        return true;
+        // Remove the flow (handles both regular flows with plans and placeholder flows without plans)
+        boolean removed = switch (flowPlanType) {
+            case FlowType.DATA_SINK -> dataSinkService.removeByName(flowPlanName, systemPluginCoords);
+            case FlowType.REST_DATA_SOURCE -> restDataSourceService.removeByName(flowPlanName, systemPluginCoords);
+            case FlowType.TIMED_DATA_SOURCE -> timedDataSourceService.removeByName(flowPlanName, systemPluginCoords);
+            case FlowType.ON_ERROR_DATA_SOURCE -> onErrorDataSourceService.removeByName(flowPlanName, systemPluginCoords);
+            case FlowType.TRANSFORM -> transformFlowService.removeByName(flowPlanName, systemPluginCoords);
+        };
+
+        return flowPlan != null || removed;
     }
 
     public PluginCoordinates getSystemPluginCoordinates() {

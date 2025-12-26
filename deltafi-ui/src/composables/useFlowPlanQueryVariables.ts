@@ -28,6 +28,7 @@ export const joinFields = {
 export const flowStatusFields = {
   state: true,
   valid: true,
+  placeholder: true,
   errors: {
     configName: true,
     errorType: true,

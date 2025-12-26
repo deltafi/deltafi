@@ -502,18 +502,23 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * Remove the flow with the given name if it exists
      *
      * @param flowName name of the flow to remove
+     * @param systemPlugin the system plugin coordinates
+     * @return true if the flow was removed, false if it didn't exist
      */
-    public void removeByName(String flowName, PluginCoordinates systemPlugin) {
+    public boolean removeByName(String flowName, PluginCoordinates systemPlugin) {
         FlowT flow = flowRepo.findByNameAndType(flowName, flowType, flowClass).orElse(null);
-        if (flow != null) {
-            if (flow.isRunning() && !flow.isInvalid()) {
-                throw new IllegalStateException("Flow " + flowName + " cannot be removed while it is running");
-            } else if (!systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
-                throw new IllegalArgumentException("Flow " + flowName + " is not a " + systemPlugin.getArtifactId() + " flow and cannot be removed");
-            }
-            flowRepo.deleteById(flow.getId());
-            refreshCache();
+        if (flow == null) {
+            return false;
         }
+        // Placeholder flows can always be removed since they're not actually running
+        if (flow.isRunning() && !flow.isInvalid() && !flow.getFlowStatus().getPlaceholder()) {
+            throw new IllegalStateException("Flow " + flowName + " cannot be removed while it is running");
+        } else if (!systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
+            throw new IllegalArgumentException("Flow " + flowName + " is not a " + systemPlugin.getArtifactId() + " flow and cannot be removed");
+        }
+        flowRepo.deleteById(flow.getId());
+        refreshCache();
+        return true;
     }
 
     /**

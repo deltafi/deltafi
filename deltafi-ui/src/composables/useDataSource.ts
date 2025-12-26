@@ -30,6 +30,7 @@ export default function useDataSource() {
     flowStatus: {
       state: true,
       valid: true,
+      placeholder: true,
       errors: {
         configName: true,
         errorType: true,

@@ -40,6 +40,7 @@ export default function useDataSink() {
             state: true,
             valid: true,
             testMode: true,
+            placeholder: true,
             errors: {
               configName: true,
               errorType: true,
