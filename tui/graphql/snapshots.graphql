@@ -53,4 +53,11 @@ mutation ResetFromSnapshotWithId($snapshotId: UUID!, $hardReset: Boolean) {
     success
     errors
   }
-} 
+}
+
+mutation ImportSnapshotAndReset($input: SystemSnapshotInput!, $hardReset: Boolean) {
+  importSnapshotAndReset(snapshot: $input, hardReset: $hardReset) {
+    success
+    errors
+  }
+}

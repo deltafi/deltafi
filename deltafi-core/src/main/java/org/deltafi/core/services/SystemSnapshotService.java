@@ -140,6 +140,16 @@ public class SystemSnapshotService {
         return saveSnapshot(systemSnapshot);
     }
 
+    public Result importSnapshotAndReset(SystemSnapshot systemSnapshot, boolean hardReset) {
+        if (systemSnapshot == null) {
+            return Result.builder().success(false).errors(List.of("Snapshot cannot be null")).build();
+        }
+
+        SystemSnapshot importedSnapshot = importSnapshot(systemSnapshot);
+        Snapshot snapshotData = mapSnapshotData(importedSnapshot);
+        return resetFromSnapshot(snapshotData, hardReset);
+    }
+
     void removeMaskedVariables(Snapshot snasphot) {
         if (snasphot.getPluginVariables() != null) {
             snasphot.setPluginVariables(snasphot.getPluginVariables().stream()

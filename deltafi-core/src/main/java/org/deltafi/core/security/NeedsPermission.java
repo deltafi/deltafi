@@ -287,6 +287,11 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('SnapshotRevert'" + OR_ADMIN)
     public @interface SnapshotRevert {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize("(hasAuthority('SnapshotCreate') and hasAuthority('SnapshotRevert')) or hasAuthority('Admin')")
+    public @interface SnapshotCreateAndRevert {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

@@ -89,6 +89,15 @@ public class SystemSnapshotDatafetcher {
     }
 
     @DgsMutation
+    @NeedsPermission.SnapshotCreateAndRevert
+    public Result importSnapshotAndReset(@InputArgument SystemSnapshot snapshot, @InputArgument Boolean hardReset) {
+        boolean hard = hardReset == null || hardReset;
+        Result result = systemSnapshotService.importSnapshotAndReset(snapshot, hard);
+        auditLogger.audit("imported and reset to snapshot {} using hardReset {}", snapshot.getId(), hard);
+        return result;
+    }
+
+    @DgsMutation
     @NeedsPermission.SnapshotDelete
     public Result deleteSnapshot(@InputArgument UUID snapshotId) {
         auditLogger.audit("deleted system snapshot {}", snapshotId);

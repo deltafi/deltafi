@@ -61,11 +61,14 @@ extend type Mutation {
     # create and return a new system snapshot with an optional reason
     snapshotSystem(reason: String): SystemSnapshot!
 
-    # apply the snapshot with the given SnapshotId, hardReset (default=false) indicates all custom config should be reset before applying the snapshot
+    # apply the snapshot with the given SnapshotId, hardReset (default=true) indicates all custom config should be reset before applying the snapshot
     resetFromSnapshotWithId(snapshotId: UUID!, hardReset: Boolean) : Result!
 
     # import the given SystemSnapshot
     importSnapshot(snapshot: SystemSnapshotInput!) : SystemSnapshot!
+
+    # import the given SystemSnapshot and apply it, hardReset (default=true) indicates all custom config should be reset before applying the snapshot
+    importSnapshotAndReset(snapshot: SystemSnapshotInput!, hardReset: Boolean) : Result!
 
     # delete the snapshot with the given SnapshotId
     deleteSnapshot(snapshotId: UUID!): Result

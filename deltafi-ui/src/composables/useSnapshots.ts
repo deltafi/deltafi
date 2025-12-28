@@ -77,7 +77,7 @@ export default function useSystemSnapshots() {
     await queryGraphQL(query, "postCreateSystemSnapshot", "mutation");
     mutationData.value = response.value.data.snapshotSystem.id;
   };
-  const revert = async (id: string) => {
+  const restore = async (id: string) => {
     const query = {
       resetFromSnapshotWithId: {
         __args: {
@@ -87,7 +87,7 @@ export default function useSystemSnapshots() {
         errors: true,
       },
     };
-    await queryGraphQL(query, "postRevertSystemSnapshot", "mutation");
+    await queryGraphQL(query, "postRestoreSystemSnapshot", "mutation");
     mutationData.value = response.value.data.resetFromSnapshotWithId;
   };
 
@@ -122,5 +122,5 @@ export default function useSystemSnapshots() {
     return response.value.data.deleteSnapshot;
   };
 
-  return { data, loading, loaded, fetch, create, revert, importSnapshot, deleteSnapshot, mutationData, errors, totalCount };
+  return { data, loading, loaded, fetch, create, restore, importSnapshot, deleteSnapshot, mutationData, errors, totalCount };
 }

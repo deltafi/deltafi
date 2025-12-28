@@ -52,7 +52,7 @@
           <template #body="data">
             <span class="btn-group">
               <Button v-tooltip.left="'Download Snapshot'" icon="fas fa-download fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onDownload(data.data)" />
-              <Button v-has-permission:SnapshotRevert v-tooltip.left="'Revert to Snapshot'" icon="fas fa-history fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onRevertClick(data.data)" />
+              <Button v-has-permission:SnapshotRevert v-tooltip.left="'Restore Snapshot'" icon="fas fa-history fa-fw" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onRestoreClick(data.data)" />
               <Button v-has-permission:SnapshotDelete v-tooltip.left="'Delete Snapshot'" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="onDeleteClick(data.data)" />
             </span>
           </template>
@@ -67,7 +67,7 @@
     <template #footer>
       <span class="btn-group">
         <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-primary mr-2" @click="onDownload(snapshot)" />
-        <Button v-has-permission:SnapshotRevert label="Revert to Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-warning mr-2" @click="onRevertClick(snapshot)" />
+        <Button v-has-permission:SnapshotRevert label="Restore Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-warning mr-2" @click="onRestoreClick(snapshot)" />
         <Button v-has-permission:SnapshotDelete label="Delete Snapshot" icon="pi pi-trash" class="p-button p-button-danger" @click="onDeleteClick(snapshot)" />
       </span>
     </template>
@@ -114,7 +114,7 @@ const pageRows = ref(20);
 const pageFirst = ref(0);
 const sortField = ref("created");
 const sortDirection = ref("DESC");
-const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, revert: revertSnapshot, importSnapshot: importSnapshot, deleteSnapshot, loading, totalCount } = useSystemSnapshots();
+const { data: snapshots, fetch: getSystemSnapshots, create: createSystemSnapshot, mutationData: mutationResponse, restore: restoreSnapshot, importSnapshot: importSnapshot, deleteSnapshot, loading, totalCount } = useSystemSnapshots();
 const snapshot = ref(null);
 const notify = useNotifications();
 const reason = ref("");
@@ -190,8 +190,8 @@ const getSnapshots = async () => {
   await getSystemSnapshots(pageFirst.value, pageRows.value, sortField.value, sortDirection.value, filterObject);
 };
 
-const onRevert = async (id) => {
-  await revertSnapshot(id);
+const onRestore = async (id) => {
+  await restoreSnapshot(id);
   close();
   if (mutationResponse.value.success) {
     notify.success("Successfully Reverted to Snapshot ", id);
@@ -201,15 +201,15 @@ const onRevert = async (id) => {
   }
 };
 
-const onRevertClick = (snapshotData) => {
+const onRestoreClick = (snapshotData) => {
   confirm.require({
-    message: `Are you sure you want to revert the system to this snapshot (${snapshotData.id})?`,
-    header: "Confirm Revert",
+    message: `Are you sure you want to restore the system to this snapshot (${snapshotData.id})?`,
+    header: "Confirm Restore",
     icon: "pi pi-exclamation-triangle",
-    acceptLabel: "Revert",
+    acceptLabel: "Restore",
     rejectLabel: "Cancel",
     accept: () => {
-      onRevert(snapshotData.id);
+      onRestore(snapshotData.id);
     },
     reject: () => { },
   });

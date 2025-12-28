@@ -187,61 +187,20 @@ var deleteSnapshotCmd = &cobra.Command{
 }
 
 func ImportSnapshot(reason string, input []byte) (*graphql.ImportSnapshotResponse, error) {
-	var rawInput map[string]interface{}
-	if err := json.Unmarshal(input, &rawInput); err != nil {
-		return nil, fmt.Errorf("error parsing snapshot JSON: %v", err)
+	snapshotInput, err := processSnapshotInput(reason, input)
+	if err != nil {
+		return nil, err
+	}
+	return graphql.ImportSnapshot(snapshotInput)
+}
+
+func ImportAndReset(reason string, hardReset bool, input []byte) (*graphql.ImportSnapshotAndResetResponse, error) {
+	snapshotInput, err := processSnapshotInput(reason, input)
+	if err != nil {
+		return nil, err
 	}
 
-	if rawInput["getSystemSnapshot"] != nil {
-		rawInput = rawInput["getSystemSnapshot"].(map[string]interface{})
-	}
-
-	var snapshotInput graphql.SystemSnapshotInput
-
-	if rawInput["id"] != nil {
-		snapshotInput.Id = rawInput["id"].(string)
-	}
-	if rawInput["reason"] != nil {
-		if reasonStr, ok := rawInput["reason"].(string); ok {
-			snapshotInput.Reason = &reasonStr
-		}
-	}
-	if rawInput["created"] != nil {
-		if createdStr, ok := rawInput["created"].(string); ok {
-			created, err := time.Parse(time.RFC3339, createdStr)
-			if err == nil {
-				snapshotInput.Created = created
-			}
-		}
-	}
-
-	// Check if this is a new format (has "snapshot" field) or old format
-	if snapshotData, exists := rawInput["snapshot"]; exists {
-		// New format
-		schemaVersion, ok := rawInput["schemaVersion"].(float64)
-		if !ok {
-			return nil, fmt.Errorf("'schemaVersion' must be a number")
-		}
-		snapshotInput.SchemaVersion = int(schemaVersion)
-		snapshotInput.Snapshot = snapshotData.(map[string]interface{})
-	} else {
-		// Old format - move everything except id, created, and reason into the snapshot field
-		snapshotData := make(map[string]interface{})
-		for k, v := range rawInput {
-			if k != "id" && k != "created" && k != "reason" {
-				snapshotData[k] = v
-			}
-		}
-		snapshotInput.SchemaVersion = 1
-		snapshotInput.Snapshot = snapshotData
-	}
-	if reason != "" {
-		snapshotInput.Reason = &reason
-	}
-
-	resp, err := graphql.ImportSnapshot(snapshotInput)
-
-	return resp, err
+	return graphql.ImportSnapshotAndReset(snapshotInput, &hardReset)
 }
 
 var importSnapshotCmd = &cobra.Command{
@@ -268,8 +227,15 @@ If no file is specified, reads from stdin.`,
 			}
 		}
 		reason, _ := cmd.Flags().GetString("reason")
+		restore, _ := cmd.Flags().GetBool("restore")
+		var resp interface{}
+		if restore {
+			hardReset, _ := cmd.Flags().GetBool("hard")
+			resp, err = ImportAndReset(reason, hardReset, input)
+		} else {
+			resp, err = ImportSnapshot(reason, input)
+		}
 
-		resp, err := ImportSnapshot(reason, input)
 		if err != nil {
 			return wrapInError("Error importing system snapshot", err)
 		}
@@ -317,6 +283,61 @@ var restoreSnapshotCmd = &cobra.Command{
 	},
 }
 
+func processSnapshotInput(reason string, input []byte) (graphql.SystemSnapshotInput, error) {
+	var rawInput map[string]interface{}
+	var snapshotInput graphql.SystemSnapshotInput
+	if err := json.Unmarshal(input, &rawInput); err != nil {
+		return snapshotInput, fmt.Errorf("error parsing snapshot JSON: %v", err)
+	}
+
+	if rawInput["getSystemSnapshot"] != nil {
+		rawInput = rawInput["getSystemSnapshot"].(map[string]interface{})
+	}
+
+	if rawInput["id"] != nil {
+		snapshotInput.Id = rawInput["id"].(string)
+	}
+	if rawInput["reason"] != nil {
+		if reasonStr, ok := rawInput["reason"].(string); ok {
+			snapshotInput.Reason = &reasonStr
+		}
+	}
+	if rawInput["created"] != nil {
+		if createdStr, ok := rawInput["created"].(string); ok {
+			created, err := time.Parse(time.RFC3339, createdStr)
+			if err == nil {
+				snapshotInput.Created = created
+			}
+		}
+	}
+
+	// Check if this is a new format (has "snapshot" field) or old format
+	if snapshotData, exists := rawInput["snapshot"]; exists {
+		// New format
+		schemaVersion, ok := rawInput["schemaVersion"].(float64)
+		if !ok {
+			return snapshotInput, fmt.Errorf("'schemaVersion' must be a number")
+		}
+		snapshotInput.SchemaVersion = int(schemaVersion)
+		snapshotInput.Snapshot = snapshotData.(map[string]interface{})
+	} else {
+		// Old format - move everything except id, created, and reason into the snapshot field
+		snapshotData := make(map[string]interface{})
+		for k, v := range rawInput {
+			if k != "id" && k != "created" && k != "reason" {
+				snapshotData[k] = v
+			}
+		}
+		snapshotInput.SchemaVersion = 1
+		snapshotInput.Snapshot = snapshotData
+	}
+	if reason != "" {
+		snapshotInput.Reason = &reason
+	}
+
+	return snapshotInput, nil
+}
+
 func init() {
 	rootCmd.AddCommand(snapshotCmd)
 	snapshotCmd.AddCommand(listSnapshotsCmd)
@@ -332,5 +353,7 @@ func init() {
 	AddFormatFlag(importSnapshotCmd)
 	createSnapshotCmd.Flags().StringP("reason", "r", "", "Reason for creating the snapshot")
 	importSnapshotCmd.Flags().StringP("reason", "r", "", "Reason for importing the snapshot")
-	restoreSnapshotCmd.Flags().BoolP("hard", "H", false, "Perform a hard reset (may be more disruptive but more thorough)")
+	importSnapshotCmd.Flags().Bool("restore", false, "Restore to the imported snapshot state")
+	importSnapshotCmd.Flags().BoolP("hard", "H", true, "Perform a hard reset, only applicable with the --restore flag set")
+	restoreSnapshotCmd.Flags().BoolP("hard", "H", true, "Perform a hard reset (may be more disruptive but more thorough)")
 }
