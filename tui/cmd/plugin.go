@@ -61,13 +61,13 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Show installed plugins",
 	Long:  `Display a list of all installed plugins with their names, container images, and versions.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 
 		resp, err := graphql.GetPlugins()
 
 		if err != nil {
-			panic(err)
+			return wrapInError("Failed to fetch plugins", err)
 		}
 
 		rows := [][]string{}
@@ -137,6 +137,8 @@ var listCmd = &cobra.Command{
 				break
 			}
 		}
+
+		return nil
 	},
 }
 
