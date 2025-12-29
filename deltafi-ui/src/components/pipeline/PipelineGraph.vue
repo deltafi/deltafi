@@ -326,8 +326,8 @@ const {
   setupResizeObserver,
   setDetailPanelOffset,
 } = useGraphPanZoom(graphContainer, layoutNodes, nodeWidth, nodeHeight, padding, containerWidth, containerHeight, {
-  minZoom: 0.25,
-  maxZoom: 2,
+  minZoom: 1,
+  maxZoom: 5,
   excludeSelectors: [".node-group", ".expand-button", ".pan-indicator"],
 });
 
