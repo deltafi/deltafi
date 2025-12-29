@@ -95,7 +95,7 @@ redis:
   fullnameOverride: deltafi-valkey
   image:
     repository: deltafi/valkey
-    tag: 9.0.0-1
+    tag: 9.0.1-0
   architecture: standalone
   auth:
     existingSecret: valkey-password
@@ -153,7 +153,7 @@ kubernetes-dashboard:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 12.4.0-3
+    tag: 12.4.0-4
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -252,7 +252,7 @@ grafana:
 
 promtail:
   image:
-    tag: 3.6.2
+    tag: 3.6.3
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
