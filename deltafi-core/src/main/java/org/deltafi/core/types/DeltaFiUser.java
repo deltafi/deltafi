@@ -65,6 +65,12 @@ public class DeltaFiUser {
         this.dn = input.dn;
     }
 
+    public DeltaFiUser(String username) {
+        this.id = Generators.timeBasedEpochGenerator().generate();
+        this.username = username;
+        this.roles = new HashSet<>();
+    }
+
     @Builder
     public record Input(String name, String username, String dn, String password, Set<UUID> roleIds) {
 

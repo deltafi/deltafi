@@ -6251,7 +6251,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(roleRepo.findById(unchangedRole.getId()).orElseThrow()).isEqualTo(unchangedRole);
 		assertThat(roleRepo.findById(roleToReplace.getId()).orElseThrow().getPermissions()).isEqualTo(snapReplacementRole.toRole().getPermissions());
 		// new role was added from the snapshot, and the invalid permission was pruned
-		assertThat(roleRepo.findById(snapshotOnlyRole.getId()).orElseThrow().getPermissions()).hasSize(1).contains("Admin");
+		assertThat(roleRepo.findAll().stream().filter(role -> role.getName().equals(snapshotOnlyRole.getName())).findFirst().orElseThrow().getPermissions()).hasSize(1).contains("Admin");
 	}
 
 	private Role role(String name, String ... permissions) {

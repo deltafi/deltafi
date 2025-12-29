@@ -32,8 +32,8 @@ import org.deltafi.core.security.DnUtil;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.DeltaFiUser.Input;
 import org.deltafi.core.types.snapshot.RoleSnapshot;
-import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.Snapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.UserSnapshot;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -235,46 +235,56 @@ public class DeltaFiUserService implements Snapshotter {
     }
 
     private Result softReset(Snapshot snapshot) {
-        List<DeltaFiUser> existingUsers = deltaFiUserRepo.findAll();
-        List<Role> existingRoles = roleService.getRoles();
-
-        Map<String, Role> existingRoleMap = existingRoles.stream()
+        Map<String, Role> existingRolesByName = roleService.getRoles().stream()
                 .collect(Collectors.toMap(Role::getName, r -> r));
 
-        Map<String, DeltaFiUser> existingUserMap = existingUsers.stream()
+        List<Role> snapshotRoles = getSnapshotRoles(snapshot);
+        List<DeltaFiUser> snapshotUsers = getSnapshotUsers(snapshot);
+
+        List<Role> rolesToSave = new ArrayList<>();
+        for (Role snapshotRole : snapshotRoles) {
+            Role role = existingRolesByName.computeIfAbsent(snapshotRole.getName(), Role::new);
+            mergeRole(snapshotRole, role);
+            rolesToSave.add(role);
+        }
+        roleService.saveAll(rolesToSave);
+
+        Map<String, DeltaFiUser> existingUsersByUsername = deltaFiUserRepo.findAll().stream()
                 .collect(Collectors.toMap(DeltaFiUser::getUsername, u -> u));
 
-        List<DeltaFiUser> snapshotUsers = getSnapshotUsers(snapshot);
-        List<Role> snapshotRoles = getSnapshotRoles(snapshot);
-
-        Map<UUID, UUID> remappedRoles = new HashMap<>();
-        for (Role snapshotRole : snapshotRoles) {
-            Role existingRole = existingRoleMap.get(snapshotRole.getName());
-            // if the role exists replace it by using the existing roles id
-            if (existingRole != null) {
-                remappedRoles.put(snapshotRole.getId(), existingRole.getId());
-                snapshotRole.setId(existingRole.getId());
-            }
-        }
-
+        List<DeltaFiUser> usersToSave = new ArrayList<>();
         for (DeltaFiUser snapshotUser : snapshotUsers) {
-            DeltaFiUser existingUser = existingUserMap.get(snapshotUser.getUsername());
-            // if the user exists replace it by using the existing users id
-            if (existingUser != null) {
-                snapshotUser.setId(existingUser.getId());
-            }
+            DeltaFiUser user = existingUsersByUsername.computeIfAbsent(snapshotUser.getUsername(), DeltaFiUser::new);
+            mergeUser(snapshotUser, user, existingRolesByName);
+            usersToSave.add(user);
+        }
+        deltaFiUserRepo.saveAll(usersToSave);
 
-            for (Role role : snapshotUser.getRoles()) {
-                // if the snapshot role has an updated id, make the change here as well
-                if (remappedRoles.containsKey(role.getId())) {
-                    role.setId(remappedRoles.get(role.getId()));
-                }
+        return new Result();
+    }
+
+    private void mergeRole(Role source, Role target) {
+        target.setName(source.getName());
+        target.setPermissions(source.getPermissions());
+        target.setCreatedAt(source.getCreatedAt());
+        target.setUpdatedAt(source.getUpdatedAt());
+    }
+
+    private void mergeUser(DeltaFiUser source, DeltaFiUser target, Map<String, Role> rolesByName) {
+        target.setName(source.getName());
+        target.setCreatedAt(source.getCreatedAt());
+        target.setUpdatedAt(source.getUpdatedAt());
+        target.setUsername(source.getUsername());
+        target.setPassword(source.getPassword());
+        target.setDn(source.getDn());
+
+        target.getRoles().clear();
+        for (Role sourceRole : source.getRoles()) {
+            Role resolvedRole = rolesByName.get(sourceRole.getName());
+            if (resolvedRole != null) {
+                target.getRoles().add(resolvedRole);
             }
         }
-
-        roleService.saveAll(snapshotRoles);
-        deltaFiUserRepo.saveAll(snapshotUsers);
-        return new Result();
     }
 
     private List<DeltaFiUser> getSnapshotUsers(Snapshot snapshot) {

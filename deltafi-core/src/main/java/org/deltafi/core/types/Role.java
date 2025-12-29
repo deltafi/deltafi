@@ -62,6 +62,13 @@ public class Role {
         this.updatedAt = createdAt;
     }
 
+    public Role(String name) {
+        this.id = Generators.timeBasedEpochGenerator().generate();
+        this.name = name;
+        this.permissions = new ArrayList<>();
+        this.users = new HashSet<>();
+    }
+
     public record Input(String name, List<String> permissions) {
         public boolean noChanges() {
             return permissions == null && StringUtils.isBlank(name);
