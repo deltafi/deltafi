@@ -5,6 +5,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.45.1] - 2025-12-29
+
+### Added
+- Integration test mutations (e.g `start`) now log audit events, including flows that may be started
+- Added `placeholder` field to `FlowStatus` to identify placeholder flows awaiting plugin installation. Placeholder flows cannot be cloned.
+- Added a mutation, `importSnapshotAndReset`, that allows operators to import and apply a snapshot in a single request
+- Added a `--restore` flag to the `deltafi snapshot import` command to allow importing and restoring the snapshot in a single command
+- Pan indicators on system map and pipeline graphs showing which directions have more content (clickable to pan)
+
+### Changed
+- `deltafi down` now uninstalls DeltaFi helm charts but leaves the KinD cluster running. Use `deltafi down -d` to destroy the cluster and data directory. This makes KinD behavior consistent with Compose (non-destructive by default).
+- Made DataSink `egressAction` nullable in GraphQL schema to support placeholder flows that don't yet have actions defined.
+- Changed the `--hard` flag to be true by default on the `deltafi snapshot restore` command to match the backend and GUI behavior  
+- Minor layout updates to the In Flight DeltaFiles count and graphs on the System Overview and System Performance dashboards
+- System map and pipeline graphs now start at a readable zoom level instead of fitting everything on screen
+- Max zoom level now scales with graph size so maximum zoom always shows roughly the same detail level
+- Detail panel tiles with graph viewport instead of overlaying it
+- Increased VictoriaMetrics memory limit from 1GB to 2GB and CPU limit from 500m to 2 cores
+- Increased VictoriaMetrics concurrent request limit from 2 to 8 and queue duration from 10s to 30s
+
+### Fixed
+- Grafana log dashboards missing on Kubernetes
+- System map detail view zoom limits now match full view, allowing closer zoom while constraining zoom-out to node boundaries 
+- Fixed a bug where running a soft restore of a snapshot caused a duplicate key exception in the `user_roles` table preventing the snapshot from being fully applied 
+- Logrotate under root user can operate without errors
+- Improved caching behavior for nodemonitor kubernetes calls to minimize metric latency
+- Added timeouts to nodemonitor network calls to prevent waiting for full socket timeouts
+- Fixed Parquet Analytics Ingress Type selector: filter was defined but never applied to queries 
+- Plugin generator now embeds gradle-wrapper.jar instead of creating an empty placeholder file
+- Plugin generator uses correct DeltaFi version: queries running system in PluginDevelopment mode, uses TUI version in CoreDevelopment mode
+- Plugin generator now sets sourceCompatibility=21 in gradle.properties
+- Fixed snapshot restoration not honoring flow running states when the plugin is not already installed. Flow snapshots now capture `sourcePlugin`, enabling placeholder flows to be created during restore. When the plugin later installs, it claims the placeholder and preserves the intended running/stopped state.
+- Fixed snapshot import failing with GraphQL parse errors when snapshots contain special characters in string values (e.g., action parameter schemas with complex descriptions).
+- Fixed invalid flows never becoming valid through periodic revalidation.
+- Fixed plugin image changes being ignored when plugin is in INSTALLING state. Changing the image now correctly triggers a redeploy.
+- Fixed plugin registration not finding pending entries when user changes the image before registration completes.
+- Fixed plugin staying in INSTALLED state while switching versions. Plugin now stays in INSTALLING until the correct image is running.
+- Fixed old plugin container continuing to run after user changes the desired image version. Registration from outdated containers is now rejected.
+- Fixed plugin reconciliation blocking all plugins when one plugin has a slow install. Plugins now install in parallel.
+- `terminateAllWithError` now terminates DeltaFiles with paused flows
+- `deltafi plugin list` will no longer panic on a graphql error
+- Fixed a bug that prevented soft snapshot resets from completing
+- Fixed Grafana analytics dashboards breaking when annotation key filter is set (unquoted variable caused SQL column reference error)
+- Fixed metric loss when VictoriaMetrics is unreachable: counters are now only decremented after successful transmission
+
+### Tech-Debt/Refactor
+- Improve Gitlab CI artifact upload speed
+
+### Upgrade and Migration
+- Upgrade logrotate to `deltafi/logrotate:1.0.0-3`
+- Snapshots created before this version may lose flow running state for plugins that need to install. Please create a new snapshot after upgrading.
+
 ## [2.45.0] - 2025-12-19
 
 ### Added
@@ -5390,7 +5442,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.1...main
+[2.45.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.0...2.45.1
 [2.45.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.44.0...2.45.0
 [2.44.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.43.1...2.44.0
 [2.43.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.43.0...2.43.1
