@@ -25,7 +25,7 @@
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
-              <span>
+              <span class="btn-group">
                 <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" flow-type="dataSink" @close-dialog-template="flowViewerPopup" @open-dialog-template="flowViewerPopup">
                   <span v-tooltip.right="'View egress information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
                     {{ data.name }}

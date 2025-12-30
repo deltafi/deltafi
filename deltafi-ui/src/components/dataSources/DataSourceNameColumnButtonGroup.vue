@@ -122,14 +122,14 @@ const items = ref([
   },
   {
     label: "View Plugin",
-    icon: "text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center",
+    icon: "text-muted fas fa-plug fa-rotate-90 fa-fw fa-sm",
     visible: computed(() => hasPermission("FlowPlanCreate")),
     route: "/config/plugins/",
   },
 
   {
     label: "Add Rate Limit",
-    icon: "text-muted fa-solid fa-plus",
+    icon: "text-muted fa-solid fa-plus fa-sm",
     visible: computed(() => _.isEqual(data.type, "REST_DATA_SOURCE")),
     command: () => {
       addRateLimit.value.showDialog();
@@ -137,7 +137,7 @@ const items = ref([
   },
   {
     label: "Remove Rate Limit",
-    icon: "text-muted fa-solid fa-xmark",
+    icon: "text-muted fa-solid fa-xmark fa-sm",
     visible: computed(() => _.isEqual(data.type, "REST_DATA_SOURCE") && !_.isEmpty(data.rateLimit)),
     command: () => {
       deleteRateLimit();
@@ -149,7 +149,7 @@ const items = ref([
   },
   {
     label: "Remove",
-    icon: "text-muted fa-solid fa-trash-can",
+    icon: "text-muted fa-solid fa-trash-can fa-sm",
     command: async () => {
       removeDataSource.value.showDialog();
     },

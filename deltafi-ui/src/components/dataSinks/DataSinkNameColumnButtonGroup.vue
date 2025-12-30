@@ -4,7 +4,9 @@
     :id="`overlay_menu_` + data.name + `_` + data.type"
     :model="items"
     :popup="true"
+    @blur="blurTrigger"
     @hide="hideMenu"
+    @show="showMenu"
     :pt="{
       action: {
         class: 'py-1',
@@ -31,7 +33,7 @@
       </a>
     </template>
   </Menu>
-  <Button :id="`${data.name}-${data.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="showMenu" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
+  <Button :id="`${data.name}-${data.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
   <DataSinkRemoveButton ref="removeDataSink" :row-data-prop="data" @reload-data-sinks="refresh" />
   <DialogTemplate ref="editDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Edit Data Sink" dialog-width="50vw" :row-data-prop="data" edit-data-sink @refresh-page="refresh" />
   <DialogTemplate ref="cloneDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Create Data Sink" dialog-width="50vw" :row-data-prop="formatCloneDataSink(data)" @refresh-page="refresh" />
@@ -53,6 +55,7 @@ import Ripple from "primevue/ripple";
 const router = useRouter();
 const hasPermission = inject("hasPermission");
 const emit = defineEmits(["reloadDataSinks"]);
+const editing = inject("isEditing");
 const vRipple = Ripple;
 const editDataSink = ref(null);
 const cloneDataSink = ref(null);
@@ -110,7 +113,7 @@ const items = ref([
   },
   {
     label: "View Plugin",
-    icon: "text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center",
+    icon: "text-muted fas fa-plug fa-rotate-90 fa-fw fa-sm",
     visible: computed(() => hasPermission("FlowPlanCreate")),
     route: "/config/plugins/",
   },
@@ -120,7 +123,7 @@ const items = ref([
   },
   {
     label: "Remove",
-    icon: "text-muted fa-solid fa-trash-can",
+    icon: "text-muted fa-solid fa-trash-can fa-sm",
     command: async () => {
       removeDataSink.value.showDialog();
     },
@@ -128,14 +131,22 @@ const items = ref([
   },
 ]);
 
-const showMenu = (event) => {
+const menuButtonClick = (event) => {
   horizontalEllipsis.value = !horizontalEllipsis.value;
   menu.value.toggle(event);
 };
 
+const showMenu = (event) => {
+  editing.value = true;
+};
+
 const hideMenu = async () => {
   horizontalEllipsis.value = false;
-  menu.value.hide();
+  await menu.value.hide();
+};
+
+const blurTrigger = () => {
+  editing.value = false;
 };
 
 const formatCloneDataSink = (data) => {
