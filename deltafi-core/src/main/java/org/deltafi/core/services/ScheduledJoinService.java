@@ -44,7 +44,7 @@ public class ScheduledJoinService {
         while (maybeJoinEntry.isPresent()) {
             JoinEntry joinEntry = maybeJoinEntry.get();
 
-            List<UUID> joinedDids = joinEntryService.findJoinedDids(joinEntry.getId());
+            List<UUID> joinedDids = joinEntryService.findJoinedDidsExcludingPaused(joinEntry.getId());
             if ((joinEntry.getMinNum() != null) && (joinEntry.getCount() < joinEntry.getMinNum())) {
                 String errorReason = String.format("Join incomplete: Timed out after receiving %s of %s files",
                         joinEntry.getCount(), joinEntry.getMinNum());

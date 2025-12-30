@@ -32,6 +32,9 @@ import java.util.UUID;
 public interface JoinEntryDidRepo extends JpaRepository<JoinEntryDid, UUID> {
     List<JoinEntryDid> findByJoinEntryId(UUID joinEntryId);
 
+    @Query("SELECT j FROM JoinEntryDid j JOIN DeltaFile d ON j.did = d.did WHERE j.joinEntryId = :joinEntryId AND d.paused = false")
+    List<JoinEntryDid> findByJoinEntryIdExcludingPaused(UUID joinEntryId);
+
     @Modifying
     @Transactional
     void deleteByJoinEntryId(UUID joinEntryId);

@@ -110,6 +110,10 @@ public class JoinEntryService {
         return joinEntryDidRepo.findByJoinEntryId(joinEntryId).stream().map(JoinEntryDid::getDid).toList();
     }
 
+    public List<UUID> findJoinedDidsExcludingPaused(UUID joinEntryId) {
+        return joinEntryDidRepo.findByJoinEntryIdExcludingPaused(joinEntryId).stream().map(JoinEntryDid::getDid).toList();
+    }
+
     public List<JoinEntryDid> findOrphans() {
         return joinEntryDidRepo.findByOrphanIsTrue(Limit.of(ORPHAN_BATCH_SIZE));
     }

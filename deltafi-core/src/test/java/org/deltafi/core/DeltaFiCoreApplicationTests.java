@@ -5875,6 +5875,58 @@ class DeltaFiCoreApplicationTests {
 		assertThat(hasErroredJoiningAction(ingress2.getDid(), transformFlowName)).isTrue();
 	}
 
+	@Test
+	void excludesPausedFilesFromTimedOutJoin() {
+		TransformFlow transformFlow = joiningTransformFlow("join-exclude-paused", new JoinConfiguration(Duration.parse("PT3S"), null, 5, null));
+		String transformFlowName = transformFlow.getName();
+		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
+		transformFlowRepo.save(transformFlow);
+		restDataSourceRepo.save(restDataSource);
+		refreshFlowCaches();
+		String dataSourceName = restDataSource.getName();
+
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, dataSourceName, null,
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
+
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", dataSourceName, null,
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
+
+		IngressEventItem ingress3 = new IngressEventItem(UUID.randomUUID(), "file-3", dataSourceName, null,
+				Collections.emptyList(), Collections.emptyMap());
+		deltaFilesService.ingressRest(restDataSource, ingress3, OffsetDateTime.now(), OffsetDateTime.now());
+
+		// Pause file 2 - simulates a file that was paused after joining but before timeout
+		DeltaFile file2 = deltaFileRepo.findById(ingress2.getDid()).orElseThrow();
+		file2.setPaused(true);
+		deltaFileRepo.save(file2);
+
+		TEST_CLOCK.setInstant(Instant.now().plusSeconds(4));
+		scheduledJoinService.handleTimedOutJoins();
+
+		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+		List<WrappedActionInput> actionInputs = actionInputListCaptor.getValue();
+
+		// Should only have 2 files (file 1 and file 3), not the paused file 2
+		assertThat(actionInputs).hasSize(1);
+		ActionInput actionInput = actionInputs.getFirst();
+		assertThat(actionInput.getDeltaFileMessages()).hasSize(2);
+
+		// Files 1 and 3 should be in JOINING state (they were included in the join)
+		DeltaFile parent1 = deltaFileRepo.findById(ingress1.getDid()).orElseThrow();
+		Action action1 = parent1.getFlow(transformFlowName).actionNamed(JOINING_TRANSFORM_ACTION).orElseThrow();
+		assertEquals(ActionState.JOINING, action1.getState());
+
+		DeltaFile parent3 = deltaFileRepo.findById(ingress3.getDid()).orElseThrow();
+		Action action3 = parent3.getFlow(transformFlowName).actionNamed(JOINING_TRANSFORM_ACTION).orElseThrow();
+		assertEquals(ActionState.JOINING, action3.getState());
+
+		// File 2 was paused and excluded from the join - verify it's still paused
+		DeltaFile parent2 = deltaFileRepo.findById(ingress2.getDid()).orElseThrow();
+		assertThat(parent2.getPaused()).isTrue();
+	}
+
 	private boolean hasErroredJoiningAction(UUID did, String actionFlow) {
 		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
 		if (deltaFile.getStage() != DeltaFileStage.ERROR) {
