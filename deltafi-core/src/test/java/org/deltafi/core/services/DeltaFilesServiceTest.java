@@ -142,6 +142,9 @@ class DeltaFilesServiceTest {
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 onErrorDataSourceService, queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
                 flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, valkeyQueue, errorCountService);
+
+        // Default: assume all plugins are ready unless explicitly mocked otherwise
+        Mockito.lenient().when(pluginService.isPluginReady(Mockito.any())).thenReturn(true);
     }
 
     @AfterEach
@@ -256,6 +259,7 @@ class DeltaFilesServiceTest {
     @Test
     void ingressRest_queuesWhenFlowIsInvalid() {
         RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
+        dataSource.getFlowStatus().setValid(false);
         dataSource.getFlowStatus().setErrors(List.of(new FlowConfigError("action", FlowErrorType.INVALID_CONFIG, "Validation error")));
         when(restDataSourceService.getActiveFlowByName(dataSource.getName())).thenReturn(dataSource);
 
@@ -916,6 +920,78 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void testReplayQueuesWhenFlowIsInvalid() {
+        UUID uuid = UUID.randomUUID();
+        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+
+        DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
+
+        flow.addAction("parentAction1", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+        flow.addAction("childAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+
+        TransformFlow flowConfig = new TransformFlow();
+        flowConfig.setName("dataSource");
+        flowConfig.setTransformActions(mockActions("parentAction1", "splitAction", "childAction"));
+        flowConfig.getFlowStatus().setValid(false);
+
+        List<UUID> dids = List.of(uuid);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
+
+        List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
+
+        assertEquals(1, results.size());
+        assertTrue(results.getFirst().getSuccess());
+
+        // Should NOT advance state machine when flow is invalid - child should be queued
+        verifyNoInteractions(stateMachine);
+
+        // Verify the child was saved with PAUSED state
+        verify(deltaFileCacheService).save(deltaFileCaptor.capture());
+        DeltaFile child = deltaFileCaptor.getValue();
+        assertEquals(DeltaFileFlowState.PAUSED, child.firstFlow().getState());
+    }
+
+    @Test
+    void testReplayQueuesWhenPluginNotReady() {
+        UUID uuid = UUID.randomUUID();
+        DeltaFile deltaFile = UtilService.buildDeltaFile(uuid, "myFlow");
+
+        DeltaFileFlow flow = deltaFile.addFlow(FlowDefinition.builder().name("dataSource").type(FlowType.TRANSFORM).build(), new DeltaFileFlow(), OffsetDateTime.now(testClock));
+
+        flow.addAction("parentAction1", null, ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+        flow.addAction("childAction", null, ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+
+        PluginCoordinates pluginCoords = new PluginCoordinates("org.test", "plugin", "1.0.0");
+        TransformFlow flowConfig = new TransformFlow();
+        flowConfig.setName("dataSource");
+        flowConfig.setTransformActions(mockActions("parentAction1", "splitAction", "childAction"));
+        flowConfig.setSourcePlugin(pluginCoords);
+
+        List<UUID> dids = List.of(uuid);
+        when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
+        when(pluginService.isPluginReady(pluginCoords)).thenReturn(false);
+
+        List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
+
+        assertEquals(1, results.size());
+        assertTrue(results.getFirst().getSuccess());
+
+        // Should NOT advance state machine when plugin not ready - child should be queued
+        verifyNoInteractions(stateMachine);
+
+        // Verify the child was saved with PAUSED state
+        verify(deltaFileCacheService).save(deltaFileCaptor.capture());
+        DeltaFile child = deltaFileCaptor.getValue();
+        assertEquals(DeltaFileFlowState.PAUSED, child.firstFlow().getState());
+    }
+
+    @Test
     void testHandleMissingFlow() {
         UUID did = UUID.randomUUID();
         DeltaFile deltaFile = utilService.buildDeltaFile(did);
@@ -1383,23 +1459,21 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = fullFlowExemplarService.postTransformDeltaFile(new UUID(0, 0));
         deltaFile.setPaused(true);
         DeltaFileFlow transform = deltaFile.getFlow(1);
-        transform.setState(DeltaFileFlowState.PAUSED);
+        // Transform flow is IN_FLIGHT after bulk update (it was PAUSED and matches criteria)
+        transform.setState(DeltaFileFlowState.IN_FLIGHT);
         DeltaFileFlow dataSink = deltaFile.lastFlow();
+        // DataSink flow stays PAUSED because egress is disabled (excludeEgressActions = true)
         dataSink.setState(DeltaFileFlowState.PAUSED);
 
-        Mockito.when(restDataSourceService.getPausedFlows()).thenReturn(List.of());
-        Mockito.when(timedDataSourceService.getPausedFlows()).thenReturn(List.of());
-        Mockito.when(transformFlowService.getPausedFlows()).thenReturn(List.of());
-        Mockito.when(dataSinkService.getPausedFlows()).thenReturn(List.of());
-        Mockito.when(deltaFileRepo.findPausedForRequeue(Set.of(), Set.of(), Set.of(), Set.of(), true, 5000))
-                .thenReturn(List.of(deltaFile));
-
-        // Mock flow definitions for canRequeuePaused checks - both flows are valid and plugin-ready
-        TransformFlow transformFlow = FlowBuilders.buildTransformFlow("sampleTransform", FlowState.RUNNING, Set.of());
-        Mockito.when(flowCacheService.getFlow(FlowType.TRANSFORM, "sampleTransform")).thenReturn(transformFlow);
-        DataSink dataSinkFlow = FlowBuilders.buildDataSink("sampleEgress", FlowState.RUNNING, Set.of());
-        Mockito.when(flowCacheService.getFlow(FlowType.DATA_SINK, "sampleEgress")).thenReturn(dataSinkFlow);
-        Mockito.when(pluginService.isPluginReady(Mockito.any())).thenReturn(true);
+        // Mock flow services to return no flows to skip (all flows are ready to unpause)
+        Mockito.when(restDataSourceService.getAll()).thenReturn(List.of());
+        Mockito.when(timedDataSourceService.getAll()).thenReturn(List.of());
+        Mockito.when(transformFlowService.getAll()).thenReturn(List.of());
+        Mockito.when(dataSinkService.getAll()).thenReturn(List.of());
+        // Mock the new 2-pass approach: bulk update returns DIDs, then cache fetch returns DeltaFiles
+        Mockito.when(deltaFileRepo.updatePausedForRequeue(Set.of(), Set.of(), Set.of(), Set.of(), true, 500, OffsetDateTime.now(testClock)))
+                .thenReturn(List.of(deltaFile.getDid()));
+        Mockito.when(deltaFileCacheService.get(List.of(deltaFile.getDid()))).thenReturn(List.of(deltaFile));
 
         mockDeltaFiPropertiesService.getDeltaFiProperties().setEgressEnabled(false);
         deltaFilesService.requeuePausedFlows();

@@ -45,6 +45,10 @@ public abstract class DeltaFileCacheService {
 
     public abstract void remove(UUID did);
 
+    public void removeAll(Collection<UUID> dids) {
+        dids.forEach(this::remove);
+    }
+
     public abstract void removeOlderThan(Duration duration);
 
     public abstract void save(DeltaFile deltaFile);

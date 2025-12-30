@@ -67,6 +67,23 @@ public interface DeltaFileRepoCustom {
                                          Set<String> skipTransforms, Set<String> skipDataSinks, boolean excludeEgressActions, int maxFiles);
 
     /**
+     * Bulk update paused flows to IN_FLIGHT state and increment requeue count.
+     * This is more efficient than loading entities, modifying them, and saving.
+     *
+     * @param skipRestDataSources Set of rest data sources to not requeue
+     * @param skipTimedDataSource Set of timed data sources to not requeue
+     * @param skipTransforms Set of transforms to not requeue
+     * @param skipDataSinks Set of data sinks to not requeue
+     * @param excludeEgressActions when true exclude egress actions from the results
+     * @param maxFiles limit the update to this many files
+     * @param modified timestamp to set on modified fields
+     * @return list of DIDs that were updated
+     */
+    List<UUID> updatePausedForRequeue(Set<String> skipRestDataSources, Set<String> skipTimedDataSource,
+                                      Set<String> skipTransforms, Set<String> skipDataSinks, boolean excludeEgressActions,
+                                      int maxFiles, OffsetDateTime modified);
+
+    /**
      * Find DeltaFiles that are ready for an automatic resume after encountering an error.
      *
      * @param maxReadyTime upper limit for finding matching DeltaFiles

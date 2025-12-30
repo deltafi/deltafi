@@ -77,6 +77,7 @@ public class DeltaFilesService {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     public static final String REPLAY_ACTION_NAME = "Replay";
     public static final int REQUEUE_BATCH_SIZE = 5000;
+    private static final int UNPAUSE_BATCH_SIZE = 500;
 
     static {
         SimpleModule simpleModule = new SimpleModule().addSerializer(OffsetDateTime.class, new JsonSerializer<>() {
@@ -1197,7 +1198,7 @@ public class DeltaFilesService {
 
                             DeltaFileFlow flow = DeltaFileFlow.builder()
                                     .flowDefinition(firstFlow.getFlowDefinition())
-                                    .state(flowConfig.isPaused() ? DeltaFileFlowState.PAUSED : DeltaFileFlowState.COMPLETE)
+                                    .state(shouldQueue(flowConfig) ? DeltaFileFlowState.PAUSED : DeltaFileFlowState.COMPLETE)
                                     .created(now)
                                     .modified(now)
                                     .testMode(firstFlow.getType().isDataSource() ? flowConfig.isTestMode() : firstFlow.isTestMode())
@@ -1972,41 +1973,61 @@ public class DeltaFilesService {
 
     public void requeuePausedFlows() {
         Integer numFound = null;
-        while (numFound == null || numFound == REQUEUE_BATCH_SIZE) {
-            Map<FlowType, Set<String>> pausedFlows = Map.of(
-                    FlowType.REST_DATA_SOURCE, restDataSourceService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet()),
-                    FlowType.TIMED_DATA_SOURCE, timedDataSourceService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet()),
-                    FlowType.TRANSFORM, transformFlowService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet()),
-                    FlowType.DATA_SINK, dataSinkService.getPausedFlows().stream().map(Flow::getName).collect(Collectors.toSet())
-            );
+        while (numFound == null || numFound == UNPAUSE_BATCH_SIZE) {
+            // Collect flows to skip: paused, invalid, or plugin not ready
+            Set<String> skipRestDataSources = restDataSourceService.getAll().stream()
+                    .filter(this::shouldQueue).map(Flow::getName).collect(Collectors.toSet());
+            Set<String> skipTimedDataSources = timedDataSourceService.getAll().stream()
+                    .filter(this::shouldQueue).map(Flow::getName).collect(Collectors.toSet());
+            Set<String> skipTransforms = transformFlowService.getAll().stream()
+                    .filter(this::shouldQueue).map(Flow::getName).collect(Collectors.toSet());
+            Set<String> skipDataSinks = dataSinkService.getAll().stream()
+                    .filter(this::shouldQueue).map(Flow::getName).collect(Collectors.toSet());
 
             OffsetDateTime modified = OffsetDateTime.now(clock);
-            List<DeltaFile> filesToRequeue = deltaFileRepo.findPausedForRequeue(
-                    pausedFlows.get(FlowType.REST_DATA_SOURCE),
-                    pausedFlows.get(FlowType.TIMED_DATA_SOURCE),
-                    pausedFlows.get(FlowType.TRANSFORM),
-                    pausedFlows.get(FlowType.DATA_SINK),
-                    isEgressDisabled(),
-                    REQUEUE_BATCH_SIZE);
-            numFound = filesToRequeue.size();
 
+            // Pass 1: Bulk update in DB - sets flow state to IN_FLIGHT, increments requeue_count
+            List<UUID> updatedDids = deltaFileRepo.updatePausedForRequeue(
+                    skipRestDataSources,
+                    skipTimedDataSources,
+                    skipTransforms,
+                    skipDataSinks,
+                    isEgressDisabled(),
+                    UNPAUSE_BATCH_SIZE,
+                    modified);
+            numFound = updatedDids.size();
+
+            if (updatedDids.isEmpty()) {
+                continue;
+            }
+
+            // Pass 2: Remove stale entries from cache, then fetch fresh from DB via cache
+            deltaFileCacheService.removeAll(updatedDids);
+            List<DeltaFile> deltaFiles = deltaFileCacheService.get(updatedDids);
+
+            // Build inputs for flows that were updated (now IN_FLIGHT, were PAUSED)
+            // The bulk update only changed flows from PAUSED to IN_FLIGHT, so any
+            // IN_FLIGHT flow in these files was just unpaused and needs to advance
             List<StateMachineInput> inputs = new ArrayList<>();
-            filesToRequeue.forEach(deltaFile -> {
-                deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
-                deltaFile.setModified(modified);
-                inputs.addAll(deltaFile.getFlows().stream()
-                        .filter(f -> canRequeuePaused(f, pausedFlows))
-                        .map(f -> {
-                            f.setState(DeltaFileFlowState.IN_FLIGHT);
-                            return new StateMachineInput(deltaFile, f);
-                        })
-                        .toList());
-            });
+            for (DeltaFile deltaFile : deltaFiles) {
+                for (DeltaFileFlow flow : deltaFile.getFlows()) {
+                    if (flow.getState() == DeltaFileFlowState.IN_FLIGHT) {
+                        inputs.add(new StateMachineInput(deltaFile, flow));
+                    }
+                }
+            }
 
             if (!inputs.isEmpty()) {
                 log.info("Unpausing {} DeltaFile flows", inputs.size());
                 List<WrappedActionInput> actionInputs = stateMachine.advance(inputs);
-                deltaFileRepo.saveAll(filesToRequeue);
+
+                // Save directly to DB (bypass cache) so any worker can process results
+                deltaFileRepo.saveAll(deltaFiles);
+                // Clear cache entries to avoid stale data
+                deltaFileCacheService.removeAll(updatedDids);
+                // Clear returnAddress so results distribute across all workers
+                actionInputs.forEach(input -> input.setReturnAddress(null));
+
                 enqueueActions(actionInputs, false);
             }
         }
@@ -2025,36 +2046,6 @@ public class DeltaFilesService {
                 || !pluginService.isPluginReady(flow.getSourcePlugin());
     }
 
-    /**
-     * Determines if a paused DeltaFileFlow can be requeued for processing.
-     * A flow can be requeued when:
-     * - The flow is in PAUSED state
-     * - The flow definition is no longer paused
-     * - The flow definition is valid
-     * - The flow's plugin is ready
-     * - Egress is not disabled for this flow
-     */
-    private boolean canRequeuePaused(DeltaFileFlow deltaFileFlow, Map<FlowType, Set<String>> pausedFlows) {
-        if (deltaFileFlow.getState() != DeltaFileFlowState.PAUSED) {
-            return false;
-        }
-        if (pausedFlows.get(deltaFileFlow.getType()).contains(deltaFileFlow.getName())) {
-            return false;
-        }
-        if (!isNotSkipEgress(deltaFileFlow)) {
-            return false;
-        }
-
-        // Check flow definition state
-        Flow flowDef = flowCacheService.getFlow(deltaFileFlow.getType(), deltaFileFlow.getName());
-        if (flowDef == null) {
-            return false; // Flow no longer exists
-        }
-        if (flowDef.isInvalid()) {
-            return false; // Flow has configuration errors
-        }
-        return pluginService.isPluginReady(flowDef.getSourcePlugin()); // Plugin not ready
-    }
 
     private WrappedActionInput requeueActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action) {
         ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), flow.getType(), action.getName());

@@ -368,6 +368,54 @@ class PublisherServiceTest {
         Assertions.assertThat(nextFlow).isEqualTo(deltaFile.lastFlow());
     }
 
+    @Test
+    void subscriberQueuesWhenPluginNotReady() {
+        DeltaFile deltaFile = deltaFile();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+
+        String condition = "metadata != null";
+        PluginCoordinates pluginCoords = new PluginCoordinates("org.test", "plugin", "1.0.0");
+        TransformFlow subscriber = flow(null, Set.of(rule("topic", condition)));
+        subscriber.setSourcePlugin(pluginCoords);
+
+        Mockito.when(mockSubscriberService.subscriberForTopic("topic")).thenReturn(Set.of(subscriber));
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
+        Mockito.when(pluginService.isPluginReady(pluginCoords)).thenReturn(false);
+
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(List.of(rule("topic", condition)));
+        Publisher publisher = flow(publishRules, Set.of());
+
+        Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
+
+        Assertions.assertThat(subscribers).hasSize(1);
+        DeltaFileFlow nextFlow = subscribers.iterator().next();
+        Assertions.assertThat(nextFlow.getState()).isEqualTo(DeltaFileFlowState.PAUSED);
+    }
+
+    @Test
+    void subscriberQueuesWhenFlowIsInvalid() {
+        DeltaFile deltaFile = deltaFile();
+        DeltaFileFlow deltaFileFlow = deltaFile.firstFlow();
+
+        String condition = "metadata != null";
+        TransformFlow subscriber = flow(null, Set.of(rule("topic", condition)));
+        subscriber.getFlowStatus().setValid(false);
+
+        Mockito.when(mockSubscriberService.subscriberForTopic("topic")).thenReturn(Set.of(subscriber));
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
+
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(List.of(rule("topic", condition)));
+        Publisher publisher = flow(publishRules, Set.of());
+
+        Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
+
+        Assertions.assertThat(subscribers).hasSize(1);
+        DeltaFileFlow nextFlow = subscribers.iterator().next();
+        Assertions.assertThat(nextFlow.getState()).isEqualTo(DeltaFileFlowState.PAUSED);
+    }
+
     void  mockRuleEval(String condition, DeltaFileFlow deltaFileFlow, boolean result) {
         Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(result);
     }

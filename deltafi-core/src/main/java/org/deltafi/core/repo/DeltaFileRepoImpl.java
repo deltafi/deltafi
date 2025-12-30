@@ -195,6 +195,86 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return fetchByDidIn(dids);
     }
 
+    @Override
+    @Transactional
+    public List<UUID> updatePausedForRequeue(Set<String> skipRestDataSources, Set<String> skipTimedDataSource,
+                                             Set<String> skipTransforms, Set<String> skipDataSinks,
+                                             boolean excludeEgressActions, int maxFiles, OffsetDateTime modified) {
+        // First, find the DIDs to update using the same criteria as findPausedForRequeue
+        String findDidsQuery = """
+                SELECT DISTINCT dff.delta_file_id
+                FROM delta_file_flows dff
+                JOIN delta_files df ON dff.delta_file_id = df.did AND df.paused = TRUE
+                JOIN flow_definitions fd ON fd.id = dff.flow_definition_id
+                WHERE dff.state = 'PAUSED'
+                AND (
+                   (fd.type = 'REST_DATA_SOURCE' AND (:skipRestDataSources IS NULL OR fd.name NOT IN (:skipRestDataSources)))
+                   OR
+                   (fd.type = 'TIMED_DATA_SOURCE' AND (:skipTimedDataSources IS NULL OR fd.name NOT IN (:skipTimedDataSources)))
+                   OR
+                   (fd.type = 'TRANSFORM' AND (:skipTransforms IS NULL OR fd.name NOT IN (:skipTransforms)))
+                   OR
+                   (fd.type = 'DATA_SINK' AND :excludeEgressActions = FALSE AND (:skipDataSinks IS NULL OR fd.name NOT IN (:skipDataSinks)))
+                 )
+                 LIMIT :limit
+            """;
+
+        Query findQuery = entityManager.createNativeQuery(findDidsQuery, UUID.class)
+                .setParameter("skipRestDataSources", skipRestDataSources)
+                .setParameter("skipTimedDataSources", skipTimedDataSource)
+                .setParameter("skipTransforms", skipTransforms)
+                .setParameter("skipDataSinks", skipDataSinks)
+                .setParameter("excludeEgressActions", excludeEgressActions)
+                .setParameter(LIMIT, maxFiles);
+
+        @SuppressWarnings("unchecked")
+        List<UUID> dids = findQuery.getResultList();
+
+        if (dids.isEmpty()) {
+            return dids;
+        }
+
+        // Update delta_files: increment requeue_count, set modified
+        String updateDeltaFiles = """
+                UPDATE delta_files
+                SET requeue_count = requeue_count + 1, modified = :modified
+                WHERE did IN (:dids)
+            """;
+        entityManager.createNativeQuery(updateDeltaFiles)
+                .setParameter("modified", modified)
+                .setParameter("dids", dids)
+                .executeUpdate();
+
+        // Update delta_file_flows: set state to IN_FLIGHT for paused flows that match criteria
+        String updateFlows = """
+                UPDATE delta_file_flows dff
+                SET state = 'IN_FLIGHT'
+                FROM flow_definitions fd
+                WHERE dff.flow_definition_id = fd.id
+                AND dff.delta_file_id IN (:dids)
+                AND dff.state = 'PAUSED'
+                AND (
+                   (fd.type = 'REST_DATA_SOURCE' AND (:skipRestDataSources IS NULL OR fd.name NOT IN (:skipRestDataSources)))
+                   OR
+                   (fd.type = 'TIMED_DATA_SOURCE' AND (:skipTimedDataSources IS NULL OR fd.name NOT IN (:skipTimedDataSources)))
+                   OR
+                   (fd.type = 'TRANSFORM' AND (:skipTransforms IS NULL OR fd.name NOT IN (:skipTransforms)))
+                   OR
+                   (fd.type = 'DATA_SINK' AND :excludeEgressActions = FALSE AND (:skipDataSinks IS NULL OR fd.name NOT IN (:skipDataSinks)))
+                )
+            """;
+        entityManager.createNativeQuery(updateFlows)
+                .setParameter("dids", dids)
+                .setParameter("skipRestDataSources", skipRestDataSources)
+                .setParameter("skipTimedDataSources", skipTimedDataSource)
+                .setParameter("skipTransforms", skipTransforms)
+                .setParameter("skipDataSinks", skipDataSinks)
+                .setParameter("excludeEgressActions", excludeEgressActions)
+                .executeUpdate();
+
+        return dids;
+    }
+
     private static final String RESUME_READY = """
             SELECT DISTINCT df.did
             FROM delta_file_flows dff

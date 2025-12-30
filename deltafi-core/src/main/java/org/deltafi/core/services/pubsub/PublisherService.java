@@ -139,7 +139,8 @@ public class PublisherService {
      * Determines if data for this subscriber should be queued instead of processed immediately.
      * Data is queued when:
      * - The subscriber is explicitly paused by the user
-     * - The subscriber is invalid (has configuration errors, including plugin not ready)
+     * - The subscriber is invalid (has configuration errors)
+     * - The subscriber's plugin is not ready
      */
     private boolean shouldQueue(Subscriber subscriber) {
         if (subscriber.isPaused()) {
@@ -147,7 +148,7 @@ public class PublisherService {
         }
         // All Subscriber implementations (TransformFlow, DataSink) extend Flow
         if (subscriber instanceof Flow flow) {
-            return flow.isInvalid();
+            return flow.isInvalid() || !pluginService.isPluginReady(flow.getSourcePlugin());
         }
         return false;
     }
