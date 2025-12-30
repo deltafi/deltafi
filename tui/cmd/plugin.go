@@ -211,6 +211,20 @@ to be uninstalled.
 Examples:
   deltafi plugin uninstall my-plugin
   deltafi plugin uninstall plugin1 plugin2`,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		resp, err := graphql.GetPlugins()
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		var values []string
+		for _, plugin := range resp.Plugins {
+			if plugin.DisplayName != "System Plugin" && plugin.DisplayName != "deltafi-core-actions" && !slices.Contains(args, plugin.DisplayName) {
+				values = append(values, plugin.DisplayName)
+			}
+		}
+		return escapedCompletions(values, toComplete)
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 
@@ -237,7 +251,11 @@ Examples:
 			displayName := plugin.DisplayName
 			allPlugins = append(allPlugins, displayName)
 			if slices.Contains(args, displayName) {
-				// Attempt to uninstall permanent plugin
+				if displayName == "System Plugin" || displayName == "deltafi-core-actions" {
+					fmt.Println(styles.RenderErrorString(fmt.Sprintf("(%s) %s", displayName, styles.ErrorStyle.Render("Cannot uninstall built-in plugin"))))
+					errored = true
+					continue
+				}
 				if plugin.PluginCoordinates.GroupId == "" || plugin.PluginCoordinates.ArtifactId == "" || plugin.PluginCoordinates.Version == "" {
 					fmt.Println(styles.RenderErrorString(fmt.Sprintf("(%s) %s", displayName, styles.ErrorStyle.Render("Cannot determine plugin coordinates"))))
 					errored = true
