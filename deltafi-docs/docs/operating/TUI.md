@@ -837,8 +837,10 @@ Manage plugins in DeltaFi.
   ```
 - `install [images...]`: Install one or more plugins
   ```bash
-  deltafi plugin install <image> [--secret|-s <secret>]
+  deltafi plugin install <image> [--secret|-s <secret>] [--wait|-w]
   ```
+  - `--secret, -s`: Image pull secret for private image repositories (Kubernetes only)
+  - `--wait, -w`: Wait for plugin installation to complete before returning. Exits with code 1 if installation fails.
 - `uninstall [names...]`: Uninstall one or more plugins
   ```bash
   deltafi plugin uninstall <name>

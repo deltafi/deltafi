@@ -100,6 +100,18 @@ deltafi plugin list
 
 ### Managing Plugins via CLI
 
+**Install a plugin**:
+```bash
+deltafi plugin install my-plugin:latest
+```
+
+**Install and wait for completion** (blocks until INSTALLED or FAILED):
+```bash
+deltafi plugin install my-plugin:latest --wait
+```
+
+The `--wait` flag is useful in scripts and CI/CD pipelines where you need to ensure the plugin is fully installed before proceeding. The command exits with code 1 if installation fails.
+
 **Disable a plugin** (stops container but preserves configuration):
 ```bash
 deltafi plugin disable <plugin-name>

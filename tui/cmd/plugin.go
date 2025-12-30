@@ -23,6 +23,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -167,7 +168,9 @@ Examples:
 			return fmt.Errorf("invalid arguments: %s", styles.ErrorStyle.Render("Please specify an image to install"))
 		}
 
+		wait := cmd.Flags().Lookup("wait").Value.String() == "true"
 		var errored bool = false
+		var queued []string
 
 		for _, image := range args {
 
@@ -187,6 +190,18 @@ Examples:
 					errored = true
 				} else {
 					fmt.Println(styles.OK(image + " queued for installation"))
+					if wait {
+						queued = append(queued, image)
+					}
+				}
+			}
+		}
+
+		if wait && len(queued) > 0 {
+			fmt.Println(styles.InfoStyle.Render("Waiting for plugins to install..."))
+			for _, image := range queued {
+				if !waitForPluginInstall(image) {
+					errored = true
 				}
 			}
 		}
@@ -197,6 +212,54 @@ Examples:
 
 		return nil
 	},
+}
+
+func waitForPluginInstall(image string) bool {
+	imageName, imageTag := parseImageRef(image)
+
+	for {
+		time.Sleep(1 * time.Second)
+
+		resp, err := graphql.GetPlugins()
+		if err != nil {
+			fmt.Println(styles.RenderError(err))
+			return false
+		}
+
+		for _, plugin := range resp.Plugins {
+			if plugin.ImageName == nil || *plugin.ImageName != imageName {
+				continue
+			}
+			if imageTag != "" && (plugin.ImageTag == nil || *plugin.ImageTag != imageTag) {
+				continue
+			}
+
+			switch plugin.InstallState {
+			case graphql.PluginStateInstalled:
+				fmt.Println(styles.OK(image + " installed successfully"))
+				return true
+			case graphql.PluginStateFailed:
+				if plugin.InstallError != nil && *plugin.InstallError != "" {
+					fmt.Println(styles.RenderErrorString(*plugin.InstallError))
+				}
+				fmt.Println(styles.FAIL(image + " installation failed"))
+				return false
+			}
+		}
+	}
+}
+
+func parseImageRef(image string) (name string, tag string) {
+	lastColon := strings.LastIndex(image, ":")
+	if lastColon == -1 {
+		return image, ""
+	}
+	// Check if colon is part of a port (e.g., registry:5000/image)
+	afterColon := image[lastColon+1:]
+	if strings.Contains(afterColon, "/") {
+		return image, ""
+	}
+	return image[:lastColon], afterColon
 }
 
 var uninstallCmd = &cobra.Command{
@@ -705,6 +768,7 @@ func init() {
 	listCmd.Flags().BoolP("plain", "p", false, "Plain output, omitting table borders")
 
 	installCmd.Flags().StringP("secret", "s", "", "Image pull secret for private image repositories(optional and Kubernetes only)")
+	installCmd.Flags().BoolP("wait", "w", false, "Wait for plugin installation to complete")
 	describeCmd.Flags().BoolP("verbose", "v", false, "Show verbose output with more details")
 	describeCmd.Flags().BoolP("action", "a", false, "Show details for a specific action")
 }
