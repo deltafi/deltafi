@@ -69,6 +69,7 @@ class ErrorResult(Result):
         super().__init__('error', 'ERROR', context)
         self.error_cause = error_cause
         self.error_context = error_context
+        self.log_error(self.error_cause + '\n' + self.error_context)
         self.annotations = {}
 
     def annotate(self, key: str, value: str):
@@ -76,7 +77,6 @@ class ErrorResult(Result):
         return self
 
     def response(self):
-        self.log_error(self.error_cause + '\n' + self.error_context)
         return {
             'cause': self.error_cause,
             'context': self.error_context,
