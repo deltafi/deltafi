@@ -48,6 +48,8 @@ type LookupResults {
   offset: Int
   count: Int
   totalCount: Int
+  created: DateTime
+  modified: DateTime
   rows: [[ColumnValue!]!]!
 }
 

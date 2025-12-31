@@ -48,6 +48,8 @@ public class LookupTable {
     private boolean pullThrough = false;
 
     private String refreshDuration;
+    private OffsetDateTime created;
+    private OffsetDateTime modified;
     private OffsetDateTime lastRefresh;
 
     private int totalRows;

@@ -216,6 +216,8 @@ public class LookupTableClient {
                         .offset()
                         .count()
                         .totalCount()
+                        .created()
+                        .modified()
                         .rows()
                         .column()
                         .value()
@@ -228,6 +230,8 @@ public class LookupTableClient {
                 org.deltafi.actionkit.generated.types.LookupResults.class);
 
         return new LookupResults(lookupResults.getTotalCount(),
+                lookupResults.getCreated(),
+                lookupResults.getModified(),
                 lookupResults.getRows().stream()
                         .map(row -> {
                             Map<String, String> map = new HashMap<>();

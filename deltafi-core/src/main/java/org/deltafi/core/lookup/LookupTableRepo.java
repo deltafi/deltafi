@@ -18,18 +18,16 @@
 package org.deltafi.core.lookup;
 
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.SortDirection;
+import org.deltafi.core.generated.types.LookupResults;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 import javax.annotation.Nullable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class LookupTableRepo {
     @Getter
@@ -48,7 +46,22 @@ public class LookupTableRepo {
                 ", PRIMARY KEY (" + String.join(", ", lookupTable.getKeyColumns()) + ")" +
                 ");";
 
-        return jdbcClient.sql(createTable).update();
+        int rtn = jdbcClient.sql(createTable).update();
+        addModifiedTrigger();
+        return rtn;
+    }
+
+    public void addModifiedTrigger() {
+        String triggerName = lookupTable.getName() + "_notify_parent_modified";
+
+        String sql = """
+            CREATE TRIGGER %s
+                AFTER INSERT OR UPDATE OR DELETE ON %s
+                FOR EACH STATEMENT
+                EXECUTE FUNCTION update_lookup_table_modified_on_child_change()
+            """.formatted(quoteIdentifier(triggerName), quoteIdentifier(lookupTable.getName()));
+
+        jdbcClient.sql(sql).update();
     }
 
     public int upsert(Map<String, String> rowMap, OffsetDateTime lastUpdated) {
@@ -87,72 +100,99 @@ public class LookupTableRepo {
                 .update();
     }
 
-    public Pair<Integer, List<Map<String, String>>> find(@Nullable Map<String, Set<String>> matchingColumnValues,
-            @Nullable List<String> resultColumns, @Nullable String sortColumn, @Nullable SortDirection sortDirection,
-            @Nullable Integer offset, @Nullable Integer limit) {
-        StringBuilder sql = new StringBuilder();
+    public LookupResults find(
+            @Nullable Map<String, Set<String>> matchingColumnValues,
+            @Nullable List<String> resultColumns,
+            @Nullable String sortColumn,
+            @Nullable SortDirection sortDirection,
+            @Nullable Integer offset,
+            @Nullable Integer limit) {
 
-        sql.append("SELECT ");
+        String tableName = lookupTable.getName();
+        validateIdentifier(tableName);
 
-        sql.append(((resultColumns == null) || resultColumns.isEmpty()) ? "*" :
-                (String.join(", ", resultColumns)) + ", last_updated");
+        List<String> selectColumns = buildSelectColumns(resultColumns);
+        String whereClause = buildWhereClause(matchingColumnValues);
+        String orderByClause = buildOrderByClause(sortColumn, sortDirection);
 
-        sql.append(", COUNT(*) OVER() AS total_matches");
+        String sql = """
+        SELECT %s,
+               lt.created AS table_created,
+               lt.modified AS table_modified,
+               COUNT(*) OVER() AS total_matches
+        FROM %s t
+        JOIN lookup_tables lt ON lt.name = :tableName
+        %s
+        %s
+        OFFSET :offset
+        LIMIT :limit
+        """.formatted(
+                String.join(", ", selectColumns.stream().map(c -> "t." + c).toList()),
+                quoteIdentifier(tableName),
+                whereClause,
+                orderByClause
+        );
 
-        sql.append(" FROM ").append(lookupTable.getName());
+        int effectiveOffset = offset != null ? offset : 0;
+        int effectiveLimit = limit != null ? limit : Integer.MAX_VALUE;
 
-        if (matchingColumnValues != null) {
-            List<String> matchClauses = matchingColumnValues.entrySet().stream()
-                    .map(entry -> String.format("%s LIKE ANY ('{%s}')", entry.getKey(),
-                            String.join(", ", entry.getValue())))
-                    .toList();
-            sql.append(" WHERE ").append(String.join(" AND ", matchClauses));
-        }
-
-        if (sortColumn != null) {
-            sql.append(" ORDER BY ").append(sortColumn).append(" ");
-            sql.append(sortDirection != null ? sortDirection : SortDirection.ASC);
-        }
-
-        if (offset != null) {
-            sql.append(" OFFSET ").append(offset);
-        }
-
-        if (limit != null) {
-            sql.append(" LIMIT ").append(limit);
-        }
-
-        sql.append(";");
-
-        List<Pair<Integer, Map<String, String>>> rows = jdbcClient.sql(sql.toString())
-                .query((resultSet, rowNum) -> mapRow(resultColumns, resultSet))
-                .list();
-
-        return Pair.of(rows.isEmpty() ? 0 : rows.getFirst().getLeft(), rows.stream().map(Pair::getRight).toList());
-    }
-
-    private Pair<Integer, Map<String, String>> mapRow(List<String> columns, ResultSet resultSet) {
-        Map<String, String> rowMap = new HashMap<>();
-        if (columns == null) {
-            columns = lookupTable.getColumns();
-        }
-        for (String column : columns) {
-            try {
-                rowMap.put(column, resultSet.getString(column));
-            } catch (SQLException e) {
-                throw new RuntimeException("Unable to map column", e);
-            }
-        }
-        try {
-            rowMap.put("last_updated",
-                    resultSet.getTimestamp("last_updated").toLocalDateTime().atOffset(ZoneOffset.UTC).toString());
-            return Pair.of(resultSet.getInt("total_matches"), rowMap);
-        } catch (SQLException e) {
-            return Pair.of(-1, rowMap);
-        }
+        return jdbcClient.sql(sql)
+                .param("tableName", tableName)
+                .param("offset", effectiveOffset)
+                .param("limit", effectiveLimit)
+                .query(new LookupResultsExtractor(resultColumns, effectiveOffset));
     }
 
     public int count() {
         return jdbcClient.sql("SELECT COUNT(*) FROM " + lookupTable.getName() + ";").query(Integer.class).single();
+    }
+
+    private List<String> buildSelectColumns(@Nullable List<String> resultColumns) {
+        if (resultColumns == null || resultColumns.isEmpty()) {
+            return List.of("*");
+        }
+        resultColumns.forEach(this::validateIdentifier);
+        return resultColumns;
+    }
+
+    private String buildWhereClause(@Nullable Map<String, Set<String>> matchingColumnValues) {
+        if (matchingColumnValues == null || matchingColumnValues.isEmpty()) {
+            return "";
+        }
+
+        List<String> clauses = matchingColumnValues.entrySet().stream()
+                .map(entry -> {
+                    validateIdentifier(entry.getKey());
+                    String patterns = entry.getValue().stream()
+                            .map(v -> "'" + v.replace("'", "''") + "'")
+                            .collect(Collectors.joining(", "));
+                    return "t.%s LIKE ANY (ARRAY[%s])".formatted(entry.getKey(), patterns);
+                })
+                .toList();
+
+        return "WHERE " + String.join(" AND ", clauses);
+    }
+
+    private String buildOrderByClause(@Nullable String sortColumn, @Nullable SortDirection sortDirection) {
+        if (sortColumn == null) {
+            return "";
+        }
+        validateIdentifier(sortColumn);
+        String direction = sortDirection != null ? sortDirection.name() : "ASC";
+        return "ORDER BY t.%s %s".formatted(sortColumn, direction);
+    }
+
+    private void validateIdentifier(String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            throw new IllegalArgumentException("Identifier cannot be null or blank");
+        }
+        if (!identifier.matches("^[a-zA-Z_]\\w*$")) {
+            throw new IllegalArgumentException("Invalid identifier: " + identifier);
+        }
+    }
+
+    private String quoteIdentifier(String identifier) {
+        // PostgreSQL identifier quoting - doubles any internal quotes
+        return "\"" + identifier.replace("\"", "\"\"") + "\"";
     }
 }

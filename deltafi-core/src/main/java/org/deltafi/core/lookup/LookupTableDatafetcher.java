@@ -20,7 +20,6 @@ package org.deltafi.core.lookup;
 import com.netflix.graphql.dgs.*;
 import com.netflix.graphql.types.errors.ErrorType;
 import graphql.GraphQLError;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.SortDirection;
 import org.deltafi.core.generated.types.*;
@@ -122,14 +121,8 @@ public class LookupTableDatafetcher {
             @InputArgument String sortColumn, @InputArgument SortDirection sortDirection,
             @InputArgument Integer offset, @InputArgument Integer limit) throws LookupTableServiceException {
         verifyEnabled();
-        Pair<Integer, List<Map<String, String>>> results = lookupTableService.lookup(lookupTableName,
+        return lookupTableService.lookup(lookupTableName,
                 fromGraphQlMatching(matchingColumnValues), resultColumns, sortColumn, sortDirection, offset, limit);
-        return LookupResults.newBuilder()
-                .rows(toGraphQl(results.getRight()))
-                .totalCount(results.getLeft())
-                .offset(offset)
-                .count(limit)
-                .build();
     }
 
     @Nullable
@@ -137,16 +130,6 @@ public class LookupTableDatafetcher {
         return matchingColumnValueInputs == null ? null : matchingColumnValueInputs.stream()
                 .collect(Collectors.toMap(MatchingColumnValueInput::getColumn,
                         columnValueInput -> new HashSet<>(columnValueInput.getValue())));
-    }
-
-    private List<List<ColumnValue>> toGraphQl(List<Map<String, String>> rowsMap) {
-        return rowsMap.stream()
-                .map(rowMap -> {
-                    List<ColumnValue> columnValues = new ArrayList<>();
-                    rowMap.forEach((key, value) -> columnValues.add(new ColumnValue(key, value)));
-                    return columnValues;
-                })
-                .toList();
     }
 
     @DgsMutation

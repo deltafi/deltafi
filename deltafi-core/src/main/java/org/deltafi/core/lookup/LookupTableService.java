@@ -22,15 +22,17 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.lookup.*;
 import org.deltafi.common.types.SortDirection;
 import org.deltafi.common.types.Variable;
+import org.deltafi.core.generated.types.LookupResults;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.PluginEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -69,31 +71,80 @@ public class LookupTableService implements PluginCleaner {
 
     public List<String> validateLookupTableCreation(LookupTable lookupTable) {
         List<String> errors = new ArrayList<>();
+        errors.addAll(PostgresIdentifierValidator.validateTableName(lookupTable.getName()));
+        errors.addAll(validateDuration(lookupTable));
+        errors.addAll(validateColumns(lookupTable));
+        loadLookupTables();
+        errors.addAll(isDuplicate(lookupTable));
+        return errors;
+    }
 
+    private List<String> validateColumns(LookupTable lookupTable) {
+        List<String> errors = new ArrayList<>();
+        if (lookupTable.getColumns() == null) {
+            lookupTable.setColumns(new ArrayList<>());
+        }
+        if (lookupTable.getKeyColumns() == null) {
+            lookupTable.setKeyColumns(new ArrayList<>());
+        }
+
+        errors.addAll(columnErrors(lookupTable.getKeyColumns(), lookupTable.getName(), "key columns"));
+        errors.addAll(columnErrors(lookupTable.getColumns(), lookupTable.getName(), "columns"));
+
+        // make sure all the columns are valid identifiers
+        lookupTable.getColumns().stream()
+                .map(PostgresIdentifierValidator::validateColumnName)
+                .forEach(errors::addAll);
+
+        Set<String> columns = new HashSet<>(lookupTable.getColumns());
+        Set<String> keys = new HashSet<>(lookupTable.getKeyColumns());
+        if (!columns.containsAll(keys)) {
+            keys.removeAll(columns);
+            errors.add("Lookup table %s has keys (%s) which are not in the column list".formatted(lookupTable.getName(), String.join(", ", keys)));
+        }
+        return errors;
+    }
+
+    private List<String> validateDuration(LookupTable lookupTable) {
         if (lookupTable.getRefreshDuration() != null) {
             try {
                 Duration.parse(lookupTable.getRefreshDuration());
-            } catch (DateTimeParseException e) {
-                errors.add("Lookup table %s has an invalid refresh duration: %s".formatted(lookupTable.getName(),
+            } catch (DateTimeParseException p) {
+                return List.of("Lookup table %s has an invalid refresh duration: %s".formatted(lookupTable.getName(),
                         lookupTable.getRefreshDuration()));
             }
         }
+        return Collections.emptyList();
+    }
 
-        loadLookupTables();
-
-        try {
-            LookupTable existingLookupTable = getLookupTableRepo(lookupTable.getName()).getLookupTable();
-            if ((existingLookupTable.getSourcePlugin() == null && lookupTable.getSourcePlugin() != null) ||
+    private List<String> isDuplicate(LookupTable lookupTable) {
+        LookupTable existingLookupTable = getLookupTableOrNull(lookupTable.getName());
+        if (existingLookupTable != null && ((existingLookupTable.getSourcePlugin() == null && lookupTable.getSourcePlugin() != null) ||
                     (existingLookupTable.getSourcePlugin() != null &&
-                            !existingLookupTable.getSourcePlugin().equalsIgnoreVersion(lookupTable.getSourcePlugin()))) {
-                errors.add("Lookup table %s exists in another plugin: %s".formatted(lookupTable.getName(),
+                            !existingLookupTable.getSourcePlugin().equalsIgnoreVersion(lookupTable.getSourcePlugin())))) {
+                return List.of("Lookup table %s exists in another plugin: %s".formatted(lookupTable.getName(),
                         existingLookupTable.getSourcePlugin()));
             }
-        } catch (LookupTableServiceException ignored) {}
+
+        return Collections.emptyList();
+    }
+
+    private List<String> columnErrors(List<String> columns, String tableName, String listName) {
+        List<String> errors = new ArrayList<>();
+        if (columns.isEmpty()) {
+            columns = new ArrayList<>();
+            errors.add("Lookup table %s has an empty %s list".formatted(tableName, listName));
+        }
+
+        if (columns.stream().anyMatch(StringUtils::isBlank)) {
+            errors.add("Lookup table %s has a null or blank value in the %s list".formatted(tableName, listName));
+        }
 
         return errors;
     }
 
+
+    @Transactional
     public void createLookupTable(LookupTable lookupTable, boolean validate) throws LookupTableServiceException {
         log.info("Creating lookup table {}", lookupTable.getName());
 
@@ -104,8 +155,9 @@ public class LookupTableService implements PluginCleaner {
             }
         }
 
-        try {
-            LookupTable existingLookupTable = getLookupTableRepo(lookupTable.getName()).getLookupTable();
+
+        LookupTable existingLookupTable = getLookupTableOrNull(lookupTable.getName());
+        if (existingLookupTable != null) {
             if (existingLookupTable.getColumns().equals(lookupTable.getColumns())) {
                 if (existingLookupTable.isServiceBacked()) {
                     existingLookupTable.setBackingServiceActive(true);
@@ -114,7 +166,7 @@ public class LookupTableService implements PluginCleaner {
                 return; // Already created with the same columns
             }
             deleteLookupTable(lookupTable.getName());
-        } catch (LookupTableServiceException ignored) {}
+        }
 
         LookupTableRepo lookupTableRepo = lookupTableRepoFactory.create(lookupTable);
         lookupTableRepo.create();
@@ -131,18 +183,28 @@ public class LookupTableService implements PluginCleaner {
     }
 
     private LookupTableRepo getLookupTableRepo(String name) throws LookupTableServiceException {
-        LookupTableRepo lookupTableRepo = lookupTableRepoMap.get(name);
-
-        if (lookupTableRepo == null) {
-            loadLookupTables();
-            lookupTableRepo = lookupTableRepoMap.get(name);
-        }
+        LookupTableRepo lookupTableRepo = getLookupTableRepoOrNull(name);
 
         if (lookupTableRepo == null) {
             throw new LookupTableServiceException(name, "Lookup table missing");
         }
 
         return lookupTableRepo;
+    }
+
+    private LookupTableRepo getLookupTableRepoOrNull(String name) {
+        LookupTableRepo lookupTableRepo = lookupTableRepoMap.get(name);
+
+        if (lookupTableRepo == null) {
+            loadLookupTables();
+            lookupTableRepo = lookupTableRepoMap.get(name);
+        }
+        return lookupTableRepo;
+    }
+
+    private LookupTable getLookupTableOrNull(String name) {
+        LookupTableRepo lookupTableRepo = getLookupTableRepoOrNull(name);
+        return lookupTableRepo != null ? lookupTableRepo.getLookupTable() : null;
     }
 
     private void saveLookupTable(LookupTable lookupTable) {
@@ -204,10 +266,10 @@ public class LookupTableService implements PluginCleaner {
         }
     }
 
-    public Pair<Integer, List<Map<String, String>>> lookup(String name,
-            @Nullable Map<String, Set<String>> matchingColumnValues, @Nullable List<String> resultColumns,
-            @Nullable String sortColumn, @Nullable SortDirection sortDirection, @Nullable Integer offset,
-            @Nullable Integer limit) throws LookupTableServiceException {
+    public LookupResults lookup(String name,
+                                @Nullable Map<String, Set<String>> matchingColumnValues, @Nullable List<String> resultColumns,
+                                @Nullable String sortColumn, @Nullable SortDirection sortDirection, @Nullable Integer offset,
+                                @Nullable Integer limit) throws LookupTableServiceException {
         LookupTableRepo lookupTableRepo = getLookupTableRepo(name);
 
         if (lookupTableRepo.getLookupTable().isPullThrough() &&
@@ -232,9 +294,7 @@ public class LookupTableService implements PluginCleaner {
                     lookupTable.getVariables().stream()
                             .filter(pluginVariable -> (pluginVariable.getValue() != null) ||
                                     (pluginVariable.getDefaultValue() != null))
-                            .collect(Collectors.toMap(Variable::getName, pluginVariable ->
-                                    pluginVariable.getValue() != null ? pluginVariable.getValue() :
-                                            pluginVariable.getDefaultValue()));
+                            .collect(Collectors.toMap(Variable::getName, Variable::valueOrDefault));
 
             LookupTableEvent lookupTableEvent = new LookupTableEvent(identityService.getUniqueId(),
                     lookupTable.getName(), matchingColumnValues, resultColumns, pluginVariableMap);

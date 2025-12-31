@@ -6512,7 +6512,7 @@ class DeltaFiCoreApplicationTests {
 	MemberMonitorService memberMonitorService;
 
 	@Test
-	public void testLookupTableService() throws LookupTableServiceException {
+	void testLookupTableService() throws LookupTableServiceException {
 		LookupTable lookupTable = LookupTable.builder()
 				.name("test_lookup_1")
 				.columns(List.of("column_a", "column_b", "column_c"))
@@ -6526,35 +6526,42 @@ class DeltaFiCoreApplicationTests {
 		lookupTableService.upsertRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 2", "column_b", "Column B Value 2")));
 		lookupTableService.upsertRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 3", "column_c", "Column C Value 3")));
 
-		Pair<Integer, List<Map<String, String>>> results = lookupTableService.lookup(lookupTable.getName(),
+		LookupResults results = lookupTableService.lookup(lookupTable.getName(),
 				Map.of("column_c", Set.of("Column C Value 1")), null, null, null, null, null);
-		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 1");
-		assertThat(results.getRight().getFirst().get("column_b")).isEqualTo("Column B Value 1");
-		assertThat(results.getRight().getFirst().get("column_c")).isEqualTo("Column C Value 1");
+		List<ColumnValue> rowOne = results.getRows().getFirst();
+		assertThat(getColumnValue(rowOne, "column_a")).isEqualTo("Column A Value 1");
+		assertThat(getColumnValue(rowOne, "column_b")).isEqualTo("Column B Value 1");
+		assertThat(getColumnValue(rowOne, "column_c")).isEqualTo("Column C Value 1");
 
 		results = lookupTableService.lookup(lookupTable.getName(),
 				Map.of("column_c", Set.of("Column C Value 1")), List.of("column_a", "column_c"), null, null, null, null);
-		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 1");
-		assertThat(results.getRight().getFirst().get("column_b")).isNull();
-		assertThat(results.getRight().getFirst().get("column_c")).isEqualTo("Column C Value 1");
+		rowOne = results.getRows().getFirst();
+		assertThat(getColumnValue(rowOne, "column_a")).isEqualTo("Column A Value 1");
+		assertThat(getColumnValue(rowOne, "column_b")).isNull();
+		assertThat(getColumnValue(rowOne, "column_c")).isEqualTo("Column C Value 1");
 
 		lookupTableService.upsertRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 1", "column_c", "Column C Value 4")));
 
 		results = lookupTableService.lookup(lookupTable.getName(),
 				Map.of("column_a", Set.of("Column A Value 1")), null, null, null, null, null);
-		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 1");
-		assertThat(results.getRight().getFirst().get("column_b")).isNull();
-		assertThat(results.getRight().getFirst().get("column_c")).isEqualTo("Column C Value 4");
+		rowOne = results.getRows().getFirst();
+		assertThat(getColumnValue(rowOne, "column_a")).isEqualTo("Column A Value 1");
+		assertThat(getColumnValue(rowOne, "column_b")).isNull();
+		assertThat(getColumnValue(rowOne, "column_c")).isEqualTo("Column C Value 4");
 
 		lookupTableService.removeRows(lookupTable.getName(), List.of(Map.of("column_a", "Column A Value 1"),
 				Map.of("column_a", "Column A Value 3")));
 		results = lookupTableService.lookup(lookupTable.getName(), null, null, null, null, null, null);
-		assertThat(results.getRight().size()).isEqualTo(1);
-		assertThat(results.getRight().getFirst().get("column_a")).isEqualTo("Column A Value 2");
+		assertThat(results.getRows()).hasSize(1);
+		assertThat(getColumnValue(results.getRows().getFirst(), "column_a")).isEqualTo("Column A Value 2");
 
 		lookupTableService.deleteLookupTable(lookupTable.getName());
 
 		assertThat(lookupTableService.getLookupTables()).isEmpty();
+	}
+
+	private String getColumnValue(List<ColumnValue> columnValues, String columnName) {
+		return columnValues.stream().filter(cv -> cv.getColumn().equals(columnName)).findFirst().map(ColumnValue::getValue).orElse(null);
 	}
 
 	@Test

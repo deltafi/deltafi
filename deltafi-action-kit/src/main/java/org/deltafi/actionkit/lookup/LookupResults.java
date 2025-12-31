@@ -17,7 +17,8 @@
  */
 package org.deltafi.actionkit.lookup;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
-public record LookupResults(int totalCount, List<Map<String, String>> results) {}
+public record LookupResults(int totalCount, OffsetDateTime created, OffsetDateTime modified, List<Map<String, String>> results) {}

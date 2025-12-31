@@ -24,8 +24,10 @@ import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.types.hibernate.StringListType;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -66,17 +68,23 @@ public class LookupTableEntity {
     private boolean pullThrough = false;
 
     private String refreshDuration;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private OffsetDateTime created;
+    @UpdateTimestamp
+    private OffsetDateTime modified;
     private OffsetDateTime lastRefresh;
 
     public static LookupTableEntity fromLookupTable(LookupTable lookupTable) {
         return new LookupTableEntity(lookupTable.getName(), lookupTable.getSourcePlugin(), lookupTable.getVariables(),
                 lookupTable.getColumns(), lookupTable.getKeyColumns(), lookupTable.isServiceBacked(),
                 lookupTable.isBackingServiceActive(), lookupTable.isPullThrough(), lookupTable.getRefreshDuration(),
-                lookupTable.getLastRefresh());
+                lookupTable.getCreated(), lookupTable.getModified(), lookupTable.getLastRefresh());
     }
 
     public LookupTable toLookupTable() {
         return new LookupTable(name, sourcePlugin, variables, columns, keyColumns, serviceBacked, backingServiceActive,
-                pullThrough, refreshDuration, lastRefresh, 0);
+                pullThrough, refreshDuration,  created, modified, lastRefresh, 0);
     }
 }

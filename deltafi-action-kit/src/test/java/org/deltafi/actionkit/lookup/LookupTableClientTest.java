@@ -43,7 +43,7 @@ import java.util.*;
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @EnableAutoConfiguration(exclude = { ActionKitAutoConfiguration.class })
 @EnableCaching
-public class LookupTableClientTest {
+class LookupTableClientTest {
     @SpringBootApplication
     public static class TestApp {
         public static void main(String... args) {
@@ -117,7 +117,7 @@ public class LookupTableClientTest {
             }""");
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         Mockito.reset(GRAPH_QL_CLIENT);
 
         String simple = """
@@ -126,13 +126,15 @@ public class LookupTableClientTest {
                     offset
                     count
                     totalCount
+                    created
+                    modified
                     rows {
                       column
                       value
                     }
                   }
                 }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(Mockito.eq(simple), Mockito.eq(Collections.emptyMap()))).thenReturn(LOOKUP_RESPONSE);
+        Mockito.when(GRAPH_QL_CLIENT.executeQuery(simple, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
 
         // Spaces after map keys in matchingColumnValues are intentional to match generated DGS serialization!
         String complex1 = """
@@ -141,43 +143,49 @@ public class LookupTableClientTest {
                     offset
                     count
                     totalCount
+                    created
+                    modified
                     rows {
                       column
                       value
                     }
                   }
                 }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(Mockito.eq(complex1), Mockito.eq(Collections.emptyMap()))).thenReturn(LOOKUP_RESPONSE);
+        Mockito.when(GRAPH_QL_CLIENT.executeQuery(complex1, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
         String complex2 = """
                 {
                   lookup(lookupTableName: "test-lookup-table", matchingColumnValues: [{column : "state", value : ["FL"]}], resultColumns: ["city"]) {
                     offset
                     count
                     totalCount
+                    created
+                    modified
                     rows {
                       column
                       value
                     }
                   }
                 }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(Mockito.eq(complex2), Mockito.eq(Collections.emptyMap()))).thenReturn(LOOKUP_RESPONSE);
+        Mockito.when(GRAPH_QL_CLIENT.executeQuery(complex2, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
         String complex3 = """
                 {
                   lookup(lookupTableName: "test-lookup-table", matchingColumnValues: [{column : "state", value : ["NV", "TX"]}], resultColumns: ["city", "state"]) {
                     offset
                     count
                     totalCount
+                    created
+                    modified
                     rows {
                       column
                       value
                     }
                   }
                 }""";
-        Mockito.when(GRAPH_QL_CLIENT.executeQuery(Mockito.eq(complex3), Mockito.eq(Collections.emptyMap()))).thenReturn(LOOKUP_RESPONSE);
+        Mockito.when(GRAPH_QL_CLIENT.executeQuery(complex3, Collections.emptyMap())).thenReturn(LOOKUP_RESPONSE);
     }
 
     @Test
-    public void lookup() throws Exception {
+    void lookup() throws Exception {
         LookupResults results = lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
 
         Assertions.assertEquals(3, results.results().size());
@@ -186,7 +194,7 @@ public class LookupTableClientTest {
     }
 
     @Test
-    public void cachesSimple() throws Exception {
+    void cachesSimple() throws Exception {
         lookupTableClient.clearCache();
 
         LookupResults results = lookupTableClient.lookup("test-lookup-table", LookupOptions.defaultLookupOptions());
@@ -205,7 +213,7 @@ public class LookupTableClientTest {
     }
 
     @Test
-    public void cachesComplex() throws Exception {
+    void cachesComplex() throws Exception {
         lookupTableClient.clearCache();
 
         LookupResults results = lookupTableClient.lookup("test-lookup-table",
@@ -237,10 +245,10 @@ public class LookupTableClientTest {
     }
 
     @Test
-    public void batchesUpserts() throws Exception {
+    void batchesUpserts() throws Exception {
         GraphQLResponse graphQLResponse = Mockito.mock(GraphQLResponse.class);
         Mockito.when(graphQLResponse.hasErrors()).thenReturn(false);
-        Mockito.when(graphQLResponse.extractValueAsObject(Mockito.eq("upsertLookupTableRows"), Mockito.eq(Result.class)))
+        Mockito.when(graphQLResponse.extractValueAsObject("upsertLookupTableRows", Result.class))
                 .thenReturn(Result.newBuilder().success(true).build());
         Mockito.when(GRAPH_QL_CLIENT.executeQuery(Mockito.anyString(), Mockito.anyMap())).thenReturn(graphQLResponse);
 

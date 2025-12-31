@@ -56,6 +56,11 @@ public class Variable {
     return !masked;
   }
 
+  @JsonIgnore
+  public String valueOrDefault() {
+    return value != null ? value : defaultValue;
+  }
+
   private Variable copyWithMaskedValue() {
     return Variable.builder()
             .name(name)

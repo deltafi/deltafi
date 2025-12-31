@@ -396,8 +396,10 @@ public class PluginService implements Snapshotter {
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
         List<String> validationErrors = validate(plugin, groupedFlowPlans, pluginRegistration.getVariables());
         if (lookupTableService != null) {
-            plugin.getLookupTables().forEach(lookupTable ->
-                    validationErrors.addAll(lookupTableService.validateLookupTableCreation(lookupTable)));
+            for (LookupTable lookupTable : plugin.getLookupTables()) {
+                lookupTable.setSourcePlugin(plugin.getPluginCoordinates()); // make sure the plugin coords are set to avoid false errors about duplicate lookup tables
+                validationErrors.addAll(lookupTableService.validateLookupTableCreation(lookupTable));
+            }
         }
         validationErrors.addAll(integrationService.validate(pluginRegistration.getIntegrationTests()));
         if (!validationErrors.isEmpty()) {
