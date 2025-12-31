@@ -74,6 +74,11 @@ const props = defineProps({
     required: false,
     default: () => { },
   },
+  hideLogo: {
+    type: Number,
+    required: false,
+    default: 1,
+  },
 });
 
 const src = computed(() => {
