@@ -93,6 +93,10 @@ public class StateMachine {
                 actionInputs.addAll(advanceTransform(input, pendingQueued));
             } else if (input.flow().getType() == FlowType.DATA_SINK) {
                 actionInputs.addAll(advanceDataSink(input, pendingQueued));
+            } else if (input.flow().getType().isDataSource()) {
+                // Data source flows with completed ingress should be marked COMPLETE
+                // so they can publish to subscribers
+                input.flow().setState(DeltaFileFlowState.COMPLETE);
             }
         }
 

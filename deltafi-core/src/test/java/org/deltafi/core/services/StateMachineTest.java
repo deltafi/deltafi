@@ -61,6 +61,8 @@ class StateMachineTest {
     @Spy private final Clock clock = new TestClock();
 
     @Mock private RestDataSourceService restDataSourceService;
+    @Mock private TimedDataSourceService timedDataSourceService;
+    @Mock private OnErrorDataSourceService onErrorDataSourceService;
     @Mock private TransformFlowService transformFlowService;
     @Mock private DataSinkService dataSinkService;
     @Mock private DeltaFiPropertiesService deltaFiPropertiesService;
@@ -228,6 +230,59 @@ class StateMachineTest {
         Action joiningAction = joiningActions.getFirst();
         assertEquals("JoiningTransformAction", joiningAction.getName());
         assertEquals(ActionType.TRANSFORM, joiningAction.getType());
+    }
+
+    @Test
+    void advancesDataSourceFlowWithCompletedIngress() {
+        // Simulates a REST data source flow that was paused after ingress completed but before publishing
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), "rest-data-source");
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
+
+        DeltaFileFlow dataSourceFlow = deltaFile.firstFlow();
+        dataSourceFlow.getFlowDefinition().setType(FlowType.REST_DATA_SOURCE);
+        dataSourceFlow.setState(DeltaFileFlowState.IN_FLIGHT);
+
+        // Add a completed ingress action
+        Action ingressAction = dataSourceFlow.addAction("IngressAction", null, ActionType.INGRESS,
+                ActionState.COMPLETE, OffsetDateTime.now(clock));
+        ingressAction.setContent(List.of(new Content("test.txt", "text/plain", List.of())));
+
+        // Mock the REST data source
+        RestDataSource restDataSource = new RestDataSource();
+        restDataSource.setName("rest-data-source");
+        restDataSource.setTopic("test-topic");
+        when(restDataSourceService.getActiveFlowByName("rest-data-source")).thenReturn(restDataSource);
+
+        // Mock publisher service to add a subscriber flow
+        DeltaFileFlow subscriberFlow = deltaFile.addFlow(
+                FlowDefinition.builder().name("subscriber-transform").type(FlowType.TRANSFORM).build(),
+                dataSourceFlow, OffsetDateTime.now(clock));
+        subscriberFlow.setPendingActions(List.of("TransformAction"));
+
+        when(publisherService.subscribers(Mockito.eq(restDataSource), Mockito.eq(deltaFile), Mockito.eq(dataSourceFlow)))
+                .thenReturn(Set.of(subscriberFlow));
+
+        // Mock transform flow for the subscriber
+        TransformFlow transformFlow = TransformFlowMaker.builder()
+                .name("subscriber-transform").flowState(FlowState.RUNNING).build().makeTransformFlow();
+        ActionConfiguration transformAction = new ActionConfiguration("TransformAction", ActionType.TRANSFORM,
+                "org.deltafi.action.SomeTransformAction");
+        transformFlow.setTransformActions(List.of(transformAction));
+        when(transformFlowService.findRunningActionConfigOrError("subscriber-transform", "TransformAction"))
+                .thenReturn(transformAction);
+
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+        when(identityService.getUniqueId()).thenReturn("test-identity");
+
+        StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, dataSourceFlow);
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(stateMachineInput));
+
+        // The data source flow should be marked COMPLETE
+        assertThat(dataSourceFlow.getState()).isEqualTo(DeltaFileFlowState.COMPLETE);
+
+        // Should have dispatched an action for the subscriber flow
+        assertThat(actionInputs).hasSize(1);
+        assertThat(actionInputs.getFirst().getActionContext().getFlowName()).isEqualTo("subscriber-transform");
     }
 
     @Test

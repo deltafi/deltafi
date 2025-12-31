@@ -3089,6 +3089,43 @@ class DeltaFiCoreApplicationTests {
     }
 
 	@Test
+	void testFindForRequeue_excludesJoiningActions() {
+		DeltaFile joiningFile = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		joiningFile.firstFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", FlowType.TRANSFORM));
+		joiningFile.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
+		joiningFile.firstFlow().addAction("joiningAction", null, ActionType.TRANSFORM, JOINING, NOW.minusSeconds(1000));
+
+		DeltaFile queuedFile = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		queuedFile.firstFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", FlowType.TRANSFORM));
+		queuedFile.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
+		queuedFile.firstFlow().addAction("queuedAction", null, ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
+
+		deltaFileRepo.insertBatch(List.of(joiningFile, queuedFile), 1000);
+
+		List<DeltaFile> hits = deltaFileRepo.findForRequeue(NOW, Duration.ofSeconds(30), Set.of(), Set.of(), false, 5000);
+
+		assertEquals(1, hits.size());
+		assertEquals(queuedFile.getDid(), hits.getFirst().getDid());
+	}
+
+	@Test
+	void testRequeue_persistsErrorWhenActionConfigNotFound() {
+		DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
+		deltaFile.firstFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("flow1", FlowType.TRANSFORM));
+		deltaFile.firstFlow().setState(DeltaFileFlowState.IN_FLIGHT);
+		deltaFile.firstFlow().addAction("missingAction", null, ActionType.TRANSFORM, QUEUED, NOW.minusSeconds(1000));
+		deltaFileRepo.save(deltaFile);
+
+		deltaFiPropertiesService.getDeltaFiProperties().setRequeueDuration(Duration.ofSeconds(30));
+		deltaFilesService.requeue();
+
+		DeltaFile afterRequeue = deltaFileRepo.findById(deltaFile.getDid()).orElseThrow();
+		Action action = afterRequeue.firstFlow().lastAction();
+		assertEquals(ERROR, action.getState());
+		assertEquals("Action named missingAction is no longer running", action.getErrorCause());
+	}
+
+	@Test
 	void testRequeuePausedFlows() {
 		DeltaFile multipleTypes = utilService.buildDeltaFile(UUID.randomUUID(), "rest1", DeltaFileStage.IN_FLIGHT, NOW, NOW.minusSeconds(1000));
 		multipleTypes.firstFlow().setFlowDefinition(flowDefinitionService.getOrCreateFlow("rest1", FlowType.REST_DATA_SOURCE));

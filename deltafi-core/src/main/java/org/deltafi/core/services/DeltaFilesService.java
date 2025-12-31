@@ -1894,6 +1894,7 @@ public class DeltaFilesService {
             }
 
             List<WrappedActionInput> actionInputs = new ArrayList<>();
+            List<DeltaFile> filesToSave = new ArrayList<>();
             filesToRequeue.forEach(deltaFile -> {
                 deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
                 deltaFile.setModified(modified);
@@ -1903,6 +1904,7 @@ public class DeltaFilesService {
                             if (flow.getActions().isEmpty()) {
                                 StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, flow);
                                 actionInputs.addAll(stateMachine.advance(List.of(stateMachineInput)));
+                                filesToSave.add(deltaFile);
                                 log.warn("Requeued malformed DeltaFile {} which had a flow with no actions.", deltaFile.getDid());
                             } else {
                                 Action action = flow.lastAction();
@@ -1915,15 +1917,21 @@ public class DeltaFilesService {
                                         action.setQueued(modified);
                                         flow.updateState();
                                         actionInputs.add(actionInput);
+                                        filesToSave.add(deltaFile);
+                                    } else {
+                                        // requeueActionInput processed an error, need to save
+                                        filesToSave.add(deltaFile);
                                     }
                                 }
                             }
                         });
             });
 
+            if (!filesToSave.isEmpty()) {
+                deltaFileRepo.saveAll(filesToSave);
+            }
             if (!actionInputs.isEmpty()) {
                 log.warn("{} actions exceeded requeue duration of {}, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
-                deltaFileRepo.saveAll(filesToRequeue);
                 enqueueActions(actionInputs, true);
             }
         }

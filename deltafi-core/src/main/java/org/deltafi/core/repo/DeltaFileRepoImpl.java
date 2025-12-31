@@ -112,7 +112,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         sqlQuery.append("""
             WHERE dff.modified < :requeueThreshold
             AND dff.state = 'IN_FLIGHT'
-            AND dff.cold_queued = false""");
+            AND dff.cold_queued = false
+            AND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'s' <> 'JOINING'""");
 
         if (skipActions != null && !skipActions.isEmpty()) {
             sqlQuery.append("\nAND (dff.actions->(jsonb_array_length(dff.actions) - 1))->>'n' NOT IN (:skipActions)");
@@ -200,7 +201,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public List<UUID> updatePausedForRequeue(Set<String> skipRestDataSources, Set<String> skipTimedDataSource,
                                              Set<String> skipTransforms, Set<String> skipDataSinks,
                                              boolean excludeEgressActions, int maxFiles, OffsetDateTime modified) {
-        // First, find the DIDs to update using the same criteria as findPausedForRequeue
+        // Find DIDs with PAUSED flows that can be unpaused, OR stuck files (paused=true but no PAUSED flows)
         String findDidsQuery = """
                 SELECT DISTINCT dff.delta_file_id
                 FROM delta_file_flows dff
@@ -216,7 +217,16 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                    OR
                    (fd.type = 'DATA_SINK' AND :excludeEgressActions = FALSE AND (:skipDataSinks IS NULL OR fd.name NOT IN (:skipDataSinks)))
                  )
-                 LIMIT :limit
+                UNION
+                SELECT df.did
+                FROM delta_files df
+                WHERE df.paused = TRUE
+                AND NOT EXISTS (
+                    SELECT 1 FROM delta_file_flows dff
+                    WHERE dff.delta_file_id = df.did
+                    AND dff.state = 'PAUSED'
+                )
+                LIMIT :limit
             """;
 
         Query findQuery = entityManager.createNativeQuery(findDidsQuery, UUID.class)
