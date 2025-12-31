@@ -31,7 +31,7 @@ public enum PropertyGroup {
     ERROR_CONTROLS("error", "Error Controls", ""),
     PLUGIN_CONTROLS("plugin", "Plugin Deployments", "Settings that impact when plugins are installed or upgraded"),
     JOIN_CONTROLS("join", "Join Controls", ""),
-    METRICS_AND_ANALYTICS("metrics", "Metrics and Analystics", ""),
+    METRICS_AND_ANALYTICS("metrics", "Metrics and Analytics", ""),
     PERFORMANCE_CONTROLS("performance", "Performance Controls", ""),
     SYSTEM_MONITORING("system", "System Monitoring", ""),
     UI_CONTROLS("ui", "UI Settings", "Update the banner lines of the UI and time display");
