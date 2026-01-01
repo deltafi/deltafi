@@ -652,8 +652,9 @@ func toVariableOptions(values []string) []variableOption {
 func (h *handler) handleDataSources(w http.ResponseWriter, r *http.Request) {
 	timeFrom, timeTo := parseTimeRange(r)
 	filtered := r.URL.Query().Get("filtered") == "true"
+	ingressTypes := r.URL.Query()["ingressTypes"]
 
-	values, err := h.queryService.GetDistinctValues("data_source", timeFrom, timeTo, filtered)
+	values, err := h.queryService.GetDistinctValues("data_source", timeFrom, timeTo, filtered, ingressTypes)
 	if err != nil {
 		h.logger.Error("failed to get data sources", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -668,7 +669,7 @@ func (h *handler) handleFlowNames(w http.ResponseWriter, r *http.Request) {
 	timeFrom, timeTo := parseTimeRange(r)
 	filtered := r.URL.Query().Get("filtered") == "true"
 
-	values, err := h.queryService.GetDistinctValues("flow_name", timeFrom, timeTo, filtered)
+	values, err := h.queryService.GetDistinctValues("flow_name", timeFrom, timeTo, filtered, nil)
 	if err != nil {
 		h.logger.Error("failed to get flow names", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -684,8 +685,10 @@ func (h *handler) handleAnnotationKeys(w http.ResponseWriter, r *http.Request) {
 	forGroup := r.URL.Query().Get("forGroup") == "true"
 	filtered := r.URL.Query().Get("filtered") == "true"
 	excludeKeys := r.URL.Query()["exclude"]
+	dataSources := r.URL.Query()["dataSources"]
+	ingressTypes := r.URL.Query()["ingressTypes"]
 
-	keys, err := h.queryService.GetAnnotationKeys(timeFrom, timeTo, forGroup, filtered)
+	keys, err := h.queryService.GetAnnotationKeys(timeFrom, timeTo, forGroup, filtered, dataSources, ingressTypes)
 	if err != nil {
 		h.logger.Error("failed to get annotation keys", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -719,6 +722,8 @@ func (h *handler) handleAnnotationValues(w http.ResponseWriter, r *http.Request)
 	key := r.URL.Query().Get("key")
 	timeFrom, timeTo := parseTimeRange(r)
 	filtered := r.URL.Query().Get("filtered") == "true"
+	dataSources := r.URL.Query()["dataSources"]
+	ingressTypes := r.URL.Query()["ingressTypes"]
 
 	// Parse limit parameter (default: 200, max: 1000)
 	limit := defaultValueLimit
@@ -741,9 +746,9 @@ func (h *handler) handleAnnotationValues(w http.ResponseWriter, r *http.Request)
 	} else if len(key) > 2 && key[0] == '{' && key[len(key)-1] == '}' {
 		// Grafana multi-value format: {key1,key2,key3}
 		keys := strings.Split(key[1:len(key)-1], ",")
-		values, err = h.queryService.GetAnnotationValuesForKeys(keys, timeFrom, timeTo, filtered)
+		values, err = h.queryService.GetAnnotationValuesForKeys(keys, timeFrom, timeTo, filtered, dataSources, ingressTypes)
 	} else {
-		values, err = h.queryService.GetAnnotationValues(key, timeFrom, timeTo, filtered)
+		values, err = h.queryService.GetAnnotationValues(key, timeFrom, timeTo, filtered, dataSources, ingressTypes)
 	}
 
 	if err != nil {

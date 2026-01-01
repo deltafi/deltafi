@@ -2533,7 +2533,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/data-sources?from=${__from}&to=${__to}&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/data-sources?from=${__from}&to=${__to}&filtered=${filterToTimeRange}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""
@@ -2582,7 +2582,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&forGroup=true&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&forGroup=true&filtered=${filterToTimeRange}&dataSources=${dataSources}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""
@@ -2632,7 +2632,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&filtered=${filterToTimeRange}&dataSources=${dataSources}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""
@@ -2686,7 +2686,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/annotation-values?key=${annotationKey1}&from=${__from}&to=${__to}&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/annotation-values?key=${annotationKey1}&from=${__from}&to=${__to}&filtered=${filterToTimeRange}&dataSources=${dataSources}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""
@@ -2736,7 +2736,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&exclude=${annotationKey1}&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&exclude=${annotationKey1}&filtered=${filterToTimeRange}&dataSources=${dataSources}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""
@@ -2790,7 +2790,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/annotation-values?key=${annotationKey2}&from=${__from}&to=${__to}&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/annotation-values?key=${annotationKey2}&from=${__from}&to=${__to}&filtered=${filterToTimeRange}&dataSources=${dataSources}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""
@@ -2840,7 +2840,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&exclude=${annotationKey1}&exclude=${annotationKey2}&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/annotation-keys?from=${__from}&to=${__to}&exclude=${annotationKey1}&exclude=${annotationKey2}&filtered=${filterToTimeRange}&dataSources=${dataSources}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""
@@ -2894,7 +2894,7 @@
             "type": "json",
             "source": "url",
             "parser": "backend",
-            "url": "http://deltafi-analytics:8080/analytics/annotation-values?key=${annotationKey3}&from=${__from}&to=${__to}&filtered=${filterToTimeRange}",
+            "url": "http://deltafi-analytics:8080/analytics/annotation-values?key=${annotationKey3}&from=${__from}&to=${__to}&filtered=${filterToTimeRange}&dataSources=${dataSources}&ingressTypes=${ingressTypes}",
             "url_options": {
               "method": "GET",
               "data": ""

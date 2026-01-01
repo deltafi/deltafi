@@ -434,11 +434,36 @@ func formatFileList(files []string) string {
 
 func containsAll(values []string) bool {
 	for _, v := range values {
+		// Handle explicit "All" values
 		if v == "All" || v == "'All'" || v == "$__all" {
+			return true
+		}
+		// Handle empty string (Grafana sends dataSources= when All is selected)
+		if v == "" {
 			return true
 		}
 	}
 	return false
+}
+
+// normalizeFilterValues expands Grafana's multi-value format {a,b,c} into individual values
+// and filters out empty strings and "All" markers
+func normalizeFilterValues(values []string) []string {
+	var result []string
+	for _, v := range values {
+		// Skip empty strings and All markers
+		if v == "" || v == "All" || v == "'All'" || v == "$__all" {
+			continue
+		}
+		// Parse Grafana multi-value format {a,b,c}
+		if len(v) > 2 && v[0] == '{' && v[len(v)-1] == '}' {
+			parts := strings.Split(v[1:len(v)-1], ",")
+			result = append(result, parts...)
+		} else {
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 // parseGrafanaMultiValue parses Grafana's multi-value format {a,b,c} into individual values
@@ -510,11 +535,15 @@ func quoteStrings(values []string) []string {
 }
 
 // GetDistinctValues returns distinct values for a field from aggregated data
-// When filtered=false (default), uses pre-computed metadata for instant response
-// When filtered=true, scans parquet files for time-range-specific values
-func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, filtered bool) ([]string, error) {
-	// Try metadata first (instant response)
-	if !filtered {
+// When filtered=false (default) and no filters applied, uses pre-computed metadata for instant response
+// When filtered=true or filters are applied, scans parquet files for filtered values
+func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, filtered bool, ingressTypes []string) ([]string, error) {
+	// Normalize and check for active filters
+	ingressTypes = normalizeFilterValues(ingressTypes)
+	hasIngressFilter := len(ingressTypes) > 0 && !containsAll(ingressTypes)
+
+	// Try metadata first (instant response) - only when no filters applied
+	if !filtered && !hasIngressFilter {
 		if meta, err := s.LoadMetadata(); err == nil {
 			switch field {
 			case "data_source":
@@ -529,7 +558,7 @@ func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, fi
 	}
 
 	// Check cache for filtered queries
-	cacheKey := fmt.Sprintf("field|%s|%s|%s", field, timeFrom.Format("20060102"), timeTo.Format("20060102"))
+	cacheKey := fmt.Sprintf("field|%s|%s|%s|%v", field, timeFrom.Format("20060102"), timeTo.Format("20060102"), ingressTypes)
 	s.cacheMu.RLock()
 	if entry, ok := s.annotationValCache[cacheKey]; ok && time.Now().Before(entry.expires) {
 		data := entry.data
@@ -550,9 +579,19 @@ func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, fi
 	timeFromStr := timeFrom.Format("2006-01-02 15:04:05")
 	timeToStr := timeTo.Format("2006-01-02 15:04:05")
 
+	// Build WHERE clause
+	filters := []string{
+		fmt.Sprintf("bucket >= '%s'", timeFromStr),
+		fmt.Sprintf("bucket < '%s'", timeToStr),
+	}
+	if hasIngressFilter {
+		quoted := quoteStrings(ingressTypes)
+		filters = append(filters, fmt.Sprintf("ingress_type IN (%s)", strings.Join(quoted, ", ")))
+	}
+
 	query := fmt.Sprintf(
-		"SELECT DISTINCT %s AS value FROM read_parquet([%s]) WHERE bucket >= '%s' AND bucket < '%s' ORDER BY value",
-		field, formatFileList(files), timeFromStr, timeToStr,
+		"SELECT DISTINCT %s AS value FROM read_parquet([%s]) WHERE %s ORDER BY value",
+		field, formatFileList(files), strings.Join(filters, " AND "),
 	)
 
 	rows, err := s.db.Query(query)
@@ -586,11 +625,17 @@ func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, fi
 // "None" is always included and means "don't group by annotation"
 // forGroup controls ordering: if true, puts analyticsGroupName first (for groupByAnnotation dropdown)
 // if false, uses alphabetical order with "None" first (for annotation key filter dropdowns)
-// When filtered=false (default), uses pre-computed metadata for instant response
-// When filtered=true, scans parquet files for time-range-specific values
-func (s *Service) GetAnnotationKeys(timeFrom, timeTo time.Time, forGroup bool, filtered bool) ([]string, error) {
-	// Try metadata first (instant response)
-	if !filtered {
+// When filtered=false (default) and no filters applied, uses pre-computed metadata for instant response
+// When filtered=true or filters are applied, scans parquet files for filtered values
+func (s *Service) GetAnnotationKeys(timeFrom, timeTo time.Time, forGroup bool, filtered bool, dataSources, ingressTypes []string) ([]string, error) {
+	// Normalize and check for active filters
+	dataSources = normalizeFilterValues(dataSources)
+	ingressTypes = normalizeFilterValues(ingressTypes)
+	hasDataSourceFilter := len(dataSources) > 0 && !containsAll(dataSources)
+	hasIngressFilter := len(ingressTypes) > 0 && !containsAll(ingressTypes)
+
+	// Try metadata first (instant response) - only when no filters applied
+	if !filtered && !hasDataSourceFilter && !hasIngressFilter {
 		if meta, err := s.LoadMetadata(); err == nil {
 			return s.buildAnnotationKeysResult(meta.AnnotationKeys, forGroup), nil
 		}
@@ -608,9 +653,24 @@ func (s *Service) GetAnnotationKeys(timeFrom, timeTo time.Time, forGroup bool, f
 	timeFromStr := timeFrom.Format("2006-01-02 15:04:05")
 	timeToStr := timeTo.Format("2006-01-02 15:04:05")
 
+	// Build WHERE clause
+	whereFilters := []string{
+		fmt.Sprintf("bucket >= '%s'", timeFromStr),
+		fmt.Sprintf("bucket < '%s'", timeToStr),
+		"annotations IS NOT NULL",
+	}
+	if hasDataSourceFilter {
+		quoted := quoteStrings(dataSources)
+		whereFilters = append(whereFilters, fmt.Sprintf("data_source IN (%s)", strings.Join(quoted, ", ")))
+	}
+	if hasIngressFilter {
+		quoted := quoteStrings(ingressTypes)
+		whereFilters = append(whereFilters, fmt.Sprintf("ingress_type IN (%s)", strings.Join(quoted, ", ")))
+	}
+
 	query := fmt.Sprintf(
-		"SELECT DISTINCT unnest(map_keys(annotations)) AS key FROM read_parquet([%s]) WHERE bucket >= '%s' AND bucket < '%s' AND annotations IS NOT NULL ORDER BY key",
-		formatFileList(files), timeFromStr, timeToStr,
+		"SELECT DISTINCT unnest(map_keys(annotations)) AS key FROM read_parquet([%s]) WHERE %s ORDER BY key",
+		formatFileList(files), strings.Join(whereFilters, " AND "),
 	)
 
 	rows, err := s.db.Query(query)
@@ -670,9 +730,15 @@ func (s *Service) buildAnnotationKeysResult(keys []string, forGroup bool) []stri
 // GetAnnotationValues returns distinct values for a specific annotation key from aggregated data
 // When filtered=false (default), uses pre-computed metadata for instant response
 // When filtered=true, scans parquet files for time-range-specific values
-func (s *Service) GetAnnotationValues(key string, timeFrom, timeTo time.Time, filtered bool) ([]string, error) {
-	// Try metadata first (instant response)
-	if !filtered {
+func (s *Service) GetAnnotationValues(key string, timeFrom, timeTo time.Time, filtered bool, dataSources, ingressTypes []string) ([]string, error) {
+	// Normalize and check for active filters
+	dataSources = normalizeFilterValues(dataSources)
+	ingressTypes = normalizeFilterValues(ingressTypes)
+	hasDataSourceFilter := len(dataSources) > 0 && !containsAll(dataSources)
+	hasIngressFilter := len(ingressTypes) > 0 && !containsAll(ingressTypes)
+
+	// Try metadata first (instant response) - only when no filters applied
+	if !filtered && !hasDataSourceFilter && !hasIngressFilter {
 		if meta, err := s.LoadMetadata(); err == nil {
 			if values, ok := meta.AnnotationValues[key]; ok {
 				s.logger.Debug("using metadata for annotation values", "key", key, "count", len(values))
@@ -685,7 +751,7 @@ func (s *Service) GetAnnotationValues(key string, timeFrom, timeTo time.Time, fi
 	}
 
 	// Check cache for filtered queries
-	cacheKey := fmt.Sprintf("vals|%s|%s|%s", key, timeFrom.Format("20060102"), timeTo.Format("20060102"))
+	cacheKey := fmt.Sprintf("vals|%s|%s|%s|%v|%v", key, timeFrom.Format("20060102"), timeTo.Format("20060102"), dataSources, ingressTypes)
 	s.cacheMu.RLock()
 	if entry, ok := s.annotationValCache[cacheKey]; ok && time.Now().Before(entry.expires) {
 		data := entry.data
@@ -706,9 +772,25 @@ func (s *Service) GetAnnotationValues(key string, timeFrom, timeTo time.Time, fi
 	timeFromStr := timeFrom.Format("2006-01-02 15:04:05")
 	timeToStr := timeTo.Format("2006-01-02 15:04:05")
 
+	// Build WHERE clause
+	whereFilters := []string{
+		fmt.Sprintf("bucket >= '%s'", timeFromStr),
+		fmt.Sprintf("bucket < '%s'", timeToStr),
+		"annotations IS NOT NULL",
+		fmt.Sprintf("annotations['%s'] IS NOT NULL", key),
+	}
+	if hasDataSourceFilter {
+		quoted := quoteStrings(dataSources)
+		whereFilters = append(whereFilters, fmt.Sprintf("data_source IN (%s)", strings.Join(quoted, ", ")))
+	}
+	if hasIngressFilter {
+		quoted := quoteStrings(ingressTypes)
+		whereFilters = append(whereFilters, fmt.Sprintf("ingress_type IN (%s)", strings.Join(quoted, ", ")))
+	}
+
 	query := fmt.Sprintf(
-		"SELECT DISTINCT annotations['%s'][1] AS value FROM read_parquet([%s]) WHERE bucket >= '%s' AND bucket < '%s' AND annotations IS NOT NULL AND annotations['%s'] IS NOT NULL ORDER BY value",
-		key, formatFileList(files), timeFromStr, timeToStr, key,
+		"SELECT DISTINCT annotations['%s'][1] AS value FROM read_parquet([%s]) WHERE %s ORDER BY value",
+		key, formatFileList(files), strings.Join(whereFilters, " AND "),
 	)
 
 	rows, err := s.db.Query(query)
@@ -778,7 +860,7 @@ func (s *Service) GetAllAnnotationValues(timeFrom, timeTo time.Time) ([]string, 
 }
 
 // GetAnnotationValuesForKeys returns distinct values for multiple annotation keys
-func (s *Service) GetAnnotationValuesForKeys(keys []string, timeFrom, timeTo time.Time, filtered bool) ([]string, error) {
+func (s *Service) GetAnnotationValuesForKeys(keys []string, timeFrom, timeTo time.Time, filtered bool, dataSources, ingressTypes []string) ([]string, error) {
 	if len(keys) == 0 {
 		return nil, nil
 	}
@@ -786,7 +868,7 @@ func (s *Service) GetAnnotationValuesForKeys(keys []string, timeFrom, timeTo tim
 	// Collect values from all keys and dedupe
 	valueSet := make(map[string]bool)
 	for _, key := range keys {
-		vals, err := s.GetAnnotationValues(key, timeFrom, timeTo, filtered)
+		vals, err := s.GetAnnotationValues(key, timeFrom, timeTo, filtered, dataSources, ingressTypes)
 		if err != nil {
 			continue
 		}
