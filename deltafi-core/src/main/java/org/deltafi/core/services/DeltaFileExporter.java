@@ -155,6 +155,7 @@ public class DeltaFileExporter {
                 if (size < 0) {
                     throw new ServerException("Unable to determine size for segment " + segment.getUuid());
                 }
+                copy.setOffset(0);
                 copy.setSize(size);
                 content.setSegments(List.of(copy));
                 segments.put(segment.getUuid(), content);
