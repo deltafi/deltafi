@@ -35,29 +35,6 @@ import (
 	_ "github.com/marcboeker/go-duckdb"
 )
 
-// Metadata stores distinct values for fast variable queries (mirrors compactor.Metadata)
-type Metadata struct {
-	DataSources      []string            `json:"data_sources"`
-	FlowNames        []string            `json:"flow_names"`
-	AnnotationKeys   []string            `json:"annotation_keys"`
-	AnnotationValues map[string][]string `json:"annotation_values"`
-	UpdatedAt        time.Time           `json:"updated_at"`
-}
-
-// LoadMetadata reads the pre-computed metadata file for fast variable queries
-func (s *Service) LoadMetadata() (*Metadata, error) {
-	metadataPath := filepath.Join(s.dataDir, "aggregated", "metadata.json")
-	data, err := os.ReadFile(metadataPath)
-	if err != nil {
-		return nil, err
-	}
-	var meta Metadata
-	if err := json.Unmarshal(data, &meta); err != nil {
-		return nil, err
-	}
-	return &meta, nil
-}
-
 // ConfigProvider provides access to core configuration
 type ConfigProvider interface {
 	GetAnalyticsGroupName() string
@@ -535,29 +512,14 @@ func quoteStrings(values []string) []string {
 }
 
 // GetDistinctValues returns distinct values for a field from aggregated data
-// When filtered=false (default) and no filters applied, uses pre-computed metadata for instant response
-// When filtered=true or filters are applied, scans parquet files for filtered values
+// Always queries parquet files directly (no metadata caching)
+// Uses short-lived in-memory cache to reduce redundant queries within a session
 func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, filtered bool, ingressTypes []string) ([]string, error) {
 	// Normalize and check for active filters
 	ingressTypes = normalizeFilterValues(ingressTypes)
 	hasIngressFilter := len(ingressTypes) > 0 && !containsAll(ingressTypes)
 
-	// Try metadata first (instant response) - only when no filters applied
-	if !filtered && !hasIngressFilter {
-		if meta, err := s.LoadMetadata(); err == nil {
-			switch field {
-			case "data_source":
-				s.logger.Debug("using metadata for data_source values", "count", len(meta.DataSources))
-				return meta.DataSources, nil
-			case "flow_name":
-				s.logger.Debug("using metadata for flow_name values", "count", len(meta.FlowNames))
-				return meta.FlowNames, nil
-			}
-		}
-		// Fall through to parquet scan if metadata unavailable
-	}
-
-	// Check cache for filtered queries
+	// Check short-lived cache
 	cacheKey := fmt.Sprintf("field|%s|%s|%s|%v", field, timeFrom.Format("20060102"), timeTo.Format("20060102"), ingressTypes)
 	s.cacheMu.RLock()
 	if entry, ok := s.annotationValCache[cacheKey]; ok && time.Now().Before(entry.expires) {
@@ -571,7 +533,13 @@ func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, fi
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	files := s.getAllAggregatedFiles()
+	// Get files for time range (faster) or all files
+	var files []string
+	if filtered {
+		files = s.getAggregatedFilesForRange(timeFrom, timeTo)
+	} else {
+		files = s.getAllAggregatedFiles()
+	}
 	if len(files) == 0 {
 		return nil, nil
 	}
@@ -625,8 +593,7 @@ func (s *Service) GetDistinctValues(field string, timeFrom, timeTo time.Time, fi
 // "None" is always included and means "don't group by annotation"
 // forGroup controls ordering: if true, puts analyticsGroupName first (for groupByAnnotation dropdown)
 // if false, uses alphabetical order with "None" first (for annotation key filter dropdowns)
-// When filtered=false (default) and no filters applied, uses pre-computed metadata for instant response
-// When filtered=true or filters are applied, scans parquet files for filtered values
+// Processes files individually to avoid OOM on large datasets
 func (s *Service) GetAnnotationKeys(timeFrom, timeTo time.Time, forGroup bool, filtered bool, dataSources, ingressTypes []string) ([]string, error) {
 	// Normalize and check for active filters
 	dataSources = normalizeFilterValues(dataSources)
@@ -634,18 +601,16 @@ func (s *Service) GetAnnotationKeys(timeFrom, timeTo time.Time, forGroup bool, f
 	hasDataSourceFilter := len(dataSources) > 0 && !containsAll(dataSources)
 	hasIngressFilter := len(ingressTypes) > 0 && !containsAll(ingressTypes)
 
-	// Try metadata first (instant response) - only when no filters applied
-	if !filtered && !hasDataSourceFilter && !hasIngressFilter {
-		if meta, err := s.LoadMetadata(); err == nil {
-			return s.buildAnnotationKeysResult(meta.AnnotationKeys, forGroup), nil
-		}
-		// Fall through to parquet scan if metadata unavailable
-	}
-
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	files := s.getAllAggregatedFiles()
+	// Get files for time range (faster) or all files
+	var files []string
+	if filtered {
+		files = s.getAggregatedFilesForRange(timeFrom, timeTo)
+	} else {
+		files = s.getAllAggregatedFiles()
+	}
 	if len(files) == 0 {
 		return []string{"None"}, nil
 	}
@@ -667,28 +632,38 @@ func (s *Service) GetAnnotationKeys(timeFrom, timeTo time.Time, forGroup bool, f
 		quoted := quoteStrings(ingressTypes)
 		whereFilters = append(whereFilters, fmt.Sprintf("ingress_type IN (%s)", strings.Join(quoted, ", ")))
 	}
+	whereClause := strings.Join(whereFilters, " AND ")
 
-	query := fmt.Sprintf(
-		"SELECT DISTINCT unnest(map_keys(annotations)) AS key FROM read_parquet([%s]) WHERE %s ORDER BY key",
-		formatFileList(files), strings.Join(whereFilters, " AND "),
-	)
+	// Process files individually to avoid OOM from unnest materializing all keys at once
+	keySet := make(map[string]struct{})
+	for _, file := range files {
+		query := fmt.Sprintf(
+			"SELECT DISTINCT unnest(map_keys(annotations)) AS key FROM read_parquet('%s') WHERE %s",
+			file, whereClause,
+		)
 
-	rows, err := s.db.Query(query)
-	if err != nil {
-		s.logger.Warn("annotation keys query failed", "error", err)
-		return []string{"None"}, nil
-	}
-	defer rows.Close()
-
-	var keys []string
-	for rows.Next() {
-		var key string
-		if err := rows.Scan(&key); err != nil {
+		rows, err := s.db.Query(query)
+		if err != nil {
+			s.logger.Debug("annotation keys query failed for file", "file", file, "error", err)
 			continue
 		}
-		if key != "" {
-			keys = append(keys, key)
+
+		for rows.Next() {
+			var key string
+			if err := rows.Scan(&key); err != nil {
+				continue
+			}
+			if key != "" {
+				keySet[key] = struct{}{}
+			}
 		}
+		rows.Close()
+	}
+
+	// Convert map to slice
+	keys := make([]string, 0, len(keySet))
+	for key := range keySet {
+		keys = append(keys, key)
 	}
 
 	return s.buildAnnotationKeysResult(keys, forGroup), nil
@@ -728,8 +703,8 @@ func (s *Service) buildAnnotationKeysResult(keys []string, forGroup bool) []stri
 }
 
 // GetAnnotationValues returns distinct values for a specific annotation key from aggregated data
-// When filtered=false (default), uses pre-computed metadata for instant response
-// When filtered=true, scans parquet files for time-range-specific values
+// Always queries parquet files on-the-fly (annotation values are NOT cached to avoid bloat)
+// Uses short-lived in-memory cache to reduce redundant queries within a session
 func (s *Service) GetAnnotationValues(key string, timeFrom, timeTo time.Time, filtered bool, dataSources, ingressTypes []string) ([]string, error) {
 	// Normalize and check for active filters
 	dataSources = normalizeFilterValues(dataSources)
@@ -737,20 +712,7 @@ func (s *Service) GetAnnotationValues(key string, timeFrom, timeTo time.Time, fi
 	hasDataSourceFilter := len(dataSources) > 0 && !containsAll(dataSources)
 	hasIngressFilter := len(ingressTypes) > 0 && !containsAll(ingressTypes)
 
-	// Try metadata first (instant response) - only when no filters applied
-	if !filtered && !hasDataSourceFilter && !hasIngressFilter {
-		if meta, err := s.LoadMetadata(); err == nil {
-			if values, ok := meta.AnnotationValues[key]; ok {
-				s.logger.Debug("using metadata for annotation values", "key", key, "count", len(values))
-				return values, nil
-			}
-			// Key not in metadata, return empty
-			return nil, nil
-		}
-		// Fall through to parquet scan if metadata unavailable
-	}
-
-	// Check cache for filtered queries
+	// Check short-lived cache to avoid redundant queries
 	cacheKey := fmt.Sprintf("vals|%s|%s|%s|%v|%v", key, timeFrom.Format("20060102"), timeTo.Format("20060102"), dataSources, ingressTypes)
 	s.cacheMu.RLock()
 	if entry, ok := s.annotationValCache[cacheKey]; ok && time.Now().Before(entry.expires) {

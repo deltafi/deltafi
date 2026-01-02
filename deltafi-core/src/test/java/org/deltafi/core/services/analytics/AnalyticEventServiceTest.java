@@ -186,4 +186,42 @@ class AnalyticEventServiceTest {
         assertThat(sentAnnotations).containsOnlyKeys("allowed1");
         assertThat(sentAnnotations).doesNotContainKey("notAllowed");
     }
+
+    @Test
+    void recordIngress_includesAnalyticsGroupNameEvenWhenNotInAllowedList() {
+        // Setup - analyticsGroupName is NOT in allowedAnalyticsAnnotationsList
+        when(mockProperties.allowedAnalyticsAnnotationsList()).thenReturn(List.of("allowed1"));
+        when(mockProperties.getAnalyticsGroupName()).thenReturn("groupKey");
+        when(eventGroupService.getOrCreateEventGroupId(anyString())).thenReturn(1);
+
+        FlowDefinition mockFlow = mock(FlowDefinition.class);
+        when(mockFlow.getId()).thenReturn(1);
+        when(flowDefinitionService.getOrCreateFlow(anyString(), any(FlowType.class))).thenReturn(mockFlow);
+
+        Map<String, String> inputAnnotations = new HashMap<>();
+        inputAnnotations.put("allowed1", "value1");
+        inputAnnotations.put("groupKey", "groupValue");
+        inputAnnotations.put("notAllowed", "shouldBeFiltered");
+
+        // Execute
+        analyticEventService.recordIngress(
+                UUID.randomUUID(),
+                OffsetDateTime.now(),
+                "testDataSource",
+                FlowType.REST_DATA_SOURCE,
+                100L,
+                inputAnnotations,
+                AnalyticIngressTypeEnum.DATA_SOURCE
+        );
+
+        // Verify the parquet collector receives both allowed1 and analyticsGroupName (groupKey)
+        ArgumentCaptor<AnalyticsEventRequest> captor = ArgumentCaptor.forClass(AnalyticsEventRequest.class);
+        verify(analyticsClient).writeEvent(captor.capture());
+
+        Map<String, String> sentAnnotations = captor.getValue().annotations();
+        assertThat(sentAnnotations).containsOnlyKeys("allowed1", "groupKey");
+        assertThat(sentAnnotations).containsEntry("allowed1", "value1");
+        assertThat(sentAnnotations).containsEntry("groupKey", "groupValue");
+        assertThat(sentAnnotations).doesNotContainKey("notAllowed");
+    }
 }

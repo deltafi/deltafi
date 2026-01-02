@@ -73,9 +73,10 @@ public class AnalyticEventService {
             return Map.of();
         }
         List<String> allowed = deltaFiPropertiesService.getDeltaFiProperties().allowedAnalyticsAnnotationsList();
+        String groupName = deltaFiPropertiesService.getDeltaFiProperties().getAnalyticsGroupName();
         Map<String, String> filtered = new HashMap<>();
         for (Map.Entry<String, String> entry : annotations.entrySet()) {
-            if (allowed.contains(entry.getKey())) {
+            if (allowed.contains(entry.getKey()) || entry.getKey().equals(groupName)) {
                 filtered.put(entry.getKey(), entry.getValue());
             }
         }

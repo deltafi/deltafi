@@ -29,22 +29,12 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	_ "github.com/marcboeker/go-duckdb"
 )
-
-// Metadata stores distinct values for fast variable queries
-type Metadata struct {
-	DataSources      []string            `json:"data_sources"`
-	FlowNames        []string            `json:"flow_names"`
-	AnnotationKeys   []string            `json:"annotation_keys"`
-	AnnotationValues map[string][]string `json:"annotation_values"`
-	UpdatedAt        time.Time           `json:"updated_at"`
-}
 
 type Config struct {
 	DataDir                   string
@@ -235,11 +225,6 @@ func (c *Compactor) compact(dates []string) error {
 			"duration", time.Since(start),
 			"hours_processed", totalHours,
 		)
-
-		// Update global metadata for fast variable queries
-		if err := c.updateMetadata(db); err != nil {
-			c.logger.Warn("failed to update metadata", "error", err)
-		}
 	}
 
 	return nil
@@ -1196,158 +1181,6 @@ func (c *Compactor) safeRemoveDir(dir string) error {
 	}
 
 	return nil
-}
-
-const metadataValueLimit = 500 // Max values per annotation key in metadata.json
-
-// updateMetadata scans all aggregated parquet files and updates metadata.json
-func (c *Compactor) updateMetadata(db *sql.DB) error {
-	// New glob pattern for hourly files: aggregated/*/*.parquet
-	aggregatedGlob := filepath.Join(c.cfg.DataDir, "aggregated", "*", "*.parquet")
-	files, _ := filepath.Glob(aggregatedGlob)
-	if len(files) == 0 {
-		return nil
-	}
-
-	meta := Metadata{
-		AnnotationValues: make(map[string][]string),
-		UpdatedAt:        time.Now(),
-	}
-
-	// Get distinct data sources
-	dataSources, err := c.queryDistinct(db, "data_source", aggregatedGlob)
-	if err != nil {
-		c.logger.Warn("failed to get data sources for metadata", "error", err)
-	} else {
-		meta.DataSources = dataSources
-	}
-
-	// Get distinct flow names
-	flowNames, err := c.queryDistinct(db, "flow_name", aggregatedGlob)
-	if err != nil {
-		c.logger.Warn("failed to get flow names for metadata", "error", err)
-	} else {
-		meta.FlowNames = flowNames
-	}
-
-	// Get distinct annotation keys
-	annotationKeys, err := c.queryAnnotationKeys(db, aggregatedGlob)
-	if err != nil {
-		c.logger.Warn("failed to get annotation keys for metadata", "error", err)
-	} else {
-		meta.AnnotationKeys = annotationKeys
-	}
-
-	// Get distinct values for each annotation key (with limit)
-	for _, key := range meta.AnnotationKeys {
-		values, err := c.queryAnnotationValues(db, aggregatedGlob, key)
-		if err != nil {
-			c.logger.Warn("failed to get annotation values for metadata", "key", key, "error", err)
-			continue
-		}
-		if len(values) > metadataValueLimit {
-			values = values[:metadataValueLimit]
-			c.logger.Debug("truncated annotation values in metadata", "key", key, "limit", metadataValueLimit)
-		}
-		meta.AnnotationValues[key] = values
-	}
-
-	// Write metadata file atomically
-	metadataPath := filepath.Join(c.cfg.DataDir, "aggregated", "metadata.json")
-	tmpPath := metadataPath + ".tmp"
-
-	data, err := json.MarshalIndent(meta, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshaling metadata: %w", err)
-	}
-
-	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
-		return fmt.Errorf("writing metadata: %w", err)
-	}
-
-	if err := os.Rename(tmpPath, metadataPath); err != nil {
-		os.Remove(tmpPath)
-		return fmt.Errorf("renaming metadata: %w", err)
-	}
-
-	c.logger.Info("metadata updated",
-		"data_sources", len(meta.DataSources),
-		"flow_names", len(meta.FlowNames),
-		"annotation_keys", len(meta.AnnotationKeys),
-	)
-
-	return nil
-}
-
-// queryDistinct returns distinct values for a field from aggregated parquet files
-func (c *Compactor) queryDistinct(db *sql.DB, field, glob string) ([]string, error) {
-	query := fmt.Sprintf("SELECT DISTINCT %s FROM read_parquet('%s') WHERE %s IS NOT NULL AND %s != '' ORDER BY %s",
-		field, glob, field, field, field)
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var values []string
-	for rows.Next() {
-		var val string
-		if err := rows.Scan(&val); err != nil {
-			continue
-		}
-		values = append(values, val)
-	}
-	return values, nil
-}
-
-// queryAnnotationKeys returns distinct annotation keys from aggregated parquet files
-func (c *Compactor) queryAnnotationKeys(db *sql.DB, glob string) ([]string, error) {
-	query := fmt.Sprintf("SELECT DISTINCT unnest(map_keys(annotations)) AS key FROM read_parquet('%s') WHERE annotations IS NOT NULL ORDER BY key", glob)
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var keys []string
-	for rows.Next() {
-		var key string
-		if err := rows.Scan(&key); err != nil {
-			continue
-		}
-		if key != "" {
-			keys = append(keys, key)
-		}
-	}
-	sort.Strings(keys)
-	return keys, nil
-}
-
-// queryAnnotationValues returns distinct values for an annotation key from aggregated parquet files
-func (c *Compactor) queryAnnotationValues(db *sql.DB, glob, key string) ([]string, error) {
-	query := fmt.Sprintf("SELECT DISTINCT annotations['%s'][1] AS value FROM read_parquet('%s') WHERE annotations IS NOT NULL AND annotations['%s'] IS NOT NULL ORDER BY value",
-		key, glob, key)
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var values []string
-	for rows.Next() {
-		var val string
-		if err := rows.Scan(&val); err != nil {
-			continue
-		}
-		if val != "" {
-			values = append(values, val)
-		}
-	}
-	sort.Strings(values)
-	return values, nil
 }
 
 // DateMeta stores per-hour compaction metadata for a date

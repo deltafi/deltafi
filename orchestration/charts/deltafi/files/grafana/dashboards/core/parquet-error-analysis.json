@@ -1281,10 +1281,10 @@
       {
         "current": {
           "selected": true,
-          "text": "Show all values (fast)",
-          "value": "false"
+          "text": "Filter to time range (faster)",
+          "value": "true"
         },
-        "description": "When enabled, filter dropdown values to only those present in the selected time range. This is slower but more accurate.",
+        "description": "When enabled, filter dropdown values to only those present in the selected time range. Recommended for faster queries.",
         "hide": 0,
         "includeAll": false,
         "label": "Filter to time range",
@@ -1292,17 +1292,17 @@
         "name": "filterToTimeRange",
         "options": [
           {
-            "selected": true,
-            "text": "Show all values (fast)",
+            "selected": false,
+            "text": "Show all values (slower)",
             "value": "false"
           },
           {
-            "selected": false,
-            "text": "Filter to time range (slower)",
+            "selected": true,
+            "text": "Filter to time range (faster)",
             "value": "true"
           }
         ],
-        "query": "Show all values (fast) : false, Filter to time range (slower) : true",
+        "query": "Show all values (slower) : false, Filter to time range (faster) : true",
         "type": "custom"
       },
       {
