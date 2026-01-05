@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.45.3] - 2026-01-05
+
+### Added
+- Analytics API: `data-sources` endpoint now accepts `ingressTypes` filter parameter
+- Analytics API: `annotation-keys` endpoint now accepts `dataSources` and `ingressTypes` filter parameters
+- Analytics API: `annotation-values` endpoint now accepts `dataSources` and `ingressTypes` filter parameters
+- Parquet analytics Grafana dashboards: dropdown variables now cascade filters (selecting an ingress type filters data sources; selecting data sources and ingress types filters annotation keys and annotation values)
+
+### Changed
+- Parquet analytics Grafana dashboards: default "Filter to time range" option to true (recommended) for faster queries
+
+### Fixed
+- Parquet analytics: fixed out-of-memory error when querying annotation keys on large datasets by processing files individually
+- Parquet analytics: include analyticsGroupName annotation even when not in allowedAnalyticsAnnotations 
+- Fixed an issue with DeltaFile export where segments with offsets were not getting exported properly leading to invalid tar files
+
+### Tech-Debt/Refactor
+- Removed orphaned changelog file: 466-minio-cli
+
 ## [2.45.2] - 2025-12-31
 
 ### Added
@@ -5479,7 +5498,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.3...main
+[2.45.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.2...2.45.3
 [2.45.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.1...2.45.2
 [2.45.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.0...2.45.1
 [2.45.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.44.0...2.45.0
