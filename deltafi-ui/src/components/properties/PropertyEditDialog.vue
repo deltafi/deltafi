@@ -21,7 +21,7 @@
     <span @click="show()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="false" :closable="false" :draggable="false" :style="{ width: '30vw' }" @show="onShow" @keydown.esc="hide">
+    <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="false" :closable="false" :draggable="false" :style="{ width: '30vw', minWidth: '400px' }" @show="onShow" @keydown.esc="hide">
       <template #header>
         <div class="p-dialog-title">
           Editing {{ localProperty.key }}
@@ -35,7 +35,7 @@
         <MapEdit v-if="localProperty.dataType === 'MAP'" v-model="localProperty.value" />
         <span v-if="localProperty.dataType === 'STRING'">
           <TextArea v-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
-          <InputText v-else v-model="localProperty.value" style="width: 100%" />
+          <InputText v-else v-model="localProperty.value" style="width: 100%" @paste="onPaste" />
         </span>
         <InputNumber v-if="localProperty.dataType === 'NUMBER'" v-model="localProperty.value" style="width: 100%" />
         <span v-if="localProperty.dataType === 'BOOLEAN'">
@@ -73,8 +73,8 @@ import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import TextArea from "primevue/textarea";
 
-const { setPluginVariableValues } = usePlugins();
-const { update, reset } = usePropertySets();
+const { setPluginVariableValues, errors: pluginErrors } = usePlugins();
+const { update, reset, errors: propertyErrors } = usePropertySets();
 
 const props = defineProps({
   pluginCoordinatesProp: {
@@ -112,7 +112,21 @@ watch(
 
 const setFocus = async () => {
   await nextTick();
-  inputContainer.value.querySelectorAll('input, textarea')[0].focus();
+  if (!inputContainer.value) return;
+  const input = inputContainer.value.querySelectorAll('input, textarea')[0];
+  if (input) input.focus();
+};
+
+const onPaste = (event) => {
+  const pastedText = event.clipboardData.getData('text');
+  if (pastedText.includes('\n')) {
+    event.preventDefault();
+    const input = event.target;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const currentValue = localProperty.value.value || '';
+    localProperty.value.value = currentValue.slice(0, start) + pastedText + currentValue.slice(end);
+  }
 };
 
 const show = () => {
@@ -145,7 +159,7 @@ const save = async (setNull = false) => {
         value: setNull ? null : updateValue.value,
       },
     });
-    updateSuccessful = response.setPluginVariableValues;
+    updateSuccessful = response?.setPluginVariableValues;
   } else {
     response = await update([
       {
@@ -153,13 +167,21 @@ const save = async (setNull = false) => {
         value: setNull ? null : updateValue.value,
       },
     ]);
-    updateSuccessful = response.updateProperties;
+    updateSuccessful = response?.updateProperties;
   }
 
   if (!updateSuccessful) {
-    localProperty.value.value = localProperty.value.defaultValue;
-    notify.error(`${pluginCoordinates.value ? "Plugin variable" : "System Property"} updated failed. Reverting to default value.`, `${pluginCoordinates.value ? localProperty.value.name : localProperty.value.key}`);
-    saving.value = false;
+    const errors = pluginCoordinates.value ? pluginErrors.value : propertyErrors.value;
+    if (errors?.length) {
+      const errorMsg = errors.map(e => e.message || e).join(', ');
+      notify.error(`${pluginCoordinates.value ? "Plugin variable" : "System Property"} update failed: ${errorMsg}`, `${pluginCoordinates.value ? localProperty.value.name : localProperty.value.key}`);
+      saving.value = false;
+    } else {
+      // No errors but updateSuccessful is false means no changes were made
+      emit("saved", localProperty.value);
+      saving.value = false;
+      hide();
+    }
   } else {
     emit("saved", localProperty.value);
     notify.success(`${pluginCoordinates.value ? "Plugin variable" : "System Property"} updated successfully.`, `${pluginCoordinates.value ? localProperty.value.name : localProperty.value.key}`);
