@@ -35,6 +35,9 @@
     <Dialog v-model:visible="idle" header="Are you still there?" :modal="true" :style="{ width: '25vw' }">
       <p>All background network activity has been paused due to user inactivity. Move the mouse to resume.</p>
     </Dialog>
+    <Dialog v-model:visible="showMotd" header="Message of the Day" :modal="true" :closable="true" :dismissableMask="true" :style="{ width: '30vw', minWidth: '300px' }" @hide="dismissMotd">
+      <div v-html="renderMarkdown(uiConfig.messageOfTheDay || '')" />
+    </Dialog>
   </div>
 </template>
 
@@ -47,6 +50,7 @@ import CustomToast from "@/components/CustomToast.vue";
 import Dialog from "primevue/dialog";
 import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
+import useMotd from "@/composables/useMotd";
 import useCurrentUser from "@/composables/useCurrentUser";
 import useVersion from '@/composables/useVersion';
 import useServerSentEvents from "@/composables/useServerSentEvents";
@@ -54,6 +58,10 @@ import useNotifications from "@/composables/useNotifications";
 import { computed, onBeforeMount, watch, nextTick, onBeforeUnmount, provide, ref, onMounted } from "vue";
 import { useTitle, useIdle } from "@vueuse/core";
 import { usePrimeVue } from "primevue/config";
+import MarkdownIt from "markdown-it";
+
+const markdownIt = new MarkdownIt();
+const renderMarkdown = (source) => markdownIt.render(source);
 
 const primevue = usePrimeVue();
 const route = useRoute();
@@ -61,6 +69,8 @@ const title = useTitle("DeltaFi");
 const notify = useNotifications();
 const { serverSentEvents } = useServerSentEvents();
 const { uiConfig } = useUiConfig();
+const messageOfTheDay = computed(() => uiConfig.messageOfTheDay);
+const { showMotd, dismiss: dismissMotd } = useMotd(messageOfTheDay);
 const { fetchCurrentUser } = useCurrentUser();
 const { fetchVersion } = useVersion();
 

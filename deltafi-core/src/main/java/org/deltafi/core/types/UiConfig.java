@@ -41,6 +41,7 @@ public class UiConfig {
     private List<Link> externalLinks = new ArrayList<>();
     private boolean lookupTablesEnabled;
     private boolean leader;
+    private String messageOfTheDay;
 
     public void setProperties(DeltaFiProperties properties) {
         this.setTitle(properties.getSystemName());
@@ -49,6 +50,7 @@ public class UiConfig {
         this.topBar = new TopBar(properties);
         this.securityBanner = new SecurityBanner(properties);
         this.leader = properties.hasMembers();
+        this.messageOfTheDay = properties.getMessageOfTheDay();
     }
 
     public void setLinks(List<Link> links) {

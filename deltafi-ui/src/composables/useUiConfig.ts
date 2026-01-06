@@ -44,7 +44,8 @@ export type UiConfig = {
   useUTC?: Boolean,
   authMode?: String,
   clusterMode?: Boolean,
-  contentPreviewSize?: Number
+  contentPreviewSize?: Number,
+  messageOfTheDay?: string
 }
 
 const uiConfig: UiConfig = reactive({

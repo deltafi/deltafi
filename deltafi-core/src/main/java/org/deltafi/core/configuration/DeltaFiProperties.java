@@ -335,6 +335,9 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Toggles the security banner display", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
     private boolean securityBannerEnabled = false;
 
+    @PropertyInfo(group = PropertyGroup.UI_CONTROLS, description = "Message of the day displayed to users when they visit the UI (supports Markdown)")
+    private String messageOfTheDay;
+
     @PropertyInfo(group = PropertyGroup.PERFORMANCE_CONTROLS, description = "Maximum size for in memory action queues before tasks are moved to on-disk queues", defaultValue = "5000", dataType = VariableDataType.NUMBER)
     private int inMemoryQueueSize = 5000;
 

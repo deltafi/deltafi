@@ -112,6 +112,7 @@ type DeltaFiProperties {
     securityBannerBackgroundColor: String
     securityBannerTextColor: String
     securityBannerEnabled: Boolean!
+    messageOfTheDay: String
     inMemoryQueueSize: Int!
     maxFlowDepth: Int!
     joinAcquireLockTimeoutMs: Long!
@@ -155,6 +156,7 @@ input DeltaFiPropertiesInput {
     securityBannerBackgroundColor: String
     securityBannerTextColor: String
     securityBannerEnabled: Boolean!
+    messageOfTheDay: String
     inMemoryQueueSize: Int!
     maxFlowDepth: Int!
     joinAcquireLockTimeoutMs: Long!
