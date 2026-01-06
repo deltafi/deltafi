@@ -212,30 +212,45 @@ public class DeltaFileFlow {
      * @param actionIndex the action index to start from, or null for flow input
      * @return the content list
      */
-    public List<Content> contentAtOrBefore(Integer actionIndex) {
+    public ContentAndMetadata contentAtOrBefore(Integer actionIndex) {
         if (actionIndex == null) {
-            return inputContent();
+            return inputContentAndMetadata();
         }
         if (actionIndex < 0 || actionIndex >= actions.size()) {
-            return List.of();
+            return ContentAndMetadata.EMPTY;
         }
 
         // Check if the requested action is complete - if so, return its content
-        Action requestedAction = actions.get(actionIndex);
-        if (requestedAction.getState() == ActionState.COMPLETE) {
-            return requestedAction.getContent() != null ? requestedAction.getContent() : List.of();
-        }
-
-        // Action didn't complete - find the last complete action before it
-        for (int i = actionIndex - 1; i >= 0; i--) {
-            Action prevAction = actions.get(i);
-            if (prevAction.getState() == ActionState.COMPLETE) {
-                return prevAction.getContent() != null ? prevAction.getContent() : List.of();
+        // If the given actionIndex was not complete work backwards until we reach the last completed action to handle finding content for errored actions
+        for (int i = actionIndex; i >= 0; i--) {
+            Action action = actions.get(i);
+            if (action.getState() == ActionState.COMPLETE) {
+                return contentAndMetadataAtIndex(i);
             }
         }
 
         // No complete actions found - use flow input
-        return inputContent();
+        return inputContentAndMetadata();
+    }
+
+    private ContentAndMetadata inputContentAndMetadata() {
+        return new ContentAndMetadata(inputContent(), inputMetadata());
+    }
+
+    private ContentAndMetadata contentAndMetadataAtIndex(int actionIndex) {
+        Map<String, String> metadata = new HashMap<>(inputMetadata());
+
+        for (int i = 0; i <= actionIndex; i++) {
+            Action action = actions.get(i);
+            if (action.getMetadata() != null) {
+                metadata.putAll(action.getMetadata());
+            }
+            if (action.getDeleteMetadataKeys() != null) {
+                action.getDeleteMetadataKeys().forEach(metadata::remove);
+            }
+        }
+
+        return new ContentAndMetadata(actions.get(actionIndex).getContent(), metadata);
     }
 
     public long lastContentSize() {
@@ -244,6 +259,10 @@ public class DeltaFileFlow {
 
     private List<Content> inputContent() {
         return input != null ? input.getContent() : List.of();
+    }
+
+    private Map<String, String> inputMetadata() {
+        return input != null && input.getMetadata() != null ? input.getMetadata() : Collections.emptyMap();
     }
 
     @Transient

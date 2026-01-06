@@ -29,6 +29,9 @@ spec:
       {{ if .Values.deltafi.auth.entityResolver.enabled }}
       {{- include "entityResolverContainer" . | nindent 6 }}
       {{ end }}
+      {{ if .Values.deltafi.auth.entityAuthorizer.enabled }}
+      {{- include "entityAuthorizerContainer" . | nindent 6 }}
+      {{ end }}
       - name: deltafi-core
         image: {{ .Values.deltafi.core.image }}
         env:

@@ -222,7 +222,11 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 	if err := o.setupSecrets(); err != nil {
 		return err
 	}
-	if err := o.entityResolverConfig(); err != nil {
+	if err := o.createServiceConfig("entityResolver", "deltafi.auth.entityResolver.config"); err != nil {
+		return err
+	}
+
+	if err := o.createServiceConfig("entityAuthorizer", "deltafi.auth.entityAuthorizer.config"); err != nil {
 		return err
 	}
 	if err := createNetwork(); err != nil {
@@ -385,6 +389,7 @@ func (o *ComposeOrchestrator) createDataDirs() error {
 		"certs",
 		"dirwatcher",
 		"egress-sink",
+		"entityAuthorizer",
 		"entityResolver",
 		"grafana",
 		"logs",
@@ -570,6 +575,9 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 
 	localStorage := o.localObjectStorageEnabled(values)
 
+	entityAuthPort := o.getValueOr(values, "deltafi.auth.entityAuthorizer.port", "8080")
+	entityAuthDefaultUrl := fmt.Sprintf("http://deltafi-entity-authorizer:%s", entityAuthPort)
+
 	envVars := map[string]string{
 		"AUTH_MODE":                          o.getValue(values, "deltafi.auth.mode"),
 		"CONFIG_DIR":                         o.configPath,
@@ -587,6 +595,8 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"DISTRO_DIR":                         o.distroPath,
 		"DOMAIN":                             o.getValue(values, "ingress.domain"),
 		"EGRESS_SINK_DROP_METADATA":          o.getValue(values, "deltafi.egress_sink.drop_metadata"),
+		"ENTITY_AUTHORIZER_ENABLED":          o.getValueOr(values, "deltafi.auth.entityAuthorizer.enabled", "false"),
+		"ENTITY_AUTHORIZER_URL":              o.getValueOr(values, "deltafi.auth.entityAuthorizer.url", entityAuthDefaultUrl),
 		"ENTITY_RESOLVER_ENABLED":            o.getValue(values, "deltafi.auth.entityResolver.enabled"),
 		"ENTITY_RESOLVER_URL":                fmt.Sprintf("http://deltafi-entity-resolver:%s", o.getValue(values, "deltafi.auth.entityResolver.port")),
 		"FASTDELETE_WORKERS":                 o.getValueOr(values, "deltafi.fastdelete.workersPerNode", "1"),
@@ -696,80 +706,80 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 	}
 
 	envVars := map[string]string{
-		"SETTINGS_DIR":                       filepath.Join(o.orchestrationPath, "compose", "settings"),
-		"SECRETS_DIR":                        o.secretsPath,
-		"ENV_DIR":                            o.configPath,
-		"CONFIG_DIR":                         o.configPath,
-		"DATA_DIR":                           o.dataPath,
-		"LOGS_DIR":                           o.logsPath,
-		"SITE_DIR":                           o.sitePath,
-		"REPOS_DIR":                          o.reposPath,
-		"COMPOSE_PROJECT_NAME":               "deltafi",
-		"DELTAFI_API":                        o.getValue(values, "deltafi.api.image"),
-		"DELTAFI_ENTITY_RESOLVER":            o.getValue(values, "deltafi.auth.entityResolver.image"),
-		"DELTAFI_JAVA_DEVCONTAINER":          o.getValue(values, "deltafi.java_devcontainer.image"),
-		"DELTAFI_JAVA_IDE":                   o.getValue(values, "deltafi.java_ide.image"),
-		"DELTAFI_CORE":                       o.getValue(values, "deltafi.core.image"),
-		"DELTAFI_CORE_ACTIONS":               o.getValue(values, "deltafi.core_actions.image"),
-		"DELTAFI_DIRWATCHER":                 o.getValue(values, "deltafi.dirwatcher.image"),
-		"DELTAFI_EGRESS_SINK":                o.getValue(values, "deltafi.egress_sink.image"),
-		"DELTAFI_ANALYTICS":                  o.getValue(values, "deltafi.analytics.image"),
-		"DELTAFI_NODEMONITOR":                o.getValue(values, "deltafi.nodemonitor.image"),
-		"DELTAFI_SECRET_CA_CHAIN":            "certs",
-		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL": o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),
-		"DELTAFI_SECRET_INGRESS_SSL":         o.getValueOr(values, "ingress.tls.secrets.default", "ssl-secret"),
-		"DELTAFI_SECRET_CORE_SSL":            o.getValueOr(values, "deltafi.core.ssl.secret", "ssl-secret"),
-		"DELTAFI_SECRET_PLUGINS_SSL":         o.getValueOr(values, "deltafi.plugins.ssl.secret", "ssl-secret"),
-		"GRAFANA":                            o.getValue(values, "dependencies.grafana"),
-		"VICTORIAMETRICS":                    o.getValue(values, "dependencies.victoriametrics"),
-		"VECTOR":                             o.getValue(values, "dependencies.vector"),
-		"DELTAFI_LOG_AGGREGATION_ENABLED":    o.getValueOr(values, "deltafi.logs.enabled", "true"),
-		"LOGROTATE":                          o.getValue(values, "deltafi.logs.logrotate.image"),
-		"LOGROTATE_INTERVAL":                 o.getValueOr(values, "deltafi.logs.logrotate.interval", "daily"),
-		"LOGROTATE_KEEP_DAYS":                o.getValueOr(values, "deltafi.logs.logrotate.schedule.keep", "30"),
-		"LOGROTATE_AUDIT_KEEP_DAYS":          o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.keep", "365"),
-		"LOGROTATE_MAX_SIZE":                 o.getValueOr(values, "deltafi.logs.logrotate.schedule.max_size", "50M"),
-		"LOGROTATE_AUDIT_MAX_SIZE":           o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.max_size", "100M"),
-		"DOZZLE":                             o.getValue(values, "dependencies.dozzle"),
-		"LOOKUP_TABLES_ENABLED":              o.getValue(values, "deltafi.lookup.enabled"),
-		"S3PROXY":                            o.getValue(values, "dependencies.s3proxy"),
-		"POSTGRES":                           o.getValue(values, "dependencies.postgres"),
-		"NGINX":                              o.getValue(values, "dependencies.nginx"),
-		"VALKEY":                             o.getValue(values, "dependencies.valkey"),
-		"REDIS":                              o.getValue(values, "dependencies.valkey"),
-		"DOCKER_WEB_GUI":                     o.getValue(values, "dependencies.docker_web_gui"),
-		"ENTITY_RESOLVER_PORT":               o.getValue(values, "deltafi.auth.entityResolver.port"),
-		"UI_HTTP_PORT":                       o.getValue(values, "ingress.ui.http_port"),
-		"UI_HTTPS_PORT":                      o.getValue(values, "ingress.ui.https_port"),
+		"SETTINGS_DIR":                         filepath.Join(o.orchestrationPath, "compose", "settings"),
+		"SECRETS_DIR":                          o.secretsPath,
+		"ENV_DIR":                              o.configPath,
+		"CONFIG_DIR":                           o.configPath,
+		"DATA_DIR":                             o.dataPath,
+		"LOGS_DIR":                             o.logsPath,
+		"SITE_DIR":                             o.sitePath,
+		"REPOS_DIR":                            o.reposPath,
+		"COMPOSE_PROJECT_NAME":                 "deltafi",
+		"DELTAFI_API":                          o.getValue(values, "deltafi.api.image"),
+		"DELTAFI_ENTITY_AUTHORIZER":            o.getValue(values, "deltafi.auth.entityAuthorizer.image"),
+		"DELTAFI_ENTITY_RESOLVER":              o.getValue(values, "deltafi.auth.entityResolver.image"),
+		"DELTAFI_JAVA_DEVCONTAINER":            o.getValue(values, "deltafi.java_devcontainer.image"),
+		"DELTAFI_JAVA_IDE":                     o.getValue(values, "deltafi.java_ide.image"),
+		"DELTAFI_CORE":                         o.getValue(values, "deltafi.core.image"),
+		"DELTAFI_CORE_ACTIONS":                 o.getValue(values, "deltafi.core_actions.image"),
+		"DELTAFI_DIRWATCHER":                   o.getValue(values, "deltafi.dirwatcher.image"),
+		"DELTAFI_EGRESS_SINK":                  o.getValue(values, "deltafi.egress_sink.image"),
+		"DELTAFI_ANALYTICS":                    o.getValue(values, "deltafi.analytics.image"),
+		"DELTAFI_NODEMONITOR":                  o.getValue(values, "deltafi.nodemonitor.image"),
+		"DELTAFI_SECRET_CA_CHAIN":              "certs",
+		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL":   o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),
+		"DELTAFI_SECRET_ENTITY_AUTHORIZER_SSL": o.getValueOr(values, "deltafi.auth.entityAuthorizer.ssl.secret", "ssl-secret"),
+		"DELTAFI_SECRET_INGRESS_SSL":           o.getValueOr(values, "ingress.tls.secrets.default", "ssl-secret"),
+		"DELTAFI_SECRET_CORE_SSL":              o.getValueOr(values, "deltafi.core.ssl.secret", "ssl-secret"),
+		"DELTAFI_SECRET_PLUGINS_SSL":           o.getValueOr(values, "deltafi.plugins.ssl.secret", "ssl-secret"),
+		"GRAFANA":                              o.getValue(values, "dependencies.grafana"),
+		"VICTORIAMETRICS":                      o.getValue(values, "dependencies.victoriametrics"),
+		"VECTOR":                               o.getValue(values, "dependencies.vector"),
+		"DELTAFI_LOG_AGGREGATION_ENABLED":      o.getValueOr(values, "deltafi.logs.enabled", "true"),
+		"LOGROTATE":                            o.getValue(values, "deltafi.logs.logrotate.image"),
+		"LOGROTATE_INTERVAL":                   o.getValueOr(values, "deltafi.logs.logrotate.interval", "daily"),
+		"LOGROTATE_KEEP_DAYS":                  o.getValueOr(values, "deltafi.logs.logrotate.schedule.keep", "30"),
+		"LOGROTATE_AUDIT_KEEP_DAYS":            o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.keep", "365"),
+		"LOGROTATE_MAX_SIZE":                   o.getValueOr(values, "deltafi.logs.logrotate.schedule.max_size", "50M"),
+		"LOGROTATE_AUDIT_MAX_SIZE":             o.getValueOr(values, "deltafi.logs.logrotate.audit_schedule.max_size", "100M"),
+		"DOZZLE":                               o.getValue(values, "dependencies.dozzle"),
+		"LOOKUP_TABLES_ENABLED":                o.getValue(values, "deltafi.lookup.enabled"),
+		"S3PROXY":                              o.getValue(values, "dependencies.s3proxy"),
+		"POSTGRES":                             o.getValue(values, "dependencies.postgres"),
+		"NGINX":                                o.getValue(values, "dependencies.nginx"),
+		"VALKEY":                               o.getValue(values, "dependencies.valkey"),
+		"REDIS":                                o.getValue(values, "dependencies.valkey"),
+		"DOCKER_WEB_GUI":                       o.getValue(values, "dependencies.docker_web_gui"),
+		"ENTITY_AUTHORIZER_PORT":               o.getValueOr(values, "deltafi.auth.entityAuthorizer.port", "8080"),
+		"ENTITY_RESOLVER_PORT":                 o.getValue(values, "deltafi.auth.entityResolver.port"),
+		"UI_HTTP_PORT":                         o.getValue(values, "ingress.ui.http_port"),
+		"UI_HTTPS_PORT":                        o.getValue(values, "ingress.ui.https_port"),
 	}
 
-	// Add compose profiles based on enabled features
+	type profileConfig struct {
+		configKey string
+		profile   string
+	}
+
+	profileConfigs := []profileConfig{
+		{"deltafi.dirwatcher.enabled", "dirwatcher"},
+		{"deltafi.egress_sink.enabled", "egress-sink"},
+		{"deltafi.auth.entityAuthorizer.enabled", "entity-authorizer"},
+		{"deltafi.auth.entityResolver.enabled", "entity-resolver"},
+		{"deltafi.java_devcontainer.enabled", "java-devcontainer"},
+		{"deltafi.java_ide.enabled", "java-ide"},
+		{"deltafi.core_worker.enabled", "worker"},
+		{"deltafi.lookup.enabled", "lookup-tables"},
+		{"deltafi.logs.enabled", "logs"},
+	}
+
 	profiles := []string{}
-	if o.getValue(values, "deltafi.dirwatcher.enabled") == "true" {
-		profiles = append(profiles, "dirwatcher")
+	for _, config := range profileConfigs {
+		if o.getValue(values, config.configKey) == "true" {
+			profiles = append(profiles, config.profile)
+		}
 	}
-	if o.getValue(values, "deltafi.egress_sink.enabled") == "true" {
-		profiles = append(profiles, "egress-sink")
-	}
-	if o.getValue(values, "deltafi.auth.entityResolver.enabled") == "true" {
-		profiles = append(profiles, "entity-resolver")
-	}
-	if o.getValue(values, "deltafi.java_devcontainer.enabled") == "true" {
-		profiles = append(profiles, "java-devcontainer")
-	}
-	if o.getValue(values, "deltafi.java_ide.enabled") == "true" {
-		profiles = append(profiles, "java-ide")
-	}
-	if o.getValue(values, "deltafi.lookup.enabled") == "true" {
-		profiles = append(profiles, "lookup-tables")
-	}
-	if o.getValue(values, "deltafi.core_worker.enabled") == "true" {
-		profiles = append(profiles, "worker")
-	}
-	if o.getValue(values, "deltafi.logs.enabled") == "true" {
-		profiles = append(profiles, "logs")
-	}
-
+	// make sure minio defaults to true if it is not in the values.yaml
 	if o.localObjectStorageEnabled(values) == "true" {
 		profiles = append(profiles, "localStorage")
 	}
@@ -867,23 +877,21 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 	return nil
 }
 
-func (o *ComposeOrchestrator) entityResolverConfig() error {
+func (o *ComposeOrchestrator) createServiceConfig(dir, configPath string) error {
 	values, err := o.getMergedValues()
 	if err != nil {
 		return err
 	}
 
-	// Recreate the entityResolver directory
-	entityResolverDir := filepath.Join(o.dataPath, "entityResolver")
-	if err := os.RemoveAll(entityResolverDir); err != nil {
-		return fmt.Errorf("error removing entityResolver directory: %w", err)
+	// Recreate the config directory
+	serviceConfigDir := filepath.Join(o.dataPath, dir)
+	if err := os.RemoveAll(serviceConfigDir); err != nil {
+		return fmt.Errorf("error removing %s directory: %w", dir, err)
 	}
-	if err := os.MkdirAll(entityResolverDir, 0755); err != nil {
-		return fmt.Errorf("error creating entityResolver directory: %w", err)
+	if err := os.MkdirAll(serviceConfigDir, 0755); err != nil {
+		return fmt.Errorf("error creating %s directory: %w", dir, err)
 	}
 
-	// Get the config map from values
-	configPath := "deltafi.auth.entityResolver.config"
 	configValue := values
 	for _, part := range strings.Split(configPath, ".") {
 		if next, ok := configValue[part].(map[string]interface{}); ok {
@@ -896,7 +904,7 @@ func (o *ComposeOrchestrator) entityResolverConfig() error {
 
 	// Write each config file
 	for filename, content := range configValue {
-		filePath := filepath.Join(entityResolverDir, filename)
+		filePath := filepath.Join(serviceConfigDir, filename)
 		var contentBytes []byte
 
 		switch v := content.(type) {
@@ -921,7 +929,7 @@ func (o *ComposeOrchestrator) entityResolverConfig() error {
 		}
 
 		if err := os.WriteFile(filePath, contentBytes, 0644); err != nil {
-			return fmt.Errorf("error writing entity resolver config file %s: %w", filename, err)
+			return fmt.Errorf("error writing config file %s: %w", filename, err)
 		}
 	}
 

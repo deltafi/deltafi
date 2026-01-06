@@ -9,6 +9,12 @@ deltafi:
       enabled: false
       image: deltafi/deltafi-entity-resolver:2.22.1
       url: http://127.0.0.1:8080/
+    entityAuthorizer:
+      enabled: false
+      image: deltafi/deltafi-entity-resolver:2.22.1
+      url: http://127.0.0.1:8081/
+      ssl:
+        secret: ssl-secret
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G

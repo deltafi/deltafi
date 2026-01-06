@@ -248,6 +248,10 @@ initContainers:
 {{- include "sslVolume" (merge (dict "secretName" (coalesce .Values.deltafi.ssl.secret .Values.deltafi.auth.entityResolver.ssl.secret) "volumeName" "entity-resolver-ssl-volume") .) -}}
 {{- end -}}
 
+{{- define "entityAuthorizerSslVolume" -}}
+{{- include "sslVolume" (merge (dict "secretName" (coalesce .Values.deltafi.ssl.secret .Values.deltafi.auth.entityAuthorizer.ssl.secret) "volumeName" "entity-authorizer-ssl-volume") .) -}}
+{{- end -}}
+
 {{- define "pluginSslVolume" -}}
 {{- include "sslVolume" (merge (dict "secretName" (coalesce .Values.deltafi.ssl.secret .Values.deltafi.plugins.ssl.secret "ssl-secret")) .) -}}
 {{- end -}}
@@ -313,6 +317,12 @@ volumeMounts:
 - name: ENTITY_RESOLVER_URL
   value: {{ .Values.deltafi.auth.entityResolver.url | default "http://127.0.0.1:8080/" }}
 {{ end }}
+{{ if .Values.deltafi.auth.entityAuthorizer.enabled }}
+- name: ENTITY_AUTHORIZER_ENABLED
+  value: "true"
+- name: ENTITY_AUTHORIZER_URL
+  value: {{ .Values.deltafi.auth.entityAuthorizer.url | default "http://127.0.0.1:8081/" }}
+{{ end }}
 {{- end }}
 
 {{- define "coreVolumeMounts" -}}
@@ -325,12 +335,17 @@ volumeMounts:
 {{- define "coreVolumes" -}}
 {{- include "sslVolume" . }}
 {{ include "entityResolverSslVolume" . }}
+{{ include "entityAuthorizerSslVolume" . }}
 - name: action-deployment-template
   configMap:
     name: deltafi-action-deployment
 - name: entity-resolver-config
   configMap:
     name: entity-resolver-config
+    optional: true
+- name: entity-authorizer-config
+  configMap:
+    name: entity-authorizer-config
     optional: true
 {{- end -}}
 
@@ -344,6 +359,20 @@ volumeMounts:
     readOnly: true
   env:
   {{- include "sslEnvVars" (merge (dict "secretName" .Values.deltafi.auth.entityResolver.ssl.secret) .) | nindent 2 }}
+  - name: DATA_DIR
+    value: /config
+{{- end -}}
+
+{{- define "entityAuthorizerContainer" -}}
+- name: deltafi-entity-authorizer
+  image: {{ .Values.deltafi.auth.entityAuthorizer.image }}
+  volumeMounts:
+  {{- include "sslVolumeMount" (dict "volumeName" "entity-authorizer-ssl-volume") | nindent 2 }}
+  - name: entity-authorizer-config
+    mountPath: /config
+    readOnly: true
+  env:
+  {{- include "sslEnvVars" (merge (dict "secretName" .Values.deltafi.auth.entityAuthorizer.ssl.secret) .) | nindent 2 }}
   - name: DATA_DIR
     value: /config
 {{- end -}}

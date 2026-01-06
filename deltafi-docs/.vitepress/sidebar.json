@@ -29,7 +29,10 @@
   {
     "text": "Configuration",
     "collapsed": true,
-    "items": [{ "text": "Authentication", "link": "/config/authentication" }]
+    "items": [
+      { "text": "Authentication", "link": "/config/authentication" },
+      { "text": "Authorization", "link": "/config/authorization" }
+    ]
   },
   {
     "text": "Plugins",

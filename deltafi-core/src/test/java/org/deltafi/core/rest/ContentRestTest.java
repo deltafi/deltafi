@@ -31,10 +31,12 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.ByteArrayInputStream;
 import java.util.Base64;
@@ -141,6 +143,17 @@ class ContentRestTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.error").value(JSON_PARSE_ERROR))
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());
+    }
+
+    @Test
+    void unauthorized() throws Exception {
+        ContentRequest contentRequest = contentRequestObj();
+        Mockito.when(fetchContentService.fetchContent(contentRequest))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN));
+
+        String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
+        mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
+                .andExpect(status().isForbidden());
     }
 
     private String json(ContentRequest contentRequest) throws JsonProcessingException {

@@ -108,6 +108,24 @@ services:
     volumes:
       - ${DATA_DIR}/entityResolver:/config
       - ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}:/certs
+  deltafi-entity-authorizer:
+    image: ${DELTAFI_ENTITY_AUTHORIZER}
+    container_name: deltafi-entity-authorizer
+    env_file:
+      - path: ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_AUTHORIZER_SSL:-ssl-secret}/.passphrase.env
+        required: false
+    expose:
+      - "${ENTITY_AUTHORIZER_PORT}"
+    labels:
+      deltafi-group: deltafi-core
+    user: "${USER_ID}:${GROUP_ID}"
+    networks:
+      - deltafi
+    restart: unless-stopped
+    profiles: ["entity-authorizer"]
+    volumes:
+      - ${DATA_DIR}/entityAuthorizer:/config
+      - ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}:/certs
   core-actions:
     image: ${DELTAFI_CORE_ACTIONS}
     # container_name: deltafi-core-actions

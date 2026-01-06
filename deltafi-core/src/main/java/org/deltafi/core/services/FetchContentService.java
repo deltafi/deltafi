@@ -27,11 +27,15 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.Content;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.EntityNotFound;
+import org.deltafi.core.services.EntityAuthorizationResolver.AuthResponse;
 import org.deltafi.core.types.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -41,6 +45,7 @@ public class FetchContentService {
     private final CoreAuditLogger auditLogger;
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
+    private final EntityAuthorizationResolver entityAuthorizationResolver;
 
     public ContentResult fetchContent(ContentRequest request) throws ObjectStorageException {
         DeltaFile deltaFile = deltaFilesService.getDeltaFile(request.did());
@@ -53,7 +58,15 @@ public class FetchContentService {
                     " has been deleted. Reason: " + deltaFile.getContentDeletedReason());
         }
 
-        Content content = resolveContent(deltaFile, request);
+        ContentMetadataPair contentAndMetadata = resolveContent(deltaFile, request);
+
+        AuthResponse authResponse = entityAuthorizationResolver.isAuthorized(contentAndMetadata.metadata);
+        if (!authResponse.authorized()) {
+            auditLogger.audit("user is not authorized to view the content named '{}' in DeltaFile '{}'", contentAndMetadata.content.getName(), request.did());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, authResponse.reason());
+        }
+
+        Content content = contentAndMetadata.content();
         Content trimmedContent = applyOffsetAndSize(content, request.offset(), request.size());
 
         auditLogger.audit("viewed content for DID {}", request.did());
@@ -72,19 +85,20 @@ public class FetchContentService {
         }
     }
 
-    private Content resolveContent(DeltaFile deltaFile, ContentRequest request) {
+    private ContentMetadataPair resolveContent(DeltaFile deltaFile, ContentRequest request) {
         DeltaFileFlow flow = deltaFile.getFlow(request.flowNumber());
         if (flow == null) {
             throw new EntityNotFound("Flow " + request.flowNumber() + " not found in DeltaFile " + request.did());
         }
 
-        List<Content> contentList = flow.contentAtOrBefore(request.actionIndex());
+        ContentAndMetadata contentAndMetadata = flow.contentAtOrBefore(request.actionIndex());
+        List<Content> contentList = contentAndMetadata.contentList();
 
         if (request.contentIndex() < 0 || request.contentIndex() >= contentList.size()) {
             throw new EntityNotFound("Content " + request.contentIndex() + " not found at specified location in DeltaFile " + request.did());
         }
 
-        return contentList.get(request.contentIndex());
+        return new ContentMetadataPair(contentList.get(request.contentIndex()), contentAndMetadata.metadata());
     }
 
     private Content applyOffsetAndSize(Content content, Long offset, Long size) {
@@ -107,4 +121,6 @@ public class FetchContentService {
 
         return content.subcontent(actualOffset, actualSize);
     }
+
+    private record ContentMetadataPair(Content content, Map<String, String> metadata) {}
 }

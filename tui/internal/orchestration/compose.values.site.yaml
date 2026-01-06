@@ -22,6 +22,12 @@ deltafi:
           Add files to the site/values.yaml at deltafi.auth.config to inject files here
       ssl:
         secret: ssl-secret
+    entityAuthorizer:
+      config:
+        README: |-
+          Add files to the site/values.yaml at deltafi.auth.config to inject files here
+      ssl:
+        secret: ssl-secret
   api:
     workers: 8
   dirwatcher:
