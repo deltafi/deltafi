@@ -5,6 +5,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.46.0] - 2026-01-07
+
+### Added
+- Added an option to check if an entity is authorized to view content based on the metadata associated with the content
+- Added table lookup service commands to the TUI:
+  - deltafi lookup list - lists all lookup tables
+  - deltafi lookup schema-import [schema-file] - imports a lookup table schema (creates table structure)
+  - deltafi lookup schema-export [name] - exports a lookup table schema (table structure without data)
+  - deltafi lookup delete [name] - deletes a lookup table (use --force to skip confirmation)
+  - deltafi lookup query [name] - displays rows (use --json, --yaml, --csv, or --plain for output format)
+  - deltafi lookup insert [name] [rows-file] - inserts/updates rows from CSV, JSON, or YAML (file or stdin)
+- Added `messageOfTheDay` system property to display a configurable message dialog to users on login
+
+### Fixed
+- Fixed bug were the refresh on DataSink Page was causing the menu to disappear 
+- Fixed pasting multi-line text into System Properties input flattening newlines
+- Fixed JavaScript error when saving System Properties (`querySelectorAll` on null)
+- Fixed System Properties edit dialog being too narrow on small screens
+- Fixed System Properties reverting to default value on save failure; now preserves user input and shows error details
+- Fixed System Properties showing error when saving unchanged value
+
 ## [2.45.3] - 2026-01-05
 
 ### Added
@@ -5498,7 +5519,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.3...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.46.0...main
+[2.46.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.3...2.46.0
 [2.45.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.2...2.45.3
 [2.45.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.1...2.45.2
 [2.45.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.0...2.45.1
