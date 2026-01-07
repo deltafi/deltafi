@@ -71,7 +71,10 @@ public class LookupResultsExtractor implements ResultSetExtractor<LookupResults>
         for (int i = 1; i <= columnCount; i++) {
             String columnName = metaData.getColumnName(i);
             if (includeColumn(columnName)) {
-                columnValues.add(new ColumnValue(columnName, rs.getString(i)));
+                String value = rs.getString(i);
+                if (value != null) {
+                    columnValues.add(new ColumnValue(columnName, value));
+                }
             }
         }
 

@@ -1,0 +1,82 @@
+query GetLookupTables {
+    getLookupTables {
+        name
+        columns
+        keyColumns
+        serviceBacked
+        backingServiceActive
+        pullThrough
+        refreshDuration
+        lastRefresh
+        totalRows
+    }
+}
+
+query GetLookupTable($name: String!) {
+    getLookupTable(lookupTableName: $name) {
+        name
+        columns
+        keyColumns
+        serviceBacked
+        backingServiceActive
+        pullThrough
+        refreshDuration
+        lastRefresh
+        totalRows
+    }
+}
+
+query GetLookupTableForExport($name: String!) {
+    getLookupTable(lookupTableName: $name) {
+        name
+        columns
+        keyColumns
+        serviceBacked
+        backingServiceActive
+        pullThrough
+        refreshDuration
+    }
+}
+
+mutation CreateLookupTable($lookupTableInput: LookupTableInput!) {
+    createLookupTable(lookupTableInput: $lookupTableInput) {
+        success
+        info
+        errors
+    }
+}
+
+mutation DeleteLookupTable($name: String!) {
+    deleteLookupTable (lookupTableName: $name) {
+        success
+        info
+        errors
+    }
+}
+
+query Lookup($name: String!, $matchingColumnValues: [MatchingColumnValueInput!], $resultColumns: [String!],
+        $sortColumn: String, $sortDirection: SortDirection, $offset: Int, $limit: Int) {
+    lookup(
+        lookupTableName: $name,
+        matchingColumnValues: $matchingColumnValues,
+        resultColumns: $resultColumns,
+        sortColumn: $sortColumn, sortDirection: $sortDirection,
+        offset: $offset, limit: $limit
+    ) {
+        rows {
+            column
+            value
+        }
+        totalCount
+        offset
+        count
+    }
+}
+
+mutation UpsertLookupTableRows($name: String!, $rows: [[ColumnValueInput!]!]!) {
+    upsertLookupTableRows(lookupTableName: $name, rows: $rows) {
+        success
+        info
+        errors
+    }
+}

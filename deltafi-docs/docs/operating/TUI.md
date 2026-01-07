@@ -1383,6 +1383,106 @@ deltafi filtered list --filtered-cause "validation_failed" --data-source my-sour
 deltafi filtered list --from "yesterday" --to "now" --json
 ```
 
+### Table Lookup Service
+
+#### 'lookup'
+Manage lookup tables. Lookup tables provide tabular storage for data that can be queried by plugins.
+
+```bash
+deltafi lookup [subcommand] [options] [arguments]
+```
+##### `postgres`
+Start an interactive Postgres CLI session for the table lookup service.
+
+```bash
+deltafi lookup postgres
+```
+
+##### `list`
+List lookup tables.
+
+```bash
+deltafi lookup list
+```
+
+##### `schema-import`
+Import a lookup table schema from a JSON or YAML file. Creates the table structure without data.
+
+```bash
+deltafi lookup schema-import [schema-file]
+```
+
+Example schema file:
+```json
+{
+  "name": "beatles_songs",
+  "columns": ["title", "album", "year", "vocalist"],
+  "keyColumns": ["title"],
+  "serviceBacked": false,
+  "backingServiceActive": false,
+  "pullThrough": false
+}
+```
+
+##### `delete`
+Delete a lookup table.
+
+```bash
+deltafi lookup delete [name] [--force|-f]
+```
+- `--force, -f`: Skip confirmation prompt
+
+##### `schema-export`
+Export a lookup table schema by name. Outputs the table structure as JSON (without data).
+
+```bash
+deltafi lookup schema-export [name]
+```
+
+##### `insert`
+Insert rows into a lookup table. Rows with key columns matching the input will be updated. The file format is detected by extension (.csv, .json, .yaml, .yml). If no file is specified, reads from stdin.
+
+```bash
+deltafi lookup insert [name] [rows-file] [--format|-f <json|yaml|csv>]
+```
+- `--format, -f`: Input format when reading from stdin (default: json)
+
+Example CSV file:
+```csv
+title,album,year,vocalist
+Strawberry Fields Forever,,1967,John
+With A Little Help From My Friends,Sgt. Pepper's Lonely Hearts Club Band,1967,Ringo
+```
+
+Example JSON file:
+```json
+[
+  [
+    {"column": "title", "value": "Strawberry Fields Forever"},
+    {"column": "year", "value": "1967"},
+    {"column": "vocalist", "value": "John"}
+  ],
+  [
+    {"column": "title", "value": "With A Little Help From My Friends"},
+    {"column": "album", "value": "Sgt. Pepper's Lonely Hearts Club Band"},
+    {"column": "year", "value": "1967"},
+    {"column": "vocalist", "value": "Ringo"}
+  ]
+]
+```
+
+##### `query`
+Show all rows in a lookup table.
+
+```bash
+deltafi lookup query [name] [--json|-j] [--yaml|-y] [--csv|-c] [--plain|-p] [--no-header|-n]
+```
+- `--json, -j`: Output in JSON format
+- `--yaml, -y`: Output in YAML format
+- `--csv, -c`: Output in CSV format
+- `--plain, -p`: Output as plain table (no styling)
+- `--no-header, -n`: Omit header row (for table, plain, and csv output)
+
 ### Testing
 
 #### `integration-test`

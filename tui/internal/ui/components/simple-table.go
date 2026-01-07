@@ -35,6 +35,7 @@ type SimpleTable struct {
 	width       int
 	StyleFunc   func(row, col int) lipgloss.Style
 	verbose     bool
+	noHeader    bool
 }
 
 func NewSimpleTable(t *api.Table) *SimpleTable {
@@ -59,6 +60,11 @@ func (t *SimpleTable) Width(width int) *SimpleTable {
 
 func (t *SimpleTable) Verbose(verbose bool) *SimpleTable {
 	t.verbose = verbose
+	return t
+}
+
+func (t *SimpleTable) NoHeader(noHeader bool) *SimpleTable {
+	t.noHeader = noHeader
 	return t
 }
 
@@ -103,7 +109,6 @@ func (t *SimpleTable) Render() string {
 	rows := t.getRowsWithSpacing()
 
 	tab := table.New().
-		Headers(t.Table.Columns...).
 		Rows(rows...).
 		Border(t.Border).
 		BorderStyle(t.BorderStyle).
@@ -130,6 +135,10 @@ func (t *SimpleTable) Render() string {
 			}
 			return t.BaseStyle
 		})
+
+	if !t.noHeader {
+		tab = tab.Headers(t.Table.Columns...)
+	}
 
 	// Set the width of the first column by padding the content
 	if len(t.Table.Columns) > 0 {
@@ -171,37 +180,43 @@ func (t *SimpleTable) RenderPlain() string {
 	rows := t.getRowsWithSpacing()
 
 	tab := table.New().
-		Headers(t.Table.Columns...).
 		Rows(rows...).
 		Border(lipgloss.MarkdownBorder()).
-		BorderBottom(false).
 		BorderTop(false).
 		BorderHeader(false).
 		BorderLeft(false).
 		BorderRight(false).
 		BorderStyle(t.BorderStyle).
-		Wrap(false).
-		StyleFunc(func(row, col int) lipgloss.Style {
-			if col == 0 {
-				return t.BaseStyle.Width(keyColumnWidth)
-			}
+		Wrap(false)
 
-			// Skip styling for empty rows
-			if t.verbose && row%2 == 1 {
-				return lipgloss.NewStyle()
-			}
+	if t.noHeader {
+		tab = tab.BorderBottom(true)
+	} else {
+		tab = tab.BorderBottom(false).Headers(t.Table.Columns...)
+	}
 
-			// Calculate the actual data row index for alternating colors
-			dataRowIndex := row
-			if t.verbose {
-				dataRowIndex = row / 2
-			}
+	// Apply StyleFunc after headers to ensure correct row count
+	tab = tab.StyleFunc(func(row, col int) lipgloss.Style {
+		if col == 0 {
+			return t.BaseStyle.Width(keyColumnWidth)
+		}
 
-			if dataRowIndex%2 == 1 {
-				return t.OddRowStyle
-			}
-			return t.BaseStyle
-		})
+		// Skip styling for empty rows
+		if t.verbose && row%2 == 1 {
+			return lipgloss.NewStyle()
+		}
+
+		// Calculate the actual data row index for alternating colors
+		dataRowIndex := row
+		if t.verbose {
+			dataRowIndex = row / 2
+		}
+
+		if dataRowIndex%2 == 1 {
+			return t.OddRowStyle
+		}
+		return t.BaseStyle
+	})
 
 	return tab.Render()
 }
