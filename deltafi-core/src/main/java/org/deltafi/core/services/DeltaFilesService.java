@@ -1377,6 +1377,7 @@ public class DeltaFilesService {
         aggregateFlow.setPendingActions(nextActions.stream().map(ActionConfiguration::getName).toList());
     }
 
+    @Transactional
     public List<AcknowledgeResult> acknowledge(List<UUID> dids, String reason) {
         return acknowledge(didsToDeltaFiles(dids, deltaFiles(dids)), reason);
     }
