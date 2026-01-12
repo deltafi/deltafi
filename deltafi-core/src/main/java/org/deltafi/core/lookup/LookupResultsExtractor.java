@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.lookup;
 
-import lombok.RequiredArgsConstructor;
 import org.deltafi.core.generated.types.ColumnValue;
 import org.deltafi.core.generated.types.LookupResults;
 import org.springframework.dao.DataAccessException;
@@ -27,16 +26,20 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 public class LookupResultsExtractor implements ResultSetExtractor<LookupResults> {
     private static final Set<String> META_COLUMNS = Set.of("table_created", "table_modified", "total_matches");
 
-    private final List<String> resultColumns;
+    private final Map<String, String> resultColumns;
     private final int offset;
+
+    public LookupResultsExtractor(List<String> resultColumns, int offset) {
+        this.resultColumns = resultColumns == null ? new HashMap<>() : resultColumns.stream()
+                .collect(Collectors.toMap(String::toLowerCase, display -> display));
+        this.offset = offset;
+    }
 
     @Override
     public LookupResults extractData(ResultSet rs) throws SQLException, DataAccessException {
@@ -73,7 +76,7 @@ public class LookupResultsExtractor implements ResultSetExtractor<LookupResults>
             if (includeColumn(columnName)) {
                 String value = rs.getString(i);
                 if (value != null) {
-                    columnValues.add(new ColumnValue(columnName, value));
+                    columnValues.add(new ColumnValue(resultColumns.get(columnName), value));
                 }
             }
         }
@@ -86,6 +89,6 @@ public class LookupResultsExtractor implements ResultSetExtractor<LookupResults>
     }
 
     private boolean inResultColumns(String columnName) {
-        return resultColumns == null || resultColumns.isEmpty() || resultColumns.contains(columnName);
+        return resultColumns == null || resultColumns.isEmpty() || resultColumns.containsKey(columnName);
     }
 }

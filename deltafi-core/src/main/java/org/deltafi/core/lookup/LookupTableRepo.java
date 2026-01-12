@@ -40,10 +40,10 @@ public class LookupTableRepo {
     }
 
     public int create() {
-        String createTable = "CREATE TABLE " + lookupTable.getName() + " (" +
-                String.join(", ", lookupTable.getColumns().stream().map(column -> column + " TEXT").toList()) +
-                ", last_updated timestamp(6) with time zone" +
-                ", PRIMARY KEY (" + String.join(", ", lookupTable.getKeyColumns()) + ")" +
+        String createTable = "CREATE TABLE " + quotedTableName() + " (" +
+                String.join(", ", quotedColumns().stream().map(column -> column + " TEXT").toList()) +
+                ", \"last_updated\" timestamp(6) with time zone" +
+                ", PRIMARY KEY (" + String.join(", ", quotedKeyColumns()) + ")" +
                 ");";
 
         int rtn = jdbcClient.sql(createTable).update();
@@ -52,7 +52,7 @@ public class LookupTableRepo {
     }
 
     public void addModifiedTrigger() {
-        String triggerName = lookupTable.getName() + "_notify_parent_modified";
+        String triggerName = lookupTable.getName().toLowerCase(Locale.ROOT) + "_notify_parent_modified";
 
         String sql = """
             CREATE TRIGGER %s
@@ -67,17 +67,19 @@ public class LookupTableRepo {
     public int upsert(Map<String, String> rowMap, OffsetDateTime lastUpdated) {
         List<String> nonKeyColumns = new ArrayList<>(lookupTable.getColumns());
         nonKeyColumns.removeAll(lookupTable.getKeyColumns());
-        String insert = "INSERT INTO " + lookupTable.getName() + " (" + String.join(", ", lookupTable.getColumns()) +
+        nonKeyColumns = nonKeyColumns.stream().map(this::quoteIdentifier).collect(Collectors.toList());
+
+        String insert = "INSERT INTO " + quotedTableName() + " (" + String.join(", ", quotedColumns()) +
                 ", last_updated" +
                 ")" +
                 " VALUES (" +
                 String.join(", ", Collections.nCopies(lookupTable.getColumns().size(), "?")) +
                 ", ?" +
                 ")" +
-                " ON CONFLICT (" + String.join(", ", lookupTable.getKeyColumns()) + ")" +
+                " ON CONFLICT (" + String.join(", ", quotedKeyColumns()) + ")" +
                 " DO UPDATE SET " +
                 (nonKeyColumns.isEmpty() ? "" : (String.join(", ", nonKeyColumns.stream().map(column -> column + " = EXCLUDED." + column).toList()) + ", ")) +
-                "last_updated = EXCLUDED.last_updated" +
+                "\"last_updated\" = EXCLUDED.\"last_updated\"" +
                 ";";
         return jdbcClient.sql(insert)
                 .params(lookupTable.getColumns().stream().map(rowMap::get).toList())
@@ -87,15 +89,15 @@ public class LookupTableRepo {
 
     public int delete(Map<String, String> rowMap) {
         List<String> matchClauses = rowMap.entrySet().stream()
-                .map(entry -> entry.getKey() + " = '" + entry.getValue() + "'")
+                .map(entry -> quoteIdentifier(entry.getKey()) + " = '" + entry.getValue() + "'")
                 .toList();
-        String delete = "DELETE FROM " + lookupTable.getName() + " WHERE " + String.join(" AND ", matchClauses) + ";";
+        String delete = "DELETE FROM " + quotedTableName() + " WHERE " + String.join(" AND ", matchClauses) + ";";
         return jdbcClient.sql(delete)
                 .update();
     }
 
     public void deleteOlder(OffsetDateTime lastUpdated) {
-        jdbcClient.sql("DELETE FROM " + lookupTable.getName() + " WHERE last_updated < ?")
+        jdbcClient.sql("DELETE FROM " + quotedTableName() + " WHERE last_updated < ?")
                 .param(lastUpdated)
                 .update();
     }
@@ -110,6 +112,10 @@ public class LookupTableRepo {
 
         String tableName = lookupTable.getName();
         validateIdentifier(tableName);
+        if (resultColumns == null || resultColumns.isEmpty()) {
+            resultColumns = new ArrayList<>(lookupTable.getColumns());
+            resultColumns.add("last_updated");
+        }
 
         List<String> selectColumns = buildSelectColumns(resultColumns);
         String whereClause = buildWhereClause(matchingColumnValues);
@@ -117,11 +123,11 @@ public class LookupTableRepo {
 
         String sql = """
         SELECT %s,
-               lt.created AS table_created,
-               lt.modified AS table_modified,
-               COUNT(*) OVER() AS total_matches
+               lt."created" AS "table_created",
+               lt."modified" AS "table_modified",
+               COUNT(*) OVER() AS "total_matches"
         FROM %s t
-        JOIN lookup_tables lt ON lt.name = :tableName
+        JOIN "lookup_tables" lt ON lt."name" = :tableName
         %s
         %s
         OFFSET :offset
@@ -144,7 +150,19 @@ public class LookupTableRepo {
     }
 
     public int count() {
-        return jdbcClient.sql("SELECT COUNT(*) FROM " + lookupTable.getName() + ";").query(Integer.class).single();
+        return jdbcClient.sql("SELECT COUNT(*) FROM " + quotedTableName() + ";").query(Integer.class).single();
+    }
+
+    private String quotedTableName() {
+        return quoteIdentifier(lookupTable.getName());
+    }
+
+    private List<String> quotedColumns() {
+        return lookupTable.getColumns().stream().map(this::quoteIdentifier).toList();
+    }
+
+    private List<String> quotedKeyColumns() {
+        return lookupTable.getKeyColumns().stream().map(this::quoteIdentifier).toList();
     }
 
     private List<String> buildSelectColumns(@Nullable List<String> resultColumns) {
@@ -152,7 +170,7 @@ public class LookupTableRepo {
             return List.of("*");
         }
         resultColumns.forEach(this::validateIdentifier);
-        return resultColumns;
+        return resultColumns.stream().map(this::quoteIdentifier).toList();
     }
 
     private String buildWhereClause(@Nullable Map<String, Set<String>> matchingColumnValues) {
@@ -166,7 +184,7 @@ public class LookupTableRepo {
                     String patterns = entry.getValue().stream()
                             .map(v -> "'" + v.replace("'", "''") + "'")
                             .collect(Collectors.joining(", "));
-                    return "t.%s LIKE ANY (ARRAY[%s])".formatted(entry.getKey(), patterns);
+                    return "t.%s LIKE ANY (ARRAY[%s])".formatted(quoteIdentifier(entry.getKey()), patterns);
                 })
                 .toList();
 
@@ -178,6 +196,7 @@ public class LookupTableRepo {
             return "";
         }
         validateIdentifier(sortColumn);
+        sortColumn = quoteIdentifier(sortColumn);
         String direction = sortDirection != null ? sortDirection.name() : "ASC";
         return "ORDER BY t.%s %s".formatted(sortColumn, direction);
     }
@@ -193,6 +212,7 @@ public class LookupTableRepo {
 
     private String quoteIdentifier(String identifier) {
         // PostgreSQL identifier quoting - doubles any internal quotes
+        identifier = identifier.toLowerCase();
         return "\"" + identifier.replace("\"", "\"\"") + "\"";
     }
 }
