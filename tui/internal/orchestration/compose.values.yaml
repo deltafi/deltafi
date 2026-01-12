@@ -29,7 +29,16 @@ deltafi:
       port: 8080
       config:
         README: |-
-          Add files to the site/values.yaml at deltafi.auth.config to inject files here
+          Add files to the site/values.yaml at deltafi.auth.entityResolver.config to inject files here
+      ssl:
+        secret: ssl-secret
+    entityAuthorizer:
+      enabled: false
+      image: deltafi/deltafi-entity-authorizer:1.0.0
+      url: http://deltafi-entity-authorizer:8081/
+      config:
+        README: |-
+          Add files to the site/values.yaml at deltafi.auth.entityAuthorizer.config to inject files here
       ssl:
         secret: ssl-secret
   api:

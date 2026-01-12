@@ -214,6 +214,10 @@ public class DeltaFileFlow {
      */
     public ContentAndMetadata contentAtOrBefore(Integer actionIndex) {
         if (actionIndex == null) {
+            // data sources do not have input metadata, try to grab the metadata from the last completed action when actionIndex is null
+            if (getType().isDataSource() && getActions() != null && !getActions().isEmpty()) {
+                return contentAndMetadataAtIndex(getActions().size() - 1);
+            }
             return inputContentAndMetadata();
         }
         if (actionIndex < 0 || actionIndex >= actions.size()) {

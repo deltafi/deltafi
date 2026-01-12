@@ -125,7 +125,7 @@ services:
     profiles: ["entity-authorizer"]
     volumes:
       - ${DATA_DIR}/entityAuthorizer:/config
-      - ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_RESOLVER_SSL:-ssl-secret}:/certs
+      - ${DATA_DIR}/certs/${DELTAFI_SECRET_ENTITY_AUTHORIZER_SSL:-ssl-secret}:/certs
   core-actions:
     image: ${DELTAFI_CORE_ACTIONS}
     # container_name: deltafi-core-actions

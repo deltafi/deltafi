@@ -40,12 +40,18 @@ deltafi:
       url: http://127.0.0.1:8080/
       ssl:
         secret: ssl-secret
+      config:
+        README: |-
+          Add files to the site/values.yaml at deltafi.auth.entityResolver.config to inject files here
     entityAuthorizer:
       enabled: false
-      image: deltafi/deltafi-entity-authorizer:2.46.0
+      image: deltafi/deltafi-entity-authorizer:1.0.0
       url: http://127.0.0.1:8081/
       ssl:
         secret: ssl-secret
+      config:
+        README: |-
+          Add files to the site/values.yaml at deltafi.auth.entityAuthorizer.config to inject files here
   egress_sink:
     enabled: true
     drop_metadata: false

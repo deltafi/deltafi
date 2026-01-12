@@ -28,7 +28,7 @@ For example, a request from DeltaFi to an Entity Authorizer might look like this
 
 ```
 POST / HTTP/1.1
-Host: 127.0.0.1:8081
+Host: deltafi-entity-authorizer:8081
 Content-Length: 12
 Content-Type: application/json
 
@@ -54,7 +54,7 @@ In this example, the Entity Authorization service is telling the DeltaFi that th
 
 #### Docker
 
-When packaging an Entity Authorizer application in a Docker image, be sure to expose port `8081` in your Dockerfile. Alternatively, you can configure the URL for service in the `site/values.yaml` if it must use a different port.
+When packaging an Entity Authorizer application in a Docker image, be sure to expose port `8081` in your Dockerfile. Alternatively, you can configure the URL for the service in the `site/values.yaml` if it must use a different port.
 
 ```
 EXPOSE 8081

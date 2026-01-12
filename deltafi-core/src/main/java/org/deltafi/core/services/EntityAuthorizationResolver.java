@@ -42,7 +42,7 @@ public class EntityAuthorizationResolver {
     private final String entityAuthorizationUrl;
     private final boolean enabled;
 
-    public EntityAuthorizationResolver(HttpClient httpClient, @Value("${ENTITY_AUTHORIZER_URL:http://127.0.0.1:8080/}") String entityResolverUrl, @Value("${ENTITY_AUTHORIZER_ENABLED:false}") boolean enabled) {
+    public EntityAuthorizationResolver(HttpClient httpClient, @Value("${ENTITY_AUTHORIZER_URL:http://127.0.0.1:8081/}") String entityResolverUrl, @Value("${ENTITY_AUTHORIZER_ENABLED:false}") boolean enabled) {
         this.httpClient = httpClient;
         this.entityAuthorizationUrl = entityResolverUrl;
         this.enabled = enabled;
@@ -53,7 +53,7 @@ public class EntityAuthorizationResolver {
         if (enabled) {
             String identifier = DeltaFiUserService.currentUsername();
             authorized = callEntityResolver(new AuthBody(identifier, metadata));
-            log.debug("User \"{}\" was {} access{} using metadata {}", identifier, authorized.authorized ? "granted" : "denied", metadata,
+            log.debug("User \"{}\" was {} access using metadata {}{}", identifier, authorized.authorized ? "granted" : "denied", metadata,
                     authorized.reason != null ? " because " + authorized.reason : "");
         }
 

@@ -17,17 +17,25 @@ deltafi:
     mode: disabled # basic, cert, or disabled
     secret: auth-secret
     entityResolver:
-      config:
-        README: |-
-          Add files to the site/values.yaml at deltafi.auth.config to inject files here
+      enabled: false
+      # config:
+      #   README: |-
+      #     Add files to the site/values.yaml at deltafi.auth.config to inject files here
       ssl:
         secret: ssl-secret
     entityAuthorizer:
-      config:
-        README: |-
-          Add files to the site/values.yaml at deltafi.auth.config to inject files here
-      ssl:
-        secret: ssl-secret
+      enabled: false
+      # image: deltafi/deltafi-entity-authorizer:1.0.0
+      # url: http://deltafi-entity-authorizer:8081/
+      # # Replace with authorizer configuration files
+      # config:
+      #   auth.yaml:
+      #     authKey: level
+      #     userAccess:
+      #       admin:
+      #         - one
+      # ssl:
+      #   secret: ssl-secret
   api:
     workers: 8
   dirwatcher:

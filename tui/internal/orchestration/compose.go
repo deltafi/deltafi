@@ -575,8 +575,8 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 
 	localStorage := o.localObjectStorageEnabled(values)
 
-	entityAuthPort := o.getValueOr(values, "deltafi.auth.entityAuthorizer.port", "8080")
-	entityAuthDefaultUrl := fmt.Sprintf("http://deltafi-entity-authorizer:%s", entityAuthPort)
+	entityAuthPort := o.getValueOr(values, "deltafi.auth.entityAuthorizer.port", "8081")
+	entityAuthDefaultUrl := fmt.Sprintf("http://deltafi-entity-authorizer:%s/", entityAuthPort)
 
 	envVars := map[string]string{
 		"AUTH_MODE":                          o.getValue(values, "deltafi.auth.mode"),
