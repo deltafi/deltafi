@@ -30,7 +30,7 @@ public class MockDeltaFiPropertiesService extends DeltaFiPropertiesService  {
 
     public MockDeltaFiPropertiesService() {
         super(Mockito.mock(DeltaFiPropertiesRepo.class), Mockito.mock(ApplicationEventPublisher.class),
-                new LocalStorageProperties(true, true));
+                new LocalStorageProperties(true, true), true);
     }
 
     @Override

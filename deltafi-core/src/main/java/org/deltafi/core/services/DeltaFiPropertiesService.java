@@ -21,12 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.VariableDataType;
-import org.deltafi.core.types.EgressDisabledEvent;
-import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.configuration.PropertyGroup;
 import org.deltafi.core.configuration.PropertyInfo;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
+import org.deltafi.core.types.EgressDisabledEvent;
 import org.deltafi.core.types.Property;
 import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.types.Result;
@@ -35,21 +35,19 @@ import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
-@Service
 public class DeltaFiPropertiesService implements Snapshotter {
 
+    protected static final Set<String> DISABLED_FOR_EXTERNAL_STORAGE = Set.of("diskSpacePercentThreshold", "ingressDiskSpaceRequirementInMb",
+            "checkContentStoragePercentThreshold", "checkDeleteLagErrorThreshold", "checkDeleteLagWarningThreshold");
     private static final String AGE_OFF_META_ONLY = "Number of days that a DeltaFile metadata should live, any records older will be removed. " +
             "The externally stored content will not be removed by this setting.";
     private static final String DISABLED_DESCRIPTION = "Disabled due to using external storage.  ";
-    private static final Set<String> DISABLED_FOR_EXTERNAL_STORAGE = Set.of("diskSpacePercentThreshold", "ingressDiskSpaceRequirementInMb",
-            "checkContentStoragePercentThreshold", "checkDeleteLagErrorThreshold", "checkDeleteLagWarningThreshold");
-
     private static final Set<String> allowedProperties;
     private static final List<Property> defaultProperties;
     private static final Map<String, PropertyGroup> propertyToGroup;
@@ -75,18 +73,20 @@ public class DeltaFiPropertiesService implements Snapshotter {
     private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
     private final ApplicationEventPublisher eventPublisher;
     private final LocalStorageProperties localStorageProperties;
-    private final Set<String> disabledProperties;
+    private Set<String> disabledProperties;
     private DeltaFiProperties cachedDeltaFiProperties;
     private List<Property> properties;
 
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
-                                    LocalStorageProperties localStorageProperties) {
+                                    LocalStorageProperties localStorageProperties, boolean isScheduler) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
         this.eventPublisher = eventPublisher;
         this.localStorageProperties = localStorageProperties;
         this.disabledProperties = new HashSet<>();
-        // make sure the latest DeltaFiProperties structure is reflected in the properties collection
-        upsertProperties();
+        if (isScheduler) {
+            // make sure the latest DeltaFiProperties structure is reflected in the properties collection
+            upsertProperties();
+        }
         refreshProperties();
     }
 
@@ -94,6 +94,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
      * Upsert the set of properties for this version of DeltaFi. Prune obsolete properties.
      */
     public void upsertProperties() {
+        log.info(" Initializing the latest DeltaFiProperties");
         String[] keys = new String[defaultProperties.size()];
         String[] defaultValues = new String[defaultProperties.size()];
         String[] descriptions = new String[defaultProperties.size()];
@@ -136,7 +137,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     /**
      * Update the cached properties to the latest from storage
-     * Bind the latest properties DeltaFiProperties and cach
+     * Bind the latest properties DeltaFiProperties and cache
      * the result
      */
     public void refreshProperties() {
@@ -145,6 +146,11 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
         // use forEach instead stream collect to avoid NPE with null values
         this.properties.forEach(p -> propertiesMap.put(p.getKey(), p.getValue()));
+
+        this.disabledProperties = this.properties.stream()
+                .filter(p -> !p.isEditable())
+                .map(Property::getKey)
+                .collect(Collectors.toSet());
 
         Binder bind = new Binder(new MapConfigurationPropertySource(propertiesMap));
         cachedDeltaFiProperties = bind.bindOrCreate("", DeltaFiProperties.class);
@@ -195,11 +201,12 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     /**
      * Update the DeltaFiProperties based on the list of updates
-     * @param updates changes to make to the properties
+     *
+     * @param updates      changes to make to the properties
      * @param fromSnapshot true if these updates are being applied from a snapshot
      * @return true if the update was successful
      */
-     boolean updateProperties(List<KeyValue> updates, boolean fromSnapshot) {
+    boolean updateProperties(List<KeyValue> updates, boolean fromSnapshot) {
         List<KeyValue> allowedUpdates = updates.stream()
                 .filter(keyValue -> isValid(keyValue, fromSnapshot))
                 .toList();

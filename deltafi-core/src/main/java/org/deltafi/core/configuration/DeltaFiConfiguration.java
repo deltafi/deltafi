@@ -24,6 +24,7 @@ import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.uuid.RandomUUIDGenerator;
 import org.deltafi.common.uuid.UUIDGenerator;
+import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.util.ParameterResolver;
@@ -81,6 +82,15 @@ public class DeltaFiConfiguration {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(deltaFiPropertiesService.getDeltaFiProperties().getScheduledServiceThreads());
         return scheduler;
+    }
+
+    @Bean
+    public DeltaFiPropertiesService deltaFiPropertiesService(
+            DeltaFiPropertiesRepo deltaFiPropertiesRepo,
+            ApplicationEventPublisher eventPublisher,
+            LocalStorageProperties localStorageProperties,
+            @Value("${schedule.maintenance:true}") boolean scheduledMaintenance) {
+        return new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, scheduledMaintenance);
     }
 
     @Bean
