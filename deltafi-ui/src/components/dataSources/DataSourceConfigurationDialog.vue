@@ -375,7 +375,7 @@ const clearEmptyObjects = (queryObj) => {
       clearEmptyObjects(queryObj[objKey]);
     }
 
-    if (_.isEmpty(queryObj[objKey]) && !_.isBoolean(queryObj[objKey])) {
+    if (_.isEmpty(queryObj[objKey]) && !_.isBoolean(queryObj[objKey]) && !_.isNumber(queryObj[objKey])) {
       delete queryObj[objKey];
     }
   }
