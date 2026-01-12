@@ -44,6 +44,15 @@ import (
 )
 
 func main() {
+	// Self healthcheck
+	if len(os.Args) > 1 && os.Args[1] == "health" {
+		resp, err := http.Get("http://localhost:8080/health")
+		if err != nil || resp.StatusCode != 200 {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
