@@ -279,6 +279,7 @@ type ExportErrorsRequest struct {
 	Acknowledge bool   `json:"acknowledge"`
 	Limit       int    `json:"limit"`
 	Reason      string `json:"reason"`
+	MaxSize     string `json:"maxSize"`
 }
 
 func (c *Client) ExportErroredDeltaFile(request ExportErrorsRequest) (io.ReadCloser, string, error) {

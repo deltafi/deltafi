@@ -27,6 +27,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.core.exceptions.EntityNotFound;
+import org.deltafi.core.exceptions.InvalidRequestException;
 import org.deltafi.core.exceptions.ServerException;
 import org.deltafi.core.generated.types.DeltaFileDirection;
 import org.deltafi.core.generated.types.DeltaFileOrder;
@@ -38,8 +39,10 @@ import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.ExportErrorsRequest;
 import org.deltafi.core.util.DeltaFileMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
@@ -62,25 +65,8 @@ public class DeltaFileExporter {
     }
 
     public StreamingResponseBody exportDeltaFiles(ExportErrorsRequest request) {
-        DeltaFilesFilter errored = DeltaFilesFilter.newBuilder()
-                .stage(DeltaFileStage.ERROR)
-                .errorAcknowledged(false)
-                .build();
-
-        DeltaFileOrder oldestFirst = DeltaFileOrder.newBuilder()
-                .direction(DeltaFileDirection.ASC).field("created").build();
-
-        DeltaFiles deltaFiles = deltaFilesService.deltaFiles(0, request.getLimit(), errored, oldestFirst);
-        if (deltaFiles.getDeltaFiles().isEmpty()) {
-            throw new EntityNotFound("No DeltaFiles were found with unacknowledged errors");
-        }
-
         List<UUID> dids = new ArrayList<>();
-        List<Export> exports = new ArrayList<>();
-        for (DeltaFile deltaFile : deltaFiles.getDeltaFiles()) {
-            dids.add(deltaFile.getDid());
-            exports.add(prepareExport(deltaFile));
-        }
+        List<Export> exports = findForExport(request, dids);
 
         return outputStream -> {
             pipeToTarFile(outputStream, exports);
@@ -94,9 +80,56 @@ public class DeltaFileExporter {
         };
     }
 
+    List<Export> findForExport(ExportErrorsRequest request, List<UUID> dids) {
+        DeltaFilesFilter errored = DeltaFilesFilter.newBuilder()
+                .stage(DeltaFileStage.ERROR)
+                .errorAcknowledged(false)
+                .build();
+
+        DeltaFileOrder oldestFirst = DeltaFileOrder.newBuilder()
+                .direction(DeltaFileDirection.ASC).field("created").build();
+
+        DeltaFiles deltaFiles = deltaFilesService.deltaFiles(0, request.getLimit(), errored, oldestFirst);
+        if (deltaFiles.getDeltaFiles().isEmpty()) {
+            throw new EntityNotFound("No DeltaFiles were found with unacknowledged errors");
+        }
+
+        List<Export> exports = new ArrayList<>();
+
+        long maxSize = maxSize(request.getMaxSize());
+        long currentSize = 0;
+        for (DeltaFile deltaFile : deltaFiles.getDeltaFiles()) {
+            Export export = prepareExport(deltaFile);
+            if (maxSize == -1 || exports.isEmpty() || currentSize + export.size() <= maxSize) {
+                dids.add(deltaFile.getDid());
+                exports.add(export);
+                currentSize += export.size();
+            } else {
+                break;
+            }
+        }
+        return exports;
+    }
+
+    private long maxSize(DataSize dataSize) {
+        if  (dataSize == null) {
+            return -1;
+        }
+
+        if (dataSize.toBytes() <= 0) {
+            throw new InvalidRequestException("The max size value must be greater than zero");
+        }
+
+        return dataSize.toBytes();
+    }
+
     private Export prepareExport(DeltaFile deltaFile) {
-        DeltaFileDTO deltaFileDto = prepareDeltaFileDTO(deltaFile);
-        return new Export(deltaFileDto, localizeContent(deltaFileDto));
+        try {
+            DeltaFileDTO deltaFileDto = prepareDeltaFileDTO(deltaFile);
+            return new Export(deltaFileDto, localizeContent(deltaFileDto));
+        } catch (IOException e) {
+            throw new InvalidRequestException("Could not prepare the DeltaFile (%s) for export".formatted(deltaFile.getDid()));
+        }
     }
 
     // Convert to a DTO that can be cleanly exported/imported, unset anything that shouldn't be preserved
@@ -153,7 +186,7 @@ public class DeltaFileExporter {
                 Content content = new Content();
                 long size = contentStorageService.getTotalSize(copy);
                 if (size < 0) {
-                    throw new ServerException("Unable to determine size for segment " + segment.getUuid());
+                    throw new ServerException("Unable to determine size for segment " + segment.getUuid() + " in deltaFile " + deltaFile.getDid());
                 }
                 copy.setOffset(0);
                 copy.setSize(size);
@@ -166,5 +199,16 @@ public class DeltaFileExporter {
         return segments.values();
     }
 
-    private record Export(DeltaFileDTO deltaFile, Collection<Content> content) {}
+    @SuppressWarnings("java:S6218")
+    record Export(DeltaFileDTO deltaFile, Collection<Content> content, byte[] deltaFileJson) {
+        public Export(DeltaFileDTO deltaFile, Collection<Content> content) throws IOException {
+            this(deltaFile, content, DeltaFileMapper.toJsonBytes(deltaFile));
+        }
+
+        public long size() {
+            long jsonSize = deltaFileJson != null ? deltaFileJson.length : 0;
+            long contentSize = content != null ? content.stream().mapToLong(Content::getSize).sum() : 0;
+            return jsonSize + contentSize;
+        }
+    }
 }

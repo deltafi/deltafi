@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/app"
@@ -152,11 +155,17 @@ func executeExportErrors(cmd *cobra.Command, _ []string) error {
 	}
 	skipAcknowledged, _ := cmd.Flags().GetBool("no-acknowledge")
 	limit, _ := cmd.Flags().GetInt("limit")
+	maxSize, _ := cmd.Flags().GetString("max-size")
+	err = validateDataSize(maxSize)
+	if err != nil {
+		return wrapInError("invalid max-size", err)
+	}
 
 	req := api.ExportErrorsRequest{
 		Acknowledge: !skipAcknowledged,
 		Limit:       limit,
 		Reason:      acknowledgeReason,
+		MaxSize:     maxSize,
 	}
 	body, suggestedFilename, err := client.ExportErroredDeltaFile(req)
 	if err != nil {
@@ -187,7 +196,48 @@ func executeExportErrors(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
-	fmt.Printf("Exported up to %d errored DeltaFiles (%d bytes) to %s\n", limit, bytesWritten, exportedErrorsPath)
+	fmt.Printf("Exported up to %d errored DeltaFiles (total size of %d bytes) to %s\n", limit, bytesWritten, exportedErrorsPath)
+	return nil
+}
+
+var dataSizePattern = regexp.MustCompile(`^([+\-]?\d+)([a-zA-Z]{0,2})$`)
+
+var validDataUnits = map[string]bool{
+	"":   true, // bytes (default)
+	"B":  true,
+	"KB": true,
+	"MB": true,
+	"GB": true,
+	"TB": true,
+	"PB": true,
+}
+
+func validateDataSize(size string) error {
+	trimmed := strings.ReplaceAll(size, " ", "")
+
+	matches := dataSizePattern.FindStringSubmatch(trimmed)
+	if matches == nil {
+		return fmt.Errorf("'%s' does not match data size pattern (expected format: number with optional unit like 100MB, 1GB)", size)
+	}
+
+	// matches[1] is the number, matches[2] is the unit suffix
+	amount := matches[1]
+	unit := strings.ToUpper(matches[2])
+
+	// Validate the number can be parsed
+	num, err := strconv.ParseInt(amount, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid number in size '%s': %v", size, err)
+	}
+
+	if num < 1 {
+		return fmt.Errorf("max size '%s' is invalid, it must be greater than 0", size)
+	}
+
+	if !validDataUnits[unit] {
+		return fmt.Errorf("invalid data unit '%s' in size '%s' (valid units: B, KB, MB, GB, TB, PB)", unit, size)
+	}
+
 	return nil
 }
 
@@ -219,6 +269,7 @@ func init() {
 	errorListCmd.Flags().Bool("terse", false, "Hide table header and footer")
 
 	exportErrorsCmd.Flags().IntP("limit", "l", 100, "Maximum number of errors to export")
+	exportErrorsCmd.Flags().StringP("max-size", "s", "100MB", "Maximum total size of exported data")
 	exportErrorsCmd.Flags().BoolP("no-acknowledge", "n", false, "Do not acknowledge the errors for exported DeltaFiles")
 	exportErrorsCmd.Flags().StringVarP(&exportedErrorsPath, "output", "o", "", "output file name")
 	exportErrorsCmd.Flags().StringVarP(&acknowledgeReason, "reason", "r", "", "acknowledge reason")

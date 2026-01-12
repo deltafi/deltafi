@@ -31,7 +31,10 @@ import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.exceptions.ServerException;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.*;
+import org.deltafi.core.util.DeltaFileMapper;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.ByteArrayInputStream;
@@ -147,6 +150,72 @@ class DeltaFileExporterTest {
                 .hasMessageContaining("Unable to determine size for segment 00000000-0000-0000-0000-000000000004");
     }
 
+    @Test
+    @SneakyThrows
+    void exportErrors_limitBySize() {
+        DeltaFiles deltaFiles = new DeltaFiles();
+        DeltaFile deltaFile = createDeltaFile(DID);
+        DeltaFile deltaFile2 = createDeltaFile(new UUID(0,1));
+
+        deltaFiles.setDeltaFiles(List.of(deltaFile, deltaFile2));
+
+        Mockito.when(deltaFilesService.deltaFiles(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any()))
+                .thenReturn(deltaFiles);
+
+        byte[] json = DeltaFileMapper.toJsonBytes(deltaFile);
+
+        ExportErrorsRequest request = new ExportErrorsRequest();
+        request.setLimit(10);
+        // should fit the first value only, metadata + roughly the content size
+        request.setMaxSize(DataSize.ofBytes(json.length + 140));
+
+        List<UUID> exportDids = new ArrayList<>();
+        List<DeltaFileExporter.Export> exports = exporter.findForExport(request, exportDids);
+        assertThat(exports).hasSize(1);
+        assertThat(exportDids).hasSize(1).contains(deltaFile.getDid());
+    }
+
+    @Test
+    void exportErrors_softLimit() {
+        DeltaFiles deltaFiles = new DeltaFiles();
+        DeltaFile deltaFile = createDeltaFile(DID);
+        DeltaFile deltaFile2 = createDeltaFile(new UUID(0,1));
+
+        deltaFiles.setDeltaFiles(List.of(deltaFile, deltaFile2));
+
+        Mockito.when(deltaFilesService.deltaFiles(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any()))
+                .thenReturn(deltaFiles);
+
+        ExportErrorsRequest request = new ExportErrorsRequest();
+        request.setLimit(10);
+        // record doesn't fit but we should always return at least one item
+        request.setMaxSize(DataSize.ofBytes(1));
+
+        List<UUID> exportDids = new ArrayList<>();
+        List<DeltaFileExporter.Export> exports = exporter.findForExport(request, exportDids);
+        assertThat(exports).hasSize(1);
+        assertThat(exportDids).hasSize(1).contains(deltaFile.getDid());
+    }
+
+    @Test
+    @SneakyThrows
+    void export_calcSize() {
+        DeltaFileDTO deltaFile = createDeltaFileDTO(DID);
+        Content contentOne = new Content();
+        contentOne.setSegments(List.of(ofSize(3), ofSize(4)));
+        Content contentTwo = new Content();
+        contentTwo.setSegments(List.of(ofSize(2), ofSize(5)));
+
+        byte[] json = DeltaFileMapper.toJsonBytes(deltaFile);
+
+        DeltaFileExporter.Export export = new DeltaFileExporter.Export(deltaFile, List.of(contentOne, contentTwo));
+        assertThat(export.size() - json.length).isEqualTo(14);
+    }
+
+    private DeltaFileDTO createDeltaFileDTO(UUID did) {
+        return DeltaFileDTO.from(createDeltaFile(did));
+    }
+
     @SneakyThrows
     private DeltaFile createDeltaFile(UUID did) {
         UUID parentId = UUID.randomUUID();
@@ -160,7 +229,7 @@ class DeltaFileExporterTest {
         Action action = new Action();
         Content referenced = contentStorageService.save(UUID.randomUUID(), REFERENCED_DATA.getBytes(StandardCharsets.UTF_8), "ref_content", "text/plain");
         refContent = referenced.getSegments().getFirst().getUuid();
-        Content local = contentStorageService.save(DID, OWNED_BY_THIS_DELTA_FILE.getBytes(StandardCharsets.UTF_8), "local_content", "text/plain");
+        Content local = contentStorageService.save(did, OWNED_BY_THIS_DELTA_FILE.getBytes(StandardCharsets.UTF_8), "local_content", "text/plain");
         localContent = local.getSegments().getFirst().getUuid();
         action.setContent(List.of(referenced, local));
         flow.getActions().add(action);
@@ -170,12 +239,19 @@ class DeltaFileExporterTest {
         flow2.setFlowDefinition(new FlowDefinition(1, "flow", FlowType.TRANSFORM));
         Action action2 = new Action();
 
-        Content moreLocal = contentStorageService.save(DID, OWNED_BY_THIS_DELTA_FILE1.getBytes(StandardCharsets.UTF_8), "local_content_2", "text/plain");
+        Content moreLocal = contentStorageService.save(did, OWNED_BY_THIS_DELTA_FILE1.getBytes(StandardCharsets.UTF_8), "local_content_2", "text/plain");
         localContent2 = moreLocal.getSegments().getFirst().getUuid();
         action2.setContent(List.of(local, moreLocal));
         flow2.getActions().add(action2);
         deltaFile.getFlows().add(flow2);
 
+        deltaFile.wireBackPointers();
         return deltaFile;
+    }
+
+    private Segment ofSize(long size) {
+        Segment segment = new Segment();
+        segment.setSize(size);
+        return segment;
     }
 }

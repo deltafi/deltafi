@@ -18,10 +18,12 @@
 package org.deltafi.core.types;
 
 import lombok.Data;
+import org.springframework.util.unit.DataSize;
 
 @Data
 public class ExportErrorsRequest {
     private boolean acknowledge = true;
     private int limit = 100;
+    private DataSize maxSize = null;
     private String reason;
 }
