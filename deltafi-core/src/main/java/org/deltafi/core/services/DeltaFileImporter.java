@@ -28,10 +28,7 @@ import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.types.ImportResponse;
 import org.deltafi.core.exceptions.InvalidImportException;
 import org.deltafi.core.repo.DeltaFileRepo;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.DeltaFileDTO;
-import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.core.types.DeltaFileFlowDTO;
+import org.deltafi.core.types.*;
 import org.deltafi.core.util.DeltaFileMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -77,8 +74,8 @@ public class DeltaFileImporter {
                 }
             }
 
-            deltaFileRepo.insertBatch(deltaFiles, deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
-            return new ImportResponse(deltaFiles.size(), contentBytes);
+            BatchInsertResults results = deltaFileRepo.insertBatchIgnoreDuplicates(deltaFiles, deltaFiPropertiesService.getDeltaFiProperties().getInsertBatchSize());
+            return new ImportResponse(results.inserted(), results.skipped(), contentBytes);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Failed to read tar archive: " + e.getMessage());

@@ -324,6 +324,7 @@ func extractFilename(header http.Header) string {
 
 type ImportResponse struct {
 	DeltaFileCount int   `json:"count"`
+	Skipped        int   `json:"skipped"`
 	ContentBytes   int64 `json:"bytes"`
 }
 

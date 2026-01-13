@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.persistence.*;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +33,7 @@ import org.deltafi.core.types.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -977,16 +973,36 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             INSERT INTO annotations (id, key, value, delta_file_id)
             VALUES (?, ?, ?, ?)""";
 
+    private static final String INSERT_DELTA_FILES_IGNORE_DUPLICATES = INSERT_DELTA_FILES + """
+            ON CONFLICT (did) DO NOTHING
+            """;
+
+    private static final String INSERT_DELTA_FILE_FLOWS_IGNORE_DUPLICATES = INSERT_DELTA_FILE_FLOWS + """
+            ON CONFLICT (id) DO NOTHING
+            """;
+
+    private static final String INSERT_ANNOTATIONS_IGNORE_DUPLICATES = INSERT_ANNOTATIONS + """
+            ON CONFLICT (id) DO NOTHING
+            """;
+
+    private static final Insert INSERT = new Insert(INSERT_DELTA_FILES, INSERT_DELTA_FILE_FLOWS, INSERT_ANNOTATIONS);
+    private static final Insert INSERT_IGNORE_DUPLICATES = new Insert(INSERT_DELTA_FILES_IGNORE_DUPLICATES, INSERT_DELTA_FILE_FLOWS_IGNORE_DUPLICATES, INSERT_ANNOTATIONS_IGNORE_DUPLICATES);
+
     @Override
     @Transactional
     public void insertOne(DeltaFile deltaFile) {
-        jdbcTemplate.execute((Connection connection) -> {
-            try (PreparedStatement psDeltaFile = connection.prepareStatement(INSERT_DELTA_FILES);
-                 PreparedStatement psDeltaFileFlow = connection.prepareStatement(INSERT_DELTA_FILE_FLOWS);
-                 PreparedStatement psAnnotation = connection.prepareStatement(INSERT_ANNOTATIONS)) {
+        insertOne(deltaFile, false);
+    }
+
+    private BatchInsertResults insertOne(DeltaFile deltaFile, boolean ignoreDuplicates) {
+        Insert insert = ignoreDuplicates ? INSERT_IGNORE_DUPLICATES : INSERT;
+        return jdbcTemplate.execute((Connection connection) -> {
+            try (PreparedStatement psDeltaFile = connection.prepareStatement(insert.deltaFile);
+                 PreparedStatement psDeltaFileFlow = connection.prepareStatement(insert.deltaFileFlows);
+                 PreparedStatement psAnnotation = connection.prepareStatement(insert.annotations)) {
 
                 setDeltaFileParameters(psDeltaFile, deltaFile);
-                psDeltaFile.executeUpdate();
+                int result = psDeltaFile.executeUpdate();
 
                 for (DeltaFileFlow flow : deltaFile.getFlows()) {
                     setDeltaFileFlowParameters(psDeltaFileFlow, flow, deltaFile);
@@ -1002,7 +1018,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     psAnnotation.executeBatch();
                 }
 
-                return null;
+                return result > 0 || result == Statement.SUCCESS_NO_INFO ? new BatchInsertResults(1, 0) :
+                        new BatchInsertResults(0, 1);
             } catch (SQLException e) {
                 throw new RuntimeException("Error inserting DeltaFile: %s".formatted(e.getMessage()), e);
             }
@@ -1011,31 +1028,46 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     @Transactional
-    public void insertBatch(List<DeltaFile> deltaFiles, int batchSize) {
-        if (deltaFiles.size() == 1) {
-            insertOne(deltaFiles.getFirst());
-            return;
-        } else if (deltaFiles.isEmpty()) {
-            return;
-        }
-
-        for (int i = 0; i < deltaFiles.size(); i += batchSize) {
-            insertBatch(deltaFiles.subList(i, Math.min(i + batchSize, deltaFiles.size())));
-        }
+    public BatchInsertResults insertBatchIgnoreDuplicates(List<DeltaFile> deltaFiles, int batchSize) {
+        return insertBatch(deltaFiles, batchSize, true);
     }
 
-    private void insertBatch(List<DeltaFile> deltaFiles) {
-        jdbcTemplate.execute(new PreparedStatementCreator() {
+    @Override
+    @Transactional
+    public void insertBatch(List<DeltaFile> deltaFiles, int batchSize) {
+        insertBatch(deltaFiles, batchSize, false);
+    }
+
+    private BatchInsertResults insertBatch(List<DeltaFile> deltaFiles, int batchSize, boolean ignoreDuplicates) {
+        if (deltaFiles.size() == 1) {
+            return insertOne(deltaFiles.getFirst(), ignoreDuplicates);
+        } else if (deltaFiles.isEmpty()) {
+            return BatchInsertResults.EMPTY;
+        }
+
+        long success = 0;
+        long skipped = 0;
+        for (int i = 0; i < deltaFiles.size(); i += batchSize) {
+            BatchInsertResults counts = insertBatch(deltaFiles.subList(i, Math.min(i + batchSize, deltaFiles.size())), ignoreDuplicates);
+            success += counts.inserted();
+            skipped += counts.skipped();
+        }
+        return new BatchInsertResults(success, skipped);
+    }
+
+    private BatchInsertResults insertBatch(List<DeltaFile> deltaFiles, boolean ignoreDuplicates) {
+        Insert insert = ignoreDuplicates ? INSERT_IGNORE_DUPLICATES : INSERT;
+        return jdbcTemplate.execute(new PreparedStatementCreator() {
             @NotNull
             @Override
             public PreparedStatement createPreparedStatement(@NotNull Connection connection) throws SQLException {
                 connection.setAutoCommit(false);
                 return connection.prepareStatement("SELECT 1"); // Dummy statement
             }
-        }, (PreparedStatementCallback<Void>) ps -> {
-            try (PreparedStatement psDeltaFile = ps.getConnection().prepareStatement(INSERT_DELTA_FILES);
-                 PreparedStatement psDeltaFileFlow = ps.getConnection().prepareStatement(INSERT_DELTA_FILE_FLOWS);
-                 PreparedStatement psAnnotation = ps.getConnection().prepareStatement(INSERT_ANNOTATIONS)) {
+        }, ps -> {
+            try (PreparedStatement psDeltaFile = ps.getConnection().prepareStatement(insert.deltaFile);
+                 PreparedStatement psDeltaFileFlow = ps.getConnection().prepareStatement(insert.deltaFileFlows);
+                 PreparedStatement psAnnotation = ps.getConnection().prepareStatement(insert.annotations)) {
 
                 boolean foundAnnotation = false;
 
@@ -1057,13 +1089,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     }
                 }
 
-                psDeltaFile.executeBatch();
+                int[] results = psDeltaFile.executeBatch();
                 psDeltaFileFlow.executeBatch();
                 if (foundAnnotation) {
                     psAnnotation.executeBatch();
                 }
 
-                return null;
+                return BatchInsertResults.from(results);
             }
         });
     }
@@ -1210,4 +1242,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         return totalUpdated;
     }
+
+    private record Insert(String deltaFile, String deltaFileFlows, String annotations) {}
 }

@@ -18,6 +18,7 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.types.BatchInsertResults;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.DeltaFileDeleteDTO;
@@ -179,6 +180,14 @@ public interface DeltaFileRepoCustom {
     void insertOne(DeltaFile deltaFile);
     void insertBatch(List<DeltaFile> deltaFiles, int batchSize);
     void batchedBulkDeleteByDidIn(List<UUID> dids);
+
+    /**
+     * Insert batches of DeltaFiles ignoring any duplicate DeltaFiles
+     * @param deltaFiles list of DeltaFiles to insert
+     * @param batchSize number of DeltaFiles to insert per batch
+     * @return count of inserted and skipped DeltaFiles
+     */
+    BatchInsertResults insertBatchIgnoreDuplicates(List<DeltaFile> deltaFiles, int batchSize);
 
     /**
      * Find the ids of the DeltaFiles with an error in the flow with the given type and name

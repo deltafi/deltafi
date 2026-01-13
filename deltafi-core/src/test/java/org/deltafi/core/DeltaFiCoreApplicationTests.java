@@ -87,6 +87,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
@@ -6998,6 +6999,67 @@ class DeltaFiCoreApplicationTests {
 			.containsExactlyInAnyOrder("dataSourceMatch", "transformMatch", "invalid", "alreadyStopped");
 	}
 
+	@Test
+	void testInsertBatch_singleInsert_failOnDuplicates() {
+		DeltaFile deltaFile = deltaFileRepo.save(fullFlowExemplarService.postTransformDeltaFile(new UUID(0,0)));
+		deltaFileRepo.save(deltaFile);
+		List<DeltaFile> deltaFiles = List.of(deltaFile);
+		Assertions.assertThrows(Exception.class, () -> deltaFileRepo.insertBatch(deltaFiles, 10)); // standard batch insert fails
+	}
+
+	@Test
+	void testInsertBatch_singleInsert_ignoreDuplicates() {
+		DeltaFile deltaFile = deltaFileRepo.save(fullFlowExemplarService.postTransformDeltaFile(new UUID(0,0)));
+		deltaFileRepo.save(deltaFile);
+		List<DeltaFile> deltaFiles = List.of(deltaFile);
+
+		// test batch going down the single insert path, it should ignore the duplicate
+		Assertions.assertDoesNotThrow(() -> deltaFileRepo.insertBatchIgnoreDuplicates(deltaFiles, 10));
+		assertThat(deltaFileRepo.count()).isEqualTo(1);
+	}
+
+	@Test
+	void testInsertBatch_multipleInsert_failOnDuplicates() {
+		UUID firstDid = new UUID(0, 0);
+		UUID secondDid = new UUID(0, 1);
+		UUID thirdDid = new UUID(0, 2);
+		DeltaFile firstError = fullFlowExemplarService.postErrorDeltaFile(firstDid);
+		DeltaFile secondError = utilService.buildErrorDeltaFile(secondDid, "dataSource", "errorCause", "context", NOW);
+		DeltaFile thirdError = utilService.buildErrorDeltaFile(thirdDid, "dataSource", "errorCause", "context", NOW);
+
+		deltaFileRepo.save(secondError);
+		List<DeltaFile> deltaFiles = List.of(firstError, secondError, thirdError);
+
+		Assertions.assertThrows(DuplicateKeyException.class, () -> deltaFileRepo.insertBatch(deltaFiles, 10));
+		assertThat(deltaFileRepo.count()).isEqualTo(1);
+	}
+
+	@Test
+	void testInsertBatch_multipleInsert_ignoreDuplicates() {
+		UUID firstDid = new UUID(0, 0);
+		UUID secondDid = new UUID(0, 1);
+		UUID thirdDid = new UUID(0, 2);
+		DeltaFile firstError = fullFlowExemplarService.postErrorDeltaFile(firstDid);
+		DeltaFile secondError = utilService.buildErrorDeltaFile(secondDid, "dataSource", "errorCause", "context", NOW);
+		DeltaFile thirdError = utilService.buildErrorDeltaFile(thirdDid, "dataSource", "errorCause", "context", NOW);
+
+
+		deltaFileRepo.save(secondError);
+		List<DeltaFile> deltaFiles = List.of(firstError, secondError, thirdError);
+
+		// verify only one record currently exists
+		assertThat(deltaFileRepo.count()).isEqualTo(1);
+		BatchInsertResults results = deltaFileRepo.insertBatchIgnoreDuplicates(deltaFiles, 10);
+		// verify all the DeltaFiles are now inserted
+		assertThat(deltaFileRepo.findByIdsIn(List.of(firstDid, secondDid, thirdDid))).hasSize(3);
+		assertThat(results.inserted()).isEqualTo(2);
+		assertThat(results.skipped()).isEqualTo(1);
+
+		// run again and now all 3 should be skipped
+		results = deltaFileRepo.insertBatchIgnoreDuplicates(deltaFiles, 10);
+		assertThat(results.inserted()).isZero();
+		assertThat(results.skipped()).isEqualTo(3);
+	}
 
 	private void setupFlowTagTestData() {
 		// create matching flows, show only one of the `any` must be included

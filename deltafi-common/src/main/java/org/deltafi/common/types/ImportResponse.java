@@ -17,4 +17,4 @@
  */
 package org.deltafi.common.types;
 
-public record ImportResponse(int count, long bytes) {}
+public record ImportResponse(long count, long skipped, long bytes) {}

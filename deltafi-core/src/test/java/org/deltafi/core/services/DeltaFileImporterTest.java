@@ -27,6 +27,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.Action;
+import org.deltafi.core.types.BatchInsertResults;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.core.util.MockFlowDefinitionService;
@@ -66,11 +67,13 @@ class DeltaFileImporterTest {
     @Test
     @SneakyThrows
     void importDeltaFile() {
+        Mockito.when(deltaFileRepo.insertBatchIgnoreDuplicates(Mockito.anyList(), Mockito.anyInt()))
+                .thenReturn(new BatchInsertResults(1, 0));
         InputStream deltaFileTar = new ClassPathResource("deltafi-delta.tar").getInputStream();
         ImportResponse response = deltaFileImporter.importDeltaFile(deltaFileTar);
         assertThat(response.count()).isEqualTo(1);
         assertThat(response.bytes()).isEqualTo(676);
-        Mockito.verify(deltaFileRepo).insertBatch(deltaFilesCaptor.capture(), Mockito.eq(1000));
+        Mockito.verify(deltaFileRepo).insertBatchIgnoreDuplicates(deltaFilesCaptor.capture(), Mockito.eq(1000));
         List<DeltaFile> deltaFiles = deltaFilesCaptor.getValue();
 
         assertThat(deltaFiles).hasSize(1);
