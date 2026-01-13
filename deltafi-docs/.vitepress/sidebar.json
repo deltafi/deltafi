@@ -68,7 +68,9 @@
       { "text": "Events API", "link": "/operating/events_api" },
       { "text": "Metrics", "link": "/operating/metrics" },
       { "text": "Consolidated Logging in Compose", "link": "/operating/logging" },
-      { "text": "DeltaFile Analytics and Survey", "link": "/operating/deltafile_analytics" }
+      { "text": "DeltaFile Analytics and Survey", "link": "/operating/deltafile_analytics" },
+      { "text": "Flow States", "link": "/operating/flow-states" },
+      { "text": "Plugin Operations", "link": "/operating/plugins" }
     ]
   },
   {
@@ -82,7 +84,8 @@
       { "text": "Data Retention", "link": "/advanced/data_retention" },
       { "text": "DeltaFile Annotations", "link": "/advanced/deltafile_annotations" },
       { "text": "Leader Member", "link": "/advanced/leader_member" },
-      { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" }
+      { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" },
+      { "text": "Provenance Tracking", "link": "/advanced/provenance" }
     ]
   },
   {
