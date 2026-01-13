@@ -46,7 +46,7 @@ type valuesData struct {
 	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.132.0"`
 	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-3"`
 	VectorContainer          string `default:"deltafi/vector:0.51.1-alpine-0"`
-	DozzleContainer          string `default:"amir20/dozzle:v8.14.12"`
+	DozzleContainer          string `default:"amir20/dozzle:v9.0.1"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
 	S3ProxyContainer         string `default:"deltafi/s3proxy:2.9.0-0"`
 	NginxContainer           string `default:"deltafi/nginx:1.29.4-alpine3.23-0"`
