@@ -106,7 +106,10 @@ const revertTooltip = computed(() => `Revert to default value: ${property.value.
 watch(
   () => localProperty.value.value,
   () => {
-    setFocus();
+    // Only auto-focus for simple types, not LIST/MAP which manage their own focus
+    if (localProperty.value.dataType !== "LIST" && localProperty.value.dataType !== "MAP") {
+      setFocus();
+    }
   }
 );
 
