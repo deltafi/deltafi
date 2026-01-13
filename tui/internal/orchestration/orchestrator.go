@@ -42,8 +42,8 @@ type Orchestrator interface {
 type valuesData struct {
 	Tag                      string
 	Repo                     string `default:"deltafi"`
-	GrafanaContainer         string `default:"deltafi/grafana:12.4.0-4"`
-	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.132.0"`
+	GrafanaContainer         string `default:"deltafi/grafana:12.4.0-5"`
+	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.133.0"`
 	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-3"`
 	VectorContainer          string `default:"deltafi/vector:0.51.1-alpine-0"`
 	DozzleContainer          string `default:"amir20/dozzle:v9.0.1"`

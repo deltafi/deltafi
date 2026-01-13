@@ -165,7 +165,7 @@ kubernetes-dashboard:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 12.4.0-4
+    tag: 12.4.0-5
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -415,7 +415,7 @@ victoriametrics:
   server:
     fullnameOverride: deltafi-victoriametrics
     image:
-      tag: v1.132.0
+      tag: v1.133.0
     retentionPeriod: "720d"
     extraArgs:
       envflag.enable: "true"
