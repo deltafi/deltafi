@@ -1,40 +1,26 @@
 <template>
-  <Menu
-    ref="menu"
-    id="DataSourcePageHeaderMenu"
-    :model="items"
-    :popup="true"
-    @hide="hideMenu"
-    :pt="{
-      action: {
-        class: 'py-1',
-      },
-    }"
-  >
-    <template #item="{ item, props }">
-      <a v-ripple class="flex align-items-center" v-bind="props.action">
-        <span :class="item.icon" />
-        <span class="ml-2 text-dark">{{ item.label }}</span>
-      </a>
-    </template>
-  </Menu>
-  <Button id="DataSourcePageHeaderOptions" ref="optionsButton" type="button" v-tooltip.left="`Options`" @click="showMenu" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" />
-  <DialogTemplate ref="addDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Add Data Source" dialog-width="50vw" :row-data-prop="{}" @refresh-page="refresh" />
-  <FileUpload
-    v-show="false"
-    auto
-    ref="dataSourceFileUploader"
-    mode="basic"
-    accept=".json,application/json"
-    :file-limit="1"
-    custom-upload
-    @uploader="preUploadValidation"
-    :pt="{
-      input: {
-        id: 'dataSourceFileUploaderButton',
-      },
-    }"
-  />
+  <div class="d-flex">
+    <Button label="Import" icon="fas fa-upload fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="importDataSources" />
+    <Button label="Export" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDataSources" />
+    <Button v-has-permission:FlowPlanCreate label="Add" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="showAddDataSource" />
+
+    <FileUpload
+      v-show="false"
+      auto
+      ref="dataSourceFileUploader"
+      mode="basic"
+      accept=".json,application/json"
+      :file-limit="1"
+      custom-upload
+      @uploader="preUploadValidation"
+      :pt="{
+        input: {
+          id: 'dataSourceFileUploaderButton',
+        },
+      }"
+    />
+    <DialogTemplate ref="addDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Add Data Source" dialog-width="50vw" :row-data-prop="{}" @refresh-page="refresh" />
+  </div>
 </template>
 
 <script setup>
@@ -47,17 +33,14 @@ import _ from "lodash";
 
 import Button from "primevue/button";
 import FileUpload from "primevue/fileupload";
-import Menu from "primevue/menu";
 import Ripple from "primevue/ripple";
 
 const emit = defineEmits(["reloadDataSources"]);
 const hasPermission = inject("hasPermission");
 const { saveTimedDataSourcePlan, saveRestDataSourcePlan, saveOnErrorDataSourcePlan } = useDataSource();
 const notify = useNotifications();
-const vRipple = Ripple;
 const menu = ref();
 const addDataSource = ref(null);
-const optionsButton = ref(null);
 const dataSourceFileUploader = ref(null);
 const horizontalEllipsis = ref(false);
 
@@ -68,32 +51,14 @@ const props = defineProps({
   },
 });
 
-const items = ref([
-  {
-    label: "Add Data Sources",
-    icon: "pi pi-plus",
-    visible: computed(() => hasPermission("FlowPlanCreate")),
-    command: () => {
-      addDataSource.value.showDialog();
-    },
-  },
-  {
-    label: "Import Data Sources",
-    icon: "text-muted fas fa-upload fa-fw",
-    visible: computed(() => hasPermission("FlowPlanCreate")),
-    command: () => {
-      document.getElementById("dataSourceFileUploaderButton").click();
-    },
-  },
-  {
-    label: "Export Data Sources",
-    icon: "text-muted fas fa-download fa-fw",
-    visible: true,
-    command: () => {
-      exportDataSources();
-    },
-  },
-]);
+
+const showAddDataSource = () => {
+  addDataSource.value.showDialog();
+};
+
+const importDataSources = () => {
+  document.getElementById("dataSourceFileUploaderButton").click();
+};
 
 const showMenu = (event) => {
   horizontalEllipsis.value = !horizontalEllipsis.value;

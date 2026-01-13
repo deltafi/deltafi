@@ -61,7 +61,8 @@ watch(
   () => props.data,
   (newValue) => {
     model.value = _.cloneDeep(newValue);
-  }
+  },
+  { immediate: true }
 );
 
 const submit = async () => {

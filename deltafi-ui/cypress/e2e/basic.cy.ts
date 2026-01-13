@@ -18,8 +18,7 @@ describe("Dashboard Page", () => {
 describe("Data Sources", () => {
   it("loads Data Sources", () => {
     cy.visit("http://localhost:8080/config/data-sources");
-    cy.get("span.p-panel-title").contains("REST Data Sources");
-    cy.get("span.p-panel-title").contains("Timed Data Sources");
+    cy.get("span.p-panel-title").contains("deltafi-testjig");
   });
 });
 
@@ -78,7 +77,7 @@ describe("DeltaFile Errors Page", () => {
 describe("Data Sink Page", () => {
   it("loads Data Sink Page", () => {
     cy.visit("http://localhost:8080/config/data-sinks");
-    cy.get("span.p-panel-title").contains("Data Sinks");
+    cy.get("span.p-panel-title").contains("deltafi-testjig");
   });
 });
 

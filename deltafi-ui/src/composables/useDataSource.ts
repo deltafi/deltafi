@@ -117,9 +117,6 @@ export default function useDataSource() {
           ...defaultDataSourceFields,
           ...onErrorDataSourceFields,
         },
-        dataSink: {
-          ...defaultDataSourceFields,
-        },
       },
     };
     return sendGraphQLQuery(query, "getAllDataSources");

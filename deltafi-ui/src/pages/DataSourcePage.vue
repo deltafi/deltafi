@@ -16,41 +16,48 @@
    limitations under the License.
 -->
 
+<!-- ABOUTME: Data Sources page with plugin-based grouping. -->
+<!-- ABOUTME: Displays REST, Timed, and OnError data sources grouped by plugin. -->
+
 <template>
-  <div>
+  <div class="data-sources-page">
     <PageHeader heading="Data Sources">
-      <div class="d-flex">
-        <SystemPropertySwitch class="mt-1 mr-1" property-name="ingressEnabled"
-          off-confirmation="Are you sure? This will stop all data from flowing into the system."
-          off-tooltip="Enable ingress" on-tooltip="Disable ingress" />
-        <div class="btn-toolbar">
-          <IconField iconPosition="left">
-            <InputIcon class="pi pi-search"> </InputIcon>
-            <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
-          </IconField>
-          <DataSourcePageHeaderButtonGroup :export-data-sources="dataSourceExport" @reload-data-sources="refresh" />
-        </div>
-      </div>
+      <DataSourcePageHeaderButtonGroup :export-data-sources="dataSourceExport" @reload-data-sources="refresh" />
     </PageHeader>
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
     <div v-else>
-      <RestDataSourcesPanel ref="restDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableRestDataSource" />
-      <TimedDataSourcesPanel ref="timedDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableTimedDataSource" />
-      <OnErrorDataSourcesPanel ref="onErrorDataSourcesPanel" :filter-flows-text-prop="filterFlowsText" @data-sources-list="exportableOnErrorDataSource" />
+      <div class="d-flex justify-content-between">
+        <IconField iconPosition="left" class="mb-3">
+          <InputIcon class="pi pi-search"></InputIcon>
+          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field" />
+        </IconField>
+        <div class="kill-switch" >
+          <span class="mr-2 text-muted">Ingress Enabled</span>
+          <SystemPropertySwitch class="mr-1" property-name="ingressEnabled"
+            off-confirmation="Are you sure? This will stop all data from flowing into the system."
+            off-tooltip="Enable ingress" on-tooltip="Disable ingress" />
+        </div>
+      </div>
+      <DataSourceDataTable
+        :flow-data-prop="flowData"
+        :flow-data-by-plugin-prop="flowDataByPlugin"
+        :filter-flows-text-prop="filterFlowsText"
+        @reload-data-sources="refresh"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
+import DataSourceDataTable from "@/components/dataSources/DataSourceDataTable.vue";
 import DataSourcePageHeaderButtonGroup from "@/components/dataSources/DataSourcePageHeaderButtonGroup.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import RestDataSourcesPanel from "@/components/dataSources/RestDataSourcesPanel.vue";
-import OnErrorDataSourcesPanel from "@/components/dataSources/OnErrorDataSourcePanel.vue";
-import TimedDataSourcesPanel from "@/components/dataSources/TimedDataSourcesPanel.vue";
-import useTopics from "@/composables/useTopics";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import SystemPropertySwitch from "@/components/SystemPropertySwitch.vue";
+import useDataSource from "@/composables/useDataSource";
+import useTopics from "@/composables/useTopics";
 import { computed, inject, onMounted, onUnmounted, provide, ref } from "vue";
+import ToggleButton from 'primevue/togglebutton';
 
 import _ from "lodash";
 
@@ -58,70 +65,86 @@ import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
-const { getAllTopics, loaded, loading } = useTopics();
+const { getAllDataSources, loaded, loading } = useDataSource();
+const { getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
+
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
-const restDataSourcesPanel = ref(null);
-const onErrorDataSourcesPanel = ref(null);
-const timedDataSourcesPanel = ref(null);
 const editing = ref(false);
-const filterFlowsText = ref("");
 provide("isEditing", editing);
+
+const flowData = ref([]);
+const flowDataByPlugin = ref({});
+const filterFlowsText = ref("");
+
 let autoRefresh;
 
-const refresh = async () => {
-  restDataSourcesPanel.value.refresh();
-  onErrorDataSourcesPanel.value.refresh();
-  timedDataSourcesPanel.value.refresh();
-};
-
-const showLoading = computed(() => !loaded.value && loading.value);
+const showLoading = computed(() => (!loaded.value && loading.value) || (!topicsLoaded.value && topicsLoading.value));
 
 onMounted(async () => {
-  await getAllTopics();
+  await Promise.all([
+    getAllTopics(),
+    fetchFlows(),
+  ]);
 
   autoRefresh = setInterval(() => {
-    if (!isIdle.value) {
+    if (!isIdle.value && !editing.value) {
       refresh();
     }
   }, refreshInterval);
 });
 
-
 onUnmounted(() => {
   clearInterval(autoRefresh);
 });
 
-const restDataSourceList = ref([]);
-const onErrorDataSourceList = ref([]);
-const timedDataSourceList = ref([]);
+const fetchFlows = async () => {
+  const response = await getAllDataSources();
+  const data = response.data.getAllFlows;
+
+  // Combine all data source types with type indicator
+  const allDataSources = [
+    ...data.restDataSource.map(ds => ({ ...ds, dataSourceType: "REST_DATA_SOURCE", type: "REST_DATA_SOURCE" })),
+    ...data.timedDataSource.map(ds => ({ ...ds, dataSourceType: "TIMED_DATA_SOURCE", type: "TIMED_DATA_SOURCE" })),
+    ...data.onErrorDataSource.map(ds => ({ ...ds, dataSourceType: "ON_ERROR_DATA_SOURCE", type: "ON_ERROR_DATA_SOURCE" })),
+  ];
+
+  // Format and normalize data
+  allDataSources.forEach(ds => {
+    ds.mvnCoordinates = `${ds.sourcePlugin.groupId}:${ds.sourcePlugin.artifactId}:${ds.sourcePlugin.version}`;
+    ds.artifactId = ds.sourcePlugin.artifactId;
+    ds.searchField = JSON.stringify({ name: ds.name, description: ds.description, mvnCoordinates: ds.mvnCoordinates, topic: ds.topic });
+    ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
+  });
+
+  flowData.value = allDataSources;
+  const grouped = _.chain(flowData.value).sortBy("artifactId").groupBy("artifactId").value();
+  const { 'system-plugin': systemPlugin, ...rest } = grouped;
+  flowDataByPlugin.value = systemPlugin ? { ...rest, 'system-plugin': systemPlugin } : rest;
+};
 
 const dataSourceExport = computed(() => {
-  const dataSourceObject = {};
-  dataSourceObject["restDataSources"] = restDataSourceList.value;
-  dataSourceObject["onErrorDataSources"] = onErrorDataSourceList.value;
-  dataSourceObject["timedDataSources"] = timedDataSourceList.value;
-  return dataSourceObject;
+  const restDataSources = flowData.value
+    .filter(ds => ds.dataSourceType === "REST_DATA_SOURCE")
+    .map(ds => _.pick(ds, ["name", "type", "description", "metadata", "annotationConfig", "topic"]));
+
+  const timedDataSources = flowData.value
+    .filter(ds => ds.dataSourceType === "TIMED_DATA_SOURCE")
+    .map(ds => _.pick(ds, ["name", "type", "description", "metadata", "topic", "cronSchedule", "timedIngressAction.name", "timedIngressAction.type", "timedIngressAction.parameters", "timedIngressAction.apiVersion", "timedIngressAction.join", "annotationConfig.annotations", "annotationConfig.metadataPatterns", "annotationConfig.discardPrefix"]));
+
+  const onErrorDataSources = flowData.value
+    .filter(ds => ds.dataSourceType === "ON_ERROR_DATA_SOURCE")
+    .map(ds => _.pick(ds, ["name", "type", "description", "metadata", "annotationConfig", "topic", "errorMessageRegex", "sourceMetadataPrefix", "includeSourceMetadataRegex"]));
+
+  return {
+    restDataSources,
+    timedDataSources,
+    onErrorDataSources,
+  };
 });
 
-const exportableRestDataSource = (value) => {
-  const formatRestDataSourcesList = JSON.parse(JSON.stringify(value));
-  formatRestDataSourcesList.forEach((e, index) => (formatRestDataSourcesList[index] = _.pick(e, ["name", "type", "description", "metadata", "annotationConfig", "topic"])));
-
-  restDataSourceList.value = formatRestDataSourcesList;
-};
-
-const exportableOnErrorDataSource = (value) => {
-  const formatOnErrorDataSourcesList = JSON.parse(JSON.stringify(value));
-  formatOnErrorDataSourcesList.forEach((e, index) => (formatOnErrorDataSourcesList[index] = _.pick(e, ["name", "type", "description", "metadata", "annotationConfig", "topic", "errorMessageRegex", "sourceMetadataPrefix", "includeSourceMetadataRegex"])));
-
-  onErrorDataSourceList.value = formatOnErrorDataSourcesList;
-};
-
-const exportableTimedDataSource = (value) => {
-  const formatTimedDataSourceList = JSON.parse(JSON.stringify(value));
-  formatTimedDataSourceList.forEach((e, index) => (formatTimedDataSourceList[index] = _.pick(e, ["name", "type", "description", "metadata", "topic", "cronSchedule", "timedIngressAction.name", "timedIngressAction.type", "timedIngressAction.parameters", "timedIngressAction.apiVersion", "timedIngressAction.join", "annotationConfig.annotations", "annotationConfig.metadataPatterns", "annotationConfig.discardPrefix"])));
-
-  timedDataSourceList.value = formatTimedDataSourceList;
+const refresh = async () => {
+  if (editing.value) return;
+  await fetchFlows();
 };
 </script>

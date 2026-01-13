@@ -19,18 +19,15 @@
 <template>
   <div class="transforms-page">
     <PageHeader heading="Transforms">
-      <div class="btn-toolbar align-items-center">
-        <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field mx-1 transform-dropdown" />
-        <IconField iconPosition="left">
-          <InputIcon class="pi pi-search"> </InputIcon>
-          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
-        </IconField>
-        <FlowPageHeaderButtonGroup :export-transforms="transformsExport" @reload-transforms="refresh" />
-      </div>
+      <FlowPageHeaderButtonGroup :export-transforms="transformsExport" @reload-transforms="refresh" />
     </PageHeader>
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
     <div v-else>
-      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @reload-transforms="refresh" />
+      <IconField iconPosition="left" class="mb-3">
+        <InputIcon class="pi pi-search"></InputIcon>
+        <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field" />
+      </IconField>
+      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @reload-transforms="refresh" />
     </div>
   </div>
 </template>
@@ -45,7 +42,6 @@ import useTopics from "@/composables/useTopics";
 import { onMounted, ref, computed } from "vue";
 import _ from "lodash";
 
-import Dropdown from "primevue/dropdown";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
@@ -57,8 +53,6 @@ const transformsFlowData = ref([]);
 const flowData = ref([]);
 const flowDataByPlugin = ref({});
 const filterFlowsText = ref("");
-const pluginNames = ref([]);
-const pluginNameSelected = ref(null);
 const showLoading = computed(() => (!loaded.value && loading.value) || (!topicsLoaded.value && topicsLoading.value));
 
 onMounted(async () => {
@@ -72,21 +66,10 @@ const fetchFlows = async () => {
   const response = await getAllFlows();
 
   transformsFlowData.value = response.data.getAllFlows.transform;
-  pluginNames.value = pluginNamesList(transformsFlowData.value);
   flowData.value = formatData(transformsFlowData.value);
-  flowDataByPlugin.value = _.chain(flowData.value).sortBy("artifactId").groupBy("artifactId").value();
-};
-
-const pluginNamesList = (data) => {
-  const mvnCoordinatesArray = [];
-
-  data.forEach((flow) => {
-    let mvnCoordinates = "";
-    mvnCoordinates = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
-    mvnCoordinatesArray.push({ name: mvnCoordinates });
-  });
-
-  return _.uniqBy(mvnCoordinatesArray, "name").sort((a, b) => a.name.localeCompare(b.name));
+  const grouped = _.chain(flowData.value).sortBy("artifactId").groupBy("artifactId").value();
+  const { 'system-plugin': systemPlugin, ...rest } = grouped;
+  flowDataByPlugin.value = systemPlugin ? { ...rest, 'system-plugin': systemPlugin } : rest;
 };
 
 const formatData = (data) => {
@@ -118,10 +101,6 @@ const refresh = async () => {
 </script>
 <style>
 .transforms-page {
-  .transform-dropdown {
-    width: 16rem;
-  }
-
   .p-divider.p-component.p-divider-vertical.p-divider-solid.p-divider-center.mx-0.flow-divider-color:before {
     border-left: 1px #f7f8fa !important;
     border-left-style: solid !important;

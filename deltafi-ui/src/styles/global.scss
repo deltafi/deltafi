@@ -195,3 +195,10 @@ td.inline-edit-column {
   color: #495057;
   text-align: inherit;
 }
+
+.kill-switch {
+  display: flex;
+  align-items: center;
+  position: relative;
+  top: -6px;
+}

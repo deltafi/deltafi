@@ -39,9 +39,11 @@
   <DialogTemplate ref="editDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @refresh-page="refresh" />
   <DialogTemplate ref="cloneDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="formatCloneDataSource(data)" @refresh-page="refresh" />
   <DialogTemplate ref="addRateLimit" component-name="dataSources/RateLimitingForm" :header="`Add Rate Limit: ${data.name}`" dialog-width="35vw" :rest-data-source-name="data['name']" :rate-limit="data['rateLimit']" @close-dialog-template="editing = false" @open-dialog-template="editing = true" @refresh-page="refresh" />
+  <CronScheduleEditDialog v-model:visible="cronEditVisible" :data="data" @reload-data-sources="refresh" @close="cronEditVisible = false" />
 </template>
 
 <script setup>
+import CronScheduleEditDialog from "@/components/dataSources/CronScheduleEditDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
@@ -73,6 +75,7 @@ const viewDataSourcePlugin = ref(null);
 const optionsButton = ref(null);
 const horizontalEllipsis = ref(false);
 const menu = ref();
+const cronEditVisible = ref(false);
 
 const props = defineProps({
   rowDataProp: {
@@ -141,6 +144,14 @@ const items = ref([
     visible: computed(() => _.isEqual(data.type, "REST_DATA_SOURCE") && !_.isEmpty(data.rateLimit)),
     command: () => {
       deleteRateLimit();
+    },
+  },
+  {
+    label: "Edit Cron Schedule",
+    icon: "text-muted fa-solid fa-clock",
+    visible: computed(() => _.isEqual(data.type, "TIMED_DATA_SOURCE") && hasPermission("FlowUpdate")),
+    command: () => {
+      cronEditVisible.value = true;
     },
   },
   {

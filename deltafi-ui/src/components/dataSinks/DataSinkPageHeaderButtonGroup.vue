@@ -1,66 +1,44 @@
 <template>
-  <Menu
-    ref="menu"
-    id="DataSinkPageHeaderMenu"
-    :model="items"
-    :popup="true"
-    @hide="hideMenu"
-    :pt="{
-      action: {
-        class: 'py-1',
-      },
-    }"
-    @click="hideMenu"
-  >
-    <template #item="{ item, props }">
-      <a v-ripple class="flex align-items-center" v-bind="props.action">
-        <span :class="item.icon" />
-        <span class="ml-2 text-dark">{{ item.label }}</span>
-      </a>
-    </template>
-  </Menu>
-  <Button id="DataSinkPageHeaderOptions" ref="optionsButton" type="button" v-tooltip.left="`Options`" @click="showMenu" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" />
-  <DialogTemplate ref="addDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Add Data Sink" dialog-width="50vw" :row-data-prop="{}" @refresh-page="refresh" />
-  <FileUpload
-    v-show="false"
-    auto
-    ref="dataSinksFileUploader"
-    mode="basic"
-    accept=".json,application/json"
-    :file-limit="1"
-    custom-upload
-    @uploader="preUploadValidation"
-    :pt="{
-      input: {
-        id: 'dataSinksFileUploaderButton',
-      },
-    }"
-  />
+  <div class="d-flex">
+    <Button label="Import" icon="fas fa-upload fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="importDataSinks" />
+    <Button label="Export" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportDataSinks" />
+    <Button v-has-permission:FlowPlanCreate label="Add" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="showAddDataSink" />
+
+    <FileUpload
+      v-show="false"
+      auto
+      ref="dataSinksFileUploader"
+      mode="basic"
+      accept=".json,application/json"
+      :file-limit="1"
+      custom-upload
+      @uploader="preUploadValidation"
+      :pt="{
+        input: {
+          id: 'dataSinksFileUploaderButton',
+        },
+      }"
+    />
+    <DialogTemplate ref="addDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Add Data Sink" dialog-width="50vw" :row-data-prop="{}" @refresh-page="refresh" />
+  </div>
 </template>
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import useDataSink from "@/composables/useDataSink";
 import useNotifications from "@/composables/useNotifications";
-import { computed, inject, ref } from "vue";
+import { ref } from "vue";
 
 import _ from "lodash";
 
 import Button from "primevue/button";
 import FileUpload from "primevue/fileupload";
-import Menu from "primevue/menu";
-import Ripple from "primevue/ripple";
 
 const emit = defineEmits(["reloadDataSinks"]);
 const { saveDataSinkPlan } = useDataSink();
 const notify = useNotifications();
-const vRipple = Ripple;
-const menu = ref();
 const addDataSink = ref(null);
-const optionsButton = ref(null);
 const dataSinksFileUploader = ref(null);
-const horizontalEllipsis = ref(false);
-const hasPermission = inject("hasPermission");
 
 const props = defineProps({
   exportDataSinks: {
@@ -69,41 +47,12 @@ const props = defineProps({
   },
 });
 
-const items = ref([
-  {
-    label: "Add Data Sink",
-    icon: "pi pi-plus",
-    visible: computed(() => hasPermission("FlowPlanCreate")),
-    command: () => {
-      addDataSink.value.showDialog();
-    },
-  },
-  {
-    label: "Import Data Sinks",
-    icon: "text-muted fas fa-upload fa-fw",
-    visible: computed(() => hasPermission("FlowPlanCreate")),
-    command: () => {
-      document.getElementById("dataSinksFileUploaderButton").click();
-    },
-  },
-  {
-    label: "Export Data Sinks",
-    icon: "text-muted fas fa-download fa-fw",
-    visible: true,
-    command: () => {
-      exportDataSinks();
-    },
-  },
-]);
-
-const showMenu = (event) => {
-  horizontalEllipsis.value = !horizontalEllipsis.value;
-  menu.value.toggle(event);
+const showAddDataSink = () => {
+  addDataSink.value.showDialog();
 };
 
-const hideMenu = async () => {
-  horizontalEllipsis.value = false;
-  menu.value.hide();
+const importDataSinks = () => {
+  document.getElementById("dataSinksFileUploaderButton").click();
 };
 
 const refresh = async () => {

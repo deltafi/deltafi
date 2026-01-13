@@ -49,6 +49,9 @@ const flowTypeMap = {
   restDataSource: "REST_DATA_SOURCE",
   timedDataSource: "TIMED_DATA_SOURCE",
   onErrorDataSource: "ON_ERROR_DATA_SOURCE",
+  REST_DATA_SOURCE: "REST_DATA_SOURCE",
+  TIMED_DATA_SOURCE: "TIMED_DATA_SOURCE",
+  ON_ERROR_DATA_SOURCE: "ON_ERROR_DATA_SOURCE",
 }
 
 const props = defineProps({

@@ -18,14 +18,16 @@
 
 <template>
   <ContextMenu ref="menu" :model="menuItems" />
-  <div v-for="(pluginFlows, pluginName) in flowDataByPlugin" :key="pluginName">
+  <div v-for="(pluginFlows, pluginName) in filteredFlowDataByPlugin" :key="pluginName">
     <CollapsiblePanel :header="pluginName" class="table-panel pb-3" @contextmenu="onPanelRightClick($event, pluginName)">
       <template #header>
-        <span class="p-panel-title">
-          {{ pluginName }}
-          <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + pluginFlows[0].mvnCoordinates }">
-            <i v-tooltip.top="pluginFlows[0].mvnCoordinates" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
+        <span class="p-panel-title d-flex align-items-center">
+          {{ pluginName === 'system-plugin' ? 'Local System Plugin' : pluginName }}
+          <i v-if="pluginName === 'system-plugin'" v-tooltip.top="'User-created flows, not from installed plugins'" class="text-muted pi pi-info-circle ml-2" />
+          <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + pluginFlows[0].mvnCoordinates }" class="ml-2">
+            <i v-tooltip.top="pluginFlows[0].mvnCoordinates" class="text-muted fas fa-plug fa-rotate-90 fa-fw" />
           </PermissionedRouterLink>
+          <Button v-tooltip.top="'Plugin actions'" severity="secondary" text size="small" icon="pi pi-ellipsis-v" class="p-0 ml-1" @click.stop="onPanelRightClick($event, pluginName)" />
         </span>
       </template>
       <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
@@ -82,7 +84,7 @@
             <FlowStatusBadge :row-data="data" />
           </template>
         </Column>
-        <Column class="flow-state-column">
+        <Column header="State" class="flow-state-column">
           <template #body="{ data }">
             <FlowStateInputSwitch :row-data-prop="data" @change="refresh" />
           </template>
@@ -111,7 +113,8 @@ import PublishCell from "@/components/PublishCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { onBeforeMount, ref, reactive, onUnmounted, watch } from "vue";
+import { computed, onBeforeMount, ref, reactive, onUnmounted } from "vue";
+import Button from "primevue/button";
 import ContextMenu from "primevue/contextmenu";
 import Column from "primevue/column";
 import ConfirmPopup from "primevue/confirmpopup";
@@ -176,11 +179,6 @@ const props = defineProps({
     type: Array,
     required: true,
   },
-  pluginNameSelectedProp: {
-    type: Object,
-    required: false,
-    default: null,
-  },
   filterFlowsTextProp: {
     type: String,
     required: false,
@@ -213,7 +211,24 @@ const runForAllFlowsForPlugin = (runType) => {
 };
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  mvnCoordinates: { value: null, matchMode: FilterMatchMode.CONTAINS },
+});
+
+// Computed that filters flows and groups by plugin, hiding empty groups
+const filteredFlowDataByPlugin = computed(() => {
+  const filterText = props.filterFlowsTextProp?.toLowerCase();
+  if (!filterText) {
+    return props.flowDataByPluginProp;
+  }
+
+  // Filter flows that match the search text
+  const filteredFlows = props.flowDataProp.filter(flow =>
+    flow.searchField?.toLowerCase().includes(filterText)
+  );
+
+  // Group filtered flows by plugin, with system-plugin last
+  const grouped = _.chain(filteredFlows).sortBy("artifactId").groupBy("artifactId").value();
+  const { 'system-plugin': systemPlugin, ...rest } = grouped;
+  return systemPlugin ? { ...rest, 'system-plugin': systemPlugin } : rest;
 });
 
 onUnmounted(() => {
@@ -223,28 +238,8 @@ onUnmounted(() => {
 onBeforeMount(async () => {
   flowData.value = props.flowDataProp;
   flowDataByPlugin.value = props.flowDataByPluginProp;
+  filters.value["global"].value = props.filterFlowsTextProp;
 });
-
-watch(
-  () => props.pluginNameSelectedProp,
-  () => {
-    filters.value["mvnCoordinates"].value = _.isEmpty(props.pluginNameSelectedProp) ? null : props.pluginNameSelectedProp.name;
-  }
-);
-
-watch(
-  () => props.filterFlowsTextProp,
-  () => {
-    filters.value["global"].value = props.filterFlowsTextProp;
-  }
-);
-watch(
-  () => props.flowDataProp,
-  () => {
-    flowDataByPlugin.value = props.flowDataByPluginProp;
-    flowData.value = props.flowDataProp;
-  }
-);
 
 const onPanelRightClick = (event, curentPlugin) => {
   selectedPlugin.value = curentPlugin;
