@@ -89,7 +89,7 @@ ingress:
       default: local-deltafi-org
 # S3Proxy config (S3-compatible storage using filesystem backend)
 s3proxy:
-  image: deltafi/s3proxy:2.9.0-0
+  image: deltafi/s3proxy:3.0.0-0
   resources:
     requests:
       memory: 256Mi

@@ -48,7 +48,7 @@ type valuesData struct {
 	VectorContainer          string `default:"deltafi/vector:0.51.1-alpine-0"`
 	DozzleContainer          string `default:"amir20/dozzle:v9.0.1"`
 	LokiContainer            string `default:"grafana/loki:2.9.17"`
-	S3ProxyContainer         string `default:"deltafi/s3proxy:2.9.0-0"`
+	S3ProxyContainer         string `default:"deltafi/s3proxy:3.0.0-0"`
 	NginxContainer           string `default:"deltafi/nginx:1.29.4-alpine3.23-0"`
 	PromtailContainer        string `default:"grafana/promtail:3.6.3"`
 	ValkeyContainer          string `default:"deltafi/valkey:9.0.1-0"`
