@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.common.rules.CoercibleString;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
 import org.deltafi.common.types.Content;
@@ -40,6 +41,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -93,10 +95,13 @@ public class ParameterResolver {
         Expression expression = expressionCache.computeIfAbsent(text, ParameterUtil::newExpression);
         ActionContext actionContext = actionInput.getActionContext();
         DeltaFileMessage message = actionInput.getDeltaFileMessages().getFirst();
+        Map<String, CoercibleString> coercibleMetadata = message.getMetadata().entrySet().stream()
+                .collect(Collectors.toMap(Entry::getKey, e -> new CoercibleString(e.getValue())));
+
         ExpressionInput expressionInput = ExpressionInput.builder()
                 .did(actionContext.getDid())
                 .deltaFileName(actionContext.getDeltaFileName())
-                .metadata(message.getMetadata())
+                .metadata(coercibleMetadata)
                 .content(message.getContentList())
                 .actionContext(actionContext)
                 .deltaFileMessages(actionInput.getDeltaFileMessages())
@@ -118,7 +123,7 @@ public class ParameterResolver {
 
     @Builder
     @SuppressWarnings("unused")
-    private record ExpressionInput(UUID did, String deltaFileName, Map<String, String> metadata, List<Content> content, ActionContext actionContext, List<DeltaFileMessage> deltaFileMessages) {
+    private record ExpressionInput(UUID did, String deltaFileName, Map<String, CoercibleString> metadata, List<Content> content, ActionContext actionContext, List<DeltaFileMessage> deltaFileMessages) {
 
         /**
          * Helper method to get the current timestamp as a string

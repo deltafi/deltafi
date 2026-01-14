@@ -19,13 +19,20 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl>
-      <span class="d-flex btn-group align-items-center">
-        <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
-        <i v-if="!_.isEmpty(schemaData.computedLabel) && _.isEqual(schemaData.computedLabel, 'Condition (Optional)')" class="fas fa-info-circle fa-fw ml-1" @click="toggle" />
-      </span>
+      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
       <dd>
         <template v-if="_.isEqual(schemaData.control.i18nKeyPrefix.split('.').pop(), 'topic')">
           <AutoComplete :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" dropdown :class="schemaData.styles.control.input + ' auto-complete-input-width'" :suggestions="topicList" @complete="search" @change="schemaData.onChange(schemaData.control.data)" />
+        </template>
+        <template v-else-if="isConditionField">
+          <SpelEditorDialog
+            :model-value="schemaData.control.data"
+            mode="CONDITION"
+            label="Publish Condition"
+            empty-placeholder="No condition (always matches)"
+            :disabled="!schemaData.control.enabled"
+            @update:model-value="schemaData.onChange($event)"
+          />
         </template>
         <template v-else-if="optionList !== undefined">
           <Dropdown :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="optionList" :option-label="optionsDisplay" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
@@ -42,9 +49,6 @@
       </dd>
     </dl>
   </control-wrapper>
-  <OverlayPanel ref="op" appendTo="body">
-    <div v-html="markdownIt.render(ruleConditionDoc)" />
-  </OverlayPanel>
 </template>
 
 <script setup lang="ts">
@@ -53,13 +57,13 @@ import { ControlElement } from "@jsonforms/core";
 import { computed, reactive, ref } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 import { default as ControlWrapper } from "../defaultRenderers/ControlWrapper.vue";
+import { SpelEditorDialog } from "@/components/spel";
 
 import _ from "lodash";
 
 import AutoComplete from "primevue/autocomplete";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
-import OverlayPanel from "primevue/overlaypanel";
 import Textarea from "primevue/textarea";
 
 import MarkdownIt from "markdown-it";
@@ -67,8 +71,6 @@ import MarkdownIt from "markdown-it";
 const markdownIt = new MarkdownIt({
   html: true,
 });
-
-const op = ref();
 
 const { useControl } = useSchemaComposition();
 
@@ -86,6 +88,11 @@ const optionList = computed(() => {
     return undefined;
   }
   return optionList;
+});
+
+const isConditionField = computed(() => {
+  const fieldName = schemaData.control.i18nKeyPrefix?.split(".").pop();
+  return fieldName === "condition";
 });
 
 const search = async (event: any) => {
@@ -131,40 +138,15 @@ const optionsDisplay = computed(() => {
 
   return (option: any) => option;
 });
-
-const toggle = (event: any) => {
-  op.value.toggle(event);
-};
-
-const ruleConditionDoc = `
-### Rule Conditions
-Conditions are SpEL expressions that evaluate to true or false. They can reference DeltaFile metadata and content information.
-
-Example conditions:
-
-\`\`\`spel 
-// check for the existence of a metadata key
-\metadata.containsKey("required-key")'
-
-// check if a key has a specific value
-\metadata["required-key"] == "required-value"'
-
-// check for content with a specific media type
-hasMediaType('application/json')
-
-// check for content with a specific name
-!content.?[name == 'required.name'].isEmpty()
-\`\`\`
-`;
 </script>
 
-<style>
+<style scoped>
 .auto-complete-input-width {
   width: 100% !important;
+}
 
-  > .p-inputtext {
-    width: 100% !important;
-  }
+.auto-complete-input-width > .p-inputtext {
+  width: 100% !important;
 }
 
 .inputWidth {

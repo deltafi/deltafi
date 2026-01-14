@@ -31,7 +31,15 @@
           <Textarea :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" rows="10" cols="80" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <template v-else>
-          <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+          <div class="p-inputgroup inputWidth">
+            <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+            <Button
+              v-tooltip.top="'Edit with expression editor'"
+              icon="fas fa-code"
+              class="spel-button"
+              @click="openSpelDialog"
+            />
+          </div>
         </template>
         <div>
           <small v-if="!_.isEmpty(schemaData.control.description)" v-html="markdownIt.render(schemaData.control.description)"></small>
@@ -39,6 +47,24 @@
       </dd>
     </dl>
   </control-wrapper>
+
+  <Dialog
+    v-model:visible="spelDialogVisible"
+    :header="'Edit ' + fieldLabel"
+    modal
+    :style="{ width: '70vw', maxWidth: '900px' }"
+  >
+    <SpelExpressionEditor
+      v-model="spelDialogValue"
+      mode="TEMPLATE"
+      placeholder="Enter value with {{ expressions }}..."
+      :disabled="!schemaData.control.enabled"
+    />
+    <template #footer>
+      <Button label="Cancel" class="p-button-text" @click="spelDialogVisible = false" />
+      <Button label="Apply" @click="applySpelValue" />
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -47,11 +73,14 @@ import { ControlElement } from "@jsonforms/core";
 import { computed, reactive, ref } from "vue";
 import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
+import { SpelExpressionEditor } from "@/components/spel";
 
 import _ from "lodash";
 import MarkdownIt from "markdown-it";
 
 import AutoComplete from "primevue/autocomplete";
+import Button from "primevue/button";
+import Dialog from "primevue/dialog";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
@@ -68,6 +97,24 @@ const props = defineProps({
 
 const schemaData = reactive(useControl(useJsonFormsControl(props), (value) => value || undefined, 300));
 const topicList = ref<any[] | undefined>([]);
+
+// SpEL dialog state
+const spelDialogVisible = ref(false);
+const spelDialogValue = ref('');
+
+const fieldLabel = computed(() => {
+  return schemaData.control.i18nKeyPrefix?.split('.').pop() || 'Value';
+});
+
+const openSpelDialog = () => {
+  spelDialogValue.value = schemaData.control.data || '';
+  spelDialogVisible.value = true;
+};
+
+const applySpelValue = () => {
+  schemaData.onChange(spelDialogValue.value || null);
+  spelDialogVisible.value = false;
+};
 
 const optionList = computed(() => {
   const optionList = schemaData.control.schema.enum;
@@ -126,5 +173,27 @@ const optionsDisplay = computed(() => {
 
 .inputWidth {
   width: 90% !important;
+}
+
+/* Style dropdown trigger to match AutoComplete dropdown button */
+.p-dropdown .p-dropdown-trigger {
+  background: var(--primary-color);
+  color: white;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+/* Style SpEL button to match dropdown triggers */
+.spel-button {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: white !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.spel-button:hover {
+  background: var(--primary-700) !important;
+  border-color: var(--primary-700) !important;
 }
 </style>

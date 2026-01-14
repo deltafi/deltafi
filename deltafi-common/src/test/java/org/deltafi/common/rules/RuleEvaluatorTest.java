@@ -44,6 +44,54 @@ class RuleEvaluatorTest {
     }
 
     @Test
+    void testEvaluation_numericComparison() {
+        Map<String, String> metadata = Map.of("count", "5", "price", "19.99");
+        List<Content> content = testContent();
+
+        // Integer equality - metadata string "5" equals numeric literal 5
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'] == 5", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'] != 5", metadata, content)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'] == 10", metadata, content)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'] != 10", metadata, content)).isTrue();
+
+        // Float equality
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['price'] == 19.99", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['price'] != 19.99", metadata, content)).isFalse();
+    }
+
+    @Test
+    void testEvaluation_numericComparisonMethods() {
+        Map<String, String> metadata = Map.of("count", "10", "price", "19.99");
+        List<Content> content = testContent();
+
+        // Greater than
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].gt(5)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].gt(10)", metadata, content)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].gt(15)", metadata, content)).isFalse();
+
+        // Greater than or equal
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].gte(10)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].gte(5)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].gte(15)", metadata, content)).isFalse();
+
+        // Less than
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].lt(15)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].lt(10)", metadata, content)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].lt(5)", metadata, content)).isFalse();
+
+        // Less than or equal
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].lte(10)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].lte(15)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['count'].lte(5)", metadata, content)).isFalse();
+
+        // Float comparisons
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['price'].gt(10.0)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['price'].lt(20.0)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['price'].gte(19.99)", metadata, content)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['price'].lte(19.99)", metadata, content)).isTrue();
+    }
+
+    @Test
     void testEvaluation_contentChecks() {
         Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('plain/text')", testMetadata(), testContent())).isTrue();
         Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('application/json')", testMetadata(), testContent())).isFalse();
@@ -57,7 +105,7 @@ class RuleEvaluatorTest {
     void testImmutableDeltaFile() {
         Map<String, String> originalMetadata = testMetadata();
         List<Content> originalContent = testContent();
-        RuleEvaluator.ImmutableDeltaFileFlow deltaFile = new RuleEvaluator.ImmutableDeltaFileFlow(originalMetadata, originalContent);
+        RuleEvaluator.ImmutableDeltaFileFlow deltaFile = RuleEvaluator.ImmutableDeltaFileFlow.from(originalMetadata, originalContent);
         // cannot rewrite value for key 'a'
         Assertions.assertThatThrownBy(() -> ruleEvaluator.doEvaluateCondition("metadata['a'] = 'c'", deltaFile))
                 .isInstanceOf(SpelEvaluationException.class);

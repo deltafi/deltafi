@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 public class RuleEvaluator {
-    private static final ImmutableDeltaFileFlow EXAMPLE_DELTA_FILE = new ImmutableDeltaFileFlow(Map.of("a", "b"), List.of(new Content("", "")));
+    private static final ImmutableDeltaFileFlow EXAMPLE_DELTA_FILE = ImmutableDeltaFileFlow.from(Map.of("a", "b"), List.of(new Content("", "")));
 
     private final Map<String, Expression> expressionCache = new ConcurrentHashMap<>();
 
@@ -64,7 +64,7 @@ public class RuleEvaluator {
      */
     public boolean evaluateCondition(String condition, Map<String, String> metadata, List<Content> content) {
         try {
-            return doEvaluateCondition(condition, new ImmutableDeltaFileFlow(metadata, content));
+            return doEvaluateCondition(condition, ImmutableDeltaFileFlow.from(metadata, content));
         } catch (Exception e) {
             log.error("Failed to evaluate condition", e);
             return false;
@@ -94,12 +94,24 @@ public class RuleEvaluator {
 
     /**
      * Holds a copy of the DeltaFileFlow metadata and content list to prevent
-     * SpEL expressions from modifying the original DeltaFile
+     * SpEL expressions from modifying the original DeltaFile.
+     * Metadata values are wrapped in CoercibleString to enable numeric comparisons.
      */
-    public record ImmutableDeltaFileFlow(Map<String, String> metadata, List<Content> content) {
-        public ImmutableDeltaFileFlow(Map<String, String> metadata, List<Content> content) {
+    public record ImmutableDeltaFileFlow(Map<String, CoercibleString> metadata, List<Content> content) {
+        public ImmutableDeltaFileFlow(Map<String, CoercibleString> metadata, List<Content> content) {
             this.metadata = Collections.unmodifiableMap(metadata);
             this.content = content.stream().map(Content::copy).toList();
+        }
+
+        /**
+         * Create an ImmutableDeltaFileFlow from raw String metadata.
+         */
+        public static ImmutableDeltaFileFlow from(Map<String, String> metadata, List<Content> content) {
+            Map<String, CoercibleString> coercibleMap = new java.util.HashMap<>();
+            for (var entry : metadata.entrySet()) {
+                coercibleMap.put(entry.getKey(), new CoercibleString(entry.getValue()));
+            }
+            return new ImmutableDeltaFileFlow(coercibleMap, content);
         }
 
         /**
@@ -109,7 +121,7 @@ public class RuleEvaluator {
          * @return true if there is a content with the given mediaType
          */
         public boolean hasMediaType(String mediaType) {
-            return this.content.stream().anyMatch(content -> Objects.equals(mediaType, content.getMediaType()));
+            return this.content.stream().anyMatch(c -> Objects.equals(mediaType, c.getMediaType()));
         }
     }
 

@@ -11,6 +11,7 @@ export default defineConfig({
   e2e: {
     viewportHeight: 900,
     viewportWidth: 1400,
+    defaultCommandTimeout: 10000,
     setupNodeEvents() {
       // implement node event listeners here
     },

@@ -34,7 +34,7 @@
         <dl>
           <dt>Name*</dt>
           <dd>
-            <InputText v-model="model.name" class="inputWidth" :disabled="editTransform" />
+            <InputText ref="nameInputRef" v-model="model.name" class="inputWidth" :disabled="editTransform" />
           </dd>
           <dt>Description*</dt>
           <dd>
@@ -58,7 +58,7 @@
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { useMounted } from "@vueuse/core";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
@@ -94,6 +94,7 @@ const transformTemplate = {
 const { editTransform } = reactive(props);
 const errors = ref([]);
 const transformData = ref(Object.assign({}, props.dataProp || transformTemplate));
+const nameInputRef = ref(null);
 
 const allTransforms = ref({});
 
@@ -126,6 +127,20 @@ onMounted(async () => {
   const response = await getAllFlows();
 
   allTransforms.value = response.data.getAllFlows;
+
+  // Focus the name input when creating a new transform
+  // Use retry with increasing delays to handle dialog animation timing
+  if (!editTransform) {
+    const focusInput = () => {
+      const input = nameInputRef.value?.$el;
+      if (input) {
+        input.focus();
+      }
+    };
+    // Try multiple times to ensure we catch after dialog animation
+    setTimeout(focusInput, 100);
+    setTimeout(focusInput, 300);
+  }
 });
 
 const hasErrors = computed(() => {
