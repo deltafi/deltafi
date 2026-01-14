@@ -5,6 +5,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.47.0] - 2026-01-14
+
+### Added
+- Added unit tests for `EntityAuthorizationResolver` covering enabled/disabled states, authorization granted/denied scenarios, HTTP failures, interruptions, and invalid JSON responses
+- Added an option to limit the error export by max file size. In the TUI the default value is 100MB.
+- SpEL expression editor dialog with live validation, testing, and reference documentation
+- Numeric comparison methods (`.gt()`, `.gte()`, `.lt()`, `.lte()`) on metadata values for SpEL conditions and template expressions
+- Warning detection in SpEL editor when users attempt to use comparison operators with metadata values, suggesting the correct method syntax
+- Load test data from DID feature in SpEL test panel with flow picker for selecting metadata/content source
+
+### Changed
+- Changed the bulk `acknowledge` process to be transactional
+- Analytics container healthcheck is now a call to analytics with the argument `health`
+- Data Sources page now groups all data source types (REST, Timed, OnError) by plugin, matching the Transforms page layout. Data source types are indicated by icons in the Name column.
+- Data Sinks page now groups sinks by plugin, matching the Transforms page layout
+- Search filter on Data Sources, Data Sinks, and Transforms pages now hides plugin groups with no matching results
+- Added "Ingress Enabled" / "Egress Enabled" labels to the master ingress/egress switches
+- Added visible menu button to plugin panel headers for bulk actions (previously only accessible via right-click)
+- Changed default entity-authorizer port from 8080 to 8081 to avoid conflicts with entity-resolver when both run in the same Kubernetes cluster
+- Updated entity-authorizer default endpoint from `/` to `/api/v1/authorize` in documentation and configuration defaults
+- Improved entity-authorizer configuration examples in values files with sample `auth.yaml` structure
+- Added `config` sections to both `entityResolver` and `entityAuthorizer` in Helm values for injecting configuration files
+- Increased the compose core-scheduler health check retry count to account for slower startup times
+- Changed the DeltaFile import endpoint to ignore duplicate DeltaFiles when inserting the records
+
+### Fixed
+- Fixed issue when adding or editing a textInput in ListEdit.vue file caused the focus to change to the first item in the list 
+- Fixed log message format string in `EntityAuthorizationResolver` where placeholder order was incorrect (`{} access{} using` → `{} access using {}{}`)
+- Fixed docker-compose volume mount using wrong secret variable (`DELTAFI_SECRET_ENTITY_RESOLVER_SSL` → `DELTAFI_SECRET_ENTITY_AUTHORIZER_SSL`)
+- Fixed null action index handling in `DeltaFileFlow.contentAtOrBefore()` for data sources - now correctly retrieves metadata from the last completed action instead of failing when actionIndex is null
+- Added orphaned documentation pages to the sidebar: Provenance Tracking, Flow States, and Plugin Operations
+- UI: Fixed a bug that prevented the `port` from being set for the `SftpIngress` action
+- Only upsert `properties` during core-scheduler init, and sync disabled properties on each refresh from DB
+- Fixed a bug where creating a lookup table with mixed cased names failed to create the last modified triggers
+
+### Removed
+- Deleted unused VitePress template pages (api-examples.md, markdown-examples.md)
+
+### Upgrade and Migration
+- Move analytics container to use Chainguard glibc base image (less CVEs)
+- Entity authorizer deployments should update their configuration to use port 8081 (or explicitly configure the URL in site values)
+- Upgrade dozzle to amir20/dozzle:v9.0.1
+
 ## [2.46.0] - 2026-01-07
 
 ### Added
@@ -5519,7 +5562,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.46.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.0...main
+[2.47.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.46.0...2.47.0
 [2.46.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.3...2.46.0
 [2.45.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.2...2.45.3
 [2.45.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.1...2.45.2
