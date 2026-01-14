@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.uuid.Generators;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,13 +27,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-@Data
 @Entity
-@Builder
+@Table(name = "users")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
 @EqualsAndHashCode
+@Builder
 public class DeltaFiUser {
     @Id
     private UUID id;
@@ -45,14 +45,9 @@ public class DeltaFiUser {
     private String dn;
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"})
-    )
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
-    @JsonManagedReference
     private Set<Role> roles = new HashSet<>();
 
     public DeltaFiUser(Input input) {
@@ -73,7 +68,6 @@ public class DeltaFiUser {
 
     @Builder
     public record Input(String name, String username, String dn, String password, Set<UUID> roleIds) {
-
         public boolean noChanges() {
             return roleIds == null && StringUtils.isAllBlank(name, username, password, dn);
         }

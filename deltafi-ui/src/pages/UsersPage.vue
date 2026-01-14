@@ -19,7 +19,14 @@
 <template>
   <div class="users-page">
     <PageHeader heading="User Management">
-      <Button :hidden="!$hasPermission('UserCreate')" label="Add User" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newUser" />
+      <div class="d-flex">
+        <Button v-has-permission:UserCreate v-tooltip.bottom="'Import Users and Roles'" label="Import" icon="fas fa-upload fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="triggerImport" />
+        <Button v-has-permission:UserRead v-tooltip.bottom="'Export Users and Roles'" label="Export" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" @click="exportUsers" />
+        <Button v-has-permission:UserCreate label="Add User" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" @click="newUser" />
+        <FileUpload v-show="false" mode="basic" auto accept=".json,application/json"
+            custom-upload @uploader="userAndRolesUploader"
+            :pt="{ input: { id: 'usersFileUploaderButton', }, }" />
+      </div>
     </PageHeader>
     <Panel header="Users" class="users-panel table-panel">
       <DataTable :value="users" data-Key="id" :loading="loading && !loaded" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
@@ -138,9 +145,12 @@
 </template>
 
 <script setup>
+import _ from "lodash";
+
 import PermissionCheckboxes from "@/components/PermissionCheckboxes.vue";
 import PermissionPill from "@/components/PermissionPill.vue";
 import Timestamp from "@/components/Timestamp.vue";
+import useNotifications from "@/composables/useNotifications";
 import usePermissions from "@/composables/usePermissions";
 import useRoles from "@/composables/useRoles";
 import useUsers from "@/composables/useUsers";
@@ -151,6 +161,7 @@ import Checkbox from "primevue/checkbox";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
+import FileUpload from "primevue/fileupload";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import MultiSelect from "primevue/multiselect";
@@ -161,13 +172,14 @@ import RolePill from "@/components/RolePill.vue";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 
+const notify = useNotifications();
 const submitted = ref(false);
 const user = ref({ roleIds: [] });
 const userDialog = ref(false);
 const deleteUserDialog = ref(false);
 const isNew = ref(false);
 const isReadOnly = ref(false);
-const { data: users, loading, loaded, fetch: fetchUsers, create, remove: removeUser, update: updateUser, errors } = useUsers();
+const { data: users, loading, loaded, fetch: fetchUsers, create, remove: removeUser, update: updateUser, errors, importUsers } = useUsers();
 const { data: roles, fetch: fetchRoles } = useRoles();
 const { appPermissionsByName } = usePermissions();
 const uiConfig = inject("uiConfig");
@@ -182,6 +194,54 @@ const columns = ref([
   { field: "createdAt", header: "Added", sortable: true, class: "timestamp-col" },
   { field: "updatedAt", header: "Updated", sortable: true, class: "timestamp-col" },
 ]);
+
+const triggerImport = () => {
+  document.getElementById("usersFileUploaderButton").click();
+};
+
+const userAndRolesUploader = async (event) => {
+  for (const file of event.files) {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      console.log('error occurred');
+    };
+
+    reader.onload = async () => {
+      if (!JSON.parse(reader.result)) {
+        notify.error(`Invalid file format`, 4000);
+        deleteUploadFile();
+        return;
+      }
+
+      const validJson = JSON.parse(reader.result);
+      if (!_.has(validJson, "users")) {
+        notify.error(`Invalid file format`, 4000);
+        return;
+      }
+
+      try {
+        await importUsers(validJson);
+      } catch {
+        return;
+      }
+
+      await fetchUsers();
+    };
+
+    reader.readAsText(file);
+  }
+};
+
+const exportUsers = () => {
+  const link = document.createElement("a");
+  const now = new Date(Date.now());
+  const downloadFileName = 'users_export_' + now.toLocaleDateString();
+  link.download = downloadFileName.toLowerCase();
+  link.href = '/api/v2/users/exportable';
+  link.click();
+  link.remove();
+};
 
 const onToggle = (val) => {
   selectedColumns.value = columns.value.filter((col) => val.includes(col));

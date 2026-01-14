@@ -18,10 +18,7 @@
 package org.deltafi.core.types;
 
 import java.time.OffsetDateTime;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public record DeltaFiUserDTO(UUID id, String name, String dn, String username, OffsetDateTime createdAt,
@@ -40,5 +37,17 @@ public record DeltaFiUserDTO(UUID id, String name, String dn, String username, O
                 .flatMap(Collection::stream)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    public DeltaFiUser toDeltaFiUser() {
+        DeltaFiUser user = new DeltaFiUser();
+        user.setId(id);
+        user.setName(name);
+        user.setCreatedAt(createdAt);
+        user.setUpdatedAt(updatedAt);
+        user.setUsername(username);
+        user.setDn(dn);
+        user.setRoles(roles);
+        return user;
     }
 }

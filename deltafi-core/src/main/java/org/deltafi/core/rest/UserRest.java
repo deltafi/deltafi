@@ -17,18 +17,22 @@
  */
 package org.deltafi.core.rest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.InvalidRequestException;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFiUserService;
-import org.deltafi.core.types.DeltaFiUser;
+import org.deltafi.core.types.*;
 import org.deltafi.core.types.DeltaFiUser.Input;
-import org.deltafi.core.types.DeltaFiUserDTO;
 import org.deltafi.core.util.UpdateMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,6 +52,27 @@ public class UserRest {
         return userService.getAllUsers();
     }
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    @GetMapping(value = "/exportable", produces = MediaType.APPLICATION_JSON)
+    @NeedsPermission.UserRead
+    public ResponseEntity<String> exportUsersAndRoles() throws JsonProcessingException {
+        return ResponseEntity.ok(OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(userService.exportUsersAndRoles()));
+    }
+
+    @PostMapping(value = "/importable", consumes = MediaType.APPLICATION_JSON)
+    @NeedsPermission.UserCreate
+    public ResponseEntity<String> importUsersAndRoles(@RequestBody UsersAndRoles usersAndRoles) {
+        try {
+            userService.importUsersAndRoles(usersAndRoles);
+        } catch (Exception e) {
+            return ResponseEntity.unprocessableEntity().body(e.getMessage());
+        }
+        auditLogger.audit("Imported {} users and {} roles", usersAndRoles.users().size(), usersAndRoles.roles().size());
+        return ResponseEntity.ok(null);
+    }
+
     @GetMapping("/{id}")
     @NeedsPermission.UserRead
     public DeltaFiUserDTO getUserById(@PathVariable("id") UUID id) {
@@ -58,7 +83,7 @@ public class UserRest {
     @NeedsPermission.UserCreate
     public DeltaFiUserDTO createUser(@RequestBody DeltaFiUser.Input userInput) {
         DeltaFiUserDTO user = userService.createUser(userInput);
-        auditLogger.audit("created user {}", user.username());
+        auditLogger.audit("Created user {}", user.username());
         return user;
     }
 
@@ -67,7 +92,7 @@ public class UserRest {
     public DeltaFiUserDTO updateUser(@PathVariable("id") UUID id, @RequestBody String updates) {
         Input userInput = UpdateMapper.readValue(updates, Input.class);
         DeltaFiUserDTO user = userService.updateUser(id, userInput);
-        auditLogger.audit("updated user {}", user.username());
+        auditLogger.audit("Updated user {}", user.username());
         return user;
     }
 
@@ -79,7 +104,7 @@ public class UserRest {
         }
 
         DeltaFiUserDTO user = userService.deleteUser(id);
-        auditLogger.audit("deleted user {}",  user.username());
+        auditLogger.audit("Deleted user {}",  user.username());
         return user;
     }
 }

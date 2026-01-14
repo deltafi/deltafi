@@ -23,9 +23,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.core.exceptions.EntityNotFound;
-import org.deltafi.core.exceptions.InvalidEntityException;
-import org.deltafi.core.exceptions.InvalidRequestException;
+import org.deltafi.core.exceptions.*;
 import org.deltafi.core.repo.RoleRepo;
 import org.deltafi.core.types.ErrorHolder;
 import org.deltafi.core.types.Role;
@@ -34,16 +32,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 
-@Slf4j
 @Service
+@Slf4j
 public class RoleService {
+    public static final List<String> DEFAULT_ROLES = List.of("Admin", "Ingress Only", "Read Only");
 
     private final RoleRepo roleRepo;
     private final PermissionsService permissionsService;
@@ -61,9 +57,9 @@ public class RoleService {
         if (scheduledMaintenance && roleRepo.count() == 0) {
             OffsetDateTime now = OffsetDateTime.now();
             List<Role> defaultRoles = List.of(
-                    Role.builder().id(ADMIN_ID).name("Admin").permission(DeltaFiConstants.ADMIN_PERMISSION).createdAt(now).updatedAt(now).build(),
-                    Role.builder().id(Generators.timeBasedEpochGenerator().generate()).name("Ingress Only").permission("DeltaFileIngress").createdAt(now).updatedAt(now).build(),
-                    Role.builder().id(Generators.timeBasedEpochGenerator().generate()).name("Read Only").permissions(
+                    Role.builder().id(ADMIN_ID).name(DEFAULT_ROLES.get(0)).permission(DeltaFiConstants.ADMIN_PERMISSION).createdAt(now).updatedAt(now).build(),
+                    Role.builder().id(Generators.timeBasedEpochGenerator().generate()).name(DEFAULT_ROLES.get(1)).permission("DeltaFileIngress").createdAt(now).updatedAt(now).build(),
+                    Role.builder().id(Generators.timeBasedEpochGenerator().generate()).name(DEFAULT_ROLES.get(2)).permissions(
                             List.of("DashboardView", "DeletePolicyRead", "DeltaFileContentView", "DeltaFileMetadataView",
                                     "EventRead", "FlowView", "MetricsView", "PluginsView",
                                     "SnapshotRead", "StatusView", "SystemPropertiesRead", "UIAccess", "VersionsView"))

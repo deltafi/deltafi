@@ -98,5 +98,15 @@ export default function useUsers() {
     }
   }
 
-  return { data, loaded, loading, fetch, update, remove, create, errors };
+  const importUsers = async (users: Object) => {
+    try {
+      await post(endpoint + '/importable', users, false);
+      notify.success("Users Imported")
+    } catch (response: any) {
+      notify.error("Import Users failed", await response.text());
+      return Promise.reject();
+    }
+  }
+
+  return { data, loaded, loading, fetch, update, remove, create, errors, importUsers };
 }

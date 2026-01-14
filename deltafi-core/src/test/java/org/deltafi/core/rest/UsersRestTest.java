@@ -20,6 +20,7 @@ package org.deltafi.core.rest;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.exceptions.InvalidEntityException;
+import org.deltafi.core.services.RoleService;
 import org.deltafi.core.types.DeltaFiUser.Input;
 import org.deltafi.core.types.ErrorHolder;
 import org.deltafi.core.services.DeltaFiUserService;
@@ -82,6 +83,9 @@ class UsersRestTest {
 
     @MockitoBean
     private DeltaFiUserService userService;
+
+    @MockitoBean
+    private RoleService roleService;
 
     @MockitoBean
     private CoreAuditLogger auditLogger;

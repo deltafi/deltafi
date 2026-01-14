@@ -31,10 +31,7 @@ import org.deltafi.core.repo.DeltaFiUserRepo;
 import org.deltafi.core.security.DnUtil;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.DeltaFiUser.Input;
-import org.deltafi.core.types.snapshot.RoleSnapshot;
-import org.deltafi.core.types.snapshot.Snapshot;
-import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.types.snapshot.UserSnapshot;
+import org.deltafi.core.types.snapshot.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -131,6 +128,22 @@ public class DeltaFiUserService implements Snapshotter {
         return deltaFiUserRepo.findAll().stream()
                 .map(DeltaFiUserDTO::new)
                 .toList();
+    }
+
+    public UsersAndRoles exportUsersAndRoles() {
+        return new UsersAndRoles(deltaFiUserRepo.findAll().stream()
+                .filter(user -> !user.getId().equals(ADMIN_ID))
+                .map(DeltaFiUserDTO::new)
+                .toList(),
+                roleService.getRoles().stream()
+                        .filter(role -> !RoleService.DEFAULT_ROLES.contains(role.getName()))
+                        .toList());
+    }
+
+    @Transactional
+    public void importUsersAndRoles(UsersAndRoles usersAndRoles) {
+        roleService.saveAll(usersAndRoles.roles());
+        deltaFiUserRepo.saveAll(usersAndRoles.users().stream().map(DeltaFiUserDTO::toDeltaFiUser).toList());
     }
 
     public DeltaFiUserDTO getUserById(UUID userId) {

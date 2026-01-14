@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
@@ -28,13 +28,13 @@ import org.hibernate.annotations.Type;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-@Data
 @Entity
-@Builder
+@Table(name = "roles")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "roles")
 @EqualsAndHashCode
+@Builder
 public class Role {
     @Id
     private UUID id;
@@ -48,10 +48,10 @@ public class Role {
     private OffsetDateTime updatedAt;
 
     @ManyToMany(mappedBy = "roles", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
-    @JsonBackReference
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Set<DeltaFiUser> users = new HashSet<>();
 
     public Role(Input roleInput) {
