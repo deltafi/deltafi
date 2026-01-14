@@ -20,7 +20,7 @@
   <div v-if="schemaData.control.visible" :class="schemaData.styles.arrayList.root" class="mt-1 align-items-center">
     <dl :class="schemaData.styles.arrayList.legend + ' mb-0'">
       <div class="btn-group pb-0 align-items-center">
-        <dt :class="schemaData.styles.arrayList.label">{{ computedLabel }}</dt>
+        <dt :class="schemaData.styles.arrayList.label">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span></dt>
         <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
       </div>
       <dd class="pb-0">
@@ -29,7 +29,7 @@
         </small>
         <span v-if="!noData" class="deltafi-fieldset pb-1 pt-3">
           <div v-for="(element, index) in renderArrayData" :key="`${schemaData.control.path}-${index}`" :class="checkSchemaIsObject(schemaData.styles.arrayList.itemWrapper, schemaData.control.path, schemaData.control.schema.type)">
-            <ArrayListElement :move-up="schemaData.moveUp?.(schemaData.control.path, index)" :move-up-enabled="index > 0" :move-down="schemaData.moveDown?.(schemaData.control.path, index)" :move-down-enabled="index < schemaData.control.data.length - 1" :delete="schemaData.removeItems?.(schemaData.control.path, [index])" :label="schemaData.childLabelForIndex(index)" :styles="schemaData.styles">
+            <ArrayListElement :move-up="schemaData.moveUp?.(schemaData.control.path, Number(index))" :move-up-enabled="Number(index) > 0" :move-down="schemaData.moveDown?.(schemaData.control.path, Number(index))" :move-down-enabled="Number(index) < schemaData.control.data.length - 1" :delete="schemaData.removeItems?.(schemaData.control.path, [Number(index)])" :label="schemaData.childLabelForIndex(Number(index))" :styles="schemaData.styles">
               <dispatch-renderer :schema="schemaData.control.schema" :uischema="schemaData.childUiSchema" :path="composePaths(schemaData.control.path, `${index}`)" :enabled="schemaData.control.enabled" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
             </ArrayListElement>
           </div>
@@ -76,14 +76,15 @@ const addButtonClick = () => {
 };
 
 const computedLabel = computed(() => {
-  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
-
-  label = (schemaData.control.required) ? label + "*" : label;
-
-  return label;
+  return schemaData.control.config.defaultLabels ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 <style scoped>
+.required-indicator {
+  color: var(--red-500);
+  margin-left: 0.125rem;
+}
+
 .deltafi-fieldset {
   display: block;
   margin-inline-start: 2px;

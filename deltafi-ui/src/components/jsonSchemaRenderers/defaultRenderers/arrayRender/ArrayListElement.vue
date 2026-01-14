@@ -17,15 +17,14 @@
 -->
 
 <template>
-  <div :class="styles.arrayList.item + ' d-flex btn-group align-items-start'">
-    <!-- <div :class="styles.arrayList.itemLabel + 'pr-1'">{{ label.split(".").pop()  }}</div> -->
-    <div class="input-width ml-2">
+  <div class="array-list-element">
+    <div class="array-list-element-content">
       <slot></slot>
     </div>
-    <div class="col btn-group px-0 align-items-center">
-      <Button icon="pi pi-angle-up text-dark" text rounded :disabled="!moveUpEnabled" @click="moveUpClicked" />
-      <Button icon="pi pi-angle-down text-dark" text rounded :disabled="!moveDownEnabled" @click="moveDownClicked" />
-      <Button icon="pi pi-trash text-dark" text rounded @click="deleteClicked" />
+    <div class="array-list-element-actions">
+      <Button v-if="!isObjectType" icon="pi pi-angle-up" class="p-button-text p-button-sm p-button-rounded" :disabled="!moveUpEnabled" @click="moveUpClicked" />
+      <Button v-if="!isObjectType" icon="pi pi-angle-down" class="p-button-text p-button-sm p-button-rounded" :disabled="!moveDownEnabled" @click="moveDownClicked" />
+      <Button icon="pi pi-times" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="deleteClicked" />
     </div>
   </div>
 </template>
@@ -75,6 +74,11 @@ const props = defineProps({
     required: true,
     type: Object,
   },
+  isObjectType: {
+    required: false,
+    type: Boolean,
+    default: false,
+  },
 });
 
 const expanded = ref(props.initiallyExpanded);
@@ -100,8 +104,43 @@ const deleteClicked = (event: any) => {
 
 defineExpose({ expandClicked, moveUpClicked, moveDownClicked, deleteClicked });
 </script>
-<style>
-.input-width {
-  width: 100% !important;
+<style scoped>
+.array-list-element {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.array-list-element-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.array-list-element-content :deep(.p-inputtext) {
+  width: 100%;
+}
+
+.array-list-element-content :deep(dl) {
+  margin: 0;
+}
+
+.array-list-element-content :deep(dt) {
+  display: none;
+}
+
+.array-list-element-content :deep(dd) {
+  margin: 0;
+}
+
+.array-list-element-content :deep(small) {
+  display: none;
+}
+
+.array-list-element-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
 }
 </style>

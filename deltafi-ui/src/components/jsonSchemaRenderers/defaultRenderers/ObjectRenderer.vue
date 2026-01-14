@@ -17,11 +17,13 @@
 -->
 
 <template>
-  <div v-if="schemaData.control.visible" class="pb-2">
-    <dt>{{ computedLabel }}</dt>
+  <div v-if="schemaData.control.visible" class="object-wrapper">
+    <dt class="object-label">
+      {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span>
+      <i v-if="!_.isEmpty(schemaData.control.description)" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
+    </dt>
     <div class="deltafi-fieldset">
-      <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
-      <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+      <dispatch-renderer v-if="hasProperties" :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
       <AdditionalPropertiesRenderer v-if="hasAdditionalProperties && showAdditionalProperties" :input="input"></AdditionalPropertiesRenderer>
     </div>
   </div>
@@ -67,6 +69,10 @@ const detailUiSchema = computed(() => {
   return result;
 });
 
+const hasProperties = computed(() => {
+  return !_.isEmpty(schemaData.control.schema.properties);
+});
+
 const hasAdditionalProperties = computed(() => {
   return (
     !_.isEmpty(schemaData.control.schema.patternProperties) || _.isObject(schemaData.control.schema.additionalProperties)
@@ -79,29 +85,41 @@ const showAdditionalProperties = computed(() => {
 });
 
 const computedLabel = computed(() => {
-  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
-
-  label = (schemaData.control.required) ? label + "*" : label;
-
-  return label;
+  return schemaData.control.config.defaultLabels ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 
 <style scoped>
+.object-wrapper {
+  margin-bottom: 0.75rem;
+}
+
+.object-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.info-icon {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  cursor: help;
+}
+
+.required-indicator {
+  color: var(--red-500);
+  margin-left: 0.125rem;
+}
+
 .deltafi-fieldset {
   display: block;
-  margin-inline-start: 2px;
-  margin-inline-end: 2px;
-  padding-block-start: 0.35em;
-  padding-inline-start: 0.75em;
-  padding-inline-end: 0.75em;
-  padding-block-end: 0.625em;
-  min-inline-size: min-content;
-  border-radius: 4px;
-  border: 1px solid #ced4da;
-  border-width: 1px;
-  border-style: groove;
-  border-color: rgb(225, 225, 225);
-  border-image: initial;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--surface-border);
+  background-color: var(--surface-50);
 }
 </style>

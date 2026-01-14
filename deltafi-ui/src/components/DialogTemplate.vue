@@ -25,7 +25,6 @@
       id="dialogTemplate"
       ref="dialogTemplate"
       v-model:visible="dialogVisible"
-      :header="$attrs['header']"
       :position="modelPosition"
       :style="{ width: dialogSize }"
       :maximizable="true"
@@ -41,6 +40,12 @@
         },
       }"
     >
+      <template #header>
+        <div class="dialog-header-content">
+          <span class="p-dialog-title">{{ $attrs['header'] }}</span>
+          <div v-if="$attrs['subheader']" class="dialog-subheader">{{ $attrs['subheader'] }}</div>
+        </div>
+      </template>
       <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" @refresh-and-close="refreshAndClose" @submit-with-metadata="submitWithMetadata" />
     </Dialog>
   </div>
@@ -76,7 +81,7 @@ const disableModel = computed(() => {
 });
 
 const modelPosition = computed(() => {
-  return _.get(attrs, "model-position", "top");
+  return _.get(attrs, "model-position", "center");
 });
 
 const isClosable = computed(() => {
@@ -131,4 +136,17 @@ defineExpose({
 });
 </script>
 
-<style />
+<style scoped>
+.dialog-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dialog-subheader {
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: var(--text-color-secondary);
+  font-family: monospace;
+}
+</style>

@@ -21,12 +21,8 @@
     <div class="action-configuration-panel">
       <div v-if="hasErrors" class="pt-2">
         <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
-          <ul>
-            <div v-for="(error, key) in errors" :key="key">
-              <li class="text-wrap text-break">
-                {{ error }}
-              </li>
-            </div>
+          <ul class="error-list">
+            <li v-for="(error, index) in errors" :key="index">{{ error }}</li>
           </ul>
         </Message>
       </div>
@@ -34,7 +30,7 @@
         <template v-for="displayActionInfo of getDisplayValues(rowData)" :key="displayActionInfo">
           <template v-if="displayFieldTest(displayActionInfo)" />
           <template v-else>
-            <dt>{{ displayMap.get(displayActionInfo).header }}</dt>
+            <dt v-if="displayActionInfo !== 'schema'">{{ displayMap.get(displayActionInfo).header }}</dt>
             <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')">
               <InputText v-model="rowData[displayActionInfo]" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
             </dd>
@@ -56,37 +52,31 @@
                 </template>
               </template>
               <template v-if="_.isEqual(displayActionInfo, 'schema')">
-                <div class="deltafi-fieldset">
-                  <div class="px-2 pt-3">
-                    <JsonForms :data="data" :renderers="renderers" :uischema="uiSchema" :schema="rowData['schema']" @change="onChange($event, rowData)" />
-                  </div>
-                </div>
+                <JsonForms :data="data" :renderers="renderers" :uischema="uiSchema" :schema="rowData['schema']" @change="onChange($event, rowData)" />
               </template>
               <template v-if="_.isEqual(displayActionInfo, 'join')">
-                <div class="deltafi-fieldset">
-                  <div class="px-2 pt-3">
-                    <dt>maxAge</dt>
-                    <dd>
-                      <InputText v-model="joinData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
-                      <small :id="join - maxAge - input - help" style="display: inline-block">The maximum duration (ISO 8601) to wait after the first DeltaFile is received for a join group before this action is executed</small>
-                    </dd>
-                    <dt>minNum</dt>
-                    <dd>
-                      <InputNumber v-model="joinData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
-                      <small :id="join - minNum - input - help" style="display: inline-block">The minimum number of DeltaFiles to join within maxAge. If this number is not reached, all DeltaFiles received for the join group will have this action marked in error.</small>
-                    </dd>
-                    <dt>maxNum</dt>
-                    <dd>
-                      <InputNumber v-model="joinData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
-                      <small :id="join - maxNum - input - help" style="display: inline-block">The maximum number of DeltaFiles to join before this action is executed</small>
-                    </dd>
-                    <dt>metadataKey</dt>
-                    <dd>
-                      <InputText v-model="joinData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
-                      <small :id="join - metadataKey - input - help" style="display: inline-block">An optional metadata key used to get the value to group joins by. If not set, DeltaFiles are not grouped when joining.</small>
-                    </dd>
-                  </div>
-                </div>
+                <dl class="join-fields">
+                  <dt>maxAge</dt>
+                  <dd>
+                    <InputText v-model="joinData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
+                    <small :id="join - maxAge - input - help" style="display: inline-block">The maximum duration (ISO 8601) to wait after the first DeltaFile is received for a join group before this action is executed</small>
+                  </dd>
+                  <dt>minNum</dt>
+                  <dd>
+                    <InputNumber v-model="joinData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
+                    <small :id="join - minNum - input - help" style="display: inline-block">The minimum number of DeltaFiles to join within maxAge. If this number is not reached, all DeltaFiles received for the join group will have this action marked in error.</small>
+                  </dd>
+                  <dt>maxNum</dt>
+                  <dd>
+                    <InputNumber v-model="joinData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" :min="0" show-buttons />
+                    <small :id="join - maxNum - input - help" style="display: inline-block">The maximum number of DeltaFiles to join before this action is executed</small>
+                  </dd>
+                  <dt>metadataKey</dt>
+                  <dd>
+                    <InputText v-model="joinData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowData.disableEdit" />
+                    <small :id="join - metadataKey - input - help" style="display: inline-block">An optional metadata key used to get the value to group joins by. If not set, DeltaFiles are not grouped when joining.</small>
+                  </dd>
+                </dl>
               </template>
             </dd>
           </template>
@@ -95,6 +85,7 @@
     </div>
     <teleport v-if="isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">
+        <Button label="Cancel" class="p-button-text" @click="cancel()" />
         <Button label="Submit" @click="submit()" />
       </div>
     </teleport>
@@ -144,12 +135,35 @@ const errors = ref([]);
 const { actionIndexProp: actionIndex } = reactive(props);
 
 const rowData = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
-const data = ref(_.isEmpty(_.get(rowData, "parameters", null)) ? {} : rowData["parameters"]);
+
+// Extract defaults from schema and merge with existing parameters
+const getInitialData = () => {
+  const existingParams = _.get(rowData, "parameters", {}) || {};
+  const schema = _.get(rowData, "schema", null);
+
+  if (!schema || !schema.properties) {
+    return existingParams;
+  }
+
+  // Build defaults from schema
+  const defaults = {};
+  for (const [key, propSchema] of Object.entries(schema.properties)) {
+    if (propSchema.default !== undefined) {
+      defaults[key] = propSchema.default;
+    }
+  }
+
+  // Merge: existing values take precedence over defaults
+  return { ...defaults, ...existingParams };
+};
+
+const data = ref(getInitialData());
 const joinData = ref(_.isEmpty(_.get(rowData, "join", null)) ? defaultJoinTemplate.value : rowData["join"]);
 
 const originalJoinData = JSON.parse(JSON.stringify(joinData.value));
 
 const onChange = (event, element) => {
+  data.value = event.data;
   element["parameters"] = event.data;
 };
 
@@ -162,7 +176,7 @@ const displayMap = new Map([
   ["schema", { header: "Parameters", type: "object", disableEdit: false }],
 ]);
 
-const displayKeysList = ["name", "type", "description", "schema"];
+const displayKeysList = ["name", "description", "schema"];
 
 const getDisplayValues = (obj) => {
   const displayValues = _.intersection(Object.keys(obj), displayKeysList);
@@ -186,8 +200,93 @@ const clearErrors = () => {
   errors.value = [];
 };
 
+const cancel = () => {
+  emit("refreshAndClose");
+};
+
+const validateMapParameters = (obj, parentName = "") => {
+  const emptyKeyFields = [];
+  const duplicateKeyFields = [];
+
+  if (obj && typeof obj === "object") {
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === "__has_empty_keys__") {
+        const fieldName = parentName || "Parameters";
+        if (!emptyKeyFields.includes(fieldName)) {
+          emptyKeyFields.push(fieldName);
+        }
+      } else if (key === "__has_duplicate_keys__") {
+        const fieldName = parentName || "Parameters";
+        if (!duplicateKeyFields.includes(fieldName)) {
+          duplicateKeyFields.push(fieldName);
+        }
+      } else if (key.startsWith("__new_key_")) {
+        const fieldName = parentName || "Parameters";
+        if (!emptyKeyFields.includes(fieldName)) {
+          emptyKeyFields.push(fieldName);
+        }
+      } else if (value && typeof value === "object" && !Array.isArray(value)) {
+        const nested = validateMapParameters(value, key);
+        emptyKeyFields.push(...nested.emptyKeyFields);
+        duplicateKeyFields.push(...nested.duplicateKeyFields);
+      }
+    }
+  }
+  return { emptyKeyFields, duplicateKeyFields };
+};
+
+const getMapValidationErrors = () => {
+  const { emptyKeyFields, duplicateKeyFields } = validateMapParameters(data.value);
+  const errors = [];
+
+  emptyKeyFields.forEach(field => {
+    errors.push(`${field} has a map entry with an empty key. Please provide a key or remove the entry.`);
+  });
+
+  duplicateKeyFields.forEach(field => {
+    errors.push(`${field} has duplicate keys. Please use unique keys.`);
+  });
+
+  return errors;
+};
+
+const isValueEmpty = (value) => {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string' && value.trim() === '') return true;
+  if (Array.isArray(value) && value.length === 0) return true;
+  return false;
+};
+
+const getRequiredFieldErrors = () => {
+  const schema = _.get(rowData, "schema", null);
+  if (!schema || !schema.required || !Array.isArray(schema.required)) {
+    return [];
+  }
+
+  const missingFields = [];
+  for (const fieldName of schema.required) {
+    const value = _.get(data.value, fieldName);
+    if (isValueEmpty(value)) {
+      missingFields.push(fieldName);
+    }
+  }
+
+  return missingFields.map(field => `${field} is required`);
+};
+
 const submit = async () => {
   clearErrors();
+
+  const requiredFieldErrors = getRequiredFieldErrors();
+  if (requiredFieldErrors.length > 0) {
+    errors.value.push(...requiredFieldErrors);
+  }
+
+  const mapErrors = getMapValidationErrors();
+  if (mapErrors.length > 0) {
+    errors.value.push(...mapErrors);
+  }
+
   // Remove any value that have not changed from the original originalJoinData value it was set at
   const changedJoinValues = _.omitBy(joinData.value, function (v, k) {
     return JSON.stringify(originalJoinData[k]) === JSON.stringify(v);
@@ -251,43 +350,64 @@ const submit = async () => {
 .action-configuration-dialog {
   width: 98%;
 
-  .action-configuration-panel {
-    .deltafi-fieldset {
-      display: block;
-      margin-inline-start: 2px;
-      margin-inline-end: 2px;
-      padding-block-start: 0.35em;
-      padding-inline-start: 0.75em;
-      padding-inline-end: 0.75em;
-      padding-block-end: 0.625em;
-      min-inline-size: min-content;
-      border-radius: 4px;
-      border: 1px solid #ced4da;
-      border-width: 1px;
-      border-style: groove;
-      border-color: rgb(225, 225, 225);
-      border-image: initial;
-    }
+  .error-list {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
 
+  .action-configuration-panel {
     dt {
-      margin-bottom: 0rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      margin-bottom: 0.25rem;
     }
 
     dd {
-      margin-bottom: 1.2rem;
+      margin-bottom: 1.25rem;
+      margin-left: 0;
     }
 
     dl {
-      margin-bottom: 1rem;
+      margin-bottom: 0;
     }
 
     .p-panel-content {
       padding-bottom: 0.25rem !important;
     }
+
+    /* Better spacing for nested parameters */
+    :deep(.array-list-container),
+    :deep(.additional-properties-container) {
+      margin-top: 0.5rem;
+    }
+
+    /* Ensure consistent input widths */
+    :deep(.p-inputtext),
+    :deep(.p-dropdown),
+    :deep(.p-inputnumber) {
+      width: 100%;
+    }
+
+    /* Better label styling for form fields */
+    :deep(dt) {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      margin-bottom: 0.25rem;
+    }
+
+    /* Description text styling */
+    :deep(small) {
+      display: block;
+      color: var(--text-color-secondary);
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
   }
 
   .inputWidth {
-    width: 97% !important;
+    width: 100% !important;
   }
 }
 </style>

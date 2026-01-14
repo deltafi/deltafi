@@ -18,9 +18,12 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
-    <div class="py-2 align-items-center">
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
-      <dd>
+    <dl class="additional-string-field">
+      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'" class="additional-string-label">
+        {{ computedLabel }}
+        <i v-if="!_.isEmpty(schemaData.control.description)" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
+      </dt>
+      <dd class="additional-string-input">
         <template v-if="suggestions !== undefined">
           <Dropdown :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="suggestions" show-clear @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
@@ -28,10 +31,7 @@
           <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
       </dd>
-      <div>
-        <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-      </div>
-    </div>
+    </dl>
   </control-wrapper>
 </template>
 
@@ -73,9 +73,29 @@ const computedLabel = computed(() => {
 });
 </script>
 
-<style>
-.field * {
-  display: block;
+<style scoped>
+.additional-string-field {
+  margin-bottom: 0.75rem;
+}
+
+.additional-string-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.additional-string-input {
+  margin-left: 0;
+}
+
+.info-icon {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  cursor: help;
 }
 
 .inputWidth {

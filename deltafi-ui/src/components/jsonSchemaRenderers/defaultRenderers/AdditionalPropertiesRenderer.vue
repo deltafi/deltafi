@@ -17,32 +17,27 @@
 -->
 
 <template>
-  <div v-if="jsonSchema.control.visible" class="px-0 pb-2">
-    <div class="d-flex w-100 justify-content-between">
-      <div class="px-0 py-0">
-        <dt class="pt-3">{{ additionalPropertiesTitle }}</dt>
-      </div>
-      <div class="btn-group">
-        <div class="flex-column additionPropsInputBox">
-          <InputText v-model="newPropertyName" :disabled="!jsonSchema.control.enabled" :placeholder="placeholder" :class="!_.isEmpty(newPropertyErrors) && 'p-invalid'" />
-          <div v-if="!_.isEmpty(newPropertyErrors)">
-            <small v-for="(error, key) in newPropertyErrors" :key="key" class="p-error">
-              {{ error }}
-            </small>
-          </div>
-        </div>
-        <Button v-tooltip.bottom="addToLabel" icon="pi pi-plus" small :disabled="addPropertyDisabled" text rounded @click="addProperty" />
-      </div>
+  <div v-if="jsonSchema.control.visible" class="additional-properties-inline">
+    <div v-if="noData" class="additional-properties-empty">
+      <span>No entries</span>
+      <Button v-tooltip.bottom="'Add entry'" icon="pi pi-plus" class="p-button-text p-button-sm p-button-rounded" :disabled="!jsonSchema.control.enabled" @click="addNewEntry" />
     </div>
-    <div v-if="noData">No data</div>
-    <div v-for="(element, index) in additionalPropertyItems" :key="`${index}`">
-      <div>
-        <div class="inputField">
-          <dispatch-renderer v-if="element.schema && element.uischema" :visible="jsonSchema.control.visible" :enabled="jsonSchema.control.enabled" :schema="element.schema" :uischema="element.uischema" :path="element.path" :renderers="jsonSchema.control.renderers" :cells="jsonSchema.control.cells" />
+
+    <div v-else class="additional-properties-list">
+      <div v-for="(element, index) in additionalPropertyItems" :key="`entry-${index}`" class="additional-properties-row">
+        <div class="additional-properties-key">
+          <InputText :model-value="element.propertyName.startsWith('__new_key_') ? '' : element.propertyName" :class="['key-input', { 'p-invalid': getKeyError(element.propertyName, index) }]" :disabled="!jsonSchema.control.enabled" placeholder="key" @update:model-value="updatePropertyKey(index, $event ?? '')" />
+          <small v-if="getKeyError(element.propertyName, index)" class="p-error">{{ getKeyError(element.propertyName, index) }}</small>
         </div>
-        <div v-if="jsonSchema.control.enabled" class="deleteButton">
-          <Button v-tooltip.bottom="deleteLabel" icon="pi pi-trash text-dark" small :disabled="removePropertyDisabled" text rounded @click="removeProperty(element.propertyName)" />
+        <span class="additional-properties-equals">=</span>
+        <div class="additional-properties-value">
+          <InputText v-if="isSimpleStringType" :model-value="element.value ?? ''" class="value-input" :disabled="!jsonSchema.control.enabled" placeholder="value" @update:model-value="updatePropertyValue(index, $event)" />
+          <dispatch-renderer v-else-if="element.schema && element.uischema" :visible="jsonSchema.control.visible" :enabled="jsonSchema.control.enabled" :schema="element.schema" :uischema="element.uischema" :path="element.path" :renderers="jsonSchema.control.renderers" :cells="jsonSchema.control.cells" />
         </div>
+        <Button v-if="jsonSchema.control.enabled" v-tooltip.bottom="'Remove'" icon="pi pi-times" class="p-button-text p-button-sm p-button-rounded p-button-danger remove-btn" @click="removeProperty(index)" />
+      </div>
+      <div class="additional-properties-add">
+        <Button v-tooltip.bottom="'Add entry'" icon="pi pi-plus" label="Add" class="p-button-text p-button-sm" :disabled="!jsonSchema.control.enabled" @click="addNewEntry" />
       </div>
     </div>
   </div>
@@ -60,10 +55,82 @@ import _ from "lodash";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 
+const tempKeyCounter = ref(0);
+
+const generateTempKey = () => {
+  tempKeyCounter.value++;
+  return `__new_key_${tempKeyCounter.value}__`;
+};
+
+const getKeyError = (propertyName: string, index: number): string | null => {
+  if (!propertyName || propertyName.startsWith("__new_key_")) {
+    return "Key is required";
+  }
+
+  const duplicateIndex = additionalPropertyItems.value.findIndex(
+    (item, i) => i !== index && item.propertyName === propertyName
+  );
+  if (duplicateIndex !== -1) {
+    return "Duplicate key";
+  }
+
+  return null;
+};
+
+const syncToData = () => {
+  const newData: Record<string, any> = {};
+  let hasDuplicates = false;
+  let hasEmptyKeys = false;
+
+  additionalPropertyItems.value.forEach((item, idx) => {
+    const error = getKeyError(item.propertyName, idx);
+    if (error === "Duplicate key") {
+      hasDuplicates = true;
+    } else if (error === "Key is required") {
+      hasEmptyKeys = true;
+    }
+    // Sync all items with non-empty keys (including duplicates - last one wins)
+    if (item.propertyName && !item.propertyName.startsWith("__new_key_")) {
+      newData[item.propertyName] = item.value ?? "";
+    }
+  });
+
+  // Add markers for validation errors so submit can detect them
+  if (hasDuplicates) {
+    newData["__has_duplicate_keys__"] = true;
+  }
+  if (hasEmptyKeys) {
+    newData["__has_empty_keys__"] = true;
+  }
+
+  jsonSchema.handleChange(jsonSchema.control.path, Object.keys(newData).length > 0 ? newData : undefined);
+};
+
+const addNewEntry = () => {
+  const tempKey = generateTempKey();
+  const additionalProperty = toAdditionalPropertyType(tempKey, "");
+  additionalPropertyItems.value = [...additionalPropertyItems.value, additionalProperty];
+  // Don't sync yet - temp keys won't be included in data until user enters a valid key
+};
+
+const updatePropertyKey = (index: number, newKey: string) => {
+  const item = additionalPropertyItems.value[index];
+  if (!item) return;
+
+  const oldKey = item.propertyName;
+  if (oldKey === newKey) return;
+
+  // Update the item's key (allow duplicates - error will show)
+  item.propertyName = newKey || oldKey;
+
+  syncToData();
+};
+
 const { useAjv, useControlAppliedOptions, useTranslator } = useSchemaComposition();
 type Input = ReturnType<typeof useJsonFormsControlWithDetail>;
 interface AdditionalPropertyType {
   propertyName: string;
+  value: any;
   path: string;
   schema: JsonSchema | undefined;
   uischema: UISchemaElement | undefined;
@@ -130,6 +197,7 @@ const toAdditionalPropertyType = (propName: string, propValue: any): AdditionalP
   }
   return {
     propertyName: propName,
+    value: propValue,
     path: jsonSchema.control.path,
     schema: { type: "additionalPropertyString" },
     uischema: propUiSchema,
@@ -240,6 +308,27 @@ const additionalPropertiesTitle = computed(() => {
   return t.value(i18nKey("title"), label);
 });
 
+const additionalPropertiesDescription = computed(() => {
+  const additionalProperties = jsonSchema.control.schema.additionalProperties;
+  if (typeof additionalProperties === "object" && Object.prototype.hasOwnProperty.call(additionalProperties, "description")) {
+    return additionalProperties.description;
+  }
+  return null;
+});
+
+const isSimpleStringType = computed(() => {
+  const additionalProperties = jsonSchema.control.schema.additionalProperties;
+  return typeof additionalProperties === "object" && additionalProperties.type === "string";
+});
+
+const updatePropertyValue = (index: number, value: any) => {
+  const item = additionalPropertyItems.value[index];
+  if (!item) return;
+
+  item.value = value;
+  syncToData();
+};
+
 const addToLabel = computed(() => {
   return t.value(i18nKey("btn.add"), `Add to ${additionalPropertiesTitle.value}`);
 });
@@ -278,50 +367,93 @@ const i18nKey = (key: string) => {
   return getI18nKey(jsonSchema.control.schema, jsonSchema.control.uischema, jsonSchema.control.path, `additionalProperties.${key}`);
 };
 
-const addProperty = () => {
-  if (newPropertyName.value) {
-    const additionalProperty = toAdditionalPropertyType(newPropertyName.value, undefined);
-    if (additionalProperty) {
-      additionalPropertyItems.value = [...additionalPropertyItems.value, additionalProperty];
-    }
-    if (typeof jsonSchema.control.data === "object" && additionalProperty.schema) {
-      jsonSchema.control.data[newPropertyName.value] = null;
-      // we need always to preserve the key even when the value is "empty"
-      jsonSchema.handleChange(jsonSchema.control.path, jsonSchema.control.data);
-    }
-  }
-  newPropertyName.value = "";
-};
-
-const removeProperty = (propName: string) => {
-  additionalPropertyItems.value = additionalPropertyItems.value.filter((d) => d.propertyName !== propName);
-
-  if (typeof jsonSchema.control.data === "object") {
-    delete jsonSchema.control.data[propName];
-    jsonSchema.handleChange(jsonSchema.control.path, jsonSchema.control.data);
-  }
+const removeProperty = (index: number) => {
+  additionalPropertyItems.value.splice(index, 1);
+  syncToData();
 };
 
 const noData = computed(() => {
   return !additionalPropertyItems.value || additionalPropertyItems.value.length === 0;
 });
 </script>
-<style>
-.inputWidth {
-  width: 10% !important;
+<style scoped>
+.additional-properties-inline {
+  margin: 0;
+  padding: 0;
 }
 
-.inputField {
-  display: inline-block;
-  width: 90%;
+.additional-properties-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color-secondary);
+  font-style: italic;
 }
 
-.deleteButton {
-  display: inline-block;
-  width: 10%;
+.additional-properties-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.additionPropsInputBox {
-  width: 185px;
+.additional-properties-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.additional-properties-row .additional-properties-equals {
+  margin-top: 0.5rem;
+}
+
+.additional-properties-row .remove-btn {
+  margin-top: 0.25rem;
+}
+
+.additional-properties-key {
+  flex: 0 0 35%;
+}
+
+.additional-properties-equals {
+  color: var(--text-color-secondary);
+  font-weight: 500;
+}
+
+.additional-properties-value {
+  flex: 1;
+}
+
+.key-input,
+.value-input {
+  width: 100%;
+}
+
+.key-input:disabled {
+  background-color: var(--surface-100);
+  opacity: 1;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+}
+
+.additional-properties-add {
+  margin-top: 0.25rem;
+}
+
+.p-error {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.add-property-dialog .field {
+  margin-bottom: 1rem;
+}
+
+.add-property-dialog .field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 </style>

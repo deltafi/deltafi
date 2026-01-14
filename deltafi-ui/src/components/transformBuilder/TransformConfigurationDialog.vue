@@ -38,7 +38,7 @@
           </dd>
           <dt>Description*</dt>
           <dd>
-            <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" />
+            <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" @input="onDescriptionInput" />
           </dd>
           <dt>Clone From <small class="text-muted">- Optional</small></dt>
           <dd>
@@ -49,6 +49,7 @@
     </div>
     <teleport v-if="isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">
+        <Button label="Cancel" class="p-button-text" @click="cancel()" />
         <Button label="Submit" @click="submit()" />
       </div>
     </teleport>
@@ -94,6 +95,7 @@ const transformTemplate = {
 const { editTransform } = reactive(props);
 const errors = ref([]);
 const transformData = ref(Object.assign({}, props.dataProp || transformTemplate));
+const descriptionManuallyEdited = ref(editTransform);
 const nameInputRef = ref(null);
 
 const allTransforms = ref({});
@@ -123,6 +125,20 @@ watch(
   }
 );
 
+// Auto-populate description as user types name (only on create, before manual edit)
+watch(
+  () => model.value.name,
+  (newName) => {
+    if (!descriptionManuallyEdited.value && newName) {
+      model.value.description = newName;
+    }
+  }
+);
+
+const onDescriptionInput = () => {
+  descriptionManuallyEdited.value = true;
+};
+
 onMounted(async () => {
   const response = await getAllFlows();
 
@@ -149,6 +165,10 @@ const hasErrors = computed(() => {
 
 const clearErrors = () => {
   errors.value = [];
+};
+
+const cancel = () => {
+  emit("refreshAndClose");
 };
 
 const submit = async () => {

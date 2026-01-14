@@ -18,9 +18,12 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
-    <dl>
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
-      <dd>
+    <dl class="env-var-field">
+      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'" class="env-var-label">
+        {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span>
+        <i v-if="fieldDescription" v-tooltip.right="fieldDescription" class="pi pi-info-circle info-icon" />
+      </dt>
+      <dd class="env-var-dd">
         <div class="env-var-container">
           <Message severity="warn" :closable="false" class="env-var-warning" icon="fas fa-exclamation-triangle">
             Enter the <strong>NAME</strong> of an environment variable, <strong>NOT</strong> the actual secret value!
@@ -42,11 +45,6 @@
           <small v-if="!isValid && envVarName" class="p-error">
             Environment variable names must be UPPER_SNAKE_CASE (e.g., MY_SECRET_KEY)
           </small>
-          <div v-if="fieldDescription">
-            <small :id="schemaData.control.id + '-input-help'" class="text-color-secondary">
-              {{ fieldDescription }}
-            </small>
-          </div>
         </div>
       </dd>
     </dl>
@@ -109,13 +107,40 @@ const handleInput = () => {
 };
 
 const computedLabel = computed(() => {
-  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
-  label = (schemaData.control.required) ? label + "*" : label;
-  return label;
+  return schemaData.control.config.defaultLabels ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 
 <style scoped>
+.env-var-field {
+  margin-bottom: 0.75rem;
+}
+
+.env-var-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.env-var-dd {
+  margin-left: 0;
+}
+
+.info-icon {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  cursor: help;
+}
+
+.required-indicator {
+  color: var(--red-500);
+  margin-left: 0.125rem;
+}
+
 .env-var-container {
   display: flex;
   flex-direction: column;

@@ -73,7 +73,7 @@
                           <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
                         </span>
                         <div class="pl-2 btn-group">
-                          <DialogTemplate component-name="transformBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
+                          <DialogTemplate component-name="transformBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :subheader="element.type" :row-data-prop="element" :action-index-prop="index" dialog-width="50vw" @update-action="updateAction">
                             <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
                           </DialogTemplate>
                           <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(index)" />
@@ -829,7 +829,20 @@ const removeAction = (index) => {
 const cloneAction = (clonedAction) => {
   const addNewClonedAction = JSON.parse(JSON.stringify(clonedAction));
   addNewClonedAction["id"] = _.uniqueId(addNewClonedAction["flowActionType"]);
+  addNewClonedAction["name"] = generateUniqueActionName(addNewClonedAction["displayName"]);
   return JSON.parse(JSON.stringify(addNewClonedAction));
+};
+
+const generateUniqueActionName = (baseName) => {
+  const existingNames = transformActions.value.map((a) => a.name);
+  if (!existingNames.includes(baseName)) {
+    return baseName;
+  }
+  let suffix = 2;
+  while (existingNames.includes(`${baseName}${suffix}`)) {
+    suffix++;
+  }
+  return `${baseName}${suffix}`;
 };
 
 const validateNewAction = async () => {

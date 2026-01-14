@@ -17,26 +17,43 @@
 -->
 
 <template>
-  <div v-if="schemaData.control.visible" :class="schemaData.styles.arrayList.root" class="mt-1 align-items-center">
-    <dl :class="schemaData.styles.arrayList.legend + ' mb-0'">
-      <div class="btn-group pb-0 align-items-center">
-        <dt :class="schemaData.styles.arrayList.label">{{ computedLabel }}</dt>
-        <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
+  <div v-if="schemaData.control.visible" class="array-list-wrapper">
+    <dt class="array-list-label">
+      {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span>
+      <i v-if="!_.isEmpty(schemaData.control.description)" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
+    </dt>
+    <div class="array-list-container">
+
+      <div v-if="noData" class="array-list-empty">
+        <span>No items</span>
+        <Button icon="pi pi-plus" class="p-button-text p-button-sm p-button-rounded" @click="addButtonClick" />
       </div>
-      <dd class="pb-0">
-        <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">
-          <pre>{{ schemaData.control.description }}</pre>
-        </small>
-        <span v-if="!noData" class="deltafi-fieldset pb-1 pt-3">
-          <div v-for="(element, index) in renderArrayData" :key="`${schemaData.control.path}-${index}`" :class="checkSchemaIsObject(schemaData.styles.arrayList.itemWrapper, schemaData.control.path, schemaData.control.schema.type)">
-            <ArrayListElement :move-up="schemaData.moveUp?.(schemaData.control.path, index)" :move-up-enabled="index > 0" :move-down="schemaData.moveDown?.(schemaData.control.path, index)" :move-down-enabled="index < schemaData.control.data.length - 1" :delete="schemaData.removeItems?.(schemaData.control.path, [index])" :label="schemaData.childLabelForIndex(index)" :styles="schemaData.styles">
+
+      <div v-else class="array-list-items">
+        <template v-if="isSimpleType">
+          <div v-for="(element, index) in renderArrayData" :key="`${schemaData.control.path}-${index}`" class="array-list-row">
+            <div class="array-list-input">
+              <InputText :model-value="element" class="value-input" :disabled="!schemaData.control.enabled" @update:model-value="updateItem(Number(index), $event)" />
+            </div>
+            <div class="array-list-actions">
+              <Button icon="pi pi-angle-up" class="p-button-text p-button-sm p-button-rounded" :disabled="index === 0" @click="schemaData.moveUp?.(schemaData.control.path, Number(index))()" />
+              <Button icon="pi pi-angle-down" class="p-button-text p-button-sm p-button-rounded" :disabled="Number(index) >= schemaData.control.data.length - 1" @click="schemaData.moveDown?.(schemaData.control.path, Number(index))()" />
+              <Button icon="pi pi-times" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="schemaData.removeItems?.(schemaData.control.path, [Number(index)])()" />
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div v-for="(element, index) in renderArrayData" :key="`${schemaData.control.path}-${index}`" :class="['array-list-item', { 'array-list-item-object': isObjectType }]">
+            <ArrayListElement :move-up="schemaData.moveUp?.(schemaData.control.path, Number(index))" :move-up-enabled="Number(index) > 0" :move-down="schemaData.moveDown?.(schemaData.control.path, Number(index))" :move-down-enabled="Number(index) < schemaData.control.data.length - 1" :delete="schemaData.removeItems?.(schemaData.control.path, [Number(index)])" :label="schemaData.childLabelForIndex(Number(index))" :styles="schemaData.styles" :is-object-type="isObjectType">
               <dispatch-renderer :schema="schemaData.control.schema" :uischema="schemaData.childUiSchema" :path="composePaths(schemaData.control.path, `${index}`)" :enabled="schemaData.control.enabled" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
             </ArrayListElement>
           </div>
-        </span>
-        <div v-if="noData" :class="schemaData.styles.arrayList.noData + ' mb-n1 pt-1'">No data</div>
-      </dd>
-    </dl>
+        </template>
+        <div class="array-list-add">
+          <Button icon="pi pi-plus" label="Add" class="p-button-text p-button-sm" @click="addButtonClick" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -44,17 +61,20 @@
 import ArrayListElement from "@/components/jsonSchemaRenderers/defaultRenderers/arrayRender/ArrayListElement.vue";
 import { computed, reactive } from "vue";
 import { composePaths, createDefaultValue, ControlElement } from "@jsonforms/core";
-import { DispatchRenderer, rendererProps, useJsonFormsArrayControl } from "@jsonforms/vue";
+import { DispatchRenderer, rendererProps, useJsonFormsArrayControl, useJsonFormsControl } from "@jsonforms/vue";
 import { useVanillaArrayControl } from "@jsonforms/vue-vanilla";
 import _ from "lodash";
 
 import Button from "primevue/button";
+import InputText from "primevue/inputtext";
 
 const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
 
-const schemaData = reactive(useVanillaArrayControl(useJsonFormsArrayControl(props)));
+const jsonFormsControl = useJsonFormsArrayControl(props);
+const { handleChange } = useJsonFormsControl(props);
+const schemaData = reactive(useVanillaArrayControl(jsonFormsControl));
 
 const noData = computed(() => {
   return !schemaData.control.data || schemaData.control.data.length === 0;
@@ -64,12 +84,19 @@ const renderArrayData = computed(() => {
   return schemaData.control.data;
 });
 
-// Checks to see if this is the root level of an array and puts a border around all items in the array
-const checkSchemaIsObject = (value: any, path: any, schemaType: any) => {
-  if (_.isEqual(schemaType, "object")) {
-    return value + " deltafi-fieldset mb-2";
-  }
-  return value;
+const isObjectType = computed(() => {
+  return schemaData.control.schema.type === "object";
+});
+
+const isSimpleType = computed(() => {
+  const type = schemaData.control.schema.type;
+  return type === "string" || type === "number" || type === "integer";
+});
+
+const updateItem = (index: number, value: any) => {
+  const newData = [...schemaData.control.data];
+  newData[index] = value;
+  handleChange(schemaData.control.path, newData);
 };
 
 const addButtonClick = () => {
@@ -77,32 +104,90 @@ const addButtonClick = () => {
 };
 
 const computedLabel = computed(() => {
-  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
-
-  label = (schemaData.control.required) ? label + "*" : label;
-
-  return label;
+  return schemaData.control.config.defaultLabels ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 <style scoped>
-.deltafi-fieldset {
-  display: block;
-  margin-inline-start: 2px;
-  margin-inline-end: 2px;
-  padding-block-start: 0.35em;
-  padding-inline-start: 0.75em;
-  padding-inline-end: 0.75em;
-  padding-block-end: 0.625em;
-  min-inline-size: min-content;
-  border-radius: 4px;
-  border: 1px solid #ced4da;
-  border-width: 1px;
-  border-style: groove;
-  border-color: rgb(225, 225, 225);
-  border-image: initial;
+.array-list-wrapper {
+  margin-bottom: 0.75rem;
 }
 
-pre {
-  text-wrap: auto;
+.array-list-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.info-icon {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  cursor: help;
+}
+
+.required-indicator {
+  color: var(--red-500);
+  margin-left: 0.125rem;
+}
+
+.array-list-container {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  background-color: var(--surface-50);
+}
+
+.array-list-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color-secondary);
+  font-style: italic;
+}
+
+.array-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.array-list-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.array-list-item-object {
+  padding: 0.5rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 4px;
+  background-color: var(--surface-0);
+}
+
+.array-list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.array-list-input {
+  flex: 1;
+}
+
+.value-input {
+  width: 100%;
+}
+
+.array-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.array-list-add {
+  margin-top: 0.25rem;
 }
 </style>

@@ -18,13 +18,13 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
-    <dl>
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
-      <dd class="align-items-center">
+    <dl class="integer-field">
+      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'" class="integer-label">
+        {{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span>
+        <i v-if="!_.isEmpty(schemaData.control.description)" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
+      </dt>
+      <dd class="integer-input">
         <InputNumber :id="schemaData.control.id + '-input'" :model-value="integerDecider(schemaData.control.data)" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange($event.value)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
-        <div>
-          <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-        </div>
       </dd>
     </dl>
   </control-wrapper>
@@ -73,20 +73,41 @@ const steps = computed(() => {
 });
 
 const computedLabel = computed(() => {
-  let label = (schemaData.control.config.defaultLabels) ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
-
-  label = (schemaData.control.required) ? label + "*" : label;
-
-  return label;
+  return schemaData.control.config.defaultLabels ? schemaData.control.label : schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 
-<style>
-.field * {
-  display: block;
+<style scoped>
+.integer-field {
+  margin-bottom: 0.75rem;
+}
+
+.integer-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.integer-input {
+  margin-left: 0;
+}
+
+.info-icon {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  cursor: help;
+}
+
+.required-indicator {
+  color: var(--red-500);
+  margin-left: 0.125rem;
 }
 
 .inputWidth {
-  width: 90% !important;
+  width: 100% !important;
 }
 </style>
