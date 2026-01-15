@@ -43,6 +43,8 @@ spec:
               fieldPath: metadata.name
         - name: SPRING_PROFILES_ACTIVE
           value: kubernetes
+        - name: LOCAL_STORAGE_CONTENT
+          value: {{ include "localObjectStorageEnabled" . | quote }}
         {{- include "coreEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080
