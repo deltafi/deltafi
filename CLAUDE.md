@@ -110,6 +110,12 @@ Local development server runs on **HTTP** (not HTTPS): `http://local.deltafi.org
 - Action kit has its own test framework (`deltafi-action-kit-test`)
 - UI tests use Cypress e2e tests with MSW (Mock Service Worker) for API mocking
 
+## Flow JSON Files
+
+When creating flow JSON files for `deltafi transform load`, `deltafi data-source load`, or `deltafi data-sink load`:
+- **Always include the `type` field** (e.g., `"type": "TRANSFORM"`, `"type": "REST_DATA_SOURCE"`, `"type": "DATA_SINK"`)
+- Use `deltafi <flow-type> get <name>` to see the expected format for existing flows
+
 ## Improving the Project
 
 When you notice gaps, suggest fixes:

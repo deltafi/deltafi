@@ -715,6 +715,76 @@ class SpelTestServiceTest {
         assertThat(spelTestService.validateExpression("metadata['s'].contains('x')", SpelExpressionMode.CONDITION).getValid()).isTrue();
         assertThat(spelTestService.validateExpression("metadata['s'].startsWith('x')", SpelExpressionMode.CONDITION).getValid()).isTrue();
         assertThat(spelTestService.validateExpression("metadata['s'].endsWith('x')", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].replaceAll('a', 'b')", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].replaceFirst('a', 'b')", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].split(',')", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].indexOf(\"x\")", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].lastIndexOf(\"x\")", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].equalsIgnoreCase('X')", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].strip()", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].stripLeading()", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].stripTrailing()", SpelExpressionMode.CONDITION).getValid()).isTrue();
+        assertThat(spelTestService.validateExpression("metadata['s'].repeat(3)", SpelExpressionMode.CONDITION).getValid()).isTrue();
+    }
+
+    @Test
+    void testTemplateReplaceAllMethod() {
+        SpelTestDataInput testData = SpelTestDataInput.newBuilder()
+                .metadata(List.of(new KeyValue("path", "a/b/c")))
+                .build();
+
+        SpelTestResult result = spelTestService.testExpression(
+                "{{ metadata['path'].replaceAll('/', '-') }}",
+                SpelExpressionMode.TEMPLATE,
+                testData
+        );
+        assertThat(result.getValid()).isTrue();
+        assertThat(result.getResult()).isEqualTo("a-b-c");
+    }
+
+    @Test
+    void testTemplateSplitMethod() {
+        SpelTestDataInput testData = SpelTestDataInput.newBuilder()
+                .metadata(List.of(new KeyValue("items", "a,b,c")))
+                .build();
+
+        SpelTestResult result = spelTestService.testExpression(
+                "{{ metadata['items'].split(',')[1] }}",
+                SpelExpressionMode.TEMPLATE,
+                testData
+        );
+        assertThat(result.getValid()).isTrue();
+        assertThat(result.getResult()).isEqualTo("b");
+    }
+
+    @Test
+    void testConditionIndexOfMethod() {
+        SpelTestDataInput testData = SpelTestDataInput.newBuilder()
+                .metadata(List.of(new KeyValue("text", "hello world")))
+                .build();
+
+        SpelTestResult result = spelTestService.testExpression(
+                "metadata['text'].indexOf(\"world\") > 0",
+                SpelExpressionMode.CONDITION,
+                testData
+        );
+        assertThat(result.getValid()).isTrue();
+        assertThat(result.getResult()).isEqualTo("true");
+    }
+
+    @Test
+    void testConditionEqualsIgnoreCaseMethod() {
+        SpelTestDataInput testData = SpelTestDataInput.newBuilder()
+                .metadata(List.of(new KeyValue("status", "ACTIVE")))
+                .build();
+
+        SpelTestResult result = spelTestService.testExpression(
+                "metadata['status'].equalsIgnoreCase('active')",
+                SpelExpressionMode.CONDITION,
+                testData
+        );
+        assertThat(result.getValid()).isTrue();
+        assertThat(result.getResult()).isEqualTo("true");
     }
 
     @Test

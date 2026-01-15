@@ -134,6 +134,8 @@ public class SpelTestService {
 
     /**
      * Validate a single expression (no && or ||) by evaluating it against test data.
+     * For validation, we evaluate without requiring Boolean conversion since
+     * sub-expressions may return non-boolean types (e.g., indexOf returns int).
      */
     private SpelTestResult validateSingleExpression(String expression, SpelExpressionMode mode) {
         // Extract metadata keys and create test data
@@ -161,7 +163,9 @@ public class SpelTestService {
                 .content(testContent)
                 .build();
 
-        SpelTestResult result = testExpression(expression, mode, testData);
+        // For validation, evaluate without type coercion to catch method errors
+        // without failing on valid expressions that return non-boolean types
+        SpelTestResult result = validateExpressionEvaluation(expression, testData);
 
         return SpelTestResult.newBuilder()
                 .valid(result.getValid())
@@ -232,6 +236,46 @@ public class SpelTestService {
             } else {
                 return testTemplate(expression, testData);
             }
+        } catch (ParseException e) {
+            return SpelTestResult.newBuilder()
+                    .valid(false)
+                    .errorMessage(e.getMessage())
+                    .errorPosition(e.getPosition())
+                    .build();
+        } catch (Exception e) {
+            return SpelTestResult.newBuilder()
+                    .valid(false)
+                    .errorMessage(e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * Validate an expression by evaluating it without type coercion.
+     * This catches method errors while allowing non-boolean return types.
+     */
+    private SpelTestResult validateExpressionEvaluation(String expression, SpelTestDataInput testData) {
+        try {
+            Map<String, CoercibleString> metadata = toCoercibleMetadataMap(testData);
+            List<Content> content = toContentList(testData);
+
+            ConditionContext context = new ConditionContext(
+                    Collections.unmodifiableMap(metadata),
+                    content.stream().map(Content::copy).toList()
+            );
+
+            SimpleEvaluationContext evalContext = SimpleEvaluationContext.forReadOnlyDataBinding()
+                    .withRootObject(context)
+                    .withInstanceMethods()
+                    .build();
+
+            Expression exp = PARSER.parseExpression(expression);
+            // Evaluate without type coercion - we just want to verify the expression is valid
+            exp.getValue(evalContext);
+
+            return SpelTestResult.newBuilder()
+                    .valid(true)
+                    .build();
         } catch (ParseException e) {
             return SpelTestResult.newBuilder()
                     .valid(false)

@@ -97,6 +97,53 @@ public class CoercibleString implements CharSequence {
         return value == null ? null : value.replace(target, replacement);
     }
 
+    public String replaceAll(String regex, String replacement) {
+        return value == null ? null : value.replaceAll(regex, replacement);
+    }
+
+    public String replaceFirst(String regex, String replacement) {
+        return value == null ? null : value.replaceFirst(regex, replacement);
+    }
+
+    public String[] split(String regex) {
+        return value == null ? new String[0] : value.split(regex);
+    }
+
+    public String[] split(String regex, int limit) {
+        return value == null ? new String[0] : value.split(regex, limit);
+    }
+
+    public int indexOf(String str) {
+        return value == null ? -1 : value.indexOf(str);
+    }
+
+    public int indexOf(int ch) {
+        return value == null ? -1 : value.indexOf(ch);
+    }
+
+    public int indexOf(Character ch) {
+        return value == null || ch == null ? -1 : value.indexOf(ch);
+    }
+
+    public int lastIndexOf(String str) {
+        return value == null ? -1 : value.lastIndexOf(str);
+    }
+
+    public int lastIndexOf(int ch) {
+        return value == null ? -1 : value.lastIndexOf(ch);
+    }
+
+    public int lastIndexOf(Character ch) {
+        return value == null || ch == null ? -1 : value.lastIndexOf(ch);
+    }
+
+    public boolean equalsIgnoreCase(String other) {
+        if (value == null) {
+            return other == null;
+        }
+        return value.equalsIgnoreCase(other);
+    }
+
     public String substring(int beginIndex) {
         return value == null ? null : value.substring(beginIndex);
     }
@@ -107,6 +154,22 @@ public class CoercibleString implements CharSequence {
 
     public String trim() {
         return value == null ? null : value.trim();
+    }
+
+    public String strip() {
+        return value == null ? null : value.strip();
+    }
+
+    public String stripLeading() {
+        return value == null ? null : value.stripLeading();
+    }
+
+    public String stripTrailing() {
+        return value == null ? null : value.stripTrailing();
+    }
+
+    public String repeat(int count) {
+        return value == null ? null : value.repeat(count);
     }
 
     public boolean isEmpty() {
