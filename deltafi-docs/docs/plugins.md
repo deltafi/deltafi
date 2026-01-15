@@ -277,4 +277,6 @@ Lookup tables may be used by a Plugin. See [Lookup Tables](/lookup-tables).
 
 ## Testing Plugin Actions
 
-Java based actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. See [Java Unit Testing](/unit-test) 
+Java based actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. See [Action Unit Testing](/unit-test).
+
+To test complete data flows end-to-end, use integration tests. Integration tests validate that your data sources, transforms, and data sinks work together correctly. See [Integration Testing](/integration-test). 

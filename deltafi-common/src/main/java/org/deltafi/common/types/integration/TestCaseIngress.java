@@ -37,28 +37,39 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestCaseIngress {
-    // Flow for ingress
+    // Data source for ingress
+    private String dataSource;
+    // Deprecated: use dataSource instead
+    @Deprecated
     private String flow;
     // Optional content type
     private String contentType;
     // File name to use for ingress
     private String ingressFileName;
-    // true:" "data: !!binary | ..."
+    // Set true when data is base64 encoded (e.g., for binary content)
     private Boolean base64Encoded;
     private String data;
     private List<KeyValue> metadata;
 
-    public List<String> validate(List<String> flows) {
+    /**
+     * Gets the data source name, preferring dataSource over the deprecated flow field.
+     */
+    public String getDataSource() {
+        return StringUtils.isNotEmpty(dataSource) ? dataSource : flow;
+    }
+
+    public List<String> validate(List<String> dataSources) {
         List<String> errors = new ArrayList<>();
         if (data == null) {
             data = ""; // No input data is OK
         }
 
-        if (StringUtils.isEmpty(flow)) {
-            errors.add("TestCaseIngress must specify the 'dataSource'");
+        String ds = getDataSource();
+        if (StringUtils.isEmpty(ds)) {
+            errors.add("TestCaseIngress must specify 'dataSource'");
         } else {
-            if (flows == null || !flows.contains(flow)) {
-                errors.add("TestCaseIngress dataSource must exist in configuration flows");
+            if (dataSources == null || !dataSources.contains(ds)) {
+                errors.add("TestCaseIngress dataSource '" + ds + "' must exist in configuration dataSources");
             }
         }
 

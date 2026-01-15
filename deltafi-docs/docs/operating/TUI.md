@@ -1664,11 +1664,11 @@ Integration tests are defined in YAML format with the following structure:
 ```yaml
 name: "test-name"
 description: "Test description"
-timeout: "5m"
+timeout: "PT5M"
 plugins:
   - groupId: "org.deltafi"
-    artifactId: "deltafi-core"
-    version: "1.0.0"
+    artifactId: "deltafi-core-actions"
+    version: "ANY"
 dataSources:
   - "my-data-source"
 transformationFlows:
@@ -1676,22 +1676,27 @@ transformationFlows:
 dataSinks:
   - "my-data-sink"
 inputs:
-  - name: "input1"
+  - dataSource: "my-data-source"
+    ingressFileName: "input.json"
     contentType: "application/json"
     data: |
       {
         "key": "value"
       }
 expectedDeltaFiles:
-  - flow: "my-data-sink"
-    type: "COMPLETE"
-    state: "COMPLETE"
-    actions:
-      - "my-action"
-    metadata:
-      - key: "expected-key"
-        value: "expected-value"
+  - stage: COMPLETE
+    expectedFlows:
+      - flow: "my-transform"
+        type: TRANSFORM
+        actions:
+          - "MyTransformAction"
+      - flow: "my-data-sink"
+        type: DATA_SINK
+        actions:
+          - "MyEgressAction"
 ```
+
+For the complete configuration reference, see [Integration Testing](/integration-test).
 
 **Key Features:**
 

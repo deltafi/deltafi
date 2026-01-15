@@ -46,7 +46,8 @@
       { "text": "Flows", "link": "/flows" },
       { "text": "Action Parameters", "link": "/action_parameters" },
       { "text": "Lookup Tables", "link": "/lookup-tables" },
-      { "text": "Action Unit Testing", "link": "/unit-test" }
+      { "text": "Action Unit Testing", "link": "/unit-test" },
+      { "text": "Integration Testing", "link": "/integration-test" }
     ]
   },
   {

@@ -242,13 +242,47 @@ public class MyTransformActionTest {
 
 ### Integration Testing
 
+Integration tests validate complete data flows by ingesting test data and verifying expected outputs. Place test configurations in `src/main/resources/integration-tests/`:
+
+```yaml
+# src/main/resources/integration-tests/basic-test.yaml
+name: my-plugin.basic-test
+description: Validates the transform flow
+timeout: PT5M
+plugins:
+  - groupId: org.myorg
+    artifactId: my-plugin
+    version: ANY
+dataSources:
+  - my-rest-data-source
+transformationFlows:
+  - my-transform
+inputs:
+  - dataSource: my-rest-data-source
+    ingressFileName: test.txt
+    data: "test content"
+expectedDeltaFiles:
+  - stage: COMPLETE
+    expectedFlows:
+      - flow: my-transform
+        type: TRANSFORM
+        actions: [MyTransformAction]
+```
+
+Load and run tests:
+
 ```bash
+# Load tests
+deltafi integration-test load src/main/resources/integration-tests/*.yaml
+
 # Run all integration tests
 deltafi integration-test run
 
 # Run tests matching a pattern
 deltafi integration-test run --like "my-plugin"
 ```
+
+See [Integration Testing](/integration-test) for the complete configuration reference.
 
 ## Reference
 
@@ -259,4 +293,5 @@ deltafi integration-test run --like "my-plugin"
 - [Egress Actions](/actions/egress) - Egress action details
 - [Timed Ingress Actions](/actions/timed_ingress) - Ingress action details
 - [Action Unit Testing](/unit-test) - Testing patterns
+- [Integration Testing](/integration-test) - End-to-end flow testing
 - [Simple Plugin Tutorial](/getting-started/simple-plugin) - Step-by-step walkthrough

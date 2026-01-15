@@ -142,7 +142,7 @@ public class IntegrationService {
             String contentType = StringUtils.isNoneEmpty(input.getContentType()) ? input.getContentType() : DEFAULT_CONTENT_TYPE;
 
             results.addAll(ingressService.ingress(
-                    input.getFlow(),
+                    input.getDataSource(),
                     input.getIngressFileName(),
                     contentType, USERNAME,
                     OBJECT_MAPPER.writeValueAsString(buildMetadataMap(input, testId)),
