@@ -40,6 +40,7 @@ import (
 var (
 	datasource  string
 	contentType string
+	metadata    string
 	plain       bool
 	verbose     bool
 	watch       bool
@@ -87,7 +88,7 @@ func pollDeltaFileState(did uuid.UUID) error {
 	}
 }
 
-func processFile(client *api.Client, filePath string, datasource string, contentType string, progressChan chan<- progressMsg) IngressResult {
+func processFile(client *api.Client, filePath string, datasource string, contentType string, metadata string, progressChan chan<- progressMsg) IngressResult {
 	// Open and read the file content
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -114,6 +115,10 @@ func processFile(client *api.Client, filePath string, datasource string, content
 			"DataSource":   datasource,
 			"Content-Type": contentType,
 		},
+	}
+
+	if metadata != "" {
+		opts.Headers["Metadata"] = metadata
 	}
 
 	// Send the request and get the response
@@ -251,7 +256,7 @@ var ingressCmd = &cobra.Command{
 			go func() {
 				defer wg.Done()
 				for filePath := range jobs {
-					result := processFile(client, filePath, datasource, contentType, progressChan)
+					result := processFile(client, filePath, datasource, contentType, metadata, progressChan)
 					results <- result
 				}
 			}()
@@ -373,6 +378,7 @@ func init() {
 	rootCmd.AddCommand(ingressCmd)
 	ingressCmd.Flags().StringVarP(&datasource, "datasource", "d", "", "Data source for the ingressed files (required)")
 	ingressCmd.Flags().StringVarP(&contentType, "content-type", "c", "application/octet-stream", "Content type for the ingressed files")
+	ingressCmd.Flags().StringVarP(&metadata, "metadata", "m", "", "JSON metadata to attach to the ingressed files")
 	ingressCmd.Flags().BoolVarP(&plain, "plain", "p", false, "Output only UUIDs, one per line")
 	ingressCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show detailed deltafile information for each uploaded file")
 	ingressCmd.Flags().BoolVarP(&watch, "watch", "w", false, "Wait for each deltafile to complete before showing results")

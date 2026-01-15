@@ -1071,10 +1071,11 @@ deltafi deltafile <did>
 Ingress files into the DeltaFi system.
 
 ```bash
-deltafi ingress <files...> --datasource|-d <source> [--content-type|-c <type>] [--plain|-p] [--verbose|-v] [--watch|-w]
+deltafi ingress <files...> --datasource|-d <source> [--content-type|-c <type>] [--metadata|-m <json>] [--plain|-p] [--verbose|-v] [--watch|-w]
 ```
 - `--datasource, -d`: Data source for the ingressed files (required)
 - `--content-type, -c`: Content type for the ingressed files (default: application/octet-stream)
+- `--metadata, -m`: JSON metadata to attach to the ingressed files
 - `--plain, -p`: Output only UUIDs, one per line
 - `--verbose, -v`: Show detailed deltafile information for each uploaded file
 - `--watch, -w`: Wait for each deltafile to complete before showing results
