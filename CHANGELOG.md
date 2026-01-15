@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.47.1] - 2026-01-15
+
+### Added
+- Action editor now pre-fills form fields with default values from the action schema 
+- Action editor enforces required fields
+- Added Victoriametrics plugin for Grafana
+- Added importing and exporting of users and roles
+- Added missing String methods to CoercibleString for SpEL expressions: `replaceAll`, `replaceFirst`, `split`, `indexOf`, `lastIndexOf`, `equalsIgnoreCase`, `strip`, `stripLeading`, `stripTrailing`, `repeat`
+- Added `--metadata` (`-m`) flag to `deltafi ingress` command to attach JSON metadata to ingressed files
+
+### Changed
+- Streamline GUI Action Editor 
+
+### Fixed
+- Fixes validation of SPeL expressions that contained missing String methods
+
+### Upgrade and Migration
+- Upgrade Grafana to deltafi/grafana:12.4.0-5
+- Upgrade Victoria Metrics to victoriametrics/victoria-metrics:v1.133.0
+
 ## [2.47.0] - 2026-01-14
 
 ### Added
@@ -5562,7 +5582,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.1...main
+[2.47.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.0...2.47.1
 [2.47.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.46.0...2.47.0
 [2.46.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.3...2.46.0
 [2.45.3]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.2...2.45.3
