@@ -23,14 +23,25 @@
   script:
     - ./deltafi-ui/licenseCheck.sh
 
-"GUI Test":
-  image: deltafi/deltafi-ui-test:2.17.1
+# Shared configuration for Cypress test jobs
+.cypress-test-base:
+  image: deltafi/deltafi-ui-test:2.47.2
   stage: test
   allow_failure: false
   needs:
     - job: "GUI eslint"
   retry: 2
-  script:
+  variables:
+    # Cypress performance optimizations
+    CYPRESS_VIDEO: "false"
+    CYPRESS_SCREENSHOT_ON_RUN_FAILURE: "true"
+    # Reduce memory usage
+    NODE_OPTIONS: "--max-old-space-size=4096"
+    # Disable unnecessary browser features in CI
+    ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu --disable-dev-shm-usage --disable-extensions"
+    # Use Chrome instead of Electron for better CI performance
+    CYPRESS_BROWSER: "chrome"
+  before_script:
     - cd deltafi-ui
     # link node_modules from base image
     - ln -s /app/node_modules ./node_modules
@@ -38,5 +49,32 @@
     - npm run test-server &
     # wait for the server to start
     - npx wait-on -t 120000 http://127.0.0.1:8080
-    # run Cypress tests
-    - npm run test --e2e --config video=false
+  artifacts:
+    when: on_failure
+    paths:
+      - deltafi-ui/cypress/screenshots/
+    expire_in: 1 week
+
+# Parallel test job 1: ~45s
+"GUI Test 1":
+  extends: .cypress-test-base
+  script:
+    - npx cypress run --config video=false --spec "cypress/e2e/deltafile-search.cy.ts,cypress/e2e/auto-resume.cy.ts,cypress/e2e/events.cy.ts,cypress/e2e/plugins.cy.ts,cypress/e2e/roles.cy.ts,cypress/e2e/system-metrics.cy.ts,cypress/e2e/deltafile-import.cy.ts"
+
+# Parallel test job 2: ~45s
+"GUI Test 2":
+  extends: .cypress-test-base
+  script:
+    - npx cypress run --config video=false --spec "cypress/e2e/fleet.cy.ts,cypress/e2e/deltafile-viewer.cy.ts,cypress/e2e/errors.cy.ts,cypress/e2e/delete-policies.cy.ts,cypress/e2e/data-sinks.cy.ts,cypress/e2e/external-links.cy.ts,cypress/e2e/system-properties.cy.ts,cypress/e2e/system-snapshots.cy.ts"
+
+# Parallel test job 3: ~45s
+"GUI Test 3":
+  extends: .cypress-test-base
+  script:
+    - npx cypress run --config video=false --spec "cypress/e2e/pipeline-visualization.cy.ts,cypress/e2e/topics.cy.ts,cypress/e2e/filtered.cy.ts,cypress/e2e/lookup-tables.cy.ts,cypress/e2e/deltafile-upload.cy.ts,cypress/e2e/dashboard.cy.ts,cypress/e2e/system-map.cy.ts,cypress/e2e/transform-builder.cy.ts"
+
+# Parallel test job 4: ~45s
+"GUI Test 4":
+  extends: .cypress-test-base
+  script:
+    - npx cypress run --config video=false --spec "cypress/e2e/queue-metrics.cy.ts,cypress/e2e/transforms.cy.ts,cypress/e2e/lookup-table-result.cy.ts,cypress/e2e/data-sources.cy.ts,cypress/e2e/error-pages.cy.ts,cypress/e2e/users.cy.ts,cypress/e2e/versions.cy.ts"

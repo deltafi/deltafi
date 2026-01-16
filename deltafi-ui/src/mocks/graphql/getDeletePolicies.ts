@@ -65,30 +65,6 @@ const generateDeltaFiles = () => {
       minBytes: null,
       deleteMetadata: true,
     },
-    {
-      id: faker.string.uuid(),
-      name: "mockOver98PerCent",
-      flow: "passthrough",
-      __typename: "DiskSpaceDeletePolicy",
-      enabled: false,
-      maxPercent: 98,
-    },
-    {
-      id: faker.string.uuid(),
-      name: "mockOver60PerCent",
-      flow: null,
-      __typename: "DiskSpaceDeletePolicy",
-      enabled: false,
-      maxPercent: 60,
-    },
-    {
-      id: faker.string.uuid(),
-      name: "mockOver20PerCent",
-      flow: "smoke",
-      __typename: "DiskSpaceDeletePolicy",
-      enabled: true,
-      maxPercent: 20,
-    },
   ];
 };
 

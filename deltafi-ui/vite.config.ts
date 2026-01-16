@@ -16,6 +16,11 @@ export default ({ mode }) => {
     server: {
       host: "localhost",
       port: 8080,
+      fs: {
+        // Allow serving files from node_modules (needed for fonts in CI)
+        // Use strict: false to allow all paths including /app/node_modules in Docker
+        strict: false,
+      },
       proxy: {
         "/api": {
           target: `${SCHEME}://${DELTAFI_DOMAIN}`,
