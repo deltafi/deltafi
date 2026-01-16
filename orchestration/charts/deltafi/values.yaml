@@ -225,14 +225,14 @@ grafana:
     datasources.yaml:
       apiVersion: 1
       datasources:
-      - name: VictoriaMetrics
-        type: graphite
+      - name: DeltaFi VictoriaMetrics
+        type: victoriametrics-metrics-datasource
         access: proxy
-        url: http://deltafi-victoriametrics:8428/graphite
+        url: http://deltafi-victoriametrics:8428
         editable: false
         isDefault: true
         version: 2
-        uid: deltafi-victoriametrics
+        uid: deltafi-vm-metricsql-datasource
       - name: Loki
         type: loki
         access: proxy

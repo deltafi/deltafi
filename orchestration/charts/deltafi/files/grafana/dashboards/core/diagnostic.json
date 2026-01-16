@@ -54,8 +54,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -139,12 +139,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
-          "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_from_source', 'dataSource=~${dfDataSource:regex}'), 'average', 'dataSource'), 'dataSource'), true, false)"
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "A"
         }
       ],
       "title": "Files In",
@@ -153,8 +154,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -239,13 +240,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "A"
         }
       ],
       "title": "Bytes In",
@@ -254,8 +256,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -338,13 +340,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_to_sink', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "B"
         }
       ],
       "title": "Files Out",
@@ -353,8 +356,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -438,13 +441,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "B"
         }
       ],
       "title": "Bytes Out",
@@ -453,8 +457,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -561,69 +565,25 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "hide": true,
-          "refCount": 1,
-          "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')",
-          "textEditor": false
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": true,
-          "refCount": 1,
-          "refId": "B",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')",
-          "textEditor": false
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
+          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval])) / sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "C",
-          "target": "aliasByMetric(divideSeriesLists(#A, #B))",
-          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')))"
+          "interval": "5m",
+          "legendFormat": "{{source}}",
+          "refId": "A"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "hide": true,
-          "refCount": 1,
-          "refId": "D",
-          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
-          "textEditor": false
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
-          "hide": true,
-          "refCount": 1,
-          "refId": "E",
-          "target": "alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')",
-          "textEditor": false
-        },
-        {
-          "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
-          },
+          "expr": "sum(increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval])) / sum(increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "F",
-          "target": "aliasByMetric(divideSeriesLists(#D, #E))",
-          "targetFull": "aliasByMetric(divideSeriesLists(alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall'), alias(sum(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')), 'Overall')))"
+          "interval": "5m",
+          "legendFormat": "Overall",
+          "refId": "B"
         }
       ],
       "title": "Action Execution Latency (Average Action Execution Time)",
@@ -631,8 +591,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -715,13 +675,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')"
+          "interval": "5m",
+          "legendFormat": "{{source}}",
+          "refId": "A"
         }
       ],
       "title": "Action Executions",
@@ -729,8 +690,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -813,12 +774,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.disk.usage\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage'), 'hostname', 'service'), true, true)"
+          "legendFormat": "{{hostname}} {{service}}",
+          "refId": "A"
         }
       ],
       "title": "Disk utilization over time",
@@ -826,8 +788,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -912,10 +874,12 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refId": "A",
-          "target": "sortByTotal(aliasByTags(seriesByTag('name=gauge.action_queue.queue_size'), 'queue_name'))"
+          "expr": "{__name__=\"gauge.action_queue.queue_size\"}",
+          "legendFormat": "{{queue_name}}",
+          "refId": "A"
         }
       ],
       "title": "Action Queue Depth",
@@ -931,25 +895,6 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "Graphite",
-          "value": "deltafi-victoriametrics"
-        },
-        "hide": 0,
-        "includeAll": false,
-        "label": "Graphite Data",
-        "multi": false,
-        "name": "datasource",
-        "options": [],
-        "query": "graphite",
-        "queryValue": "",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "type": "datasource"
-      },
-      {
-        "current": {
           "selected": true,
           "text": [
             "All"
@@ -959,10 +904,10 @@
           ]
         },
         "datasource": {
-          "type": "graphite",
-          "uid": "${datasource}"
+          "type": "victoriametrics-metrics-datasource",
+          "uid": "deltafi-vm-metricsql-datasource"
         },
-        "definition": "tag_values(dataSource)",
+        "definition": "label_values(dataSource)",
         "hide": 0,
         "includeAll": true,
         "label": "Data Source",
@@ -972,7 +917,7 @@
         "query": {
           "queryType": "Default",
           "refId": "A",
-          "target": "tag_values(dataSource)"
+          "query": "label_values(dataSource)"
         },
         "refresh": 2,
         "regex": "",

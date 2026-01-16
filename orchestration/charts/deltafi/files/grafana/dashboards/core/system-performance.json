@@ -66,8 +66,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "deltafi-victoriametrics"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -123,12 +123,12 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "deltafi-victoriametrics"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(gauge.deltafile.inFlightCount, 'Files in flight')"
+          "expr": "gauge.deltafile.inFlightCount",
+          "legendFormat": "Files in flight",
+          "refId": "A"
         }
       ],
       "transparent": true,
@@ -136,8 +136,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "deltafi-victoriametrics"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -220,12 +220,12 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "deltafi-victoriametrics"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(gauge.deltafile.inFlightCount, 'In Flight')"
+          "expr": "gauge.deltafile.inFlightCount",
+          "legendFormat": "In Flight",
+          "refId": "A"
         }
       ],
       "transparent": true,
@@ -234,8 +234,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -320,10 +320,12 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refId": "A",
-          "target": "sortByTotal(aliasByTags(seriesByTag('name=gauge.action_queue.queue_size'), 'queue_name'))"
+          "expr": "{__name__=\"gauge.action_queue.queue_size\"}",
+          "legendFormat": "{{queue_name}}",
+          "refId": "A"
         }
       ],
       "title": "Action Queue Depth",
@@ -332,8 +334,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -418,14 +420,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '${__interval}in', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')",
-          "textEditor": false
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "A"
         }
       ],
       "title": "DeltaFiles Egressed by Data Source",
@@ -434,8 +436,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -519,14 +521,14 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')",
-          "textEditor": true
+          "interval": "5m",
+          "legendFormat": "{{source}}",
+          "refId": "A"
         }
       ],
       "title": "Action Execution Count",
@@ -535,8 +537,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -656,69 +658,69 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval]))",
           "hide": true,
-          "refCount": 1,
-          "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')",
-          "textEditor": false
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "A"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": true,
-          "refCount": 1,
-          "refId": "B",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '${__interval}in', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')",
-          "textEditor": false
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "B"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval])) / sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "C",
-          "target": "aliasByMetric(divideSeriesLists(#A, #B))",
-          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '${__interval}in', 'sum', 'minutes'), 'sum', 'dataSource'), 'dataSource')))"
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}",
+          "refId": "C"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum(increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval]))",
           "hide": true,
-          "refCount": 1,
-          "refId": "D",
-          "target": "alias(sum(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '${__interval}in', 'sum', 'minutes')), 'Overall')",
-          "textEditor": false
+          "interval": "5m",
+          "legendFormat": "Overall",
+          "refId": "D"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum(increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": true,
-          "refCount": 1,
-          "refId": "E",
-          "target": "alias(sum(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '${__interval}in', 'sum', 'minutes')), 'Overall')",
-          "textEditor": false
+          "interval": "5m",
+          "legendFormat": "Overall",
+          "refId": "E"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "avg_over_time((sum(increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval])) / sum(increase({__name__=\"stats_counts.files_to_sink\"}[$__interval])))[10m:])",
           "hide": false,
-          "refCount": 0,
-          "refId": "F",
-          "target": "alias(movingAverage(divideSeriesLists(#D, #E), 10), 'Overall')",
-          "targetFull": "alias(movingAverage(divideSeriesLists(alias(sum(smartSummarize(seriesByTag('name=stats_counts.execution_time_ms'), '${__interval}in', 'sum', 'minutes')), 'Overall'), alias(sum(smartSummarize(seriesByTag('name=stats_counts.files_to_sink'), '${__interval}in', 'sum', 'minutes')), 'Overall')), 10), 'Overall')"
+          "interval": "5m",
+          "legendFormat": "Overall",
+          "refId": "F"
         }
       ],
       "title": "Average DeltaFile Latency by Data Source",
@@ -727,8 +729,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -811,36 +813,36 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval]))",
           "hide": true,
-          "refCount": 1,
-          "refId": "A",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')",
-          "textEditor": false
+          "interval": "5m",
+          "legendFormat": "{{source}}",
+          "refId": "A"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": true,
-          "refCount": 1,
-          "refId": "B",
-          "target": "aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')",
-          "textEditor": false
+          "interval": "5m",
+          "legendFormat": "{{source}}",
+          "refId": "B"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval])) / sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "refCount": 0,
-          "refId": "C",
-          "target": "aliasByMetric(divideSeriesLists(#A, #B))",
-          "targetFull": "aliasByMetric(divideSeriesLists(aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution_time_ms'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source'), aliasByTags(groupByTags(smartSummarize(seriesByTag('name=stats_counts.action_execution'), '${__interval}in', 'sum', 'minutes'), 'sum', 'source'), 'source')))"
+          "interval": "5m",
+          "legendFormat": "{{source}}",
+          "refId": "C"
         }
       ],
       "title": "Action Execution Latency (Average Action Execution Time)",
@@ -848,8 +850,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -956,21 +958,23 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "max({__name__=~\"gauge.node.memory.limit\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(maxSeries(sortByName(seriesByTag('name=~gauge.node.memory.limit'), true, true)), 'limit')"
+          "legendFormat": "limit",
+          "refId": "B"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.memory.usage\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "sortByMaxima(sortByName(aliasByTags(seriesByTag('name=~gauge.node.memory.usage'), 'hostname'), true, true))"
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
         }
       ],
       "title": "Node RAM utilization over time",
@@ -978,8 +982,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -1086,21 +1090,23 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "max({__name__=~\"gauge.node.cpu.limit\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "Limit",
-          "target": "alias(maxSeries(sortByName(seriesByTag('name=~gauge.node.cpu.limit'), true, true)), 'limit')"
+          "legendFormat": "limit",
+          "refId": "Limit"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.cpu.usage\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.cpu.usage'), 'hostname'), true, true)"
+          "legendFormat": "{{hostname}}",
+          "refId": "A"
         }
       ],
       "title": "Node CPU utilization over time",
@@ -1108,8 +1114,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -1219,12 +1225,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (app) ({__name__=~\"gauge.app.memory\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "aliasByTags(groupByTags(removeEmptySeries(seriesByTag('name=~gauge.app.memory')), 'sum', 'app'), 'app')"
+          "legendFormat": "{{app}}",
+          "refId": "B"
         }
       ],
       "title": "App RAM utilization over time",
@@ -1232,8 +1239,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -1343,12 +1350,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (app) ({__name__=~\"gauge.app.cpu\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "aliasByTags(groupByTags(removeEmptySeries(seriesByTag('name=~gauge.app.cpu')), 'sum', 'app'), 'app')"
+          "legendFormat": "{{app}}",
+          "refId": "B"
         }
       ],
       "title": "App CPU utilization over time",
@@ -1356,8 +1364,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -1468,12 +1476,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sort_desc(sum by (namespace) ({__name__=~\"gauge.app.memory\", namespace!=\"\"}))",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "sortBy(aliasByTags(groupByTags(removeEmptySeries(seriesByTag('name=~gauge.app.memory', 'namespace!=')), 'sum', 'namespace'), 'namespace'), 'last', true)"
+          "legendFormat": "{{namespace}}",
+          "refId": "B"
         }
       ],
       "title": "RAM by Namespace",
@@ -1645,8 +1654,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -1757,12 +1766,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sort_desc(sum by (namespace) ({__name__=~\"gauge.app.cpu\", namespace!=\"\"}))",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "sortBy(aliasByTags(groupByTags(removeEmptySeries(seriesByTag('name=~gauge.app.cpu', 'namespace!=')), 'sum', 'namespace'), 'namespace'), 'last', true)"
+          "legendFormat": "{{namespace}}",
+          "refId": "B"
         }
       ],
       "title": "CPU by Namespace",
@@ -1770,8 +1780,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -1854,12 +1864,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.disk.usage\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "sortByName(aliasByTags(seriesByTag('name=~gauge.node.disk.usage'), 'hostname', 'service'), true, true)"
+          "legendFormat": "{{hostname}} {{service}}",
+          "refId": "A"
         }
       ],
       "title": "Disk utilization over time",
@@ -1867,8 +1878,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -1951,13 +1962,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=\"stats_counts.deleted.bytes\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "Deleted Bytes",
-          "target": "aliasByTags(seriesByTag('name=stats_counts.deleted.bytes'), 'policy')"
+          "legendFormat": "{{policy}}",
+          "refId": "Deleted Bytes"
         }
       ],
       "title": "Bytes deleted by policy",
@@ -1965,8 +1976,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -2046,13 +2057,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=\"stats_counts.deleted.files\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "Deleted Files",
-          "target": "aliasByTags(seriesByTag('name=stats_counts.deleted.files'), 'policy')"
+          "legendFormat": "{{policy}}",
+          "refId": "Deleted Files"
         }
       ],
       "title": "DeltaFiles deleted by policy",
@@ -2060,8 +2071,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "deltafi-victoriametrics"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "gridPos": {
         "h": 3,
@@ -2095,14 +2106,14 @@
       "panels": [],
       "repeat": "nodes",
       "repeatDirection": "h",
-      "title": "Performance on Node ${nodes:regex}",
+      "title": "Performance on Node $nodes",
       "type": "row"
     },
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -2203,21 +2214,23 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "max({__name__=~\"gauge.node.memory.limit\", hostname=~\"$nodes\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(maxSeries(sortByName(seriesByTag('name=~gauge.node.memory.limit', 'hostname=~${nodes:regex}'), true, true)), 'limit')"
+          "legendFormat": "limit",
+          "refId": "B"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(sortByMaxima(sortByName(seriesByTag('name=~gauge.node.memory.usage', 'hostname=~${nodes:regex}'), true, true)), 'Total RAM')"
+          "legendFormat": "Total RAM",
+          "refId": "A"
         }
       ],
       "transparent": true,
@@ -2226,8 +2239,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "- Limit is physical RAM on the node\n- \"hostname\" is RAM usage as reported by host OS\n- App RAM is RAM usage as reported by clustermonitor (kubernetes)",
       "fieldConfig": {
@@ -2384,50 +2397,53 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "max({__name__=~\"gauge.node.memory.limit\", hostname=~\"$nodes\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.memory.limit', 'hostname=~${nodes:regex}')), 'Limit')"
+          "legendFormat": "Limit",
+          "refId": "B"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(sortByMaxima(seriesByTag('name=~gauge.node.memory.usage', 'hostname=~${nodes:regex}')), 'Total RAM')"
+          "legendFormat": "Total RAM",
+          "refId": "A"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum({__name__=\"gauge.app.memory\", node=~\"$nodes\"}) * 1000000",
           "hide": false,
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(sum(scale(seriesByTag('name=gauge.app.memory', 'node=~${nodes:regex}'), 1000000)), 'App RAM')"
+          "legendFormat": "App RAM",
+          "refId": "C"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "avg_over_time({__name__=~\"gauge.node.memory.usage\", hostname=~\"$nodes\"}[200s])",
           "hide": false,
-          "refCount": 0,
-          "refId": "trend",
-          "target": "alias(movingAverage(seriesByTag('name=~gauge.node.memory.usage', 'hostname=~${nodes:regex}'), 200), 'Trend')"
+          "legendFormat": "Trend",
+          "refId": "trend"
         }
       ],
-      "title": "Memory utilization over time (${nodes:regex})",
+      "title": "Memory utilization over time ($nodes)",
       "type": "timeseries"
     },
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -2537,22 +2553,23 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum by (app) ({__name__=\"gauge.app.memory\", node=~\"$nodes\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=gauge.app.memory', 'node=~${nodes:regex}'), 'sum', 'app'), 'app'))"
+          "legendFormat": "{{app}}",
+          "refId": "B"
         }
       ],
-      "title": "App RAM utilization over time (${nodes:regex})",
+      "title": "App RAM utilization over time ($nodes)",
       "type": "timeseries"
     },
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -2622,21 +2639,23 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "max({__name__=~\"gauge.node.cpu.limit\", hostname=~\"$nodes\"}) * 0.001",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(maxSeries(sortByName(scale(seriesByTag('name=~gauge.node.cpu.limit', 'hostname=~${nodes:regex}'), 0.001), true, true)), 'limit')"
+          "legendFormat": "limit",
+          "refId": "B"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"} * 0.001",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(sortByMaxima(sortByName(scale(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=~${nodes:regex}'), 0.001), true, true)), 'Total CPU')"
+          "legendFormat": "Total CPU",
+          "refId": "A"
         }
       ],
       "transparent": true,
@@ -2645,8 +2664,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "- Limit is physical RAM on the node\n- \"hostname\" is CPU usage as reported by host OS\n- App CPU is CPU usage as reported by clustermonitor (kubernetes)\n- IOWait is CPU usage as reported by Host OS",
       "fieldConfig": {
@@ -2803,59 +2822,63 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "max({__name__=~\"gauge.node.cpu.limit\", hostname=~\"$nodes\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "Limit",
-          "target": "alias(maxSeries(seriesByTag('name=~gauge.node.cpu.limit', 'hostname=~${nodes:regex}')), 'Limit')"
+          "legendFormat": "Limit",
+          "refId": "Limit"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "A",
-          "target": "alias(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=~${nodes:regex}'), 'Total CPU')"
+          "legendFormat": "Total CPU",
+          "refId": "A"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "sum({__name__=\"gauge.app.cpu\", node=~\"$nodes\"})",
           "hide": false,
-          "refCount": 0,
-          "refId": "C",
-          "target": "alias(sum(seriesByTag('name=gauge.app.cpu', 'node=~${nodes:regex}')), 'App CPU')"
+          "legendFormat": "App CPU",
+          "refId": "C"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=~\"gauge.node.cpu.iowait\", hostname=~\"$nodes\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "alias(seriesByTag('name=~gauge.node.cpu.iowait', 'hostname=~${nodes:regex}'), 'IO Wait')"
+          "legendFormat": "IO Wait",
+          "refId": "B"
         },
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "avg_over_time({__name__=~\"gauge.node.cpu.usage\", hostname=~\"$nodes\"}[100s])",
           "hide": false,
-          "refCount": 0,
-          "refId": "Trend",
-          "target": "alias(movingAverage(seriesByTag('name=~gauge.node.cpu.usage', 'hostname=~${nodes:regex}'), 100), 'Trend')"
+          "legendFormat": "Trend",
+          "refId": "Trend"
         }
       ],
-      "title": "CPU utilization over time (${nodes:regex})",
+      "title": "CPU utilization over time ($nodes)",
       "type": "timeseries"
     },
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -2966,15 +2989,16 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
+          "expr": "{__name__=\"gauge.app.cpu\", node=~\"$nodes\"}",
           "hide": false,
-          "refCount": 0,
-          "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(seriesByTag('name=gauge.app.cpu', 'node=~${nodes:regex}'), 'app'))"
+          "legendFormat": "{{app}}",
+          "refId": "B"
         }
       ],
-      "title": "App CPU utilization over time (${nodes:regex})",
+      "title": "App CPU utilization over time ($nodes)",
       "type": "timeseries"
     }
   ],
@@ -2988,25 +3012,6 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "Graphite",
-          "value": "deltafi-victoriametrics"
-        },
-        "hide": 0,
-        "includeAll": false,
-        "label": "Data Source",
-        "multi": false,
-        "name": "datasource",
-        "options": [],
-        "query": "graphite",
-        "queryValue": "",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "type": "datasource"
-      },
-      {
-        "current": {
           "selected": true,
           "text": [
             "All"
@@ -3016,10 +3021,10 @@
           ]
         },
         "datasource": {
-          "type": "graphite",
-          "uid": "${datasource}"
+          "type": "victoriametrics-metrics-datasource",
+          "uid": "deltafi-vm-metricsql-datasource"
         },
-        "definition": "tag_values(namespace)",
+        "definition": "label_values(namespace)",
         "hide": 2,
         "includeAll": true,
         "label": "Namespaces",
@@ -3027,9 +3032,9 @@
         "name": "namespaces",
         "options": [],
         "query": {
-          "queryType": "Default",
-          "refId": "A",
-          "target": "tag_values(namespace)"
+          "qryType": 1,
+          "query": "label_values(namespace)",
+          "refId": "A"
         },
         "refresh": 2,
         "regex": "",
@@ -3048,10 +3053,10 @@
           ]
         },
         "datasource": {
-          "type": "graphite",
-          "uid": "${datasource}"
+          "type": "victoriametrics-metrics-datasource",
+          "uid": "deltafi-vm-metricsql-datasource"
         },
-        "definition": "tag_values(node)",
+        "definition": "label_values(node)",
         "hide": 2,
         "includeAll": true,
         "label": "Nodes",
@@ -3059,9 +3064,9 @@
         "name": "nodes",
         "options": [],
         "query": {
-          "queryType": "Default",
-          "refId": "A",
-          "target": "tag_values(node)"
+          "qryType": 1,
+          "query": "label_values(node)",
+          "refId": "A"
         },
         "refresh": 2,
         "regex": "",

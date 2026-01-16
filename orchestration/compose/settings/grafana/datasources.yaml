@@ -3,10 +3,10 @@ datasources:
   - access: proxy
     editable: false
     isDefault: true
-    name: VictoriaMetrics
-    type: graphite
-    uid: deltafi-victoriametrics
-    url: http://deltafi-victoriametrics:8428/graphite
+    name: DeltaFi VictoriaMetrics
+    type: victoriametrics-metrics-datasource
+    uid: deltafi-vm-metricsql-datasource
+    url: http://deltafi-victoriametrics:8428
     version: 2
   - name: Postgres
     uid: deltafi-postgres

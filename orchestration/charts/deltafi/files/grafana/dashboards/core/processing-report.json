@@ -78,8 +78,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -122,7 +122,7 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -135,13 +135,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
           "hide": false,
-          "refCount": 0,
           "refId": "Flows",
-          "target": "alias(countSeries(groupByTags(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), 'countSeries', 'dataSource')), 'Data Sources')"
+          "expr": "count(count by (dataSource) (stats_counts.files_from_source))",
+          "legendFormat": "Data Sources"
         }
       ],
       "title": "Total Data Sources",
@@ -150,8 +150,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -225,7 +225,7 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -238,22 +238,22 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '$__interval', 'sum', false)), 'Ingress')"
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_from_source\"}[$__range]))",
+          "legendFormat": "Ingress"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
           "hide": false,
-          "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.bytes_to_sink\", dataSink=~\"$dataSink\"}[$__range]))",
+          "legendFormat": "Egress"
         }
       ],
       "title": "Total Bytes",
@@ -262,8 +262,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -337,7 +337,7 @@
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
-            "sum"
+            "lastNotNull"
           ],
           "fields": "",
           "values": false
@@ -350,22 +350,22 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_from_source'), '$__interval', 'sum', false)), 'Ingress')"
+          "expr": "sum(sum_over_time(stats_counts.files_from_source[$__range]))",
+          "legendFormat": "Ingress"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
           "hide": false,
-          "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum', false)), 'Egress')"
+          "expr": "sum(sum_over_time({__name__=\"stats_counts.files_to_sink\", dataSink=~\"$dataSink\"}[$__range]))",
+          "legendFormat": "Egress"
         }
       ],
       "title": "Total Files",
@@ -374,8 +374,8 @@
     },
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -491,22 +491,24 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_from_source')), 'Ingress')"
+          "expr": "sum(increase(stats_counts.files_from_source[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "Ingress"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
           "hide": false,
-          "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}')), 'Egress')"
+          "expr": "sum(increase({__name__=\"stats_counts.files_to_sink\", dataSink=~\"$dataSink\"}[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "Egress"
         }
       ],
       "title": "Aggregate Processed Files",
@@ -515,8 +517,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -632,12 +634,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), 'sum', 'dataSource'), 'dataSource')"
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource!=\"\"}[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}"
         }
       ],
       "title": "Processed Files by Flow",
@@ -646,8 +649,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "description": "",
       "fieldConfig": {
@@ -705,22 +708,24 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
           "refId": "A",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_from_source', 'dataSource!='), '$__interval', 'sum'), 'dataSource'))"
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_from_source\", dataSource!=\"\"}[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
           "hide": false,
-          "refCount": 0,
           "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_to_sink', 'dataSource!=', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum'), 'dataSource'))"
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_to_sink\", dataSource!=\"\", dataSink=~\"$dataSink\"}[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}"
         }
       ],
       "title": "Processed Bytes by Data Source",
@@ -796,8 +801,8 @@
     {
       "datasource": {
         "default": false,
-        "type": "graphite",
-        "uid": "${datasource}"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "deltafi-vm-metricsql-datasource"
       },
       "fieldConfig": {
         "defaults": {
@@ -854,22 +859,24 @@
       "targets": [
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
-          "refCount": 0,
           "refId": "A",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_from_source', 'dataSource!='), '$__interval', 'sum'), 'dataSource'))"
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource!=\"\"}[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}"
         },
         {
           "datasource": {
-            "type": "graphite",
-            "uid": "${datasource}"
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "deltafi-vm-metricsql-datasource"
           },
           "hide": false,
-          "refCount": 0,
           "refId": "B",
-          "target": "removeEmptySeries(aliasByTags(summarize(seriesByTag('name=stats_counts.files_to_sink', 'dataSink=~${dataSink:regex}'), '$__interval', 'sum'), 'dataSource'))"
+          "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\", dataSink=~\"$dataSink\"}[$__interval]))",
+          "interval": "5m",
+          "legendFormat": "{{dataSource}}"
         }
       ],
       "title": "Processed Files by Data Source",
@@ -953,20 +960,6 @@
     "list": [
       {
         "current": {
-          "text": "Graphite",
-          "value": "deltafi-victoriametrics"
-        },
-        "includeAll": false,
-        "label": "Database",
-        "name": "datasource",
-        "options": [],
-        "query": "graphite",
-        "refresh": 1,
-        "regex": "",
-        "type": "datasource"
-      },
-      {
-        "current": {
           "text": [
             "All"
           ],
@@ -975,10 +968,10 @@
           ]
         },
         "datasource": {
-          "type": "graphite",
-          "uid": "deltafi-victoriametrics"
+          "type": "victoriametrics-metrics-datasource",
+          "uid": "deltafi-vm-metricsql-datasource"
         },
-        "definition": "tag_values(dataSink)",
+        "definition": "label_values(dataSink)",
         "description": "Include only these data sinks",
         "includeAll": true,
         "label": "Data Sink",
@@ -988,7 +981,7 @@
         "query": {
           "queryType": "Default",
           "refId": "A",
-          "target": "tag_values(dataSink)"
+          "query": "label_values(dataSink)"
         },
         "refresh": 1,
         "regex": "",
