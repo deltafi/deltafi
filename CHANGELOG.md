@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.47.2] - 2026-01-19
+
+### Added
+- Added Cypress test coverage for all pages 
+- Added comprehensive integration testing documentation for plugin developers
+
+### Changed
+- Integration test inputs now accept `dataSource` field as the preferred way to specify the target data source
+
+### Fixed
+- Fix cluster deployment for deltafi-core-worker to set the `LOCAL_STORAGE_CONTENT` environment variable so local storage check for content can be properly determined. This allows the storatge limit check by the ingress service to be skipped when external content storage is being used
+- Fixed incorrect integration test configuration example in TUI documentation
+- Converted Grafana dashboards to use the native VictoriaMetrics plugin for correct query results
+
+### Deprecated
+- The `flow` field in integration test inputs is deprecated; use `dataSource` instead
+
 ## [2.47.1] - 2026-01-15
 
 ### Added
@@ -5582,7 +5599,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.2...main
+[2.47.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.1...2.47.2
 [2.47.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.0...2.47.1
 [2.47.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.46.0...2.47.0
 [2.46.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.45.3...2.46.0
