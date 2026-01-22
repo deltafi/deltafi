@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.error.ErrorResultException;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.io.Writer;
 import org.deltafi.common.io.WriterPipedInputStream;
+import org.deltafi.common.storage.s3.MissingContentException;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
@@ -254,6 +255,8 @@ public class ActionContent {
     public InputStream loadInputStream() {
         try {
             return contentStorageService.load(content);
+        } catch (MissingContentException e) {
+            throw new ActionKitException("Content missing from storage", e);
         } catch (ObjectStorageException e) {
             throw new ActionKitException("Failed to load content from storage", e);
         }

@@ -20,6 +20,7 @@ package org.deltafi.core.action.egress;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import org.deltafi.actionkit.action.ActionKitException;
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
@@ -80,6 +81,8 @@ public class HttpEgressBase<P extends ActionParameters & IHttpEgressParameters> 
             }
         } catch (IOException e) {
             return new ErrorResult(context, "Service " + method + " failure", e.getMessage(), e).logErrorTo(log);
+        } catch (ActionKitException e) {
+            return new ErrorResult(context, e.getMessage(), e.getCause() != null ? e.getCause().getMessage() : null, e).logErrorTo(log);
         } catch (Exception e) {
             return new ErrorResult(context, "Unexpected error during " + method + " request", e.getMessage(), e).logErrorTo(log);
         }
