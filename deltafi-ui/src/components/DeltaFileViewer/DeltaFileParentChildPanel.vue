@@ -15,10 +15,22 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<!-- ABOUTME: Displays parent or child DeltaFiles in a collapsible panel with a data table. -->
+<!-- ABOUTME: Includes a button to open the lineage tree visualization dialog. -->
 
 <template>
   <div class="deltafile-parent-child-panel">
     <CollapsiblePanel :header="headerWithCount" :collapsed="isEmpty" class="table-panel">
+      <template #icons>
+        <Button
+          v-if="!isEmpty"
+          v-tooltip.top="'View full parent/child tree'"
+          icon="fas fa-sitemap"
+          label="View Lineage"
+          class="p-button-text p-button-sm p-button-secondary mr-2"
+          @click.stop="showLineageDialog"
+        />
+      </template>
       <DataTable :paginator="didsList.length < 10 ? false : true" :rows="10" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="didsList" :loading="loading && !loaded" :row-class="actionRowClass" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}" data-key="did">
         <template v-if="!loading" #empty>
           {{ `No ${header} found.` }}
@@ -36,13 +48,22 @@
         <Column field="stage" header="Stage" class="stage-col" :sortable="true" />
       </DataTable>
     </CollapsiblePanel>
+
+    <!-- Lineage Tree Dialog -->
+    <LineageTreeDialog
+      ref="lineageTreeDialogRef"
+      :did="deltaFile.did"
+      :delta-file-data="deltaFile"
+    />
   </div>
 </template>
 <script setup>
+import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DidLink from "@/components/DidLink.vue";
+import LineageTreeDialog from "@/components/DeltaFileViewer/LineageTreeDialog.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import _ from "lodash";
@@ -64,6 +85,11 @@ const didsList = ref([]);
 const deltaFile = reactive(props.deltaFileData);
 const loading = ref(true);
 const loaded = ref(false);
+const lineageTreeDialogRef = ref(null);
+
+const showLineageDialog = () => {
+  lineageTreeDialogRef.value?.show();
+};
 
 onMounted(() => {
   fetchDidsArrayData();
