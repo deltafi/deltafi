@@ -164,7 +164,8 @@ type ExpectedDeltaFile {
 }
 
 input TestCaseIngressInput {
-  flow: String
+  dataSource: String
+  flow: String @deprecated(reason: "Use dataSource field instead")
   contentType: String
   ingressFileName: String
   base64Encoded: Boolean
@@ -173,7 +174,8 @@ input TestCaseIngressInput {
 }
 
 type TestCaseIngress {
-  flow: String
+  dataSource: String
+  flow: String @deprecated(reason: "Use dataSource field instead")
   contentType: String
   ingressFileName: String
   base64Encoded: Boolean

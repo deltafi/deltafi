@@ -30,6 +30,7 @@ query GetIntegrationTests {
     transformationFlows
     dataSinks
     inputs {
+      dataSource
       flow
       contentType
       ingressFileName
@@ -284,6 +285,7 @@ query GetIntegrationTest($name: String!) {
     transformationFlows
     dataSinks
     inputs {
+      dataSource
       flow
       contentType
       ingressFileName

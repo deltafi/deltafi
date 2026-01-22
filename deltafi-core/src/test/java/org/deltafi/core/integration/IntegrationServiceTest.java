@@ -119,14 +119,14 @@ class IntegrationServiceTest {
         assertEquals(1, testCase.getDataSinks().size());
 
         TestCaseIngress ingress1 = TestCaseIngress.builder()
-                .flow("unarchive-passthrough-rest-data-source")
+                .dataSource("unarchive-passthrough-rest-data-source")
                 .ingressFileName("file-1.txt")
                 .base64Encoded(false)
                 .data("Here is some\ntext on two lines")
                 .build();
 
         TestCaseIngress ingress2 = TestCaseIngress.builder()
-                .flow("unarchive-passthrough-rest-data-source")
+                .dataSource("unarchive-passthrough-rest-data-source")
                 .ingressFileName("file-2.txt")
                 .base64Encoded(false)
                 .data("Single line of text content")
