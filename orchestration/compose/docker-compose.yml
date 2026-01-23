@@ -484,7 +484,7 @@ services:
           - "ingress"
     restart: unless-stopped
     volumes:
-      - ${SETTINGS_DIR}/nginx/conf:/opt/nginx
+      - ${CONFIG_DIR}/nginx:/opt/nginx/conf/
       - ${DATA_DIR}/certs/${DELTAFI_SECRET_INGRESS_SSL:-ssl-secret}:/certs
       - ${SETTINGS_DIR}/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
       - ${SETTINGS_DIR}/nginx/html:/etc/nginx/html

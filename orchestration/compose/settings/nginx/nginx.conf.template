@@ -47,10 +47,10 @@ http {
     proxy_set_header X-Metrics-Role $user_metrics_role;
     proxy_set_header Upgrade $http_upgrade;
 
-    include /opt/nginx/${NGINX_CONF_DIR}/redirect_http.conf*;
+    include /opt/nginx/conf/redirect_http.conf*;
 
     server {
-        include /opt/nginx/${NGINX_CONF_DIR}/listen.conf;
+        include /opt/nginx/conf/listen.conf;
         ${INCLUDE_CERT_AUTH}
 
         server_name ${DOMAIN};
@@ -127,7 +127,7 @@ http {
     }
 
     server {
-        include /opt/nginx/${NGINX_CONF_DIR}/listen.conf;
+        include /opt/nginx/conf/listen.conf;
         ${INCLUDE_CERT_AUTH}
 
         server_name *.${DOMAIN};

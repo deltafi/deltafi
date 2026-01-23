@@ -22,7 +22,6 @@ deltafi:
     replicas: 1
   auth:
     mode: disabled # basic, cert, or disabled
-    secret: auth-secret
     entityResolver:
       enabled: false
       image: {{.Repo}}/deltafi-entity-resolver:{{.Tag}}
@@ -77,6 +76,8 @@ ingress:
   domain: local.deltafi.org
   tls:
     enabled: false
+    ssl_protocols: TLSv1.2 TLSv1.3
+    ssl_ciphers: ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384
     secrets:
       default: ssl-secret
   ui:

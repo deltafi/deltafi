@@ -36,6 +36,7 @@ import (
 )
 
 //go:embed compose.plugin-dev.yaml compose.core-dev.yaml compose.site.yaml compose.values.yaml compose.values.site.yaml
+//go:embed nginx_listen.conf.tmpl nginx_redirect_http.conf nginx_ssl_verify.conf
 var composeEmbeddedFiles embed.FS
 
 const (
@@ -456,10 +457,9 @@ func (o *ComposeOrchestrator) ContainerEnvironments() error {
 		return fmt.Errorf("error writing common.env: %w", err)
 	}
 
-	// Create nginx.env
-	nginxEnv := filepath.Join(o.configPath, "nginx.env")
-	if err := o.writeNginxEnv(nginxEnv); err != nil {
-		return fmt.Errorf("error writing nginx.env: %w", err)
+	// Create nginx.env and configuration files
+	if err := o.configureNginx(); err != nil {
+		return fmt.Errorf("error writing nginx configuration files: %w", err)
 	}
 
 	// Create dirwatcher.env
@@ -645,7 +645,13 @@ func (o *ComposeOrchestrator) writeDirwatcherEnv(path string) error {
 	return writeEnvFile(path, envVars)
 }
 
-func (o *ComposeOrchestrator) writeNginxEnv(path string) error {
+type ListenConfig struct {
+	TLSEnabled   bool   `yaml:"enabled"`
+	SSLProtocols string `yaml:"ssl_protocols,omitempty"`
+	SSLCiphers   string `yaml:"ssl_ciphers,omitempty"`
+}
+
+func (o *ComposeOrchestrator) configureNginx() error {
 	values, err := o.getMergedValues()
 	if err != nil {
 		return err
@@ -655,9 +661,16 @@ func (o *ComposeOrchestrator) writeNginxEnv(path string) error {
 	authMode := o.getValue(values, "deltafi.auth.mode")
 	tlsEnabled := o.getValue(values, "ingress.tls.enabled")
 
+	tlsEnabledBool := tlsEnabled == "true"
+
+	listenConfig := ListenConfig{
+		TLSEnabled:   tlsEnabledBool,
+		SSLProtocols: o.getValueOr(values, "ingress.tls.ssl_protocols", "TLSv1.2 TLSv1.3"),
+		SSLCiphers:   o.getValueOr(values, "ingress.tls.ssl_ciphers", "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384"),
+	}
+
 	proxyCacheKey := "no-auth"
 	includeCertAuth := ""
-	nginxConfDir := "http"
 
 	if authMode == "basic" {
 		proxyCacheKey = "$$remote_user$$http_authorization"
@@ -665,22 +678,76 @@ func (o *ComposeOrchestrator) writeNginxEnv(path string) error {
 		if tlsEnabled != "true" {
 			return fmt.Errorf("cannot run with certificate authentication without .ingress.tls.enabled set to true")
 		}
-		includeCertAuth = "include /opt/nginx/https/ssl_verify.conf;"
+		includeCertAuth = "include /opt/nginx/conf/ssl_verify.conf;"
 		proxyCacheKey = "$$ssl_client_s_dn$$http_authorization"
 	}
 
-	if tlsEnabled == "true" {
-		nginxConfDir = "https"
+	nginxConfigDir := filepath.Join(o.configPath, "nginx")
+	if err := os.RemoveAll(nginxConfigDir); err != nil {
+		return fmt.Errorf("failed to remove nginx config directory: %w", err)
+	}
+
+	if err := os.MkdirAll(nginxConfigDir, 0755); err != nil {
+		return fmt.Errorf("failed to create nginx config directory: %w", err)
+	}
+
+	if tlsEnabledBool {
+		if err = copyEmbeddedFile("nginx_redirect_http.conf", filepath.Join(nginxConfigDir, "redirect_http.conf")); err != nil {
+			return err
+		}
+
+		if err = copyEmbeddedFile("nginx_ssl_verify.conf", filepath.Join(nginxConfigDir, "ssl_verify.conf")); err != nil {
+			return err
+		}
+	}
+
+	if err = generateListenConf(listenConfig, filepath.Join(nginxConfigDir, "listen.conf")); err != nil {
+		return err
 	}
 
 	envVars := map[string]string{
 		"DOMAIN":            domain,
 		"PROXY_CACHE_KEY":   proxyCacheKey,
 		"INCLUDE_CERT_AUTH": includeCertAuth,
-		"NGINX_CONF_DIR":    nginxConfDir,
 	}
 
-	return writeEnvFile(path, envVars)
+	return writeEnvFile(filepath.Join(o.configPath, "nginx.env"), envVars)
+}
+
+func copyEmbeddedFile(embeddedFileName, outputPath string) error {
+	fileContent, err := composeEmbeddedFiles.ReadFile(embeddedFileName)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(outputPath, fileContent, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateListenConf(config ListenConfig, outputPath string) error {
+	listenTemplate, err := composeEmbeddedFiles.ReadFile("nginx_listen.conf.tmpl")
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New("listen").Parse(string(listenTemplate))
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
+
+	return tmpl.Execute(f, config)
 }
 
 func writeEnvFile(path string, envVars map[string]string) error {
