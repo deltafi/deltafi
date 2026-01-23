@@ -221,3 +221,9 @@ This will:
 3. **Backup**: Before major changes, back up your `site/` and `config/` directories.
 
 4. **Documentation**: Document any custom configurations specific to your deployment in a README within the `site/` directory.
+
+## Browser Connection Limit (HTTP without TLS)
+
+When running DeltaFi over plain HTTP, browsers limit concurrent connections to approximately 6 per domain. The DeltaFi UI uses Server-Sent Events (SSE) for real-time updates, and each browser tab maintains a long-lived SSE connection. This means you can only have about 5 browser tabs open to the DeltaFi UI simultaneously.
+
+To remove this limitation, configure DeltaFi to use HTTPS. With TLS enabled, DeltaFi uses HTTP/2, which multiplexes all connections over a single TCP connection and eliminates the per-domain connection limit.
