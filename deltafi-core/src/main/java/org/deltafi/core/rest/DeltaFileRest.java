@@ -25,22 +25,23 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ImportResponse;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressMetadataException;
+import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
-import org.deltafi.core.exceptions.IngressRateLimitException;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFileExporter;
 import org.deltafi.core.services.DeltaFileImporter;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.ExportErrorsRequest;
+import org.deltafi.core.types.ExportRequest;
 import org.deltafi.core.types.IngressResult;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -53,13 +54,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileRest {
+    public static final MediaType APPLICATION_TAR = MediaType.parseMediaType("application/x-tar");
+
     private final CoreAuditLogger auditLogger;
     private final IngressService ingressService;
     private final DeltaFileExporter deltaFileExporter;
     private final DeltaFileImporter deltaFileImporter;
 
     @NeedsPermission.DeltaFileIngress
-    @PostMapping(value = "ingress", consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
+    @PostMapping(value = "ingress", consumes = MediaType.ALL_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> ingressData(InputStream dataStream,
             @RequestHeader(value = "Filename", required = false) String filename,
             @RequestHeader(value = "DataSource", required = false) String dataSource,
@@ -91,7 +94,7 @@ public class DeltaFileRest {
         auditLogger.audit("exporting DeltaFile with a did of '{}'", did);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"%s.tar\"".formatted(did))
-                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(APPLICATION_TAR)
                 .body(deltaFileExporter.exportDeltaFile(did));
     }
 
@@ -103,7 +106,19 @@ public class DeltaFileRest {
     }
 
     @NeedsPermission.DeltaFileExport
-    @PostMapping(value = "export/errors", produces = "application/x-tar", consumes = MediaType.APPLICATION_JSON)
+    @PostMapping(value = "export/deltaFiles", produces = "application/x-tar", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StreamingResponseBody> exportDeltaFiles(@RequestBody ExportRequest request) {
+        auditLogger.audit("exporting DeltaFile(s)");
+        String filename = String.format("exported_delta_files_%s.tar",
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss-SSS")));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"%s\"".formatted(filename))
+                .contentType(APPLICATION_TAR)
+                .body(deltaFileExporter.exportDeltaFiles(request));
+    }
+
+    @NeedsPermission.DeltaFileExport
+    @PostMapping(value = "export/errors", produces = "application/x-tar", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StreamingResponseBody> exportErroredDeltaFiles(@RequestBody ExportErrorsRequest request) {
         auditLogger.audit("exporting up to {} errored DeltaFiles{}", request.getLimit(), request.isAcknowledge() ? " and acknowledged the errors" : "");
         String filename = String.format("errored_delta_files_%s.tar",

@@ -19,7 +19,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 
+	"github.com/deltafi/tui/internal/api"
+	"github.com/deltafi/tui/internal/app"
 	"github.com/spf13/cobra"
 )
 
@@ -74,6 +78,23 @@ var deltafilesListCmd = &cobra.Command{
 	RunE:         runDeltafilesList,
 }
 
+var deltafilesExportCmd = &cobra.Command{
+	Use:   "export",
+	Short: "Export multiple DeltaFiles",
+	Long: `Export multiple DeltaFiles to a tar archive based on filter criteria.
+
+The exported file contains the metadata and content of all matching DeltaFiles.
+The export can also be configured to include only metadata.
+Use the same filter flags as the list/view commands to select which DeltaFiles to export.
+
+Examples:
+  deltafi deltafiles export --from "yesterday" --to "now"
+  deltafi deltafiles export --data-source "file-watcher" --limit 50
+  deltafi deltafiles export --stage "COMPLETE" -o my-export.tar`,
+	SilenceUsage: true,
+	RunE:         runDeltafilesExport,
+}
+
 func runDeltafilesList(cmd *cobra.Command, args []string) error {
 	RequireRunningDeltaFi()
 	if len(args) > 0 {
@@ -102,10 +123,77 @@ func runDeltafilesList(cmd *cobra.Command, args []string) error {
 	}
 }
 
+var exportsOutputPath string
+var exportsIncludeContent bool
+
+func runDeltafilesExport(cmd *cobra.Command, args []string) error {
+	RequireRunningDeltaFi()
+	if len(args) > 0 {
+		return fmt.Errorf("exports command does not accept positional arguments: %v", args)
+	}
+
+	limit, _ := cmd.Flags().GetInt("limit")
+	offset, _ := cmd.Flags().GetInt("offset")
+
+	filter, err := searchParams.GetFilter()
+	if err != nil {
+		return err
+	}
+
+	return executeExportDeltaFiles(filter, limit, offset, exportsIncludeContent, exportsOutputPath)
+}
+
+func executeExportDeltaFiles(filter searchFilter, limit int, offset int, includeContent bool, outputPath string) error {
+	client, err := app.GetInstance().GetAPIClient()
+	if err != nil {
+		return clientError(err)
+	}
+
+	// Build the export request
+	request := api.ExportDeltaFilesRequest{
+		DeltaFilesFilter: filter.toGraphQLFilter(),
+		IncludeContent:   includeContent,
+		Limit:            limit,
+		Offset:           offset,
+		Order:            filter.order,
+	}
+
+	body, suggestedFilename, err := client.ExportDeltaFiles(request)
+	if err != nil {
+		return fmt.Errorf("failed to export deltafiles: %w", err)
+	}
+	defer func(body io.ReadCloser) {
+		_ = body.Close()
+	}(body)
+
+	// Use suggested filename if no output path specified
+	filename := outputPath
+	if filename == "" {
+		filename = suggestedFilename
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
+	bytesWritten, err := io.Copy(file, body)
+	if err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	fmt.Printf("Exported DeltaFiles (%d bytes) to %s\n", bytesWritten, filename)
+	return nil
+}
+
 func init() {
 	rootCmd.AddCommand(deltafilesCmd)
 	deltafilesCmd.AddCommand(deltafilesViewCmd)
 	deltafilesCmd.AddCommand(deltafilesListCmd)
+	deltafilesCmd.AddCommand(deltafilesExportCmd)
 	searchParams.addSearchFlagsAndCompletions(deltafilesViewCmd)
 
 	searchParams.addSearchFlagsAndCompletions(deltafilesListCmd)
@@ -116,4 +204,10 @@ func init() {
 	deltafilesListCmd.Flags().Int("offset", 0, "Offset the results")
 	deltafilesListCmd.Flags().BoolP("verbose", "v", false, "Show verbose output (JSON and YAML only)")
 	deltafilesListCmd.Flags().Bool("terse", false, "Hide table header and footer")
+
+	searchParams.addSearchFlagsAndCompletionsWithDisplayFlags(deltafilesExportCmd, false)
+	deltafilesExportCmd.Flags().StringVarP(&exportsOutputPath, "output", "o", "", "Output file name (default: auto-generated)")
+	deltafilesExportCmd.Flags().BoolVar(&exportsIncludeContent, "include-content", true, "Include content in the export")
+	deltafilesExportCmd.Flags().Int("limit", 100, "Limit the number of DeltaFiles to export")
+	deltafilesExportCmd.Flags().Int("offset", 0, "Offset the results")
 }

@@ -1223,18 +1223,18 @@ func searchResultYAML(filter searchFilter, limit int, offset int, verbose bool) 
 }
 
 func (searchParams *SearchParameters) addSearchFlagsAndCompletions(cmd *cobra.Command) {
+	searchParams.addSearchFlagsAndCompletionsWithDisplayFlags(cmd, true)
+}
+
+func (searchParams *SearchParameters) addSearchFlagsAndCompletionsWithDisplayFlags(cmd *cobra.Command, includeDisplayFlags bool) {
 	cmd.Flags().StringVar(&searchParams.startTime, "from", "today", "Display DeltaFiles modified after this time (default: today)")
 	cmd.Flags().StringVar(&searchParams.endTime, "to", "now", "Display DeltaFiles modified before this time (default: now)")
 	cmd.Flags().StringVar(&searchParams.endTime, "until", "now", "Alias for --to")
 	cmd.Flags().BoolVarP(&searchParams.useCreationTime, "creation-time", "C", false, "Filter by creation time instead of modification time")
-	cmd.Flags().BoolVar(&searchParams.useLocal, "local", false, "Display times in local timezone")
-	cmd.Flags().BoolVar(&searchParams.useZulu, "zulu", false, "Display times in UTC/Zulu timezone")
 	cmd.Flags().BoolVar(&searchParams.ascending, "ascending", false, "Sort results in ascending order")
 	cmd.Flags().BoolVar(&searchParams.descending, "descending", false, "Sort results in descending order")
 	cmd.Flags().StringVar(&searchParams.sortBy, "sort-by", "modified", "Column to sort by (modified, filename, data-source, stage, size)")
 	cmd.Flags().IntVar(&searchParams.autoRefresh, "auto-refresh", 0, "Automatically refresh results every N seconds (0 to disable)")
-
-	cmd.Flags().BoolVar(&searchParams.useHumanize, "humanize", false, "Display timestamps in human-readable format")
 
 	cmd.Flags().StringSliceVarP(&searchParams.dataSources, "data-source", "d", []string{}, "Filter by data source name (can be specified multiple times)")
 	cmd.Flags().StringSliceVarP(&searchParams.transforms, "transform", "t", []string{}, "Filter by transform name (can be specified multiple times)")
@@ -1312,7 +1312,12 @@ func (searchParams *SearchParameters) addSearchFlagsAndCompletions(cmd *cobra.Co
 	cmd.RegisterFlagCompletionFunc("filtered-cause", cobra.NoFileCompletions)
 	cmd.RegisterFlagCompletionFunc("error-cause", cobra.NoFileCompletions)
 
-	cmd.MarkFlagsMutuallyExclusive("local", "zulu")
+	if includeDisplayFlags {
+		cmd.Flags().BoolVar(&searchParams.useHumanize, "humanize", false, "Display timestamps in human-readable format")
+		cmd.Flags().BoolVar(&searchParams.useLocal, "local", false, "Display times in local timezone")
+		cmd.Flags().BoolVar(&searchParams.useZulu, "zulu", false, "Display times in UTC/Zulu timezone")
+		cmd.MarkFlagsMutuallyExclusive("local", "zulu")
+	}
 	cmd.MarkFlagsMutuallyExclusive("to", "until")
 }
 

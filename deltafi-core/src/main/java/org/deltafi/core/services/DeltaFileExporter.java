@@ -33,10 +33,7 @@ import org.deltafi.core.generated.types.DeltaFileDirection;
 import org.deltafi.core.generated.types.DeltaFileOrder;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.repo.DeltaFileRepo;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.DeltaFileDTO;
-import org.deltafi.core.types.DeltaFiles;
-import org.deltafi.core.types.ExportErrorsRequest;
+import org.deltafi.core.types.*;
 import org.deltafi.core.util.DeltaFileMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.unit.DataSize;
@@ -52,6 +49,10 @@ import java.util.*;
 @RequiredArgsConstructor
 public class DeltaFileExporter {
 
+    private static final DataSize NO_SIZE_LIMIT = null;
+    private static final DeltaFileOrder OLDEST_FIRST = DeltaFileOrder.newBuilder()
+            .direction(DeltaFileDirection.ASC).field("created").build();
+
     private final DeltaFileRepo deltaFileRepo;
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
@@ -60,8 +61,19 @@ public class DeltaFileExporter {
         DeltaFile deltaFile = deltaFileRepo.findById(did)
                 .orElseThrow(() -> new EntityNotFound("Delta file with id " + did + " not found"));
 
-        Export toExport = prepareExport(deltaFile);
+        Export toExport = prepareExport(deltaFile, true);
         return outputStream -> pipeToTarFile(outputStream, List.of(toExport));
+    }
+
+    public StreamingResponseBody exportDeltaFiles(ExportRequest exportRequest) {
+        List<UUID> dids = new ArrayList<>();
+        List<Export> exports = findForExport(exportRequest.getDeltaFilesFilter(), exportRequest.getOrder(),
+                exportRequest.getOffset(), exportRequest.getLimit(), NO_SIZE_LIMIT, exportRequest.isIncludeContent(), dids);
+
+        return outputStream -> {
+            pipeToTarFile(outputStream, exports);
+            outputStream.flush();
+        };
     }
 
     public StreamingResponseBody exportDeltaFiles(ExportErrorsRequest request) {
@@ -86,20 +98,23 @@ public class DeltaFileExporter {
                 .errorAcknowledged(false)
                 .build();
 
-        DeltaFileOrder oldestFirst = DeltaFileOrder.newBuilder()
-                .direction(DeltaFileDirection.ASC).field("created").build();
+        return findForExport(errored, OLDEST_FIRST, 0, request.getLimit(), request.getMaxSize(), true, dids);
+    }
 
-        DeltaFiles deltaFiles = deltaFilesService.deltaFiles(0, request.getLimit(), errored, oldestFirst);
+    List<Export> findForExport(DeltaFilesFilter filter, DeltaFileOrder order, int offset, int limit,
+                               DataSize requestedMaxSize, boolean includeContent, List<UUID> dids) {
+        DeltaFileOrder deltaFileOrder = order != null ? order : OLDEST_FIRST;
+        DeltaFiles deltaFiles = deltaFilesService.deltaFiles(offset, limit, filter, deltaFileOrder);
         if (deltaFiles.getDeltaFiles().isEmpty()) {
-            throw new EntityNotFound("No DeltaFiles were found with unacknowledged errors");
+            throw new EntityNotFound("No DeltaFiles were found for export");
         }
 
         List<Export> exports = new ArrayList<>();
 
-        long maxSize = maxSize(request.getMaxSize());
+        long maxSize = maxSize(requestedMaxSize);
         long currentSize = 0;
         for (DeltaFile deltaFile : deltaFiles.getDeltaFiles()) {
-            Export export = prepareExport(deltaFile);
+            Export export = prepareExport(deltaFile, includeContent);
             if (maxSize == -1 || exports.isEmpty() || currentSize + export.size() <= maxSize) {
                 dids.add(deltaFile.getDid());
                 exports.add(export);
@@ -123,10 +138,11 @@ public class DeltaFileExporter {
         return dataSize.toBytes();
     }
 
-    private Export prepareExport(DeltaFile deltaFile) {
+    private Export prepareExport(DeltaFile deltaFile, boolean includeContent) {
         try {
             DeltaFileDTO deltaFileDto = prepareDeltaFileDTO(deltaFile);
-            return new Export(deltaFileDto, localizeContent(deltaFileDto));
+            Collection<Content> content = includeContent ? localizeContent(deltaFileDto) : List.of();
+            return new Export(deltaFileDto, content);
         } catch (IOException e) {
             throw new InvalidRequestException("Could not prepare the DeltaFile (%s) for export".formatted(deltaFile.getDid()));
         }
@@ -174,7 +190,16 @@ public class DeltaFileExporter {
         }
     }
 
+    /**
+     * Modify all the segments in this DeltaFile to appear as though they are owned by the DeltaFile that is being exported
+     * @param deltaFile that is going to be exported
+     * @return collection of content references whose content will be included in the tar export
+     */
     private Collection<Content> localizeContent(DeltaFileDTO deltaFile) {
+        if (deltaFile.getContentDeleted() != null) {
+            // if this DeltaFile is marked as content deleted there is no need to localize the content in the DeltaFile metadata
+            return List.of();
+        }
         Map<UUID, Content> segments = new HashMap<>();
         // use all segments to ensure all segments repeated along multiple actions/flows get the updated did
         for (Segment segment : deltaFile.allSegments()) {
@@ -186,7 +211,14 @@ public class DeltaFileExporter {
                 Content content = new Content();
                 long size = contentStorageService.getTotalSize(copy);
                 if (size < 0) {
-                    throw new ServerException("Unable to determine size for segment " + segment.getUuid() + " in deltaFile " + deltaFile.getDid());
+                    UUID contentOwnerDid = copy.getDid();
+                    if (contentOwnerDid.equals(deltaFile.getDid()) || contentNotDeleted(contentOwnerDid)) {
+                        // the DeltaFile that created this content is not marked with contentDeleted, something went wrong getting the size
+                        throw new ServerException("Unable to determine size for segment " + segment.getUuid() + " in deltaFile " + deltaFile.getDid());
+                    } else {
+                        // the content was removed, just keep the original size of the segment, no need for the overall size
+                        size = copy.getSize();
+                    }
                 }
                 copy.setOffset(0);
                 copy.setSize(size);
@@ -197,6 +229,15 @@ public class DeltaFileExporter {
 
         deltaFile.setContentObjectIds(new ArrayList<>(segments.keySet()));
         return segments.values();
+    }
+
+    private boolean contentNotDeleted(UUID did) {
+        DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
+        // if we can't find the DeltaFile assume the content was deleted too
+        if (deltaFile == null) {
+            return false;
+        }
+        return deltaFile.getContentDeleted() == null;
     }
 
     @SuppressWarnings("java:S6218")

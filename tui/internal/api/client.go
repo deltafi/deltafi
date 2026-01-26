@@ -348,6 +348,44 @@ func (c *Client) ImportDeltaFile(archivePath string) (*ImportResponse, error) {
 	return &result, err
 }
 
+// ExportDeltaFilesRequest represents the request body for bulk export
+type ExportDeltaFilesRequest struct {
+	DeltaFilesFilter interface{} `json:"deltaFilesFilter,omitempty"`
+	IncludeContent   bool        `json:"includeContent"`
+	Limit            int         `json:"limit"`
+	Offset           int         `json:"offset"`
+	Order            interface{} `json:"order,omitempty"`
+}
+
+func (c *Client) ExportDeltaFiles(request ExportDeltaFilesRequest) (io.ReadCloser, string, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to encode request body: %w", err)
+	}
+
+	resp, err := c.HttpClient.Post(c.baseURL+"/api/v2/deltafile/export/deltaFiles", "application/json", bytes.NewReader(requestBody))
+	if err != nil {
+		return nil, "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if resp.StatusCode == 404 {
+			return nil, "", errors.New("no DeltaFiles found matching the filter criteria")
+		}
+		return nil, "", fmt.Errorf("export failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	filename := extractFilename(resp.Header)
+	if filename == "" {
+		timestamp := time.Now().Format("2006-01-02_150405-000")
+		filename = fmt.Sprintf("exported_delta_files_%s.tar", timestamp)
+	}
+
+	return resp.Body, filename, nil
+}
+
 type PasswordUpdate struct {
 	Password string `json:"password"`
 }

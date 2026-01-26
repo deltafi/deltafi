@@ -41,11 +41,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -134,20 +134,58 @@ class DeltaFileExporterTest {
                 .hasMessageContaining("Delta file with id " + did + " not found");
     }
 
-
     @Test
     void exportDeltaFile_missingContent() {
         UUID did = UUID.randomUUID();
         DeltaFile deltaFile = createDeltaFile(did);
         DeltaFileFlow deltaFileFlow = deltaFile.getFlows().stream().findFirst().orElseThrow();
         // change the pointer in segment so it can't be found when getting the size
-        deltaFileFlow.getActions().getFirst().getContent().getFirst().getSegments().getFirst().setUuid(new UUID(0,4));
+        Segment segment = deltaFileFlow.getActions().getFirst().getContent().getFirst().getSegments().getFirst();
+        segment.setUuid(new UUID(0,4));
 
         when(deltaFileRepo.findById(did)).thenReturn(Optional.of(deltaFile));
+        // mock using a segment from a parent where the content is not marked deleted
+        when(deltaFileRepo.findById(segment.getDid())).thenReturn(Optional.of(new DeltaFile()));
 
         assertThatThrownBy(() ->  exporter.exportDeltaFile(did))
                 .isInstanceOf(ServerException.class)
                 .hasMessageContaining("Unable to determine size for segment 00000000-0000-0000-0000-000000000004");
+    }
+
+    @Test
+    void exportDeltaFile_handleDeletedParentContent() {
+        UUID did = UUID.randomUUID();
+        DeltaFile deltaFile = createDeltaFile(did);
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().stream().findFirst().orElseThrow();
+        // change the pointer in segment so it can't be found when getting the size
+        Segment segment = deltaFileFlow.getActions().getFirst().getContent().getFirst().getSegments().getFirst();
+        segment.setUuid(new UUID(0,4));
+
+        when(deltaFileRepo.findById(did)).thenReturn(Optional.of(deltaFile));
+        // mock using a segment from a parent where the content is marked deleted
+        DeltaFile parent = createDeltaFile(segment.getDid());
+        parent.setContentDeleted(OffsetDateTime.now());
+        when(deltaFileRepo.findById(segment.getDid())).thenReturn(Optional.of(parent));
+
+        assertThatCode(() -> exporter.exportDeltaFile(did)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void exportDeltaFile_handleLocalContentDeleted() {
+        UUID did = UUID.randomUUID();
+        DeltaFile deltaFile = createDeltaFile(did);
+        // content is marked deleted so there should be no attempt to export content
+        deltaFile.setContentDeleted(OffsetDateTime.now());
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().stream().findFirst().orElseThrow();
+        // change the pointer in segment so it can't be found when getting the size
+        Segment segment = deltaFileFlow.getActions().getFirst().getContent().getFirst().getSegments().getFirst();
+        segment.setUuid(new UUID(0,4));
+
+        when(deltaFileRepo.findById(did)).thenReturn(Optional.of(deltaFile));
+        // mock using a segment from a parent where the content is not marked deleted
+        when(deltaFileRepo.findById(segment.getDid())).thenReturn(Optional.of(new DeltaFile()));
+
+        assertThatCode(() -> exporter.exportDeltaFile(did)).doesNotThrowAnyException();
     }
 
     @Test
