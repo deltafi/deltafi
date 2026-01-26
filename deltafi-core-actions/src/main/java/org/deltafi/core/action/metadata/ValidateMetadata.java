@@ -46,8 +46,8 @@ public class ValidateMetadata extends TransformAction<ValidateMetadataParameters
                                 Required metadata is validated.
                                 
                                 The requiredMetadata map is used to specify metadata keys that are required from the
-                                input. Within the map, a required metadata key may optional specify a RegEx pattern the
-                                key's value must match. An empty string ("") or RegEx pattern of ".*" may be used of the
+                                input. Within the map, a required metadata key may optionally specify a RegEx pattern the
+                                key's value must match. An empty string ("") or RegEx pattern of ".*" may be used if the
                                 key's value can be of any value pattern.""")
                         .build())
                 .build());

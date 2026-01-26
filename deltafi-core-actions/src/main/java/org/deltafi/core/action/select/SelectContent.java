@@ -24,7 +24,6 @@ import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionOptions;
-import org.deltafi.core.action.ContentMatchingParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -34,7 +33,10 @@ public class SelectContent extends TransformAction<SelectContentParameters> {
         super(ActionOptions.builder()
                 .description("Selects content to pass through, dropping unselected content.")
                 .inputSpec(ActionOptions.InputSpec.builder()
-                        .contentSummary(ContentMatchingParameters.CONTENT_SELECTION_DESCRIPTION)
+                        .contentSummary("""
+                                Input content to act on may be selected (or inversely selected using the exclude parameters) with
+                                contentIndexes, mediaTypes, and/or filePatterns. If any of these are set and the content is matched, the
+                                content is passed through unchanged.""")
                         .build())
                 .outputSpec(ActionOptions.OutputSpec.builder()
                         .contentSummary("Only content matching the selection criteria is retained.")

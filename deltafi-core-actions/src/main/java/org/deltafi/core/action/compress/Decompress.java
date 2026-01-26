@@ -82,9 +82,14 @@ public class Decompress extends TransformAction<DecompressParameters> {
                                 When saving lineage (non-empty lineageFilename), the format is written as a JSON string
                                 using the data type org.deltafi.common.types.LineageMap, which offers easy methods to
                                 parse and search by follow-on actions.""")
-                        .metadataDescriptions(List.of(ActionOptions.KeyedDescription.builder()
-                                .key("compressFormat")
+                        .metadataDescriptions(List.of(
+                            ActionOptions.KeyedDescription.builder()
+                                .key(COMPRESS_FORMAT)
                                 .description("Format of the last input content decompressed. Not set when using recursion.")
+                                .build(),
+                            ActionOptions.KeyedDescription.builder()
+                                .key(DECOMPRESS_PASSTHROUGH)
+                                .description("Set to 'true' if the 'passThroughUnsupported' parameter results in pass through content.")
                                 .build()))
                         .build())
                 .errors(List.of(new ActionOptions.DescriptionWithConditions("On content that cannot be decompressed", List.of("""

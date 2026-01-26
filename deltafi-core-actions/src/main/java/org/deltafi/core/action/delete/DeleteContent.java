@@ -33,7 +33,9 @@ public class DeleteContent extends TransformAction<DeleteContentParameters> {
                         .contentSummary(DeleteContentParameters.CONTENT_SELECTION_DESCRIPTION)
                         .build())
                 .outputSpec(ActionOptions.OutputSpec.builder()
-                        .contentSummary("All input content is deleted if the deleteAllContent parameter is true.")
+                        .contentSummary("""
+                                All input content is deleted if the deleteAllContent parameter is true.
+                                Otherwise, only content matching the selection criteria is deleted.""")
                         .build())
                 .build());
     }

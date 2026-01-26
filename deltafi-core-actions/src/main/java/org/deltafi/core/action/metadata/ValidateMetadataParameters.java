@@ -32,6 +32,6 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class ValidateMetadataParameters extends ActionParameters {
-    @JsonPropertyDescription("Required metadata keys and required RegEx pattern, if not empty")
+    @JsonPropertyDescription("Required metadata keys; if map value is not empty, specifies a required RegEx pattern the metadata value must match")
     private Map<String, String> requiredMetadata = new HashMap<>();
 }
