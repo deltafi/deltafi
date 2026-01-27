@@ -196,16 +196,16 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileResume
-  public List<RetryResult> resumeMatching(@InputArgument DeltaFilesFilter filter, @InputArgument List<ResumeMetadata> resumeMetadata) {
+  public List<RetryResult> resumeMatching(@InputArgument DeltaFilesFilter filter, @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Integer limit) {
     auditLogger.audit("resumed deltaFiles by filter");
-    return deltaFilesService.resume(filter, resumeMetadata);
+    return deltaFilesService.resume(filter, resumeMetadata, limit);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileReplay
-  public List<RetryResult> replayMatching(@InputArgument DeltaFilesFilter filter, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
+  public List<RetryResult> replayMatching(@InputArgument DeltaFilesFilter filter, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata, @InputArgument Integer limit) {
     auditLogger.audit("replayed deltaFiles by filter");
-    return deltaFilesService.replay(filter, removeSourceMetadata, replaceSourceMetadata);
+    return deltaFilesService.replay(filter, removeSourceMetadata, replaceSourceMetadata, limit);
   }
 
   @DgsMutation
@@ -224,9 +224,9 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileAcknowledge
-  public List<AcknowledgeResult> acknowledgeMatching(@InputArgument DeltaFilesFilter filter, @InputArgument String reason) {
+  public List<AcknowledgeResult> acknowledgeMatching(@InputArgument DeltaFilesFilter filter, @InputArgument String reason, @InputArgument Integer limit) {
     auditLogger.audit("acknowledging deltaFiles by filter");
-    return deltaFilesService.acknowledge(filter, reason);
+    return deltaFilesService.acknowledge(filter, reason, limit);
   }
 
   @DgsMutation
@@ -308,9 +308,10 @@ public class DeltaFilesDatafetcher {
           @InputArgument DeltaFilesFilter filter,
           @InputArgument String reason,
           @InputArgument List<String> removeSourceMetadata,
-          @InputArgument List<KeyValue> replaceSourceMetadata) {
+          @InputArgument List<KeyValue> replaceSourceMetadata,
+          @InputArgument Integer limit) {
     auditLogger.audit("replaying and acknowledging deltaFiles by filter");
-    return deltaFilesService.replayAndAcknowledgeMatching(filter, reason, removeSourceMetadata, replaceSourceMetadata);
+    return deltaFilesService.replayAndAcknowledgeMatching(filter, reason, removeSourceMetadata, replaceSourceMetadata, limit);
   }
 
   @DgsMutation

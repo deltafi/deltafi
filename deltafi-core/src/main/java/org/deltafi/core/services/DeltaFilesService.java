@@ -1038,6 +1038,10 @@ public class DeltaFilesService {
     }
 
     public List<RetryResult> resume(@NotNull DeltaFilesFilter filter, List<ResumeMetadata> resumeMetadata) {
+        return resume(filter, resumeMetadata, null);
+    }
+
+    public List<RetryResult> resume(@NotNull DeltaFilesFilter filter, List<ResumeMetadata> resumeMetadata, Integer limit) {
         // check for filters set to values that would return DeltaFiles that cannot be resumed
         if ((filter.getStage() != null && filter.getStage() != DeltaFileStage.ERROR) || Boolean.TRUE.equals(filter.getContentDeleted())) {
             return List.of();
@@ -1047,6 +1051,12 @@ public class DeltaFilesService {
         // make sure only resumable DeltaFiles are pulled back
         filter.setStage(DeltaFileStage.ERROR);
         filter.setContentDeleted(Boolean.FALSE);
+
+        // If limit provided, process only that many
+        if (limit != null && limit > 0) {
+            List<DeltaFile> toResume = deltaFileRepo.deltaFiles(filter, limit);
+            return resumeDeltaFiles(toResume, resumeMetadata);
+        }
 
         List<RetryResult> retryResults = new ArrayList<>();
 
@@ -1141,6 +1151,10 @@ public class DeltaFilesService {
     }
 
     public List<RetryResult> replay(@NotNull DeltaFilesFilter filter, List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata)  {
+        return replay(filter, removeSourceMetadata, replaceSourceMetadata, null);
+    }
+
+    public List<RetryResult> replay(@NotNull DeltaFilesFilter filter, List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, Integer limit)  {
         // check for filters set to values that would return DeltaFiles that cannot be replayed
         if (Boolean.TRUE.equals(filter.getContentDeleted()) || Boolean.TRUE.equals(filter.getReplayed()) || Boolean.FALSE.equals(filter.getReplayable())) {
             return List.of();
@@ -1149,6 +1163,13 @@ public class DeltaFilesService {
         // make sure only replayable DeltaFiles are pulled back
         filter.setReplayable(true);
         ensureModifiedBeforeNow(filter);
+
+        // If limit provided, process only that many
+        if (limit != null && limit > 0) {
+            Map<UUID, DeltaFile> toReplay = deltaFileRepo.deltaFiles(filter, limit)
+                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+            return replay(toReplay, removeSourceMetadata, replaceSourceMetadata);
+        }
 
         List<RetryResult> retryResults = new ArrayList<>();
 
@@ -1426,6 +1447,10 @@ public class DeltaFilesService {
     }
 
     public List<AcknowledgeResult> acknowledge(DeltaFilesFilter filter, String reason) {
+        return acknowledge(filter, reason, null);
+    }
+
+    public List<AcknowledgeResult> acknowledge(DeltaFilesFilter filter, String reason, Integer limit) {
         // if the stage is not null or ERROR there is nothing to acknowledge
         if ((filter.getStage() != null && filter.getStage() != DeltaFileStage.ERROR)) {
             return List.of();
@@ -1441,6 +1466,13 @@ public class DeltaFilesService {
         ensureModifiedBeforeNow(filter);
 
         List<AcknowledgeResult> results = new ArrayList<>();
+
+        // If limit provided, process only that many
+        if (limit != null && limit > 0) {
+            Map<UUID, DeltaFile> toAck = deltaFileRepo.deltaFiles(filter, limit)
+                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+            return acknowledge(toAck, reason);
+        }
 
         int numFound = REQUEUE_BATCH_SIZE;
         while (numFound == REQUEUE_BATCH_SIZE) {
@@ -1577,6 +1609,11 @@ public class DeltaFilesService {
 
     public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeMatching(@NotNull DeltaFilesFilter filter, String reason,
             List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata) {
+        return replayAndAcknowledgeMatching(filter, reason, removeSourceMetadata, replaceSourceMetadata, null);
+    }
+
+    public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeMatching(@NotNull DeltaFilesFilter filter, String reason,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, Integer limit) {
         // Only process replayable DeltaFiles
         if (Boolean.TRUE.equals(filter.getContentDeleted()) ||
                 Boolean.TRUE.equals(filter.getReplayed()) ||
@@ -1586,6 +1623,13 @@ public class DeltaFilesService {
 
         filter.setReplayable(true);
         ensureModifiedBeforeNow(filter);
+
+        // If limit provided, process only that many
+        if (limit != null && limit > 0) {
+            Map<UUID, DeltaFile> toProcess = deltaFileRepo.deltaFiles(filter, limit)
+                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+            return replayAndAcknowledge(toProcess, reason, removeSourceMetadata, replaceSourceMetadata);
+        }
 
         List<ReplayAndAcknowledgeResult> results = new ArrayList<>();
         int numFound = REQUEUE_BATCH_SIZE;

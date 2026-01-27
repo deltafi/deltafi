@@ -1685,4 +1685,213 @@ class DeltaFilesServiceTest {
         // Verify the file was acknowledged (saved)
         Mockito.verify(deltaFileRepo).saveAll(Mockito.anyList());
     }
+
+    // --- Tests for limit parameter on matching mutations ---
+
+    @Test
+    void resumeMatching_withLimit() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        int limit = 100;
+        deltaFilesService.resume(filter, List.of(), limit);
+
+        // Should use provided limit instead of REQUEUE_BATCH_SIZE
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit);
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
+        assertThat(filter.getContentDeleted()).isFalse();
+    }
+
+    @Test
+    void resumeMatching_withNullLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.resume(filter, List.of(), null);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is null
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void resumeMatching_withZeroLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.resume(filter, List.of(), 0);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is 0
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void resumeMatching_withNegativeLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.resume(filter, List.of(), -1);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is negative
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void replayMatching_withLimit() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        int limit = 50;
+        deltaFilesService.replay(filter, null, null, limit);
+
+        // Should use provided limit instead of REQUEUE_BATCH_SIZE
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit);
+        assertThat(filter.getReplayable()).isTrue();
+    }
+
+    @Test
+    void replayMatching_withNullLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replay(filter, null, null, null);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is null
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void replayMatching_withZeroLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replay(filter, null, null, 0);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is 0
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void acknowledgeMatching_withLimit() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        int limit = 200;
+        deltaFilesService.acknowledge(filter, "reason", limit);
+
+        // Should use provided limit instead of REQUEUE_BATCH_SIZE
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit);
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
+        assertThat(filter.getErrorAcknowledged()).isFalse();
+    }
+
+    @Test
+    void acknowledgeMatching_withNullLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.acknowledge(filter, "reason", null);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is null
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void acknowledgeMatching_withZeroLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.acknowledge(filter, "reason", 0);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is 0
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void replayAndAcknowledgeMatching_withLimit() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        int limit = 75;
+        deltaFilesService.replayAndAcknowledgeMatching(filter, "test reason", null, null, limit);
+
+        // Should use provided limit instead of REQUEUE_BATCH_SIZE
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, limit);
+        assertThat(filter.getReplayable()).isTrue();
+    }
+
+    @Test
+    void replayAndAcknowledgeMatching_withNullLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replayAndAcknowledgeMatching(filter, "test reason", null, null, null);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is null
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void replayAndAcknowledgeMatching_withZeroLimit_usesBatchSize() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replayAndAcknowledgeMatching(filter, "test reason", null, null, 0);
+
+        // Should use REQUEUE_BATCH_SIZE when limit is 0
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+    }
+
+    @Test
+    void resumeMatching_withLimit_stillSetsFilters() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.resume(filter, List.of(), 100);
+
+        // Verify filter modifications still happen with limit
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
+        assertThat(filter.getContentDeleted()).isFalse();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void replayMatching_withLimit_stillSetsFilters() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replay(filter, null, null, 100);
+
+        // Verify filter modifications still happen with limit
+        assertThat(filter.getReplayable()).isTrue();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void acknowledgeMatching_withLimit_stillSetsFilters() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.acknowledge(filter, "reason", 100);
+
+        // Verify filter modifications still happen with limit
+        assertThat(filter.getStage()).isEqualTo(DeltaFileStage.ERROR);
+        assertThat(filter.getErrorAcknowledged()).isFalse();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void replayAndAcknowledgeMatching_withLimit_stillSetsFilters() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replayAndAcknowledgeMatching(filter, "reason", null, null, 100);
+
+        // Verify filter modifications still happen with limit
+        assertThat(filter.getReplayable()).isTrue();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void resumeMatching_withLimit_skipNonResumableFilters() {
+        // Limit should not bypass filter validation
+        deltaFilesService.resume(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.IN_FLIGHT).build(), List.of(), 100);
+        deltaFilesService.resume(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), List.of(), 100);
+
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void replayMatching_withLimit_skipNonReplayableFilters() {
+        // Limit should not bypass filter validation
+        deltaFilesService.replay(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), null, null, 100);
+        deltaFilesService.replay(DeltaFilesFilter.newBuilder().replayed(true).build(), null, null, 100);
+        deltaFilesService.replay(DeltaFilesFilter.newBuilder().replayable(false).build(), null, null, 100);
+
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void acknowledgeMatching_withLimit_skipInvalidFilters() {
+        // Limit should not bypass filter validation
+        deltaFilesService.acknowledge(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.IN_FLIGHT).build(), "reason", 100);
+        deltaFilesService.acknowledge(DeltaFilesFilter.newBuilder().errorAcknowledged(true).build(), "reason", 100);
+
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void replayAndAcknowledgeMatching_withLimit_skipNonReplayableFilters() {
+        // Limit should not bypass filter validation
+        deltaFilesService.replayAndAcknowledgeMatching(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), "reason", null, null, 100);
+        deltaFilesService.replayAndAcknowledgeMatching(DeltaFilesFilter.newBuilder().replayed(true).build(), "reason", null, null, 100);
+        deltaFilesService.replayAndAcknowledgeMatching(DeltaFilesFilter.newBuilder().replayable(false).build(), "reason", null, null, 100);
+
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
 }
