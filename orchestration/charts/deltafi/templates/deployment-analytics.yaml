@@ -35,6 +35,8 @@ spec:
           value: /data/analytics
         - name: CORE_URL
           value: http://deltafi-core-service
+        - name: DUCKDB_MEMORY_LIMIT
+          value: {{ default "4GB" .Values.deltafi.analytics.duckdbMemoryLimit | quote }}
         startupProbe:
           httpGet:
             path: /health

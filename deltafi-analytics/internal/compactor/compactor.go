@@ -56,7 +56,7 @@ func New(cfg Config, logger *slog.Logger) *Compactor {
 		cfg.CheckInterval = 1 * time.Minute
 	}
 	if cfg.MemoryLimit == "" {
-		cfg.MemoryLimit = "1GB" // Conservative default to leave room for Go runtime
+		cfg.MemoryLimit = "4GB"
 	}
 	if cfg.ArchiveThreshold == 0 {
 		cfg.ArchiveThreshold = 72 * time.Hour // 3 days default

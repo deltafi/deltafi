@@ -74,6 +74,7 @@ func main() {
 	comp := compactor.New(compactor.Config{
 		DataDir:                  cfg.OutputDir,
 		ArchiveThreshold:         cfg.ArchiveThreshold,
+		MemoryLimit:              cfg.DuckDBMemoryLimit,
 		AgeOffDaysFunc:           coreConfig.GetAgeOffDays,
 		ProvenanceAgeOffDaysFunc: coreConfig.GetProvenanceAgeOffDays,
 	}, logger)
@@ -167,6 +168,7 @@ func main() {
 		"flush_count", cfg.FlushCount,
 		"flush_interval", cfg.FlushInterval,
 		"archive_threshold", cfg.ArchiveThreshold,
+		"duckdb_memory_limit", cfg.DuckDBMemoryLimit,
 	)
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
@@ -176,22 +178,24 @@ func main() {
 }
 
 type appConfig struct {
-	ListenAddr       string
-	OutputDir        string
-	FlushCount       int
-	FlushInterval    time.Duration
-	CoreURL          string
-	ArchiveThreshold time.Duration
+	ListenAddr         string
+	OutputDir          string
+	FlushCount         int
+	FlushInterval      time.Duration
+	CoreURL            string
+	ArchiveThreshold   time.Duration
+	DuckDBMemoryLimit  string
 }
 
 func loadConfig() appConfig {
 	cfg := appConfig{
-		ListenAddr:       ":8080",
-		OutputDir:        "/data/analytics",
-		FlushCount:       10000,
-		FlushInterval:    60 * time.Second,
-		CoreURL:          "http://deltafi-core:8080",
-		ArchiveThreshold: 72 * time.Hour, // 3 days default
+		ListenAddr:        ":8080",
+		OutputDir:         "/data/analytics",
+		FlushCount:        10000,
+		FlushInterval:     60 * time.Second,
+		CoreURL:           "http://deltafi-core:8080",
+		ArchiveThreshold:  72 * time.Hour, // 3 days default
+		DuckDBMemoryLimit: "4GB",
 	}
 
 	if addr := os.Getenv("LISTEN_ADDR"); addr != "" {
@@ -207,6 +211,9 @@ func loadConfig() appConfig {
 		if hours, err := strconv.Atoi(archiveHours); err == nil && hours > 0 {
 			cfg.ArchiveThreshold = time.Duration(hours) * time.Hour
 		}
+	}
+	if memLimit := os.Getenv("DUCKDB_MEMORY_LIMIT"); memLimit != "" {
+		cfg.DuckDBMemoryLimit = memLimit
 	}
 
 	return cfg

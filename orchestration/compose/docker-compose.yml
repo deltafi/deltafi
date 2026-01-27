@@ -249,6 +249,7 @@ services:
     environment:
       LISTEN_ADDR: ":8080"
       OUTPUT_DIR: /data/analytics
+      DUCKDB_MEMORY_LIMIT: ${DUCKDB_MEMORY_LIMIT:-1GB}
     expose:
       - "8080"
     healthcheck:

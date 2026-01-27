@@ -792,6 +792,7 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"DELTAFI_DIRWATCHER":                   o.getValue(values, "deltafi.dirwatcher.image"),
 		"DELTAFI_EGRESS_SINK":                  o.getValue(values, "deltafi.egress_sink.image"),
 		"DELTAFI_ANALYTICS":                    o.getValue(values, "deltafi.analytics.image"),
+		"DUCKDB_MEMORY_LIMIT":                  o.getValueOr(values, "deltafi.analytics.duckdbMemoryLimit", "1GB"),
 		"DELTAFI_NODEMONITOR":                  o.getValue(values, "deltafi.nodemonitor.image"),
 		"DELTAFI_SECRET_CA_CHAIN":              "certs",
 		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL":   o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),
