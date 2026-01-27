@@ -56,6 +56,7 @@ public class AnalyticsClient {
     private final ConcurrentHashMap<UUID, PendingAnnotation> pendingAnnotations = new ConcurrentHashMap<>();
     private final AtomicBoolean flushPending = new AtomicBoolean(false);
     private ScheduledExecutorService scheduler;
+    private boolean failedLastTime = false;
 
     private record PendingAnnotation(Map<String, String> annotations, long creationTime) {}
 
@@ -168,6 +169,10 @@ public class AnalyticsClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                if (failedLastTime) {
+                    log.info("Analytics events POST restored");
+                    failedLastTime = false;
+                }
                 log.debug("Sent {} analytics events", batch.size());
             } else if (response.statusCode() >= 500) {
                 log.error("Server error sending analytics events: HTTP {} - {}. Will retry.", response.statusCode(), response.body());
@@ -179,7 +184,12 @@ public class AnalyticsClient {
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize analytics events: {}", e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Failed to send analytics events: {}", e.getMessage(), e);
+            if (failedLastTime) {
+                log.error("Failed to send {} analytics events: {}", batch.size(), e.getMessage(), e);
+            } else {
+                log.warn("Failed to send {} analytics events: {}", batch.size(), e.getMessage(), e);
+                failedLastTime = true;
+            }
             // Re-queue events on failure
             eventBuffer.addAll(batch);
         }
