@@ -37,7 +37,7 @@ const props = defineProps({
   icon: {
     type: String,
     required: false,
-    default: "fa-solid fa-clock-rotate-left fa-flip-horizontal",
+    default: "fa-solid fa-repeat",
   },
 });
 

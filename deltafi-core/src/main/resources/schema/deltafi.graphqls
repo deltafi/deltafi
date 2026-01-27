@@ -348,6 +348,13 @@ type AcknowledgeResult {
   error: String
 }
 
+type ReplayAndAcknowledgeResult {
+  did: UUID!
+  replayDid: UUID
+  success: Boolean!
+  error: String
+}
+
 type CancelResult {
   did: UUID!
   success: Boolean!
@@ -531,6 +538,14 @@ type Mutation {
   acknowledgeMatching(filter: DeltaFilesFilter!, reason: String) : [AcknowledgeResult]!
   acknowledgeByFlow(flowType: FlowType!, flowName: String!, reason: String, limit: Int): [AcknowledgeResult]!
   acknowledgeByMessage(errorCause: String!, reason: String, limit: Int): [AcknowledgeResult]!
+
+  replayErrorsByFlow(flowType: FlowType!, flowName: String!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput], limit: Int): [RetryResult]!
+  replayErrorsByMessage(errorCause: String!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput], limit: Int): [RetryResult]!
+
+  replayAndAcknowledge(dids: [UUID!]!, reason: String!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [ReplayAndAcknowledgeResult!]!
+  replayAndAcknowledgeErrorsByFlow(flowType: FlowType!, flowName: String!, reason: String!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput], limit: Int): [ReplayAndAcknowledgeResult]!
+  replayAndAcknowledgeErrorsByMessage(errorCause: String!, reason: String!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput], limit: Int): [ReplayAndAcknowledgeResult]!
+  replayAndAcknowledgeMatching(filter: DeltaFilesFilter!, reason: String!, removeSourceMetadata: [String], replaceSourceMetadata: [KeyValueInput]): [ReplayAndAcknowledgeResult]!
 
   cancel(dids: [UUID!]!) : [CancelResult!]!
   cancelMatching(filter: DeltaFilesFilter!) : [CancelResult]!

@@ -108,6 +108,7 @@
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
     <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
     <ResumeDialog ref="resumeDialog" :did="filterSelectedDids" @refresh-page="onRefresh" />
+    <ReplayDialog ref="replayDialog" :did="filterSelectedDids" @refresh-page="onRefresh" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="allPanelAutoResumeDialog" />
     </DialogTemplate>
@@ -117,6 +118,7 @@
 <script setup>
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
+import ReplayDialog from "@/components/ReplayDialog.vue";
 import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DidLink from "@/components/DidLink.vue";
@@ -147,6 +149,7 @@ const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
 
 const resumeDialog = ref();
+const replayDialog = ref();
 const { fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
@@ -212,7 +215,7 @@ const menuItems = ref([
   },
   {
     separator: true,
-    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate")),
+    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "DeltaFileReplay", "ResumePolicyCreate")),
   },
   {
     label: "Acknowledge Selected",
@@ -233,7 +236,7 @@ const menuItems = ref([
   },
   {
     label: "Resume Selected",
-    icon: "fas fa-redo fa-fw",
+    icon: "fas fa-play fa-fw",
     command: () => {
       resumeDialog.value.showConfirmDialog();
     },
@@ -241,8 +244,17 @@ const menuItems = ref([
     disabled: computed(() => selectedErrors.value.length == 0),
   },
   {
+    label: "Replay Selected",
+    icon: "fas fa-redo fa-fw",
+    command: () => {
+      replayDialog.value.showConfirmDialog();
+    },
+    visible: computed(() => hasPermission("DeltaFileReplay")),
+    disabled: computed(() => selectedErrors.value.length == 0),
+  },
+  {
     label: "Create Auto Resume Rule",
-    icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+    icon: "fas fa-repeat fa-fw",
     command: () => {
       document.getElementById("allPanelAutoResumeDialog").click();
     },

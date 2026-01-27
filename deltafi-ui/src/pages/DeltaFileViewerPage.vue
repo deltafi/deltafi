@@ -90,7 +90,7 @@
     </Dialog>
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
-    <ReplayDialog ref="replayDialog" :did="[did]" @refresh-page="loadDeltaFileData" />
+    <ReplayDialog ref="replayDialog" :did="[did]" :show-acknowledge="showReplayAcknowledge" @refresh-page="loadDeltaFileData" />
     <ResumeDialog ref="resumeDialog" :did="[did]" @refresh-page="loadDeltaFileData" />
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -174,26 +174,31 @@ const staticMenuItems = reactive([
     },
   },
   {
+    label: "Export DeltaFile",
+    icon: "fas fa-download fa-fw",
+    visible: () => hasPermission("DeltaFileExport"),
+    command: () => {
+      exportDeltaFile();
+    },
+  },
+  {
+    separator: true,
+    visible: computed(() => hasSomePermissions("DeltaFileUserNote", "DeltaFileAnnotate", "DeltaFilePinning")),
+  },
+  {
     label: "Add User Note",
     icon: "fas fa-pen-to-square fa-fw",
+    visible: computed(() => hasPermission("DeltaFileUserNote")),
     command: () => {
       addUserNote.value.showDialog();
     },
   },
   {
-    label: "Replay",
-    icon: "fas fa-sync fa-fw",
-    visible: () => !beenReplayed.value && !beenDeleted.value && hasPermission("DeltaFileReplay"),
+    label: "Annotate",
+    icon: "fa-solid fa-tags fa-fw",
+    visible: computed(() => hasPermission("DeltaFileAnnotate")),
     command: () => {
-      replayDialog.value.showConfirmDialog();
-    },
-  },
-  {
-    label: "Cancel",
-    icon: "fas fa-power-off fa-fw",
-    visible: () => canBeCancelled.value && hasPermission("DeltaFileCancel"),
-    command: () => {
-      onCancelClick();
+      annotateDialog.value.showDialog();
     },
   },
   {
@@ -214,46 +219,48 @@ const staticMenuItems = reactive([
   },
   {
     separator: true,
-    visible: computed(() => isError.value && !beenDeleted.value && hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate")),
+    visible: computed(() => !beenDeleted.value && hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate", "DeltaFileReplay", "DeltaFileCancel")),
   },
   {
     label: "Acknowledge Error",
     icon: "fas fa-check-circle fa-fw",
     visible: computed(() => isError.value && hasPermission("DeltaFileAcknowledge")),
+    disabled: computed(() => isAcknowledged.value),
     command: () => {
       ackErrorsDialog.visible = true;
     },
   },
   {
     label: "Resume",
-    icon: "fas fa-redo fa-fw",
+    icon: "fas fa-play fa-fw",
     visible: computed(() => isError.value && hasPermission("DeltaFileResume")),
     command: () => {
       resumeDialog.value.showConfirmDialog();
     },
   },
   {
-    label: "Annotate",
-    icon: "fa-solid fa-tags fa-fw",
-    visible: computed(() => hasPermission("DeltaFileAnnotate")),
-    command: () => {
-      annotateDialog.value.showDialog();
-    },
-  },
-  {
     label: "Create Auto Resume Rule",
-    icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+    icon: "fas fa-repeat fa-fw",
+    visible: computed(() => isError.value && hasPermission("ResumePolicyCreate")),
     command: () => {
       document.getElementById("autoResumeDialog").click();
     },
-    visible: computed(() => isError.value && hasPermission("ResumePolicyCreate")),
   },
   {
-    label: "Export DeltaFile",
-    icon: "fas fa-download fa-fw",
-    visible: () => hasPermission("DeltaFileExport"),
+    label: "Replay",
+    icon: "fas fa-redo fa-fw",
+    visible: () => !beenDeleted.value && hasPermission("DeltaFileReplay"),
+    disabled: computed(() => beenReplayed.value),
     command: () => {
-      exportDeltaFile();
+      replayDialog.value.showConfirmDialog();
+    },
+  },
+  {
+    label: "Cancel",
+    icon: "fas fa-power-off fa-fw",
+    visible: () => canBeCancelled.value && hasPermission("DeltaFileCancel"),
+    command: () => {
+      onCancelClick();
     },
   },
 ]);
@@ -347,6 +354,16 @@ const beenReplayed = computed(() => {
 
 const beenDeleted = computed(() => {
   return deltaFile.contentDeleted !== null;
+});
+
+const isAcknowledged = computed(() => {
+  if (!deltaFile.flows) return false;
+  const errorFlows = deltaFile.flows.filter((flow) => flow.state === "ERROR");
+  return errorFlows.length > 0 && errorFlows.every((flow) => flow.errorAcknowledged !== null);
+});
+
+const showReplayAcknowledge = computed(() => {
+  return isError.value && hasPermission("DeltaFileAcknowledge") && !isAcknowledged.value;
 });
 
 const canBeCancelled = computed(() => {

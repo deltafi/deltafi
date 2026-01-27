@@ -1169,6 +1169,11 @@ public class DeltaFilesService {
     }
 
     public List<RetryResult> replay(@NotNull Map<UUID, DeltaFile> deltaFiles, List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata)  {
+        return replay(deltaFiles, removeSourceMetadata, replaceSourceMetadata, true);
+    }
+
+    List<RetryResult> replay(@NotNull Map<UUID, DeltaFile> deltaFiles, List<String> removeSourceMetadata,
+            List<KeyValue> replaceSourceMetadata, boolean saveParents)  {
         List<StateMachineInput> inputs = new ArrayList<>();
         List<DeltaFile> parents = new ArrayList<>();
 
@@ -1280,7 +1285,9 @@ public class DeltaFilesService {
                 .toList();
 
         advanceAndSave(inputs, true);
-        deltaFileRepo.saveAll(parents);
+        if (saveParents) {
+            deltaFileRepo.saveAll(parents);
+        }
 
         return results;
     }
@@ -1458,6 +1465,138 @@ public class DeltaFilesService {
         List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit);
         Map<UUID, DeltaFile> toAck = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return acknowledge(toAck, reason);
+    }
+
+    @Transactional
+    public List<RetryResult> replayErrorsByFlow(FlowType flowType, String flowName,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false, limit);
+        return replay(deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d)), removeSourceMetadata, replaceSourceMetadata);
+    }
+
+    @Transactional
+    public List<RetryResult> replayErrorsByMessage(String errorCause,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit);
+        return replay(deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d)), removeSourceMetadata, replaceSourceMetadata);
+    }
+
+    public List<ReplayAndAcknowledgeResult> replayAndAcknowledge(@NotNull List<UUID> dids, String reason,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata) {
+        Map<UUID, DeltaFile> deltaFileMap = didsToDeltaFiles(dids, deltaFiles(dids));
+        return replayAndAcknowledge(deltaFileMap, reason, removeSourceMetadata, replaceSourceMetadata);
+    }
+
+    public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeByFlow(FlowType flowType, String flowName, String reason,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false, limit);
+        Map<UUID, DeltaFile> deltaFileMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+        return replayAndAcknowledge(deltaFileMap, reason, removeSourceMetadata, replaceSourceMetadata);
+    }
+
+    public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeByMessage(String errorCause, String reason,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByErrorCause(errorCause, false, limit);
+        Map<UUID, DeltaFile> deltaFileMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+        return replayAndAcknowledge(deltaFileMap, reason, removeSourceMetadata, replaceSourceMetadata);
+    }
+
+    public List<ReplayAndAcknowledgeResult> replayAndAcknowledge(@NotNull Map<UUID, DeltaFile> deltaFiles, String reason,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata) {
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        List<DeltaFile> toSave = new ArrayList<>();
+        List<ReplayAndAcknowledgeResult> results = new ArrayList<>();
+
+        // Separate already-replayed files from those needing replay
+        Map<UUID, DeltaFile> needsReplay = new HashMap<>();
+        for (Map.Entry<UUID, DeltaFile> entry : deltaFiles.entrySet()) {
+            UUID did = entry.getKey();
+            DeltaFile deltaFile = entry.getValue();
+
+            if (deltaFile == null) {
+                results.add(ReplayAndAcknowledgeResult.newBuilder()
+                        .did(did)
+                        .success(false)
+                        .error("DeltaFile with did " + did + " not found")
+                        .build());
+            } else if (deltaFile.getReplayed() != null) {
+                // Already replayed - just acknowledge it
+                ReplayAndAcknowledgeResult result = ReplayAndAcknowledgeResult.newBuilder()
+                        .did(did)
+                        .replayDid(deltaFile.getReplayDid())
+                        .success(true)
+                        .build();
+                if (deltaFile.canBeAcknowledged()) {
+                    deltaFile.acknowledgeErrors(now, reason);
+                    toSave.add(deltaFile);
+                }
+                results.add(result);
+            } else {
+                needsReplay.put(did, deltaFile);
+            }
+        }
+
+        // Replay the files that need it (with saveParents=false)
+        if (!needsReplay.isEmpty()) {
+            Map<UUID, RetryResult> replayResults = replay(needsReplay, removeSourceMetadata, replaceSourceMetadata, false)
+                    .stream().collect(Collectors.toMap(RetryResult::getDid, r -> r));
+
+            for (Map.Entry<UUID, DeltaFile> entry : needsReplay.entrySet()) {
+                UUID did = entry.getKey();
+                DeltaFile deltaFile = entry.getValue();
+                ReplayAndAcknowledgeResult result = ReplayAndAcknowledgeResult.newBuilder()
+                        .did(did)
+                        .success(true)
+                        .build();
+
+                // replay() sets replayDid on the deltaFile object and returns RetryResult with child DID
+                UUID replayDid = deltaFile.getReplayDid();
+                RetryResult replayResult = replayDid != null ? replayResults.get(replayDid) : null;
+                if (replayResult == null || !replayResult.getSuccess()) {
+                    result.setSuccess(false);
+                    result.setError(replayResult != null ? replayResult.getError() : "Replay failed for DID " + did);
+                    results.add(result);
+                    continue;
+                }
+
+                result.setReplayDid(replayDid);
+
+                // Acknowledge on the same deltaFile object that replay() modified
+                if (deltaFile.canBeAcknowledged()) {
+                    deltaFile.acknowledgeErrors(now, reason);
+                }
+                toSave.add(deltaFile);
+                results.add(result);
+            }
+        }
+
+        // Save all modified parents
+        deltaFileRepo.saveAll(toSave);
+        return results;
+    }
+
+    public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeMatching(@NotNull DeltaFilesFilter filter, String reason,
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata) {
+        // Only process replayable DeltaFiles
+        if (Boolean.TRUE.equals(filter.getContentDeleted()) ||
+                Boolean.TRUE.equals(filter.getReplayed()) ||
+                Boolean.FALSE.equals(filter.getReplayable())) {
+            return List.of();
+        }
+
+        filter.setReplayable(true);
+        ensureModifiedBeforeNow(filter);
+
+        List<ReplayAndAcknowledgeResult> results = new ArrayList<>();
+        int numFound = REQUEUE_BATCH_SIZE;
+        while (numFound == REQUEUE_BATCH_SIZE) {
+            Map<UUID, DeltaFile> toProcess = deltaFileRepo.deltaFiles(filter, REQUEUE_BATCH_SIZE)
+                    .stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+            results.addAll(replayAndAcknowledge(toProcess, reason, removeSourceMetadata, replaceSourceMetadata));
+            numFound = toProcess.size();
+        }
+
+        return results;
     }
 
     public int annotateByFlow(FlowType flowType, String flowName, Map<String, String> annotations, boolean allowOverwrites, int limit) {

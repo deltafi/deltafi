@@ -112,4 +112,47 @@ describe("Errors Page", () => {
       cy.get(".errors-page").should("be.visible");
     });
   });
+
+  // All Panel Structure
+  describe("All Panel Structure", () => {
+    it("displays action menu button in panel header", () => {
+      cy.visit(baseUrl);
+      cy.get(".p-panel-header-icon").should("exist");
+    });
+
+    it("displays errors table", () => {
+      cy.visit(baseUrl);
+      cy.get("#errorsTable").should("exist");
+    });
+  });
+
+  // By Flow Panel
+  describe("By Flow Panel", () => {
+    it("displays By Flow panel when tab is clicked", () => {
+      cy.visit(baseUrl);
+      cy.contains("span.p-tabview-title", "By Flow").click();
+      cy.get("span.p-panel-title").contains("DeltaFiles by Flow");
+    });
+
+    it("displays action menu button in panel header", () => {
+      cy.visit(baseUrl);
+      cy.contains("span.p-tabview-title", "By Flow").click();
+      cy.get(".p-panel-header-icon").should("exist");
+    });
+  });
+
+  // By Message Panel
+  describe("By Message Panel", () => {
+    it("displays By Message panel when tab is clicked", () => {
+      cy.visit(baseUrl);
+      cy.contains("span.p-tabview-title", "By Message").click();
+      cy.get("span.p-panel-title").contains("DeltaFiles by Message");
+    });
+
+    it("displays action menu button in panel header", () => {
+      cy.visit(baseUrl);
+      cy.contains("span.p-tabview-title", "By Message").click();
+      cy.get(".p-panel-header-icon").should("exist");
+    });
+  });
 });

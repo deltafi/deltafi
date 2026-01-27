@@ -265,7 +265,7 @@ const staticMenuItems = ref([
       },
       {
         name: "Auto Resume",
-        icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+        icon: "fas fa-repeat fa-fw",
         path: "/config/auto-resume",
         visible: computed(() => hasPermission("ResumePolicyRead")),
       },

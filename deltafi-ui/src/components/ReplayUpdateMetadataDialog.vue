@@ -48,7 +48,7 @@
       <div class="p-dialog-footer">
         <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addMetadataField" />
         <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeMetadataDialog" />
-        <Button label="Replay" icon="fas fa-play" :disabled="hasDuplicateKeys" @click="submitMetadata" />
+        <Button label="Replay" icon="fas fa-redo" :disabled="hasDuplicateKeys" @click="submitMetadata" />
       </div>
     </teleport>
   </div>

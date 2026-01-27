@@ -11,6 +11,7 @@ operations:
 - deltafile.graphql
 - deltafile_search.graphql
 - deltafile_stats.graphql
+- errored_actions.graphql
 - flow_controls.graphql
 - flow_graph.graphql
 - lookup_tables.graphql

@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/app"
 	"github.com/spf13/cobra"
@@ -200,6 +201,264 @@ func executeExportErrors(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+var errorResumeCmd = &cobra.Command{
+	Use:   "resume",
+	Short: "Resume errored DeltaFiles",
+	Long: `Resume errored DeltaFiles matching the filter criteria.
+Shows count and prompts for confirmation before executing.`,
+	SilenceUsage: true,
+	RunE:         runErrorResume,
+}
+
+func runErrorResume(cmd *cobra.Command, args []string) error {
+	RequireRunningDeltaFi()
+	searchParams.stage = "ERROR"
+	searchParams.errorAcknowledged.Set("no")
+
+	filter, err := searchParams.GetFilter()
+	if err != nil {
+		return err
+	}
+
+	force, _ := cmd.Flags().GetBool("force")
+
+	count, err := countMatchingDeltaFiles(filter)
+	if err != nil {
+		return wrapInError("Error counting errored DeltaFiles", err)
+	}
+
+	if count == 0 {
+		fmt.Println("No errored DeltaFiles match the criteria.")
+		return nil
+	}
+
+	if !force {
+		prompt := fmt.Sprintf("Resume %d errored DeltaFile(s)?", count)
+		if !ConfirmPrompt(prompt) {
+			return nil
+		}
+	}
+
+	return executeResume(filter)
+}
+
+var errorReplayCmd = &cobra.Command{
+	Use:   "replay",
+	Short: "Replay errored DeltaFiles",
+	Long: `Replay errored DeltaFiles matching the filter criteria.
+Use -A/--acknowledge to also acknowledge the original errors.`,
+	SilenceUsage: true,
+	RunE:         runErrorReplay,
+}
+
+func runErrorReplay(cmd *cobra.Command, args []string) error {
+	RequireRunningDeltaFi()
+	searchParams.stage = "ERROR"
+	searchParams.replayable.Set("yes")
+	searchParams.errorAcknowledged.Set("no")
+
+	filter, err := searchParams.GetFilter()
+	if err != nil {
+		return err
+	}
+
+	force, _ := cmd.Flags().GetBool("force")
+	acknowledgeAll, _ := cmd.Flags().GetBool("acknowledge")
+	reason, _ := cmd.Flags().GetString("reason")
+
+	if acknowledgeAll && reason == "" {
+		return fmt.Errorf("--reason is required when using --acknowledge")
+	}
+
+	count, err := countMatchingDeltaFiles(filter)
+	if err != nil {
+		return wrapInError("Error counting errored DeltaFiles", err)
+	}
+
+	if count == 0 {
+		fmt.Println("No replayable errored DeltaFiles match the criteria.")
+		return nil
+	}
+
+	action := "Replay"
+	if acknowledgeAll {
+		action = "Replay and acknowledge"
+	}
+
+	if !force {
+		prompt := fmt.Sprintf("%s %d errored DeltaFile(s)?", action, count)
+		if !ConfirmPrompt(prompt) {
+			return nil
+		}
+	}
+
+	if acknowledgeAll {
+		return executeReplayAndAcknowledge(filter, reason)
+	}
+	return executeReplay(filter)
+}
+
+var errorAcknowledgeCmd = &cobra.Command{
+	Use:   "acknowledge",
+	Short: "Acknowledge errored DeltaFiles",
+	Long: `Acknowledge errors on DeltaFiles matching the filter criteria.
+Requires -r/--reason to specify the acknowledgement reason.`,
+	SilenceUsage: true,
+	RunE:         runErrorAcknowledge,
+}
+
+func runErrorAcknowledge(cmd *cobra.Command, args []string) error {
+	RequireRunningDeltaFi()
+	searchParams.stage = "ERROR"
+	searchParams.errorAcknowledged.Set("no")
+
+	filter, err := searchParams.GetFilter()
+	if err != nil {
+		return err
+	}
+
+	force, _ := cmd.Flags().GetBool("force")
+	reason, _ := cmd.Flags().GetString("reason")
+
+	if reason == "" {
+		return fmt.Errorf("--reason is required for acknowledge command")
+	}
+
+	count, err := countMatchingDeltaFiles(filter)
+	if err != nil {
+		return wrapInError("Error counting errored DeltaFiles", err)
+	}
+
+	if count == 0 {
+		fmt.Println("No unacknowledged errored DeltaFiles match the criteria.")
+		return nil
+	}
+
+	if !force {
+		prompt := fmt.Sprintf("Acknowledge %d errored DeltaFile(s)?", count)
+		if !ConfirmPrompt(prompt) {
+			return nil
+		}
+	}
+
+	return executeAcknowledge(filter, reason)
+}
+
+func countMatchingDeltaFiles(filter searchFilter) (int, error) {
+	gqlFilter := filter.toGraphQLFilter()
+	limit := 0
+	offset := 0
+	response, err := graphql.DeltaFiles(&offset, &limit, gqlFilter, filter.order)
+	if err != nil {
+		return 0, err
+	}
+	return *response.DeltaFiles.TotalCount, nil
+}
+
+func executeResume(filter searchFilter) error {
+	gqlFilter := filter.toGraphQLFilter()
+	response, err := graphql.ResumeMatching(*gqlFilter, nil)
+	if err != nil {
+		return wrapInError("Resume failed", err)
+	}
+
+	successCount := 0
+	failCount := 0
+	for _, result := range response.ResumeMatching {
+		if result.Success {
+			successCount++
+		} else {
+			failCount++
+			fmt.Printf("Failed to resume %s: %s\n", result.Did, *result.Error)
+		}
+	}
+
+	fmt.Printf("Resumed %d DeltaFile(s)", successCount)
+	if failCount > 0 {
+		fmt.Printf(", %d failed", failCount)
+	}
+	fmt.Println()
+	return nil
+}
+
+func executeReplay(filter searchFilter) error {
+	gqlFilter := filter.toGraphQLFilter()
+	response, err := graphql.ReplayMatching(*gqlFilter, nil, nil)
+	if err != nil {
+		return wrapInError("Replay failed", err)
+	}
+
+	successCount := 0
+	failCount := 0
+	for _, result := range response.ReplayMatching {
+		if result.Success {
+			successCount++
+		} else {
+			failCount++
+			fmt.Printf("Failed to replay %s: %s\n", result.Did, *result.Error)
+		}
+	}
+
+	fmt.Printf("Replayed %d DeltaFile(s)", successCount)
+	if failCount > 0 {
+		fmt.Printf(", %d failed", failCount)
+	}
+	fmt.Println()
+	return nil
+}
+
+func executeAcknowledge(filter searchFilter, reason string) error {
+	gqlFilter := filter.toGraphQLFilter()
+	response, err := graphql.AcknowledgeMatching(*gqlFilter, &reason)
+	if err != nil {
+		return wrapInError("Acknowledge failed", err)
+	}
+
+	successCount := 0
+	failCount := 0
+	for _, result := range response.AcknowledgeMatching {
+		if result.Success {
+			successCount++
+		} else {
+			failCount++
+			fmt.Printf("Failed to acknowledge %s: %s\n", result.Did, *result.Error)
+		}
+	}
+
+	fmt.Printf("Acknowledged %d DeltaFile(s)", successCount)
+	if failCount > 0 {
+		fmt.Printf(", %d failed", failCount)
+	}
+	fmt.Println()
+	return nil
+}
+
+func executeReplayAndAcknowledge(filter searchFilter, reason string) error {
+	gqlFilter := filter.toGraphQLFilter()
+	response, err := graphql.ReplayAndAcknowledgeMatching(*gqlFilter, reason, nil, nil)
+	if err != nil {
+		return wrapInError("Replay and acknowledge failed", err)
+	}
+
+	successCount := 0
+	failCount := 0
+	for _, result := range response.ReplayAndAcknowledgeMatching {
+		if result.Success {
+			successCount++
+		} else {
+			failCount++
+			fmt.Printf("Failed to replay and acknowledge %s: %s\n", result.Did, *result.Error)
+		}
+	}
+
+	fmt.Printf("Replayed and acknowledged %d DeltaFile(s)", successCount)
+	if failCount > 0 {
+		fmt.Printf(", %d failed", failCount)
+	}
+	fmt.Println()
+	return nil
+}
+
 var dataSizePattern = regexp.MustCompile(`^([+\-]?\d+)([a-zA-Z]{0,2})$`)
 
 var validDataUnits = map[string]bool{
@@ -243,7 +502,7 @@ func validateDataSize(size string) error {
 
 func init() {
 	rootCmd.AddCommand(errorCmd)
-	errorCmd.AddCommand(errorViewCmd, errorListCmd, exportErrorsCmd)
+	errorCmd.AddCommand(errorViewCmd, errorListCmd, exportErrorsCmd, errorResumeCmd, errorReplayCmd, errorAcknowledgeCmd)
 
 	searchParams.addSearchFlagsAndCompletions(errorViewCmd)
 	errorViewCmd.Flags().MarkHidden("stage")
@@ -273,4 +532,26 @@ func init() {
 	exportErrorsCmd.Flags().BoolP("no-acknowledge", "n", false, "Do not acknowledge the errors for exported DeltaFiles")
 	exportErrorsCmd.Flags().StringVarP(&exportedErrorsPath, "output", "o", "", "output file name")
 	exportErrorsCmd.Flags().StringVarP(&acknowledgeReason, "reason", "r", "", "acknowledge reason")
+
+	// Resume subcommand flags
+	searchParams.addSearchFlagsAndCompletions(errorResumeCmd)
+	errorResumeCmd.Flags().MarkHidden("stage")
+	errorResumeCmd.Flags().MarkHidden("error-acknowledged")
+	errorResumeCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
+
+	// Replay subcommand flags
+	searchParams.addSearchFlagsAndCompletions(errorReplayCmd)
+	errorReplayCmd.Flags().MarkHidden("stage")
+	errorReplayCmd.Flags().MarkHidden("replayable")
+	errorReplayCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
+	errorReplayCmd.Flags().BoolP("acknowledge", "A", false, "Also acknowledge errors after replay")
+	errorReplayCmd.Flags().StringP("reason", "r", "", "Acknowledge reason (required with -A)")
+
+	// Acknowledge subcommand flags
+	searchParams.addSearchFlagsAndCompletions(errorAcknowledgeCmd)
+	errorAcknowledgeCmd.Flags().MarkHidden("stage")
+	errorAcknowledgeCmd.Flags().MarkHidden("error-acknowledged")
+	errorAcknowledgeCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
+	errorAcknowledgeCmd.Flags().StringP("reason", "r", "", "Acknowledge reason (required)")
+	errorAcknowledgeCmd.MarkFlagRequired("reason")
 }

@@ -96,6 +96,11 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('DeltaFileReplay'" + OR_ADMIN)
     public @interface DeltaFileReplay {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize("(hasAuthority('DeltaFileReplay') and hasAuthority('DeltaFileAcknowledge')) or hasAuthority('Admin')")
+    public @interface DeltaFileReplayAndAcknowledge {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

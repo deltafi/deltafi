@@ -183,6 +183,10 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
     - [errored](#errored)
       - [view](#errored-view)
       - [list](#errored-list)
+      - [export](#errored-export)
+      - [resume](#errored-resume)
+      - [replay](#errored-replay)
+      - [acknowledge](#errored-acknowledge)
     - [filtered](#filtered)
       - [view](#filtered-view)
       - [list](#filtered-list)
@@ -1319,6 +1323,119 @@ deltafi errored list --error-cause "timeout" --data-source my-source
 deltafi errored list --from "last week" --to "now" --json
 ```
 
+##### `export`
+Export unacknowledged errored DeltaFiles. By default, exported DeltaFiles are marked as acknowledged.
+
+```bash
+deltafi errored export [flags]
+```
+
+**Flags:**
+- `--output, -o <file>`: Output file name (default: auto-generated)
+- `--limit, -l <int>`: Maximum number of errors to export (default: 100)
+- `--max-size, -s <size>`: Maximum total size of exported data (default: 100MB)
+- `--no-acknowledge, -n`: Do not acknowledge the errors for exported DeltaFiles
+- `--reason, -r <reason>`: Acknowledge reason
+
+**Examples:**
+```bash
+# Export up to 100 errors to auto-named file
+deltafi errored export
+
+# Export with custom limit and output file
+deltafi errored export --limit 50 --output errors.tar.gz
+
+# Export without acknowledging
+deltafi errored export --no-acknowledge
+
+# Export with acknowledge reason
+deltafi errored export --reason "Exported for analysis"
+```
+
+##### `resume`
+Resume errored DeltaFiles matching the filter criteria. Shows count and prompts for confirmation before executing.
+
+```bash
+deltafi errored resume [flags]
+```
+
+**Flags:**
+- `--force, -f`: Skip confirmation prompt
+- All search flags are available for filtering
+
+**Examples:**
+```bash
+# Resume all unacknowledged errors
+deltafi errored resume
+
+# Resume errors from a specific data source
+deltafi errored resume --data-source my-source
+
+# Resume with specific error cause filter
+deltafi errored resume --error-cause "timeout"
+
+# Skip confirmation prompt
+deltafi errored resume --force
+```
+
+##### `replay`
+Replay errored DeltaFiles matching the filter criteria. Creates new child DeltaFiles that restart processing from the beginning.
+
+```bash
+deltafi errored replay [flags]
+```
+
+**Flags:**
+- `--force, -f`: Skip confirmation prompt
+- `--acknowledge, -A`: Also acknowledge the original errors after replay
+- `--reason, -r <reason>`: Acknowledge reason (required with --acknowledge)
+- All search flags are available for filtering (replayable is automatically set)
+
+**Examples:**
+```bash
+# Replay all replayable unacknowledged errors
+deltafi errored replay
+
+# Replay and acknowledge errors
+deltafi errored replay --acknowledge --reason "Replayed for retry"
+
+# Replay errors from a specific data source
+deltafi errored replay --data-source my-source
+
+# Replay with specific error cause filter
+deltafi errored replay --error-cause "connection refused"
+
+# Skip confirmation prompt
+deltafi errored replay --force
+```
+
+##### `acknowledge`
+Acknowledge errors on DeltaFiles matching the filter criteria. Requires a reason to be specified.
+
+```bash
+deltafi errored acknowledge --reason <reason> [flags]
+```
+
+**Flags:**
+- `--reason, -r <reason>`: Acknowledge reason (required)
+- `--force, -f`: Skip confirmation prompt
+- All search flags are available for filtering
+
+**Examples:**
+```bash
+# Acknowledge all unacknowledged errors
+deltafi errored acknowledge --reason "Known issue, fix deployed"
+
+# Acknowledge errors from a specific data source
+deltafi errored acknowledge --reason "Data source deprecated" --data-source old-source
+
+# Acknowledge errors with specific error cause
+deltafi errored acknowledge --reason "Transient network issue" --error-cause "timeout"
+
+# Skip confirmation prompt
+deltafi errored acknowledge --reason "Bulk acknowledge" --force
+```
+
 #### `filtered`
 Manage and search filtered DeltaFiles with specialized filtering for filtered conditions.
 
@@ -1886,6 +2003,18 @@ deltafi errored list --limit 5
 
 # View all errors including acknowledged
 deltafi errored view --all
+
+# Resume all unacknowledged errors
+deltafi errored resume
+
+# Replay errors and acknowledge them
+deltafi errored replay --acknowledge --reason "Replayed after fix"
+
+# Acknowledge errors with a reason
+deltafi errored acknowledge --reason "Known issue resolved"
+
+# Export errors for external analysis
+deltafi errored export --limit 50 --output errors.tar.gz
 
 # List filtered DeltaFiles
 deltafi filtered list --filtered-cause "validation_failed"

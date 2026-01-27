@@ -59,6 +59,7 @@
     </DataTable>
   </Panel>
   <ResumeBulkActionDialog ref="resumeBulkActionDialog" :flow-info="filterSelectedMessageInfo" bundle-request-type="resumeByErrorCause" :acknowledged="props.acknowledged" @refresh-page="onRefresh()" />
+  <ReplayBulkActionDialog ref="replayBulkActionDialog" :flow-info="filterSelectedMessageInfo" bundle-request-type="replayByErrorCause" @refresh-page="onRefresh()" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :message-info="ackErrorsDialog.messageInfo" @acknowledged="onAcknowledged" />
   <AnnotateDialog ref="annotateDialog" :message-info="filterSelectedMessageInfo" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -70,6 +71,7 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
+import ReplayBulkActionDialog from "@/components/errors/ReplayBulkActionDialog.vue";
 import ResumeBulkActionDialog from "@/components/errors/ResumeBulkActionDialog.vue";
 import ChevronSwitch from "@/components/errors/ChevronSwitch.vue";
 import useErrorsSummary from "@/composables/useErrorsSummary";
@@ -100,6 +102,7 @@ const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
 const resumeBulkActionDialog = ref();
+const replayBulkActionDialog = ref();
 const sortField = ref("NAME");
 const sortDirection = ref("ASC");
 const expandedErrorGroups = ref({});
@@ -154,7 +157,7 @@ const menuItems = ref([
   },
   {
     separator: true,
-    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume")),
+    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "DeltaFileReplay")),
   },
   {
     label: "Acknowledge Selected",
@@ -175,7 +178,7 @@ const menuItems = ref([
   },
   {
     label: "Resume Selected",
-    icon: "fas fa-redo fa-fw",
+    icon: "fas fa-play fa-fw",
     command: () => {
       resumeBulkActionDialog.value.showConfirmDialog();
     },
@@ -183,8 +186,17 @@ const menuItems = ref([
     disabled: computed(() => selectedErrors.value.length == 0),
   },
   {
+    label: "Replay Selected",
+    icon: "fas fa-redo fa-fw",
+    command: () => {
+      replayBulkActionDialog.value.showConfirmDialog();
+    },
+    visible: computed(() => hasPermission("DeltaFileReplay")),
+    disabled: computed(() => selectedErrors.value.length == 0),
+  },
+  {
     label: "Create Auto Resume Rule",
-    icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+    icon: "fas fa-repeat fa-fw",
     command: () => {
       document.getElementById("summaryMessageAutoResumeDialog").click();
     },

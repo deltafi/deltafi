@@ -126,4 +126,40 @@ describe("DeltaFile Viewer Page", () => {
       cy.get(".deltafile-viewer-page").should("be.visible");
     });
   });
+
+  // Menu Actions
+  describe("Menu Actions", { testIsolation: false }, () => {
+    before(() => {
+      cy.visit(`${baseUrl}/${testDid}`);
+    });
+
+    it("opens menu when Menu button is clicked", () => {
+      cy.contains("Menu").click();
+      cy.get(".p-menu").should("be.visible");
+    });
+
+    it("displays Replay option in menu", () => {
+      cy.get(".p-menu").contains("Replay").should("exist");
+    });
+
+    it("displays View Raw DeltaFile option in menu", () => {
+      cy.get(".p-menu").contains("View Raw DeltaFile").should("exist");
+    });
+
+    it("displays Export DeltaFile option in menu", () => {
+      cy.get(".p-menu").contains("Export DeltaFile").should("exist");
+    });
+
+    it("displays Pin/Unpin option in menu", () => {
+      cy.get(".p-menu").contains(/Pin|Unpin/).should("exist");
+    });
+
+    it("displays Add User Note option in menu", () => {
+      cy.get(".p-menu").contains("Add User Note").should("exist");
+    });
+
+    it("displays Annotate option in menu", () => {
+      cy.get(".p-menu").contains("Annotate").should("exist");
+    });
+  });
 });

@@ -39,6 +39,7 @@
     </DataTable>
   </Panel>
   <ResumeBulkActionDialog ref="resumeBulkActionDialog" :flow-info="filterSelectedFlowInfo" bundle-request-type="resumeByFlow" :acknowledged="props.acknowledged" @refresh-page="onRefresh" />
+  <ReplayBulkActionDialog ref="replayBulkActionDialog" :flow-info="filterSelectedFlowInfo" bundle-request-type="replayByFlow" @refresh-page="onRefresh" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :flow-info="ackErrorsDialog.flowInfo" @acknowledged="onAcknowledged" />
   <AnnotateDialog ref="annotateDialog" :flow-info="filterSelectedFlowInfo" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -50,6 +51,7 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
+import ReplayBulkActionDialog from "@/components/errors/ReplayBulkActionDialog.vue";
 import ResumeBulkActionDialog from "@/components/errors/ResumeBulkActionDialog.vue";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import useErrorCount from "@/composables/useErrorCount";
@@ -79,6 +81,7 @@ const offset = ref(0);
 const perPage = ref();
 const page = ref(null);
 const resumeBulkActionDialog = ref();
+const replayBulkActionDialog = ref();
 const sortField = ref("NAME");
 const sortDirection = ref("ASC");
 const selectedErrors = ref([]);
@@ -128,7 +131,7 @@ const menuItems = ref([
   },
   {
     separator: true,
-    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume")),
+    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "DeltaFileReplay")),
   },
   {
     label: "Acknowledge Selected",
@@ -149,7 +152,7 @@ const menuItems = ref([
   },
   {
     label: "Resume Selected",
-    icon: "fas fa-redo fa-fw",
+    icon: "fas fa-play fa-fw",
     command: () => {
       resumeBulkActionDialog.value.showConfirmDialog();
     },
@@ -157,8 +160,17 @@ const menuItems = ref([
     disabled: computed(() => selectedErrors.value.length == 0),
   },
   {
+    label: "Replay Selected",
+    icon: "fas fa-redo fa-fw",
+    command: () => {
+      replayBulkActionDialog.value.showConfirmDialog();
+    },
+    visible: computed(() => hasPermission("DeltaFileReplay")),
+    disabled: computed(() => selectedErrors.value.length == 0),
+  },
+  {
     label: "Create Auto Resume Rule",
-    icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
+    icon: "fas fa-repeat fa-fw",
     command: () => {
       document.getElementById("summaryFlowAutoResumeDialog").click();
     },

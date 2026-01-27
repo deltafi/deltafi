@@ -244,6 +244,76 @@ public class DeltaFilesDatafetcher {
   }
 
   @DgsMutation
+  @NeedsPermission.DeltaFileReplay
+  public List<RetryResult> replayErrorsByFlow(
+          @InputArgument FlowType flowType,
+          @InputArgument String flowName,
+          @InputArgument List<String> removeSourceMetadata,
+          @InputArgument List<KeyValue> replaceSourceMetadata,
+          @InputArgument Integer limit) {
+    auditLogger.audit("replaying errored deltaFiles by flow {} {}", flowType, flowName);
+    return deltaFilesService.replayErrorsByFlow(flowType, flowName, removeSourceMetadata, replaceSourceMetadata, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileReplay
+  public List<RetryResult> replayErrorsByMessage(
+          @InputArgument String errorCause,
+          @InputArgument List<String> removeSourceMetadata,
+          @InputArgument List<KeyValue> replaceSourceMetadata,
+          @InputArgument Integer limit) {
+    auditLogger.audit("replaying errored deltaFiles by error cause: {}", errorCause);
+    return deltaFilesService.replayErrorsByMessage(errorCause, removeSourceMetadata, replaceSourceMetadata, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileReplayAndAcknowledge
+  public List<ReplayAndAcknowledgeResult> replayAndAcknowledge(
+          @InputArgument List<UUID> dids,
+          @InputArgument String reason,
+          @InputArgument List<String> removeSourceMetadata,
+          @InputArgument List<KeyValue> replaceSourceMetadata) {
+    auditLogger.audit("replaying and acknowledging {} deltaFiles", dids.size());
+    return deltaFilesService.replayAndAcknowledge(dids, reason, removeSourceMetadata, replaceSourceMetadata);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileReplayAndAcknowledge
+  public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeErrorsByFlow(
+          @InputArgument FlowType flowType,
+          @InputArgument String flowName,
+          @InputArgument String reason,
+          @InputArgument List<String> removeSourceMetadata,
+          @InputArgument List<KeyValue> replaceSourceMetadata,
+          @InputArgument Integer limit) {
+    auditLogger.audit("replaying and acknowledging errored deltaFiles by flow {} {}", flowType, flowName);
+    return deltaFilesService.replayAndAcknowledgeByFlow(flowType, flowName, reason, removeSourceMetadata, replaceSourceMetadata, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileReplayAndAcknowledge
+  public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeErrorsByMessage(
+          @InputArgument String errorCause,
+          @InputArgument String reason,
+          @InputArgument List<String> removeSourceMetadata,
+          @InputArgument List<KeyValue> replaceSourceMetadata,
+          @InputArgument Integer limit) {
+    auditLogger.audit("replaying and acknowledging errored deltaFiles by error cause {}", errorCause);
+    return deltaFilesService.replayAndAcknowledgeByMessage(errorCause, reason, removeSourceMetadata, replaceSourceMetadata, limit != null ? limit : 1000);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileReplayAndAcknowledge
+  public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeMatching(
+          @InputArgument DeltaFilesFilter filter,
+          @InputArgument String reason,
+          @InputArgument List<String> removeSourceMetadata,
+          @InputArgument List<KeyValue> replaceSourceMetadata) {
+    auditLogger.audit("replaying and acknowledging deltaFiles by filter");
+    return deltaFilesService.replayAndAcknowledgeMatching(filter, reason, removeSourceMetadata, replaceSourceMetadata);
+  }
+
+  @DgsMutation
   @NeedsPermission.DeltaFileCancel
   public List<CancelResult> cancel(@InputArgument List<UUID> dids) {
     auditLogger.audit("canceled {} deltaFiles", dids.size());

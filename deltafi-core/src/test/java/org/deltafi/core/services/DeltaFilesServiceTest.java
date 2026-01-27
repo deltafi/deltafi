@@ -32,6 +32,7 @@ import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.generated.types.ReplayAndAcknowledgeResult;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -1580,5 +1581,108 @@ class DeltaFilesServiceTest {
         assertThat(result.getCount()).isEqualTo(1);
         assertThat(flow.getState()).isEqualTo(DeltaFileFlowState.ERROR);
         Mockito.verify(deltaFileRepo).save(deltaFile);
+    }
+
+    @Test
+    void replayErrorsByFlow() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
+        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100))
+                .thenReturn(List.of(deltaFile));
+
+        deltaFilesService.replayErrorsByFlow(FlowType.TRANSFORM, "testFlow", null, null, 100);
+
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100);
+    }
+
+    @Test
+    void replayErrorsByMessage() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
+        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100))
+                .thenReturn(List.of(deltaFile));
+
+        deltaFilesService.replayErrorsByMessage("test error", null, null, 100);
+
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100);
+    }
+
+    @Test
+    void replayAndAcknowledgeMatching() {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        deltaFilesService.replayAndAcknowledgeMatching(filter, "test reason", null, null);
+
+        Mockito.verify(deltaFileRepo).deltaFiles(filter, 5000);
+        assertThat(filter.getReplayable()).isTrue();
+        assertThat(filter.getModifiedBefore()).isNotNull();
+    }
+
+    @Test
+    void replayAndAcknowledgeMatching_skipNonReplayableFilters() {
+        deltaFilesService.replayAndAcknowledgeMatching(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), "reason", null, null);
+        deltaFilesService.replayAndAcknowledgeMatching(DeltaFilesFilter.newBuilder().replayed(true).build(), "reason", null, null);
+        deltaFilesService.replayAndAcknowledgeMatching(DeltaFilesFilter.newBuilder().replayable(false).build(), "reason", null, null);
+        Mockito.verifyNoInteractions(deltaFileRepo);
+    }
+
+    @Test
+    void replayAndAcknowledgeByFlow() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
+        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100))
+                .thenReturn(List.of(deltaFile));
+
+        deltaFilesService.replayAndAcknowledgeByFlow(FlowType.TRANSFORM, "testFlow", "reason", null, null, 100);
+
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100);
+    }
+
+    @Test
+    void replayAndAcknowledgeByMessage() {
+        DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
+        Mockito.when(deltaFileRepo.findForResumeByErrorCause("test error", false, 100))
+                .thenReturn(List.of(deltaFile));
+
+        deltaFilesService.replayAndAcknowledgeByMessage("test error", "reason", null, null, 100);
+
+        Mockito.verify(deltaFileRepo).findForResumeByErrorCause("test error", false, 100);
+    }
+
+    @Test
+    void replayAndAcknowledge_notFound() {
+        UUID missingDid = UUID.randomUUID();
+        Mockito.when(deltaFileRepo.findAllById(List.of(missingDid))).thenReturn(List.of());
+
+        List<ReplayAndAcknowledgeResult> results = deltaFilesService.replayAndAcknowledge(
+                List.of(missingDid), "reason", null, null);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.getFirst().getSuccess()).isFalse();
+        assertThat(results.getFirst().getError()).contains("not found");
+    }
+
+    @Test
+    void replayAndAcknowledge_alreadyReplayed() {
+        UUID did = UUID.randomUUID();
+        UUID replayDid = UUID.randomUUID();
+        DeltaFile deltaFile = utilService.buildDeltaFile(did, "dataSource", DeltaFileStage.ERROR,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFile.setReplayed(OffsetDateTime.now());
+        deltaFile.setReplayDid(replayDid);
+
+        // Set up error state so canBeAcknowledged returns true
+        DeltaFileFlow flow = deltaFile.firstFlow();
+        flow.setState(DeltaFileFlowState.ERROR);
+        OffsetDateTime now = OffsetDateTime.now();
+        flow.queueAction("testAction", "TestActionClass", ActionType.TRANSFORM, false, now);
+        flow.lastAction().error(now, now, now, "test error", "context");
+
+        Mockito.when(deltaFileRepo.findAllById(List.of(did))).thenReturn(List.of(deltaFile));
+
+        List<ReplayAndAcknowledgeResult> results = deltaFilesService.replayAndAcknowledge(
+                List.of(did), "reason", null, null);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.getFirst().getSuccess()).isTrue();
+        assertThat(results.getFirst().getReplayDid()).isEqualTo(replayDid);
+        // Verify the file was acknowledged (saved)
+        Mockito.verify(deltaFileRepo).saveAll(Mockito.anyList());
     }
 }

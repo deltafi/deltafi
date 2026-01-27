@@ -2,13 +2,13 @@
 
 When an Action fails during DeltaFile processing, the corresponding DeltaFile enters an ERROR state. The errored DeltaFile is then displayed in the DeltaFi UI with information on the cause of the error and additional context supplied by the Action.
 
-DeltaFi provides three methods for dealing with errors:
+DeltaFi provides several methods for dealing with errors:
 
 ## Resume
 
 The first method for recovering from errors is called Resume. When you Resume an errored DeltaFile, the Actions that caused the error are restarted, meaning DeltaFile processing picks up where it left off.
 
-To Resume an errored DeltaFile, follow these steps:
+### Resume via UI
 
 - Navigate to the Errors page on the DeltaFi UI.
 - Right click on the DeltaFile and click resume. You can multi-select by clicking several files before doing this. In addition, errored DeltaFiles are grouped together on the Per Flow and Per Message tabs, where they can also be retried in bulk.
@@ -16,6 +16,19 @@ To Resume an errored DeltaFile, follow these steps:
 - Click "Resume."
 
 Note that it is not possible to modify any other part of the DeltaFile, including intermediate Action-produced metadata, before resuming.
+
+### Resume via TUI
+
+```bash
+# Resume all unacknowledged errors
+deltafi errored resume
+
+# Resume errors from a specific data source
+deltafi errored resume --data-source my-source
+
+# Resume with specific error cause filter
+deltafi errored resume --error-cause "timeout"
+```
 
 ## Replay
 
@@ -25,20 +38,77 @@ The replayed DeltaFile has a parent/child relationship with the original file an
 
 Note that replay works for any DeltaFile, not just the ones in error state.
 
-To Replay a DeltaFile, follow these steps:
+### Replay via UI
 
+Replay can be performed from the DeltaFile Viewer or from the Errors page:
+
+**From the DeltaFile Viewer:**
 - Navigate to the DeltaFi UI and find the DeltaFile you wish to replay on the Search screen. Click the DID of that DeltaFile to enter the DeltaFile Viewer.
 - Click the Menu button in the upper right then click on the "Replay" button.
+- For errored DeltaFiles, an "Acknowledge error on replay" checkbox is shown (checked by default). Uncheck this to replay without acknowledging, or enter an acknowledge reason to also acknowledge the error.
 - Click Modify Metadata to review and optionally modify the original source metadata of the DeltaFile.
+- Click "Replay."
+
+**From the Errors Page:**
+- Navigate to the Errors page on the DeltaFi UI.
+- Right click on the DeltaFile and click "Replay". You can multi-select by clicking several files before doing this.
+- Errored DeltaFiles can also be replayed in bulk from the Per Flow and Per Message tabs.
+- The "Acknowledge error on replay" checkbox is checked by default. Uncheck it to replay without acknowledging, or enter an acknowledge reason to also acknowledge the errors.
+- Click Modify Metadata to review and optionally modify the source metadata.
 - Click "Replay."
 
 Note that, as with Resume, it is not possible to modify any other part of the DeltaFile before replaying.
 
+### Replay via TUI
+
+```bash
+# Replay all replayable unacknowledged errors
+deltafi errored replay
+
+# Replay errors from a specific data source
+deltafi errored replay --data-source my-source
+
+# Replay with specific error cause filter
+deltafi errored replay --error-cause "connection refused"
+```
+
 ## Acknowledge
 
-You can also acknowledge an error, which provides a reason for why the error occurred. This action will remove the error from the list of errors displayed in the UI, even if the DeltaFile was not completed.
+You can acknowledge an error, which provides a reason for why the error occurred. This action will remove the error from the list of errors displayed in the UI, even if the DeltaFile was not completed.
+
+### Acknowledge via UI
 
 Acknowledge can be performed from either the Errors page or the DeltaFile Viewer.
+
+### Acknowledge via TUI
+
+```bash
+# Acknowledge all unacknowledged errors
+deltafi errored acknowledge --reason "Known issue, fix deployed"
+
+# Acknowledge errors from a specific data source
+deltafi errored acknowledge --reason "Data source deprecated" --data-source old-source
+```
+
+## Replay and Acknowledge
+
+For convenience, DeltaFi provides a combined operation that replays errored DeltaFiles and acknowledges the original errors in a single step. This is useful when you want to retry processing but also want to clear the errors from your dashboard.
+
+If a DeltaFile has already been replayed, the replay+acknowledge operation will simply acknowledge it without creating another child.
+
+### Replay and Acknowledge via UI
+
+The Replay dialog includes an "Acknowledge error on replay" checkbox that is checked by default. When checked, enter an acknowledge reason and the replay operation will also acknowledge the original errors. See the Replay section above for details.
+
+### Replay and Acknowledge via TUI
+
+```bash
+# Replay and acknowledge all replayable unacknowledged errors
+deltafi errored replay --acknowledge --reason "Replayed for retry"
+
+# Replay and acknowledge errors from a specific data source
+deltafi errored replay --acknowledge --reason "Fixed upstream issue" --data-source my-source
+```
 
 ## Error Thresholds and Ingress Flow Blocking
 

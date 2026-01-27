@@ -15,14 +15,29 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
+<!-- ABOUTME: Dialog for replay operations with optional acknowledgement. -->
+<!-- ABOUTME: Supports batch processing with progress tracking. -->
 
 <template>
   <div class="replay-dialog">
-    <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true">
+    <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true" :style="{ width: '35vw' }">
       <template #header>
         <strong>Replay</strong>
       </template>
-      <div v-if="!displayBatchingDialog" class="metadata-body">Replay {{ pluralized }}?</div>
+      <div v-if="!displayBatchingDialog" class="metadata-body">
+        <p class="mb-3">Replay {{ pluralized }}?</p>
+        <div v-if="props.showAcknowledge" class="p-fluid">
+          <div class="flex align-items-center mb-4">
+            <Checkbox v-model="acknowledgeOnReplay" input-id="acknowledgeOnReplay" :binary="true" />
+            <label for="acknowledgeOnReplay" class="ml-2 mb-0" style="line-height: 1;">Acknowledge error on replay</label>
+          </div>
+          <span class="p-float-label mt-2">
+            <InputText id="reason" v-model="reason" type="text" :disabled="!acknowledgeOnReplay" :class="{ 'p-invalid': reasonInvalid }" autofocus />
+            <label for="reason">Acknowledge Reason</label>
+          </span>
+          <small v-if="reasonInvalid" class="p-error">Reason is required when acknowledging</small>
+        </div>
+      </div>
       <div v-else-if="displayBatchingDialog">
         <div>
           <p v-if="!stopped">Replay in progress.<span v-if="props.did.length > 1"> If you navigate away, the operation will stop after the current batch.</span></p>
@@ -35,7 +50,7 @@
         <template v-if="!displayBatchingDialog">
           <Button icon="fas fa-database fa-fw" label="Modify Metadata" class="p-button-secondary p-button-outlined" @click="showMetadataDialog" />
           <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeConfirmDialog" />
-          <Button label="Replay" icon="fas fa-play" @click="replayClean" />
+          <Button label="Replay" icon="fas fa-redo" @click="replayClean" />
         </template>
         <template v-else>
           <Button label="Stop" icon="pi pi-stop" class="p-button-danger" :disabled="stopped" @click="stopBatching" />
@@ -51,13 +66,16 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useNotifications from "@/composables/useNotifications";
 import useReplay from "@/composables/useReplay";
+import useReplayAndAcknowledge from "@/composables/useReplayAndAcknowledge";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref } from "vue";
 
 import _ from "lodash";
 
 import Button from "primevue/button";
+import Checkbox from "primevue/checkbox";
 import Dialog from "primevue/dialog";
+import InputText from "primevue/inputtext";
 
 const emit = defineEmits(["refreshPage"]);
 const { pluralize } = useUtilFunctions();
@@ -73,21 +91,33 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  showAcknowledge: {
+    type: Boolean,
+    required: false,
+    default: true,
+  },
 });
 
 const { replay } = useReplay();
+const { replayAndAcknowledge } = useReplayAndAcknowledge();
 const modifyMetadataDialog = ref(null);
 const confirmDialogVisible = ref(false);
 const pluralized = ref();
+const acknowledgeOnReplay = ref(true);
+const reason = ref("");
+const reasonInvalid = ref(false);
 const batchSize = 500;
 
 const showMetadataDialog = async () => {
+  if (!validateReason()) return;
   confirmDialogVisible.value = false;
   modifyMetadataDialog.value.showDialog();
 };
 
 const showConfirmDialog = async () => {
   pluralized.value = pluralize(props.did.length, "DeltaFile");
+  reason.value = "";
+  reasonInvalid.value = false;
   confirmDialogVisible.value = true;
 };
 
@@ -104,7 +134,17 @@ const stopBatching = () => {
   stopped.value = true;
 };
 
+const validateReason = () => {
+  if (props.showAcknowledge && acknowledgeOnReplay.value && (!reason.value || reason.value.trim() === "")) {
+    reasonInvalid.value = true;
+    return false;
+  }
+  reasonInvalid.value = false;
+  return true;
+};
+
 const replayClean = async () => {
+  if (!validateReason()) return;
   await requestReplay([], []);
 };
 
@@ -118,6 +158,7 @@ const requestReplay = async (removeMetadataKeys, replaceMetadata) => {
   const batchedDids = getBatchDids(props.did);
   let totalProcessed = 0;
   const expectedTotal = props.did.length;
+  const shouldAcknowledge = props.showAcknowledge && acknowledgeOnReplay.value;
 
   try {
     displayBatchingDialog.value = true;
@@ -130,13 +171,26 @@ const requestReplay = async (removeMetadataKeys, replaceMetadata) => {
     for (const dids of batchedDids) {
       if (stopped.value) break;
 
-      const response = await replay(dids, removeMetadataKeys, replaceMetadata);
-      if (response.value.data !== undefined && response.value.data !== null) {
-        for (const replayStatus of response.value.data.replay) {
-          if (replayStatus.success) {
-            newDids.push(replayStatus.did);
-          } else {
-            notify.error(`Replay request failed for ${replayStatus.did}`, replayStatus.error);
+      if (shouldAcknowledge) {
+        const response = await replayAndAcknowledge(dids, reason.value, removeMetadataKeys, replaceMetadata);
+        if (response.value.data !== undefined && response.value.data !== null) {
+          for (const result of response.value.data.replayAndAcknowledge) {
+            if (result.success) {
+              newDids.push(result.replayDid);
+            } else {
+              notify.error(`Replay failed for ${result.did}`, result.error);
+            }
+          }
+        }
+      } else {
+        const response = await replay(dids, removeMetadataKeys, replaceMetadata);
+        if (response.value.data !== undefined && response.value.data !== null) {
+          for (const replayStatus of response.value.data.replay) {
+            if (replayStatus.success) {
+              newDids.push(replayStatus.did);
+            } else {
+              notify.error(`Replay failed for ${replayStatus.did}`, replayStatus.error);
+            }
           }
         }
       }
@@ -149,7 +203,8 @@ const requestReplay = async (removeMetadataKeys, replaceMetadata) => {
       const pluralized = pluralize(newDids.length, "DeltaFile");
       const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
       if (newDids.length > maxSuccessDisplay) links.push("...");
-      notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
+      const successMessage = shouldAcknowledge ? `Replay and acknowledge completed for ${pluralized}` : `Replay request sent successfully for ${pluralized}`;
+      notify.success(successMessage, links.join(", "));
     }
   } finally {
     displayBatchingDialog.value = false;
