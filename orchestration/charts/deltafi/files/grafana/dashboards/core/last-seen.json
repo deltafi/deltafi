@@ -146,7 +146,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (dataSource) (increase(stats_counts.files_from_source[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "A"
         }

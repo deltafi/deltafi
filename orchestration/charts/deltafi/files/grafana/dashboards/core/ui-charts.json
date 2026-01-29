@@ -626,7 +626,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "Bytes In"
         }
@@ -725,7 +725,7 @@
           },
           "expr": "sum by (dataSink) (increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSink}}",
           "refId": "Bytes Out"
         }

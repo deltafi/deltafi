@@ -496,7 +496,7 @@
           },
           "refId": "Ingress",
           "expr": "sum(increase(stats_counts.files_from_source[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "Ingress"
         },
         {
@@ -507,7 +507,7 @@
           "hide": false,
           "refId": "Egress",
           "expr": "sum(increase({__name__=\"stats_counts.files_to_sink\", dataSink=~\"$dataSink\"}[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "Egress"
         }
       ],
@@ -639,7 +639,7 @@
           },
           "refId": "Ingress",
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource!=\"\"}[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
       ],
@@ -713,7 +713,7 @@
           },
           "refId": "A",
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_from_source\", dataSource!=\"\"}[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}"
         },
         {
@@ -724,7 +724,7 @@
           "hide": false,
           "refId": "B",
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_to_sink\", dataSource!=\"\", dataSink=~\"$dataSink\"}[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
       ],
@@ -864,7 +864,7 @@
           },
           "refId": "A",
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource!=\"\"}[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}"
         },
         {
@@ -875,7 +875,7 @@
           "hide": false,
           "refId": "B",
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\", dataSink=~\"$dataSink\"}[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}"
         }
       ],

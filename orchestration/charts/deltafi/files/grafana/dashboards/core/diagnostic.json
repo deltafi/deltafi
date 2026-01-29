@@ -143,7 +143,7 @@
             "uid": "deltafi-vm-metricsql-datasource"
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "A"
         }
@@ -245,7 +245,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_from_source\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "A"
         }
@@ -345,7 +345,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "B"
         }
@@ -446,7 +446,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.bytes_to_sink\", dataSource=~\"$dfDataSource\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "B"
         }
@@ -570,7 +570,7 @@
           },
           "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval])) / sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "A"
         },
@@ -581,7 +581,7 @@
           },
           "expr": "sum(increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval])) / sum(increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "Overall",
           "refId": "B"
         }
@@ -680,7 +680,7 @@
           },
           "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "A"
         }

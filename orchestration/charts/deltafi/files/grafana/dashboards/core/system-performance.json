@@ -425,7 +425,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "A"
         }
@@ -526,7 +526,7 @@
           },
           "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "A"
         }
@@ -663,7 +663,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval]))",
           "hide": true,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "A"
         },
@@ -674,7 +674,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": true,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "B"
         },
@@ -685,7 +685,7 @@
           },
           "expr": "sum by (dataSource) (increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval])) / sum by (dataSource) (increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{dataSource}}",
           "refId": "C"
         },
@@ -696,7 +696,7 @@
           },
           "expr": "sum(increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval]))",
           "hide": true,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "Overall",
           "refId": "D"
         },
@@ -707,7 +707,7 @@
           },
           "expr": "sum(increase({__name__=\"stats_counts.files_to_sink\"}[$__interval]))",
           "hide": true,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "Overall",
           "refId": "E"
         },
@@ -718,7 +718,7 @@
           },
           "expr": "avg_over_time((sum(increase({__name__=\"stats_counts.execution_time_ms\"}[$__interval])) / sum(increase({__name__=\"stats_counts.files_to_sink\"}[$__interval])))[10m:])",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "Overall",
           "refId": "F"
         }
@@ -818,7 +818,7 @@
           },
           "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval]))",
           "hide": true,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "A"
         },
@@ -829,7 +829,7 @@
           },
           "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": true,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "B"
         },
@@ -840,7 +840,7 @@
           },
           "expr": "sum by (source) (increase({__name__=\"stats_counts.action_execution_time_ms\"}[$__interval])) / sum by (source) (increase({__name__=\"stats_counts.action_execution\"}[$__interval]))",
           "hide": false,
-          "interval": "5m",
+          "interval": "1m",
           "legendFormat": "{{source}}",
           "refId": "C"
         }
