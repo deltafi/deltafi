@@ -117,8 +117,8 @@ const showDialog = async () => {
   }
 };
 
-const refreshAndClose = () => {
-  emit("refreshPage");
+const refreshAndClose = (data) => {
+  emit("refreshPage", data);
   closeDialog();
 };
 

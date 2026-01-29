@@ -17,53 +17,63 @@
 -->
 
 <template>
-  <div id="error-message" class="rate-limiting-form">
-    <div v-if="!_.isEmpty(errors)" class="pt-2">
-      <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
+  <div class="rate-limiting-form">
+    <div v-if="errors.length > 0" class="pt-2">
+      <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="errors = []">
         <ul>
-          <div v-for="(error, key) in errors" :key="key">
-            <li class="text-wrap text-break">
-              {{ error }}
-            </li>
-          </div>
+          <li v-for="(error, key) in errors" :key="key" class="text-wrap text-break">
+            {{ error }}
+          </li>
         </ul>
       </Message>
     </div>
-    <span>
-      <FillInSentence ref="refFill" v-model="rowData" :fields="fields" :template="rateLimitExplainer" :minBlankWidth="130" @validity="isValidRateLimit" />
-    </span>
+
+    <div class="form-grid">
+      <label for="maxAmount">Max Amount</label>
+      <InputNumber id="maxAmount" v-model="formData.maxAmount" :min="1" :useGrouping="false" placeholder="e.g. 100" class="w-full" />
+
+      <label for="unit">Unit</label>
+      <Dropdown id="unit" v-model="formData.unit" :options="unitOptions" optionLabel="label" optionValue="value" class="w-full" />
+
+      <label for="duration">Duration (seconds)</label>
+      <InputNumber id="duration" v-model="formData.durationSeconds" :min="1" :useGrouping="false" placeholder="e.g. 60" class="w-full" />
+    </div>
+
+    <div class="summary">
+      <i class="pi pi-info-circle mr-2" />
+      {{ summaryText }}
+    </div>
+
     <teleport v-if="isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">
-        <Button v-show="canDelete" label="Delete" @click="deleteRateLimit()" class="p-button-secondary" />
-        <Button label="Submit" @click="submit()" :disabled="!canSubmit" />
+        <Button v-if="canDelete" label="Delete" severity="danger" @click="deleteRateLimit()" />
+        <Button label="Submit" :disabled="!isComplete" @click="submit()" />
       </div>
     </teleport>
   </div>
 </template>
 
 <script setup>
-import FillInSentence from "./FillInSentence.vue";
 import useRateLimiting from "@/composables/useRateLimiting";
 import useNotifications from "@/composables/useNotifications";
-import { computed, inject, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, inject, onMounted, onUnmounted, reactive } from "vue";
 import { useMounted } from "@vueuse/core";
 
 import Button from "primevue/button";
+import Dropdown from "primevue/dropdown";
+import InputNumber from "primevue/inputnumber";
 import Message from "primevue/message";
 
-import _ from "lodash";
-
-const isMounted = ref(useMounted());
+const isMounted = useMounted();
 const editing = inject("isEditing");
 const notify = useNotifications();
+const { removeRestDataSourceRateLimit, setRestDataSourceRateLimit } = useRateLimiting();
 
 const props = defineProps({
   restDataSourceName: {
     type: String,
     required: false,
-    default: function () {
-      return "";
-    },
+    default: "",
   },
   rateLimit: {
     type: Object,
@@ -72,25 +82,36 @@ const props = defineProps({
   },
 });
 
-const { removeRestDataSourceRateLimit, setRestDataSourceRateLimit } = useRateLimiting();
-const refFill = ref();
-const isValid = ref(false);
-
-const rateLimitTemplate = {
-  unit: null,
-  maxAmount: null,
-  durationSeconds: null,
-};
-
 const emit = defineEmits(["refreshAndClose"]);
-const errors = ref([]);
+const errors = reactive([]);
 
-const originalRateLimit = _.cloneDeepWith(_.isEmpty(props.rateLimit) ? rateLimitTemplate : props.rateLimit);
+const unitOptions = [
+  { label: "Files", value: "FILES" },
+  { label: "Bytes", value: "BYTES" },
+];
 
-const rowData = ref(_.cloneDeepWith(_.isEmpty(props.rateLimit) ? rateLimitTemplate : props.rateLimit));
+const formData = reactive({
+  maxAmount: props.rateLimit?.maxAmount ?? null,
+  unit: props.rateLimit?.unit ?? "FILES",
+  durationSeconds: props.rateLimit?.durationSeconds ?? null,
+});
+
+const isComplete = computed(() => {
+  return formData.maxAmount != null && formData.unit != null && formData.durationSeconds != null;
+});
+
+const summaryText = computed(() => {
+  const amount = formData.maxAmount ?? "___";
+  const unitLabel = formData.unit === "FILES" ? "files" : "bytes";
+  const duration = formData.durationSeconds ?? "___";
+  return `${props.restDataSourceName} will accept up to ${amount} ${unitLabel} every ${duration} seconds.`;
+});
+
+const canDelete = computed(() => {
+  return props.rateLimit?.maxAmount != null && props.rateLimit?.durationSeconds != null;
+});
 
 onMounted(() => {
-  console.log("RateLimitingForm mounted");
   editing.value = true;
 });
 
@@ -98,106 +119,70 @@ onUnmounted(() => {
   editing.value = false;
 });
 
-const model = computed({
-  get() {
-    return new Proxy(rowData.value, {
-      set(obj, key, value) {
-        model.value = { ...obj, [key]: value };
-        return true;
-      },
-    });
-  },
-  set(newValue) {
-    Object.assign(
-      rowData.value,
-      _.mapValues(newValue, (v) => (v === "" ? null : v))
-    );
-  },
-});
-
-watch(
-  () => model.value.unit,
-  () => {
-    if (!model.value.unit) {
-      model.value.maxAmount = null;
-      model.value.durationSeconds = null;
-    }
-  }
-);
-
-const rateLimitExplainer = computed(() => {
-  return `${props.restDataSourceName} will be rate limited to {maxAmount} {unit} every {durationSeconds} seconds.`;
-});
-
-const fields = {
-  unit: {
-    type: "dropdown",
-    order: 1,
-    required: true,
-    label: "Unit",
-    options: [
-      { label: "Files", value: "FILES" },
-      { label: "Bytes", value: "BYTES" },
-    ],
-  },
-  maxAmount: { type: "number", order: 2, required: true, label: "Max Amount" },
-  durationSeconds: { type: "number", order: 3, required: true, label: "Duration in seconds" },
-};
-
-const isValidRateLimit = ({ isValid: v }) => {
-  isValid.value = v;
-};
-
-const canSubmit = computed(() => {
-  if (isValid.value && !_.every(model)) {
-    return true;
-  }
-  return false;
-});
-
 const submit = async () => {
-  const response = await setRestDataSourceRateLimit(props.restDataSourceName, model.value.unit, model.value.maxAmount, model.value.durationSeconds);
+  const response = await setRestDataSourceRateLimit(
+    props.restDataSourceName,
+    formData.unit,
+    formData.maxAmount,
+    formData.durationSeconds
+  );
 
   if (response) {
-    notify.success("Rate Limit Set Successfully", `Rate Limit for ${props.restDataSourceName} set to ${model.value.unit} ${model.value.maxAmount} every ${model.value.durationSeconds} seconds`);
+    notify.success("Rate Limit Set", `Rate limit for ${props.restDataSourceName} updated.`);
     editing.value = false;
-    emit("refreshAndClose");
+    emit("refreshAndClose", {
+      name: props.restDataSourceName,
+      rateLimit: {
+        unit: formData.unit,
+        maxAmount: formData.maxAmount,
+        durationSeconds: formData.durationSeconds,
+      },
+    });
   } else {
-    errors.value.push("Failed to set a rate limit for ", props.restDataSourceName);
+    errors.push(`Failed to set rate limit for ${props.restDataSourceName}`);
   }
 };
-
-const canDelete = computed(() => {
-  if (_.every(originalRateLimit, (value) => !_.isNil(value))) {
-    return true;
-  }
-  return false;
-});
 
 const deleteRateLimit = async () => {
   const response = await removeRestDataSourceRateLimit(props.restDataSourceName);
 
   if (response) {
-    notify.success("Removed Rate Limit", `Removed Rate Limit from Data Source ${props.restDataSourceName}.`, 3000);
+    notify.success("Rate Limit Removed", `Removed rate limit from ${props.restDataSourceName}.`);
+    editing.value = false;
+    emit("refreshAndClose", {
+      name: props.restDataSourceName,
+      rateLimit: null,
+    });
   } else {
-    notify.error("Error Removing Rate Limit", `Error removing Rate Limit from Data Source ${props.restDataSourceName}.`, 3000);
+    notify.error("Error", `Failed to remove rate limit from ${props.restDataSourceName}.`);
   }
-  editing.value = false;
-  emit("refreshAndClose");
 };
 </script>
 
-<style>
+<style scoped>
 .rate-limiting-form {
-  .inline-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-wrap: wrap;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-  .inputWidth {
-    flex: 0 0 180px;
-  }
+.form-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem 1rem;
+  align-items: center;
+}
+
+.form-grid label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.summary {
+  background: var(--surface-100);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
 }
 </style>

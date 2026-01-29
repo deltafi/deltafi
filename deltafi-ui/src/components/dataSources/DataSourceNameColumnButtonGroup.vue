@@ -34,11 +34,12 @@
       </a>
     </template>
   </Menu>
+  <i v-if="hasRateLimit" v-tooltip.top="rateLimitTooltip" class="fa-solid fa-stopwatch fa-lg text-info cursor-pointer mr-2" @click="addRateLimit.showDialog()" />
   <Button :id="`${data.name}-${data.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
   <DataSourceRemoveButton ref="removeDataSource" :row-data-prop="data" @reload-data-sources="refresh" />
   <DialogTemplate ref="editDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @refresh-page="refresh" />
   <DialogTemplate ref="cloneDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="formatCloneDataSource(data)" @refresh-page="refresh" />
-  <DialogTemplate ref="addRateLimit" component-name="dataSources/RateLimitingForm" :header="`Add Rate Limit: ${data.name}`" dialog-width="35vw" :rest-data-source-name="data['name']" :rate-limit="data['rateLimit']" @close-dialog-template="editing = false" @open-dialog-template="editing = true" @refresh-page="refresh" />
+  <DialogTemplate ref="addRateLimit" component-name="dataSources/RateLimitingForm" :header="rateLimitDialogHeader" dialog-width="35vw" dismissable-mask :rest-data-source-name="data['name']" :rate-limit="data['rateLimit']" @close-dialog-template="editing = false" @open-dialog-template="editing = true" @refresh-page="refresh" />
   <CronScheduleEditDialog v-model:visible="cronEditVisible" :data="data" @reload-data-sources="refresh" @close="cronEditVisible = false" />
 </template>
 
@@ -47,9 +48,7 @@ import CronScheduleEditDialog from "@/components/dataSources/CronScheduleEditDia
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
-import useNotifications from "@/composables/useNotifications";
-import useRateLimiting from "@/composables/useRateLimiting";
-import { computed, inject, reactive, ref } from "vue";
+import { computed, inject, ref, toRef } from "vue";
 import { useRouter } from "vue-router";
 
 import _ from "lodash";
@@ -62,9 +61,7 @@ const overlayPanelPosition = ref({});
 const vRipple = Ripple;
 
 const router = useRouter();
-const { removeRestDataSourceRateLimit } = useRateLimiting();
-const notify = useNotifications();
-const emit = defineEmits(["reloadDataSources"]);
+const emit = defineEmits(["reloadDataSources", "updateRateLimit"]);
 const hasPermission = inject("hasPermission");
 const editing = inject("isEditing");
 const editDataSource = ref(null);
@@ -84,7 +81,19 @@ const props = defineProps({
   },
 });
 
-const { rowDataProp: data } = reactive(props);
+const data = toRef(props, "rowDataProp");
+
+const hasRateLimit = computed(() => _.isEqual(data.value.type, "REST_DATA_SOURCE") && !_.isEmpty(data.value.rateLimit));
+
+const rateLimitTooltip = computed(() => {
+  if (!data.value.rateLimit) return "";
+  const { maxAmount, unit, durationSeconds } = data.value.rateLimit;
+  return `Rate limited: ${maxAmount} ${unit.toLowerCase()} every ${durationSeconds}s`;
+});
+
+const rateLimitDialogHeader = computed(() => {
+  return hasRateLimit.value ? `Edit Rate Limit: ${data.value.name}` : `Add Rate Limit: ${data.value.name}`;
+});
 
 const concatMvnCoordinates = (sourcePlugin) => {
   return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
@@ -96,13 +105,13 @@ const items = ref([
     icon: "text-muted pi pi-sitemap",
     visible: computed(() => hasPermission("FlowView")),
     command: () => {
-      router.push(`/pipeline/${data.type}/${data.name}`);
+      router.push(`/pipeline/${data.value.type}/${data.value.name}`);
     },
   },
   {
     label: "Edit",
     icon: "text-muted pi pi-pencil",
-    visible: computed(() => data.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanCreate")),
+    visible: computed(() => data.value.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanCreate")),
     command: () => {
       editDataSource.value.showDialog();
     },
@@ -110,7 +119,7 @@ const items = ref([
   {
     label: "Clone",
     icon: "text-muted pi pi-clone",
-    visible: computed(() => hasPermission("FlowPlanCreate") && !data.flowStatus?.placeholder),
+    visible: computed(() => hasPermission("FlowPlanCreate") && !data.value.flowStatus?.placeholder),
     command: () => {
       cloneDataSource.value.showDialog();
     },
@@ -131,32 +140,24 @@ const items = ref([
   },
 
   {
-    label: "Add Rate Limit",
-    icon: "text-muted fa-solid fa-plus fa-sm",
-    visible: computed(() => _.isEqual(data.type, "REST_DATA_SOURCE")),
+    label: computed(() => hasRateLimit.value ? "Edit Rate Limit" : "Add Rate Limit"),
+    icon: computed(() => hasRateLimit.value ? "text-muted fa-solid fa-stopwatch fa-sm" : "text-muted fa-solid fa-plus fa-sm"),
+    visible: computed(() => _.isEqual(data.value.type, "REST_DATA_SOURCE")),
     command: () => {
       addRateLimit.value.showDialog();
     },
   },
   {
-    label: "Remove Rate Limit",
-    icon: "text-muted fa-solid fa-xmark fa-sm",
-    visible: computed(() => _.isEqual(data.type, "REST_DATA_SOURCE") && !_.isEmpty(data.rateLimit)),
-    command: () => {
-      deleteRateLimit();
-    },
-  },
-  {
     label: "Edit Cron Schedule",
     icon: "text-muted fa-solid fa-clock",
-    visible: computed(() => _.isEqual(data.type, "TIMED_DATA_SOURCE") && hasPermission("FlowUpdate")),
+    visible: computed(() => _.isEqual(data.value.type, "TIMED_DATA_SOURCE") && hasPermission("FlowUpdate")),
     command: () => {
       cronEditVisible.value = true;
     },
   },
   {
     separator: true,
-    visible: computed(() => data.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
+    visible: computed(() => data.value.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
   },
   {
     label: "Remove",
@@ -164,7 +165,7 @@ const items = ref([
     command: async () => {
       removeDataSource.value.showDialog();
     },
-    visible: computed(() => data.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
+    visible: computed(() => data.value.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
   },
 ]);
 
@@ -193,12 +194,17 @@ const formatCloneDataSource = (data) => {
   return clonedDataSourceObject;
 };
 
-const refresh = async () => {
-  emit("reloadDataSources");
+const refresh = async (updateData) => {
+  editing.value = false;
+  if (updateData && updateData.name && updateData.rateLimit !== undefined) {
+    emit("updateRateLimit", updateData);
+  } else {
+    emit("reloadDataSources", true);
+  }
 };
 
 const formatFlowData = () => {
-  let exportableData = JSON.parse(JSON.stringify(data));
+  let exportableData = JSON.parse(JSON.stringify(data.value));
 
   if (_.isEqual(exportableData.type, "REST_DATA_SOURCE")) {
     exportableData = _.pick(exportableData, ["name", "type", "description", "metadata", "annotationConfig", "topic"]);
@@ -215,19 +221,9 @@ const formatFlowData = () => {
   return exportableData;
 };
 
-const deleteRateLimit = async () => {
-  const response = await removeRestDataSourceRateLimit(data.name);
-  if (response) {
-    notify.success("Removed Rate Limit", `Removed Rate Limit from Data Source ${data.name}.`, 3000);
-  } else {
-    notify.error("Error Removing Rate Limit", `Error removing Rate Limit from Data Source ${data.name}.`, 3000);
-  }
-  refresh();
-};
-
 const exportDataSource = () => {
   const link = document.createElement("a");
-  const downloadFileName = `${data.name}_${data.type}_export_` + new Date(Date.now()).toLocaleDateString();
+  const downloadFileName = `${data.value.name}_${data.value.type}_export_` + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
   const blob = new Blob([JSON.stringify(formatFlowData(), null, 2)], {
     type: "application/json",

@@ -59,7 +59,7 @@
                 <span class="cursor-pointer" @click="showAction(data)">{{ data.name }}</span>
               </span>
               <span>
-                <DataSourceNameColumnButtonGroup :key="data.name" :row-data-prop="data" @reload-data-sources="refresh" />
+                <DataSourceNameColumnButtonGroup :key="data.name" :row-data-prop="data" @reload-data-sources="refresh" @update-rate-limit="updateRateLimit" />
               </span>
             </div>
           </template>
@@ -205,7 +205,7 @@ import _ from "lodash";
 const notify = useNotifications();
 const confirm = useConfirm();
 const editing = inject("isEditing");
-const emit = defineEmits(["reloadDataSources"]);
+const emit = defineEmits(["reloadDataSources", "updateRateLimit"]);
 const flowData = ref({});
 const flowDataByPlugin = ref({});
 const menu = ref();
@@ -474,6 +474,10 @@ const onErrorFields = {
 const showAction = (data) => {
   activeDataSource.value = data;
   viewDialogVisible.value = true;
+};
+
+const updateRateLimit = (data) => {
+  emit("updateRateLimit", data);
 };
 
 const refresh = async () => {

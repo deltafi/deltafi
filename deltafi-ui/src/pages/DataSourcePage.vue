@@ -43,6 +43,7 @@
         :flow-data-by-plugin-prop="flowDataByPlugin"
         :filter-flows-text-prop="filterFlowsText"
         @reload-data-sources="refresh"
+        @update-rate-limit="updateRateLimit"
       />
     </div>
   </div>
@@ -142,6 +143,13 @@ const dataSourceExport = computed(() => {
     onErrorDataSources,
   };
 });
+
+const updateRateLimit = ({ name, rateLimit }) => {
+  const dataSource = flowData.value.find((ds) => ds.name === name);
+  if (dataSource) {
+    dataSource.rateLimit = rateLimit;
+  }
+};
 
 const refresh = async () => {
   if (editing.value) return;

@@ -27,6 +27,58 @@ REST Data Sources allow external systems to push data into DeltaFi via HTTPS req
 }
 ```
 
+#### Rate Limiting
+
+REST Data Sources support rate limiting to control the volume of data ingested over time. This is useful for:
+
+- Protecting downstream systems from being overwhelmed
+- Managing resource consumption during high-traffic periods
+- Enforcing data ingestion quotas
+
+Rate limits are configured with three parameters:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `unit` | The unit of measurement for the limit | `FILES` or `BYTES` |
+| `maxAmount` | Maximum amount allowed in the time window | `100` |
+| `durationSeconds` | The time window in seconds | `60` |
+
+**Example**: To limit a data source to 100 files per minute:
+
+```json
+{
+  "name": "rate-limited-source",
+  "type": "REST_DATA_SOURCE",
+  "description": "A rate-limited REST data source",
+  "topic": "input-topic",
+  "rateLimit": {
+    "unit": "FILES",
+    "maxAmount": 100,
+    "durationSeconds": 60
+  }
+}
+```
+
+**Example**: To limit a data source to 10 MB per hour:
+
+```json
+{
+  "name": "bandwidth-limited-source",
+  "type": "REST_DATA_SOURCE",
+  "description": "A bandwidth-limited REST data source",
+  "topic": "input-topic",
+  "rateLimit": {
+    "unit": "BYTES",
+    "maxAmount": 10485760,
+    "durationSeconds": 3600
+  }
+}
+```
+
+When a rate limit is exceeded, ingress requests will receive an HTTP 429 (Too Many Requests) response until the rate limit window resets.
+
+Rate limits can also be configured through the UI on the Data Sources page by clicking the options menu for a REST data source and selecting "Add Rate Limit" or "Edit Rate Limit".
+
 ### Timed Data Sources
 
 Timed Data Sources periodically generate or fetch data based on a defined schedule. They are defined as follows:
