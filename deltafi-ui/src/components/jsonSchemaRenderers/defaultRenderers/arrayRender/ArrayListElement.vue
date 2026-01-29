@@ -125,17 +125,11 @@ defineExpose({ expandClicked, moveUpClicked, moveDownClicked, deleteClicked });
   margin: 0;
 }
 
-.array-list-element-content :deep(dt) {
-  display: none;
-}
 
 .array-list-element-content :deep(dd) {
   margin: 0;
 }
 
-.array-list-element-content :deep(small) {
-  display: none;
-}
 
 .array-list-element-actions {
   display: flex;

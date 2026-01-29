@@ -100,6 +100,102 @@ publish:
 
 The templates used in action parameters can include SPeL expressions which are evaluated to a string value. This gives operators the ability to do things like call methods against the values or filter/search through content and metadata. The template can be embedded inside a literal value, for example - `https://api.service/{{ deltaFileName.toLowerCase() }}` would evaluate to `https://api.service/input.txt` when the DeltaFileName is `Input.txt`. Templates can also be used within the value of a plugin variable.
 
+## Nested Parameter Structures
+
+Action parameters can contain nested objects and lists to organize complex configurations. Use `@JsonPropertyDescription` on nested class fields to provide descriptions that appear in the UI.
+
+### Defining Nested Parameters (Java)
+
+```java
+package org.deltafi.myaction;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import lombok.*;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+
+import java.util.List;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class MyActionParameters extends ActionParameters {
+    @JsonPropertyDescription("Primary endpoint configuration")
+    private EndpointConfig primaryEndpoint;
+
+    @JsonPropertyDescription("Optional fallback endpoints to try if primary fails")
+    private List<EndpointConfig> fallbackEndpoints;
+
+    @Data
+    public static class EndpointConfig {
+        @JsonProperty(required = true)
+        @JsonPropertyDescription("The URL to connect to")
+        private String url;
+
+        @JsonPropertyDescription("Connection timeout in milliseconds")
+        private int timeoutMs = 30000;
+
+        @JsonPropertyDescription("Authentication settings for this endpoint")
+        private AuthConfig auth;
+    }
+
+    @Data
+    public static class AuthConfig {
+        @JsonPropertyDescription("Authentication type: NONE, BASIC, or BEARER")
+        private String type = "NONE";
+
+        @JsonPropertyDescription("Username for BASIC auth")
+        private String username;
+
+        @JsonPropertyDescription("Environment variable containing the password or token")
+        private EnvVar credential;
+    }
+}
+```
+
+### Defining Nested Parameters (Python)
+
+```python
+from pydantic import BaseModel, Field
+from typing import List, Optional
+
+class AuthConfig(BaseModel):
+    type: str = Field(default="NONE", description="Authentication type: NONE, BASIC, or BEARER")
+    username: Optional[str] = Field(default=None, description="Username for BASIC auth")
+    password: Optional[str] = Field(default=None, description="Password or token")
+
+class EndpointConfig(BaseModel):
+    url: str = Field(description="The URL to connect to")
+    timeout_ms: int = Field(default=30000, description="Connection timeout in milliseconds")
+    auth: Optional[AuthConfig] = Field(default=None, description="Authentication settings for this endpoint")
+
+class MyActionParameters(BaseModel):
+    primary_endpoint: EndpointConfig = Field(description="Primary endpoint configuration")
+    fallback_endpoints: List[EndpointConfig] = Field(default=[], description="Optional fallback endpoints to try if primary fails")
+```
+
+### Configuring Nested Parameters in Flows
+
+```yaml
+name: my-flow
+type: TRANSFORM
+transformActions:
+  - name: CallAPI
+    type: org.deltafi.myaction.MyAction
+    parameters:
+      primaryEndpoint:
+        url: https://api.example.com/v1
+        timeoutMs: 5000
+        auth:
+          type: BASIC
+          username: myuser
+          credential: API_PASSWORD
+      fallbackEndpoints:
+        - url: https://backup.example.com/v1
+          timeoutMs: 10000
+```
+
+The UI displays nested parameters with expandable sections. Each field shows its label and description (via the info icon) as defined in `@JsonPropertyDescription`.
+
 ## Secure Parameters with EnvVar
 
 ::: warning Java Action Kit Only

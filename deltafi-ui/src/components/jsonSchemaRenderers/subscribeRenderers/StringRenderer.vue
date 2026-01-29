@@ -19,7 +19,7 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl>
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span></dt>
+      <dt :id="schemaData.control.id + '-input-label'">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span></dt>
       <dd>
         <template v-if="_.isEqual(schemaData.control.i18nKeyPrefix.split('.').pop(), 'topic')">
           <AutoComplete :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' auto-complete-input-width'" dropdown :suggestions="topicList" @complete="search" @change="schemaData.onChange(schemaData.control.data)" />

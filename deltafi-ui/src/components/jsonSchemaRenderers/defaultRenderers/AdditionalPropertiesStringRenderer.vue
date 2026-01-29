@@ -19,7 +19,7 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl class="additional-string-field">
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'" class="additional-string-label">
+      <dt :id="schemaData.control.id + '-input-label'" class="additional-string-label">
         {{ computedLabel }}
         <i v-if="!_.isEmpty(schemaData.control.description)" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
       </dt>
