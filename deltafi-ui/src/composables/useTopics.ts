@@ -1,3 +1,5 @@
+// ABOUTME: Composable for fetching and caching topic data (publishers/subscribers).
+// ABOUTME: Uses a shared promise to deduplicate concurrent API calls.
 /*
    DeltaFi - Data transformation and enrichment platform
 
@@ -79,25 +81,29 @@ export type Topic = {
 
 const topics: Ref<Array<Topic>> = ref([]);
 const topicNames: Ref<Array<String | undefined>> = ref([]);
+let fetchPromise: Promise<Array<Topic>> | null = null;
 
 export default function useTopics() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
 
   const hasActiveSubscribers = async (topicName: string) => {
-    if (topics.value.length === 0) await getAllTopics();
-
+    await getAllTopics();
     const topic = _.find(topics.value, (topic) => topic.name === topicName);
-
     return topic ? _.some(topic.subscribers, { 'state': 'RUNNING' }) : false
   };
 
-  const getAllTopics = async () => {
-    await queryGraphQL(getAllTopicsQuery, "getAllTopics");
+  const getAllTopics = async (): Promise<Array<Topic>> => {
+    if (topics.value.length > 0) return topics.value;
+    if (fetchPromise) return fetchPromise;
 
-    topics.value = response.value.data.getAllTopics;
-    topicNames.value = _.map(topics.value, "name");
+    fetchPromise = (async () => {
+      await queryGraphQL(getAllTopicsQuery, "getAllTopics");
+      topics.value = response.value.data.getAllTopics;
+      topicNames.value = _.map(topics.value, "name");
+      return topics.value;
+    })();
 
-    return topics.value;
+    return fetchPromise;
   };
 
   const getAllTopicNames = async () => {
@@ -107,15 +113,8 @@ export default function useTopics() {
   };
 
   const getTopic = async (topicName: string) => {
-    if (topics.value.length === 0) await getAllTopics();
-
-    const topic = _.find(topics.value, (topic) => topic.name === topicName);
-
-    if (!topic) {
-      throw new Error(`Topic ${topicName} not found`);
-    }
-
-    return topic;
+    await getAllTopics();
+    return _.find(topics.value, (topic) => topic.name === topicName);
   }
 
   return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getTopic, getAllTopics, getAllTopicNames, loading, loaded, errors };
