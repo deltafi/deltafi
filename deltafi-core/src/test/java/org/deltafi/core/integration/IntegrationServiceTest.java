@@ -26,6 +26,8 @@ import org.deltafi.common.types.TestStatus;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.types.integration.KeyValueChecks;
 import org.deltafi.common.types.integration.TestCaseIngress;
+import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
 import org.deltafi.core.types.integration.TestResult;
@@ -50,6 +52,9 @@ class IntegrationServiceTest {
 
     @Mock
     private IngressService ingressService;
+
+    @Mock
+    private DeltaFiPropertiesService propertiesService;
 
     @Mock
     private ConfigurationValidator configurationValidator;
@@ -156,6 +161,10 @@ class IntegrationServiceTest {
                 .thenReturn(List.of(
                         new IngressResult("unarchive-passthrough-rest-data-source", UUID.randomUUID(), null)));
 
+        DeltaFiProperties properties = new DeltaFiProperties();
+        properties.setIngressEnabled(true);
+        Mockito.when(propertiesService.getDeltaFiProperties()).thenReturn(properties);
+
         TestResult r = integrationService.runTest(testCase);
         assertEquals("plugin1.test1", r.getTestName());
         assertFalse(r.getId().isEmpty());
@@ -179,9 +188,13 @@ class IntegrationServiceTest {
                         Mockito.any()))
                 .thenReturn(Collections.emptyList());
 
+        DeltaFiProperties properties = new DeltaFiProperties();
+        properties.setIngressEnabled(true);
+        Mockito.when(propertiesService.getDeltaFiProperties()).thenReturn(properties);
+
         TestResult r = integrationService.runTest(testCase);
         assertEquals("plugin1.test1", r.getTestName());
-        assertNull(r.getId());
+        assertNotNull(r.getId());
         assertEquals(TestStatus.INVALID, r.getStatus());
 
         List<String> expectedErrors = List.of(
@@ -193,5 +206,25 @@ class IntegrationServiceTest {
     IntegrationTest readYamlTestFile(String file) throws IOException {
         byte[] bytes = new ClassPathResource("/integration/" + file).getInputStream().readAllBytes();
         return YAML_MAPPER.readValue(bytes, IntegrationTest.class);
+    }
+
+    @Test
+    @SneakyThrows
+    void runTestFailsIngressDisabled() {
+        IntegrationTest testCase = readYamlTestFile("/config-binary.yaml");
+
+        DeltaFiProperties properties = new DeltaFiProperties();
+        properties.setIngressEnabled(false);
+        Mockito.when(propertiesService.getDeltaFiProperties()).thenReturn(properties);
+
+        TestResult r = integrationService.runTest(testCase);
+        assertEquals("plugin1.test1", r.getTestName());
+        assertNotNull(r.getId());
+        assertEquals(TestStatus.INVALID, r.getStatus());
+
+        List<String> expectedErrors = List.of(
+                "System Ingress is disabled"
+        );
+        assertEquals(expectedErrors, r.getErrors());
     }
 }

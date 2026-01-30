@@ -23,6 +23,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.PluginState;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.core.services.DataSinkService;
 import org.deltafi.core.services.PluginService;
@@ -142,6 +143,33 @@ class ConfigurationValidatorTest {
         assertTrue(actualErrors.isEmpty());
     }
 
+    @Test
+    @SneakyThrows
+    void testValidateToStartPluginErrors() {
+        IntegrationTest testCase = readYamlTestFile("config-binary.yaml");
+
+        Mockito.when(pluginService.getPlugins()).thenReturn(getErrorPlugins());
+
+        Mockito.when(restDataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(true);
+        Mockito.when(restDataSourceService.hasRunningFlow("unarchive-passthrough-rest-data-source")).thenReturn(true);
+
+        Mockito.when(transformFlowService.hasFlow("unarchive-passthrough-transform")).thenReturn(true);
+        Mockito.when(transformFlowService.hasRunningFlow("unarchive-passthrough-transform")).thenReturn(true);
+
+        Mockito.when(transformFlowService.hasFlow("passthrough-transform")).thenReturn(true);
+        Mockito.when(transformFlowService.hasRunningFlow("passthrough-transform")).thenReturn(true);
+
+        Mockito.when(dataSinkService.hasFlow("passthrough-egress")).thenReturn(true);
+        Mockito.when(dataSinkService.hasRunningFlow("passthrough-egress")).thenReturn(true);
+
+        List<String> actualErrors = configurationValidator.validateToStart(testCase);
+        List<String> expectedErrors = List.of(
+                "Plugin is currently disabled: plugin-1",
+                "Plugin state is not INSTALLED: plugin-2"
+        );
+        assertEquals(expectedErrors, actualErrors);
+    }
+
     private List<PluginEntity> getPlugins() {
         Plugin p1 = new Plugin();
         p1.setPluginCoordinates(new PluginCoordinates("org.deltafi", "deltafi-core-actions", "1.0"));
@@ -150,6 +178,22 @@ class ConfigurationValidatorTest {
         p2.setPluginCoordinates(new PluginCoordinates("org.deltafi.testjig", "deltafi-testjig", "1.0"));
 
         return List.of(new PluginEntity(p1), new PluginEntity(p2));
+    }
+
+    private List<PluginEntity> getErrorPlugins() {
+        Plugin p1 = new Plugin();
+        p1.setPluginCoordinates(new PluginCoordinates("org.deltafi", "deltafi-core-actions", "1.0"));
+        PluginEntity pe1 = new PluginEntity(p1);
+        pe1.setDisplayName("plugin-1");
+        pe1.setDisabled(true);
+
+        Plugin p2 = new Plugin();
+        p2.setPluginCoordinates(new PluginCoordinates("org.deltafi.testjig", "deltafi-testjig", "1.0"));
+        PluginEntity pe2 = new PluginEntity(p2);
+        pe2.setDisplayName("plugin-2");
+        pe2.setInstallState(PluginState.FAILED);
+
+        return List.of(pe1, pe2);
     }
 
     IntegrationTest readYamlTestFile(String file) throws IOException {

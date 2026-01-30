@@ -28,11 +28,8 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.TestStatus;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.types.integration.TestCaseIngress;
-import org.deltafi.core.exceptions.IngressException;
-import org.deltafi.core.exceptions.IngressMetadataException;
-import org.deltafi.core.exceptions.IngressStorageException;
-import org.deltafi.core.exceptions.IngressUnavailableException;
-import org.deltafi.core.exceptions.IngressRateLimitException;
+import org.deltafi.core.exceptions.*;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
@@ -59,6 +56,7 @@ public class IntegrationService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final IngressService ingressService;
+    private final DeltaFiPropertiesService propertiesService;
     private final ConfigurationValidator configurationValidator;
     private final DeltaFilesService deltaFilesService;
     private final ContentStorageService contentStorageService;
@@ -81,13 +79,25 @@ public class IntegrationService {
         }
     }
 
+    private TestResult saveAndReturnInvalidResult(String id, String name, List<String> errors) {
+        TestResult testResult = TestResult.builder()
+                .status(TestStatus.INVALID)
+                .testName(name)
+                .id(id)
+                .errors(errors)
+                .build();
+        testResultRepo.save(testResult);
+        return testResult;
+    }
+
     public TestResult runTest(IntegrationTest config) {
         String testId = UUID.randomUUID().toString();
         if (!processIncomingRequests) {
-            return TestResult.builder()
-                    .status(TestStatus.INVALID)
-                    .errors(List.of("Service shutting down"))
-                    .build();
+            return saveAndReturnInvalidResult(testId, config.getName(), List.of("Service shutting down"));
+        }
+
+        if (!propertiesService.getDeltaFiProperties().isIngressEnabled()) {
+            return saveAndReturnInvalidResult(testId, config.getName(), List.of("System Ingress is disabled"));
         }
 
         List<String> errors = configurationValidator.validateToStart(config);
@@ -107,11 +117,7 @@ public class IntegrationService {
         }
 
         if (!errors.isEmpty()) {
-            return TestResult.builder()
-                    .status(TestStatus.INVALID)
-                    .errors(errors)
-                    .testName(config.getName())
-                    .build();
+            return saveAndReturnInvalidResult(testId, config.getName(), errors);
         }
         return started;
     }

@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.PluginState;
 import org.deltafi.common.types.integration.ExpectedDeltaFile;
 import org.deltafi.common.types.integration.IntegrationTest;
 import org.deltafi.common.types.integration.TestCaseIngress;
@@ -33,6 +34,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -147,6 +149,7 @@ public class ConfigurationValidator {
         List<String> errors = new ArrayList<>();
         List<PluginEntity> allInstalledPlugins = null;
         for (PluginCoordinates pluginCoordinates : plugins) {
+            PluginEntity foundPlugin = null;
             if (StringUtils.isEmpty(pluginCoordinates.getGroupId()) || StringUtils.isEmpty(pluginCoordinates.getArtifactId())) {
                 errors.add("Invalid plugin specified: " + pluginCoordinates);
             } else {
@@ -155,19 +158,31 @@ public class ConfigurationValidator {
                     if (allInstalledPlugins == null) {
                         allInstalledPlugins = pluginService.getPlugins();
                     }
-                    boolean found = false;
                     for (PluginEntity p : allInstalledPlugins) {
                         if (p.getPluginCoordinates().equalsIgnoreVersion(pluginCoordinates)) {
-                            found = true;
+                            foundPlugin = p;
                             break;
                         }
                     }
-                    if (!found) {
+                    if (foundPlugin == null) {
                         errors.add("Plugin not found: " + pluginCoordinates.getGroupId() + ":" + pluginCoordinates.getArtifactId() + ":*");
                     }
 
-                } else if (pluginService.getPlugin(pluginCoordinates).isEmpty()) {
-                    errors.add("Plugin not found: " + pluginCoordinates);
+                } else {
+                    Optional<PluginEntity> entity = pluginService.getPlugin(pluginCoordinates);
+                    if (entity.isEmpty()) {
+                        errors.add("Plugin not found: " + pluginCoordinates);
+                    } else {
+                        foundPlugin = entity.get();
+                    }
+                }
+            }
+
+            if (foundPlugin != null) {
+                if (foundPlugin.isDisabled()) {
+                    errors.add("Plugin is currently disabled: " + foundPlugin.getDisplayName());
+                } else if (!foundPlugin.getInstallState().equals(PluginState.INSTALLED)) {
+                    errors.add("Plugin state is not INSTALLED: " + foundPlugin.getDisplayName());
                 }
             }
         }

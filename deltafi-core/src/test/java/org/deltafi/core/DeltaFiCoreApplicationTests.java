@@ -4223,7 +4223,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(startErrors, testResult.getErrors());
 
 		List<TestResult> listResult = IntegrationDataFetcherTestHelper.getAllTestResults(dgsQueryExecutor);
-		assertEquals(0, listResult.size());
+		assertEquals(1, listResult.size());
 	}
 
 	@Test
