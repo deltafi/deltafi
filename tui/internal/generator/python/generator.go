@@ -1,7 +1,7 @@
 /*
  *    DeltaFi - Data transformation and enrichment platform
  *
- *    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+ *    Copyright 2021-2026 DeltaFi Contributors <deltafi@deltafi.org>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -1010,7 +1010,7 @@ func getLicenseContent() string {
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+   Copyright 2021-2026 DeltaFi Contributors <deltafi@deltafi.org>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

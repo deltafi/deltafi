@@ -165,6 +165,6 @@ Requirements:
 
 ## License
 
-Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+Copyright 2021-2026 DeltaFi Contributors <deltafi@deltafi.org>
 
 Licensed under the Apache License, Version 2.0

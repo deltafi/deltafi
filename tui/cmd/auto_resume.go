@@ -1,10 +1,7 @@
-// ABOUTME: TUI commands for managing auto resume rules
-// ABOUTME: Provides list, get, export, load, delete, clear, apply, and dry-run subcommands
-
 /*
  *    DeltaFi - Data transformation and enrichment platform
  *
- *    Copyright 2021-2025 DeltaFi Contributors <deltafi@deltafi.org>
+ *    Copyright 2021-2026 DeltaFi Contributors <deltafi@deltafi.org>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -18,6 +15,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: TUI commands for managing auto resume rules
+// ABOUTME: Provides list, get, export, load, delete, clear, apply, and dry-run subcommands
+
 package cmd
 
 import (
