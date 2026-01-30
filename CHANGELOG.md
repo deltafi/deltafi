@@ -5,6 +5,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.49.0] - 2026-01-30
+
+### Added
+- Documentation for nested action parameter structures
+- Add lineage tree view to DeltaFile viewer 
+- Documentation for REST data source rate limiting in flows.md
+- Rate limit indicator (stopwatch icon) on REST data sources in the Data Sources page
+
+### Changed
+- When an integration test cannot be started, record the INVALID test result in the DB. This provides attempt history
+and works better with the TUI.
+- Reduced minimum query interval from 5 minutes to 1 minute for VictoriaMetrics-backed Grafana dashboards
+- Simplified rate limit form to use standard form inputs with a live preview sentence
+
+### Fixed
+- Generate an error when attempting to run an integration test if system ingress is disabled, any of the required plugins are disabled, or any of the required plugins were not successfully upgraded
+- Fixed labels and descriptions not appearing for nested parameter structures in action configuration
+- Fixed duplicate API calls when loading topic subscribers on the Data Sources, Transforms, and Data Sinks pages
+
+### Tech-Debt/Refactor
+- Removed unused data source panel components
+
 ## [2.48.0] - 2026-01-28
 
 ### Added
@@ -5639,7 +5661,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.48.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.0...main
+[2.49.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.48.0...2.49.0
 [2.48.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.2...2.48.0
 [2.47.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.1...2.47.2
 [2.47.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.0...2.47.1
