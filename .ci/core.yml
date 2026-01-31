@@ -23,6 +23,7 @@ variables:
 
 default:
   timeout: 45m
+  interruptible: true
 
 image: ${JAVA_BASE_IMAGE}
 
