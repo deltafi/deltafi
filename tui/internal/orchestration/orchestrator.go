@@ -42,18 +42,16 @@ type Orchestrator interface {
 type valuesData struct {
 	Tag                      string
 	Repo                     string `default:"deltafi"`
-	GrafanaContainer         string `default:"deltafi/grafana:12.4.0-5"`
-	VictoriaMetricsContainer string `default:"victoriametrics/victoria-metrics:v1.133.0"`
-	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-3"`
-	VectorContainer          string `default:"deltafi/vector:0.51.1-alpine-0"`
-	DozzleContainer          string `default:"amir20/dozzle:v9.0.1"`
-	LokiContainer            string `default:"grafana/loki:2.9.17"`
-	S3ProxyContainer         string `default:"deltafi/s3proxy:3.0.0-0"`
+	GrafanaContainer         string `default:"deltafi/grafana:12.4.0-7"`
+	VictoriaMetricsContainer string `default:"deltafi/victoria-metrics:v1.134.0-0"`
+	LogrotateContainer       string `default:"deltafi/logrotate:1.0.0-4"`
+	VectorContainer          string `default:"deltafi/vector:0.53.0-alpine-0"`
+	DozzleContainer          string `default:"deltafi/dozzle:v9.0.3-0"`
+	S3ProxyContainer         string `default:"deltafi/s3proxy:3.0.0-1"`
 	NginxContainer           string `default:"deltafi/nginx:1.29.4-alpine3.23-0"`
-	PromtailContainer        string `default:"grafana/promtail:3.6.3"`
-	ValkeyContainer          string `default:"deltafi/valkey:9.0.1-0"`
-	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-4"`
-	PostgresLookupContainer  string `default:"deltafi/postgres:16.11-0"`
+	ValkeyContainer          string `default:"deltafi/valkey:9.0.1-1"`
+	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-6"`
+	PostgresLookupContainer  string `default:"deltafi/postgres:16.11-1"`
 	JavaIDEContainer         string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-2"`
 	JavaDevContainer         string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`
 }
