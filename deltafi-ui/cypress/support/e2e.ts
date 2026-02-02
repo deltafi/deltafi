@@ -15,6 +15,28 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
+import './retryable-before'
 
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
+// When CYPRESS_BAIL_ON_FAILURE is set, skip remaining tests in a spec once a
+// test has exhausted all retries. Support files are re-evaluated per spec, so
+// specFailed resets automatically.
+if (Cypress.env('BAIL_ON_FAILURE')) {
+  let specFailed = false;
+
+  afterEach(function () {
+    const test = this.currentTest as any;
+    if (test?.state === 'failed') {
+      const maxRetries = test._retries ?? 0;
+      const currentRetry = test._currentRetry ?? 0;
+      if (currentRetry >= maxRetries) {
+        specFailed = true;
+      }
+    }
+  });
+
+  beforeEach(function () {
+    if (specFailed) {
+      this.skip();
+    }
+  });
+}

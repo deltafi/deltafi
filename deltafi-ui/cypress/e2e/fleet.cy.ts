@@ -21,7 +21,7 @@ describe("Fleet Search Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -61,7 +61,7 @@ describe("Fleet Search Page", () => {
 
   // Search Options interaction
   describe("Search Options", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -90,7 +90,7 @@ describe("Fleet Dashboard Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -149,7 +149,7 @@ describe("Fleet Dashboard Page", () => {
 
   // View Mode Selection
   describe("View Mode Selection", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -178,7 +178,7 @@ describe("Fleet Config Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -217,7 +217,7 @@ describe("Fleet Config Page", () => {
 
   // View Mode Selection
   describe("View Mode Selection", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

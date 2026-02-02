@@ -40,4 +40,4 @@ else
 fi
 
 echo "Running Cypress tests..."
-npm run test -- --config video=false
+npm run test -- --config video=false "${@}"

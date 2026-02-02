@@ -12,6 +12,7 @@
     "lint:fix": "npm run lint -- --fix",
     "lint:fix-a11y": "npm run lint -- --config ./eslint-a11y.config.js",
     "test-server": "VITE_MOCK_REQUEST_DELAY=1 VITE_MOCK_RESPONSES=successResponse vite serve --mode test",
+    "test-server-kill": "pkill -f 'vite serve --mode test' || true",
     "test": "cypress run"
   },
   "dependencies": {

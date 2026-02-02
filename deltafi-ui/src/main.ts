@@ -45,14 +45,15 @@ if (import.meta.env.MODE === "development" || import.meta.env.MODE === "test") {
   const responseType = import.meta.env.VITE_MOCK_RESPONSES ? import.meta.env.VITE_MOCK_RESPONSES : "";
   if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
     const { worker } = await import("./mocks/browser.ts");
-    worker.start({
+    const workerStarted = worker.start({
       // turn off MSW warnings for specific routes
       onUnhandledRequest(req: any, print: any) {
         // specify routes to exclude
         const excludedRoutes = ["/js/", "/fonts/"];
 
-        // check if the req.url.pathname contains excludedRoutes
-        const isExcluded = excludedRoutes.some((route) => req.url.pathname.includes(route));
+        // check if the request URL pathname contains excludedRoutes
+        const pathname = new URL(req.url).pathname;
+        const isExcluded = excludedRoutes.some((route) => pathname.includes(route));
 
         if (isExcluded) {
           return;
@@ -61,6 +62,8 @@ if (import.meta.env.MODE === "development" || import.meta.env.MODE === "test") {
         print.warning();
       },
     });
+    const timeout = new Promise((resolve) => setTimeout(resolve, 5000));
+    await Promise.race([workerStarted, timeout]);
   }
 }
 

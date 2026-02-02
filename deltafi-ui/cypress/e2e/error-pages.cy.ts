@@ -19,7 +19,7 @@
 describe("Page Not Found", () => {
   // Read-only tests - share a single page visit
   describe("Default Not Found", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit("http://localhost:8080/this-page-does-not-exist", {
         failOnStatusCode: false,
       });
@@ -42,7 +42,7 @@ describe("Page Not Found", () => {
 
   // Service unavailable tests - share a single page visit
   describe("Service Unavailable", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit("http://localhost:8080/not-found?service=Grafana", {
         failOnStatusCode: false,
       });
@@ -76,7 +76,7 @@ describe("Unauthorized Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Load", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

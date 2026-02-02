@@ -21,7 +21,7 @@ describe("Queue Metrics Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -86,7 +86,7 @@ describe("Queue Metrics Page", () => {
 
   // Sorting tests - clicks change sort state but stay on page
   describe("Table Sorting", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

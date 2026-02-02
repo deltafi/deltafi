@@ -21,7 +21,7 @@ describe("Events Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -97,7 +97,7 @@ describe("Events Page", () => {
 
   // Context Menu tests
   describe("Context Menu", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

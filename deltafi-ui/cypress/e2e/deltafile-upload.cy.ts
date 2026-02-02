@@ -21,7 +21,7 @@ describe("DeltaFile Upload Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -78,7 +78,7 @@ describe("DeltaFile Upload Page", () => {
 
   // Metadata interaction tests
   describe("Metadata Functionality", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

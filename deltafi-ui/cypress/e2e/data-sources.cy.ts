@@ -21,7 +21,7 @@ describe("Data Sources Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -49,7 +49,7 @@ describe("Data Sources Page", () => {
 
   // Search functionality
   describe("Search Functionality", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

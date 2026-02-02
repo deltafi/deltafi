@@ -58,6 +58,17 @@ export default [
     }
   }),
 
+  rest.get("/api/v*/*/*", async (req, res, ctx) => {
+    try {
+      const mockModule = await import(/* @vite-ignore */ `.${req.url.pathname}`);
+      const responseJson = "default" in mockModule ? mockModule.default : mockModule;
+      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+  }),
+
   rest.get("/api/v*/*", async (req, res, ctx) => {
     try {
       const mockModule = await import(/* @vite-ignore */ `.${req.url.pathname}`);

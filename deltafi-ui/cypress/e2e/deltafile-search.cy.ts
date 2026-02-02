@@ -21,7 +21,7 @@ describe("DeltaFile Search Page", () => {
 
   // Group 1: Tests that share the same page state (read-only, no navigation)
   describe("Page Structure & Read-Only Tests", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
       cy.get(".p-datatable-tbody tr", { timeout: 15000 }).should("have.length.greaterThan", 0);
     });
@@ -100,7 +100,7 @@ describe("DeltaFile Search Page", () => {
 
   // Group 2: Advanced Search Options Panel (expands panel, but read-only)
   describe("Advanced Search Options Panel", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
       cy.get(".p-datatable", { timeout: 15000 }).should("exist");
     });
@@ -125,7 +125,7 @@ describe("DeltaFile Search Page", () => {
 
   // Group 3: Column Sorting Tests (each click changes state, but order doesn't matter)
   describe("Column Sorting", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
       cy.get(".p-datatable-tbody tr", { timeout: 15000 }).should("have.length.greaterThan", 0);
     });
@@ -163,7 +163,7 @@ describe("DeltaFile Search Page", () => {
 
   // Group 4: Pagination Tests (sequential navigation tests)
   describe("Pagination", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
       cy.get(".p-datatable-tbody tr", { timeout: 15000 }).should("have.length.greaterThan", 0);
     });
@@ -202,7 +202,7 @@ describe("DeltaFile Search Page", () => {
 
   // Group 5: Context Menu Tests
   describe("Context Menu", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
       cy.get(".p-datatable-tbody tr.p-selectable-row", { timeout: 15000 }).should("have.length.greaterThan", 0);
     });
@@ -222,7 +222,7 @@ describe("DeltaFile Search Page", () => {
 
   // Group 6: Date Toolbar Functionality
   describe("Date Toolbar Functionality", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
       cy.get(".p-dropdown", { timeout: 15000 }).should("exist");
     });

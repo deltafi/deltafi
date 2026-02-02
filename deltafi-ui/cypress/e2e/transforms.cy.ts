@@ -21,7 +21,7 @@ describe("Transforms Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -44,7 +44,7 @@ describe("Transforms Page", () => {
 
   // Search functionality
   describe("Search Functionality", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

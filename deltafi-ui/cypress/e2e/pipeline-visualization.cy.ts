@@ -21,7 +21,7 @@ describe("Pipeline Visualization Page", () => {
 
   // Page Load - No Flow Selected
   describe("Page Load - No Flow Selected", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -44,7 +44,7 @@ describe("Pipeline Visualization Page", () => {
 
   // Flow Selection
   describe("Flow Selection", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -93,7 +93,7 @@ describe("Pipeline Visualization Page", () => {
 
   // Page Load - With Flow Selected
   describe("Page Load - With Flow Selected", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}/TRANSFORM/smoke-test-transform`);
     });
 
@@ -136,7 +136,7 @@ describe("Pipeline Visualization Page", () => {
 
   // Flow Not Found
   describe("Flow Not Found", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}/TRANSFORM/non-existent-flow`);
     });
 

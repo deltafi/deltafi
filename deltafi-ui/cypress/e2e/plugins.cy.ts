@@ -21,7 +21,7 @@ describe("Plugins Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -66,7 +66,7 @@ describe("Plugins Page", () => {
 
   // Sorting tests
   describe("Table Sorting", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

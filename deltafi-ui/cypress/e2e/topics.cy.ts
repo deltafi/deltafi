@@ -21,7 +21,7 @@ describe("Topics Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -72,7 +72,7 @@ describe("Topics Page", () => {
 
   // Sorting tests - clicks change sort state but stay on page
   describe("Table Sorting", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -106,7 +106,7 @@ describe("Topics Page", () => {
 
   // Search tests - modifies input state
   describe("Search Functionality", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

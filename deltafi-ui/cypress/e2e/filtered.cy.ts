@@ -21,7 +21,7 @@ describe("Filtered Page", () => {
 
   // Read-only tests - share a single page visit
   describe("Page Structure & Elements", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -72,7 +72,7 @@ describe("Filtered Page", () => {
 
   // Tab navigation tests
   describe("Tab Navigation", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 

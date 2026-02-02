@@ -22,7 +22,7 @@ describe("DeltaFile Viewer Page", () => {
 
   // Form view tests (no DID)
   describe("Form View (No DID)", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -45,7 +45,7 @@ describe("DeltaFile Viewer Page", () => {
 
   // DID validation tests
   describe("DID Input Validation", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(baseUrl);
     });
 
@@ -62,7 +62,7 @@ describe("DeltaFile Viewer Page", () => {
 
   // Viewer with DID tests
   describe("Viewer with DID", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}/${testDid}`);
     });
 
@@ -129,7 +129,7 @@ describe("DeltaFile Viewer Page", () => {
 
   // Menu Actions
   describe("Menu Actions", { testIsolation: false }, () => {
-    before(() => {
+    retryableBefore(() => {
       cy.visit(`${baseUrl}/${testDid}`);
     });
 

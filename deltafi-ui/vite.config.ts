@@ -21,6 +21,18 @@ export default ({ mode }) => {
         // Use strict: false to allow all paths including /app/node_modules in Docker
         strict: false,
       },
+      warmup: {
+        clientFiles: [
+          "./src/main.ts",
+          "./src/App.vue",
+          "./src/router/index.ts",
+          "./src/plugins/auth.ts",
+          "./src/composables/useCurrentUser.ts",
+          "./src/composables/useUiConfig.ts",
+          "./src/composables/usePermissions.ts",
+          "./src/components/PageHeader.vue",
+        ],
+      },
       proxy: {
         "/api": {
           target: `${SCHEME}://${DELTAFI_DOMAIN}`,
