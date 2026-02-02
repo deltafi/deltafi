@@ -24,7 +24,7 @@ export default defineConfig({
 
     setupNodeEvents(on) {
       on("before:browser:launch", (browser, launchOptions) => {
-        if (browser.name === "chrome" || browser.name === "electron") {
+        if (browser.name === "chrome") {
           launchOptions.args.push("--disable-gpu");
           launchOptions.args.push("--disable-dev-shm-usage");
           launchOptions.args.push("--disable-extensions");

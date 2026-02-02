@@ -82,6 +82,17 @@ describe("Queue Metrics Page", () => {
     it("displays page content correctly", () => {
       cy.get(".queue-metrics-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".queue-metrics-page").should("be.visible");
+      cy.get(".p-datatable").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".queue-metrics-page").should("be.visible");
+      cy.get(".p-datatable").should("be.visible");
+    });
   });
 
   // Sorting tests - clicks change sort state but stay on page
@@ -144,22 +155,6 @@ describe("Queue Metrics Page", () => {
       cy.visit(baseUrl);
       cy.get(".running-tasks-panel .p-datatable").should("be.visible");
       cy.contains("Running Tasks").click();
-    });
-  });
-
-  // Viewport tests
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".queue-metrics-page").should("be.visible");
-      cy.get(".p-datatable").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".queue-metrics-page").should("be.visible");
-      cy.get(".p-datatable").should("be.visible");
     });
   });
 });

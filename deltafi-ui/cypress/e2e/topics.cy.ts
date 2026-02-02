@@ -68,6 +68,15 @@ describe("Topics Page", () => {
     it("page container exists", () => {
       cy.get(".topics-table").should("be.visible");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".topics-table").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".topics-table").should("be.visible");
+    });
   });
 
   // Sorting tests - clicks change sort state but stay on page
@@ -132,20 +141,6 @@ describe("Topics Page", () => {
 
     it("displays tooltips on publisher/subscriber tags", () => {
       cy.get(".p-datatable-tbody .p-tag").first().trigger("mouseover");
-    });
-  });
-
-  // Viewport tests
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".topics-table").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".topics-table").should("be.visible");
     });
   });
 });

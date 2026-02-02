@@ -70,6 +70,15 @@ describe("Auto Resume Page", () => {
     it("page container exists", () => {
       cy.get(".auto-resume-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".auto-resume-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".auto-resume-page").should("be.visible");
+    });
   });
 
   // Sorting tests
@@ -122,20 +131,6 @@ describe("Auto Resume Page", () => {
       cy.visit(baseUrl);
       cy.get('input[placeholder="Search"]').type("test");
       cy.get(".p-datatable").should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".auto-resume-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".auto-resume-page").should("be.visible");
     });
   });
 });

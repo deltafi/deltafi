@@ -41,18 +41,12 @@ describe("Versions Page", () => {
       cy.get("span.p-panel-title").contains("Other");
     });
 
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
     it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
       cy.get("h2").contains("Versions").should("be.visible");
     });
 
     it("renders correctly at smaller viewport", () => {
       cy.viewport(1024, 768);
-      cy.visit(baseUrl);
       cy.get("h2").contains("Versions").should("be.visible");
     });
   });

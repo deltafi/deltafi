@@ -86,6 +86,15 @@ describe("Lookup Table Page", () => {
     it("page container exists", () => {
       cy.get(".lookup-tables-page").should("be.visible");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".lookup-tables-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".lookup-tables-page").should("be.visible");
+    });
   });
 
   // Sorting tests - clicks change sort state but stay on page
@@ -114,20 +123,6 @@ describe("Lookup Table Page", () => {
           cy.get("a").first().click();
         });
       cy.url().should("include", "/admin/lookup-table/");
-    });
-  });
-
-  // Viewport tests
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".lookup-tables-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".lookup-tables-page").should("be.visible");
     });
   });
 });

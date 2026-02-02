@@ -48,6 +48,15 @@ describe("Users Page", () => {
     it("page container exists", () => {
       cy.get(".users-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".users-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".users-page").should("be.visible");
+    });
   });
 
   // Dialog tests
@@ -56,20 +65,6 @@ describe("Users Page", () => {
       cy.visit(baseUrl);
       cy.contains("Add User").click();
       cy.get(".p-dialog").should("be.visible");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".users-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".users-page").should("be.visible");
     });
   });
 });

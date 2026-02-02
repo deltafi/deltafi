@@ -25,7 +25,7 @@
 
 # Shared configuration for Cypress test jobs
 .cypress-test-base:
-  image: deltafi/deltafi-ui-test:2.47.2
+  image: deltafi/deltafi-ui-test:2.48.1
   stage: test
   allow_failure: false
   needs:

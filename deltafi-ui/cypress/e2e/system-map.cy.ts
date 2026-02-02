@@ -60,18 +60,13 @@ describe("System Map Page", () => {
     it("panel can be closed", () => {
       cy.get(".system-map-page").should("exist");
     });
-  });
 
-  // Responsive Layout
-  describe("Responsive Layout", () => {
     it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
       cy.get(".system-map-page").should("be.visible");
     });
 
     it("renders correctly at smaller viewport", () => {
       cy.viewport(1024, 768);
-      cy.visit(baseUrl);
       cy.get(".system-map-page").should("be.visible");
     });
   });

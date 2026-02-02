@@ -1,6 +1,6 @@
 #!/bin/bash
-# ABOUTME: Runs UI e2e tests with the mock test server.
-# ABOUTME: Starts server, waits for ready, runs Cypress, ensures cleanup.
+# ABOUTME: Runs UI e2e tests with the mock dev server.
+# ABOUTME: Starts Vite dev server with mocks, waits for ready, runs Cypress, ensures cleanup.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -22,7 +22,7 @@ if curl -s -o /dev/null "http://localhost:$PORT/" 2>/dev/null; then
   echo "Using existing server on port $PORT..."
 else
   echo "Starting test server on port $PORT..."
-  VITE_MOCK_REQUEST_DELAY=1 VITE_MOCK_RESPONSES=successResponse npx vite serve --mode test &
+  npm run test-server &
   STARTED_SERVER=true
 
   echo "Waiting for server to be ready..."

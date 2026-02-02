@@ -45,6 +45,15 @@ describe("Data Sinks Page", () => {
     it("page container exists", () => {
       cy.get(".data-sinks-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".data-sinks-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".data-sinks-page").should("be.visible");
+    });
   });
 
   // Search functionality
@@ -61,20 +70,6 @@ describe("Data Sinks Page", () => {
     it("can clear search", () => {
       cy.get('input[placeholder="Search"]').clear();
       cy.get(".data-sinks-page").should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".data-sinks-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".data-sinks-page").should("be.visible");
     });
   });
 });

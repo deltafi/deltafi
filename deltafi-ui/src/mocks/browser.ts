@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-import { setupWorker } from "msw";
+import { setupWorker } from "msw/browser";
 import errorResponseHandlers from "./errorResponseHandlers";
 import successReponseHandlers from "./successResponseHandlers";
 import customResponseHandlers from "./customResponseHandlers";

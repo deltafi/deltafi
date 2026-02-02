@@ -68,6 +68,15 @@ describe("Filtered Page", () => {
     it("page container exists", () => {
       cy.get(".filtered-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".filtered-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".filtered-page").should("be.visible");
+    });
   });
 
   // Tab navigation tests
@@ -88,20 +97,6 @@ describe("Filtered Page", () => {
     it("can switch to By Cause tab", () => {
       cy.contains("span.p-tabview-title", "By Cause").click();
       cy.get("span.p-panel-title").contains("DeltaFiles by Cause");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".filtered-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".filtered-page").should("be.visible");
     });
   });
 });

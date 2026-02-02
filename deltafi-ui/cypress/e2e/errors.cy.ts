@@ -76,6 +76,15 @@ describe("Errors Page", () => {
     it("page container exists", () => {
       cy.get(".errors-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".errors-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".errors-page").should("be.visible");
+    });
   });
 
   // Tab navigation tests
@@ -96,20 +105,6 @@ describe("Errors Page", () => {
     it("can switch to By Message tab", () => {
       cy.contains("span.p-tabview-title", "By Message").click();
       cy.get("span.p-panel-title").contains("DeltaFiles by Message");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".errors-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".errors-page").should("be.visible");
     });
   });
 

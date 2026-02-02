@@ -64,6 +64,15 @@ describe("Delete Policies Page", () => {
     it("page container exists", () => {
       cy.get(".delete-policies-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".delete-policies-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".delete-policies-page").should("be.visible");
+    });
   });
 
   // Sorting tests
@@ -83,20 +92,6 @@ describe("Delete Policies Page", () => {
     it("can filter policies by search", () => {
       cy.get('input[placeholder="Search"]').type("test");
       cy.get(".p-datatable").should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".delete-policies-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".delete-policies-page").should("be.visible");
     });
   });
 });

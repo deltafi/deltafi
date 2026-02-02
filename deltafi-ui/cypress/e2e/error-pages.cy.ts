@@ -17,7 +17,6 @@
 */
 
 describe("Page Not Found", () => {
-  // Read-only tests - share a single page visit
   describe("Default Not Found", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit("http://localhost:8080/this-page-does-not-exist", {
@@ -38,9 +37,13 @@ describe("Page Not Found", () => {
     it("renders correctly at default viewport", () => {
       cy.get("h2").should("be.visible");
     });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get("h2").should("be.visible");
+    });
   });
 
-  // Service unavailable tests - share a single page visit
   describe("Service Unavailable", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit("http://localhost:8080/not-found?service=Grafana", {
@@ -58,23 +61,11 @@ describe("Page Not Found", () => {
       );
     });
   });
-
-  // Viewport test with different size
-  describe("Responsive Layout", () => {
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit("http://localhost:8080/this-page-does-not-exist", {
-        failOnStatusCode: false,
-      });
-      cy.get("h2").should("be.visible");
-    });
-  });
 });
 
 describe("Unauthorized Page", () => {
   const baseUrl = "http://localhost:8080/unauthorized";
 
-  // Read-only tests - share a single page visit
   describe("Page Load", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(baseUrl);
@@ -93,13 +84,9 @@ describe("Unauthorized Page", () => {
     it("renders correctly at default viewport", () => {
       cy.get("h2").should("be.visible");
     });
-  });
 
-  // Viewport test with different size
-  describe("Responsive Layout", () => {
     it("renders correctly at smaller viewport", () => {
       cy.viewport(1024, 768);
-      cy.visit(baseUrl);
       cy.get("h2").should("be.visible");
     });
   });

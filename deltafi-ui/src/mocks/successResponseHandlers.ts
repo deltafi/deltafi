@@ -16,111 +16,114 @@
    limitations under the License.
 */
 
-import { rest, graphql } from "msw";
+import { http, graphql, HttpResponse, delay } from "msw";
 
 const requestDelay = parseInt(import.meta.env.VITE_MOCK_REQUEST_DELAY || "500");
 console.log("Mock Request Delay: ", requestDelay);
 
 export default [
-  rest.get("/api/v*/sse", async (req, res, ctx) => {
+  http.get("/api/v:version/sse", async () => {
     const status = await import(`./api/v2/status.ts`);
     const errorCount = 2;
 
-    return res(ctx.set("Connection", "keep-alive"), ctx.set("Content-Type", "text/event-stream"), ctx.status(200, "Mocked status"), ctx.body(`event: errorCount\ndata: ${errorCount}\n\nevent: status\ndata: ${JSON.stringify(status)}\n\n`));
+    return new HttpResponse(`event: errorCount\ndata: ${errorCount}\n\nevent: status\ndata: ${JSON.stringify(status)}\n\n`, {
+      headers: {
+        "Connection": "keep-alive",
+        "Content-Type": "text/event-stream",
+      },
+    });
   }),
 
-  rest.get("/api/v*/metrics/graphite", async (req, res, ctx) => {
+  http.get("/api/v:version/metrics/graphite", async ({ request }) => {
     try {
-      const url = new URL(req.url.href);
+      const url = new URL(request.url);
       const params = new URLSearchParams(url.search);
 
-      const mockModule = await import(/* @vite-ignore */ `.${req.url.pathname}/${params.get("title")}`);
+      const mockModule = await import(/* @vite-ignore */ `.${url.pathname}/${params.get("title")}`);
       const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
+      await delay(requestDelay);
+      return new HttpResponse(JSON.stringify(responseJson, null, 2));
     } catch (e) {
       console.error(e);
-      return;
+      return HttpResponse.json({});
     }
   }),
 
-  rest.get("/api/v*/content", async (req, res, ctx) => {
+  http.get("/api/v:version/content", async ({ request }) => {
     try {
-      const contentBase64: string = req.url.searchParams.get("content") || "";
+      const url = new URL(request.url);
+      const contentBase64: string = url.searchParams.get("content") || "";
       const contentJson = window.atob(contentBase64);
       const content = JSON.parse(contentJson);
 
-      const mockContentModule = await import(/* @vite-ignore */ `.${req.url.pathname}`);
+      const mockContentModule = await import(/* @vite-ignore */ `.${url.pathname}`);
       const responseData = mockContentModule.default(content);
-      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(responseData));
+      await delay(requestDelay);
+      return new HttpResponse(responseData);
     } catch (e) {
       console.error(e);
-      return;
+      return HttpResponse.json({});
     }
   }),
 
-  rest.get("/api/v*/*/*", async (req, res, ctx) => {
+  http.get("/api/v:version/:rest+", async ({ request }) => {
     try {
-      const mockModule = await import(/* @vite-ignore */ `.${req.url.pathname}`);
+      const url = new URL(request.url);
+      const mockModule = await import(/* @vite-ignore */ `.${url.pathname}`);
       const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
+      await delay(requestDelay);
+      return new HttpResponse(JSON.stringify(responseJson, null, 2));
     } catch (e) {
       console.error(e);
-      return;
+      return HttpResponse.json({});
     }
   }),
 
-  rest.get("/api/v*/*", async (req, res, ctx) => {
+  graphql.query(/.*/, async ({ request }) => {
     try {
-      const mockModule = await import(/* @vite-ignore */ `.${req.url.pathname}`);
-      const responseJson = "default" in mockModule ? mockModule.default : mockModule;
-      return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(JSON.stringify(responseJson, null, 2)));
-    } catch (e) {
-      console.error(e);
-      return;
-    }
-  }),
-
-  graphql.query(/.*/, async (req, res, ctx) => {
-    try {
-      if (req.body && "operationName" in req.body) {
-        const mockModule = await import(/* @vite-ignore */ `./graphql/${req.body.operationName}`);
+      const body = await request.clone().json();
+      if (body && "operationName" in body) {
+        const mockModule = await import(/* @vite-ignore */ `./graphql/${body.operationName}`);
         let responseJson;
         if ("default" in mockModule) {
           if (typeof mockModule.default === "function") {
-            responseJson = mockModule.default(req);
+            responseJson = mockModule.default(request);
           } else {
             responseJson = mockModule.default;
           }
         } else {
           responseJson = mockModule;
         }
-        return res(ctx.delay(requestDelay), ctx.data(responseJson));
+        await delay(requestDelay);
+        return HttpResponse.json({ data: responseJson });
       }
     } catch (e) {
       console.error(e);
-      return;
+      return HttpResponse.json({ data: {} });
     }
   }),
 
-  graphql.mutation(/.*/, async (req, res, ctx) => {
+  graphql.mutation(/.*/, async ({ request }) => {
     try {
-      if (req.body && "operationName" in req.body) {
-        const mockModule = await import(/* @vite-ignore */ `./graphql/mutations/${req.body.operationName}`);
+      const body = await request.clone().json();
+      if (body && "operationName" in body) {
+        const mockModule = await import(/* @vite-ignore */ `./graphql/mutations/${body.operationName}`);
         let responseJson;
         if ("default" in mockModule) {
           if (typeof mockModule.default === "function") {
-            responseJson = mockModule.default(req);
+            responseJson = mockModule.default(request);
           } else {
             responseJson = mockModule.default;
           }
         } else {
           responseJson = mockModule;
         }
-        return res(ctx.delay(requestDelay), ctx.data(responseJson));
+        await delay(requestDelay);
+        return HttpResponse.json({ data: responseJson });
       }
     } catch (e) {
       console.error(e);
-      return;
+      return HttpResponse.json({ data: {} });
     }
   }),
 ];

@@ -60,6 +60,15 @@ describe("External Links Page", () => {
     it("page container exists", () => {
       cy.get(".external-links-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".external-links-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".external-links-page").should("be.visible");
+    });
   });
 
   // Search functionality
@@ -68,20 +77,6 @@ describe("External Links Page", () => {
       cy.visit(baseUrl);
       cy.get('input[placeholder="Search"]').type("test");
       cy.get(".external-links-page").should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".external-links-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".external-links-page").should("be.visible");
     });
   });
 });

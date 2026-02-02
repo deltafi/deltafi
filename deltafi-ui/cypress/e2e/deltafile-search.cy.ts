@@ -23,7 +23,7 @@ describe("DeltaFile Search Page", () => {
   describe("Page Structure & Read-Only Tests", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
-      cy.get(".p-datatable-tbody tr", { timeout: 15000 }).should("have.length.greaterThan", 0);
+      cy.get(".p-datatable-tbody tr").should("have.length.greaterThan", 0);
     });
 
     it("loads the page with default settings", () => {
@@ -96,13 +96,24 @@ describe("DeltaFile Search Page", () => {
     it("displays timezone button", () => {
       cy.get("button").contains(/[A-Z]{2,4}/).should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".deltafile-search-page").should("be.visible");
+      cy.get(".p-datatable").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".deltafile-search-page").should("be.visible");
+      cy.get(".p-datatable").should("be.visible");
+    });
   });
 
   // Group 2: Advanced Search Options Panel (expands panel, but read-only)
   describe("Advanced Search Options Panel", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(baseUrl);
-      cy.get(".p-datatable", { timeout: 15000 }).should("exist");
+      cy.get(".p-datatable").should("exist");
     });
 
     it("can toggle the advanced search options panel", () => {
@@ -127,7 +138,7 @@ describe("DeltaFile Search Page", () => {
   describe("Column Sorting", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
-      cy.get(".p-datatable-tbody tr", { timeout: 15000 }).should("have.length.greaterThan", 0);
+      cy.get(".p-datatable-tbody tr").should("have.length.greaterThan", 0);
     });
 
     it("can sort by Filename column", () => {
@@ -165,7 +176,7 @@ describe("DeltaFile Search Page", () => {
   describe("Pagination", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
-      cy.get(".p-datatable-tbody tr", { timeout: 15000 }).should("have.length.greaterThan", 0);
+      cy.get(".p-datatable-tbody tr").should("have.length.greaterThan", 0);
     });
 
     it("can change rows per page", () => {
@@ -204,7 +215,7 @@ describe("DeltaFile Search Page", () => {
   describe("Context Menu", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(`${baseUrl}?perPage=20`);
-      cy.get(".p-datatable-tbody tr.p-selectable-row", { timeout: 15000 }).should("have.length.greaterThan", 0);
+      cy.get(".p-datatable-tbody tr.p-selectable-row").should("have.length.greaterThan", 0);
     });
 
     it("shows context menu when right-clicking on a row", () => {
@@ -224,7 +235,7 @@ describe("DeltaFile Search Page", () => {
   describe("Date Toolbar Functionality", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(baseUrl);
-      cy.get(".p-dropdown", { timeout: 15000 }).should("exist");
+      cy.get(".p-dropdown").should("exist");
     });
 
     it("has date type dropdown with Created/Modified options", () => {
@@ -237,7 +248,7 @@ describe("DeltaFile Search Page", () => {
   describe("DID Link Navigation", () => {
     it("clicking a DID link navigates to the viewer page", () => {
       cy.visit(`${baseUrl}?perPage=20`);
-      cy.get(".p-datatable-tbody tr", { timeout: 15000 }).should("have.length.greaterThan", 0);
+      cy.get(".p-datatable-tbody tr").should("have.length.greaterThan", 0);
       cy.get(".p-datatable-tbody tr").first().within(() => {
         cy.get("a").first().click({ force: true });
       });
@@ -250,22 +261,6 @@ describe("DeltaFile Search Page", () => {
     it("loads with URL parameters for perPage", () => {
       cy.visit(`${baseUrl}?perPage=20`);
       cy.get("span.p-paginator-current").contains("1 - 20 of 2000");
-    });
-  });
-
-  // Group 9: Responsive Layout (changes viewport)
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".deltafile-search-page", { timeout: 15000 }).should("be.visible");
-      cy.get(".p-datatable", { timeout: 15000 }).should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".deltafile-search-page", { timeout: 15000 }).should("be.visible");
-      cy.get(".p-datatable", { timeout: 15000 }).should("be.visible");
     });
   });
 });

@@ -52,6 +52,15 @@ describe("Dashboard Page", () => {
     it("page container exists", () => {
       cy.get(".dashboard-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".dashboard-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".dashboard-page").should("be.visible");
+    });
   });
 
   // Refresh functionality
@@ -60,20 +69,6 @@ describe("Dashboard Page", () => {
       cy.visit(baseUrl);
       cy.contains("Refresh").click();
       cy.get(".dashboard-page").should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".dashboard-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".dashboard-page").should("be.visible");
     });
   });
 });

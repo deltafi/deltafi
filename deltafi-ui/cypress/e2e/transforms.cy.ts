@@ -40,6 +40,15 @@ describe("Transforms Page", () => {
     it("page container exists", () => {
       cy.get(".transforms-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".transforms-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".transforms-page").should("be.visible");
+    });
   });
 
   // Search functionality
@@ -56,20 +65,6 @@ describe("Transforms Page", () => {
     it("can clear search", () => {
       cy.get('input[placeholder="Search"]').clear();
       cy.get(".transforms-page").should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".transforms-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".transforms-page").should("be.visible");
     });
   });
 });

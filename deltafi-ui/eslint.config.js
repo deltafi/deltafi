@@ -14,7 +14,8 @@ configureVueProject({
 export default defineConfigWithVueTs(
   {
     ignores: [
-      "dist/"
+      "dist/",
+      "public/mockServiceWorker.js"
     ]
   },
   pluginVue.configs['flat/essential'],

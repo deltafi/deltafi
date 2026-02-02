@@ -93,6 +93,15 @@ describe("Events Page", () => {
     it("displays severity badges in table", () => {
       cy.get(".p-datatable-tbody").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".events-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".events-page").should("be.visible");
+    });
   });
 
   // Context Menu tests
@@ -120,20 +129,6 @@ describe("Events Page", () => {
       cy.get(".events-panel").rightclick();
       cy.get(".p-contextmenu").should("be.visible");
       cy.contains("Clear Selected").click();
-    });
-  });
-
-  // Viewport tests - need separate visits
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".events-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".events-page").should("be.visible");
     });
   });
 });

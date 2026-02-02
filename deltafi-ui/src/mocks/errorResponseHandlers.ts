@@ -16,57 +16,42 @@
    limitations under the License.
 */
 
-import { rest } from 'msw'
+import { http, HttpResponse, delay } from 'msw'
 
 
 export default [
 
-  rest.get("/api/v1/config", (req, res, ctx) => {
-    return res(
-      ctx.delay(1500),
-      ctx.status(500, 'Mocked status'),
-      ctx.json({
-        error: 'Error fetching UI configs.',
-      })
-    )
+  http.get("/api/v1/config", async () => {
+    await delay(1500);
+    return HttpResponse.json({
+      error: 'Error fetching UI configs.',
+    }, { status: 500 })
   }),
-  rest.get("/api/v1/metrics/system/nodes", (req, res, ctx) => {
-    return res(
-      ctx.delay(1500),
-      ctx.status(500, 'Mocked status'),
-      ctx.json({
-        error: 'Error fetching System Metrics.',
-      })
-    )
+  http.get("/api/v1/metrics/system/nodes", async () => {
+    await delay(1500);
+    return HttpResponse.json({
+      error: 'Error fetching System Metrics.',
+    }, { status: 500 })
   }),
 
-  rest.get("/api/v1/metrics/queues", (req, res, ctx) => {
-    return res(
-      ctx.delay(1500),
-      ctx.status(500, 'Mocked status'),
-      ctx.json({
-        error: 'Error fetching Queue Metrics.',
-      })
-    )
+  http.get("/api/v1/metrics/queues", async () => {
+    await delay(1500);
+    return HttpResponse.json({
+      error: 'Error fetching Queue Metrics.',
+    }, { status: 500 })
   }),
 
-  rest.get("/api/v1/versions", (req, res, ctx) => {
-    return res(
-      ctx.delay(1500),
-      ctx.status(500, 'Mocked status'),
-      ctx.json({
-        error: 'Error fetching Versions.',
-      })
-    )
+  http.get("/api/v1/versions", async () => {
+    await delay(1500);
+    return HttpResponse.json({
+      error: 'Error fetching Versions.',
+    }, { status: 500 })
   }),
 
-  rest.post("/graphql", (req, res, ctx) => {
-    return res(
-      ctx.delay(1500),
-      ctx.status(500, 'Mocked status'),
-      ctx.json({
-        message: 'Error fetching data from GraphQL',
-      })
-    )
+  http.post("/graphql", async () => {
+    await delay(1500);
+    return HttpResponse.json({
+      message: 'Error fetching data from GraphQL',
+    }, { status: 500 })
   }),
 ]

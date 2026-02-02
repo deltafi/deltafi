@@ -57,6 +57,15 @@ describe("Fleet Search Page", () => {
     it("search options panel exists", () => {
       cy.contains("Search Options").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".fleet-search-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".fleet-search-page").should("be.visible");
+    });
   });
 
   // Search Options interaction
@@ -67,20 +76,6 @@ describe("Fleet Search Page", () => {
 
     it("can interact with search options", () => {
       cy.contains("Search Options").click();
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".fleet-search-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".fleet-search-page").should("be.visible");
     });
   });
 });
@@ -145,6 +140,15 @@ describe("Fleet Dashboard Page", () => {
     it("page container exists", () => {
       cy.get(".leader-dashboard-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".leader-dashboard-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".leader-dashboard-page").should("be.visible");
+    });
   });
 
   // View Mode Selection
@@ -155,20 +159,6 @@ describe("Fleet Dashboard Page", () => {
 
     it("can switch view modes", () => {
       cy.contains("System").click();
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".leader-dashboard-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".leader-dashboard-page").should("be.visible");
     });
   });
 });
@@ -213,6 +203,15 @@ describe("Fleet Config Page", () => {
     it("view mode buttons exist", () => {
       cy.get(".view-mode-selector").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".leader-config-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".leader-config-page").should("be.visible");
+    });
   });
 
   // View Mode Selection
@@ -227,20 +226,6 @@ describe("Fleet Config Page", () => {
 
     it("can switch to Snapshot view", () => {
       cy.contains("Snapshot").click();
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".leader-config-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".leader-config-page").should("be.visible");
     });
   });
 });

@@ -40,6 +40,15 @@ describe("Pipeline Visualization Page", () => {
     it("displays flow options in listboxes", () => {
       cy.get(".p-listbox").should("have.length", 4);
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".pipeline-visualization-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".pipeline-visualization-page").should("be.visible");
+    });
   });
 
   // Flow Selection
@@ -148,20 +157,6 @@ describe("Pipeline Visualization Page", () => {
     it("can navigate back to flow selection from error", () => {
       cy.contains("Select a Flow").click();
       cy.contains("Select an entity to visualize").should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".pipeline-visualization-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".pipeline-visualization-page").should("be.visible");
     });
   });
 });

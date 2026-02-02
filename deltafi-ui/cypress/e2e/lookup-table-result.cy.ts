@@ -81,6 +81,15 @@ describe("Lookup Table Result Page", () => {
     it("displays delete row button", () => {
       cy.get(".p-datatable-tbody button").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".lookup-tables-results-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".lookup-tables-results-page").should("be.visible");
+    });
   });
 
   // Menu tests
@@ -96,20 +105,6 @@ describe("Lookup Table Result Page", () => {
     it("breadcrumb links back to lookup tables list", () => {
       cy.visit(baseUrl);
       cy.get('a[href="/admin/lookup-tables/"]').should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".lookup-tables-results-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".lookup-tables-results-page").should("be.visible");
     });
   });
 });

@@ -41,6 +41,15 @@ describe("DeltaFile Viewer Page", () => {
     it("page container exists", () => {
       cy.get(".deltafile-viewer-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".deltafile-viewer-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".deltafile-viewer-page").should("be.visible");
+    });
   });
 
   // DID validation tests
@@ -110,20 +119,6 @@ describe("DeltaFile Viewer Page", () => {
       cy.get('input[placeholder="DID (UUID)"]').type(testDid);
       cy.get(".p-inputgroup").contains("View").click();
       cy.url().should("include", testDid);
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(`${baseUrl}/${testDid}`);
-      cy.get(".deltafile-viewer-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(`${baseUrl}/${testDid}`);
-      cy.get(".deltafile-viewer-page").should("be.visible");
     });
   });
 

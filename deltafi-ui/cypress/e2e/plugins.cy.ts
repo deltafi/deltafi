@@ -62,6 +62,15 @@ describe("Plugins Page", () => {
     it("page container exists", () => {
       cy.get(".plugins-page").should("exist");
     });
+
+    it("renders correctly at default viewport", () => {
+      cy.get(".plugins-page").should("be.visible");
+    });
+
+    it("renders correctly at smaller viewport", () => {
+      cy.viewport(1024, 768);
+      cy.get(".plugins-page").should("be.visible");
+    });
   });
 
   // Sorting tests
@@ -95,20 +104,6 @@ describe("Plugins Page", () => {
       cy.visit(baseUrl);
       cy.get(".p-datatable-tbody tr").first().click();
       cy.get(".p-splitter-panel").last().should("exist");
-    });
-  });
-
-  // Responsive Layout
-  describe("Responsive Layout", () => {
-    it("renders correctly at default viewport", () => {
-      cy.visit(baseUrl);
-      cy.get(".plugins-page").should("be.visible");
-    });
-
-    it("renders correctly at smaller viewport", () => {
-      cy.viewport(1024, 768);
-      cy.visit(baseUrl);
-      cy.get(".plugins-page").should("be.visible");
     });
   });
 });
