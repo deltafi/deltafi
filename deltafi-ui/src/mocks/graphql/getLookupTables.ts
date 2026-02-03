@@ -19,7 +19,7 @@
 export default {
   getLookupTables: [
     {
-      name: "country-codes",
+      name: "mock-country-codes",
       keyColumns: ["code"],
       columns: ["code", "name", "region"],
       totalRows: 195,
@@ -30,7 +30,7 @@ export default {
       lastRefresh: new Date(Date.now() - 3600000).toISOString(),
     },
     {
-      name: "mime-types",
+      name: "mock-mime-types",
       keyColumns: ["extension"],
       columns: ["extension", "mime_type", "description"],
       totalRows: 1200,
@@ -41,7 +41,7 @@ export default {
       lastRefresh: new Date(Date.now() - 86400000).toISOString(),
     },
     {
-      name: "threat-indicators",
+      name: "mock-threat-indicators",
       keyColumns: ["indicator_type", "indicator_value"],
       columns: ["indicator_type", "indicator_value", "severity", "source", "last_seen"],
       totalRows: 50000,

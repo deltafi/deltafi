@@ -17,11 +17,7 @@
 */
 
 export default {
-  actionPlugins: {
-    "org.deltafi.testjig.action.SmokeTestTransformAction": "deltafi-testjig",
-    "org.deltafi.testjig.action.PassthroughEgressAction": "deltafi-testjig",
-    "org.deltafi.helloworld.action.HelloWorldJavaAction": "deltafi-hello-world-java",
-    "org.deltafi.core.action.DecompressAction": "deltafi-core-actions",
-    "org.deltafi.core.action.JoltTransformAction": "deltafi-core-actions",
+  saveTimedDataSourcePlan: {
+    name: "mock-timed-data-source",
   },
 };

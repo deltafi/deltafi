@@ -18,7 +18,7 @@
 
 export default {
   getLookupTable: {
-    name: "country-codes",
+    name: "mock-country-codes",
     keyColumns: ["code"],
     columns: ["code", "name", "region"],
     totalRows: 195,

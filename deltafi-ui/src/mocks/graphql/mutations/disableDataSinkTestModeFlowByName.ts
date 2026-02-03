@@ -16,14 +16,6 @@
    limitations under the License.
 */
 
-const generateData = () => {
-  const data = {
-    totalCount: 1,
-  };
-
-  return data;
-};
-
 export default {
-  deltaFiles: generateData(),
+  disableDataSinkTestMode: true,
 };

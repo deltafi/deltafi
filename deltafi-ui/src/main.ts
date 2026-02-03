@@ -47,9 +47,9 @@ if (import.meta.env.MODE === "development" || import.meta.env.MODE === "test") {
     const { worker } = await import("./mocks/browser.ts");
     const workerStarted = worker.start({
       // turn off MSW warnings for specific routes
-      onUnhandledRequest(req: any, print: any) {
+      onUnhandledRequest(req: Request, print: { warning: () => void }) {
         // specify routes to exclude
-        const excludedRoutes = ["/js/", "/fonts/"];
+        const excludedRoutes = ["/js/", "/fonts/", "/src/", "/@vite/", "/node_modules/", "/logo.png"];
 
         // check if the request URL pathname contains excludedRoutes
         const pathname = new URL(req.url).pathname;

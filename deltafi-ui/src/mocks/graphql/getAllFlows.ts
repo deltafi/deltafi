@@ -25,11 +25,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "devFlow4",
+        name: "mock-transform-1",
         subscribe: [
           {
             condition: null,
-            topic: "devFlow4"
+            topic: "mock-transform-1"
           }
         ],
         publish: {
@@ -69,11 +69,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "devFlow3",
+        name: "mock-transform-2",
         subscribe: [
           {
             condition: null,
-            topic: "devFlow3"
+            topic: "mock-transform-2"
           }
         ],
         publish: {
@@ -113,11 +113,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "devFlow2",
+        name: "mock-transform-3",
         subscribe: [
           {
             condition: null,
-            topic: "devFlow2"
+            topic: "mock-transform-3"
           }
         ],
         publish: {
@@ -157,11 +157,11 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "devFlow1",
+        name: "mock-transform-4",
         subscribe: [
           {
             condition: null,
-            topic: "devFlow1"
+            topic: "mock-transform-4"
           }
         ],
         publish: {
@@ -204,14 +204,14 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "2.0-beta6"
         },
-        name: "passthrough-data-sink",
+        name: "mock-passthrough-data-sink",
         subscribe: [
           {
             condition: null,
-            topic: "passthrough-egress"
+            topic: "mock-passthrough-egress"
           }
         ],
-        description: "Test flow that passes data through unchanged",
+        description: "Mock test flow that passes data through unchanged",
         flowStatus: {
           state: "RUNNING",
           errors: [],
@@ -235,14 +235,14 @@ const generateFlows = () => {
           groupId: "org.deltafi.testjig",
           version: "2.0-beta5"
         },
-        name: "blackhole-egress",
+        name: "mock-blackhole-egress",
         subscribe: [
           {
             condition: null,
-            topic: "blackhole"
+            topic: "mock-blackhole"
           }
         ],
-        description: "POST to nowhere",
+        description: "Mock POST to nowhere",
         flowStatus: {
           state: "RUNNING",
           errors: [],
@@ -266,14 +266,14 @@ const generateFlows = () => {
           groupId: "org.deltafi.stix",
           version: "2.0b7.dev0+g4f25d95.d20240524"
         },
-        name: "stix-2_1-egress",
+        name: "mock-stix-2_1-egress",
         subscribe: [
           {
             condition: null,
-            topic: "stix-2_1-validated"
+            topic: "mock-stix-2_1-validated"
           }
         ],
-        description: "Egress validated STIX 2.1",
+        description: "Mock egress validated STIX 2.1",
         flowStatus: {
           state: "RUNNING",
           errors: [],
@@ -297,14 +297,14 @@ const generateFlows = () => {
           groupId: "org.deltafi.helloworld",
           version: "2.0-beta5"
         },
-        name: "hello-world-java-egress",
+        name: "mock-hello-world-java-egress",
         subscribe: [
           {
             condition: null,
-            topic: "hello-world-java-egress"
+            topic: "mock-hello-world-java-egress"
           }
         ],
-        description: "Hello World Java egress",
+        description: "Mock Hello World Java egress",
         flowStatus: {
           state: "RUNNING",
           errors: [],
@@ -325,14 +325,14 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "2.0-beta6"
         },
-        name: "smoke-test-data-sink",
+        name: "mock-smoke-test-data-sink",
         subscribe: [
           {
             condition: null,
-            topic: "smoke-egress"
+            topic: "mock-smoke-egress"
           }
         ],
-        description: "Test flow that passes data through unchanged",
+        description: "Mock test flow that passes data through unchanged",
         flowStatus: {
           state: "RUNNING",
           errors: [],
@@ -356,14 +356,14 @@ const generateFlows = () => {
           groupId: "org.deltafi.python-hello-world",
           version: "2.0b7.dev0+gfa7ef50.d20240524"
         },
-        name: "hello-world-python-egress",
+        name: "mock-hello-world-python-egress",
         subscribe: [
           {
             condition: null,
-            topic: "hello-world-python-egress"
+            topic: "mock-hello-world-python-egress"
           }
         ],
-        description: "Hello World Python egress",
+        description: "Mock Hello World Python egress",
         flowStatus: {
           state: "RUNNING",
           errors: [],

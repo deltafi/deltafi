@@ -65,6 +65,28 @@ const generateDeltaFiles = () => {
       minBytes: null,
       deleteMetadata: true,
     },
+    {
+      id: faker.string.uuid(),
+      name: "mockOneWeekAfterCreate",
+      flow: null,
+      __typename: "TimedDeletePolicy",
+      enabled: true,
+      afterCreate: "P7D",
+      afterComplete: null,
+      minBytes: 1024,
+      deleteMetadata: false,
+    },
+    {
+      id: faker.string.uuid(),
+      name: "mockTwoDaysAfterCreate",
+      flow: "passthrough",
+      __typename: "TimedDeletePolicy",
+      enabled: false,
+      afterCreate: "P2D",
+      afterComplete: null,
+      minBytes: null,
+      deleteMetadata: true,
+    },
   ];
 };
 

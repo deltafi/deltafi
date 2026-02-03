@@ -20,15 +20,15 @@ const generateData = () => {
   return [
     {
       id: 1,
-      name: "Admin",
-      dn: "CN=Admin, C=US",
-      username: "admin",
+      name: "Mock Admin",
+      dn: "CN=Mock Admin, C=US",
+      username: "mock.admin",
       createdAt: "2022-11-28T18:27:26.534Z",
       updatedAt: "2022-11-28T18:40:05.194Z",
       roles: [
         {
           id: 1,
-          name: "Admin",
+          name: "Mock Admin",
           permissions: [
             "Admin"
           ],
@@ -42,15 +42,15 @@ const generateData = () => {
     },
     {
       id: 2,
-      name: "John Doe",
-      dn: "CN=John Doe",
-      username: "johndoe",
+      name: "Mock John Doe",
+      dn: "CN=Mock John Doe",
+      username: "mock.johndoe",
       createdAt: "2022-11-30T19:57:58.074Z",
       updatedAt: "2022-11-30T19:57:58.109Z",
       roles: [
         {
           id: 2,
-          name: "Ingress Only",
+          name: "Mock Ingress Only",
           permissions: [
             "DeltaFileIngress"
           ],
@@ -59,7 +59,7 @@ const generateData = () => {
         },
         {
           id: 3,
-          name: "Read Only",
+          name: "Mock Read Only",
           permissions: [
             "DashboardView",
             "DeletePolicyRead",

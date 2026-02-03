@@ -19,6 +19,54 @@
 const generateData = () => {
   return [
     {
+      "name": "mock-transform-1",
+      "publishers": [],
+      "subscribers": [
+        {
+          "name": "mock-transform-1",
+          "type": "TRANSFORM",
+          "state": "RUNNING",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "name": "mock-transform-2",
+      "publishers": [],
+      "subscribers": [
+        {
+          "name": "mock-transform-2",
+          "type": "TRANSFORM",
+          "state": "RUNNING",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "name": "mock-transform-3",
+      "publishers": [],
+      "subscribers": [
+        {
+          "name": "mock-transform-3",
+          "type": "TRANSFORM",
+          "state": "RUNNING",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "name": "mock-transform-4",
+      "publishers": [],
+      "subscribers": [
+        {
+          "name": "mock-transform-4",
+          "type": "TRANSFORM",
+          "state": "RUNNING",
+          "condition": null
+        }
+      ]
+    },
+    {
       "name": "blackhole",
       "publishers": [
         {

@@ -19,7 +19,7 @@
 const generateData = () => {
   const data = [
     {
-      displayName: "Deltafi STIX 1",
+      displayName: "Mock Plugin 1",
       description: "Provides conversions to/from STIX 1.X and 2.1 formats",
       actionKitVersion: "flowplan-2",
       pluginCoordinates: {
@@ -56,7 +56,7 @@ const generateData = () => {
       propertySets: null,
     },
     {
-      displayName: "Deltafi STIX 2",
+      displayName: "Mock Plugin 2",
       description: "Provides conversions to and 2.1 formats",
       actionKitVersion: "flowplan-3",
       pluginCoordinates: {
@@ -121,7 +121,7 @@ const generateData = () => {
       propertySets: null,
     },
     {
-      displayName: "Deltafi STIX 5",
+      displayName: "Mock Plugin 3",
       description: "Provides conversions to and 2.1 formats",
       actionKitVersion: "flowplan-4",
       pluginCoordinates: {
@@ -186,7 +186,7 @@ const generateData = () => {
       propertySets: null,
     },
     {
-      displayName: "Deltafi STIX",
+      displayName: "Mock Plugin 4",
       description: "Provides conversions to/from STIX 1.X and 2.1 formats",
       actionKitVersion: "flowplan-2",
       pluginCoordinates: {

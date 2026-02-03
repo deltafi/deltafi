@@ -17,5 +17,5 @@
 */
 
 export default {
-  startdataSourceFlow: true,
+  setRestDataSourceMaxErrors: true,
 };

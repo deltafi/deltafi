@@ -20,7 +20,7 @@ const generateData = () => {
   return [
     {
       id: 1,
-      name: "Admin",
+      name: "Mock Admin",
       permissions: [
         "Admin"
       ],
@@ -29,7 +29,7 @@ const generateData = () => {
     },
     {
       id: 2,
-      name: "Ingress Only",
+      name: "Mock Ingress Only",
       permissions: [
         "DeltaFileIngress"
       ],
@@ -38,7 +38,7 @@ const generateData = () => {
     },
     {
       id: 3,
-      name: "Read Only",
+      name: "Mock Read Only",
       permissions: [
         "DashboardView",
         "DeletePolicyRead",

@@ -18,7 +18,7 @@
 
 const generateData = () => {
   return {
-    name: "Grett Bargano",
+    name: "Mock User",
     permissions: [
       "Admin",
       // "DashboardView",

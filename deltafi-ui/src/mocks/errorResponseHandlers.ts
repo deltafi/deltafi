@@ -54,4 +54,4 @@ export default [
       message: 'Error fetching data from GraphQL',
     }, { status: 500 })
   }),
-]
+];

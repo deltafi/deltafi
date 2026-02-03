@@ -17,5 +17,7 @@
 */
 
 export default {
-  stopdataSourceFlow: true,
+  saveRestDataSourcePlan: {
+    name: "mock-rest-data-source",
+  },
 };

@@ -22,31 +22,31 @@ export default {
     rows: [
       [
         { column: "code", value: "US" },
-        { column: "name", value: "United States" },
+        { column: "name", value: "Mock United States" },
         { column: "region", value: "North America" },
         { column: "last_updated", value: new Date(Date.now() - 86400000).toISOString() },
       ],
       [
         { column: "code", value: "CA" },
-        { column: "name", value: "Canada" },
+        { column: "name", value: "Mock Canada" },
         { column: "region", value: "North America" },
         { column: "last_updated", value: new Date(Date.now() - 86400000).toISOString() },
       ],
       [
         { column: "code", value: "MX" },
-        { column: "name", value: "Mexico" },
+        { column: "name", value: "Mock Mexico" },
         { column: "region", value: "North America" },
         { column: "last_updated", value: new Date(Date.now() - 86400000).toISOString() },
       ],
       [
         { column: "code", value: "GB" },
-        { column: "name", value: "United Kingdom" },
+        { column: "name", value: "Mock United Kingdom" },
         { column: "region", value: "Europe" },
         { column: "last_updated", value: new Date(Date.now() - 86400000).toISOString() },
       ],
       [
         { column: "code", value: "DE" },
-        { column: "name", value: "Germany" },
+        { column: "name", value: "Mock Germany" },
         { column: "region", value: "Europe" },
         { column: "last_updated", value: new Date(Date.now() - 86400000).toISOString() },
       ],

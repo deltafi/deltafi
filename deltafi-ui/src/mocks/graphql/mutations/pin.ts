@@ -16,18 +16,9 @@
    limitations under the License.
 */
 
-const generateData = () => {
-  return {
-    metadata: {
-      "city 1": ["a", "b", "c"],
-      "state 2": ["vfg"],
-      "county 3": ["a"],
-      "grate 4": ["gdeds"],
-      "district 5": ["ghr", "fed"],
-      "money 6": ["bdrf"],
-      "hotel 7": ["dcv"]
-    }
-  };
+export default {
+  pin: {
+    success: true,
+    info: ["1 DeltaFile(s) pinned"],
+  },
 };
-
-export default generateData();
