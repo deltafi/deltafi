@@ -44,17 +44,19 @@ func TestConfigWizardKubernetesAvailability(t *testing.T) {
 	// Test that the wizard is created correctly
 	wizard := NewConfigWizard()
 
-	// Check if Kubernetes cluster is running
+	// Kubernetes option is disabled when no cluster is running OR when the cluster is KinD
 	kubernetesAvailable := isKubernetesClusterRunning()
+	kindRunning := isKindClusterRunning()
+	expectDisabled := !kubernetesAvailable || kindRunning
 
-	// If Kubernetes cluster is not running, Kubernetes option should be disabled
-	if !kubernetesAvailable {
+	if expectDisabled {
 		if !wizard.disabledOptions[1] {
-			t.Errorf("Expected Kubernetes option (index 1) to be disabled when Kubernetes cluster is not running")
+			t.Errorf("Expected Kubernetes option (index 1) to be disabled (k8s available: %t, kind running: %t)",
+				kubernetesAvailable, kindRunning)
 		}
 	} else {
 		if wizard.disabledOptions[1] {
-			t.Errorf("Expected Kubernetes option (index 1) to be enabled when Kubernetes cluster is running")
+			t.Errorf("Expected Kubernetes option (index 1) to be enabled when a non-KinD Kubernetes cluster is running")
 		}
 	}
 }
@@ -93,9 +95,10 @@ func TestConfigWizardAllOrchestrationOptions(t *testing.T) {
 			wizard.disabledOptions[0], dockerAvailable)
 	}
 
-	if kubernetesAvailable != !wizard.disabledOptions[1] {
-		t.Errorf("Kubernetes option disabled state (%t) doesn't match Kubernetes availability (%t)",
-			wizard.disabledOptions[1], kubernetesAvailable)
+	kubernetesExpectDisabled := !kubernetesAvailable || isKindClusterRunning()
+	if kubernetesExpectDisabled != wizard.disabledOptions[1] {
+		t.Errorf("Kubernetes option disabled state (%t) doesn't match expected (%t) (k8s available: %t, kind running: %t)",
+			wizard.disabledOptions[1], kubernetesExpectDisabled, kubernetesAvailable, isKindClusterRunning())
 	}
 
 	if kindAvailable != !wizard.disabledOptions[2] {

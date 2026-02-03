@@ -446,7 +446,7 @@ Parse errors:
   Simple format: %v
   Original format: %v`, simpleErr, originalErr)
 
-	return nil, fmt.Errorf(errMsg)
+	return nil, fmt.Errorf("%s", errMsg)
 }
 
 func convertMapsToRows(maps []map[string]string) [][]graphql.ColumnValueInput {
