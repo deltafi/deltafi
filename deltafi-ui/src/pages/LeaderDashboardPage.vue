@@ -365,8 +365,12 @@ const savedPrefs = loadPreferences();
 const viewMode = ref(savedPrefs.viewMode || "summary");
 const metricFilter = ref("");
 const displayMode = ref<"cards" | "table" | "summary">(savedPrefs.displayMode || "cards");
-const tableSortField = ref<string | null>(null);
-const tableSortOrder = ref<number | null>(null);
+
+// Per-view-mode sort preferences
+const tableSortPrefs = ref<Record<string, { field: string; order: number }>>(savedPrefs.tableSortPrefs || {});
+const initialSort = tableSortPrefs.value[savedPrefs.viewMode || "summary"];
+const tableSortField = ref<string | null>(initialSort?.field ?? null);
+const tableSortOrder = ref<number | null>(initialSort?.order ?? null);
 
 // Override flowMetricsInterval if saved
 if (savedPrefs.flowMetricsInterval) {
@@ -379,6 +383,7 @@ const savePreferences = () => {
     viewMode: viewMode.value,
     displayMode: displayMode.value,
     flowMetricsInterval: flowMetricsInterval.value,
+    tableSortPrefs: tableSortPrefs.value,
   }));
 };
 
@@ -565,6 +570,11 @@ const summaryTableData = computed(() => {
 
 // Fetch flow metrics when switching to a metric view or when interval changes
 watch(viewMode, (newMode) => {
+  // Restore persisted sort state for the new view mode
+  const savedSort = tableSortPrefs.value[newMode];
+  tableSortField.value = savedSort?.field ?? null;
+  tableSortOrder.value = savedSort?.order ?? null;
+
   if (["ingress", "egress", "storage", "deleted"].includes(newMode)) {
     fetchFlowMetrics();
   }
@@ -730,7 +740,13 @@ const sortedTableData = computed(() => {
 });
 
 const onTableSort = () => {
-  // Sort state is managed by v-model, sorting handled by sortedTableData computed
+  // Persist sort state for the current view mode
+  if (tableSortField.value && tableSortOrder.value) {
+    tableSortPrefs.value[viewMode.value] = { field: tableSortField.value, order: tableSortOrder.value };
+  } else {
+    delete tableSortPrefs.value[viewMode.value];
+  }
+  savePreferences();
 };
 
 const rowClass = (data: Record<string, unknown>) => {
@@ -807,6 +823,11 @@ let refreshInterval: number | null = null;
 
 onMounted(() => {
   fetchAll();
+
+  // Fetch flow metrics if initial view mode is a metric view (watcher only fires on changes)
+  if (["ingress", "egress", "storage", "deleted"].includes(viewMode.value)) {
+    fetchFlowMetrics();
+  }
 
   // Auto-refresh every 5 seconds
   refreshInterval = window.setInterval(() => {

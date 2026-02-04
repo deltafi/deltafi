@@ -79,7 +79,9 @@ export interface FlowMetrics {
 }
 
 export default function useLeaderDashboard() {
-  const { response, get, loading } = useApi();
+  const { response: membersResponse, get: getMembers, loading } = useApi();
+  const { response: statsResponse, get: getStats } = useApi();
+  const { response: metricsResponse, get: getMetrics } = useApi();
   const members = ref<MemberStatus[]>([]);
   const lastRefresh = ref<string>("");
   const filterText = ref<string>("");
@@ -90,18 +92,18 @@ export default function useLeaderDashboard() {
   const flowMetricsLoading = ref<boolean>(false);
 
   const fetchMembers = async () => {
-    await get("leader/members");
-    if (response.value) {
-      const data = response.value as LeaderDashboardData;
+    await getMembers("leader/members");
+    if (membersResponse.value) {
+      const data = membersResponse.value as LeaderDashboardData;
       members.value = data.members;
       lastRefresh.value = data.lastRefresh;
     }
   };
 
   const fetchStats = async () => {
-    await get("leader/stats");
-    if (response.value) {
-      aggregatedStats.value = response.value as AggregatedStats;
+    await getStats("leader/stats");
+    if (statsResponse.value) {
+      aggregatedStats.value = statsResponse.value as AggregatedStats;
     }
   };
 
@@ -109,9 +111,9 @@ export default function useLeaderDashboard() {
     const interval = minutes ?? flowMetricsInterval.value;
     flowMetricsLoading.value = true;
     try {
-      await get(`leader/metrics/flow?minutes=${interval}`);
-      if (response.value) {
-        flowMetrics.value = response.value as Record<string, FlowMetrics>;
+      await getMetrics(`leader/metrics/flow?minutes=${interval}`);
+      if (metricsResponse.value) {
+        flowMetrics.value = metricsResponse.value as Record<string, FlowMetrics>;
       }
     } finally {
       flowMetricsLoading.value = false;
