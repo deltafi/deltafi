@@ -1,4 +1,22 @@
-"GUI eslint":
+.when-ui-changes:
+  rules:
+    # No redundant triggers for merge request events
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    # Always run on dev and main
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # # Run on branch commits if deltafi-ui has changed
+    - if: $CI_COMMIT_BRANCH
+      changes:
+        compare_to: refs/heads/dev
+        paths:
+          - deltafi-ui/**/*
+    # Otherwise allow manual trigger
+    - when: manual
+      allow_failure: true
+
+GUI Static Analysis:
+  extends: .when-ui-changes
   tags:
     - light
   image: node:22.5.1-alpine
@@ -14,7 +32,8 @@
     # Run eslint
     - npm run lint
 
-"GUI License Check":
+GUI License Check:
+  extends: .when-ui-changes
   tags:
     - light
   image: node
@@ -29,7 +48,7 @@
   stage: test
   allow_failure: false
   needs:
-    - job: "GUI eslint"
+    - job: "GUI Static Analysis"
   retry: 2
   variables:
     # Cypress performance optimizations
@@ -56,7 +75,7 @@
       - deltafi-ui/cypress/screenshots/
     expire_in: 1 week
 
-"GUI Test":
+GUI Tests:
   extends: .cypress-test-base
   timeout: 15m
   parallel: 10
