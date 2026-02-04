@@ -307,6 +307,9 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
   const savePersistedParams = () => {
     let persistedQueryState = _.cloneDeep(queryParamsModel.value) as Record<string, unknown>;
 
+    // Convert validatedAnnotations to annotations for persistence encoding
+    persistedQueryState.annotations = persistedQueryState.validatedAnnotations;
+
     // Remove unchanged values
     persistedQueryState = _.omitBy(persistedQueryState, (v, k) => {
       return JSON.stringify((defaultTemplate as unknown as Record<string, unknown>)[k]) === JSON.stringify(v);
