@@ -25,11 +25,15 @@ import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.util.ResourceMapper;
 import org.deltafi.core.configuration.SslSecretNames;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.PluginService;
+import org.deltafi.core.types.RegistryAuth;
 import org.deltafi.core.types.Result;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -57,6 +61,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .withStartPeriod(5_000_000_000L)
                 .withTimeout(1_000_000_000L);
 
+    private final Resource dockerAuthConfig = new FileSystemResource("/.docker/config.json");
     private final DockerClient dockerClient;
     private final SslSecretNames sslSecretNames;
 
@@ -289,7 +294,16 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
     private String pullImage(String image) {
         try {
-            boolean completed = dockerClient.pullImageCmd(image)
+            PullImageCmd pullImageCmd = dockerClient.pullImageCmd(image);
+
+            // Try to load auth config for the registry
+            AuthConfig authConfig = loadAuthConfig(image);
+            if (authConfig != null) {
+                pullImageCmd.withAuthConfig(authConfig);
+                log.debug("Using authentication for image pull: {}", image);
+            }
+
+            boolean completed = pullImageCmd
                     .exec(new PullImageResultCallback())
                     .awaitCompletion(IMAGE_PULL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!completed) {
@@ -306,6 +320,144 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         } catch (Exception e) {
             return extractPullError(image, e);
         }
+    }
+
+    /**
+     * Load authentication configuration for a Docker registry.
+     * Reads from /root/.docker/config.json if available.
+     *
+     * @param image The full image name (e.g., registry.example.com/repo/image:tag)
+     * @return AuthConfig if credentials are found for the registry, null otherwise
+     */
+    private AuthConfig loadAuthConfig(String image) {
+        try {
+            if (!dockerAuthConfig.exists()) {
+                return null;
+            }
+
+            DockerConfig dockerConfig = ResourceMapper.readValue(dockerAuthConfig, DockerConfig.class);
+
+            // Extract and normalize registry from image name
+            String registry = extractRegistry(image);
+            String normalizedRegistry = normalizeRegistry(registry);
+
+            // Find auth for the normalized registry
+            RegistryAuth registryAuth = findRegistryAuth(dockerConfig.auths(), normalizedRegistry);
+            if (registryAuth == null) {
+                return null;
+            }
+
+            return registryAuth.toAuthConfig(normalizedRegistry);
+        } catch (IOException e) {
+            log.warn("Failed to load Docker auth config: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Normalize a registry name by removing protocol prefixes and trying common variations.
+     * This ensures consistent matching regardless of how the registry was stored.
+     *
+     * @param registry The registry hostname (may be null for Docker Hub)
+     * @return Normalized registry name, or null for Docker Hub
+     */
+    private String normalizeRegistry(String registry) {
+        if (registry == null) {
+            return null;
+        }
+
+        // Remove protocol prefixes
+        registry = registry.replaceFirst("^https?://", "");
+
+        // Remove trailing slashes and paths
+        registry = registry.split("/")[0];
+
+        return registry.isEmpty() ? null : registry;
+    }
+
+    /**
+     * Find authentication config for a registry.
+     * All registry names in the map should be pre-normalized (no http/https prefix).
+     *
+     * @param auths Map of normalized registry names to auth configs
+     * @param normalizedRegistry The normalized registry hostname (null for Docker Hub)
+     * @return RegistryAuth if found, null otherwise
+     */
+    RegistryAuth findRegistryAuth(Map<String, RegistryAuth> auths, String normalizedRegistry) {
+        if (normalizedRegistry == null) {
+            // Docker Hub - try common variations (normalized)
+            String[] dockerHubVariations = {
+                "index.docker.io/v1",
+                "index.docker.io",
+                "docker.io",
+                "registry.hub.docker.com",
+                "registry-1.docker.io"
+            };
+            for (String variation : dockerHubVariations) {
+                RegistryAuth auth = auths.get(variation);
+                if (auth != null) {
+                    return auth;
+                }
+            }
+            return null;
+        }
+
+        // Try exact match first (should work in most cases since everything is normalized)
+        RegistryAuth auth = auths.get(normalizedRegistry);
+        if (auth != null) {
+            return auth;
+        }
+
+        // Try without port if registry has one (registry.example.com:443 -> registry.example.com)
+        if (normalizedRegistry.contains(":")) {
+            String registryWithoutPort = normalizedRegistry.substring(0, normalizedRegistry.indexOf(":"));
+            auth = auths.get(registryWithoutPort);
+            if (auth != null) {
+                return auth;
+            }
+        }
+
+        // Try with default HTTPS port if no port specified
+        auth = auths.get(normalizedRegistry + ":443");
+        return auth;
+    }
+
+    /**
+     * Extract the registry hostname from an image name.
+     * Examples:
+     *   - registry.example.com/repo/image:tag -> registry.example.com
+     *   - 123456789012.dkr.ecr.us-east-1.amazonaws.com/repo:tag -> 123456789012.dkr.ecr.us-east-1.amazonaws.com
+     *   - ubuntu:latest -> null (uses Docker Hub, no explicit registry)
+     *   - localhost:5000/myimage -> localhost:5000
+     *
+     * @param image The full image name
+     * @return Registry hostname or null if using Docker Hub
+     */
+    String extractRegistry(String image) {
+        if (StringUtils.isBlank(image)) {
+            return null;
+        }
+
+        // If image doesn't contain '/', it's Docker Hub
+        int firstSlash = image.indexOf('/');
+        if (firstSlash == -1) {
+            return null; // No slash, Docker Hub
+        }
+
+        String registryCandidate = image.substring(0, firstSlash);
+
+        // Check if it looks like a registry:
+        // - Contains '.' (e.g., registry.example.com, gcr.io, docker.io)
+        // - Contains ':' for localhost:port
+        // - Starts with 'localhost'
+        if (registryCandidate.contains(".") ||
+            registryCandidate.contains(":") ||
+            registryCandidate.equals("localhost")) {
+            return registryCandidate;
+        }
+
+        // Otherwise it's likely Docker Hub namespace (e.g., ubuntu/mysql)
+        return null;
     }
 
     private String extractPullError(String image, Exception e) {
@@ -483,5 +635,14 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .findFirst()
                 .map(Container::getImage)
                 .orElse(null);
+    }
+
+    /**
+     * Represents the top-level Docker config.json structure.
+     */
+    record DockerConfig(Map<String, RegistryAuth> auths) {
+        DockerConfig {
+            auths = auths != null ? auths : Map.of();
+        }
     }
 }

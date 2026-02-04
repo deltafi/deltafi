@@ -52,6 +52,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DATA_DIR}/certs:/certs:rw
       - ${DATA_DIR}/analytics:/data/deltafi/analytics:rw
+      - ${SECRETS_DIR}/docker-config.json:/.docker/config.json:ro
   core-worker:
     image: ${DELTAFI_CORE}
     profiles: ["worker"]
@@ -90,6 +91,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DATA_DIR}/certs:/certs:rw
       - ${DATA_DIR}/analytics:/data/deltafi/analytics:rw
+      - ${SECRETS_DIR}/docker-config.json:/.docker/config.json:ro
   deltafi-entity-resolver:
     image: ${DELTAFI_ENTITY_RESOLVER}
     container_name: deltafi-entity-resolver

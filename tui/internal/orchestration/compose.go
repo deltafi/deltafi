@@ -20,6 +20,8 @@ package orchestration
 import (
 	"bytes"
 	"embed"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -940,6 +942,59 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 		if err := os.WriteFile(sslPath, []byte{}, 0600); err != nil {
 			return fmt.Errorf("error creating ssl secrets file: %w", err)
 		}
+	}
+
+	// Setup Docker config for registry authentication
+	dockerConfigPath := filepath.Join(secretsDir, "docker-config.json")
+	if _, err := os.Stat(dockerConfigPath); os.IsNotExist(err) {
+		// Create empty but valid Docker config.json
+		defaultDockerConfig := `{
+  "auths": {}
+}`
+		if err := os.WriteFile(dockerConfigPath, []byte(defaultDockerConfig), 0600); err != nil {
+			return fmt.Errorf("error creating docker config file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// SaveDockerAuth saves Docker registry authentication credentials
+func (o *ComposeOrchestrator) SaveDockerAuth(registry, username, password string) error {
+	dockerConfigPath := filepath.Join(o.secretsPath, "docker-config.json")
+
+	if err := os.MkdirAll(o.secretsPath, 0755); err != nil {
+		return fmt.Errorf("failed to create secrets directory: %w", err)
+	}
+
+	type dockerConfigJSON struct {
+		Auths map[string]DockerAuthConfig `json:"auths"`
+	}
+
+	var dockerConfig dockerConfigJSON
+	if existingData, err := os.ReadFile(dockerConfigPath); err == nil {
+		// Parse existing config, if it fails recreate a valid config to start from
+		if err := json.Unmarshal(existingData, &dockerConfig); err != nil {
+			dockerConfig = dockerConfigJSON{Auths: make(map[string]DockerAuthConfig)}
+		}
+	} else {
+		dockerConfig = dockerConfigJSON{Auths: make(map[string]DockerAuthConfig)}
+	}
+
+	authString := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+	dockerConfig.Auths[registry] = DockerAuthConfig{
+		Username: username,
+		Password: password,
+		Auth:     authString,
+	}
+
+	configJSON, err := json.MarshalIndent(dockerConfig, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal docker config: %w", err)
+	}
+
+	if err := os.WriteFile(dockerConfigPath, configJSON, 0600); err != nil {
+		return fmt.Errorf("failed to write docker config: %w", err)
 	}
 
 	return nil

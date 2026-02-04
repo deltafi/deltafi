@@ -36,7 +36,15 @@ type Orchestrator interface {
 	GetValkeyName() string
 	GetAPIBaseURL() (string, error)
 	Migrate(activeVersion *semver.Version) error
+	SaveDockerAuth(registry, username, password string) error
 	SslManagement
+}
+
+// DockerAuthConfig represents authentication for a single registry
+type DockerAuthConfig struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Auth     string `json:"auth,omitempty"`
 }
 
 type valuesData struct {

@@ -85,6 +85,7 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
       - [down](#kind-down)
       - [destroy](#kind-destroy)
       - [shell](#kind-shell)
+    - [docker-login](#docker-login)
   - [DeltaFi System Management](#deltafi-system-management)
     - [event](#event)
       - [list](#event-list)
@@ -348,6 +349,46 @@ deltafi kind [subcommand]
   - Provide an interactive development environment
   
   Use `Ctrl+B` then `D` to detach from the tmux session.
+
+#### `docker-login`
+Configure Docker registry authentication for pulling private images. This allows DeltaFi to install plugins from image repositories that require authentication.
+
+**⚠️ Important**: This command is only available when the orchestration mode is set to Compose. It is not supported in Kubernetes or KinD deployments.
+
+```bash
+deltafi docker-login [registry] --username|-u <username> [--password <password>] [--password-stdin|-p]
+```
+
+**Arguments:**
+- `registry`: The Docker registry URL (e.g., `registry.example.com`, `123456789012.dkr.ecr.us-east-1.amazonaws.com`)
+
+**Flags:**
+- `--username, -u <username>`: Registry username (required)
+- `--password <password>`: Registry password (use --password-stdin instead for better security)
+- `--password-stdin, -p`: Read password from stdin (mutually exclusive with --password)
+
+**Security Note**: Using `--password-stdin` is recommended over `--password` to avoid exposing credentials in shell history or process listings.
+
+**After Configuration**: The credentials are saved and will be used for plugin installations. You must restart the core services for changes to take effect by running:
+```bash
+deltafi down && deltafi up
+```
+
+**Examples:**
+```bash
+# Login with password from stdin (recommended for AWS ECR)
+aws ecr get-login-password --region us-east-1 | \
+  deltafi docker-login --username AWS --password-stdin \
+  123456789012.dkr.ecr.us-east-1.amazonaws.com
+
+# Login with password from environment variable
+deltafi docker-login --username myuser --password "$REGISTRY_PASSWORD" \
+  registry.example.com
+
+# Standard docker registry login
+echo "$DOCKER_PASSWORD" | deltafi docker-login --username myuser \
+  --password-stdin docker.io
+```
 
 ### DeltaFi System Management
 

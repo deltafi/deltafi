@@ -226,6 +226,14 @@ deltafi plugin generate --java my-plugin
 deltafi plugin generate --python my-plugin
 ```
 
+**Installing from Private Registries**: If you need to install plugins from a private or authenticated Docker registry (AWS ECR, Azure Container Registry, etc.) when running with Compose orchestration, configure authentication first with:
+
+```bash
+deltafi docker-login <registry> --username <username> --password-stdin
+```
+
+Then restart DeltaFi (`deltafi down && deltafi up`) before installing the plugin. See [Installing Plugins](/getting-started/install-plugins#installing-plugins-from-private-registries) for complete details.
+
 ## Reference
 
 - [TUI Reference](/operating/TUI) - Complete command documentation

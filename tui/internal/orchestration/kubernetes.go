@@ -232,6 +232,10 @@ func (o *KubernetesOrchestrator) TemplatesDir() (string, error) {
 	return siteTemplatesDir, nil
 }
 
+func (o *KubernetesOrchestrator) SaveDockerAuth(registry, username, password string) error {
+	return fmt.Errorf("docker-login is not yet implemented for Kubernetes orchestration mode")
+}
+
 func (o *KubernetesOrchestrator) Migrate(_ *semver.Version) error {
 	return nil
 }
