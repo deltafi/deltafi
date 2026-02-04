@@ -5,6 +5,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.49.1] - 2026-02-04
+
+### Added
+- Updates to our mocking service 
+- Added a new command `deltafi docker-login` that allows DeltaFi to install plugins from image repositories that require authentication when running in compose mode
+
+### Changed
+- Improved UI CI test pipeline performance with parallelization and early failure termination
+- UI e2e tests now use retryable setup to handle transient initialization failures
+- Added `runTest.sh` argument passthrough for running individual test specs
+
+### Fixed
+- Added guards to UI tests to prevent spurious timeouts and failures when under heavy load
+- TUI: Unit test failure
+- TUI: Linter failure
+- Fixed race condition where the mock service worker may not be ready before the app fetches initial data
+
+### Tech-Debt/Refactor
+- Moved UI viewport tests into Page Structure groups across all Cypress specs to share page loads and reduce test runtime
+
+### Upgrade and Migration
+- Upgraded Java JRE base image to deltafi/deltafi-java-jre:21.0.9-alpine-7
+- Upgraded MSW (Mock Service Worker) from v1 to v2 for UI test mocking
+- Updated Go applications to float the latest patch release of Golang 1.25.x
+- Upgrade KinD to the latest executable and control plane images (0.31.0)
+- Upgrade compose nginx to deltafi/nginx:1.29.4-alpine3.23-1
+- Upgrade Grafana sidecar to kiwigrid/k8s-sidecar:2.5.0
+- Upgrade subprojects:
+  - Upgrade Grafana to deltafi/grafana:12.4.0-7
+  - Upgrade VictoriaMetrics to victoriametrics/victoria-metrics:v1.134.0
+  - Upgrade logrotate to deltafi/logrotate:1.0.0-4
+  - Upgrade Vector to deltafi/vector:0.53.0-alpine-0
+  - Upgrade Dozzle to deltafi/dozzle:v9.0.3
+  - Upgrade S3-Proxy to deltafi/s3proxy:3.0.0-1
+  - Upgrade Promtail to grafana/promtail:3.6.4
+  - Upgrade Valkey to deltafi/valkey:9.0.1-1
+  - Upgrade TimescaleDB to deltafi/timescaledb:2.19.3-pg16-6
+  - Upgrade Postgres to deltafi/postgres:16.11-1
+
 ## [2.49.0] - 2026-01-30
 
 ### Added
@@ -5661,7 +5700,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.1...main
+[2.49.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.0...2.49.1
 [2.49.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.48.0...2.49.0
 [2.48.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.2...2.48.0
 [2.47.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.47.1...2.47.2
