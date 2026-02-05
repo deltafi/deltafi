@@ -3,5 +3,5 @@ plugins {
 }
 
 license {
-    includes(["**/*.sh", "**/*.rb"])
+    includes(["**/*.go"])
 }

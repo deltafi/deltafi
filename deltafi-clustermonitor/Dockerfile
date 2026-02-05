@@ -1,13 +1,15 @@
-# Scab kubectl from this bitnami image...
-FROM chainguard/kubectl:latest AS kubectl
-
-FROM ubuntu:questing
-RUN apt-get -y update && apt-get -y install bash netcat-openbsd && apt-get clean && rm -rf /var/lib/apt/lists/*
-COPY --from=kubectl /usr/bin/kubectl /usr/local/bin
-
-RUN useradd -r -s /bin/false deltafi && kubectl version || kubectl help
-USER deltafi
-
+FROM golang:1.25 AS builder
 WORKDIR /app
-COPY . /app
-CMD [ "bash", "-c", "/app/doit.sh" ]
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -o deltafi-clustermonitor .
+
+FROM builder AS test
+RUN go test -v ./...
+
+FROM chainguard/static:latest
+WORKDIR /app
+COPY --from=builder /app/deltafi-clustermonitor .
+USER 65532
+ENTRYPOINT ["/app/deltafi-clustermonitor"]
