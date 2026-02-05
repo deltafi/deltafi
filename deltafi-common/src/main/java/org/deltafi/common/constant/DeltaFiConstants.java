@@ -33,6 +33,7 @@ public class DeltaFiConstants {
     public static final String USER_NAME_HEADER = "X-User-Name";
     public static final String USER_ID_HEADER = "X-User-Id";
     public static final String USER_METRIC_ROLE_HEADER = "X-Metrics-Role";
+    public static final String AUTHORIZATION_HEADER = "Authorization";
 
     // Metric names
     public static final String BYTES_IN = "bytes_in";

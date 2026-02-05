@@ -137,11 +137,11 @@ const generateData = () => {
         group: null,
       },
       {
-        app: "kubernetes-dashboard",
-        container: "kubernetes-dashboard",
+        app: "headlamp",
+        container: "headlamp",
         image: {
-          name: "kubernetesui/dashboard",
-          tag: "v2.3.0",
+          name: "kubernetesui/headlamp",
+          tag: "0.38.0",
         },
         group: null,
       },

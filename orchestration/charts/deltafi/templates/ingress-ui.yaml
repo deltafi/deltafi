@@ -37,3 +37,10 @@ spec:
             name: deltafi-grafana
             port:
               number: 3000
+      - path: /(orchestration.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: deltafi-headlamp
+            port:
+              number: 80

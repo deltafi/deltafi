@@ -43,14 +43,20 @@ import static org.deltafi.common.constant.DeltaFiConstants.*;
 @Slf4j
 public class AuthRest {
 
-    public static final String X_ORIGINAL_URL = "X-ORIGINAL-URL";
+    private static final String X_ORIGINAL_URL = "X-ORIGINAL-URL";
+    private static final String ORCHESTRATION_PATH = "/orchestration";
+    private static final String VISUALIZATION_PATH = "/visualization";
+
     private final String domain;
     private final AuthProperties authProperties;
+    private final String headlampToken;
     private final CoreAuditLogger auditLogger;
 
-    public AuthRest(@Value("${DELTAFI_UI_DOMAIN}") String domain, AuthProperties authProperties, CoreAuditLogger auditLogger) {
+    public AuthRest(@Value("${DELTAFI_UI_DOMAIN}") String domain, AuthProperties authProperties,
+            @Value("${HEADLAMP_TOKEN:#{null}}") String headlampToken, CoreAuditLogger auditLogger) {
         this.domain = domain;
         this.authProperties = authProperties;
+        this.headlampToken = headlampToken;
         this.auditLogger = auditLogger;
     }
 
@@ -58,24 +64,27 @@ public class AuthRest {
     public void get(@AuthenticationPrincipal UserDetails user, HttpServletResponse response,
                     @RequestHeader(value = X_ORIGINAL_URL, required = false) String originalUrl) {
         if (user instanceof DeltaFiUserDetails deltaFiUserDetails) {
-            verifyDomainAccess(originalUrl, deltaFiUserDetails);
-            verifyPathAccess(originalUrl, deltaFiUserDetails);
+            String requestedDomain = extractDomain(originalUrl);
+            verifyDomainAccess(requestedDomain, deltaFiUserDetails);
+            String requestedPath = extractPath(originalUrl);
+            verifyPathAccess(requestedPath, deltaFiUserDetails);
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader(USER_NAME_HEADER, user.getUsername());
             response.setHeader(USER_ID_HEADER, deltaFiUserDetails.id());
             response.setHeader(PERMISSIONS_HEADER, deltaFiUserDetails.getPermissions());
             response.setHeader(USER_METRIC_ROLE_HEADER, deltaFiUserDetails.metricsRole());
+            if ((headlampToken != null) && requestedPath.startsWith(ORCHESTRATION_PATH)) {
+                response.setHeader(AUTHORIZATION_HEADER, "Bearer " + headlampToken);
+            }
         } else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }
 
-    void verifyPathAccess(String originalUrl, DeltaFiUserDetails user) {
+    private void verifyPathAccess(String requestedPath, DeltaFiUserDetails user) {
         if (authProperties.noAuth()) {
             return;
         }
-
-        String requestedPath = extractPath(originalUrl);
 
         String requiredPermission = pathPermission(requestedPath);
 
@@ -89,12 +98,10 @@ public class AuthRest {
         }
     }
 
-    void verifyDomainAccess(String originalUrl, DeltaFiUserDetails user) {
+    private void verifyDomainAccess(String requestedDomain, DeltaFiUserDetails user) {
         if (authProperties.noAuth()) {
             return;
         }
-
-        String requestedDomain = extractDomain(originalUrl);
 
         // calls to the standard domain will use the regular required permissions method for authorization
         if (this.domain.equals(requestedDomain)) {
@@ -109,7 +116,7 @@ public class AuthRest {
         }
     }
 
-    String domainPermission(String domain) {
+    private String domainPermission(String domain) {
         // Make sure this a valid domain and take the first chunk
         if (domain.contains(".") && domain.endsWith(this.domain)) {
             domain = domain.substring(0, domain.indexOf("."));
@@ -122,16 +129,16 @@ public class AuthRest {
         };
     }
 
-    String pathPermission(String path) {
+    private String pathPermission(String path) {
         if (path == null) {
             return null;
         }
 
-        if (path.startsWith("/visualization")) {
+        if (path.startsWith(VISUALIZATION_PATH)) {
             return "MetricsView";
         }
 
-        if (path.startsWith("/orchestration")) {
+        if (path.startsWith(ORCHESTRATION_PATH)) {
             return "Admin";
         }
 

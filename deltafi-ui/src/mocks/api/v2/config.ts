@@ -48,7 +48,7 @@ const generateData = () => {
       ],
       externalLinks: [
         { url: "/mock-graphiql/", name: "Mock GraphiQL", description: "Mock GraphQL query interface" },
-        { url: "https://mock.k8s.dev.deltafi.org/#/workloads?namespace=deltafi", name: "Mock Kubernetes Dashboard", description: "Mock Kubernetes admin interface" },
+        { url: "/orchestration/c/main/workloads", name: "Mock Headlamp", description: "Mock Kubernetes admin interface" },
         { url: "https://mock.metrics.dev.deltafi.org/dashboards", name: "Mock Grafana Dashboards", description: "Mock Metrics and logging visualization" },
       ],
     },

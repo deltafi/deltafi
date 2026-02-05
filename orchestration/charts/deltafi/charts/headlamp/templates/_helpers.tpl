@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "metrics-server.name" -}}
+{{- define "headlamp.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "metrics-server.fullname" -}}
+{{- define "headlamp.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,58 +24,53 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Expand the namespace of the release.
+Allows overriding it for multi-namespace deployments in combined charts.
+*/}}
+{{- define "headlamp.namespace" -}}
+  {{- if .Values.namespaceOverride }}
+    {{- .Values.namespaceOverride | trunc 63 | trimSuffix "-" -}}
+  {{- else if .Release.Namespace }}
+    {{- .Release.Namespace | trunc 63 | trimSuffix "-" -}}
+  {{- else -}}
+    default
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "metrics-server.chart" -}}
+{{- define "headlamp.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "metrics-server.labels" -}}
-helm.sh/chart: {{ include "metrics-server.chart" . }}
-{{ include "metrics-server.selectorLabels" . }}
+{{- define "headlamp.labels" -}}
+helm.sh/chart: {{ include "headlamp.chart" . }}
+{{ include "headlamp.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- if .Values.commonLabels }}
-{{ toYaml .Values.commonLabels }}
-{{- end }}
 {{- end }}
 
 {{/*
 Selector labels
 */}}
-{{- define "metrics-server.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "metrics-server.name" . }}
+{{- define "headlamp.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "headlamp.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "metrics-server.serviceAccountName" -}}
+{{- define "headlamp.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "metrics-server.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "headlamp.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-
-{{/*
-The image to use
-*/}}
-{{- define "metrics-server.image" -}}
-{{- printf "%s:%s" .Values.image.repository (default (printf "v%s" .Chart.AppVersion) .Values.image.tag) }}
-{{- end }}
-
-{{/* Get PodDisruptionBudget API Version */}}
-{{- define "metrics-server.pdb.apiVersion" -}}
-  {{- if and (.Capabilities.APIVersions.Has "policy/v1") (semverCompare ">= 1.21-0" .Capabilities.KubeVersion.Version) -}}
-      {{- print "policy/v1" -}}
-  {{- else -}}
-    {{- print "policy/v1beta1" -}}
-  {{- end -}}
-{{- end -}}

@@ -23,10 +23,10 @@ dependencies:
     version: 18.4.0
     # repository: https://charts.bitnami.com/bitnami
     condition: enable.redis
-  - name: kubernetes-dashboard
-    version: 6.0.8
-    # repository: https://kubernetes.github.io/dashboard/
-    condition: enable.kubernetes-dashboard
+  - name: headlamp
+    version: 0.38.0
+    # repository: https://github.com/kubernetes-sigs/headlamp.git
+    condition: enable.headlamp
   - name: promtail
     version: 6.15.2
     # repository: https://grafana.github.io/helm-charts

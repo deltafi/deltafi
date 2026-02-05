@@ -91,7 +91,7 @@ const generateData = () => {
             name: "deltafi-ingress-d5546d8bd-f9fnj"
           },
           {
-            name: "deltafi-kubernetes-dashboard-6cb87f577c-g2km6"
+            name: "deltafi-headlamp-6cb87f577c-g2km6"
           },
           {
             name: "deltafi-loki-0"

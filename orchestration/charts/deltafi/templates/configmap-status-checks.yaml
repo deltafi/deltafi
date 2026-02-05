@@ -4,7 +4,7 @@
 {{- $graphiteEnabled := and .Values.enable.graphite .Values.tags.metrics }}
 {{- $egressSinkEnabled := .Values.deltafi.egress_sink.enabled }}
 {{- $analyticsEnabled := .Values.deltafi.analytics.enabled }}
-{{- $kubeDashboardEnabled := index .Values.enable "kubernetes-dashboard" }}
+{{- $headlampEnabled := .Values.enable.headlamp }}
 {{- $redisEnabled := .Values.enable.redis }}
 
 apiVersion: v1
@@ -33,8 +33,8 @@ data:
     {{- if $grafanaEnabled }}
     - deltafi-grafana
     {{- end }}
-    {{- if $kubeDashboardEnabled }}
-    - deltafi-kubernetes-dashboard
+    {{- if $headlampEnabled }}
+    - deltafi-headlamp
     {{- end }}
     {{- if $minioEnabled }}
     - deltafi-s3proxy
@@ -45,9 +45,6 @@ data:
     - deltafi-victoriametrics
     {{- end }}
     - deltafi-ingress
-    {{- if $kubeDashboardEnabled }}
-    - deltafi-kubernetes-dashboard
-    {{- end }}
     {{- if $minioEnabled }}
     - deltafi-s3proxy
     {{- end }}
@@ -65,8 +62,8 @@ data:
     - deltafi-victoriametrics
     {{- end }}
     - deltafi-ingress-service
-    {{- if $kubeDashboardEnabled }}
-    - deltafi-kubernetes-dashboard
+    {{- if $headlampEnabled }}
+    - deltafi-headlamp
     {{- end }}
     {{- if $lokiEnabled }}
     - deltafi-loki

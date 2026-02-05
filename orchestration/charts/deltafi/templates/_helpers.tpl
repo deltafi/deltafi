@@ -10,7 +10,7 @@
 {{- include "noAuthAnnotations" .}}
 {{- end }}
 nginx.ingress.kubernetes.io/auth-cache-duration: 200 1m
-nginx.ingress.kubernetes.io/auth-response-headers: X-User-ID, X-User-Name, X-User-Permissions, X-Metrics-Role
+nginx.ingress.kubernetes.io/auth-response-headers: Authorization, X-User-ID, X-User-Name, X-User-Permissions, X-Metrics-Role
 nginx.ingress.kubernetes.io/auth-url: http://deltafi-core-service.deltafi.svc.cluster.local/api/v2/auth
 {{- end -}}
 
@@ -323,6 +323,11 @@ volumeMounts:
 - name: ENTITY_AUTHORIZER_URL
   value: {{ .Values.deltafi.auth.entityAuthorizer.url | default "http://127.0.0.1:8081/" }}
 {{ end }}
+- name: HEADLAMP_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: deltafi-headlamp-secret
+      key: token
 {{- end }}
 
 {{- define "coreVolumeMounts" -}}

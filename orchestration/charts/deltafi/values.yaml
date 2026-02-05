@@ -3,7 +3,7 @@ enable:
   local_object_storage: true
   minio: true # Deprecated: use local_object_storage instead
   redis: true
-  kubernetes-dashboard: true
+  headlamp: true
   promtail: true
   loki: true
   graphite: true
@@ -139,29 +139,9 @@ redis:
       timeoutSeconds: 1
       successThreshold: 1
       failureThreshold: 5
-# Kubernetes Dashboard config
-kubernetes-dashboard:
-  image:
-    tag: v2.7.0
-  securityContext: null
-  metricsScraper:
-    enabled: true
-    image:
-      tag: v1.0.9
-  protocolHttp: true
-  service:
-    externalPort: 80
-  settings:
-    clusterName: 'DeltaFi'
-    itemsPerPage: 50
-    labelsLimit: 3
-    logsAutoRefreshTimeInterval: 5
-    resourceAutoRefreshTimeInterval: 5
-    disableAccessDeniedNotifications: false
-    defaultNamespace: deltafi
-    namespaceFallbackList:
-      - default
-
+headlamp:
+  config:
+    baseURL: "/orchestration"
 grafana:
   image:
     repository: deltafi/grafana
@@ -364,14 +344,6 @@ promtail:
             stages:
               - drop:
                   expression: "POST / HTTP"
-        # Clear out excessive probe messages
-        - match:
-            selector: '{app="kubernetes-dashboard"}'
-            stages:
-              - drop:
-                  expression: "kube-probe"
-              - drop:
-                  expression: "/healthz"
 loki:
   image:
     tag: 2.9.17
@@ -397,7 +369,7 @@ loki:
       - selector: '{container="deltafi-ingress",type="AUDIT"}'
         priority: 3
         period: 24h
-      - selector: '{app="kubernetes-dashboard"}'
+      - selector: '{app="headlamp"}'
         priority: 6
         period: 96h
       - selector: '{app="grafana"}'

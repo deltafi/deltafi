@@ -8,7 +8,7 @@ compatibility, and end-to-end flows in an environment with reasonable fidelity
 to a full DeltaFi Kubernetes deployment.
 
 The DeltaFi KinD cluster provides all functionality, including the DeltaFi UI, the CLI,
-the Kubernetes Dashboard, the complete metrics and logging stack with Grafana, authentication,
+the Headlamp Kubernetes UI, the complete metrics and logging stack with Grafana, authentication,
 and all core components.  The cluster has been extensively used on MacOS with x86 and Apple Silicon, and
 should be reasonably easy to start on non-air gapped Linux environments as well.
 
