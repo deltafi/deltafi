@@ -139,7 +139,7 @@ import static org.mockito.Mockito.times;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
-@Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, flows, plugins, properties, resume_policies, analytics, event_annotations, flow_definitions CASCADE",
+@Sql(statements = "TRUNCATE TABLE annotations, delta_file_flows, delta_files, delete_policies, flows, plugins, properties, resume_policies, analytics, event_annotations, flow_definitions CASCADE",
 		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DeltaFiCoreApplicationTests {
 	@Container
@@ -4887,6 +4887,47 @@ class DeltaFiCoreApplicationTests {
 		Result result = SystemSnapshotTestHelper.restoreSnapshot(dgsQueryExecutor);
 
 		assertThat(result.isSuccess()).isTrue();
+	}
+
+	@Test
+	void restoreSnapshotRollsBackOnUnexpectedError() {
+		// Set up initial state - a delete policy that should NOT be modified if rollback works
+		UUID initialPolicyId = UUID.randomUUID();
+		TimedDeletePolicy initialPolicy = TimedDeletePolicy.builder()
+				.id(initialPolicyId)
+				.name("initialPolicy")
+				.afterComplete("PT1H")
+				.enabled(true)
+				.deleteMetadata(false)
+				.build();
+		deletePolicyRepo.save(initialPolicy);
+
+		// Verify initial state
+		assertThat(deletePolicyRepo.count()).isEqualTo(1);
+		assertThat(deletePolicyRepo.findById(initialPolicyId)).isPresent();
+
+		// Save a snapshot to restore (which has different delete policies)
+		pluginService.doUpdateSystemPlugin();
+		systemSnapshotRepo.save(SystemSnapshotTestHelper.expectedSnapshot());
+
+		// Make the deployer service throw an exception during restore
+		// DeployerService runs AFTER DeletePolicyService in the snapshot restore order
+		Mockito.when(deployerService.resetFromSnapshot(Mockito.any(), Mockito.anyBoolean()))
+				.thenThrow(new RuntimeException("Simulated unexpected error during snapshot restore"));
+
+		// Attempt the restore - it should fail
+		Result result = SystemSnapshotTestHelper.restoreSnapshot(dgsQueryExecutor);
+
+		// The result should indicate failure
+		assertThat(result.isSuccess()).isFalse();
+		assertThat(result.getErrors()).isNotEmpty();
+		assertThat(result.getErrors().getFirst()).contains("unexpected error");
+
+		// The transaction should have rolled back, so the initial policy should still exist
+		// and NOT be replaced by the snapshot's policies
+		assertThat(deletePolicyRepo.count()).isEqualTo(1);
+		assertThat(deletePolicyRepo.findById(initialPolicyId)).isPresent();
+		assertThat(deletePolicyRepo.findById(initialPolicyId).get().getName()).isEqualTo("initialPolicy");
 	}
 
 	@Test

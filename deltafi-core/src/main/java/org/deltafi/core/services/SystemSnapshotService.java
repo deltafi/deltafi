@@ -35,6 +35,7 @@ import org.deltafi.core.types.Result;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -119,6 +120,7 @@ public class SystemSnapshotService {
         return snapshot;
     }
 
+    @Transactional
     public Result resetFromSnapshot(UUID snapshotId, boolean hardReset) {
         SystemSnapshot systemSnapshot = getById(snapshotId);
 
@@ -140,6 +142,7 @@ public class SystemSnapshotService {
         return saveSnapshot(systemSnapshot);
     }
 
+    @Transactional
     public Result importSnapshotAndReset(SystemSnapshot systemSnapshot, boolean hardReset) {
         if (systemSnapshot == null) {
             return Result.builder().success(false).errors(List.of("Snapshot cannot be null")).build();

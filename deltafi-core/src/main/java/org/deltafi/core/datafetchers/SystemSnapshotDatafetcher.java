@@ -23,6 +23,7 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import com.networknt.schema.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.generated.types.DeltaFileDirection;
 import org.deltafi.core.generated.types.SystemSnapshotFilter;
@@ -35,9 +36,11 @@ import org.deltafi.core.types.snapshot.SystemSnapshot;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 @DgsComponent
 @RequiredArgsConstructor
+@Slf4j
 public class SystemSnapshotDatafetcher {
 
     private final SystemSnapshotService systemSnapshotService;
@@ -78,7 +81,12 @@ public class SystemSnapshotDatafetcher {
     public Result resetFromSnapshotWithId(@InputArgument UUID snapshotId, @InputArgument Boolean hardReset) {
         boolean hard = hardReset == null || hardReset;
         auditLogger.audit("reset to snapshot {} using hardReset {}", snapshotId, hard);
-        return systemSnapshotService.resetFromSnapshot(snapshotId, hard);
+        return handleSnapshotOperation(
+                () -> systemSnapshotService.resetFromSnapshot(snapshotId, hard),
+                "snapshot reset",
+                snapshotId,
+                hard
+        );
     }
 
     @DgsMutation
@@ -92,7 +100,13 @@ public class SystemSnapshotDatafetcher {
     @NeedsPermission.SnapshotCreateAndRevert
     public Result importSnapshotAndReset(@InputArgument SystemSnapshot snapshot, @InputArgument Boolean hardReset) {
         boolean hard = hardReset == null || hardReset;
-        Result result = systemSnapshotService.importSnapshotAndReset(snapshot, hard);
+        Result result = handleSnapshotOperation(
+                () -> systemSnapshotService.importSnapshotAndReset(snapshot, hard),
+                "snapshot import and reset",
+                snapshot.getId(),
+                hard
+        );
+
         auditLogger.audit("imported and reset to snapshot {} using hardReset {}", snapshot.getId(), hard);
         return result;
     }
@@ -102,5 +116,35 @@ public class SystemSnapshotDatafetcher {
     public Result deleteSnapshot(@InputArgument UUID snapshotId) {
         auditLogger.audit("deleted system snapshot {}", snapshotId);
         return systemSnapshotService.deleteSnapshot(snapshotId);
+    }
+
+    /**
+     * Handles snapshot operations with consistent error handling and logging.
+     * <p>
+     * Controlled failures (e.g., flow not installed) return a Result with success=false
+     * and do not trigger a rollback. Only unexpected exceptions (e.g., SQL errors)
+     * trigger a transaction rollback and return a generic error message to avoid
+     * information leakage.
+     *
+     * @param operation the snapshot operation to execute
+     * @param operationName the name of the operation for logging
+     * @param snapshotId the snapshot ID for logging
+     * @param hardReset whether hard reset is enabled for logging
+     * @return the result of the operation
+     */
+    private Result handleSnapshotOperation(Supplier<Result> operation, String operationName,
+                                           UUID snapshotId, boolean hardReset) {
+        try {
+            return operation.get();
+        } catch (Exception e) {
+            // Unexpected failure - transaction rolled back, log full details but return generic error
+            log.error("Unexpected error during {} for snapshot {} (hardReset={}). " +
+                    "Transaction has been rolled back.",
+                    operationName, snapshotId, hardReset, e);
+            return Result.builder()
+                    .success(false)
+                    .errors(List.of("An unexpected error occurred during " + operationName + ". Please check the logs for details."))
+                    .build();
+        }
     }
 }
