@@ -58,7 +58,7 @@ type valuesData struct {
 	S3ProxyContainer         string `default:"deltafi/s3proxy:3.0.0-1"`
 	NginxContainer           string `default:"deltafi/nginx:1.29.4-alpine3.23-1"`
 	ValkeyContainer          string `default:"deltafi/valkey:9.0.1-1"`
-	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-6"`
+	PostgresContainer        string `default:"deltafi/timescaledb:2.19.3-pg16-7"`
 	PostgresLookupContainer  string `default:"deltafi/postgres:16.11-1"`
 	JavaIDEContainer         string `default:"deltafi/deltafi-java-dev:jdk21-gradle8.5-2"`
 	JavaDevContainer         string `default:"deltafi/devcontainer-java:jdk21-gradle8.5-0"`
