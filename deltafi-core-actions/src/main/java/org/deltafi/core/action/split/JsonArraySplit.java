@@ -20,6 +20,7 @@ package org.deltafi.core.action.split;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
@@ -31,6 +32,13 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
@@ -39,16 +47,17 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
 
     public JsonArraySplit() {
         super(ActionOptions.builder()
-                .description("Split each object in a JSON Array into a separate content.")
+                .description("Split each object in a JSON Array or line-separated list into a separate content.")
                 .inputSpec(ActionOptions.InputSpec.builder()
                         .contentSummary("""
-                                Only a single content input is allowed. A JSON Array is expected
-                                but other types can be a pass through or error depending on parameter values.
+                                Only a single content input is allowed. A JSON Array is expected,
+                                but a single JSON object per line of content is also supported.
+                                Other types can be a pass through or error depending on parameter values.
                                 """)
                         .build())
                 .outputSpec(ActionOptions.OutputSpec.builder()
                         .contentSummary("""
-                                Each JSON object from the input JSON Array will be saved to its own content. The name of the new
+                                Each JSON object from the input JSON Array (or line) will be saved to its own content. The name of the new
                                 content will remain the same. However, the 'contentSuffix' parameter can be used
                                 to append a suffix to the new content name, which will be followed by a 1-up index.
                                 E.g. if the input was 'name.json' and the contentSuffix is '-', new names will be
@@ -59,6 +68,8 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
                         .build())
                 .errors("Not a JSON object or array",
                         "Could not parse JSON content",
+                        "JSON parse error on line #",
+                        "JSON object not found on line #",
                         "Content is not a JSON array")
                 .notes(" Textual JSON which is neither an object nor an array will not be recognized as JSON.")
                 .build());
@@ -73,47 +84,119 @@ public class JsonArraySplit extends TransformAction<JsonArraySplitParameters> {
                     + input.getContent().size());
         }
 
+        ActionContent firstContent = input.getContent().getFirst();
         TransformResult result = new TransformResult(context);
 
         JsonNode rootNode = null;
         try {
-            rootNode = OBJECT_MAPPER.readTree(input.getContent().getFirst().loadString());
-            if (!params.isPassThroughNonJson() && !rootNode.isArray() && !rootNode.isObject()) {
-                return new ErrorResult(context, "Not a JSON object or array");
-            }
-
-        } catch (JsonProcessingException e) {
-            if (!params.isPassThroughNonJson()) {
-                return new ErrorResult(context, "Could not parse JSON content", e.getMessage());
-            }
+            rootNode = OBJECT_MAPPER.readTree(firstContent.loadString());
+        } catch (JsonProcessingException ignored) {
         }
 
-        if (rootNode != null) {
-            if (rootNode.isArray()) {
-                int index = 0;
-                for (JsonNode jsonNode : rootNode) {
-                    String contentName = input.getContent().getFirst().getName();
-                    if (params.getContentSuffix() != null) {
-                        contentName += params.getContentSuffix() + index;
-                    }
-
-                    try {
-                        result.saveContent(
-                                OBJECT_MAPPER.writeValueAsString(jsonNode),
-                                contentName, MediaType.APPLICATION_JSON);
-                    } catch (JsonProcessingException e) {
-                        return new ErrorResult(context, "JSON write failure", e.getMessage());
-                    }
-                    ++index;
+        if (rootNode == null || !(rootNode.isArray() || rootNode.isObject())) {
+            if (params.isPassThroughNonJson()) {
+                result.addContent(firstContent);
+                return result;
+            } else {
+                if (rootNode == null) {
+                    return new ErrorResult(context, "Could not parse JSON content");
+                } else {
+                    return new ErrorResult(context, "Not a JSON object or array");
                 }
-            } else if (!params.isPassThroughNonJsonArray()) {
-                return new ErrorResult(context, "Content is not a JSON array");
             }
         }
+
+        // JSON Array or content starts with a JSON object
+        if (rootNode.isArray()) {
+            return splitArray(context, params, firstContent, rootNode);
+        } else if (!params.isPassThroughNonJsonArray()) {
+            return new ErrorResult(context, "Content is not a JSON array");
+        }
+
+        // content starts with a JSON object
+        if (params.isSplitOneObjectPerLine()) {
+            List<JsonNode> nodesByLine = new ArrayList<>();
+            String error = parseLinesAsObjects(firstContent, nodesByLine);
+            if (error != null) {
+                return new ErrorResult(context, error);
+            }
+            if (nodesByLine.size() > 1) {
+                int index = 0;
+                for (JsonNode jsonNode : nodesByLine) {
+                    try {
+                        writeNode(params, jsonNode, firstContent, index, result);
+                        ++index;
+                    } catch (JsonProcessingException e) {
+                        return new ErrorResult(context, "JSON write error", e);
+                    }
+                }
+            }
+        }
+
         if (result.getContent().isEmpty()) {
-            // Non-error cases are pass-through
-            result.addContent(input.getContent());
+            // Pass through the json unchanged
+            result.addContent(firstContent);
         }
         return result;
+    }
+
+    private TransformResultType splitArray(ActionContext context, JsonArraySplitParameters params,
+                                           ActionContent content, JsonNode rootNode) {
+        TransformResult result = new TransformResult(context);
+        int index = 0;
+        for (JsonNode jsonNode : rootNode) {
+            try {
+                writeNode(params, jsonNode, content, index, result);
+                ++index;
+            } catch (JsonProcessingException e) {
+                return new ErrorResult(context, "JSON write error", e);
+            }
+        }
+        return result;
+    }
+
+    private String parseLinesAsObjects(ActionContent content, List<JsonNode> nodes) {
+        try (InputStream inputStream = content.loadInputStream()) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                int lineNum = 0;
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    ++lineNum;
+                    if (!line.trim().isEmpty()) {
+                        try {
+                            JsonNode lineNode = OBJECT_MAPPER.readTree(line);
+                            if (!lineNode.isObject()) {
+                                return "JSON object not found on line " + lineNum;
+                            }
+                            nodes.add(lineNode);
+                        } catch (JsonProcessingException e) {
+                            if (nodes.isEmpty()) {
+                                // Content is likely valid json, but not 1 object per line
+                                return null;
+                            } else {
+                                return "JSON parse error on line " + lineNum;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
+    }
+
+    private void writeNode(JsonArraySplitParameters params,
+                           JsonNode jsonNode, ActionContent content,
+                           int index, TransformResult result) throws JsonProcessingException {
+        String contentName = content.getName();
+        if (params.getContentSuffix() != null) {
+            contentName += params.getContentSuffix() + index;
+        }
+
+        result.saveContent(
+                OBJECT_MAPPER.writeValueAsString(jsonNode),
+                contentName, MediaType.APPLICATION_JSON);
     }
 }

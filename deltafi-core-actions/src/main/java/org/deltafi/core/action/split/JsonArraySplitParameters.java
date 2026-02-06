@@ -35,8 +35,12 @@ public class JsonArraySplitParameters extends ActionParameters {
     private boolean passThroughNonJson = true;
 
     @JsonProperty(defaultValue = "true")
-    @JsonPropertyDescription("If TRUE, pass through JSON content that is not an array. Else error")
+    @JsonPropertyDescription("If TRUE, pass through JSON content that is not a JSON array. Else error")
     private boolean passThroughNonJsonArray = true;
+
+    @JsonProperty(defaultValue = "true")
+    @JsonPropertyDescription("If TRUE, split each line of input as a single JSON object when a JSON array is not detected. Each non-empty line must be a valid JSON object")
+    private boolean splitOneObjectPerLine = true;
 
     @JsonPropertyDescription("If not NULL, each split output content name will have the original name followed by this suffix and an index which starts at 0")
     private String contentSuffix;

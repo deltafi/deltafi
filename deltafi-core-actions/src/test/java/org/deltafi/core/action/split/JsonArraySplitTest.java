@@ -30,6 +30,24 @@ import java.util.List;
 
 class JsonArraySplitTest {
 
+    static final String VALID_LOG_FILE = """
+            {"sev":"INFO","msg":"Message"}
+            
+            {"sev":"ERROR","msg":"Error"}
+            """;
+
+    static final String INVALID_LOG_FORMAT = """
+            {"sev":"INFO","msg":"Message"}
+            {"partial":
+            {"sev":"ERROR","msg":"Error"}
+            """;
+
+    static final String INVALID_LOG_NOT_AN_OBJECT = """
+            {"sev":"INFO","msg":"Message"}
+            {"sev":"ERROR","msg":"Error"}
+            "bogus"
+            """;
+
     static final String VALID_JSON_ARRAY = """
             [
               {
@@ -60,6 +78,87 @@ class JsonArraySplitTest {
                 {"category":"pet","type":"cat"}""";
 
         splitArray(VALID_JSON_ARRAY, List.of(output1, output2),
+                true, true, null);
+    }
+
+    @Test
+    void testSplitJsonPerLine() {
+        String output1 = """
+                {"sev":"INFO","msg":"Message"}""";
+        String output2 = """
+                {"sev":"ERROR","msg":"Error"}""";
+
+        splitArray(VALID_LOG_FILE, List.of(output1, output2),
+                false, true, null);
+    }
+
+    @Test
+    void testSplitJsonPerLineWithSuffix() {
+        String output1 = """
+                {"sev":"INFO","msg":"Message"}""";
+        String output2 = """
+                {"sev":"ERROR","msg":"Error"}""";
+
+        splitArray(VALID_LOG_FILE, List.of(output1, output2),
+                false, true, "-");
+    }
+
+    @Test
+    void testDoNotSplitJsonPerLine() {
+        splitArray(VALID_LOG_FILE, List.of(VALID_LOG_FILE),
+                false, true,
+                false, null);
+    }
+
+    @Test
+    void testPassThroughButDoNotSplitOrVerifyEveryLine() {
+        splitArray(INVALID_LOG_FORMAT, List.of(INVALID_LOG_FORMAT),
+                false, true,
+                false, null);
+    }
+
+    @Test
+    void testInvalidSplitFormatting() {
+        error(INVALID_LOG_FORMAT, false, true,
+                "JSON parse error on line 2");
+    }
+
+    @Test
+    void testInvalidSplitNotAnObject() {
+        error(INVALID_LOG_NOT_AN_OBJECT, false, true,
+                "JSON object not found on line 3");
+    }
+
+    @Test
+    void testPassThroughEmptyContent() {
+        splitArray("", List.of(""),
+                true, true, null);
+    }
+
+    @Test
+    void testEmptyContentErrorForFalsePassThrough() {
+        error("",
+                false, true,
+                "Not a JSON object or array");
+    }
+
+    @Test
+    void testEmptyArray() {
+        splitArray("[]", List.of(),
+                true, true, null);
+    }
+
+    @Test
+    void testSingleElement() {
+        String output = "{\"name\":\"Sam\",\"age\":21}";
+        splitArray("{\"name\":\"Sam\",\"age\":21}", List.of(output),
+                true, true, null);
+    }
+
+    @Test
+    void testSingleElementArray() {
+        String output = "{\"name\":\"Sam\",\"age\":21}";
+        splitArray("[{\"name\":\"Sam\",\"age\":21}]", List.of(output),
                 true, true, null);
     }
 
@@ -148,9 +247,20 @@ class JsonArraySplitTest {
                             boolean passThroughNonJson,
                             boolean passThroughNonJsonArray,
                             String suffix) {
+        splitArray(inputContent, expectedOutput,
+                passThroughNonJson, passThroughNonJsonArray, true, suffix);
+    }
+
+    private void splitArray(String inputContent,
+                            List<String> expectedOutput,
+                            boolean passThroughNonJson,
+                            boolean passThroughNonJsonArray,
+                            boolean splitOneObjectPerLine,
+                            String suffix) {
         JsonArraySplitParameters params = new JsonArraySplitParameters();
         params.setPassThroughNonJson(passThroughNonJson);
         params.setPassThroughNonJsonArray(passThroughNonJsonArray);
+        params.setSplitOneObjectPerLine(splitOneObjectPerLine);
         params.setContentSuffix(suffix);
 
         String inputName = "input.json";
