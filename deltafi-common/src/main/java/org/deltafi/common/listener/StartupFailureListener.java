@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit;
+package org.deltafi.common.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationFailedEvent;
@@ -26,7 +26,7 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
 @Slf4j
-public class StartupFailureHandler implements ApplicationListener<ApplicationFailedEvent> {
+public class StartupFailureListener implements ApplicationListener<ApplicationFailedEvent> {
 
     @Override
     public void onApplicationEvent(ApplicationFailedEvent event) {

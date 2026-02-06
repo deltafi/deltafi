@@ -40,6 +40,7 @@ import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
 import org.deltafi.common.http.HttpService;
+import org.deltafi.common.listener.StartupFailureListener;
 import org.deltafi.actionkit.lookup.LookupTableClient;
 import org.deltafi.actionkit.lookup.LookupTableSupplier;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
@@ -68,8 +69,8 @@ public class ActionKitAutoConfiguration {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Bean
-    public StartupFailureHandler startupFailureHandler() {
-        return new StartupFailureHandler();
+    public StartupFailureListener startupFailureHandler() {
+        return new StartupFailureListener();
     }
 
     @Bean
