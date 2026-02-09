@@ -326,7 +326,7 @@ func deleteDataSink(cmd *cobra.Command, name string) error {
 		return newDataSinkError(fmt.Sprintf("Error deleting data sink %s: %v", name, err))
 	}
 	if !deleteResp.RemoveDataSinkPlan {
-		return newDataSinkError(fmt.Sprintf("Unable to delete data sink"))
+		return newDataSinkError("Unable to delete data sink")
 	}
 	fmt.Printf("Successfully deleted data sink %s\n", name)
 	return nil

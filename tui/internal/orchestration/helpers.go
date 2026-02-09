@@ -41,18 +41,6 @@ func executeShellCommand(executable string, args []string, env []string) error {
 	return c.Run()
 }
 
-func executeShellCommandWithOutput(executable string, args []string, env []string) (string, error) {
-	c := *exec.Command(executable, args...)
-	c.Env = env
-
-	output, err := c.Output()
-	if err != nil {
-		return "", err
-	}
-
-	return string(output), nil
-}
-
 func randomPassword(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, length)

@@ -54,7 +54,7 @@ var (
 	instance        *App
 	once            sync.Once
 	SemanticVersion *semver.Version
-	NotRunning      = errors.New("not running")
+	ErrNotRunning   = errors.New("not running")
 )
 
 // GetInstance returns the singleton App instance
@@ -84,7 +84,7 @@ func ReloadInstance() *App {
 func GetGraphqlClient() (graphql.Client, error) {
 	client := GetInstance().graphqlClient
 	if client == nil || !GetInstance().running {
-		return nil, NotRunning
+		return nil, ErrNotRunning
 	}
 	return GetInstance().graphqlClient, nil
 }
@@ -272,7 +272,7 @@ func (a *App) GetAPIClient() (*api.Client, error) {
 	defer a.mu.RUnlock()
 
 	if a.apiClient == nil || !a.running {
-		return nil, NotRunning
+		return nil, ErrNotRunning
 	}
 
 	return a.apiClient, nil

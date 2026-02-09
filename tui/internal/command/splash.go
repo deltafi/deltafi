@@ -19,26 +19,27 @@ package command
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/deltafi/tui/internal/ui/art"
 )
 
-// SplashCommand displays the DeltaFi logo
+// SplashCommand displays art content in a centered box
 type SplashCommand struct {
 	BaseCommand
 	duration time.Duration
 	width    int
 	height   int
 	ready    bool
+	content  string
 }
 
 // timeoutMsg is sent when the splash screen should close
 type timeoutMsg struct{}
 
-func NewSplashCommand(args []string) *SplashCommand {
+func NewSplashCommand(content string, args []string) *SplashCommand {
 	duration := 3 * time.Second // default duration
 	if len(args) > 0 {
 		if seconds, err := strconv.Atoi(args[0]); err == nil {
@@ -49,6 +50,7 @@ func NewSplashCommand(args []string) *SplashCommand {
 	return &SplashCommand{
 		BaseCommand: NewBaseCommand(),
 		duration:    duration,
+		content:     content,
 	}
 }
 
@@ -99,6 +101,6 @@ func (c *SplashCommand) View() string {
 		c.height,
 		lipgloss.Center,
 		lipgloss.Center,
-		boxStyle.Render(art.Logo),
+		boxStyle.Render(strings.TrimRight(c.content, "\n")),
 	)
 }

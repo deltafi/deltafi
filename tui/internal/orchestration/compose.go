@@ -123,7 +123,7 @@ func (o *ComposeOrchestrator) GetPostgresLookupCmd(args []string) (exec.Cmd, err
 func (o *ComposeOrchestrator) GetExecCmd(name string, args []string) (exec.Cmd, error) {
 	cmdArgs := []string{name, "sh", "-c"}
 
-	extraCmdArgs := fmt.Sprintf("%s", strings.Join(args, " "))
+	extraCmdArgs := strings.Join(args, " ")
 	cmdArgs = append(cmdArgs, extraCmdArgs)
 
 	return getDockerExecCmd(cmdArgs)
@@ -547,10 +547,6 @@ func (o *ComposeOrchestrator) getValueOr(values map[string]interface{}, path str
 	}
 
 	return defaultValue
-}
-
-func (o *ComposeOrchestrator) inDevelopment() bool {
-	return o.deploymentMode == types.PluginDevelopment || o.deploymentMode == types.CoreDevelopment
 }
 
 // localObjectStorageEnabled checks both enable.local_object_storage and the deprecated enable.minio flag.
@@ -1227,7 +1223,7 @@ func (o *ComposeOrchestrator) migrateCerts() error {
 		return nil
 	}
 
-	fmt.Println(styles.InfoStyle.Render(fmt.Sprintf("Moving the existing certs to the new default location, ssl-secret")))
+	fmt.Println(styles.InfoStyle.Render("Moving the existing certs to the new default location, ssl-secret"))
 
 	// Create the default secret, ssl-secret, subdirectory
 	sslSecretDir := filepath.Join(certsDir, "ssl-secret")
@@ -1260,7 +1256,7 @@ CA_CHAIN_PATH=/certs/ssl-secret/ca.crt
 		return fmt.Errorf("failed to create .env file: %w", err)
 	}
 
-	fmt.Println(styles.InfoStyle.Render(fmt.Sprintf("Completed moving migrating existing certs")))
+	fmt.Println(styles.InfoStyle.Render("Completed cert migration"))
 
 	return nil
 }

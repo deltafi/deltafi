@@ -63,8 +63,7 @@ type progressMsg struct {
 }
 
 type completeMsg struct {
-	filePath string
-	result   IngressResult
+	result IngressResult
 }
 
 // pollDeltaFileState polls the deltafile state until it reaches a terminal state
@@ -395,21 +394,4 @@ func getRunningDataSourceNames(_ *cobra.Command, _ []string, toComplete string) 
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 	return suggestions, cobra.ShellCompDirectiveNoFileComp
-}
-
-func fetchRunningDataSourceNames() ([]string, error) {
-	var resp, err = graphql.ListDataSources()
-	if err != nil {
-		return nil, err
-	}
-
-	var names []string
-
-	for _, obj := range resp.GetAllFlows.GetRestDataSource() {
-		if obj.GetFlowStatus().State == "RUNNING" {
-			names = append(names, obj.GetName())
-		}
-	}
-
-	return names, nil
 }

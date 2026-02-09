@@ -359,7 +359,7 @@ func deleteTransform(cmd *cobra.Command, name string) error {
 		return newTransformError(fmt.Sprintf("Error deleting transform %s: %v", name, err))
 	}
 	if !deleteResp.RemoveTransformFlowPlan {
-		return newTransformError(fmt.Sprintf("Unable to delete transform"))
+		return newTransformError("Unable to delete transform")
 	}
 	fmt.Printf("Successfully deleted transform %s\n", name)
 	return nil

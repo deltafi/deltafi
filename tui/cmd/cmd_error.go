@@ -35,7 +35,7 @@ type Error struct {
 }
 
 func clientError(err error) *Error {
-	if errors.Is(err, app.NotRunning) {
+	if errors.Is(err, app.ErrNotRunning) {
 		return notRunningError()
 	} else {
 		return wrapInError("Unexpected client error", err)
@@ -53,7 +53,7 @@ To start a DeltaFi with your current configuration:        %s
 
 func wrapInError(summary string, err error) *Error {
 	// catch any wrapped graphql errors
-	if errors.Is(err, app.NotRunning) {
+	if errors.Is(err, app.ErrNotRunning) {
 		return notRunningError()
 	}
 

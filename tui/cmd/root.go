@@ -30,6 +30,7 @@ import (
 
 var (
 	splash       bool
+	engage       bool
 	printVersion bool
 )
 
@@ -111,6 +112,8 @@ func init() {
 	rootCmd.AddGroup(&cobra.Group{ID: "testing", Title: "Testing"})
 
 	rootCmd.PersistentFlags().BoolVar(&splash, "splash", false, "Show splash screen")
+	rootCmd.PersistentFlags().BoolVar(&engage, "engage", false, "")
+	_ = rootCmd.PersistentFlags().MarkHidden("engage")
 	rootCmd.PersistentFlags().BoolVar(&printVersion, "version", false, "Print version and exit")
 	rootCmd.PersistentFlags().String("api-url", "", "Set the DeltaFi API URL, this takes precedence over DELTAFI_API_URL env var and config.yaml")
 	// Cobra also supports local flags, which will only run
@@ -120,7 +123,9 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func preExecutionHook() {
-	if splash {
-		runProgram(command.NewSplashCommand([]string{}))
+	if engage {
+		runProgram(command.NewSplashCommand(art.Engage, []string{}))
+	} else if splash {
+		runProgram(command.NewSplashCommand(art.Logo, []string{}))
 	}
 }

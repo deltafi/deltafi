@@ -273,7 +273,7 @@ func (c *Client) ExportDeltaFile(did string) (io.ReadCloser, string, error) {
 	return resp.Body, filename, nil
 }
 
-var ErrNoneFound = errors.New("No DeltaFiles were found with unacknowledged errors to export")
+var ErrNoneFound = errors.New("no DeltaFiles were found with unacknowledged errors to export")
 
 type ExportErrorsRequest struct {
 	Acknowledge bool   `json:"acknowledge"`

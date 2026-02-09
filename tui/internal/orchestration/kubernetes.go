@@ -142,7 +142,7 @@ func (o *KubernetesOrchestrator) GetPostgresLookupCmd(args []string) (exec.Cmd, 
 func (o *KubernetesOrchestrator) GetExecCmd(name string, args []string) (exec.Cmd, error) {
 	cmdArgs := []string{name, "--", "sh", "-c"}
 
-	extraCmdArgs := fmt.Sprintf("%s", strings.Join(args, " "))
+	extraCmdArgs := strings.Join(args, " ")
 	cmdArgs = append(cmdArgs, extraCmdArgs)
 
 	return getKubectlExecCmd(cmdArgs)
@@ -155,31 +155,31 @@ func (o *KubernetesOrchestrator) GetValkeyName() string {
 func (o *KubernetesOrchestrator) Up(args []string) error {
 
 	if err := kubernetesPrerequisites(o.namespace); err != nil {
-		return fmt.Errorf("Unable to configure Kubernetes for DeltaFi: %w", err)
+		return fmt.Errorf("unable to configure Kubernetes for DeltaFi: %w", err)
 	}
 
 	postgresOperatorPath := filepath.Join(o.distroPath, "orchestration", "charts", "postgres-operator")
 
 	if err := postgresOperatorInstall(o.namespace, postgresOperatorPath); err != nil {
 		fmt.Println(styles.FAIL("Postgres Operator installation failed"))
-		return fmt.Errorf("Unable to install Postgres Operator: %w", err)
+		return fmt.Errorf("unable to install Postgres Operator: %w", err)
 	}
 
 	deltafiChartPath := filepath.Join(o.distroPath, "orchestration", "charts", "deltafi")
 
 	siteValuesFile, err := o.SiteValuesFile()
 	if err != nil {
-		return fmt.Errorf("Unable to get site values file: %w", err)
+		return fmt.Errorf("unable to get site values file: %w", err)
 	}
 
 	siteTemplatesPath, err := o.TemplatesDir()
 	if err != nil {
-		return fmt.Errorf("Unable to get site templates directory: %w", err)
+		return fmt.Errorf("unable to get site templates directory: %w", err)
 	}
 
 	if err := deltafiHelmInstall(o.namespace, deltafiChartPath, siteValuesFile, siteTemplatesPath); err != nil {
 		fmt.Println(styles.FAIL("DeltaFi installation failed"))
-		return fmt.Errorf("Unable to install DeltaFi: %w", err)
+		return fmt.Errorf("unable to install DeltaFi: %w", err)
 	}
 
 	return nil

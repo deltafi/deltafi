@@ -137,28 +137,6 @@ func deltafiHelmUninstall(namespace string) error {
 	return nil
 }
 
-func deleteNamespace(namespace string) error {
-	ctx := context.Background()
-
-	// Set up Kubernetes client
-	config, err := clientcmd.BuildConfigFromFlags("", clientcmd.RecommendedHomeFile)
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes config: %w", err)
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return fmt.Errorf("failed to create Kubernetes client: %w", err)
-	}
-
-	// Delete the namespace
-	err = clientset.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to delete namespace %s: %w", namespace, err)
-	}
-	fmt.Println(styles.OK(fmt.Sprintf("Deleted namespace %s", namespace)))
-	return nil
-}
-
 func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFile string, siteTemplatesPath string, additionalValuesFiles ...string) error {
 
 	fmt.Println(styles.HEADER("Installing DeltaFi helm chart"))

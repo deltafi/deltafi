@@ -94,25 +94,25 @@ func (o *KindOrchestrator) DestroyKind() error {
 func (o *KindOrchestrator) Up(args []string) error {
 
 	if err := o.StartKind(); err != nil {
-		return fmt.Errorf("Unable to start Kind cluster: %w", err)
+		return fmt.Errorf("unable to start Kind cluster: %w", err)
 	}
 
 	if err := kubernetesPrerequisites(o.namespace); err != nil {
-		return fmt.Errorf("Unable to configure Kubernetes for DeltaFi: %w", err)
+		return fmt.Errorf("unable to configure Kubernetes for DeltaFi: %w", err)
 	}
 
 	postgresOperatorPath := filepath.Join(o.distroPath, "orchestration", "charts", "postgres-operator")
 
 	if err := postgresOperatorInstall(o.namespace, postgresOperatorPath); err != nil {
 		fmt.Println(styles.FAIL("Postgres Operator installation failed"))
-		return fmt.Errorf("Unable to install Postgres Operator: %w", err)
+		return fmt.Errorf("unable to install Postgres Operator: %w", err)
 	}
 
 	deltafiChartPath := filepath.Join(o.distroPath, "orchestration", "charts", "deltafi")
 
 	siteValuesFile, err := o.SiteValuesFile()
 	if err != nil {
-		return fmt.Errorf("Unable to get site values file: %w", err)
+		return fmt.Errorf("unable to get site values file: %w", err)
 	}
 
 	// Check if we should include dev values for core development mode
@@ -120,13 +120,13 @@ func (o *KindOrchestrator) Up(args []string) error {
 	if o.deploymentMode == types.CoreDevelopment {
 		// Ensure config directory exists
 		if err := os.MkdirAll(o.configPath, 0755); err != nil {
-			return fmt.Errorf("Unable to create config directory: %w", err)
+			return fmt.Errorf("unable to create config directory: %w", err)
 		}
 
 		// Read the embedded kind.dev.values.yaml file
 		devValuesContent, err := kindEmbeddedFiles.ReadFile("kind.dev.values.yaml")
 		if err != nil {
-			return fmt.Errorf("Unable to read kind.dev.values.yaml: %w", err)
+			return fmt.Errorf("unable to read kind.dev.values.yaml: %w", err)
 		}
 
 		tmpl, err := template.New("values").Parse(string(devValuesContent))
@@ -160,12 +160,12 @@ func (o *KindOrchestrator) Up(args []string) error {
 
 	siteTemplatesPath, err := o.TemplatesDir()
 	if err != nil {
-		return fmt.Errorf("Unable to get site templates directory: %w", err)
+		return fmt.Errorf("unable to get site templates directory: %w", err)
 	}
 
 	if err := deltafiHelmInstall(o.namespace, deltafiChartPath, siteValuesFile, siteTemplatesPath, additionalValuesFiles...); err != nil {
 		fmt.Println(styles.FAIL("DeltaFi installation failed"))
-		return fmt.Errorf("Unable to install DeltaFi: %w", err)
+		return fmt.Errorf("unable to install DeltaFi: %w", err)
 	}
 
 	fmt.Println(styles.HEADER("Checking for out-of-date pods"))

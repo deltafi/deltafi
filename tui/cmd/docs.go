@@ -81,8 +81,6 @@ type DocsCommand struct {
 	BaseCommand
 	list            list.Model
 	viewport        viewport.Model
-	docs            []Document
-	currentPath     string
 	stack           [][]Document // Navigation stack
 	currentDoc      *Document
 	width           int

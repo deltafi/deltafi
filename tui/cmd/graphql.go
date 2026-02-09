@@ -34,17 +34,6 @@ import (
 var plainOutput bool
 var queryFile string
 
-// JSON syntax highlighting styles
-var (
-	jsonKeyStyle     = styles.NewStyleBuilder().WithForeground(styles.LightBlue).Bold().Build()
-	jsonStringStyle  = styles.NewStyleBuilder().WithForeground(styles.LightGreen).Build()
-	jsonNumberStyle  = styles.NewStyleBuilder().WithForeground(styles.Peach).Build()
-	jsonBooleanStyle = styles.NewStyleBuilder().WithForeground(styles.Yellow).Build()
-	jsonNullStyle    = styles.NewStyleBuilder().WithForeground(styles.Gray).Italic().Build()
-	jsonBracketStyle = styles.NewStyleBuilder().WithForeground(styles.Text).Build()
-	jsonCommaStyle   = styles.NewStyleBuilder().WithForeground(styles.Text).Build()
-)
-
 // graphqlCmd represents the graphql command
 var graphqlCmd = &cobra.Command{
 	Use:   "graphql [query]",

@@ -417,7 +417,7 @@ var setDataSourceTestMode = &cobra.Command{
 
 		if !on && !off {
 			fmt.Println("Either --disable or --enable must be set on the test-mode command")
-			return fmt.Errorf("Either --disable or --enable must be set")
+			return fmt.Errorf("either --disable or --enable must be set")
 		}
 
 		if on {
@@ -652,7 +652,7 @@ func deleteDataSource(cmd *cobra.Command, name string) error {
 			return newDataSourceError(fmt.Sprintf("Error deleting REST data source %s: %v", name, err))
 		}
 		if !deleteResp.RemoveRestDataSourcePlan {
-			return newDataSourceError(fmt.Sprintf("Unable to delete REST data source"))
+			return newDataSourceError("Unable to delete REST data source")
 		}
 		fmt.Printf("Successfully deleted REST data source %s\n", name)
 		return nil
@@ -684,7 +684,7 @@ func deleteDataSource(cmd *cobra.Command, name string) error {
 			return newDataSourceError(fmt.Sprintf("Error deleting timed data source %s: %v", name, err))
 		}
 		if !deleteResp.RemoveTimedDataSourcePlan {
-			return newDataSourceError(fmt.Sprintf("Unable to delete timed data source"))
+			return newDataSourceError("Unable to delete timed data source")
 		}
 		fmt.Printf("Successfully deleted timed data source %s\n", name)
 		return nil
@@ -716,7 +716,7 @@ func deleteDataSource(cmd *cobra.Command, name string) error {
 			return newDataSourceError(fmt.Sprintf("Error deleting on-error data source %s: %v", name, err))
 		}
 		if !deleteResp.RemoveOnErrorDataSourcePlan {
-			return newDataSourceError(fmt.Sprintf("Unable to delete on-error data source"))
+			return newDataSourceError("Unable to delete on-error data source")
 		}
 		fmt.Printf("Successfully deleted on-error data source %s\n", name)
 		return nil

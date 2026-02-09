@@ -19,9 +19,6 @@ package orchestration
 
 import (
 	"context"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -130,7 +127,7 @@ func TestCreateKubernetesSecret(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create fake clientset
-			clientset := fake.NewSimpleClientset()
+			clientset := fake.NewClientset()
 
 			// Run setup if provided
 			if tt.setupFunc != nil {
@@ -238,30 +235,6 @@ func TestKubernetesPrerequisites(t *testing.T) {
 	})
 }
 
-// Helper function to create a temporary directory for testing
-func createTempDir(t *testing.T) string {
-	t.Helper()
-	dir, err := os.MkdirTemp("", "kubernetes-helpers-test-*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	t.Cleanup(func() {
-		os.RemoveAll(dir)
-	})
-	return dir
-}
-
-// Helper function to create a temporary file with content
-func createTempFile(t *testing.T, dir, name, content string) string {
-	t.Helper()
-	filePath := filepath.Join(dir, name)
-	err := os.WriteFile(filePath, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("failed to create temp file %s: %v", filePath, err)
-	}
-	return filePath
-}
-
 // Test helper functions that don't require external dependencies
 func TestHelperFunctions(t *testing.T) {
 	t.Run("randomPassword generates correct length", func(t *testing.T) {
@@ -286,26 +259,6 @@ func TestHelperFunctions(t *testing.T) {
 		// Just verify it returns a boolean
 		_ = result
 	})
-}
-
-// Mock functions for testing external dependencies
-type mockExecCommand struct {
-	command string
-	args    []string
-	output  string
-	err     error
-}
-
-func mockExecCommandFunc(mock *mockExecCommand) func(string, ...string) *exec.Cmd {
-	return func(command string, args ...string) *exec.Cmd {
-		mock.command = command
-		mock.args = args
-		cmd := exec.Command("echo", mock.output)
-		if mock.err != nil {
-			cmd = exec.Command("false")
-		}
-		return cmd
-	}
 }
 
 // Test error handling scenarios

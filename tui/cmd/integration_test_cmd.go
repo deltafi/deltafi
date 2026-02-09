@@ -224,7 +224,7 @@ func formatTestStatus(status graphql.TestStatus) string {
 	case graphql.TestStatusInvalid:
 		return styles.WarningStyle.Render("INVALID")
 	default:
-		return styles.InfoStyle.Render(fmt.Sprintf("%s", status))
+		return styles.InfoStyle.Render(string(status))
 	}
 }
 
@@ -949,35 +949,6 @@ func runAllIntegrationTests(cmd *cobra.Command, resp *graphql.GetIntegrationTest
 
 	// Check if any tests failed for exit code
 	summary := calculateTestSummary(results)
-	return validateTestResults(summary)
-}
-
-func displayTestResults(cmd *cobra.Command, results map[string]*graphql.GetTestResultGetTestResult, json, plain bool) error {
-	if json {
-		// Return JSON output
-		if len(results) == 1 {
-			for _, result := range results {
-				return printJSON(result, plain)
-			}
-		}
-		return printJSON(results, plain)
-	}
-
-	// Create test result rows
-	var rows []testResultRow
-	for testName, result := range results {
-		rows = append(rows, createTestResultRow(testName, result))
-	}
-
-	// Sort by test name
-	sort.Slice(rows, func(i, j int) bool {
-		return rows[i].testName < rows[j].testName
-	})
-
-	// Calculate summary and display results
-	summary := calculateTestSummary(results)
-	renderTestResultsSummaryWithTable(rows, summary, plain)
-
 	return validateTestResults(summary)
 }
 

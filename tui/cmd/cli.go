@@ -60,7 +60,7 @@ var deprecatedComposeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if app.GetOrchestrationMode() != orchestration.Compose {
-			return fmt.Errorf("This command is only available in Compose orchestration mode")
+			return fmt.Errorf("this command is only available in Compose orchestration mode")
 		}
 
 		executable := filepath.Join(app.GetDistroPath(), "orchestration", "compose", "compose")

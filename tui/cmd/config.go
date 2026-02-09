@@ -42,7 +42,6 @@ var (
 	composeFlag           bool
 	kindFlag              bool
 	kubernetesFlag        bool
-	noWizard              bool
 	deploymentFlag        bool
 	pluginDevelopmentFlag bool
 	coreDevelopmentFlag   bool
@@ -67,8 +66,6 @@ func init() {
 
 	configCmd.Flags().BoolVar(&jsonFlag, "json", false, "Output configuration in JSON format and exit")
 	configCmd.Flags().BoolVar(&noStartFlag, "no-start", false, "Do not automatically start DeltaFi if it is not running")
-
-	noWizard = false
 }
 
 var configCmd = &cobra.Command{
@@ -106,8 +103,6 @@ var configCmd = &cobra.Command{
 
 		// Handle orchestration and deployment mode flags
 		if composeFlag || kindFlag || kubernetesFlag || deploymentFlag || pluginDevelopmentFlag || coreDevelopmentFlag {
-			noWizard = true
-
 			if composeFlag {
 				config.OrchestrationMode = orchestration.Compose
 			} else if kindFlag {
