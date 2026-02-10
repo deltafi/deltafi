@@ -32,7 +32,7 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/marcboeker/go-duckdb"
+	_ "github.com/duckdb/duckdb-go/v2"
 )
 
 // ConfigProvider provides access to core configuration
@@ -265,15 +265,15 @@ func (s *Service) buildAggregatedQuery(files []string, timeFrom, timeTo string, 
 
 			if hasNotPresent && len(regularValues) == 0 {
 				// Only "not present" selected - filter for NULL annotations
-				filters = append(filters, fmt.Sprintf("(annotations['%s'] IS NULL OR annotations['%s'][1] IS NULL)", key, key))
+				filters = append(filters, fmt.Sprintf("annotations['%s'] IS NULL", key))
 			} else if hasNotPresent {
 				// "not present" plus other values - use OR
 				quoted := quoteStrings(regularValues)
-				filters = append(filters, fmt.Sprintf("(annotations['%s'] IS NULL OR annotations['%s'][1] IS NULL OR annotations['%s'][1] IN (%s))", key, key, key, strings.Join(quoted, ", ")))
+				filters = append(filters, fmt.Sprintf("(annotations['%s'] IS NULL OR annotations['%s'] IN (%s))", key, key, strings.Join(quoted, ", ")))
 			} else {
 				// Regular filter - annotation must be present with matching value
 				quoted := quoteStrings(values)
-				filters = append(filters, fmt.Sprintf("annotations['%s'][1] IN (%s)", key, strings.Join(quoted, ", ")))
+				filters = append(filters, fmt.Sprintf("annotations['%s'] IN (%s)", key, strings.Join(quoted, ", ")))
 			}
 		}
 	}
@@ -315,8 +315,7 @@ func (s *Service) buildAnnotationSelect(annotationKey string) string {
 	if key == "" {
 		return "CAST('' AS VARCHAR)"
 	}
-	// Access annotation from MAP column - [1] extracts first element since DuckDB MAP access returns a list
-	return fmt.Sprintf("COALESCE(annotations['%s'][1], 'not present')", key)
+	return fmt.Sprintf("COALESCE(annotations['%s'], 'not present')", key)
 }
 
 // buildDataSourceSelect builds data_source select for aggregated data
@@ -326,8 +325,7 @@ func (s *Service) buildDataSourceSelect(annotationKey string) string {
 	if key == "" {
 		return "data_source"
 	}
-	// Combine data_source with annotation value: "DataSource - AnnotationValue" or "DataSource - not present"
-	return fmt.Sprintf("data_source || ' - ' || COALESCE(annotations['%s'][1], 'not present')", key)
+	return fmt.Sprintf("data_source || ' - ' || COALESCE(annotations['%s'], 'not present')", key)
 }
 
 func (s *Service) hasParquetFiles(glob string) bool {
@@ -751,7 +749,7 @@ func (s *Service) GetAnnotationValues(key string, timeFrom, timeTo time.Time, fi
 	}
 
 	query := fmt.Sprintf(
-		"SELECT DISTINCT annotations['%s'][1] AS value FROM read_parquet([%s]) WHERE %s ORDER BY value",
+		"SELECT DISTINCT annotations['%s'] AS value FROM read_parquet([%s]) WHERE %s ORDER BY value",
 		key, formatFileList(files), strings.Join(whereFilters, " AND "),
 	)
 
@@ -1088,13 +1086,13 @@ func (s *Service) buildEventAnalysisQuery(req EventAnalysisRequest, eventType st
 			}
 
 			if hasNotPresent && len(regularValues) == 0 {
-				filters = append(filters, fmt.Sprintf("(annotations['%s'] IS NULL OR annotations['%s'][1] IS NULL)", key, key))
+				filters = append(filters, fmt.Sprintf("annotations['%s'] IS NULL", key))
 			} else if hasNotPresent {
 				quoted := quoteStrings(regularValues)
-				filters = append(filters, fmt.Sprintf("(annotations['%s'] IS NULL OR annotations['%s'][1] IS NULL OR annotations['%s'][1] IN (%s))", key, key, key, strings.Join(quoted, ", ")))
+				filters = append(filters, fmt.Sprintf("(annotations['%s'] IS NULL OR annotations['%s'] IN (%s))", key, key, strings.Join(quoted, ", ")))
 			} else {
 				quoted := quoteStrings(values)
-				filters = append(filters, fmt.Sprintf("annotations['%s'][1] IN (%s)", key, strings.Join(quoted, ", ")))
+				filters = append(filters, fmt.Sprintf("annotations['%s'] IN (%s)", key, strings.Join(quoted, ", ")))
 			}
 		}
 	}
@@ -1120,7 +1118,7 @@ func (s *Service) buildGroupBySelect(groupBy string) string {
 		return "CAST('' AS VARCHAR)"
 	default:
 		// Assume it's an annotation key
-		return fmt.Sprintf("COALESCE(annotations['%s'][1], 'not present')", groupBy)
+		return fmt.Sprintf("COALESCE(annotations['%s'], 'not present')", groupBy)
 	}
 }
 
@@ -1238,7 +1236,7 @@ func (s *Service) GetProvenanceStats(req ProvenanceStatsRequest) (*ProvenanceSta
 		filters = append(filters, fmt.Sprintf("filename = '%s'", escapeSQL(req.Filename)))
 	}
 	if req.AnnotationKey != "" && req.AnnotationValue != "" {
-		filters = append(filters, fmt.Sprintf("annotations['%s'][1] = '%s'", escapeSQL(req.AnnotationKey), escapeSQL(req.AnnotationValue)))
+		filters = append(filters, fmt.Sprintf("annotations['%s'] = '%s'", escapeSQL(req.AnnotationKey), escapeSQL(req.AnnotationValue)))
 	}
 
 	whereClause := ""
@@ -1384,7 +1382,7 @@ func (s *Service) QueryProvenance(req ProvenanceQueryRequest) ([]ProvenanceRecor
 		filters = append(filters, fmt.Sprintf("final_state = '%s'", escapeSQL(req.FinalState)))
 	}
 	if req.AnnotationKey != "" && req.AnnotationValue != "" {
-		filters = append(filters, fmt.Sprintf("annotations['%s'][1] = '%s'", escapeSQL(req.AnnotationKey), escapeSQL(req.AnnotationValue)))
+		filters = append(filters, fmt.Sprintf("annotations['%s'] = '%s'", escapeSQL(req.AnnotationKey), escapeSQL(req.AnnotationValue)))
 	}
 	if !req.From.IsZero() {
 		filters = append(filters, fmt.Sprintf("completed >= '%s'", req.From.Format(time.RFC3339)))

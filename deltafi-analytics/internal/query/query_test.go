@@ -969,3 +969,881 @@ func TestQuoteStrings(t *testing.T) {
 		}
 	}
 }
+
+// =============================================================================
+// MAP/Annotation Access Tests
+// These tests specifically verify that annotation values are correctly extracted
+// as full strings, not individual characters. They exercise the annotations['key']
+// access pattern in DuckDB queries.
+// =============================================================================
+
+// setupAnnotationTestData creates test data with diverse annotation patterns
+func setupAnnotationTestData(t *testing.T, dataDir string) {
+	t.Helper()
+
+	aggregatedDir := filepath.Join(dataDir, "aggregated", "20251125")
+	if err := os.MkdirAll(aggregatedDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	bucket := time.Date(2025, 11, 25, 10, 0, 0, 0, time.UTC)
+
+	// Create events with various annotation patterns to test MAP access
+	events := []schema.AggregatedEvent{
+		// Events with multiple annotations
+		{Bucket: bucket, DataSource: "src-alpha", EventType: "INGRESS", FlowName: "flow-1", ActionName: "ingest", IngressType: "DATA_SOURCE",
+			Annotations: map[string]string{"customer": "acme-corp", "region": "us-east-1", "env": "production"},
+			EventCount: 1, TotalBytes: 1000, TotalFileCount: 1},
+		{Bucket: bucket, DataSource: "src-alpha", EventType: "EGRESS", FlowName: "flow-1", ActionName: "egress", IngressType: "DATA_SOURCE",
+			Annotations: map[string]string{"customer": "acme-corp", "region": "us-west-2"},
+			EventCount: 1, TotalBytes: 900, TotalFileCount: 1},
+
+		// Events with different customer
+		{Bucket: bucket, DataSource: "src-beta", EventType: "INGRESS", FlowName: "flow-2", ActionName: "ingest", IngressType: "CHILD",
+			Annotations: map[string]string{"customer": "globex-inc", "region": "eu-central-1"},
+			EventCount: 1, TotalBytes: 2000, TotalFileCount: 2},
+		{Bucket: bucket, DataSource: "src-beta", EventType: "ERROR", FlowName: "flow-2", ActionName: "transform", IngressType: "CHILD",
+			Annotations: map[string]string{"customer": "globex-inc"},
+			EventCount: 1, TotalBytes: 0, TotalFileCount: 1},
+
+		// Events with long annotation values (test that we get full strings, not chars)
+		{Bucket: bucket, DataSource: "src-gamma", EventType: "INGRESS", FlowName: "flow-3", ActionName: "ingest", IngressType: "SURVEY",
+			Annotations: map[string]string{"customer": "wayne-enterprises-international", "department": "research-and-development"},
+			EventCount: 1, TotalBytes: 500, TotalFileCount: 1},
+
+		// Events with NO annotations (test "not present" handling)
+		{Bucket: bucket, DataSource: "src-delta", EventType: "INGRESS", FlowName: "flow-4", ActionName: "ingest", IngressType: "DATA_SOURCE",
+			Annotations: nil,
+			EventCount: 1, TotalBytes: 100, TotalFileCount: 1},
+		{Bucket: bucket, DataSource: "src-delta", EventType: "FILTER", FlowName: "flow-4", ActionName: "filter", IngressType: "DATA_SOURCE",
+			EventCount: 1, TotalBytes: 0, TotalFileCount: 1},
+
+		// Events with single-char annotation values (edge case)
+		{Bucket: bucket, DataSource: "src-epsilon", EventType: "INGRESS", FlowName: "flow-5", ActionName: "ingest", IngressType: "DATA_SOURCE",
+			Annotations: map[string]string{"tier": "A", "priority": "1"},
+			EventCount: 1, TotalBytes: 50, TotalFileCount: 1},
+
+		// Events with special characters in annotation values
+		{Bucket: bucket, DataSource: "src-zeta", EventType: "INGRESS", FlowName: "flow-6", ActionName: "ingest", IngressType: "DATA_SOURCE",
+			Annotations: map[string]string{"customer": "o'reilly-media", "tag": "test-value"},
+			EventCount: 1, TotalBytes: 75, TotalFileCount: 1},
+	}
+
+	aggregatedFile := filepath.Join(aggregatedDir, "10.parquet")
+	f, err := os.Create(aggregatedFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := parquet.NewGenericWriter[schema.AggregatedEvent](f, parquet.Compression(&parquet.Snappy))
+	if _, err := writer.Write(events); err != nil {
+		t.Fatal(err)
+	}
+	writer.Close()
+	f.Close()
+}
+
+func TestAnnotationValueExtraction_FullStrings(t *testing.T) {
+	// This test verifies that annotation values are returned as complete strings,
+	// not individual characters. This is critical for DuckDB MAP access compatibility.
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	timeFrom := time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC)
+	timeTo := time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC)
+
+	// Get annotation values for "customer" key
+	values, err := svc.GetAnnotationValues("customer", timeFrom, timeTo, true, nil, nil)
+	if err != nil {
+		t.Fatalf("GetAnnotationValues failed: %v", err)
+	}
+
+	// Verify we get complete customer names, not just first characters
+	expectedCustomers := map[string]bool{
+		"acme-corp":                      false,
+		"globex-inc":                     false,
+		"wayne-enterprises-international": false,
+		"o'reilly-media":                 false,
+	}
+
+	for _, v := range values {
+		if _, ok := expectedCustomers[v]; ok {
+			expectedCustomers[v] = true
+		} else {
+			// Check if we got a single character (the bug we're testing for)
+			if len(v) == 1 {
+				t.Errorf("Got single character '%s' instead of full annotation value - MAP access bug!", v)
+			}
+		}
+	}
+
+	for customer, found := range expectedCustomers {
+		if !found {
+			t.Errorf("Missing expected customer value: %s", customer)
+		}
+	}
+}
+
+func TestAnnotationValueExtraction_LongValues(t *testing.T) {
+	// Specifically test that long annotation values are fully extracted
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	timeFrom := time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC)
+	timeTo := time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC)
+
+	values, err := svc.GetAnnotationValues("department", timeFrom, timeTo, true, nil, nil)
+	if err != nil {
+		t.Fatalf("GetAnnotationValues failed: %v", err)
+	}
+
+	// Should get "research-and-development", not "r"
+	if len(values) != 1 {
+		t.Fatalf("Expected 1 department value, got %d: %v", len(values), values)
+	}
+	if values[0] != "research-and-development" {
+		t.Errorf("Expected 'research-and-development', got '%s' (length %d)", values[0], len(values[0]))
+	}
+}
+
+func TestAnnotationValueExtraction_SingleCharValues(t *testing.T) {
+	// Test that single-character annotation values work correctly
+	// This distinguishes between "correctly got single char" vs "bug truncated to single char"
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	timeFrom := time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC)
+	timeTo := time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC)
+
+	// tier has value "A" and priority has value "1"
+	tierValues, err := svc.GetAnnotationValues("tier", timeFrom, timeTo, true, nil, nil)
+	if err != nil {
+		t.Fatalf("GetAnnotationValues for tier failed: %v", err)
+	}
+	if len(tierValues) != 1 || tierValues[0] != "A" {
+		t.Errorf("Expected tier=['A'], got %v", tierValues)
+	}
+
+	priorityValues, err := svc.GetAnnotationValues("priority", timeFrom, timeTo, true, nil, nil)
+	if err != nil {
+		t.Fatalf("GetAnnotationValues for priority failed: %v", err)
+	}
+	if len(priorityValues) != 1 || priorityValues[0] != "1" {
+		t.Errorf("Expected priority=['1'], got %v", priorityValues)
+	}
+}
+
+func TestQueryAnalytics_GroupByAnnotation_FullValues(t *testing.T) {
+	// Verify that GroupByAnnotation returns complete annotation values in results
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:          time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:            time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs:        300000,
+		GroupByAnnotation: "customer",
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// Collect all unique annotation values from results
+	annotationValues := make(map[string]bool)
+	for _, row := range results {
+		if row.AnnotationValue != "" {
+			annotationValues[row.AnnotationValue] = true
+		}
+	}
+
+	// Verify we have complete customer names
+	expectedValues := []string{"acme-corp", "globex-inc", "wayne-enterprises-international", "o'reilly-media", "not present"}
+	for _, expected := range expectedValues {
+		if !annotationValues[expected] {
+			t.Errorf("Missing expected annotation value in results: %s", expected)
+		}
+	}
+
+	// Verify we DON'T have single-character truncated values (unless they're legitimate like "A")
+	for val := range annotationValues {
+		if len(val) == 1 && val != "A" && val != "1" {
+			t.Errorf("Suspicious single-character annotation value '%s' - possible MAP access bug", val)
+		}
+	}
+}
+
+func TestQueryAnalytics_DataSourceWithAnnotation_FullValues(t *testing.T) {
+	// Test the combined "data_source - annotation_value" format
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:          time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:            time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs:        300000,
+		GroupByAnnotation: "customer",
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// The DataSource field should be "source - customer_value" format
+	foundExpected := map[string]bool{
+		"src-alpha - acme-corp":                      false,
+		"src-beta - globex-inc":                      false,
+		"src-gamma - wayne-enterprises-international": false,
+		"src-delta - not present":                    false,
+	}
+
+	for _, row := range results {
+		if _, ok := foundExpected[row.DataSource]; ok {
+			foundExpected[row.DataSource] = true
+		}
+	}
+
+	for expected, found := range foundExpected {
+		if !found {
+			t.Errorf("Missing expected data_source format: %s", expected)
+		}
+	}
+}
+
+func TestQueryAnalytics_FilterByAnnotation_ExactMatch(t *testing.T) {
+	// Test filtering by exact annotation value
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		Annotations: map[string][]string{
+			"customer": {"acme-corp"},
+		},
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// Should only have results from src-alpha (acme-corp customer)
+	for _, row := range results {
+		if row.DataSource != "src-alpha" {
+			t.Errorf("Filter by customer=acme-corp should only return src-alpha, got %s", row.DataSource)
+		}
+	}
+
+	// Verify we have both INGRESS and EGRESS from src-alpha
+	var totalIngress, totalEgress int64
+	for _, row := range results {
+		totalIngress += row.IngressFiles
+		totalEgress += row.EgressFiles
+	}
+	if totalIngress != 1 {
+		t.Errorf("Expected 1 ingress file for acme-corp, got %d", totalIngress)
+	}
+	if totalEgress != 1 {
+		t.Errorf("Expected 1 egress file for acme-corp, got %d", totalEgress)
+	}
+}
+
+func TestQueryAnalytics_FilterByAnnotation_MultipleValues(t *testing.T) {
+	// Test filtering by multiple annotation values (IN clause)
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		Annotations: map[string][]string{
+			"customer": {"acme-corp", "globex-inc"},
+		},
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// Should have results from src-alpha AND src-beta
+	foundAlpha := false
+	foundBeta := false
+	for _, row := range results {
+		if row.DataSource == "src-alpha" {
+			foundAlpha = true
+		}
+		if row.DataSource == "src-beta" {
+			foundBeta = true
+		}
+		// Should NOT have gamma (wayne-enterprises), delta (no annotations), etc.
+		if row.DataSource == "src-gamma" || row.DataSource == "src-delta" {
+			t.Errorf("Unexpected data source in filtered results: %s", row.DataSource)
+		}
+	}
+
+	if !foundAlpha {
+		t.Error("Missing src-alpha (acme-corp) in results")
+	}
+	if !foundBeta {
+		t.Error("Missing src-beta (globex-inc) in results")
+	}
+}
+
+func TestQueryAnalytics_FilterByAnnotation_NotPresent(t *testing.T) {
+	// Test filtering for events WITHOUT a specific annotation
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		Annotations: map[string][]string{
+			"customer": {"not present"},
+		},
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// Should have results from sources that DON'T have a customer annotation:
+	// - src-delta (no annotations at all)
+	// - src-epsilon (has tier/priority but no customer)
+	allowedSources := map[string]bool{
+		"src-delta":   true,
+		"src-epsilon": true,
+	}
+	for _, row := range results {
+		if !allowedSources[row.DataSource] {
+			t.Errorf("Filter by customer='not present' should only return sources without customer, got %s", row.DataSource)
+		}
+	}
+
+	// Verify we have results from both expected sources
+	foundDelta := false
+	foundEpsilon := false
+	for _, row := range results {
+		if row.DataSource == "src-delta" {
+			foundDelta = true
+		}
+		if row.DataSource == "src-epsilon" {
+			foundEpsilon = true
+		}
+	}
+	if !foundDelta {
+		t.Error("Missing src-delta (no annotations) in 'not present' filter results")
+	}
+	if !foundEpsilon {
+		t.Error("Missing src-epsilon (has other annotations but no customer) in 'not present' filter results")
+	}
+}
+
+func TestQueryAnalytics_FilterByAnnotation_NotPresentPlusValues(t *testing.T) {
+	// Test filtering for "not present" OR specific value
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		Annotations: map[string][]string{
+			"customer": {"not present", "acme-corp"},
+		},
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// Should have results from src-alpha (acme-corp) AND src-delta (no customer)
+	foundAlpha := false
+	foundDelta := false
+	for _, row := range results {
+		if row.DataSource == "src-alpha" {
+			foundAlpha = true
+		}
+		if row.DataSource == "src-delta" {
+			foundDelta = true
+		}
+	}
+
+	if !foundAlpha {
+		t.Error("Missing src-alpha (acme-corp) in results")
+	}
+	if !foundDelta {
+		t.Error("Missing src-delta (no customer annotation) in results")
+	}
+}
+
+func TestQueryAnalytics_FilterByMultipleAnnotationKeys(t *testing.T) {
+	// Test filtering by multiple annotation keys simultaneously
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		Annotations: map[string][]string{
+			"customer": {"acme-corp"},
+			"region":   {"us-east-1"},
+		},
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// Should only match the first event (src-alpha, INGRESS, customer=acme-corp, region=us-east-1)
+	// The EGRESS event has region=us-west-2 so it shouldn't match
+	var totalIngress, totalEgress int64
+	for _, row := range results {
+		totalIngress += row.IngressFiles
+		totalEgress += row.EgressFiles
+	}
+
+	if totalIngress != 1 {
+		t.Errorf("Expected 1 ingress file matching both filters, got %d", totalIngress)
+	}
+	if totalEgress != 0 {
+		t.Errorf("Expected 0 egress files (us-west-2 doesn't match us-east-1), got %d", totalEgress)
+	}
+}
+
+func TestEventAnalysis_GroupByAnnotation(t *testing.T) {
+	// Test QueryEventAnalysis with annotation-based groupBy
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := EventAnalysisRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		GroupBy:    "customer", // Group by annotation key
+	}
+
+	results, err := svc.QueryEventAnalysis(req, "ERROR")
+	if err != nil {
+		t.Fatalf("QueryEventAnalysis failed: %v", err)
+	}
+
+	// Should have error grouped by customer
+	foundGlobex := false
+	for _, row := range results {
+		if row.GroupValue == "globex-inc" {
+			foundGlobex = true
+			if row.Count != 1 {
+				t.Errorf("Expected 1 error for globex-inc, got %d", row.Count)
+			}
+		}
+		// Verify we don't get truncated values
+		if len(row.GroupValue) == 1 && row.GroupValue != "A" && row.GroupValue != "1" {
+			t.Errorf("Suspicious single-char group value '%s' - possible MAP access bug", row.GroupValue)
+		}
+	}
+
+	if !foundGlobex {
+		t.Error("Missing globex-inc in error analysis results")
+	}
+}
+
+func TestEventAnalysis_GroupByStandardField(t *testing.T) {
+	// Test QueryEventAnalysis with standard field groupBy (not annotation)
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := EventAnalysisRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		GroupBy:    "data_source",
+	}
+
+	results, err := svc.QueryEventAnalysis(req, "INGRESS")
+	if err != nil {
+		t.Fatalf("QueryEventAnalysis failed: %v", err)
+	}
+
+	// Should have ingress events grouped by data_source
+	foundSources := make(map[string]int64)
+	for _, row := range results {
+		foundSources[row.GroupValue] += row.Count
+	}
+
+	// Verify we have full data source names
+	expectedSources := []string{"src-alpha", "src-beta", "src-gamma", "src-delta", "src-epsilon", "src-zeta"}
+	for _, expected := range expectedSources {
+		if _, ok := foundSources[expected]; !ok {
+			t.Errorf("Missing data source %s in results", expected)
+		}
+	}
+}
+
+func TestEventAnalysis_FilterByAnnotation(t *testing.T) {
+	// Test QueryEventAnalysis with annotation filter
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := EventAnalysisRequest{
+		TimeFrom:   time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:     time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs: 300000,
+		Annotations: map[string][]string{
+			"customer": {"globex-inc"},
+		},
+		GroupBy: "action_name",
+	}
+
+	results, err := svc.QueryEventAnalysis(req, "ERROR")
+	if err != nil {
+		t.Fatalf("QueryEventAnalysis failed: %v", err)
+	}
+
+	// Should only have the transform error from globex-inc
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 result for globex-inc errors, got %d", len(results))
+	}
+	if results[0].GroupValue != "transform" {
+		t.Errorf("Expected action_name='transform', got '%s'", results[0].GroupValue)
+	}
+}
+
+// =============================================================================
+// Provenance Annotation Tests
+// =============================================================================
+
+func setupProvenanceTestData(t *testing.T, dataDir string) {
+	t.Helper()
+
+	// Create provenance directories
+	rawDir := filepath.Join(dataDir, "provenance", "raw", "20251125", "10")
+	if err := os.MkdirAll(rawDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	created := time.Date(2025, 11, 25, 10, 0, 0, 0, time.UTC)
+	completed := time.Date(2025, 11, 25, 10, 5, 0, 0, time.UTC)
+
+	records := []schema.Provenance{
+		{DID: "did-1", SystemName: "system-a", DataSource: "source-1", Filename: "file1.txt",
+			Transforms: []string{"transform-1"}, DataSink: "sink-1", FinalState: "COMPLETE",
+			Created: created, Completed: completed,
+			Annotations: map[string]string{"customer": "acme-corp", "project": "alpha"}},
+		{DID: "did-2", SystemName: "system-a", DataSource: "source-1", Filename: "file2.txt",
+			Transforms: []string{"transform-1", "transform-2"}, DataSink: "sink-2", FinalState: "ERROR",
+			Created: created, Completed: completed,
+			Annotations: map[string]string{"customer": "globex-inc", "project": "beta"}},
+		{DID: "did-3", SystemName: "system-b", DataSource: "source-2", Filename: "file3.txt",
+			Transforms: []string{}, FinalState: "FILTERED",
+			Created: created, Completed: completed,
+			Annotations: map[string]string{"customer": "acme-corp"}},
+		{DID: "did-4", SystemName: "system-b", DataSource: "source-2", Filename: "file4.txt",
+			Transforms: []string{}, FinalState: "COMPLETE",
+			Created: created, Completed: completed,
+			Annotations: nil}, // No annotations
+	}
+
+	rawFile := filepath.Join(rawDir, "provenance.parquet")
+	f, err := os.Create(rawFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := parquet.NewGenericWriter[schema.Provenance](f, parquet.Compression(&parquet.Snappy))
+	if _, err := writer.Write(records); err != nil {
+		t.Fatal(err)
+	}
+	writer.Close()
+	f.Close()
+}
+
+func TestProvenanceStats_FilterByAnnotation(t *testing.T) {
+	dataDir := t.TempDir()
+	setupProvenanceTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := ProvenanceStatsRequest{
+		AnnotationKey:   "customer",
+		AnnotationValue: "acme-corp",
+	}
+
+	stats, err := svc.GetProvenanceStats(req)
+	if err != nil {
+		t.Fatalf("GetProvenanceStats failed: %v", err)
+	}
+
+	// Should have 2 records with customer=acme-corp (did-1 and did-3)
+	if stats.TotalRecords != 2 {
+		t.Errorf("Expected 2 records for customer=acme-corp, got %d", stats.TotalRecords)
+	}
+}
+
+func TestQueryProvenance_FilterByAnnotation(t *testing.T) {
+	dataDir := t.TempDir()
+	setupProvenanceTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := ProvenanceQueryRequest{
+		AnnotationKey:   "project",
+		AnnotationValue: "beta",
+		Limit:           100,
+	}
+
+	results, err := svc.QueryProvenance(req)
+	if err != nil {
+		t.Fatalf("QueryProvenance failed: %v", err)
+	}
+
+	// Should have 1 record with project=beta (did-2)
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 record for project=beta, got %d", len(results))
+	}
+	if results[0].DID != "did-2" {
+		t.Errorf("Expected did-2, got %s", results[0].DID)
+	}
+	if results[0].Annotations["customer"] != "globex-inc" {
+		t.Errorf("Expected customer=globex-inc, got %s", results[0].Annotations["customer"])
+	}
+}
+
+func TestQueryProvenance_AnnotationsReturned(t *testing.T) {
+	// Verify that annotation values in results are complete strings
+	dataDir := t.TempDir()
+	setupProvenanceTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := ProvenanceQueryRequest{
+		Limit: 100,
+	}
+
+	results, err := svc.QueryProvenance(req)
+	if err != nil {
+		t.Fatalf("QueryProvenance failed: %v", err)
+	}
+
+	// Verify annotation values are complete
+	for _, rec := range results {
+		if rec.Annotations == nil {
+			continue
+		}
+		for key, val := range rec.Annotations {
+			// Check for suspiciously short values (possible truncation)
+			if key == "customer" && len(val) == 1 {
+				t.Errorf("Annotation customer value '%s' appears truncated (DID: %s)", val, rec.DID)
+			}
+			if key == "project" && len(val) == 1 {
+				t.Errorf("Annotation project value '%s' appears truncated (DID: %s)", val, rec.DID)
+			}
+		}
+	}
+}
+
+// =============================================================================
+// Edge Case Tests
+// =============================================================================
+
+func TestAnnotationFilter_SpecialCharacters(t *testing.T) {
+	// Test that annotation values with special characters are handled correctly
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	timeFrom := time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC)
+	timeTo := time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC)
+
+	// Get all customer values
+	values, err := svc.GetAnnotationValues("customer", timeFrom, timeTo, true, nil, nil)
+	if err != nil {
+		t.Fatalf("GetAnnotationValues failed: %v", err)
+	}
+
+	// Should include "o'reilly-media" with the apostrophe
+	found := false
+	for _, v := range values {
+		if v == "o'reilly-media" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Missing customer value with special character: o'reilly-media. Got: %v", values)
+	}
+}
+
+func TestAnnotationFilter_EmptyAnnotationsMap(t *testing.T) {
+	// Test handling of events with nil/empty annotations
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	req := AnalyticsRequest{
+		TimeFrom:          time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC),
+		TimeTo:            time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC),
+		IntervalMs:        300000,
+		GroupByAnnotation: "customer",
+	}
+
+	results, err := svc.QueryAnalytics(req)
+	if err != nil {
+		t.Fatalf("QueryAnalytics failed: %v", err)
+	}
+
+	// Should have "not present" for src-delta which has no annotations
+	foundNotPresent := false
+	for _, row := range results {
+		if row.DataSource == "src-delta - not present" && row.AnnotationValue == "not present" {
+			foundNotPresent = true
+			break
+		}
+	}
+
+	if !foundNotPresent {
+		t.Error("Expected 'not present' annotation value for events without annotations")
+	}
+}
+
+func TestAnnotationKeys_AllKeysExtracted(t *testing.T) {
+	// Verify that all unique annotation keys are properly extracted
+	dataDir := t.TempDir()
+	setupAnnotationTestData(t, dataDir)
+
+	svc, err := NewService(dataDir, testConfigProvider(), testLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer svc.Close()
+
+	timeFrom := time.Date(2025, 11, 25, 0, 0, 0, 0, time.UTC)
+	timeTo := time.Date(2025, 11, 26, 0, 0, 0, 0, time.UTC)
+
+	keys, err := svc.GetAnnotationKeys(timeFrom, timeTo, false, true, nil, nil)
+	if err != nil {
+		t.Fatalf("GetAnnotationKeys failed: %v", err)
+	}
+
+	expectedKeys := []string{"customer", "region", "env", "department", "tier", "priority", "tag"}
+	for _, expected := range expectedKeys {
+		found := false
+		for _, k := range keys {
+			if k == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Missing expected annotation key: %s", expected)
+		}
+	}
+}
