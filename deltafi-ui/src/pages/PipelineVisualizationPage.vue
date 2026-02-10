@@ -328,7 +328,7 @@ import _ from "lodash";
 const route = useRoute();
 const router = useRouter();
 const confirm = useConfirm();
-const { topics, getAllTopics, loading, loaded } = useTopics();
+const { clearTopicsCache, topics, getAllTopics, loading, loaded } = useTopics();
 const { setFlowState } = useFlows();
 const { getTransformFlowByName, getDataSinkByName } = useFlowQueryBuilder();
 const { getTimedDataSources } = useDataSource();
@@ -948,6 +948,7 @@ async function onFlowStateChange(node, newState) {
       accept: async () => {
         notify.info("Stopping Flow", `Stopping <b>${flowName}</b>...`, 3000);
         await setFlowState(flowType, flowName, newState);
+        await clearTopicsCache();
         await getAllTopics();
       },
     });
@@ -955,6 +956,7 @@ async function onFlowStateChange(node, newState) {
     const stateLabel = newState === "RUNNING" ? "Starting" : "Pausing";
     notify.info(`${stateLabel} Flow`, `${stateLabel} <b>${flowName}</b>...`, 3000);
     await setFlowState(flowType, flowName, newState);
+    await clearTopicsCache();
     await getAllTopics();
   }
 }
@@ -1081,7 +1083,7 @@ function setupScrollListeners() {
 }
 
 onMounted(async () => {
-  await Promise.all([getAllTopics(), fetchFlowErrors(), fetchQueueMetrics()]);
+  await Promise.all([clearTopicsCache(), getAllTopics(), fetchFlowErrors(), fetchQueueMetrics()]);
   startMetricsRefresh();
 });
 

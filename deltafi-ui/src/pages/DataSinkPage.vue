@@ -33,17 +33,10 @@
         </IconField>
         <div class="kill-switch">
           <span class="mr-2 text-muted">Egress Enabled</span>
-          <SystemPropertySwitch class="mr-1" property-name="egressEnabled"
-            off-confirmation="Are you sure? This will stop all data from flowing out of the system."
-            off-tooltip="Enable egress" on-tooltip="Disable egress" />
+          <SystemPropertySwitch class="mr-1" property-name="egressEnabled" off-confirmation="Are you sure? This will stop all data from flowing out of the system." off-tooltip="Enable egress" on-tooltip="Disable egress" />
         </div>
       </div>
-      <DataSinkDataTable
-        :flow-data-prop="flowData"
-        :flow-data-by-plugin-prop="flowDataByPlugin"
-        :filter-flows-text-prop="filterFlowsText"
-        @reload-data-sinks="refresh"
-      />
+      <DataSinkDataTable :flow-data-prop="flowData" :flow-data-by-plugin-prop="flowDataByPlugin" :filter-flows-text-prop="filterFlowsText" @reload-data-sinks="refresh" />
     </div>
   </div>
 </template>
@@ -65,7 +58,7 @@ import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
 const { getAllDataSinks, loaded, loading } = useDataSink();
-const { getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
+const { clearTopicsCache, getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
 
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
@@ -81,10 +74,7 @@ let autoRefresh;
 const showLoading = computed(() => (!loaded.value && loading.value) || (!topicsLoaded.value && topicsLoading.value));
 
 onMounted(async () => {
-  await Promise.all([
-    getAllTopics(),
-    fetchFlows(),
-  ]);
+  await Promise.all([clearTopicsCache(), getAllTopics(), fetchFlows()]);
 
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !editing.value) {
@@ -102,7 +92,7 @@ const fetchFlows = async () => {
   const dataSinks = response.data.getAllFlows.dataSink;
 
   // Format data
-  dataSinks.forEach(ds => {
+  dataSinks.forEach((ds) => {
     ds.type = "DATA_SINK";
     ds.mvnCoordinates = `${ds.sourcePlugin.groupId}:${ds.sourcePlugin.artifactId}:${ds.sourcePlugin.version}`;
     ds.artifactId = ds.sourcePlugin.artifactId;
@@ -111,14 +101,12 @@ const fetchFlows = async () => {
 
   flowData.value = dataSinks;
   const grouped = _.chain(flowData.value).sortBy("artifactId").groupBy("artifactId").value();
-  const { 'system-plugin': systemPlugin, ...rest } = grouped;
-  flowDataByPlugin.value = systemPlugin ? { ...rest, 'system-plugin': systemPlugin } : rest;
+  const { "system-plugin": systemPlugin, ...rest } = grouped;
+  flowDataByPlugin.value = systemPlugin ? { ...rest, "system-plugin": systemPlugin } : rest;
 };
 
 const dataSinkExport = computed(() => {
-  const formatDataSinksList = flowData.value.map(ds =>
-    _.pick(ds, ["name", "type", "description", "subscribe", "egressAction.name", "egressAction.type", "egressAction.parameters", "egressAction.apiVersion", "egressAction.join"])
-  );
+  const formatDataSinksList = flowData.value.map((ds) => _.pick(ds, ["name", "type", "description", "subscribe", "egressAction.name", "egressAction.type", "egressAction.parameters", "egressAction.apiVersion", "egressAction.join"]));
   return { dataSinks: formatDataSinksList };
 });
 
@@ -127,4 +115,3 @@ const refresh = async () => {
   await fetchFlows();
 };
 </script>
-

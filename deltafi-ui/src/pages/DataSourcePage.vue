@@ -67,7 +67,7 @@ import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
 const { getAllDataSources, loaded, loading } = useDataSource();
-const { getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
+const { clearTopicsCache, getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
 
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
@@ -84,6 +84,7 @@ const showLoading = computed(() => (!loaded.value && loading.value) || (!topicsL
 
 onMounted(async () => {
   await Promise.all([
+    clearTopicsCache(), 
     getAllTopics(),
     fetchFlows(),
   ]);

@@ -47,7 +47,7 @@ import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 
 const { getAllFlows, loaded, loading } = useFlowQueryBuilder();
-const { getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
+const { clearTopicsCache, getAllTopics, loaded: topicsLoaded, loading: topicsLoading } = useTopics();
 
 const transformsFlowData = ref([]);
 const flowData = ref([]);
@@ -56,10 +56,7 @@ const filterFlowsText = ref("");
 const showLoading = computed(() => (!loaded.value && loading.value) || (!topicsLoaded.value && topicsLoading.value));
 
 onMounted(async () => {
-  await Promise.all([
-    getAllTopics(),
-    fetchFlows(),
-  ]);
+  await Promise.all([clearTopicsCache(), getAllTopics(), fetchFlows()]);
 });
 
 const fetchFlows = async () => {
@@ -68,8 +65,8 @@ const fetchFlows = async () => {
   transformsFlowData.value = response.data.getAllFlows.transform;
   flowData.value = formatData(transformsFlowData.value);
   const grouped = _.chain(flowData.value).sortBy("artifactId").groupBy("artifactId").value();
-  const { 'system-plugin': systemPlugin, ...rest } = grouped;
-  flowDataByPlugin.value = systemPlugin ? { ...rest, 'system-plugin': systemPlugin } : rest;
+  const { "system-plugin": systemPlugin, ...rest } = grouped;
+  flowDataByPlugin.value = systemPlugin ? { ...rest, "system-plugin": systemPlugin } : rest;
 };
 
 const formatData = (data) => {

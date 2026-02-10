@@ -18,9 +18,9 @@
 // ABOUTME: Composable for fetching and caching topic data (publishers/subscribers).
 // ABOUTME: Uses a shared promise to deduplicate concurrent API calls.
 
-import { ref, Ref, readonly } from 'vue';
+import { ref, Ref, readonly } from "vue";
 import useGraphQL from "./useGraphQL";
-import _ from "lodash"
+import _ from "lodash";
 
 const getAllTopicsQuery = {
   getAllTopics: {
@@ -32,15 +32,15 @@ const getAllTopicsQuery = {
       valid: true,
       condition: true,
       errors: {
-        message: true
+        message: true,
       },
       sourcePlugin: {
         groupId: true,
         artifactId: true,
-        version: true
+        version: true,
       },
       pluginReady: true,
-      pluginNotReadyReason: true
+      pluginNotReadyReason: true,
     },
     subscribers: {
       name: true,
@@ -49,34 +49,34 @@ const getAllTopicsQuery = {
       valid: true,
       condition: true,
       errors: {
-        message: true
+        message: true,
       },
       sourcePlugin: {
         groupId: true,
         artifactId: true,
-        version: true
+        version: true,
       },
       pluginReady: true,
-      pluginNotReadyReason: true
-    }
+      pluginNotReadyReason: true,
+    },
   },
-}
+};
 
 export type TopicParticipant = {
-  name: String,
-  type: String,
-  state: String,
-  valid: boolean,
-  condition: String,
-  errors?: Array<{ message: String }>,
-  pluginReady: boolean,
-  pluginNotReadyReason?: String
+  name: String;
+  type: String;
+  state: String;
+  valid: boolean;
+  condition: String;
+  errors?: Array<{ message: String }>;
+  pluginReady: boolean;
+  pluginNotReadyReason?: String;
 };
 
 export type Topic = {
-  name?: String,
-  publishers?: Array<TopicParticipant>,
-  subscribers?: Array<TopicParticipant>
+  name?: String;
+  publishers?: Array<TopicParticipant>;
+  subscribers?: Array<TopicParticipant>;
 };
 
 const topics: Ref<Array<Topic>> = ref([]);
@@ -89,7 +89,7 @@ export default function useTopics() {
   const hasActiveSubscribers = async (topicName: string) => {
     await getAllTopics();
     const topic = _.find(topics.value, (topic) => topic.name === topicName);
-    return topic ? _.some(topic.subscribers, { 'state': 'RUNNING' }) : false
+    return topic ? _.some(topic.subscribers, { state: "RUNNING" }) : false;
   };
 
   const getAllTopics = async (): Promise<Array<Topic>> => {
@@ -115,7 +115,14 @@ export default function useTopics() {
   const getTopic = async (topicName: string) => {
     await getAllTopics();
     return _.find(topics.value, (topic) => topic.name === topicName);
-  }
+  };
 
-  return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getTopic, getAllTopics, getAllTopicNames, loading, loaded, errors };
+  // Clear the cached topics data to force a fresh fetch on next access
+  const clearTopicsCache = async () => {
+    topics.value = [];
+    topicNames.value = [];
+    fetchPromise = null;
+  };
+
+  return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getTopic, getAllTopics, getAllTopicNames, loading, loaded, errors, clearTopicsCache };
 }

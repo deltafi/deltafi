@@ -83,7 +83,7 @@ import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Tag from "primevue/tag";
 
-const { topics, getAllTopics, loading, loaded } = useTopics();
+const { clearTopicsCache, topics, getAllTopics, loading, loaded } = useTopics();
 
 let autoRefresh;
 const refreshInterval = 5000; // 5 seconds
@@ -120,6 +120,7 @@ const pubsubIcon = (type) => {
 };
 
 onMounted(async () => {
+  await clearTopicsCache();
   await getAllTopics();
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !loading.value) {

@@ -263,7 +263,7 @@ import MetricsControls from "@/components/pipeline/MetricsControls.vue";
 
 const router = useRouter();
 const confirm = useConfirm();
-const { topics, getAllTopics, loading, loaded } = useTopics();
+const { clearTopicsCache, topics, getAllTopics, loading, loaded } = useTopics();
 const { errorsByFlow, fetch: fetchFlowErrors } = useFlowErrors();
 const { setFlowState } = useFlows();
 const { getTransformFlowByName, getDataSinkByName } = useFlowQueryBuilder();
@@ -763,7 +763,7 @@ watch(flowGraph, (newGraph) => {
 
 
 onMounted(async () => {
-  await Promise.all([getAllTopics(), fetchFlowErrors(), fetchQueueMetrics()]);
+  await Promise.all([ clearTopicsCache(), getAllTopics(), fetchFlowErrors(), fetchQueueMetrics()]);
   startMetricsRefresh();
 });
 
