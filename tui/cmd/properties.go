@@ -122,11 +122,6 @@ var listPropertiesCmd = &cobra.Command{
 						}
 					}
 
-					// Only show override value for CUSTOM properties
-					if prop.Source != graphql.PropertySourceCustom {
-						value = "" // Show nothing for non-CUSTOM properties
-					}
-
 					row = append(row, defaultValue, description)
 				}
 				table.Rows = append(table.Rows, row)

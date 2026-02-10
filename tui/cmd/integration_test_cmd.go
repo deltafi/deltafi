@@ -77,7 +77,7 @@ func initialTestProgressModel(testNames []string) testProgressModel {
 }
 
 func (m testProgressModel) Init() tea.Cmd {
-	return tea.Batch(spinner.Tick)
+	return tea.Batch(m.spinner.Tick)
 }
 
 func (m testProgressModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

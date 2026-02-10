@@ -156,39 +156,39 @@ func NewStyleBuilder() *StyleBuilder {
 }
 
 func (sb *StyleBuilder) WithForeground(color lipgloss.AdaptiveColor) *StyleBuilder {
-	sb.style = sb.style.Copy().Foreground(color)
+	sb.style = sb.style.Foreground(color)
 	return sb
 }
 
 func (sb *StyleBuilder) WithBackground(color lipgloss.AdaptiveColor) *StyleBuilder {
-	sb.style = sb.style.Copy().Background(color)
+	sb.style = sb.style.Background(color)
 	return sb
 }
 
 func (sb *StyleBuilder) Bold() *StyleBuilder {
-	sb.style = sb.style.Copy().Bold(true)
+	sb.style = sb.style.Bold(true)
 	return sb
 }
 
 func (sb *StyleBuilder) Italic() *StyleBuilder {
-	sb.style = sb.style.Copy().Italic(true)
+	sb.style = sb.style.Italic(true)
 	return sb
 }
 
 func (sb *StyleBuilder) Underline() *StyleBuilder {
-	sb.style = sb.style.Copy().Underline(true)
+	sb.style = sb.style.Underline(true)
 	return sb
 }
 
 func (sb *StyleBuilder) Border() *StyleBuilder {
-	sb.style = sb.style.Copy().
+	sb.style = sb.style.
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(Surface2)
 	return sb
 }
 
 func (sb *StyleBuilder) Padding(n int) *StyleBuilder {
-	sb.style = sb.style.Copy().Padding(n)
+	sb.style = sb.style.Padding(n)
 	return sb
 }
 

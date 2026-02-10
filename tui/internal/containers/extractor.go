@@ -76,7 +76,7 @@ func initialProgressModel() progressModel {
 }
 
 func (m progressModel) Init() tea.Cmd {
-	return tea.Batch(spinner.Tick)
+	return tea.Batch(m.spinner.Tick)
 }
 
 func (m progressModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
