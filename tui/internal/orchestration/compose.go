@@ -1066,6 +1066,9 @@ const (
 
 func (o *ComposeOrchestrator) GetKeyCert(secretName string) (*SslOutput, error) {
 	secretDir, err := o.secretDir(secretName)
+	if err != nil {
+		return nil, err
+	}
 
 	if _, err := os.Stat(secretDir); os.IsNotExist(err) {
 		return nil, fmt.Errorf("secret named '%s' does not exist", secretName)

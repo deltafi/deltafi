@@ -164,6 +164,9 @@ var appendToCaChainCmd = &cobra.Command{
 		}
 
 		caChain, err := app.GetOrchestrator().AppendToCaChain(string(data))
+		if err != nil {
+			return err
+		}
 
 		return printCaChain(cmd, caChain)
 	},

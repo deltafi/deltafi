@@ -18,6 +18,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -139,7 +140,7 @@ func executeGraphQLQuery(query string) (string, error) {
 
 	// Execute the request
 	var resp graphql.Response
-	err = client.MakeRequest(nil, req, &resp)
+	err = client.MakeRequest(context.Background(), req, &resp)
 	if err != nil {
 		return "", fmt.Errorf("GraphQL request failed: %w", err)
 	}
