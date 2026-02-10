@@ -129,6 +129,7 @@ var configCmd = &cobra.Command{
 		deploymentModeChanged := currentDeploymentMode != config.DeploymentMode
 		configurationChanged := orchestrationModeChanged || deploymentModeChanged
 
+		var downErr error
 		if orchestrationModeChanged && configExists {
 			fmt.Printf("Orchestration mode will be set to %s\n", styles.WarningStyle.Render(config.OrchestrationMode.String()))
 			goForIt := true
@@ -141,11 +142,14 @@ var configCmd = &cobra.Command{
 				}
 			}
 			if goForIt {
-				down(true)
+				downErr = down(true)
 			}
 		}
 
 		err := config.Save()
+		if downErr != nil {
+			return fmt.Errorf("failed to shut down existing cluster: %w", downErr)
+		}
 		if err != nil {
 			return fmt.Errorf("failed to save orchestration/deployment mode: %w", err)
 		}
