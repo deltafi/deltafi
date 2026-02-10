@@ -281,30 +281,39 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return dids;
     }
 
+    // SKIP LOCKED avoids deadlocks with concurrent delete operations.
+    // Skipped rows are picked up on the next scheduled auto-resume cycle.
     private static final String RESUME_READY = """
-            SELECT DISTINCT df.did
-            FROM delta_file_flows dff
-            JOIN delta_files df
-            ON dff.delta_file_id = df.did
+            SELECT df.did
+            FROM delta_files df
             WHERE df.stage = 'ERROR'
             AND df.content_deleted IS NULL
-            AND dff.state = 'ERROR'
-            AND dff.error_acknowledged IS NULL
-            AND dff.next_auto_resume < :maxReadyTime
+            AND EXISTS (
+                SELECT 1 FROM delta_file_flows dff
+                WHERE dff.delta_file_id = df.did
+                AND dff.state = 'ERROR'
+                AND dff.error_acknowledged IS NULL
+                AND dff.next_auto_resume < :maxReadyTime
+            )
+            FOR UPDATE OF df SKIP LOCKED
             LIMIT :batchSize
             """;
 
     private static final String RESUME_READY_NO_EGRESS = """
-            SELECT DISTINCT df.did
-            FROM delta_file_flows dff
-            JOIN delta_files df ON dff.delta_file_id = df.did
-            JOIN flow_definitions fd ON fd.id = dff.flow_definition_id
+            SELECT df.did
+            FROM delta_files df
             WHERE df.stage = 'ERROR'
             AND df.content_deleted IS NULL
-            AND dff.state = 'ERROR'
-            AND dff.error_acknowledged IS NULL
-            AND dff.next_auto_resume < :maxReadyTime
-            AND fd.type <> 'DATA_SINK'
+            AND EXISTS (
+                SELECT 1 FROM delta_file_flows dff
+                JOIN flow_definitions fd ON fd.id = dff.flow_definition_id
+                WHERE dff.delta_file_id = df.did
+                AND dff.state = 'ERROR'
+                AND dff.error_acknowledged IS NULL
+                AND dff.next_auto_resume < :maxReadyTime
+                AND fd.type <> 'DATA_SINK'
+            )
+            FOR UPDATE OF df SKIP LOCKED
             LIMIT :batchSize
             """;
 
@@ -942,13 +951,16 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Transactional
     public void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason) {
         if (dids == null || dids.isEmpty()) return;
-        List<Object[]> batchParams = dids.stream()
-                .map(did -> new Object[] { now, reason, did })
-                .toList();
-        jdbcTemplate.batchUpdate(
-                "UPDATE delta_files SET content_deleted = ?, content_deleted_reason = ?, content_deletable = false WHERE did = ?",
-                batchParams
-        );
+        // SKIP LOCKED avoids deadlocks with concurrent resume/delete operations.
+        // Skipped rows are picked up on the next scheduled delete cycle.
+        entityManager.createNativeQuery("""
+                UPDATE delta_files SET content_deleted = :now, content_deleted_reason = :reason, content_deletable = false
+                WHERE did IN (SELECT did FROM delta_files WHERE did IN (:dids) FOR UPDATE SKIP LOCKED)
+                """)
+                .setParameter("now", now)
+                .setParameter("reason", reason)
+                .setParameter("dids", dids)
+                .executeUpdate();
     }
 
     private static final String INSERT_DELTA_FILES = """
@@ -1187,10 +1199,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Transactional
     public void batchedBulkDeleteByDidIn(List<UUID> dids) {
         if (dids == null || dids.isEmpty()) return;
-        List<Object[]> params = dids.stream()
-                .map(did -> new Object[] { did })
-                .toList();
-        jdbcTemplate.batchUpdate("DELETE FROM delta_files WHERE did = ?", params);
+        // SKIP LOCKED avoids deadlocks with concurrent resume/delete operations.
+        // Skipped rows are picked up on the next scheduled delete cycle.
+        entityManager.createNativeQuery("""
+                DELETE FROM delta_files WHERE did IN (
+                    SELECT did FROM delta_files WHERE did IN (:dids) FOR UPDATE SKIP LOCKED
+                )
+                """)
+                .setParameter("dids", dids)
+                .executeUpdate();
     }
 
     @Override

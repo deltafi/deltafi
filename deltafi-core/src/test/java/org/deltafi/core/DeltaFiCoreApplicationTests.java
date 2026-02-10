@@ -106,6 +106,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.ws.rs.core.MediaType;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.*;
@@ -7155,6 +7157,75 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testSetContentDeletedSkipsLockedRows() throws Exception {
+		UUID did1 = UUID.randomUUID();
+		UUID did2 = UUID.randomUUID();
+		UUID did3 = UUID.randomUUID();
+
+		deltaFileRepo.insertOne(utilService.emptyDeltaFile(did1, REST_DATA_SOURCE_NAME));
+		deltaFileRepo.insertOne(utilService.emptyDeltaFile(did2, REST_DATA_SOURCE_NAME));
+		deltaFileRepo.insertOne(utilService.emptyDeltaFile(did3, REST_DATA_SOURCE_NAME));
+
+		// Lock did2 in a separate JDBC connection (simulating a concurrent resume/operation)
+		try (Connection lockConn = java.sql.DriverManager.getConnection(
+				POSTGRES_CONTAINER.getJdbcUrl(),
+				POSTGRES_CONTAINER.getUsername(),
+				POSTGRES_CONTAINER.getPassword())) {
+			lockConn.setAutoCommit(false);
+			try (PreparedStatement ps = lockConn.prepareStatement(
+					"SELECT * FROM delta_files WHERE did = ? FOR UPDATE")) {
+				ps.setObject(1, did2);
+				ps.executeQuery();
+			}
+
+			// Call setContentDeletedByDidIn — should skip the locked row (did2)
+			OffsetDateTime now = OffsetDateTime.now();
+			deltaFileRepo.setContentDeletedByDidIn(List.of(did1, did2, did3), now, "test-policy");
+
+			// Verify did1 and did3 were updated, did2 was skipped
+			assertThat(contentDeletedIsSet(did1)).isTrue();
+			assertThat(contentDeletedIsSet(did2)).isFalse();
+			assertThat(contentDeletedIsSet(did3)).isTrue();
+
+			lockConn.rollback();
+		}
+	}
+
+	@Test
+	void testBulkDeleteSkipsLockedRows() throws Exception {
+		UUID did1 = UUID.randomUUID();
+		UUID did2 = UUID.randomUUID();
+		UUID did3 = UUID.randomUUID();
+
+		deltaFileRepo.insertOne(utilService.emptyDeltaFile(did1, REST_DATA_SOURCE_NAME));
+		deltaFileRepo.insertOne(utilService.emptyDeltaFile(did2, REST_DATA_SOURCE_NAME));
+		deltaFileRepo.insertOne(utilService.emptyDeltaFile(did3, REST_DATA_SOURCE_NAME));
+
+		// Lock did2 in a separate JDBC connection
+		try (Connection lockConn = java.sql.DriverManager.getConnection(
+				POSTGRES_CONTAINER.getJdbcUrl(),
+				POSTGRES_CONTAINER.getUsername(),
+				POSTGRES_CONTAINER.getPassword())) {
+			lockConn.setAutoCommit(false);
+			try (PreparedStatement ps = lockConn.prepareStatement(
+					"SELECT * FROM delta_files WHERE did = ? FOR UPDATE")) {
+				ps.setObject(1, did2);
+				ps.executeQuery();
+			}
+
+			// Call batchedBulkDeleteByDidIn — should skip the locked row (did2)
+			deltaFileRepo.batchedBulkDeleteByDidIn(List.of(did1, did2, did3));
+
+			// Verify did1 and did3 were deleted, did2 still exists
+			assertThat(deltaFileExists(did1)).isFalse();
+			assertThat(deltaFileExists(did2)).isTrue();
+			assertThat(deltaFileExists(did3)).isFalse();
+
+			lockConn.rollback();
+		}
+	}
+
+	@Test
 	void testAnalyticsCacheConcurrency() {
 		annotationKeyService.clearCache();
 		annotationValueService.clearCache();
@@ -7208,5 +7279,18 @@ class DeltaFiCoreApplicationTests {
 						.isEqualTo(expectedId);
 			}
 		}
+	}
+
+	private boolean contentDeletedIsSet(UUID did) {
+		return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
+				"SELECT content_deleted IS NOT NULL FROM delta_files WHERE did = ?",
+				Boolean.class, did));
+	}
+
+	private boolean deltaFileExists(UUID did) {
+		Integer count = jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM delta_files WHERE did = ?",
+				Integer.class, did);
+		return count != null && count > 0;
 	}
 }
