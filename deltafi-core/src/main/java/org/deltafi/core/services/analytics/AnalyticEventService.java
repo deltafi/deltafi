@@ -595,10 +595,13 @@ public class AnalyticEventService {
                     continue;
                 }
                 String valName = anno.getValue();
-                int keyId = annotationKeyService.getOrCreateKeyId(keyName);
-                int valId = annotationValueService.getOrCreateValueId(valName);
-
-                batchParams.add(new Object[]{did, keyId, valId});
+                try {
+                    int keyId = annotationKeyService.getOrCreateKeyId(keyName);
+                    int valId = annotationValueService.getOrCreateValueId(valName);
+                    batchParams.add(new Object[]{did, keyId, valId});
+                } catch (Exception e) {
+                    log.warn("Skipping annotation {}={} for did {}: {}", keyName, valName, did, e.getMessage());
+                }
             }
         }
 

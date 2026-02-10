@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class ActionNameServiceImpl implements ActionNameService {
 
     private final ActionNameRepo repo;
-    private final LoadingCache<String, ActionName> cache;
+    private final LoadingCache<String, Integer> cache;
 
     public ActionNameServiceImpl(ActionNameRepo repo) {
         this.repo = repo;
@@ -44,8 +44,8 @@ public class ActionNameServiceImpl implements ActionNameService {
                 .build(new CacheLoader<>() {
                     @NotNull
                     @Override
-                    public ActionName load(@NotNull String key) {
-                        return findOrCreate(key);
+                    public Integer load(@NotNull String key) {
+                        return findOrCreate(key).getId();
                     }
                 });
     }
@@ -53,8 +53,7 @@ public class ActionNameServiceImpl implements ActionNameService {
     @Override
     public int getOrCreateActionName(String name) {
         try {
-            ActionName group = cache.get(name);
-            return group.getId();
+            return cache.get(name);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get/create ActionName for name=" + name, e);
         }

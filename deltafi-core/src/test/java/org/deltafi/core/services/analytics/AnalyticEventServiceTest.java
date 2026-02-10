@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -223,5 +223,30 @@ class AnalyticEventServiceTest {
         assertThat(sentAnnotations).containsEntry("allowed1", "value1");
         assertThat(sentAnnotations).containsEntry("groupKey", "groupValue");
         assertThat(sentAnnotations).doesNotContainKey("notAllowed");
+    }
+
+    @Test
+    void processEventBatch_continuesProcessingWhenOneAnnotationKeyFails() {
+        when(mockProperties.allowedAnalyticsAnnotationsList()).thenReturn(List.of("goodKey", "badKey"));
+
+        // Mock: goodKey succeeds, badKey throws (simulating session corruption)
+        when(annotationKeyService.getOrCreateKeyId("goodKey")).thenReturn(1);
+        when(annotationKeyService.getOrCreateKeyId("badKey"))
+                .thenThrow(new RuntimeException("Failed to get/create AnnotationKey for name=badKey"));
+        when(annotationValueService.getOrCreateValueId("goodValue")).thenReturn(10);
+
+        // Queue two annotation events: one good, one bad
+        UUID goodDid = UUID.randomUUID();
+        UUID badDid = UUID.randomUUID();
+        analyticEventService.queueAnnotations(goodDid, Map.of("goodKey", "goodValue"), OffsetDateTime.now());
+        analyticEventService.queueAnnotations(badDid, Map.of("badKey", "badValue"), OffsetDateTime.now());
+
+        // Process the batch
+        analyticEventService.processEventBatch();
+
+        // The good annotation should still be persisted even though the bad one failed.
+        // Currently this FAILS: the entire batch is lost when any single annotation throws.
+        verify(eventAnnotationsRepo).bulkUpsertAnnotations(argThat(params ->
+                params.stream().anyMatch(row -> row[0].equals(goodDid))));
     }
 }

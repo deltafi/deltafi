@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class EventGroupServiceImpl implements EventGroupService {
 
     private final EventGroupRepo repo;
-    private final LoadingCache<String, EventGroup> cache;
+    private final LoadingCache<String, Integer> cache;
 
     public EventGroupServiceImpl(EventGroupRepo repo) {
         this.repo = repo;
@@ -44,8 +44,8 @@ public class EventGroupServiceImpl implements EventGroupService {
                 .build(new CacheLoader<>() {
                     @NotNull
                     @Override
-                    public EventGroup load(@NotNull String key) {
-                        return findOrCreate(key);
+                    public Integer load(@NotNull String key) {
+                        return findOrCreate(key).getId();
                     }
                 });
     }
@@ -53,8 +53,7 @@ public class EventGroupServiceImpl implements EventGroupService {
     @Override
     public int getOrCreateEventGroupId(String name) {
         try {
-            EventGroup group = cache.get(name);
-            return group.getId();
+            return cache.get(name);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get/create EventGroup for name=" + name, e);
         }

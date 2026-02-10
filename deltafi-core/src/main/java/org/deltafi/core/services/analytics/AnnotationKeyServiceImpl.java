@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class AnnotationKeyServiceImpl implements AnnotationKeyService {
 
     private final AnnotationKeyRepo repo;
-    private final LoadingCache<String, AnnotationKey> cache;
+    private final LoadingCache<String, Integer> cache;
 
     public AnnotationKeyServiceImpl(AnnotationKeyRepo repo) {
         this.repo = repo;
@@ -44,8 +44,8 @@ public class AnnotationKeyServiceImpl implements AnnotationKeyService {
                 .build(new CacheLoader<>() {
                     @NotNull
                     @Override
-                    public AnnotationKey load(@NotNull String key) {
-                        return findOrCreate(key);
+                    public Integer load(@NotNull String key) {
+                        return findOrCreate(key).getId();
                     }
                 });
     }
@@ -53,8 +53,7 @@ public class AnnotationKeyServiceImpl implements AnnotationKeyService {
     @Override
     public int getOrCreateKeyId(String name) {
         try {
-            AnnotationKey group = cache.get(name);
-            return group.getId();
+            return cache.get(name);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get/create AnnotationKey for name=" + name, e);
         }

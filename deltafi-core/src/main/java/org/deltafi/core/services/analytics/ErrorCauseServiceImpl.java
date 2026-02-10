@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class ErrorCauseServiceImpl implements ErrorCauseService {
 
     private final ErrorCauseRepo repo;
-    private final LoadingCache<String, ErrorCause> cache;
+    private final LoadingCache<String, Integer> cache;
 
     public ErrorCauseServiceImpl(ErrorCauseRepo repo) {
         this.repo = repo;
@@ -44,8 +44,8 @@ public class ErrorCauseServiceImpl implements ErrorCauseService {
                 .build(new CacheLoader<>() {
                     @NotNull
                     @Override
-                    public ErrorCause load(@NotNull String key) {
-                        return findOrCreate(key);
+                    public Integer load(@NotNull String key) {
+                        return findOrCreate(key).getId();
                     }
                 });
     }
@@ -53,8 +53,7 @@ public class ErrorCauseServiceImpl implements ErrorCauseService {
     @Override
     public int getOrCreateCause(String name) {
         try {
-            ErrorCause group = cache.get(name);
-            return group.getId();
+            return cache.get(name);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get/create ErrorCause for name=" + name, e);
         }

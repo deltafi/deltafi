@@ -68,7 +68,7 @@ import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.rest.AuthRest;
 import org.deltafi.core.services.*;
-import org.deltafi.core.services.analytics.AnalyticEventService;
+import org.deltafi.core.services.analytics.*;
 import org.deltafi.core.snapshot.SystemSnapshotTestHelper;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.Flow;
@@ -353,6 +353,21 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	FlowDefinitionService flowDefinitionService;
+
+	@Autowired
+	AnnotationKeyService annotationKeyService;
+
+	@Autowired
+	AnnotationValueService annotationValueService;
+
+	@Autowired
+	ErrorCauseService errorCauseService;
+
+	@Autowired
+	EventGroupService eventGroupService;
+
+	@Autowired
+	ActionNameService actionNameService;
 
 	@Autowired
 	FullFlowExemplarService fullFlowExemplarService;
@@ -7137,5 +7152,61 @@ class DeltaFiCoreApplicationTests {
 		restDataSourceRepo.saveAll(List.of(dataSourceMatch, missingOneOfAll, excluded, invalid, missingAny, alreadyStopped));
 		transformFlowRepo.save(transformMatch);
 		timedDataSourceRepo.save(wrongType);
+	}
+
+	@Test
+	void testAnalyticsCacheConcurrency() {
+		annotationKeyService.clearCache();
+		annotationValueService.clearCache();
+		errorCauseService.clearCache();
+		eventGroupService.clearCache();
+		actionNameService.clearCache();
+
+		String prefix = UUID.randomUUID().toString().substring(0, 8);
+		int numThreads = 10;
+		int keysPerThread = 20;
+		Executor executor = Executors.newFixedThreadPool(numThreads);
+
+		// Concurrent calls with overlapping key names to exercise the getOrCreate race path
+		List<CompletableFuture<Map<String, Integer>>> futures = IntStream.range(0, numThreads)
+				.mapToObj(threadIdx -> CompletableFuture.supplyAsync(() -> {
+					Map<String, Integer> results = new HashMap<>();
+					for (int k = 0; k < keysPerThread; k++) {
+						// Use shared key names across threads to force contention
+						String name = prefix + "-key-" + k;
+						int id = annotationKeyService.getOrCreateKeyId(name);
+						assertThat(id).isPositive();
+						results.put(name, id);
+
+						int valId = annotationValueService.getOrCreateValueId(name);
+						assertThat(valId).isPositive();
+
+						int causeId = errorCauseService.getOrCreateCause(name);
+						assertThat(causeId).isPositive();
+
+						int groupId = eventGroupService.getOrCreateEventGroupId(name);
+						assertThat(groupId).isPositive();
+
+						int actionId = actionNameService.getOrCreateActionName(name);
+						assertThat(actionId).isPositive();
+					}
+					return results;
+				}, executor))
+				.toList();
+
+		List<Map<String, Integer>> allResults = futures.stream()
+				.map(CompletableFuture::join)
+				.toList();
+
+		// Every thread must get the same ID for the same key name
+		for (int k = 0; k < keysPerThread; k++) {
+			String name = prefix + "-key-" + k;
+			int expectedId = allResults.getFirst().get(name);
+			for (Map<String, Integer> result : allResults) {
+				assertThat(result.get(name))
+						.as("All threads should get the same ID for key '%s'", name)
+						.isEqualTo(expectedId);
+			}
+		}
 	}
 }

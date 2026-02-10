@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class AnnotationValueServiceImpl implements AnnotationValueService {
 
     private final AnnotationValueRepo repo;
-    private final LoadingCache<String, AnnotationValue> cache;
+    private final LoadingCache<String, Integer> cache;
 
     public AnnotationValueServiceImpl(AnnotationValueRepo repo) {
         this.repo = repo;
@@ -44,8 +44,8 @@ public class AnnotationValueServiceImpl implements AnnotationValueService {
                 .build(new CacheLoader<>() {
                     @NotNull
                     @Override
-                    public AnnotationValue load(@NotNull String key) {
-                        return findOrCreate(key);
+                    public Integer load(@NotNull String key) {
+                        return findOrCreate(key).getId();
                     }
                 });
     }
@@ -53,8 +53,7 @@ public class AnnotationValueServiceImpl implements AnnotationValueService {
     @Override
     public int getOrCreateValueId(String name) {
         try {
-            AnnotationValue group = cache.get(name);
-            return group.getId();
+            return cache.get(name);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get/create AnnotationValue for name=" + name, e);
         }
