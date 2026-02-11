@@ -40,20 +40,9 @@ class DataSinkPlanGeneratorTest {
     }
 
     @Test
-    void testExtraFormatAction() {
-        List<ActionGeneratorInput> egress = List.of(new ActionGeneratorInput("e1", "org.e1"),
-                new ActionGeneratorInput("e2", "org.e2"));
-
-        List<FlowPlan> flowPlans = DataSinkPlanGenerator.generateDataSinkPlans("base", egress);
-        assertThat(flowPlans).hasSize(2);
-
-        matches(flowPlans.get(0), "base-data-sink-1", new ActionConfigMatcher("e1", "org.e1"));
-        matches(flowPlans.get(1), "base-data-sink-2", new ActionConfigMatcher("e2", "org.e2"));
-    }
-
-    @Test
-    void testExtraEgressAction() {
-        List<ActionGeneratorInput> egress = List.of(new ActionGeneratorInput("e1", "org.e1"),
+    void testExtraEgressActions() {
+        List<ActionGeneratorInput> egress = List.of(
+                new ActionGeneratorInput("e1", "org.e1"),
                 new ActionGeneratorInput("e2", "org.e2"),
                 new ActionGeneratorInput("e3", "org.e3"));
 
@@ -66,7 +55,7 @@ class DataSinkPlanGeneratorTest {
     }
 
     @Test
-    void testMultipleValidate() {
+    void testDefaultEgressAction() {
         List<FlowPlan> flowPlans = DataSinkPlanGenerator.generateDataSinkPlans("base", null);
         assertThat(flowPlans).hasSize(1);
         matches(flowPlans.getFirst(), "base-data-sink", ActionConfigMatchers.DEFAULT_EGRESS_MATCHER);

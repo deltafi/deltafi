@@ -35,7 +35,7 @@ import java.util.Map;
 
 /**
  * Base class for all DeltaFi Actions.  No action should directly extend this class, but should use
- * specialized classes in the action taxonomy (LoadAction, EgressAction, etc.)
+ * specialized classes in the action taxonomy (TransformAction, EgressAction, etc.)
  * @param <I> The input type
  * @param <P> The parameter class that will be used to configure the action instance.
  * @param <R> The result type

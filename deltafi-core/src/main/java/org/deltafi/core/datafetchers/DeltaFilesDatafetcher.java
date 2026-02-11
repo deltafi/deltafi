@@ -599,7 +599,7 @@ public class DeltaFilesDatafetcher {
     long timeRangeSeconds = ChronoUnit.SECONDS.between(startTime, endTime);
 
     String[] flows = {"flow1", "flow2", "flow3", "flow4"};
-    String[] actions = {"LoadAction", "NormalizeAction", "EnrichAction", "ValidateAction"};
+    String[] actions = {"TransformAction", "ExtractAction", "ConvertAction", "ValidateAction"};
     String[] dataSources = {"stressTestAIn", "stressTestBIn", "stressTestCIn", "stressTestDIn"};
     String[] dataSinks = {"stressTestAOut", "stressTestBOut", "stressTestCOut", "stressTestDOut"};
 

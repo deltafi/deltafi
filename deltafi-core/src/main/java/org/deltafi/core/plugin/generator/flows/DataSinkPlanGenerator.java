@@ -35,10 +35,10 @@ public class DataSinkPlanGenerator {
 
     /**
      * Generate dataSink plans using the given actions
-     * @param baseFlowName prefix to use for the dataSource plan name
-     * @param egressActions egress actions to use in the dataSource plans, a default egress action will be used if this is
+     * @param baseFlowName prefix to use for the dataSink plan name
+     * @param egressActions egress actions to use in the dataSink plans, a default egress action will be used if this is
      *                      null or empty
-     * @return list of dataSource plans built using the given actions
+     * @return list of dataSink plans built using the given actions
      */
     List<FlowPlan> generateDataSinkPlans(String baseFlowName, List<ActionGeneratorInput> egressActions) {
         List<ActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
