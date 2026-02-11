@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
@@ -64,7 +65,8 @@ public class MetadataToContent extends TransformAction<MetadataToContentParamete
         }
 
         try {
-            Map<String, String> filteredMetadata = filterMetadata(input.getMetadata(), params.getMetadataPatterns());
+            List<Pattern> compiledPatterns = compilePatterns(params.getMetadataPatterns());
+            Map<String, String> filteredMetadata = filterMetadata(input.getMetadata(), compiledPatterns);
             String jsonMetadata = OBJECT_MAPPER.writeValueAsString(filteredMetadata);
             ActionContent newContent = ActionContent.saveContent(context, jsonMetadata, params.getFilename(), MediaType.APPLICATION_JSON);
             result.addContent(newContent);
@@ -75,12 +77,19 @@ public class MetadataToContent extends TransformAction<MetadataToContentParamete
         return result;
     }
 
-    private Map<String, String> filterMetadata(Map<String, String> metadata, List<String> patterns) {
+    private List<Pattern> compilePatterns(List<String> patterns) {
         if (patterns == null || patterns.isEmpty()) {
+            return List.of();
+        }
+        return patterns.stream().map(Pattern::compile).toList();
+    }
+
+    private Map<String, String> filterMetadata(Map<String, String> metadata, List<Pattern> patterns) {
+        if (patterns.isEmpty()) {
             return metadata;
         }
         return metadata.entrySet().stream()
-                .filter(entry -> patterns.stream().anyMatch(pattern -> entry.getKey().matches(pattern)))
+                .filter(entry -> patterns.stream().anyMatch(pattern -> pattern.matcher(entry.getKey()).matches()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }
