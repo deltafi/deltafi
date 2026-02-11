@@ -149,6 +149,10 @@ public class CoreEventQueue {
         return valkeyKeyedBlockingQueue.sortedSetSize(key);
     }
 
+    public Map<String, Long> sizes(Collection<String> keys) {
+        return valkeyKeyedBlockingQueue.sortedSetSizes(keys);
+    }
+
     /**
      * Streams through a queue using cursor-based iteration, invoking the consumer for each item.
      * This avoids loading all items into memory at once.

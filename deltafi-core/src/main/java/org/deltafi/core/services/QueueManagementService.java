@@ -97,8 +97,10 @@ public class QueueManagementService {
 
         Set<String> dbColdQueuedActions = new HashSet<>(deltaFileFlowRepo.distinctColdQueuedActions());
 
-        keys.stream().filter(actionNames::contains).forEach(k -> {
-            long size = coreEventQueue.size(k);
+        Set<String> activeKeys = keys.stream().filter(actionNames::contains).collect(Collectors.toSet());
+        Map<String, Long> queueSizes = coreEventQueue.sizes(activeKeys);
+
+        queueSizes.forEach((k, size) -> {
             allQueues.put(k, size);
             if (coldQueues.contains(k)) {
                 // only move to normal when the backlog in the database is worked off

@@ -33,10 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -81,7 +78,7 @@ class QueueManagementServiceTest {
         when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
-        when(coreEventQueue.size(QUEUE_NAME)).thenReturn(12L);
+        when(coreEventQueue.sizes(Set.of(QUEUE_NAME))).thenReturn(Map.of(QUEUE_NAME, 12L));
 
         queueManagementService.refreshQueues();
         assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 0L));
@@ -94,7 +91,7 @@ class QueueManagementServiceTest {
         when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
-        when(coreEventQueue.size(QUEUE_NAME)).thenReturn(400L);
+        when(coreEventQueue.sizes(Set.of(QUEUE_NAME))).thenReturn(Map.of(QUEUE_NAME, 400L));
 
         queueManagementService.refreshQueues();
         assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 0L));
@@ -108,7 +105,7 @@ class QueueManagementServiceTest {
         when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
-        when(coreEventQueue.size(QUEUE_NAME)).thenReturn(8L);
+        when(coreEventQueue.sizes(Set.of(QUEUE_NAME))).thenReturn(Map.of(QUEUE_NAME, 8L));
 
         queueManagementService.refreshQueues();
         assertFalse(queueManagementService.coldQueue(QUEUE_NAME, 0L));

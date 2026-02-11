@@ -255,6 +255,30 @@ public class ValkeyKeyedBlockingQueue {
     }
 
     /**
+     * Get the sizes of multiple sorted sets in a single pipelined call
+     * @param keys the names of the sorted sets
+     * @return a map of key to size
+     */
+    public Map<String, Long> sortedSetSizes(Collection<String> keys) {
+        if (keys.isEmpty()) {
+            return Map.of();
+        }
+        try (Jedis jedis = jedisPool.getResource()) {
+            Pipeline p = jedis.pipelined();
+            Map<String, Response<Long>> responses = new LinkedHashMap<>();
+            for (String key : keys) {
+                responses.put(key, p.zcard(key));
+            }
+            p.sync();
+            Map<String, Long> result = new HashMap<>();
+            for (Map.Entry<String, Response<Long>> entry : responses.entrySet()) {
+                result.put(entry.getKey(), entry.getValue().get());
+            }
+            return result;
+        }
+    }
+
+    /**
      * Scan through all items in a sorted set, invoking the consumer for each item.
      * Uses cursor-based iteration to avoid loading all items into memory at once.
      *
