@@ -35,6 +35,7 @@ import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -85,7 +86,7 @@ class AnalyticEventServiceProvenanceTest {
     void recordProvenance_sendsRecordWhenEnabled() {
         when(deltaFiProperties.isProvenanceEnabled()).thenReturn(true);
         when(deltaFiProperties.getSystemName()).thenReturn("test-system");
-        when(deltaFiProperties.provenanceAnnotationsAllowedList()).thenReturn(List.of("customer"));
+        when(deltaFiProperties.allowedProvenanceAnnotations()).thenReturn(Set.of("customer"));
 
         DeltaFile deltaFile = createTestDeltaFile();
         deltaFile.addAnnotations(Map.of("customer", "ABC123", "internal", "should-not-appear"));
@@ -185,7 +186,7 @@ class AnalyticEventServiceProvenanceTest {
     void recordProvenance_filtersAnnotationsByAllowList() {
         when(deltaFiProperties.isProvenanceEnabled()).thenReturn(true);
         when(deltaFiProperties.getSystemName()).thenReturn("system");
-        when(deltaFiProperties.provenanceAnnotationsAllowedList()).thenReturn(List.of("allowed1", "allowed2"));
+        when(deltaFiProperties.allowedProvenanceAnnotations()).thenReturn(Set.of("allowed1", "allowed2"));
 
         DeltaFile deltaFile = createTestDeltaFile();
         deltaFile.addAnnotations(Map.of("allowed1", "value1", "allowed2", "value2", "notAllowed", "value3"));
@@ -208,7 +209,7 @@ class AnalyticEventServiceProvenanceTest {
     void recordProvenance_emptyAnnotationsWhenNoAllowList() {
         when(deltaFiProperties.isProvenanceEnabled()).thenReturn(true);
         when(deltaFiProperties.getSystemName()).thenReturn("system");
-        when(deltaFiProperties.provenanceAnnotationsAllowedList()).thenReturn(List.of());
+        when(deltaFiProperties.allowedProvenanceAnnotations()).thenReturn(Set.of());
 
         DeltaFile deltaFile = createTestDeltaFile();
         deltaFile.addAnnotations(Map.of("key1", "value1", "key2", "value2"));

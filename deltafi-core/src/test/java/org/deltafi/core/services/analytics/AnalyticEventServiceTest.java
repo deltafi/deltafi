@@ -39,8 +39,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,7 +95,7 @@ class AnalyticEventServiceTest {
     @Test
     void recordIngress_filtersAnnotationsForParquetCollector() {
         // Setup - allow only "allowed1" and "allowed2" annotations
-        when(mockProperties.allowedAnalyticsAnnotationsList()).thenReturn(List.of("allowed1", "allowed2"));
+        when(mockProperties.allowedAnalyticsAnnotations()).thenReturn(Set.of("allowed1", "allowed2"));
         when(eventGroupService.getOrCreateEventGroupId(anyString())).thenReturn(1);
 
         FlowDefinition mockFlow = mock(FlowDefinition.class);
@@ -133,7 +133,7 @@ class AnalyticEventServiceTest {
     @Test
     void recordIngress_emptyAnnotationsWhenNoneAllowed() {
         // Setup - allow only keys that aren't in the input
-        when(mockProperties.allowedAnalyticsAnnotationsList()).thenReturn(List.of("other1", "other2"));
+        when(mockProperties.allowedAnalyticsAnnotations()).thenReturn(Set.of("other1", "other2"));
         when(eventGroupService.getOrCreateEventGroupId(anyString())).thenReturn(1);
 
         FlowDefinition mockFlow = mock(FlowDefinition.class);
@@ -166,7 +166,7 @@ class AnalyticEventServiceTest {
     @Test
     void queueAnnotations_filtersAnnotationsForParquetCollector() {
         // Setup
-        when(mockProperties.allowedAnalyticsAnnotationsList()).thenReturn(List.of("allowed1"));
+        when(mockProperties.allowedAnalyticsAnnotations()).thenReturn(Set.of("allowed1"));
 
         Map<String, String> inputAnnotations = new HashMap<>();
         inputAnnotations.put("allowed1", "value1");
@@ -190,7 +190,7 @@ class AnalyticEventServiceTest {
     @Test
     void recordIngress_includesAnalyticsGroupNameEvenWhenNotInAllowedList() {
         // Setup - analyticsGroupName is NOT in allowedAnalyticsAnnotationsList
-        when(mockProperties.allowedAnalyticsAnnotationsList()).thenReturn(List.of("allowed1"));
+        when(mockProperties.allowedAnalyticsAnnotations()).thenReturn(Set.of("allowed1"));
         when(mockProperties.getAnalyticsGroupName()).thenReturn("groupKey");
         when(eventGroupService.getOrCreateEventGroupId(anyString())).thenReturn(1);
 
@@ -227,7 +227,7 @@ class AnalyticEventServiceTest {
 
     @Test
     void processEventBatch_continuesProcessingWhenOneAnnotationKeyFails() {
-        when(mockProperties.allowedAnalyticsAnnotationsList()).thenReturn(List.of("goodKey", "badKey"));
+        when(mockProperties.allowedAnalyticsAnnotations()).thenReturn(Set.of("goodKey", "badKey"));
 
         // Mock: goodKey succeeds, badKey throws (simulating session corruption)
         when(annotationKeyService.getOrCreateKeyId("goodKey")).thenReturn(1);

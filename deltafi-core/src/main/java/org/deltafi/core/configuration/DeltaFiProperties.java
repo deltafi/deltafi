@@ -28,6 +28,7 @@ import org.deltafi.core.types.leader.MemberConfig;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Holds the system properties. To add a new property that will be exposed
@@ -534,24 +535,24 @@ public class DeltaFiProperties {
      *
      * @return a List of allowed analytics annotation keys
      */
-    public List<String> allowedAnalyticsAnnotationsList() {
+    public Set<String> allowedAnalyticsAnnotations() {
         if (allowedAnalyticsAnnotations == null || allowedAnalyticsAnnotations.isBlank()) {
-            return Collections.emptyList();
+            return Set.of();
         }
         return Arrays.stream(allowedAnalyticsAnnotations.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .toList();
+                .collect(Collectors.toSet());
     }
 
-    public List<String> provenanceAnnotationsAllowedList() {
+    public Set<String> allowedProvenanceAnnotations() {
         if (provenanceAnnotationsAllowed == null || provenanceAnnotationsAllowed.isBlank()) {
-            return Collections.emptyList();
+            return Set.of();
         }
         return Arrays.stream(provenanceAnnotationsAllowed.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .toList();
+                .collect(Collectors.toSet());
     }
 
     private void minCheck(int value, int min, String name) {
