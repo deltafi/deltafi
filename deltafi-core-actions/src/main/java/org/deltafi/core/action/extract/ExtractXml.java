@@ -29,6 +29,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
@@ -39,7 +40,8 @@ import java.util.*;
 @Component
 public class ExtractXml extends TransformAction<ExtractXmlParameters> {
     private static final int MAX_CACHE_SIZE = 1000;
-    private static final XPath X_PATH = XPathFactory.newInstance().newXPath();
+    private static final ThreadLocal<XPath> X_PATH = ThreadLocal.withInitial(() -> XPathFactory.newInstance().newXPath());
+    private static final ThreadLocal<DocumentBuilderFactory> DOCUMENT_BUILDER_FACTORY = ThreadLocal.withInitial(DocumentBuilderFactory::newInstance);
 
     // use an LRU cache to avoid recomputing the xpath expression each time but control memory usage
     private final Map<String, XPathExpression> X_PATH_CACHE = Collections.synchronizedMap(
@@ -83,6 +85,13 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
             @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
 
+        DocumentBuilder documentBuilder;
+        try {
+            documentBuilder = DOCUMENT_BUILDER_FACTORY.get().newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            return new ErrorResult(context, "Unable to create XML parser", e);
+        }
+
         Map<String, List<String>> valuesMap = new HashMap<>();
         for (int i = 0; i < input.getContent().size(); i++) {
             ActionContent content = input.content(i);
@@ -96,13 +105,10 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
                 result.addContent(content);
             }
 
-
             Document document;
             try {
-                document = DocumentBuilderFactory.newInstance()
-                        .newDocumentBuilder()
-                        .parse(new InputSource(new StringReader(content.loadString())));
-            } catch (ParserConfigurationException | SAXException | IOException e) {
+                document = documentBuilder.parse(new InputSource(new StringReader(content.loadString())));
+            } catch (SAXException | IOException e) {
                 return new ErrorResult(context, "Unable to read XML content", "Failed to read " + content.getName(), e);
             }
 
@@ -155,7 +161,7 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
     private XPathExpression getXPathExpression(String xpath) {
         return X_PATH_CACHE.computeIfAbsent(xpath, key -> {
             try {
-                return X_PATH.compile(xpath);
+                return X_PATH.get().compile(xpath);
             } catch (XPathExpressionException e) {
                 throw new RuntimeException(e);
             }
