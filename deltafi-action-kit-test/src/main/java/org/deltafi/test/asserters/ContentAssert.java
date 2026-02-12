@@ -115,6 +115,7 @@ public class ContentAssert extends AbstractAssert<ContentAssert, ActionContent> 
      * Load the content as a string using the given charset and
      * verify it is equal to the given string
      * @param value expected content as a string
+     * @param charset the charset to use when loading the content
      * @return this
      */
     public ContentAssert loadStringIsEqualTo(String value, Charset charset) {

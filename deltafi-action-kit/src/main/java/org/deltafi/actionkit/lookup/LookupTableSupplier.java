@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Base class for supplying lookup table data from an external source.
+// ABOUTME: Subclasses implement getRows() to provide row data when requested by the core.
 package org.deltafi.actionkit.lookup;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,6 +33,9 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Base class for supplying lookup table data from an external source
+ */
 @RequiredArgsConstructor
 @Slf4j
 public abstract class LookupTableSupplier {
@@ -42,9 +47,20 @@ public abstract class LookupTableSupplier {
     @Getter
     private final LookupTable lookupTable;
 
+    /**
+     * Fetch rows from the external data source.
+     * @param variables runtime variables for parameterized queries
+     * @param matchingColumnValues optional column/value filters to apply
+     * @param resultColumns optional set of columns to include in results
+     * @return the list of matching rows as column/value maps
+     */
     public abstract List<Map<String, String>> getRows(@NotNull Map<String, String> variables,
             @Nullable Map<String, Set<String>> matchingColumnValues, @Nullable List<String> resultColumns);
 
+    /**
+     * Upload all rows as JSON to the lookup table in the core.
+     * @param variables runtime variables for parameterized queries
+     */
     public void uploadTable(@NotNull Map<String, String> variables) {
         try {
             uploadTable(LookupTableClient.UploadFileType.JSON, OBJECT_MAPPER.writeValueAsString(
@@ -54,6 +70,11 @@ public abstract class LookupTableSupplier {
         }
     }
 
+    /**
+     * Upload table data to the core in the given file format.
+     * @param uploadFileType the file format to upload
+     * @param file the file contents as a string
+     */
     protected void uploadTable(LookupTableClient.UploadFileType uploadFileType, String file) {
         try {
             lookupTableClient.uploadTable(lookupTable.getName(), uploadFileType, file);

@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Result type for transform actions that split a DeltaFile into multiple children.
+// ABOUTME: Each ChildTransformResult added to this result creates a new child DeltaFile.
 package org.deltafi.actionkit.action.transform;
 
 import lombok.EqualsAndHashCode;
@@ -36,6 +38,7 @@ public class TransformResults extends Result<TransformResults> implements Transf
     final List<ChildTransformResult> childResults = new ArrayList<>();
 
     /**
+     * Create a TransformResults with no initial children.
      * @param context Execution context for the current action
      */
     public TransformResults(@NotNull ActionContext context) {

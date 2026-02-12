@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Generates markdown documentation for all actions in a plugin.
+// ABOUTME: Runs as a Spring Boot command-line application, scanning for action beans and producing docs.
 package org.deltafi.actionkit.documentation;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -42,6 +44,9 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Generates markdown documentation files for all actions discovered in a plugin package
+ */
 @RequiredArgsConstructor
 @ComponentScan("${scan.base.package}")
 @EnableAutoConfiguration(exclude = {ActionKitAutoConfiguration.class, CacheAutoConfiguration.class,
@@ -51,6 +56,10 @@ public class ActionsDocumentationGenerator implements CommandLineRunner {
 
     private final SchemaGenerator schemaGenerator = new ActionKitAutoConfiguration().parametersSchemaGenerator(null);
 
+    /**
+     * Entry point for the documentation generator.
+     * @param args args[0] is the output directory, args[1] is the base package to scan
+     */
     public static void main(String... args) {
         if (args.length < 2) {
             throw new IllegalArgumentException("You must specify the output directory and the base package to scan");

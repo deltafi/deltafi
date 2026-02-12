@@ -23,10 +23,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+// ABOUTME: Abstract Writer that iterates over a list of ActionContent and writes each one.
+// ABOUTME: Collects errors from individual writes and throws a combined IOException if any fail.
+
+/**
+ * Abstract {@link ActionContentWriter} that writes a list of {@link ActionContent} items
+ * using a provided {@link ContentWriter}.
+ */
 @RequiredArgsConstructor
 public abstract class ActionContentListWriter extends ActionContentWriter {
     private final List<ActionContent> contentList;
 
+    /**
+     * Writes each content item using the given writer, collecting any errors.
+     * @param contentWriter the writer to use for each content item
+     * @throws IOException if one or more content items fail to write
+     */
     protected void writeContentList(ContentWriter contentWriter) throws IOException {
         List<String> errorMessages = new ArrayList<>();
 

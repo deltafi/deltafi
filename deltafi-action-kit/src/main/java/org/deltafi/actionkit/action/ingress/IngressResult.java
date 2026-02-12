@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Result type returned by timed ingress actions containing ingressed items.
+// ABOUTME: Produces INGRESS action events with memo, status, and child ingress items.
 package org.deltafi.actionkit.action.ingress;
 
 import lombok.Getter;
@@ -37,10 +39,18 @@ public class IngressResult extends Result<IngressResult> implements IngressResul
     IngressStatus status = IngressStatus.HEALTHY;
     String statusMessage;
 
+    /**
+     * Create an IngressResult with the given context.
+     * @param context execution context of the ingress action
+     */
     public IngressResult(ActionContext context) {
         super(context, ActionEventType.INGRESS);
     }
 
+    /**
+     * Add an ingress result item to this result.
+     * @param item the ingress result item to add
+     */
     public void addItem(IngressResultItem item) {
         ingressResultItems.add(item);
     }

@@ -33,6 +33,11 @@ import java.util.Objects;
  */
 public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>> extends AbstractAssert<A, T> {
 
+    /**
+     * Create a new ResultAssert.
+     * @param t the result to assert against
+     * @param selfType the concrete assert class
+     */
     protected ResultAssert(T t, Class<?> selfType) {
         super(t, selfType);
     }

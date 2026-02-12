@@ -53,7 +53,7 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
 
     private final Class<P> paramClass = getGenericParameterType();
 
-    // name of the pod or container running this action
+    /** Name of the pod or container running this action */
     @Setter
     public String appName;
 
@@ -62,10 +62,20 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
     @Setter
     private int threadNum = 0;
 
+    /**
+     * Create an Action with the given type and description.
+     * @param actionType the type of action
+     * @param description a human-readable description of this action
+     */
     public Action(ActionType actionType, String description) {
         this(actionType, ActionOptions.builder().description(description).build());
     }
 
+    /**
+     * Create an Action with the given type and options.
+     * @param actionType the type of action
+     * @param actionOptions configuration options for this action
+     */
     public Action(ActionType actionType, ActionOptions actionOptions) {
         this.actionType = actionType;
         this.actionOptions = actionOptions;
@@ -73,6 +83,7 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
 
     /**
      * @deprecated Use Action#getActionOptions().getDescription()
+     * @return the description of this action
      */
     @Deprecated
     public String getDescription() {
@@ -121,6 +132,11 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
      */
     protected abstract R execute(@NotNull ActionContext context, @NotNull I input, @NotNull P params);
 
+    /**
+     * Execute this action with the given input, building parameters and dispatching to the execute method.
+     * @param actionInput the input containing the action context and delta file messages
+     * @return the result of executing the action
+     */
     public R executeAction(@NotNull ActionInput actionInput) {
         if (actionInput.getDeltaFileMessages() == null || actionInput.getDeltaFileMessages().isEmpty()) {
             throw new ActionKitException("Received actionInput with no deltaFileMessages for did " +
@@ -138,14 +154,25 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
                 actionInput.getDeltaFileMessages().getFirst()), convertToParams(actionInput.getActionParams()));
     }
 
+    /**
+     * Convert the raw parameter map to the typed parameter class.
+     * @param params the raw parameter map from the action input
+     * @return the deserialized typed parameter object
+     */
     protected P convertToParams(@NotNull Map<String, Object> params) {
         return OBJECT_MAPPER.convertValue(params, paramClass);
     }
 
+    /**
+     * Execute this action as a join action. Override in actions that support joining.
+     * @param actionInput the input containing the action context and delta file messages to join
+     * @return the result of executing the join action
+     */
     public R executeJoinAction(@NotNull ActionInput actionInput) {
         throw new UnsupportedOperationException("Join is not supported for " + getClassCanonicalName());
     }
 
+    /** Clear the current action execution tracking state */
     public void clearActionExecution() {
         actionExecution = null;
     }

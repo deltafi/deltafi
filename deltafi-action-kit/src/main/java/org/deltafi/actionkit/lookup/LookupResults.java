@@ -15,10 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Record holding the results of a lookup table query.
+// ABOUTME: Contains the total count, timestamps, and the list of matching rows.
 package org.deltafi.actionkit.lookup;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Results of a lookup table query.
+ * @param totalCount total number of matching rows (before paging)
+ * @param created when the lookup table was created
+ * @param modified when the lookup table was last modified
+ * @param results the matching rows as column/value maps
+ */
 public record LookupResults(int totalCount, OffsetDateTime created, OffsetDateTime modified, List<Map<String, String>> results) {}

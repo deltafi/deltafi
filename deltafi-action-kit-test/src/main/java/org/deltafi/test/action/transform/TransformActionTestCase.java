@@ -38,7 +38,17 @@ import java.util.List;
 @SuperBuilder
 public class TransformActionTestCase extends TestCaseBase<TransformAction<? extends ActionParameters>> {
 
+    /**
+     * Builder for constructing TransformActionTestCase instances.
+     * @param <C> the concrete test case subclass
+     * @param <B> the concrete builder subclass (for fluent API)
+     */
     public static abstract class TransformActionTestCaseBuilder<C extends TransformActionTestCase, B extends TransformActionTestCase.TransformActionTestCaseBuilder<C, B>> extends TestCaseBase.TestCaseBaseBuilder<TransformAction<? extends ActionParameters>, C, B> {
+        /**
+         * Configure the test case to expect a TransformResult with the given outputs.
+         * @param outputs the expected output content
+         * @return this builder
+         */
         public B expectTransformResult(List<IOContent> outputs) {
             expectedResultType(TransformResult.class);
             outputs(outputs);

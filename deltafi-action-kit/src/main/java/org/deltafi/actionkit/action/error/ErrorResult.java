@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Result type for actions that encounter an error during execution.
+// ABOUTME: Transitions the DeltaFile to the ERROR state with a cause, context, and optional stack trace.
 package org.deltafi.actionkit.action.error;
 
 import lombok.EqualsAndHashCode;
@@ -46,6 +48,7 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
     private final String errorSummary;
 
     /**
+     * Create an ErrorResult with full error details.
      * @param context Execution context of the errored action
      * @param errorMessage Message explaining the error result
      * @param errorDetails Additional details about the error
@@ -73,6 +76,7 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
     }
 
     /**
+     * Create an ErrorResult from an exception.
      * @param context Execution context of the errored action
      * @param errorMessage Message explaining the error result
      * @param throwable An exception that indicates the reason for the error
@@ -82,6 +86,7 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
     }
 
     /**
+     * Create an ErrorResult with only a message.
      * @param context Execution context of the errored action
      * @param errorMessage Message explaining the error result
      */
@@ -91,6 +96,7 @@ public class ErrorResult extends AnnotationsResult<ErrorResult> implements Egres
     }
 
     /**
+     * Create an ErrorResult with a message and details.
      * @param context      Execution context of the errored action
      * @param errorMessage Message explaining the error result
      * @param errorDetails Additional details about the error

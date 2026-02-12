@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Service that resolves the hostname of the running pod or container.
+// ABOUTME: Uses configured hostname, environment variables, or InetAddress as fallbacks.
 package org.deltafi.actionkit.service;
 
 import lombok.Getter;
@@ -38,6 +40,10 @@ public class HostnameService {
 
     private final String hostname;
 
+    /**
+     * Create a HostnameService, resolving the hostname from properties or the environment.
+     * @param actionsProperties properties that may contain a configured hostname
+     */
     public HostnameService(ActionsProperties actionsProperties) {
         if (actionsProperties.getHostname() != null) {
             this.hostname = actionsProperties.getHostname();

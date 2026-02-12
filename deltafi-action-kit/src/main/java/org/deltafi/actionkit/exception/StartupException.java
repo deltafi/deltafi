@@ -15,10 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Exception thrown when the action runner fails to start up.
+// ABOUTME: Typically indicates a fatal initialization error like failing to write the running file.
 package org.deltafi.actionkit.exception;
 
+/**
+ * Thrown when the action runner encounters a fatal error during startup
+ */
 public class StartupException extends RuntimeException {
 
+    /**
+     * Create a StartupException with the given reason.
+     * @param reason description of the startup failure
+     */
     public StartupException(String reason) {
         super(reason);
     }

@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Represents a single ingressed item within an IngressResult.
+// ABOUTME: Each item becomes a new child DeltaFile with its own content, metadata, and name.
 package org.deltafi.actionkit.action.ingress;
 
 import lombok.Getter;
@@ -33,11 +35,21 @@ import java.util.UUID;
 @Setter
 public class IngressResultItem extends ContentResult<IngressResultItem> {
     String deltaFileName;
+
+    /**
+     * Create an IngressResultItem with a name for the child DeltaFile.
+     * @param context execution context of the ingress action
+     * @param deltaFileName the name to assign to the ingressed DeltaFile
+     */
     public IngressResultItem(@NotNull ActionContext context, @NotNull String deltaFileName) {
         super(context.childContext(), ActionEventType.INGRESS);
         this.deltaFileName = deltaFileName;
     }
 
+    /**
+     * Convert this item to an IngressEventItem for the action event.
+     * @return an IngressEventItem populated from this item's content, metadata, and annotations
+     */
     public final IngressEventItem toIngressEventItem() {
         return IngressEventItem.builder()
                 .did(context.getDid())

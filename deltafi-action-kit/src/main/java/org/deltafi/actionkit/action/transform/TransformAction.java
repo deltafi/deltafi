@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Base class for transform actions that process DeltaFile content.
+// ABOUTME: Subclasses implement transform() to modify content, metadata, or split into children.
 package org.deltafi.actionkit.action.transform;
 
 import org.deltafi.actionkit.action.Action;
@@ -29,10 +31,18 @@ import org.jetbrains.annotations.NotNull;
  * @param <P> Parameter class for configuring the transform action
  */
 public abstract class TransformAction<P extends ActionParameters> extends Action<TransformInput, P, TransformResultType> {
+    /**
+     * Create a TransformAction with the given description.
+     * @param description a human-readable description of this action
+     */
     protected TransformAction(@NotNull String description) {
         this(ActionOptions.builder().description(description).build());
     }
 
+    /**
+     * Create a TransformAction with the given options.
+     * @param actionOptions configuration options for this action
+     */
     protected  TransformAction(ActionOptions actionOptions) {
         super(ActionType.TRANSFORM, actionOptions);
     }

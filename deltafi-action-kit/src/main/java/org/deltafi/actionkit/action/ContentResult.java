@@ -32,20 +32,37 @@ import org.jetbrains.annotations.NotNull;
 import java.io.InputStream;
 import java.util.*;
 
+// ABOUTME: Result subclass that supports content, annotation, and metadata changes on DeltaFiles.
+// ABOUTME: Provides methods to save content to storage and attach it to the result.
+
 /**
  * A Result that may include changes to content, annotations, or metadata
+ * @param <T> the concrete Result subclass, for fluent method chaining
  */
 @Getter
 public abstract class ContentResult<T extends Result<T>> extends MetadataResult<T> {
+    /** The list of content items in this result */
     @Setter
     protected List<ActionContent> content;
 
+    /** Searchable key-value annotations to attach to the DeltaFile */
     protected final Map<String, String> annotations = new HashMap<>();
 
+    /**
+     * Create a ContentResult with no initial content.
+     * @param context the action execution context
+     * @param actionEventType the type of event this result represents
+     */
     public ContentResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {
         this(context, actionEventType, Collections.emptyList());
     }
 
+    /**
+     * Create a ContentResult with initial content.
+     * @param context the action execution context
+     * @param actionEventType the type of event this result represents
+     * @param content initial content to include in the result
+     */
     public ContentResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType, @NotNull List<ActionContent> content) {
         super(context, actionEventType);
         this.content = new ArrayList<>(content);
@@ -140,6 +157,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
 
     /**
      * @deprecated Use {@link ContentConverter#convert(List)} instead
+     * @return the content list converted to {@link Content} objects
      */
     @Deprecated
     public List<Content> content() {

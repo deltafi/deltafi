@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Result type for creating child DeltaFiles from a transform action.
+// ABOUTME: Each ChildTransformResult added to TransformResults spawns a new child DeltaFile.
 package org.deltafi.actionkit.action.transform;
 
 import lombok.EqualsAndHashCode;
@@ -74,6 +76,10 @@ public class ChildTransformResult extends TransformResult {
         this.deltaFileName = deltaFileName;
     }
 
+    /**
+     * Convert this result to a TransformEvent including the child delta file name and messages.
+     * @return a TransformEvent populated with this result's content, metadata, annotations, messages, and name
+     */
     public final TransformEvent toChildTransformEvent() {
         TransformEvent event = toTransformEvent();
         event.setMessages(getMessages());

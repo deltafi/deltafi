@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Base class for timed ingress actions that periodically ingest data.
+// ABOUTME: Subclasses implement ingress() to fetch and return data from external sources.
 package org.deltafi.actionkit.action.ingress;
 
 import org.deltafi.actionkit.action.*;
@@ -28,10 +30,18 @@ import org.jetbrains.annotations.NotNull;
  * @param <P> Parameter class for configuring the Timed Ingress action
  */
 public abstract class TimedIngressAction<P extends ActionParameters> extends Action<ContentInput, P, IngressResultType> {
+    /**
+     * Create a TimedIngressAction with the given description.
+     * @param description a human-readable description of this action
+     */
     protected TimedIngressAction(@NotNull String description) {
         this(ActionOptions.builder().description(description).build());
     }
 
+    /**
+     * Create a TimedIngressAction with the given options.
+     * @param actionOptions configuration options for this action
+     */
     protected TimedIngressAction(ActionOptions actionOptions) {
         super(ActionType.TIMED_INGRESS, actionOptions);
     }
@@ -54,6 +64,7 @@ public abstract class TimedIngressAction<P extends ActionParameters> extends Act
      * @see IngressResultItem
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
+     * @return the result of the ingress operation
      * @see TransformResults
      */
     public abstract IngressResultType ingress(@NotNull ActionContext context, @NotNull P params);

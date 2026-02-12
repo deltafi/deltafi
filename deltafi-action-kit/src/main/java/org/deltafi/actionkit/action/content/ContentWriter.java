@@ -19,6 +19,17 @@ package org.deltafi.actionkit.action.content;
 
 import java.io.IOException;
 
+// ABOUTME: Functional interface for writing a single ActionContent item.
+// ABOUTME: Used as a callback by ActionContentListWriter to process each content element.
+
+/**
+ * Functional interface for writing a single {@link ActionContent} item.
+ */
 public interface ContentWriter {
+    /**
+     * Writes the given content.
+     * @param actionContent the content to write
+     * @throws IOException if an I/O error occurs during the write
+     */
     void write(ActionContent actionContent) throws IOException;
 }

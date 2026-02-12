@@ -34,6 +34,10 @@ public class ContentLoader {
     private String contentName;
     private String mediaType;
 
+    /**
+     * Create a new empty ContentLoader instance.
+     * @return a new ContentLoader
+     */
     public static ContentLoader contentLoader() {
         return new ContentLoader();
     }
@@ -68,6 +72,7 @@ public class ContentLoader {
     /**
      * Set the byte array value from the given string using the given charset when getting the byte array
      * @param value to convert to a byte array
+     * @param charset the charset to use when converting the string to bytes
      * @return this
      */
     public ContentLoader string(String value, Charset charset) {
@@ -137,6 +142,7 @@ public class ContentLoader {
     /**
      * Helper to read the contents stored at each classpath location as a string using the given charset
      * @param paths zero or more classpath resources to read
+     * @param charset the charset to use when reading the resources as strings
      * @return a list of the strings stored at the given paths, or null if no paths were provided
      */
     public static List<String> readAsStringFromClasspath(List<String> paths, Charset charset) {

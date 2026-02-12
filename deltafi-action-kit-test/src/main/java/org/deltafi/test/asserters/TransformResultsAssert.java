@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
+/**
+ * AssertJ-style assertions for verifying TransformResults containing child transform outputs.
+ */
 public class TransformResultsAssert extends ResultAssert<TransformResultsAssert, TransformResults> {
     /**
      * Create a new TransformResultsAssert with the given result, asserting that the result is not null and an instance

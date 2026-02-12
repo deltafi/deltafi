@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Spring auto-configuration that wires up all action-kit beans.
+// ABOUTME: Creates the event queue, action runner, schema generator, and lookup table infrastructure.
 package org.deltafi.actionkit;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -61,6 +63,9 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.util.*;
 
+/**
+ * Spring auto-configuration that wires up the action-kit infrastructure beans
+ */
 @AutoConfiguration
 @EnableConfigurationProperties({ActionsProperties.class, EventQueueProperties.class})
 @AutoConfigureAfter(SslAutoConfiguration.class)
@@ -68,11 +73,24 @@ import java.util.*;
 public class ActionKitAutoConfiguration {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /**
+     * Create the listener that handles startup failures.
+     * @return a StartupFailureListener instance
+     */
     @Bean
     public StartupFailureListener startupFailureHandler() {
         return new StartupFailureListener();
     }
 
+    /**
+     * Create the Valkey blocking queue sized for the total number of action threads plus housekeeping.
+     * @param actionsProperties properties controlling action thread counts
+     * @param eventQueueProperties properties for the Valkey connection
+     * @param actions all registered actions
+     * @param lookupTableSuppliers all registered lookup table suppliers
+     * @return a configured ValkeyKeyedBlockingQueue
+     * @throws URISyntaxException if the Valkey URI is malformed
+     */
     @Bean
     public ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue(ActionsProperties actionsProperties,
             EventQueueProperties eventQueueProperties, List<Action<?, ?, ?>> actions,
@@ -93,11 +111,26 @@ public class ActionKitAutoConfiguration {
         return new ValkeyKeyedBlockingQueue(eventQueueProperties, totalThreads);
     }
 
+    /**
+     * Create the action event queue backed by Valkey.
+     * @param valkeyKeyedBlockingQueue the underlying Valkey queue
+     * @return a configured ActionEventQueue
+     */
     @Bean
     public ActionEventQueue actionEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue) {
         return new ActionEventQueue(valkeyKeyedBlockingQueue);
     }
 
+    /**
+     * Create the registrar that registers the plugin and its actions with the core.
+     * @param actionRunner the action runner managing action execution
+     * @param lookupTableSupplierRunner the runner managing lookup table suppliers
+     * @param buildProperties build metadata from Spring Boot
+     * @param applicationContext the Spring application context
+     * @param environment the Spring environment
+     * @param schemaGenerator the JSON schema generator for action parameters
+     * @return a configured PluginRegistrar
+     */
     @Bean
     public PluginRegistrar pluginRegistrar(ActionRunner actionRunner,
             LookupTableSupplierRunner lookupTableSupplierRunner, BuildProperties buildProperties,
@@ -106,22 +139,38 @@ public class ActionKitAutoConfiguration {
                 environment, schemaGenerator);
     }
 
+    /** Create the action runner that polls for and executes actions.
+     * @return a configured ActionRunner
+     */
     @Bean
     @DependsOn({"lookupTableSupplierRunner"})
     public ActionRunner actionRunner() {
         return new ActionRunner();
     }
 
+    /**
+     * Create the hostname service.
+     * @param actionsProperties properties that may override the hostname
+     * @return a configured HostnameService
+     */
     @Bean
     public HostnameService hostnameService(ActionsProperties actionsProperties) {
         return new HostnameService(actionsProperties);
     }
 
+    /** Create the service that sends periodic heartbeats to the core.
+     * @return a configured HeartbeatService
+     */
     @Bean
     public HeartbeatService heartbeatService() {
         return new HeartbeatService();
     }
 
+    /**
+     * Create the JSON schema generator used to produce parameter schemas for action registration.
+     * @param schemaGeneratorCustomizer optional customizer for the schema generator config
+     * @return a configured SchemaGenerator
+     */
     @Bean
     public SchemaGenerator parametersSchemaGenerator(@Nullable SchemaGeneratorConfigCustomizer schemaGeneratorCustomizer) {
         SchemaGeneratorConfigBuilder configBuilder =
@@ -178,12 +227,24 @@ public class ActionKitAutoConfiguration {
         return new SchemaGenerator(configBuilder.build());
     }
 
+    /**
+     * Create the runner that manages lookup table supplier threads.
+     * @param actionEventQueue the event queue for lookup table events
+     * @param lookupTableSuppliers all registered lookup table suppliers
+     * @return a configured LookupTableSupplierRunner
+     */
     @Bean
     public LookupTableSupplierRunner lookupTableSupplierRunner(ActionEventQueue actionEventQueue,
             List<LookupTableSupplier> lookupTableSuppliers) {
         return new LookupTableSupplierRunner(actionEventQueue, lookupTableSuppliers);
     }
 
+    /**
+     * Create the GraphQL client for communicating with the core API.
+     * @param environment the Spring environment for resolving the core URL
+     * @param httpClient the HTTP client to use for requests
+     * @return a configured GraphQLClient
+     */
     @ConditionalOnMissingBean
     @Bean
     public GraphQLClient graphQLClient(Environment environment, HttpClient httpClient) {
@@ -196,6 +257,13 @@ public class ActionKitAutoConfiguration {
         return environment.getProperty("CORE_URL", "http://deltafi-core:8080") + "/api/v2";
     }
 
+    /**
+     * Create the client for fetching lookup table data from the core.
+     * @param environment the Spring environment for resolving the core URL
+     * @param graphQLClient the GraphQL client for schema queries
+     * @param httpService the HTTP service for REST requests
+     * @return a configured LookupTableClient
+     */
     @ConditionalOnMissingBean
     @Bean
     public LookupTableClient lookupTableClient(Environment environment, GraphQLClient graphQLClient,

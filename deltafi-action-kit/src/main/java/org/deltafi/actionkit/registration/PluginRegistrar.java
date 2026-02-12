@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Registers the plugin and its actions with the DeltaFi core on startup.
+// ABOUTME: Builds the plugin registration payload including actions, flows, variables, and tests.
 package org.deltafi.actionkit.registration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -45,6 +47,9 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Registers the plugin and its actions with the DeltaFi core on startup
+ */
 @RequiredArgsConstructor
 @Slf4j
 public class PluginRegistrar {
@@ -59,6 +64,7 @@ public class PluginRegistrar {
     private final Environment environment;
     private final SchemaGenerator schemaGenerator;
 
+    /** Build and post the plugin registration to the DeltaFi core */
     @PostConstruct
     public void register() {
         String coreUrl = environment.getProperty("CORE_URL", String.class, "http://localhost");

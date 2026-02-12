@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Client for CRUD operations on lookup tables via GraphQL and REST.
+// ABOUTME: Supports querying, upserting, removing rows, uploading table data, and cache management.
 package org.deltafi.actionkit.lookup;
 
 import com.jayway.jsonpath.TypeRef;
@@ -36,6 +38,9 @@ import java.io.*;
 import java.net.http.HttpResponse;
 import java.util.*;
 
+/**
+ * Client for CRUD operations on lookup tables via GraphQL and REST
+ */
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class LookupTableClient {
@@ -247,6 +252,7 @@ public class LookupTableClient {
                 .toList();
     }
 
+    /** Evict all entries from the lookup table query cache */
     @CacheEvict(value = "lookup-table-client-cache", allEntries = true)
     public void clearCache() {}
 
@@ -275,9 +281,12 @@ public class LookupTableClient {
         return response.extractValueAsObject(graphQLQueryRequest.getQuery().getOperationName(), Result.class);
     }
 
+    /** Supported file types for uploading lookup table data */
     @RequiredArgsConstructor
     public enum UploadFileType {
+        /** JSON array of row objects */
         JSON(MediaType.APPLICATION_JSON),
+        /** CSV with header row */
         CSV("text/csv");
 
         private final String mediaType;

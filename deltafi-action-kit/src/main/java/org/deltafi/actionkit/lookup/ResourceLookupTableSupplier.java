@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Lookup table supplier that reads data from a classpath resource file.
+// ABOUTME: Supports CSV and JSON resource files for populating lookup tables.
 package org.deltafi.actionkit.lookup;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +28,20 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Lookup table supplier that reads data from a classpath resource file
+ */
 @Slf4j
 @SuppressWarnings("unused")
 public abstract class ResourceLookupTableSupplier extends LookupTableSupplier {
     private final String path;
 
+    /**
+     * Create a ResourceLookupTableSupplier backed by a classpath resource.
+     * @param lookupTableClient the client for uploading table data
+     * @param lookupTable the lookup table definition
+     * @param path the classpath resource path (CSV or JSON)
+     */
     public ResourceLookupTableSupplier(LookupTableClient lookupTableClient, LookupTable lookupTable, String path) {
         super(lookupTableClient, lookupTable);
         this.path = path;

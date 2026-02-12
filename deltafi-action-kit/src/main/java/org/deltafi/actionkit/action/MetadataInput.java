@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Base action input class providing access to DeltaFile metadata.
+// ABOUTME: Supports required and optional metadata lookups by key.
 package org.deltafi.actionkit.action;
 
 import lombok.Builder;
@@ -32,6 +34,7 @@ import java.util.Map;
 @Data
 @SuperBuilder
 public abstract class MetadataInput {
+    /** The DeltaFile metadata key-value pairs */
     @Builder.Default
     protected Map<String, String> metadata = new HashMap<>();
 

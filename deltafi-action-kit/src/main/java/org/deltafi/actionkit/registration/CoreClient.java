@@ -21,7 +21,17 @@ import feign.Headers;
 import feign.RequestLine;
 import org.deltafi.common.types.PluginRegistration;
 
+// ABOUTME: Feign client interface for registering plugins with the DeltaFi core.
+// ABOUTME: Posts plugin registration data to the core REST API.
+
+/**
+ * Feign client for communicating with the DeltaFi core plugin registration endpoint
+ */
 public interface CoreClient {
+    /**
+     * Register a plugin with the core
+     * @param pluginRegistration the plugin registration data to post
+     */
     @RequestLine("POST /plugins")
     @Headers("Content-Type: application/json")
     void postPlugin(PluginRegistration pluginRegistration);

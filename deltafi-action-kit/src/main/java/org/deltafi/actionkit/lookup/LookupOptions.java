@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Record holding options for performing a lookup table query.
+// ABOUTME: Supports filtering, column selection, sorting, and paging of results.
 package org.deltafi.actionkit.lookup;
 
 import lombok.Builder;
@@ -36,6 +38,10 @@ import java.util.Set;
 @Builder
 public record LookupOptions(Map<String, Set<String>> matchingColumnValues, Set<String> resultColumns,
         String sortColumn, SortDirection sortDirection, Integer offset, Integer limit) {
+    /**
+     * Create a default LookupOptions with no filtering, sorting, or paging applied.
+     * @return a LookupOptions with all fields set to null
+     */
     public static LookupOptions defaultLookupOptions() {
         return new LookupOptions(null, null, null, null, null, null);
     }

@@ -27,17 +27,25 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// ABOUTME: Base class for all action results with support for metrics and log messages.
+// ABOUTME: Specializations are provided for each action type (transform, egress, error, filter).
+
 /**
  * Base class for all action results.  Specializations of the Result class are provided for each action type.
+ * @param <T> the concrete Result subclass, for fluent method chaining
  */
 @RequiredArgsConstructor
 @EqualsAndHashCode
 @Getter
 public abstract class Result<T extends Result<T>> implements ResultType {
+    /** The action execution context */
     protected final ActionContext context;
+    /** The type of action event this result represents */
     protected final ActionEventType actionEventType;
 
+    /** Custom metrics to include with this result */
     protected final ArrayList<Metric> metrics = new ArrayList<>();
+    /** Log messages to include with this result */
     protected final List<LogMessage> messages = new ArrayList<>();
 
     /**

@@ -26,6 +26,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+// ABOUTME: Action input that provides access to content and metadata from a DeltaFile.
+// ABOUTME: Used as the base input type for content-processing actions.
+
 /**
  * Action input that may include content or metadata
  */
@@ -33,27 +36,38 @@ import java.util.*;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class ContentInput extends MetadataInput {
+    /** The list of content items available to the action */
     @Builder.Default
     protected List<ActionContent> content = new ArrayList<>();
 
+    /**
+     * Get the list of content items available to this action.
+     * @return the list of content items
+     */
     public List<ActionContent> content() {
         return content;
     }
 
     /**
      * @deprecated Use {@link #content()} instead.
+     * @return the list of content items
      */
     @Deprecated
     public List<ActionContent> getContentList() {
         return content;
     }
 
+    /**
+     * Set the list of content items.
+     * @param content the content items to set
+     */
     public void setContent(@NotNull List<ActionContent> content) {
         this.content = content;
     }
 
     /**
      * @deprecated Use {@link #setContent(List)} instead.
+     * @param contentList the content items to set
      */
     @Deprecated
     public void setContentList(@NotNull List<ActionContent> contentList) {

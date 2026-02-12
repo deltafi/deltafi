@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Action input providing access to a single content item and metadata.
+// ABOUTME: Used by egress actions that operate on one content item at a time.
 package org.deltafi.actionkit.action;
 
 import lombok.Data;
@@ -29,6 +31,7 @@ import org.deltafi.actionkit.action.content.ActionContent;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class SingleContentInput extends MetadataInput {
+    /** The single content item available to the action */
     protected ActionContent content;
 
     /**

@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Input class for transform actions containing content and metadata.
+// ABOUTME: Extends ContentInput; used as the input type for TransformAction.transform().
 package org.deltafi.actionkit.action.transform;
 
 import lombok.Data;
@@ -22,6 +24,9 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.ContentInput;
 
+/**
+ * Input for transform actions containing content and metadata from the DeltaFile
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder

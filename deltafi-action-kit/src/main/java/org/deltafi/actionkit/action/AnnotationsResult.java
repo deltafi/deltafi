@@ -26,14 +26,24 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
+// ABOUTME: Result subclass that supports searchable annotations on DeltaFiles.
+// ABOUTME: Allows adding key-value annotation pairs that are indexed for search.
+
 /**
  * A Result that may include changes to annotations
+ * @param <T> the concrete Result subclass, for fluent method chaining
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public abstract class AnnotationsResult<T extends Result<T>> extends Result<T> {
+    /** Searchable key-value annotations to attach to the DeltaFile */
     protected final Map<String, String> annotations = new HashMap<>();
 
+    /**
+     * Create an AnnotationsResult with the given context and event type.
+     * @param context the action execution context
+     * @param actionEventType the type of event this result represents
+     */
     public AnnotationsResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {
         super(context, actionEventType);
     }

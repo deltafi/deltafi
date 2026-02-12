@@ -29,17 +29,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// ABOUTME: Result subclass that supports metadata modifications on DeltaFiles.
+// ABOUTME: Allows adding and deleting metadata key-value pairs.
+
 /**
  * A Result that may include changes to metadata
+ * @param <T> the concrete Result subclass, for fluent method chaining
  */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public abstract class MetadataResult<T extends Result<T>> extends Result<T> {
+    /** Metadata key-value pairs to add to the DeltaFile */
     @Getter
     protected Map<String, String> metadata = new HashMap<>();
+    /** Metadata keys to remove from the DeltaFile */
     protected List<String> deleteMetadataKeys = new ArrayList<>();
 
+    /**
+     * Create a MetadataResult with the given context and event type.
+     * @param context the action execution context
+     * @param actionEventType the type of event this result represents
+     */
     public MetadataResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {
         super(context, actionEventType);
     }
@@ -77,6 +88,10 @@ public abstract class MetadataResult<T extends Result<T>> extends Result<T> {
         }
     }
 
+    /**
+     * Mark a metadata key for deletion from the DeltaFile.
+     * @param key the metadata key to delete
+     */
     @SuppressWarnings("unused")
     public void deleteMetadataKey(@NotNull String key) {
         deleteMetadataKeys.add(key);

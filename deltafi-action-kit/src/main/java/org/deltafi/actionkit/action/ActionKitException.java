@@ -19,11 +19,26 @@ package org.deltafi.actionkit.action;
 
 import org.jetbrains.annotations.NotNull;
 
+// ABOUTME: General-purpose runtime exception for action-kit errors.
+// ABOUTME: Thrown when an action encounters an unrecoverable internal error.
+
+/**
+ * General-purpose runtime exception for action-kit errors
+ */
 public class ActionKitException extends RuntimeException {
+    /**
+     * Create an ActionKitException with an error message.
+     * @param message the error message
+     */
     public ActionKitException(@NotNull String message) {
         super(message);
     }
 
+    /**
+     * Create an ActionKitException with an error message and cause.
+     * @param message the error message
+     * @param e the underlying cause
+     */
     public ActionKitException(@NotNull String message, @NotNull Throwable e) {
         super(message, e);
     }

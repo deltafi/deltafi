@@ -15,9 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Marker interface for result types that can be returned by ingress actions.
+// ABOUTME: Implemented by IngressResult, ErrorResult, and FilterResult.
 package org.deltafi.actionkit.action.ingress;
 
 import org.deltafi.actionkit.action.ResultType;
 
+/**
+ * Marker interface for result types that can be returned by ingress actions
+ */
 public interface IngressResultType extends ResultType {
 }

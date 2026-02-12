@@ -24,14 +24,31 @@ import org.deltafi.common.types.Content;
 import java.util.List;
 import java.util.Objects;
 
+// ABOUTME: Converts between Content (common types) and ActionContent (action-kit types).
+// ABOUTME: Provides static methods for bidirectional conversion of single items and lists.
+
+/**
+ * Utility class for converting between {@link Content} and {@link ActionContent}.
+ */
 public class ContentConverter {
 
     private ContentConverter() {}
 
+    /**
+     * Converts a list of {@link Content} to a list of {@link ActionContent}.
+     * @param contentList the content items to convert
+     * @param contentStorageService the storage service to associate with each ActionContent
+     * @return a list of ActionContent instances
+     */
     public static List<ActionContent> convert(List<Content> contentList, ContentStorageService contentStorageService) {
         return contentList.stream().map(content -> new ActionContent(content, contentStorageService)).toList();
     }
 
+    /**
+     * Converts a list of {@link ActionContent} to a list of {@link Content}.
+     * @param actionContentList the action content items to convert, may be null
+     * @return a list of Content instances, or an empty list if input is null
+     */
     public static List<Content> convert(List<ActionContent> actionContentList) {
         return actionContentList != null ?
                 actionContentList.stream()
@@ -40,6 +57,11 @@ public class ContentConverter {
                         .toList() : List.of();
     }
 
+    /**
+     * Converts a single {@link ActionContent} to a {@link Content}.
+     * @param actionContent the action content to convert
+     * @return the converted Content instance
+     */
     public static Content convert(ActionContent actionContent) {
         return new org.deltafi.common.types.Content(actionContent.getContent().getName(),
                 actionContent.getMediaType(), actionContent.getContent().getSegments(),

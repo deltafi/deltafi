@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Exception that can be thrown by actions to signal an error result.
+// ABOUTME: Converts to an ErrorResult with optional annotations and metrics.
 package org.deltafi.actionkit.action.error;
 
 import lombok.AllArgsConstructor;
@@ -32,11 +34,17 @@ import java.util.*;
 @AllArgsConstructor
 @SuppressWarnings("unused")
 public class ErrorResultException extends RuntimeException {
+    /** Summary message explaining the error */
+    /** Summary message explaining the error */
     private final String errorCause;
+    /** Detailed error context */
     private final String errorContext;
+    /** The underlying exception that caused the error */
     private final Throwable cause;
+    /** Searchable annotations to attach to the DeltaFile */
     @Singular
     private final Map<String, String> annotations;
+    /** Custom metrics to include with the error result */
     @Singular
     private final List<Metric> metrics;
 
@@ -73,7 +81,7 @@ public class ErrorResultException extends RuntimeException {
     }
 
 
-    // make javadoc generator happy
+    /** Lombok-generated builder for ErrorResultException */
     public static class ErrorResultExceptionBuilder {}
 
     /**
@@ -85,6 +93,11 @@ public class ErrorResultException extends RuntimeException {
         return new ErrorResultExceptionBuilder().errorCause(errorCause);
     }
 
+    /**
+     * Convert this exception to an ErrorResult with the given action context.
+     * @param context execution context of the action that threw this exception
+     * @return an ErrorResult populated from this exception's fields
+     */
     public ErrorResult toErrorResult(ActionContext context) {
         ErrorResult errorResult = new ErrorResult(context, errorCause, errorContext, cause);
         if (annotations != null) {

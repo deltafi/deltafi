@@ -22,6 +22,12 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.SingleContentInput;
 
+// ABOUTME: Input provided to egress actions, containing the content to be egressed.
+// ABOUTME: Extends SingleContentInput since egress actions operate on a single content item.
+
+/**
+ * Input provided to egress actions
+ */
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Data

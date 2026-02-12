@@ -32,6 +32,14 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Size {
+    /**
+     * Minimum string length for this field in the generated JSON schema.
+     * @return the minimum length
+     */
     int minLength() default 0;
+    /**
+     * Maximum string length for this field in the generated JSON schema.
+     * @return the maximum length
+     */
     int maxLength() default 80;
 }

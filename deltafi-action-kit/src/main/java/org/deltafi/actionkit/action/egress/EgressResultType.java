@@ -19,5 +19,11 @@ package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.ResultType;
 
+// ABOUTME: Marker interface for result types that can be returned by egress actions.
+// ABOUTME: Implemented by EgressResult, ErrorResult, and FilterResult.
+
+/**
+ * Marker interface for result types that can be returned by egress actions
+ */
 public interface EgressResultType extends ResultType {
 }

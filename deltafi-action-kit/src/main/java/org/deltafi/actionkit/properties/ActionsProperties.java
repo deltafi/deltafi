@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Configuration properties for action execution (polling, threading, hostname).
+// ABOUTME: Bound from the "actions" prefix in application.yaml.
 package org.deltafi.actionkit.properties;
 
 import lombok.Data;
@@ -23,6 +25,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Configuration properties for action execution bound from the "actions" prefix
+ */
 @ConfigurationProperties("actions")
 @Data
 public class ActionsProperties {

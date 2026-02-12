@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Interface that transform actions implement to support joining multiple DeltaFileMessages.
+// ABOUTME: Merges content and metadata from multiple inputs into a single TransformInput.
 package org.deltafi.actionkit.action.transform;
 
 import org.deltafi.actionkit.action.content.ActionContent;
@@ -25,6 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Interface for transform actions that support joining multiple DeltaFileMessages into one input
+ */
 public interface Join {
 
     /**

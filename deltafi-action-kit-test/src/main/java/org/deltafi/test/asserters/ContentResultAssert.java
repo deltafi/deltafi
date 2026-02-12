@@ -35,6 +35,11 @@ import java.util.function.Predicate;
  */
 public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T extends ContentResult<T>> extends MetadataResultAssert<A, T> {
 
+    /**
+     * Create a new ContentResultAssert.
+     * @param metadataResult the result to assert against
+     * @param selfType the concrete assert class
+     */
     protected ContentResultAssert(T metadataResult, Class<?> selfType) {
         super(metadataResult, selfType);
     }

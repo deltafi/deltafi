@@ -15,9 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Marker interface for result types that can be returned by transform actions.
+// ABOUTME: Implemented by TransformResult, TransformResults, ErrorResult, and FilterResult.
 package org.deltafi.actionkit.action.transform;
 
 import org.deltafi.actionkit.action.ResultType;
 
+/**
+ * Marker interface for result types that can be returned by transform actions
+ */
 public interface TransformResultType extends ResultType {
 }

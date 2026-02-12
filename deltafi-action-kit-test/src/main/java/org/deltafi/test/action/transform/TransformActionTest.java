@@ -37,6 +37,10 @@ import java.util.*;
 @Slf4j
 public abstract class TransformActionTest extends ActionTest {
 
+    /**
+     * Execute the action and verify the result based on the expected result type in the test case.
+     * @param testCase the test case to execute
+     */
     public void execute(TransformActionTestCase testCase) {
         if(testCase.getExpectedResultType()==TransformResult.class) {
             executeTransformResult(testCase);

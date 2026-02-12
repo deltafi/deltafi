@@ -49,6 +49,10 @@ public class EnvVar {
 
     private String name;
 
+    /**
+     * Create an EnvVar referencing the given environment variable name.
+     * @param name environment variable name in UPPER_SNAKE_CASE
+     */
     @JsonCreator
     public EnvVar(String name) {
         setName(name);
@@ -56,6 +60,7 @@ public class EnvVar {
 
     /**
      * Returns the env var name for JSON serialization.
+     * @return the environment variable name
      */
     @JsonValue
     public String getName() {

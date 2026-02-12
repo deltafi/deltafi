@@ -37,10 +37,18 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// ABOUTME: Wraps a Content object with methods to load, save, and manipulate content data.
+// ABOUTME: Provides the primary API for actions to interact with content stored in object storage.
+
+/**
+ * Wraps a {@link Content} reference with methods to load, save, and manipulate content data
+ */
 @Slf4j
 public class ActionContent {
+    /** The underlying content metadata and segment references */
     @Getter
     protected final Content content;
+    /** The storage service used to load and save content */
     protected final ContentStorageService contentStorageService;
 
     /**

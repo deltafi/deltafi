@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Result type for actions that filter out a DeltaFile.
+// ABOUTME: Transitions the DeltaFile to the FILTERED state with a cause and optional context.
 package org.deltafi.actionkit.action.filter;
 
 import lombok.EqualsAndHashCode;
@@ -41,6 +43,7 @@ public class FilterResult extends AnnotationsResult<FilterResult> implements Egr
     private final String filteredContext;
 
     /**
+     * Create a FilterResult with only a cause message.
      * @param context       Execution context of the filtered action
      * @param filteredCause Message explaining the reason for the filtered action
      */
@@ -49,6 +52,7 @@ public class FilterResult extends AnnotationsResult<FilterResult> implements Egr
     }
 
     /**
+     * Create a FilterResult with a cause and additional context.
      * @param context         Execution context of the filtered action
      * @param filteredCause   Summary message explaining the reason for the filtered action
      * @param filteredContext Detailed message explaining the reason for the filtered action

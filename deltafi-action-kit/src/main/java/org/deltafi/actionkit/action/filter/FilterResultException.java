@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Exception that can be thrown by actions to signal a filter result.
+// ABOUTME: Converts to a FilterResult with optional annotations and metrics.
 package org.deltafi.actionkit.action.filter;
 
 import lombok.AllArgsConstructor;
@@ -35,10 +37,14 @@ import java.util.Map;
 @AllArgsConstructor
 @SuppressWarnings("unused")
 public class FilterResultException extends RuntimeException {
+    /** Summary message explaining the filter reason */
     private final String filterCause;
+    /** Detailed filter context */
     private final String filterContext;
+    /** Searchable annotations to attach to the DeltaFile */
     @Singular
     private final Map<String, String> annotations;
+    /** Custom metrics to include with the filter result */
     @Singular
     private final List<Metric> metrics;
 
@@ -63,7 +69,7 @@ public class FilterResultException extends RuntimeException {
         this.metrics = new ArrayList<>();
     }
 
-    // make javadoc generator happy
+    /** Lombok-generated builder for FilterResultException */
     public static class FilterResultExceptionBuilder {}
 
     /**
@@ -75,6 +81,11 @@ public class FilterResultException extends RuntimeException {
         return new FilterResultExceptionBuilder().filterCause(filterCause);
     }
 
+    /**
+     * Convert this exception to a FilterResult with the given action context.
+     * @param context execution context of the action that threw this exception
+     * @return a FilterResult populated from this exception's fields
+     */
     public FilterResult toFilterResult(ActionContext context) {
         FilterResult filterResult = new FilterResult(context, filterCause, filterContext);
         if (annotations != null) {

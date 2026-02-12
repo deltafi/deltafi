@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Result type returned by transform actions containing transformed content.
+// ABOUTME: Produces TRANSFORM action events with content, metadata, and annotations.
 package org.deltafi.actionkit.action.transform;
 
 import org.deltafi.actionkit.action.ContentResult;
@@ -34,6 +36,7 @@ import java.util.List;
  */
 public class TransformResult extends ContentResult<TransformResult> implements TransformResultType {
     /**
+     * Create a TransformResult with no initial content.
      * @param context Context of executing action
      */
     public TransformResult(@NotNull ActionContext context) {
@@ -41,6 +44,7 @@ public class TransformResult extends ContentResult<TransformResult> implements T
     }
 
     /**
+     * Create a TransformResult with initial content.
      * @param context Context of executing action
      * @param content List of content objects to be processed with the execution result
      */
@@ -48,6 +52,10 @@ public class TransformResult extends ContentResult<TransformResult> implements T
         super(context, ActionEventType.TRANSFORM, content);
     }
 
+    /**
+     * Convert this result to a TransformEvent.
+     * @return a TransformEvent populated from this result's content, metadata, and annotations
+     */
     public final TransformEvent toTransformEvent() {
         return TransformEvent.builder()
                 .did(context.getDid())

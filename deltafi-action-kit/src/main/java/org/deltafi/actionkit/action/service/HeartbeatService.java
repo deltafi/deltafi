@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Scheduled service that sends heartbeats and tracks long-running actions.
+// ABOUTME: Periodically reports action liveness and execution state to Valkey.
 package org.deltafi.actionkit.action.service;
 
 import org.deltafi.actionkit.action.Action;
@@ -28,6 +30,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Scheduled service that sends action heartbeats and tracks long-running actions in Valkey
+ */
 public class HeartbeatService {
     @Autowired
     private ActionEventQueue actionEventQueue;

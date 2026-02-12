@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Result type returned by egress actions to indicate successful egress.
+// ABOUTME: Produces EGRESS action events.
 package org.deltafi.actionkit.action.egress;
 
 import lombok.Builder;
@@ -32,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 @EqualsAndHashCode(callSuper = true)
 public class EgressResult extends Result<EgressResult> implements EgressResultType {
     /**
+     * Create an EgressResult for a completed egress action.
      * @param context Context of the executed action
      */
     @Builder

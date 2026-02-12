@@ -23,7 +23,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+// ABOUTME: Abstract Writer that transfers ActionContent to an OutputStream.
+// ABOUTME: Base class for content writing operations that stream data from content storage.
+
+/**
+ * Abstract {@link Writer} that streams {@link ActionContent} data to an {@link OutputStream}.
+ */
 public abstract class ActionContentWriter implements Writer {
+    /**
+     * Writes the given content to the output stream by loading from storage and transferring.
+     * @param actionContent the content to write
+     * @param outputStream the destination output stream
+     * @throws IOException if an I/O error occurs during the transfer
+     */
     protected void writeContent(ActionContent actionContent, OutputStream outputStream) throws IOException {
         try (InputStream contentStream = actionContent.loadInputStream()) {
             contentStream.transferTo(outputStream);

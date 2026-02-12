@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Service for pushing and popping action events to a Valkey queue.
+// ABOUTME: Handles action input/output, lookup table events, heartbeats, and long-running task tracking.
 package org.deltafi.actionkit.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -71,6 +73,12 @@ public class ActionEventQueue {
         return OBJECT_MAPPER.readValue(valkeyKeyedBlockingQueue.take(actionClassName), ActionInput.class);
     }
 
+    /**
+     * Block until a lookup table event is available for any of the given table names.
+     * @param lookupTableNames names of lookup tables to listen for
+     * @return the next LookupTableEvent from the queue
+     * @throws JsonProcessingException if the incoming event cannot be deserialized
+     */
     public LookupTableEvent takeLookupTableEvent(String... lookupTableNames) throws JsonProcessingException {
         String[] prefixedLookupTableNames = Arrays.stream(lookupTableNames)
                 .map(LookupTableEvent::buildKey)
@@ -78,6 +86,11 @@ public class ActionEventQueue {
         return OBJECT_MAPPER.readValue(valkeyKeyedBlockingQueue.take(prefixedLookupTableNames), LookupTableEvent.class);
     }
 
+    /**
+     * Submit a lookup table event result back to the queue.
+     * @param lookupTableEventResult the result to post
+     * @throws JsonProcessingException if the result cannot be serialized
+     */
     public void putLookupTableResult(LookupTableEventResult lookupTableEventResult) throws JsonProcessingException {
         valkeyKeyedBlockingQueue.put(new SortedSetEntry(lookupTableEventResult.getLookupTableEventId(),
                 OBJECT_MAPPER.writeValueAsString(lookupTableEventResult), OffsetDateTime.now()));
@@ -96,12 +109,17 @@ public class ActionEventQueue {
      * Submit a result object for action processing
      *
      * @param result ActionEvent result to be posted to the action queue
+     * @param returnAddress optional address suffix for the destination queue
      * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */
     public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException {
         valkeyKeyedBlockingQueue.put(new SortedSetEntry(queueName(returnAddress), OBJECT_MAPPER.writeValueAsString(result), OffsetDateTime.now()));
     }
 
+    /**
+     * Record a heartbeat for the given key in Valkey.
+     * @param key the heartbeat key to set
+     */
     public void setHeartbeat(String key) {
         valkeyKeyedBlockingQueue.setHeartbeat(key);
     }

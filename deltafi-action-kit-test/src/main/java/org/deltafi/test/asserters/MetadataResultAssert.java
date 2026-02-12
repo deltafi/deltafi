@@ -32,6 +32,11 @@ import java.util.Map;
 public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T extends MetadataResult<T>>
         extends ResultAssert<A, T> {
 
+    /**
+     * Create a new MetadataResultAssert.
+     * @param metadataResult the result to assert against
+     * @param selfType the concrete assert class
+     */
     protected MetadataResultAssert(T metadataResult, Class<?> selfType) {
         super(metadataResult, selfType);
     }

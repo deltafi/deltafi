@@ -15,6 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Exception thrown when an action expects content at an index that does not exist.
+// ABOUTME: Caught by the action runner and converted to an ErrorResult.
 package org.deltafi.actionkit.exception;
 
+/**
+ * Thrown when an action attempts to access content at an index that does not exist
+ */
 public class ExpectedContentException extends IndexOutOfBoundsException {}

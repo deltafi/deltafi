@@ -46,6 +46,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
+ * Base class for action tests using the deprecated test framework.
  * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
  * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
  */
@@ -53,20 +54,36 @@ import java.util.*;
 @ExtendWith(MockitoExtension.class)
 @Slf4j
 public abstract class ActionTest {
+    /** Random DeltaFile ID used for test context. */
     protected final UUID DID = UUID.randomUUID();
+    /** Hostname value used for test context. */
     protected final String HOSTNAME = "hostname";
 
+    /** Mocked action properties. */
     @Mock
     protected ActionsProperties actionsProperties;
 
+    /** In-memory content storage service for test isolation. */
     protected final ActionContentStorageService contentStorageService = new InMemoryContentStorageService();
 
+    /**
+     * Convert a UTC date string to the local timezone.
+     * @param utcDateString the UTC date string to convert
+     * @return the date string in the local timezone
+     */
     protected String convertUTCDateToLocal(String utcDateString) {
         final DateTimeFormatter javaStdDateToStringFormatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy", Locale.ENGLISH);
         ZonedDateTime utcDate = ZonedDateTime.parse(utcDateString, javaStdDateToStringFormatter);
         return utcDate.toOffsetDateTime().atZoneSameInstant(ZoneId.systemDefault()).format(javaStdDateToStringFormatter);
     }
 
+    /**
+     * Load IOContent entries into the content storage service as ActionContent.
+     * @param contents the IOContent entries to load
+     * @param testCase the test case providing the test name for resource lookup
+     * @param stripIfStartsWith prefix to strip from content names
+     * @return list of ActionContent backed by the storage service
+     */
     protected List<ActionContent> getContents(List<? extends IOContent> contents, TestCaseBase<?> testCase, String stripIfStartsWith) {
         return contents.stream().map(ioContent -> {
             try {
@@ -103,6 +120,12 @@ public abstract class ActionTest {
         }
     }
 
+    /**
+     * Build a DeltaFileMessage from the given metadata and content.
+     * @param metadata the source metadata map
+     * @param content the content list to include
+     * @return a DeltaFileMessage
+     */
     protected DeltaFileMessage deltaFileMessage(Map<String, String> metadata, List<ActionContent> content) {
         return DeltaFileMessage.builder()
                 .metadata(metadata == null ? new HashMap<>() : metadata)
@@ -110,6 +133,10 @@ public abstract class ActionTest {
                 .build();
     }
 
+    /**
+     * Build a test ActionContext with default values and the in-memory content storage service.
+     * @return a populated ActionContext
+     */
     protected ActionContext context() {
         return ActionContext.builder()
                 .did(DID)
@@ -123,9 +150,19 @@ public abstract class ActionTest {
                 .build();
     }
 
+    /**
+     * Hook called before executing the action. Override to customize test setup.
+     * @param ignored the DeltaFileMessage that will be passed to the action
+     * @param ignored2 the test case being executed
+     */
     protected void beforeExecuteAction(DeltaFileMessage ignored, TestCaseBase<?> ignored2) {
     }
 
+    /**
+     * Execute the action configured in the test case and return the result.
+     * @param testCase the test case to execute
+     * @return the result from the action execution
+     */
     protected ResultType callAction(TestCaseBase<?> testCase) {
         List<ActionContent> inputs = getContents(testCase.getInputs(), testCase, "input.");
         DeltaFileMessage deltaFileMessage = deltaFileMessage(testCase.getSourceMetadata(), inputs);
@@ -140,6 +177,10 @@ public abstract class ActionTest {
                 .build());
     }
 
+    /**
+     * Execute the action and verify the result is a FilterResult matching the expected regex.
+     * @param testCase the test case to execute
+     */
     public void executeFilter(TestCaseBase<?> testCase) {
         FilterResult result = execute(testCase, FilterResult.class);
 
@@ -148,6 +189,10 @@ public abstract class ActionTest {
         }
     }
 
+    /**
+     * Execute the action and verify the result is an ErrorResult matching the expected regex.
+     * @param testCase the test case to execute
+     */
     public void executeError(TestCaseBase<?> testCase) {
         ErrorResult result = execute(testCase, ErrorResult.class);
 
@@ -156,6 +201,10 @@ public abstract class ActionTest {
         }
     }
 
+    /**
+     * Execute the action and verify the result based on the expected result type in the test case.
+     * @param testCase the test case to execute
+     */
     public void execute(TestCaseBase<?> testCase) {
         if(testCase.getExpectedResultType() == ErrorResult.class) {
             executeError(testCase);
@@ -168,6 +217,14 @@ public abstract class ActionTest {
         }
     }
 
+    /**
+     * Execute the action and cast the result to the expected type, failing if the types don't match.
+     * @param <TC> the test case type
+     * @param <RT> the expected result type
+     * @param testCase the test case to execute
+     * @param expectedResultType the expected result class
+     * @return the action result cast to the expected type
+     */
     @SneakyThrows
     public <TC extends TestCaseBase<?>, RT extends Result<?>> RT execute(TC testCase, Class<RT> expectedResultType) {
         ResultType result = callAction(testCase);
@@ -179,6 +236,11 @@ public abstract class ActionTest {
         return expectedResultType.cast(result);
     }
 
+    /**
+     * Normalize an ActionEvent for comparison by setting stop time and clearing content segments.
+     * @param actionEvent the event to normalize
+     * @return the normalized event
+     */
     protected ActionEvent normalizeEvent(ActionEvent actionEvent) {
         actionEvent.setStop(OffsetDateTime.MAX);
         if (actionEvent.getTransform() != null) {
@@ -188,10 +250,21 @@ public abstract class ActionTest {
         return actionEvent;
     }
 
+    /**
+     * Clear the segments from a Content object for comparison purposes.
+     * @param content the content to normalize
+     */
     protected void normalizeContent(Content content) {
         content.setSegments(List.of());
     }
 
+    /**
+     * Load expected output content from IOContent entries and set it on the expected result.
+     * @param expectedResult the result to populate with expected content
+     * @param testCase the test case providing the test name for resource lookup
+     * @param outputs the expected output IOContent entries
+     * @return the expected content as byte arrays
+     */
     protected List<byte[]> getExpectedContentOutput(ContentResult<?> expectedResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
         final List<ActionContent> expectedContent = getContents(outputs, testCase, "output.");
         expectedResult.setContent(expectedContent);
@@ -199,6 +272,11 @@ public abstract class ActionTest {
         return expectedContent.stream().map(ActionContent::loadBytes).toList();
     }
 
+    /**
+     * Assert that two lists of byte arrays are equal in size and content.
+     * @param expected the expected byte arrays
+     * @param actual the actual byte arrays
+     */
     protected void assertContentIsEqual(List<byte[]> expected, List<byte[]> actual) {
         Assertions.assertEquals(expected.size(), actual.size(), "Expected content list size does not match actual content list size");
 
@@ -211,6 +289,12 @@ public abstract class ActionTest {
         }
     }
 
+    /**
+     * Load a test resource as bytes, returning null if the resource does not exist.
+     * @param testCaseName name of the test case subdirectory
+     * @param file name of the file to load
+     * @return the file contents as bytes, or null if not found
+     */
     protected byte[] getTestResourceBytesOrNull(String testCaseName, String file) {
         try(InputStream inputStream = getClass().getClassLoader().getResourceAsStream(getClass().getSimpleName() + "/" + testCaseName + "/" + file)) {
             return inputStream==null ? null : inputStream.readAllBytes();

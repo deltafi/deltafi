@@ -15,12 +15,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Interface for action results that can be converted to ActionEvents.
+// ABOUTME: All action result types implement this interface.
 package org.deltafi.actionkit.action;
 
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 
+/**
+ * Interface for action results
+ */
 public interface ResultType {
+    /**
+     * Convert this result to an ActionEvent for dispatching back to the core.
+     * @return the ActionEvent representation of this result
+     */
     ActionEvent toEvent();
+
+    /**
+     * Get the action context associated with this result.
+     * @return the action execution context
+     */
     ActionContext getContext();
 }

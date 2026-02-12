@@ -39,7 +39,9 @@ import java.util.stream.Stream;
  */
 public class DeltaFiTestRunner {
 
+    /** Random DeltaFile ID used for test context. */
     protected static final UUID DID = UUID.randomUUID();
+    /** Hostname value used for test context. */
     protected static final String HOSTNAME = "hostname";
     private final ActionContentStorageService storageService = new InMemoryContentStorageService();
     private String testDataFolder = null;

@@ -15,14 +15,24 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Exception thrown when an action requires metadata at a key that does not exist.
+// ABOUTME: Caught by the action runner and converted to an ErrorResult.
 package org.deltafi.actionkit.exception;
 
 import lombok.Getter;
 
+/**
+ * Thrown when an action attempts to access metadata at a key that does not exist
+ */
 @Getter
 public class MissingMetadataException extends IllegalArgumentException {
+    /** The metadata key that was not found */
     final String key;
 
+    /**
+     * Create a MissingMetadataException for the given key.
+     * @param key the metadata key that was not found
+     */
     public MissingMetadataException(String key) {
         this.key = key;
     }

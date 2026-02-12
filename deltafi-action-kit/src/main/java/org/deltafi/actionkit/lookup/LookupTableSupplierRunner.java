@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Runs a listener thread that processes lookup table events for all registered suppliers.
+// ABOUTME: Dispatches incoming lookup requests to the appropriate LookupTableSupplier.
 package org.deltafi.actionkit.lookup;
 
 import lombok.Getter;
@@ -29,6 +31,9 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Runs a listener thread that dispatches lookup table events to the appropriate supplier
+ */
 @Slf4j
 public class LookupTableSupplierRunner {
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
@@ -37,6 +42,11 @@ public class LookupTableSupplierRunner {
     @Getter
     private final Map<String, LookupTableSupplier> lookupTableSupplierMap;
 
+    /**
+     * Create a LookupTableSupplierRunner and start the listener thread if suppliers exist.
+     * @param actionEventQueue the event queue for receiving lookup table events
+     * @param lookupTableSuppliers all registered lookup table suppliers
+     */
     public LookupTableSupplierRunner(ActionEventQueue actionEventQueue,
             List<LookupTableSupplier> lookupTableSuppliers) {
         this.actionEventQueue = actionEventQueue;

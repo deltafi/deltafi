@@ -15,6 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+// ABOUTME: Manages the lifecycle of action execution threads.
+// ABOUTME: Polls the event queue, dispatches actions, and handles results and errors.
 package org.deltafi.actionkit.action.service;
 
 import jakarta.annotation.PostConstruct;
@@ -58,6 +60,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Manages the lifecycle of action execution threads, polling the event queue and dispatching actions
+ */
 @Slf4j
 public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
     @Autowired
@@ -219,6 +224,7 @@ public class ActionRunner implements ApplicationListener<ContextClosedEvent> {
         }
     }
 
+    /** Gracefully shut down the action executor thread pool */
     @PreDestroy
     public void shutdown() {
         shutdownExecutor();
