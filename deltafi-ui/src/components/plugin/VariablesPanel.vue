@@ -31,21 +31,21 @@
       <Column field="value" header="Value" class="value-column" :style="{ width: '50%' }">
         <template #body="{ data }">
           <template v-if="(!$hasPermission('PluginVariableUpdate'))">
-            <div>
+            <div class="value-readonly">
               <span v-if="data.value !== null && data.value !== data.defaultValue" class="override-icon">
                 <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
               </span>
-              <span v-if="data.value == null">
+              <template v-if="data.value == null">
                 <span v-if="data.defaultValue == null"><em>null</em></span>
-                <span v-else-if="['MAP', 'LIST'].includes(data.dataType)">
-                  <div v-for="item in viewList(data.defaultValue)" :key="item" class="list-item">{{ item }}</div>
-                </span>
+                <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
+                  <Chip v-for="item in viewList(data.defaultValue)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                </template>
                 <span v-else>{{ data.defaultValue }}</span>
-              </span>
+              </template>
               <span v-else-if="data.value === ''"><em>empty string</em></span>
-              <span v-else-if="['MAP', 'LIST'].includes(data.dataType)">
-                <div v-for="item in viewList(data.value)" :key="item" class="list-item">{{ item }}</div>
-              </span>
+              <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
+                <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+              </template>
               <span v-else>{{ data.value }}</span>
             </div>
           </template>
@@ -55,17 +55,17 @@
                 <span v-if="data.value !== null && data.value !== data.defaultValue" class="override-icon">
                   <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted" />
                 </span>
-                <span v-if="data.value == null">
+                <template v-if="data.value == null">
                   <span v-if="data.defaultValue == null"><em>null</em></span>
-                  <span v-else-if="['MAP', 'LIST'].includes(data.dataType)">
-                    <div v-for="item in viewList(data.defaultValue)" :key="item" class="list-item">{{ item }}</div>
-                  </span>
+                  <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
+                    <Chip v-for="item in viewList(data.defaultValue)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                  </template>
                   <span v-else>{{ data.defaultValue }}</span>
-                </span>
+                </template>
                 <span v-else-if="data.value === ''"><em>empty string</em></span>
-                <span v-else-if="['MAP', 'LIST'].includes(data.dataType)">
-                  <div v-for="item in viewList(data.value)" :key="item" class="list-item">{{ item }}</div>
-                </span>
+                <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
+                  <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                </template>
                 <span v-else>{{ data.value }}</span>
               </div>
             </PropertyEditDialog>
@@ -77,10 +77,12 @@
 </template>
 
 <script setup>
+import Chip from "primevue/chip";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PropertyEditDialog from "@/components/properties/PropertyEditDialog.vue";
+import { splitEscaped, COLLECTION_TYPES } from "@/utils/collectionValues";
 import { toRefs } from "vue";
 
 defineEmits(["updated"]);
@@ -103,9 +105,7 @@ const props = defineProps({
 
 const { headerProp: header, pluginCoordinatesProp: pluginCoordinates, variablesProp: variables } = toRefs(props);
 
-const viewList = (value) => {
-  return value.split(",").map((i) => i.trim());
-};
+const viewList = splitEscaped;
 </script>
 
 <style>
@@ -114,11 +114,19 @@ const viewList = (value) => {
     padding: 0 !important;
   }
 
+  .value-readonly {
+    padding: 0.5rem !important;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+  }
+
   .value-clickable {
     cursor: pointer;
     padding: 0.5rem !important;
     width: 100%;
     display: flex;
+    flex-wrap: wrap;
   }
 
   .value-clickable>* {
@@ -131,10 +139,16 @@ const viewList = (value) => {
     justify-content: center;
   }
 
-  .list-item::before {
-    content: "•";
-    margin-right: 0.25rem;
-    font-weight: bold;
+  .truncate-chip {
+    max-width: 200px;
+    overflow: hidden;
+
+    .p-chip-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 }
 </style>

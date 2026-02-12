@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.configuration.LocalStorageProperties;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.types.Property;
@@ -128,6 +129,48 @@ class DeltaFiPropertiesServiceTest {
         List<KeyValue> updates = List.of(new KeyValue("checkDeleteLagErrorThreshold", "30_000"));
         Assertions.assertThatNoException().isThrownBy(() -> propsWithExternalStorage.updateProperties(updates, true));
         Mockito.verify(deltaFiPropertiesRepo, Mockito.never()).updateProperty(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void testSnapshotSetValuesNormalized() {
+        // A SET property with values in non-sorted order should be normalized in the snapshot
+        Property setProperty = Property.builder()
+                .key("allowedAnalyticsAnnotations")
+                .customValue("c, a, b")
+                .defaultValue(null)
+                .dataType(VariableDataType.SET)
+                .build();
+        Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(setProperty));
+
+        Snapshot snapshot = new Snapshot();
+        deltaFiPropertiesService.updateSnapshot(snapshot);
+
+        List<KeyValue> props = snapshot.getDeltaFiProperties();
+        Assertions.assertThat(props).hasSize(1);
+        Assertions.assertThat(props.get(0).getValue()).isEqualTo("a, b, c");
+    }
+
+    @Test
+    void testSortedSetValueDeduplicates() {
+        Assertions.assertThat(DeltaFiPropertiesService.sortedSetValue("a, b, a, c, b"))
+                .isEqualTo("a, b, c");
+    }
+
+    @Test
+    void testSnapshotSetValuesEqualRegardlessOfOrder() {
+        // A SET property whose custom value matches the default (just different order) should be excluded from snapshot
+        Property setProperty = Property.builder()
+                .key("allowedAnalyticsAnnotations")
+                .customValue("c, b, a")
+                .defaultValue("a, b, c")
+                .dataType(VariableDataType.SET)
+                .build();
+        Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(setProperty));
+
+        Snapshot snapshot = new Snapshot();
+        deltaFiPropertiesService.updateSnapshot(snapshot);
+
+        Assertions.assertThat(snapshot.getDeltaFiProperties()).isEmpty();
     }
 
     @Test

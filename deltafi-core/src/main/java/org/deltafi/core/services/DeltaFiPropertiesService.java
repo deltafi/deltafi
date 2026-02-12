@@ -51,17 +51,20 @@ public class DeltaFiPropertiesService implements Snapshotter {
     private static final Set<String> allowedProperties;
     private static final List<Property> defaultProperties;
     private static final Map<String, PropertyGroup> propertyToGroup;
+    private static final Map<String, VariableDataType> propertyToDataType;
 
     static {
         allowedProperties = new HashSet<>();
         defaultProperties = new ArrayList<>();
         propertyToGroup = new HashMap<>();
+        propertyToDataType = new HashMap<>();
         for (Field field : DeltaFiProperties.class.getDeclaredFields()) {
             PropertyInfo propertyInfo = field.getAnnotation(PropertyInfo.class);
             if (propertyInfo != null) {
                 allowedProperties.add(field.getName());
                 String value = !PropertyInfo.NULL.equals(propertyInfo.defaultValue()) ? propertyInfo.defaultValue() : null;
                 propertyToGroup.put(field.getName(), propertyInfo.group());
+                propertyToDataType.put(field.getName(), propertyInfo.dataType());
 
                 defaultProperties.add(Property.builder().key(field.getName()).defaultValue(value)
                         .description(propertyInfo.description()).refreshable(propertyInfo.refreshable())
@@ -123,6 +126,22 @@ public class DeltaFiPropertiesService implements Snapshotter {
         deltaFiPropertiesRepo.batchUpsertAndDeleteProperties(
                 keys, defaultValues, descriptions, refreshables, editables, dataTypes, allowedProperties
         );
+
+        normalizeSetProperties();
+    }
+
+    /**
+     * Normalize existing SET property values so they are stored in sorted order.
+     */
+    private void normalizeSetProperties() {
+        for (Property property : deltaFiPropertiesRepo.findAll()) {
+            if (property.getDataType() == VariableDataType.SET && property.hasValue()) {
+                String normalized = sortedSetValue(property.getCustomValue());
+                if (!normalized.equals(property.getCustomValue())) {
+                    deltaFiPropertiesRepo.updateProperty(property.getKey(), normalized);
+                }
+            }
+        }
     }
 
     private void modifyForExternalStorage(Property property) {
@@ -212,6 +231,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
                 .toList();
         boolean changed = false;
         for (KeyValue keyValue : allowedUpdates) {
+            normalizeSetValue(keyValue);
             boolean updated = deltaFiPropertiesRepo.updateProperty(keyValue.getKey(), keyValue.getValue()) > 0;
             if (updated && disabledEgress(keyValue)) {
                 eventPublisher.publishEvent(new EgressDisabledEvent(keyValue));
@@ -219,6 +239,31 @@ public class DeltaFiPropertiesService implements Snapshotter {
             changed = updated || changed;
         }
         return refresh(changed);
+    }
+
+    private void normalizeSetValue(KeyValue keyValue) {
+        if (keyValue.getValue() != null && propertyToDataType.get(keyValue.getKey()) == VariableDataType.SET) {
+            keyValue.setValue(sortedSetValue(keyValue.getValue()));
+        }
+    }
+
+    // TODO: LIST, SET, and MAP values are stored as comma-separated strings with escape characters
+    //  for delimiters. This is fragile and prevents the UI from properly handling values containing
+    //  commas. These should be stored as proper JSON (arrays for LIST/SET, objects for MAP) with a
+    //  migration for existing values and backward-compatible snapshot import.
+
+    /**
+     * Parse a comma-separated value as a set, sort the entries, and rejoin.
+     * Does not add brackets — the DB stores plain comma-separated strings.
+     * Re-escapes commas within entries so round-tripping is lossless.
+     */
+    static String sortedSetValue(String value) {
+        List<String> items = new ArrayList<>(VariableDataType.readStringAsList(value));
+        Collections.sort(items);
+        return items.stream()
+                .distinct()
+                .map(item -> item.replace(",", "\\,"))
+                .collect(Collectors.joining(", "));
     }
 
     private boolean disabledEgress(KeyValue keyValue) {
@@ -256,6 +301,10 @@ public class DeltaFiPropertiesService implements Snapshotter {
         if (valuesEqual(customValue, defaultValue, property.getDataType())) {
             return null;
         }
+        // Normalize SET values so snapshots have consistent ordering
+        if (property.getDataType() == VariableDataType.SET) {
+            customValue = sortedSetValue(customValue);
+        }
         return new KeyValue(property.getKey(), customValue);
     }
 
@@ -273,6 +322,14 @@ public class DeltaFiPropertiesService implements Snapshotter {
             } catch (NumberFormatException e) {
                 return false;
             }
+        }
+        // For SET types, compare sorted entries to handle different ordering
+        if (dataType == VariableDataType.SET) {
+            List<String> list1 = new ArrayList<>(VariableDataType.readStringAsList(value1));
+            List<String> list2 = new ArrayList<>(VariableDataType.readStringAsList(value2));
+            Collections.sort(list1);
+            Collections.sort(list2);
+            return list1.equals(list2);
         }
         return false;
     }

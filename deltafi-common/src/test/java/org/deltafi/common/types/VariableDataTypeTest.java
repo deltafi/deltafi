@@ -51,6 +51,19 @@ class VariableDataTypeTest {
                 .hasMessage(expectedMessage);
     }
 
+    @ParameterizedTest
+    @MethodSource
+    void setFormatString(String input, String expected) {
+        String result = VariableDataType.SET.formatString(input);
+        Assertions.assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void setConvertValue() {
+        Object result = VariableDataType.SET.convertValue("[c, a, b]");
+        Assertions.assertThat(result).isEqualTo(List.of("c", "a", "b"));
+    }
+
     @Test
     void duplicateKey() {
         Assertions.assertThatThrownBy(() -> VariableDataType.readStringAsMap("a: b, a: c"))
@@ -68,6 +81,20 @@ class VariableDataTypeTest {
                 Arguments.of("[ \\, ]", List.of(",")),
                 Arguments.of(" a, b\\,c, \\d\n, e\\,f ", List.of("a", "b,c", "\\d", "e,f")),
                 Arguments.of("[ ab\\\\,next]", List.of("ab\\\\", "next"))
+        );
+    }
+
+    private static Stream<Arguments> setFormatString() {
+        return Stream.of(
+                Arguments.of(null, null),
+                Arguments.of("", "[]"),
+                Arguments.of("c, a, b", "[a, b, c]"),
+                Arguments.of("[c, a, b]", "[a, b, c]"),
+                Arguments.of("  [b, a]  ", "[a, b]"),
+                Arguments.of("a", "[a]"),
+                Arguments.of("z, a, m", "[a, m, z]"),
+                Arguments.of("b\\,c, a", "[a, b\\,c]"),
+                Arguments.of("a, b, a, c, b", "[a, b, c]")
         );
     }
 

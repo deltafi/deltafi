@@ -341,6 +341,25 @@ class LeaderConfigServiceTest {
     }
 
     @Test
+    void computeDiff_setPropertySameValuesDifferentOrder_noDifference() {
+        // SET-typed properties should be normalized before snapshot creation,
+        // so identical values in different order should produce matching snapshot values
+        Snapshot leaderSnapshot = createSnapshot(
+                List.of(), List.of(), List.of(),
+                List.of(new KeyValue("allowedAnalyticsAnnotations", "a, b, c"))
+        );
+
+        Snapshot memberSnapshot = createSnapshot(
+                List.of(), List.of(), List.of(),
+                List.of(new KeyValue("allowedAnalyticsAnnotations", "a, b, c"))
+        );
+
+        ConfigDiff diff = leaderConfigService.computeDiffForTest(leaderSnapshot, memberSnapshot);
+
+        assertEquals(0, diff.totalDiffCount());
+    }
+
+    @Test
     void computeDiff_nullLists_handledGracefully() {
         Snapshot leaderSnapshot = new Snapshot();
         Snapshot memberSnapshot = new Snapshot();

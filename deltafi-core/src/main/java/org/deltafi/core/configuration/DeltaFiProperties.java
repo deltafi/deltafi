@@ -71,7 +71,7 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Name of the analytics group used to aggregate metrics. This provides a level of grouping more specific than data source.")
     private String analyticsGroupName;
 
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.LIST)
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.SET)
     private String allowedAnalyticsAnnotations;
 
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics export to the Parquet-based analytics collector", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
@@ -86,7 +86,7 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain provenance data before automatic deletion", defaultValue = "3", dataType = VariableDataType.NUMBER)
     private int provenanceAgeOffDays = 3;
 
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of annotation keys to include in provenance records", dataType = VariableDataType.LIST)
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of annotation keys to include in provenance records", dataType = VariableDataType.SET)
     private String provenanceAnnotationsAllowed;
 
     @PropertyInfo(group = PropertyGroup.DATA_RETENTION, description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13", dataType = VariableDataType.NUMBER)

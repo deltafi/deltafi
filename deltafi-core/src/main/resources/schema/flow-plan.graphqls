@@ -33,6 +33,7 @@ enum DataType {
   BOOLEAN
   NUMBER
   LIST
+  SET
   MAP
 }
 

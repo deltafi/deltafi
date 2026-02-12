@@ -21,6 +21,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -66,6 +67,25 @@ public enum VariableDataType {
     @Override
     public String formatString(String value) {
       return wrapIfMissing(value, "[", "]");
+    }
+
+    @Override
+    public Object convertValue(String value) {
+      return VariableDataType.readStringAsList(value);
+    }
+  },
+  SET {
+    @Override
+    public String formatString(String value) {
+      if (value == null) {
+        return null;
+      }
+      List<String> items = new ArrayList<>(readStringAsList(value));
+      Collections.sort(items);
+      return "[" + items.stream()
+              .distinct()
+              .map(item -> item.replace(",", "\\,"))
+              .collect(Collectors.joining(", ")) + "]";
     }
 
     @Override

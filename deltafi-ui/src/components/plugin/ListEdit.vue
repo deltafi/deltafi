@@ -31,6 +31,7 @@ import { ref, nextTick, onMounted, watch } from "vue";
 
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
+import { splitEscaped, escapeCommas } from "@/utils/collectionValues";
 
 const emit = defineEmits(["update:modelValue"]);
 const props = defineProps({
@@ -46,6 +47,8 @@ const listContainer = ref(null);
 const addButton = ref(null);
 // Flag to track when a new item is added so we can focus it after the update cycle completes
 const shouldFocusLast = ref(false);
+// Flag to suppress re-parsing modelValue when the change came from our own emitUpdate
+const isInternalUpdate = ref(false);
 
 // Focuses the last input in the list and scrolls the Add button into view
 const focusLastInput = async () => {
@@ -66,7 +69,7 @@ const loadListFromModelValue = async () => {
     if (Array.isArray(props.modelValue)) {
       list.value = props.modelValue;
     } else {
-      list.value = props.modelValue.split(",").map((i) => i.trim());
+      list.value = splitEscaped(props.modelValue);
     }
   }
   if (shouldFocusLast.value) {
@@ -81,17 +84,24 @@ onMounted(() => {
 
 // Emits the updated list value, filtering out any null or empty items
 const emitUpdate = () => {
+  isInternalUpdate.value = true;
   const filteredList = list.value.filter((item) => item !== null && item !== "");
   if (filteredList.length === 0) {
     emit("update:modelValue", null);
   } else {
-    emit("update:modelValue", filteredList.join(", "));
+    emit("update:modelValue", filteredList.map(escapeCommas).join(", "));
   }
 };
 
 watch(() => list.value, emitUpdate, { deep: true });
 
-watch(() => props.modelValue, loadListFromModelValue, { deep: true });
+watch(() => props.modelValue, () => {
+  if (isInternalUpdate.value) {
+    isInternalUpdate.value = false;
+    return;
+  }
+  loadListFromModelValue();
+}, { deep: true });
 
 // Adds a new item and sets flag to focus it after the Vue update cycle completes
 const addItem = () => {

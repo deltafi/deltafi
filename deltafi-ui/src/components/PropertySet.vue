@@ -42,6 +42,9 @@
                 </span>
                 <span v-if="data.value == null"><em>null</em></span>
                 <span v-else-if="data.value === ''"><em>empty string</em></span>
+                <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
+                  <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                </template>
                 <span v-else>{{ data.value }}</span>
               </div>
             </template>
@@ -59,6 +62,9 @@
                   </span>
                   <span v-if="data.value == null"><em>null</em></span>
                   <span v-else-if="data.value === ''"><em>empty string</em></span>
+                  <template v-else-if="COLLECTION_TYPES.includes(data.dataType)">
+                    <Chip v-for="item in viewList(data.value)" :key="item" v-tooltip.bottom="item.length > 20 ? item : undefined" :label="item" class="mr-1 mb-1 truncate-chip" />
+                  </template>
                   <span v-else>{{ data.value }}</span>
                 </div>
               </PropertyEditDialog>
@@ -71,11 +77,13 @@
 </template>
 
 <script setup>
+import Chip from "primevue/chip";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import SystemPropertySwitch from "@/components/SystemPropertySwitch.vue";
 import PropertyEditDialog from "@/components/properties/PropertyEditDialog.vue";
+import { splitEscaped, COLLECTION_TYPES } from "@/utils/collectionValues";
 import { computed, inject, reactive } from "vue";
 import _ from "lodash";
 
@@ -92,6 +100,8 @@ const emit = defineEmits(["updated"]);
 
 const propertySet = reactive(props.propSet);
 const visibleProperties = computed(() => propertySet.properties.filter((p) => !p.hidden));
+
+const viewList = splitEscaped;
 
 const tooltipText = (property) => {
   const parts = [];
@@ -117,6 +127,7 @@ const onSaved = (property) => {
     padding: 0.5rem !important;
     width: 100%;
     display: flex;
+    flex-wrap: wrap;
   }
 
   .value-clickable {
@@ -124,10 +135,23 @@ const onSaved = (property) => {
     padding: 0.5rem !important;
     width: 100%;
     display: flex;
+    flex-wrap: wrap;
   }
 
   .value-clickable>* {
     flex: 0 0 auto;
+  }
+
+  .truncate-chip {
+    max-width: 200px;
+    overflow: hidden;
+
+    .p-chip-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 }
 </style>

@@ -31,7 +31,7 @@
         </div>
       </template>
       <div ref="inputContainer">
-        <ListEdit v-if="localProperty.dataType === 'LIST'" v-model="localProperty.value" />
+        <ListEdit v-if="localProperty.dataType === 'LIST' || localProperty.dataType === 'SET'" v-model="localProperty.value" />
         <MapEdit v-if="localProperty.dataType === 'MAP'" v-model="localProperty.value" />
         <span v-if="localProperty.dataType === 'STRING'">
           <TextArea v-if="textArea" v-model="localProperty.value" style="width: 100%" rows="5" />
@@ -62,6 +62,7 @@ import MapEdit from "@/components/plugin/MapEdit.vue";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import usePropertySets from "@/composables/usePropertySets";
+import { splitEscaped, escapeCommas } from "@/utils/collectionValues";
 import { computed, toRefs, ref, watch, nextTick } from "vue";
 
 import _ from "lodash";
@@ -107,7 +108,7 @@ watch(
   () => localProperty.value.value,
   () => {
     // Only auto-focus for simple types, not LIST/MAP which manage their own focus
-    if (localProperty.value.dataType !== "LIST" && localProperty.value.dataType !== "MAP") {
+    if (localProperty.value.dataType !== "LIST" && localProperty.value.dataType !== "SET" && localProperty.value.dataType !== "MAP") {
       setFocus();
     }
   }
@@ -149,6 +150,14 @@ const updateValue = computed(() => {
   return localProperty.value.value === null ? null : localProperty.value.value.toString();
 });
 
+const normalizeSetValue = () => {
+  if (localProperty.value.dataType === "SET" && localProperty.value.value) {
+    const items = splitEscaped(localProperty.value.value);
+    const unique = [...new Set(items)].sort();
+    localProperty.value.value = unique.map(escapeCommas).join(", ");
+  }
+};
+
 const save = async (setNull = false) => {
   saving.value = true;
   let response = null;
@@ -181,11 +190,13 @@ const save = async (setNull = false) => {
       saving.value = false;
     } else {
       // No errors but updateSuccessful is false means no changes were made
+      normalizeSetValue();
       emit("saved", localProperty.value);
       saving.value = false;
       hide();
     }
   } else {
+    normalizeSetValue();
     emit("saved", localProperty.value);
     notify.success(`${pluginCoordinates.value ? "Plugin variable" : "System Property"} updated successfully.`, `${pluginCoordinates.value ? localProperty.value.name : localProperty.value.key}`);
     saving.value = false;
