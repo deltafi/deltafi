@@ -35,8 +35,11 @@
     <Dialog v-model:visible="idle" header="Are you still there?" :modal="true" :style="{ width: '25vw' }">
       <p>All background network activity has been paused due to user inactivity. Move the mouse to resume.</p>
     </Dialog>
-    <Dialog v-model:visible="showMotd" header="Message of the Day" :modal="true" :closable="true" :dismissableMask="true" :style="{ width: '30vw', minWidth: '300px' }" @hide="dismissMotd">
+    <Dialog v-model:visible="showMotd" header="Message of the Day" :modal="true" :closable="false" :style="{ width: '30vw', minWidth: '300px' }">
       <div v-html="renderMarkdown(uiConfig.messageOfTheDay || '')" />
+      <template #footer>
+        <Button label="Acknowledge" @click="dismissMotd" />
+      </template>
     </Dialog>
   </div>
 </template>
@@ -47,6 +50,7 @@ import AppTopBar from "@/components/header/AppTopBar.vue";
 import AppMenu from "@/components/sidebar/AppMenu.vue";
 import FooterBanner from "@/components/footer/FooterBanner.vue";
 import CustomToast from "@/components/CustomToast.vue";
+import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import { useRoute } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
