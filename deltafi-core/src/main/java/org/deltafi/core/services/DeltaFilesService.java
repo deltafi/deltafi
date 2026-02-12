@@ -53,6 +53,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.*;
 import java.time.*;
@@ -121,6 +122,7 @@ public class DeltaFilesService {
     private final Optional<LocalContentStorageService> localContentStorageService;
     private final PluginService pluginService;
     private final FlowCacheService flowCacheService;
+    private final TransactionTemplate transactionTemplate;
     private final org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue valkeyQueue;
     private final ErrorCountService errorCountService;
 
@@ -2273,17 +2275,27 @@ public class DeltaFilesService {
         int queued = 0;
         int currentBatchSize = batchSize;
         while (currentBatchSize == batchSize) {
-            Map<String, Integer> countByFlow = new HashMap<>();
-            List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp, isEgressDisabled(), batchSize);
-            currentBatchSize = autoResumeDeltaFiles.size();
-            if (!autoResumeDeltaFiles.isEmpty()) {
+            // Run each batch in a transaction so the FOR UPDATE SKIP LOCKED row locks acquired
+            // by findReadyForAutoResume are held through resumeDeltaFiles, preventing concurrent
+            // core instances from processing the same DeltaFiles.
+            AutoResumeBatchResult batchResult = transactionTemplate.execute(status -> {
+                List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp, isEgressDisabled(), batchSize);
+                if (autoResumeDeltaFiles.isEmpty()) {
+                    return new AutoResumeBatchResult(0, Collections.emptyList(), Collections.emptyMap());
+                }
                 Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
                         .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
                 List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles, Collections.emptyList());
-                for (RetryResult result : results) {
+                return new AutoResumeBatchResult(autoResumeDeltaFiles.size(), results, flowByDid);
+            });
+
+            currentBatchSize = batchResult == null ? 0 : batchResult.size;
+            if (currentBatchSize > 0) {
+                Map<String, Integer> countByFlow = new HashMap<>();
+                for (RetryResult result : batchResult.results) {
                     if (result.getSuccess()) {
                         ++queued;
-                        String flow = flowByDid.get(result.getDid());
+                        String flow = batchResult.flowByDid.get(result.getDid());
                         Integer count = 1;
                         if (countByFlow.containsKey(flow)) {
                             count += countByFlow.get(flow);
@@ -2304,6 +2316,7 @@ public class DeltaFilesService {
         return queued;
     }
 
+    private record AutoResumeBatchResult(int size, List<RetryResult> results, Map<UUID, String> flowByDid) {}
 
     @SuppressWarnings("SameParameterValue")
     private void generateMetricsByName(String name, Map<String, Integer> countByFlow) {

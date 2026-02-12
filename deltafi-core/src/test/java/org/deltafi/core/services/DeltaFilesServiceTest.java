@@ -46,6 +46,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -138,11 +141,15 @@ class DeltaFilesServiceTest {
         this.fullFlowExemplarService = new FullFlowExemplarService(flowDefinitionService, utilService);
         this.pluginService = pluginService;
         this.flowCacheService = flowCacheService;
+        PlatformTransactionManager mockTxManager = mock(PlatformTransactionManager.class);
+        Mockito.lenient().when(mockTxManager.getTransaction(Mockito.any())).thenReturn(mock(TransactionStatus.class));
+        TransactionTemplate transactionTemplate = new TransactionTemplate(mockTxManager);
+
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, dataSinkService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, restDataSourceService, timedDataSourceService,
                 onErrorDataSourceService, queueManagementService, queuedAnnotationRepo, environment, new TestUUIDGenerator(), identityService,
-                flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, valkeyQueue, errorCountService);
+                flowDefinitionService, parameterResolver, Optional.empty(), pluginService, flowCacheService, transactionTemplate, valkeyQueue, errorCountService);
 
         // Default: assume all plugins are ready unless explicitly mocked otherwise
         Mockito.lenient().when(pluginService.isPluginReady(Mockito.any())).thenReturn(true);

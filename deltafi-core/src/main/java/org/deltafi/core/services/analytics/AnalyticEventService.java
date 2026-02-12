@@ -607,6 +607,10 @@ public class AnalyticEventService {
         }
 
         if (!batchParams.isEmpty()) {
+            // Sort by PK (did, annotation_key_id) to ensure consistent lock ordering across
+            // concurrent core instances, preventing deadlocks on the event_annotations table.
+            batchParams.sort(Comparator.<Object[], UUID>comparing(p -> (UUID) p[0])
+                    .thenComparingInt(p -> (Integer) p[1]));
             eventAnnotationsRepo.bulkUpsertAnnotations(batchParams);
         }
 

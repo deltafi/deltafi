@@ -240,18 +240,26 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return dids;
         }
 
-        // Update delta_files: increment requeue_count, set modified
+        // SKIP LOCKED avoids deadlocks with concurrent delete operations.
+        // Skipped rows are picked up on the next scheduled requeue cycle.
+        // RETURNING gives us the DIDs that were actually updated so the flows UPDATE stays consistent.
         String updateDeltaFiles = """
                 UPDATE delta_files
                 SET requeue_count = requeue_count + 1, modified = :modified
-                WHERE did IN (:dids)
+                WHERE did IN (SELECT did FROM delta_files WHERE did IN (:dids) FOR UPDATE SKIP LOCKED)
+                RETURNING did
             """;
-        entityManager.createNativeQuery(updateDeltaFiles)
+        @SuppressWarnings("unchecked")
+        List<UUID> updatedDids = entityManager.createNativeQuery(updateDeltaFiles, UUID.class)
                 .setParameter("modified", modified)
                 .setParameter("dids", dids)
-                .executeUpdate();
+                .getResultList();
 
-        // Update delta_file_flows: set state to IN_FLIGHT for paused flows that match criteria
+        if (updatedDids.isEmpty()) {
+            return updatedDids;
+        }
+
+        // Only update flows for DIDs whose delta_files row was actually updated above.
         String updateFlows = """
                 UPDATE delta_file_flows dff
                 SET state = 'IN_FLIGHT'
@@ -270,7 +278,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 )
             """;
         entityManager.createNativeQuery(updateFlows)
-                .setParameter("dids", dids)
+                .setParameter("dids", updatedDids)
                 .setParameter("skipRestDataSources", skipRestDataSources)
                 .setParameter("skipTimedDataSources", skipTimedDataSource)
                 .setParameter("skipTransforms", skipTransforms)
@@ -278,7 +286,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 .setParameter("excludeEgressActions", excludeEgressActions)
                 .executeUpdate();
 
-        return dids;
+        return updatedDids;
     }
 
     // SKIP LOCKED avoids deadlocks with concurrent delete operations.
@@ -458,6 +466,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 " WHERE " + conditions + " " +
                 orderBySql +
                 " LIMIT " + batchSize +
+                " FOR UPDATE SKIP LOCKED" +
                 ") " +
                 "DELETE FROM delta_files " +
                 "WHERE did IN (SELECT did FROM batch)";
@@ -1239,6 +1248,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     AND child.terminal = false
                 )
                 LIMIT :batchSize
+                FOR UPDATE OF df SKIP LOCKED
             )
             UPDATE delta_files df
             SET waiting_for_children = false,
