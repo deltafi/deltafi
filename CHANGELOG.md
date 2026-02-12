@@ -5,6 +5,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.49.5] - 2026-02-12
+
+### Added
+- PostgreSQL configuration parameters are now configurable via Helm values (Kubernetes) and site values (Compose)
+- PostgreSQL tuning documentation at Advanced Topics > PostgreSQL Tuning
+
+### Changed
+- Replaced the close button on the Message of the Day dialog with an Acknowledge button
+- PostgreSQL default `random_page_cost` set to `1.1` (SSD-optimized, was PostgreSQL default of `4.0`)
+- PostgreSQL default `effective_io_concurrency` set to `200` (SSD-optimized, was PostgreSQL default of `1`)
+- PostgreSQL default `log_autovacuum_min_duration` set to `0` (log all autovacuum runs, was disabled)
+- Lookup PostgreSQL instance now uses right-sized defaults: `shared_buffers=32MB`, `max_connections=100`, `max_worker_processes=4`
+- Simplified authorization to use path-based checks only (removed subdomain-based authorization)
+
+### Fixed
+- Added SKIP LOCKED protection to additional database operations to prevent deadlocks under concurrent load
+- Fixed thread safety issue with shared XPath instance in ExtractXml
+- DeltaFi UI will render regardless of the subdomain that is used
+- TUI: Fixed silent error handling in CA chain append command
+- TUI: Fixed shadowed error in compose secret directory lookup
+- TUI: Fixed nil context passed to GraphQL client
+
+### Removed
+- Removed subdomain ingresses for `metrics`, `ingress`, `victoriametrics`, and `minio` (K8s)
+- Removed subdomain routing from nginx configuration (Compose)
+
+### Tech-Debt/Refactor
+- Sped up allowed annotation lookup
+- Improved queue monitoring performance by batching Valkey queue size lookups
+- Update references to old action types in code comments and test data
+- Reuse DocumentBuilderFactory and DocumentBuilder in ExtractXml instead of creating new instances per content item
+- Pre-compile regex patterns in MetadataToContent to avoid repeated compilation per metadata entry
+
+### Upgrade and Migration
+- PostgreSQL now starts with SSD-optimized planner settings and autovacuum logging enabled. Review the [PostgreSQL Tuning](advanced/postgres-tuning.md) documentation for recommended `shared_buffers` sizing based on your host RAM (default remains 128MB).
+- Subdomain URLs (e.g., `metrics.local.deltafi`, `minio.local.deltafi`) will no longer work
+  - Use the main domain with appropriate paths instead
+
 ## [2.49.2] - 2026-02-11
 
 ### Added
@@ -5733,7 +5771,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.5...main
+[2.49.5]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.2...2.49.5
 [2.49.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.1...2.49.2
 [2.49.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.0...2.49.1
 [2.49.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.48.0...2.49.0
