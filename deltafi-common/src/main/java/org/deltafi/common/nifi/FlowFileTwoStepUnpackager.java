@@ -22,9 +22,32 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
+/**
+ * Unpacks FlowFile streams in two steps: first extracting attributes, then content.
+ */
 public interface FlowFileTwoStepUnpackager {
+    /**
+     * Reads and returns the attributes from the next FlowFile in the stream.
+     *
+     * @param in the InputStream to read attributes from
+     * @return a map of attribute key-value pairs
+     * @throws IOException if an I/O error occurs
+     */
     Map<String, String> unpackageAttributes(InputStream in) throws IOException;
+
+    /**
+     * Reads the content from the current FlowFile and writes it to the output stream.
+     *
+     * @param in the InputStream to read content from
+     * @param out the OutputStream to write content to
+     * @throws IOException if an I/O error occurs
+     */
     void unpackageContent(InputStream in, OutputStream out) throws IOException;
 
+    /**
+     * Returns whether there is more FlowFile data available in the stream.
+     *
+     * @return true if more data is available, false otherwise
+     */
     boolean hasMoreData();
 }

@@ -27,8 +27,19 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/** Executes GraphQL queries and extracts typed responses. */
 @SuppressWarnings("unused")
 public class GraphQLExecutor {
+    /**
+     * Execute a GraphQL query and extract a typed object from the response.
+     * @param graphQLClient the client to execute the query with
+     * @param queryRequest the query request to execute
+     * @param responseObjectPath the JSON path to extract the result from
+     * @param responseObjectClass the class to deserialize the result into
+     * @param <T> the response object type
+     * @return the extracted and deserialized response object
+     * @throws Exception if the query fails or contains errors
+     */
     public static <T> T executeQuery(GraphQLClient graphQLClient, GraphQLQueryRequest queryRequest,
             String responseObjectPath, Class<T> responseObjectClass) throws Exception {
         GraphQLResponse response = executeQuery(graphQLClient, queryRequest);
@@ -36,11 +47,26 @@ public class GraphQLExecutor {
         return response.extractValueAsObject(responseObjectPath, responseObjectClass);
     }
 
+    /**
+     * Execute a GraphQL query request and return the raw response.
+     * @param graphQLClient the client to execute the query with
+     * @param queryRequest the query request to execute
+     * @return the GraphQL response
+     * @throws Exception if the query fails or contains errors
+     */
     public static GraphQLResponse executeQuery(GraphQLClient graphQLClient, GraphQLQueryRequest queryRequest)
             throws Exception {
         return executeQuery(graphQLClient, queryRequest.serialize(), Collections.emptyMap());
     }
 
+    /**
+     * Execute a GraphQL query string with variables and return the raw response.
+     * @param graphQLClient the client to execute the query with
+     * @param query the GraphQL query string
+     * @param variables the query variables
+     * @return the GraphQL response
+     * @throws Exception if the query fails or contains errors
+     */
     public static GraphQLResponse executeQuery(GraphQLClient graphQLClient, @Language("graphql") String query,
             Map<String, Object> variables) throws Exception {
         GraphQLResponse response = graphQLClient.executeQuery(query, variables);

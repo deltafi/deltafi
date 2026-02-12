@@ -32,18 +32,29 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 
+/** Auto-configuration for HTTP clients and the {@link HttpService} bean. */
 @Slf4j
 @AutoConfiguration
 @AutoConfigureAfter(SslAutoConfiguration.class)
 public class HttpServiceAutoConfiguration {
 
+    /** Default connection timeout applied to all HTTP clients. */
     public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMillis(1000L);
     private final List<HttpClientCustomizer> httpClientCustomizers;
 
+    /**
+     * Construct the auto-configuration with the given HTTP client customizers.
+     * @param httpClientCustomizers customizers to apply to HTTP client builders
+     */
     public HttpServiceAutoConfiguration(List<HttpClientCustomizer> httpClientCustomizers) {
         this.httpClientCustomizers = httpClientCustomizers;
     }
 
+    /**
+     * Create a {@link HttpClient} bean configured with SSL and any registered customizers.
+     * @param sslContextProvider provides the SSL context for secure connections
+     * @return a configured {@link HttpClient}
+     */
     @Bean
     public HttpClient httpClient(SslContextProvider sslContextProvider) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
@@ -60,6 +71,11 @@ public class HttpServiceAutoConfiguration {
         return httpClientBuilder.build();
     }
 
+    /**
+     * Create an {@link OkHttpClient} bean configured with SSL and any registered customizers.
+     * @param sslContextProvider provides the SSL context for secure connections
+     * @return a configured {@link OkHttpClient}
+     */
     @Bean
     public OkHttpClient okHttpClient(SslContextProvider sslContextProvider) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -84,6 +100,11 @@ public class HttpServiceAutoConfiguration {
         return builder.build();
     }
 
+    /**
+     * Create an {@link HttpService} bean if one is not already defined.
+     * @param httpClient the HTTP client to use for requests
+     * @return a configured {@link HttpService}
+     */
     @Bean
     @ConditionalOnMissingBean
     public HttpService httpService(HttpClient httpClient) {

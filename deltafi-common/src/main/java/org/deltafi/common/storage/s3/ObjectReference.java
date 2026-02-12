@@ -22,11 +22,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** Points to an object or a range within an object in S3-compatible storage. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ObjectReference {
+    /** Sentinel value indicating the object size is not known. */
     public static final long UNKNOWN_SIZE = -1;
 
     private String bucket;
@@ -34,6 +36,11 @@ public class ObjectReference {
     private long offset;
     private long size;
 
+    /**
+     * Create a reference to an entire object with unknown size.
+     * @param bucket the storage bucket
+     * @param name the object name
+     */
     public ObjectReference(String bucket, String name) {
         this(bucket, name, 0, UNKNOWN_SIZE);
     }

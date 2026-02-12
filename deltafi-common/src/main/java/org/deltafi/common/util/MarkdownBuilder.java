@@ -21,23 +21,41 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.List;
 
+/**
+ * Builds markdown-formatted strings with support for lists, tables, and JSON blocks.
+ */
 public class MarkdownBuilder {
     private static final char NEWLINE = '\n';
 
     private final StringBuilder markdown;
 
+    /** Creates an empty MarkdownBuilder. */
     public MarkdownBuilder() {
         markdown = new StringBuilder();
     }
 
+    /**
+     * Creates a MarkdownBuilder initialized with the given content.
+     * @param content the initial content
+     */
     public MarkdownBuilder(String content) {
         markdown = new StringBuilder(content);
     }
 
+    /**
+     * Returns the built markdown string.
+     * @return the markdown content
+     */
     public String build() {
         return markdown.toString();
     }
 
+    /**
+     * Adds a bulleted list with a title.
+     * @param title the list title
+     * @param items the list items
+     * @return this builder
+     */
     public MarkdownBuilder addList(String title, List<String> items) {
         if (items != null && !items.isEmpty()) {
             String blob = title + "\n* " + String.join("\n* ", items) + NEWLINE;
@@ -49,12 +67,30 @@ public class MarkdownBuilder {
         return this;
     }
 
+    /**
+     * Adds a table with left-aligned, JSON-escaped columns.
+     * @param columnHeaders the column header names
+     * @param rows the table rows
+     * @return this builder
+     */
     public MarkdownBuilder addSimpleTable(List<String> columnHeaders, List<List<String>> rows) {
         return addTable(columnHeaders.stream().map(header -> new ColumnDef(header, false, true)).toList(), rows);
     }
 
+    /**
+     * Defines a table column with header text, alignment, and JSON escaping behavior.
+     * @param header the column header text
+     * @param center whether to center-align the column
+     * @param escapeJson whether to escape cell values as JSON
+     */
     public record ColumnDef(String header, boolean center, boolean escapeJson) {}
 
+    /**
+     * Adds a table with the given column definitions and rows.
+     * @param columnDefs the column definitions
+     * @param rows the table rows
+     * @return this builder
+     */
     public MarkdownBuilder addTable(List<ColumnDef> columnDefs, List<List<String>> rows) {
         if (rows == null || rows.isEmpty()) {
             return this;
@@ -123,6 +159,12 @@ public class MarkdownBuilder {
         table.append(NEWLINE);
     }
 
+    /**
+     * Adds a titled JSON code block with escaped content.
+     * @param title the block title
+     * @param jsonLog the JSON content
+     * @return this builder
+     */
     public MarkdownBuilder addJsonBlock(String title, String jsonLog) {
         String blob = title + "\n```json\n" + StringEscapeUtils.escapeJson(jsonLog) + "```";
         if (!markdown.isEmpty()) {
@@ -132,11 +174,21 @@ public class MarkdownBuilder {
         return this;
     }
 
+    /**
+     * Appends a character to the markdown content.
+     * @param content the character to append
+     * @return this builder
+     */
     public MarkdownBuilder append(char content) {
         markdown.append(content);
         return this;
     }
 
+    /**
+     * Appends a string to the markdown content.
+     * @param content the string to append
+     * @return this builder
+     */
     public MarkdownBuilder append(String content) {
         markdown.append(content);
         return this;

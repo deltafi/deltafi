@@ -19,6 +19,9 @@ package org.deltafi.common.uuid;
 
 import java.util.UUID;
 
+/**
+ * Generates random version-4 UUIDs.
+ */
 public class RandomUUIDGenerator implements UUIDGenerator {
     @Override
     public UUID generate() {

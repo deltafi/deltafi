@@ -22,6 +22,7 @@ import org.deltafi.common.storage.s3.ObjectReference;
 
 import java.util.*;
 
+/** Represents a byte range within a content object stored in S3. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,22 +32,44 @@ public class Segment {
     private long size;
     private UUID did;
 
+    /**
+     * Create a segment with a random UUID for the given DeltaFile.
+     * @param did DeltaFile ID that owns this segment
+     */
     public Segment(UUID did) {
         this(UUID.randomUUID(), did);
     }
 
+    /**
+     * Copy constructor.
+     * @param other segment to copy
+     */
     public Segment(Segment other) {
         this(other.getUuid(), other.getOffset(), other.getSize(), other.getDid());
     }
 
+    /**
+     * Create a segment with the given UUID and DeltaFile ID, starting at offset 0 with unknown size.
+     * @param uuid segment identifier
+     * @param did DeltaFile ID that owns this segment
+     */
     public Segment(UUID uuid, UUID did) {
         this(uuid, 0, ObjectReference.UNKNOWN_SIZE, did);
     }
 
+    /**
+     * Build the S3 object name for this segment.
+     * @return the object name derived from the DeltaFile ID and segment UUID
+     */
     public String objectName() {
         return objectName(did, uuid);
     }
 
+    /**
+     * Create a segment by parsing an S3 object name.
+     * @param objectName S3 object name in the format "prefix/did/uuid"
+     * @param size size of the segment in bytes
+     */
     public Segment(String objectName, long size) {
         String[] parts = objectName.split("/");
         if (parts.length != 3) {
@@ -60,10 +83,21 @@ public class Segment {
         segment.setSize(size);
     }
 
+    /**
+     * Build the S3 object name for the given DeltaFile ID and object ID.
+     * @param did DeltaFile ID
+     * @param objectId object identifier
+     * @return the S3 object name
+     */
     public static String objectName(UUID did, UUID objectId) {
         return did.toString().substring(0, 3) + "/" + did + "/" + objectId;
     }
 
+    /**
+     * Calculate the total non-overlapping byte size across all segments.
+     * @param segments set of segments to measure
+     * @return total size in bytes, accounting for overlapping ranges
+     */
     public static long calculateTotalSize(Set<Segment> segments) {
         Map<UUID, List<Segment>> segmentsByUuid = new HashMap<>();
 

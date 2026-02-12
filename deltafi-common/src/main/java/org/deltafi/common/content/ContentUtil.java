@@ -21,7 +21,15 @@ import org.deltafi.common.types.Content;
 
 import java.util.List;
 
+/**
+ * Utility methods for working with content.
+ */
 public class ContentUtil {
+    /**
+     * Compute the total size of all content in the list.
+     * @param content the list of content items
+     * @return the sum of all content sizes, or 0 if the list is null or empty
+     */
     public static Long computeContentSize(List<Content> content) {
         if (content == null || content.isEmpty()) {
             return 0L;

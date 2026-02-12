@@ -19,9 +19,13 @@ package org.deltafi.common.content;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** Configuration properties for content storage.
+ * @param bucketName name of the S3 bucket used for content storage */
 @ConfigurationProperties("storage")
 public record StorageProperties(String bucketName) {
+    /** Default bucket name. */
     public static final String STORAGE = "storage";
+    /** Normalize the bucket name, defaulting to {@link #STORAGE} if blank. */
     public StorageProperties {
         if (bucketName == null || bucketName.isBlank()) {
             bucketName = STORAGE;

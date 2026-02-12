@@ -27,6 +27,9 @@ import org.deltafi.common.util.MarkdownBuilder;
 
 import java.util.*;
 
+/**
+ * Generates Markdown documentation from action descriptors and their JSON schemas.
+ */
 @Slf4j
 public class DocumentationGenerator {
     private static final List<MarkdownBuilder.ColumnDef> PARAMETER_TABLE_COLUMNS =

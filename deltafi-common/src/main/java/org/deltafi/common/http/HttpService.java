@@ -40,6 +40,13 @@ public class HttpService {
 
     private final HttpClient httpClient;
 
+    /**
+     * Create an {@link HttpRequest.Builder} with the given URL, headers, and content type.
+     * @param url the request URL
+     * @param headers headers to add to the request
+     * @param mediaType the content type to set if not already present in headers
+     * @return a configured request builder
+     */
     public static HttpRequest.Builder newRequestBuilder(@NotNull String url, @NotNull Map<String, String> headers, @NotNull String mediaType) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url));
@@ -50,6 +57,14 @@ public class HttpService {
         return requestBuilder;
     }
 
+    /**
+     * Execute an HTTP request and return the response.
+     * @param request the HTTP request to send
+     * @param bodyHandler the response body handler
+     * @param <T> the response body type
+     * @return the HTTP response
+     * @throws HttpSendException if sending the request fails
+     */
     public <T> HttpResponse<T> execute(@NotNull HttpRequest request, @NotNull HttpResponse.BodyHandler<T> bodyHandler) throws HttpSendException {
         try {
             // TODO: Should exceptions be thrown for 4xx return codes?

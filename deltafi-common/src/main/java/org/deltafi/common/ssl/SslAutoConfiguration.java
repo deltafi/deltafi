@@ -28,10 +28,20 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Auto-configuration that creates an {@link SslContextProvider} from PEM certificate files. */
 @Slf4j
 @AutoConfiguration
 public class SslAutoConfiguration {
 
+    /**
+     * Create an {@link SslContextProvider} configured from PEM key and certificate files.
+     * @param keyPath path to the private key file
+     * @param certPath path to the certificate file
+     * @param caChainPath path to the CA chain file
+     * @param protocol SSL/TLS protocol version
+     * @param keyPass private key password
+     * @return the configured SslContextProvider
+     */
     @Bean
     public SslContextProvider sslContextProvider(
             @Value("${KEY_PATH:/certs/tls.key}") String keyPath,

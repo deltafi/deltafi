@@ -28,10 +28,16 @@ import org.springframework.context.annotation.Bean;
 
 import java.util.concurrent.TimeUnit;
 
+/** Auto-configures the MinIO client and object storage service beans. */
 @AutoConfiguration
 @EnableConfigurationProperties(MinioProperties.class)
 public class MinioAutoConfiguration {
 
+    /**
+     * Create a MinIO client configured from the application properties.
+     * @param minioProperties the MinIO connection properties
+     * @return a configured MinIO client
+     */
     @Bean
     public MinioClient minioClient(MinioProperties minioProperties) {
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
@@ -49,6 +55,12 @@ public class MinioAutoConfiguration {
         return builder.build();
     }
 
+    /**
+     * Create the MinIO-backed object storage service if no other implementation is present.
+     * @param minioClient the MinIO client
+     * @param minioProperties the MinIO connection properties
+     * @return a MinIO object storage service
+     */
     @Bean
     @ConditionalOnMissingBean
     public MinioObjectStorageService minioObjectStorageService(MinioClient minioClient,

@@ -21,11 +21,29 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Objects;
 
+/**
+ * Reads classpath resources as strings.
+ */
 public class Resource {
+    /**
+     * Reads a classpath resource as a string using the default charset.
+     *
+     * @param path the classpath resource path
+     * @return the resource content as a string
+     * @throws IOException if the resource cannot be read
+     */
     public static String read(String path) throws IOException {
         return new String(Objects.requireNonNull(Resource.class.getResourceAsStream(path)).readAllBytes());
     }
 
+    /**
+     * Reads a classpath resource as a string using the specified charset.
+     *
+     * @param path the classpath resource path
+     * @param charset the charset to use for decoding
+     * @return the resource content as a string
+     * @throws IOException if the resource cannot be read
+     */
     public static String read(String path, Charset charset) throws IOException {
         return new String(Objects.requireNonNull(Resource.class.getResourceAsStream(path)).readAllBytes(), charset);
     }

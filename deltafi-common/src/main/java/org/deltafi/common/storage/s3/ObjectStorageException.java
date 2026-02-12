@@ -17,16 +17,30 @@
  */
 package org.deltafi.common.storage.s3;
 
+/** Exception thrown when an object storage operation fails. */
 public class ObjectStorageException extends Exception {
 
+    /**
+     * Construct an ObjectStorageException with a message.
+     * @param message description of the failure
+     */
     public ObjectStorageException(String message) {
         super(message);
     }
 
+    /**
+     * Construct an ObjectStorageException with a cause.
+     * @param cause the underlying cause
+     */
     public ObjectStorageException(Throwable cause) {
         super(cause);
     }
 
+    /**
+     * Construct an ObjectStorageException with a message and cause.
+     * @param message description of the failure
+     * @param cause the underlying cause
+     */
     public ObjectStorageException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -25,6 +25,9 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
+/**
+ * Logs diagnostic information and forces JVM shutdown when application startup fails.
+ */
 @Slf4j
 public class StartupFailureListener implements ApplicationListener<ApplicationFailedEvent> {
 

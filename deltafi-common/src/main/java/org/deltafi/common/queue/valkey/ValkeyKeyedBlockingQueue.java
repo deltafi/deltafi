@@ -38,9 +38,13 @@ import java.util.function.Predicate;
  */
 @Slf4j
 public class ValkeyKeyedBlockingQueue {
+    /** Valkey channel prefix for server-sent events. */
     public static final String SSE_VALKEY_CHANNEL_PREFIX = "org.deltafi.ui.sse";
+    /** Valkey hash key for action queue heartbeats. */
     public static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
+    /** Valkey hash key for long-running task tracking. */
     public static final String LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks";
+    /** Valkey hash key for monitor status. */
     public static final String MONITOR_STATUS_HASH = "org.deltafi.monitor.status";
 
     private final JedisPool jedisPool;
@@ -67,7 +71,13 @@ public class ValkeyKeyedBlockingQueue {
     }
 
     /**
-     * Helper method to create a JedisPool with specified configuration.
+     * Creates a JedisPool with specified configuration.
+     *
+     * @param eventQueueProperties the queue configuration properties
+     * @param maxTotal the maximum number of pooled connections
+     * @param maxIdle the maximum number of idle connections
+     * @return the configured JedisPool
+     * @throws URISyntaxException if the URL is invalid
      */
     public static JedisPool createJedisPool(EventQueueProperties eventQueueProperties, int maxTotal, int maxIdle) throws URISyntaxException {
         GenericObjectPoolConfig<Jedis> poolConfig = new GenericObjectPoolConfig<>();
@@ -188,6 +198,11 @@ public class ValkeyKeyedBlockingQueue {
         return heartbeats(null, heartbeat -> heartbeat.isAfter(staleMarker));
     }
 
+    /**
+     * Get the set of DGS queue names with heartbeats older than 5 minutes.
+     *
+     * @return set of stale DGS queue names
+     */
     public Set<String> getOldDgsQueues() {
         return heartbeats("dgs-", heartbeat -> heartbeat.isBefore(OffsetDateTime.now().minusMinutes(5)));
     }
@@ -221,6 +236,13 @@ public class ValkeyKeyedBlockingQueue {
         return take(0, keys);
     }
 
+    /**
+     * Takes an object out of the queue, waiting up to the specified timeout.
+     *
+     * @param timeout the maximum time in seconds to wait (0 for indefinite)
+     * @param keys the keys for the object
+     * @return the object value, or null if the timeout expires
+     */
     public String take(double timeout, String... keys) {
         try (Jedis jedis = jedisPool.getResource()) {
             try {
@@ -370,6 +392,12 @@ public class ValkeyKeyedBlockingQueue {
         return result;
     }
 
+    /**
+     * Get the value associated with the given key.
+     *
+     * @param key the key to look up
+     * @return the value, or null if the key does not exist
+     */
     public String getByKey(String key) {
         try (Jedis jedis = jedisPool.getResource()) {
             return jedis.get(key);

@@ -23,9 +23,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Auto-configuration that creates a {@link ContentStorageService} bean when one is not already defined.
+ */
 @AutoConfiguration
 @EnableConfigurationProperties(StorageProperties.class)
 public class ContentStorageServiceAutoConfiguration {
+    /**
+     * Create a {@link ContentStorageService} using the configured storage properties.
+     * @param objectStorageService the object storage backend
+     * @param storageProperties the storage configuration properties
+     * @return a configured ContentStorageService
+     */
     @Bean
     @ConditionalOnMissingBean
     public ContentStorageService contentStorageService(ObjectStorageService objectStorageService, StorageProperties storageProperties) {

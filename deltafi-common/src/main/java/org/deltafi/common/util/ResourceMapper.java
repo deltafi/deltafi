@@ -31,8 +31,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Reads JSON and YAML resource files into Java objects.
+ */
 public class ResourceMapper {
 
+    /** ObjectMapper configured for JSON deserialization. */
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
@@ -45,6 +49,7 @@ public class ResourceMapper {
 
     /**
      * Read the content of the file and map it the type
+     * @param <T> the target type
      * @param file containing the content to read
      * @param type the class type to map to
      * @return the content of the file mapped to the given type
@@ -56,6 +61,7 @@ public class ResourceMapper {
 
     /**
      * Read the content of the resource and map it the type
+     * @param <T> the target type
      * @param resource containing the content to read
      * @param type the class type to map to
      * @return the content of the file mapped to the given type
@@ -67,6 +73,7 @@ public class ResourceMapper {
 
     /**
      * Read the content of the resource and map it using the valueTypeRef
+     * @param <T> the target type
      * @param resource containing the content to read
      * @param valueTypeRef TypeReference to use
      * @return the content of the file mapped to the given type
@@ -78,6 +85,7 @@ public class ResourceMapper {
 
     /**
      * Read the content of the resource and map it to a list of the given type
+     * @param <T> the target type
      * @param resource containing the content to read
      * @param type the class type to map to
      * @return the content of the file mapped to the given type

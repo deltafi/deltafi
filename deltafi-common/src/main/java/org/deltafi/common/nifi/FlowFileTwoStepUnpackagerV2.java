@@ -25,6 +25,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Unpacks FlowFile version 2 streams in two steps: attributes then content.
+ */
 public class FlowFileTwoStepUnpackagerV2 implements FlowFileTwoStepUnpackager {
     private final byte[] readBuffer = new byte[8192];
     private Map<String, String> nextAttributes = null;
@@ -35,6 +38,13 @@ public class FlowFileTwoStepUnpackagerV2 implements FlowFileTwoStepUnpackager {
         return nextAttributes != null || !haveReadSomething;
     }
 
+    /**
+     * Reads the attribute key-value pairs from the stream.
+     *
+     * @param in the InputStream to read from
+     * @return a map of attributes, or null if the end of stream is reached
+     * @throws IOException if an I/O error occurs
+     */
     protected Map<String, String> readAttributes(final InputStream in) throws IOException {
         final Map<String, String> attributes = new HashMap<>();
         final Integer numAttributes = readFieldLength(in); //read number of attributes
@@ -74,6 +84,13 @@ public class FlowFileTwoStepUnpackagerV2 implements FlowFileTwoStepUnpackager {
         haveReadSomething = true;
     }
 
+    /**
+     * Read a length-prefixed UTF-8 string from the stream.
+     *
+     * @param in the InputStream to read from
+     * @return the decoded string
+     * @throws IOException if an I/O error occurs or end of stream is reached unexpectedly
+     */
     protected String readString(final InputStream in) throws IOException {
         final Integer numBytes = readFieldLength(in);
         if (numBytes == null) {
@@ -95,6 +112,15 @@ public class FlowFileTwoStepUnpackagerV2 implements FlowFileTwoStepUnpackager {
         }
     }
 
+    /**
+     * Copies the specified number of bytes from the input stream to the output stream.
+     *
+     * @param in the InputStream to read from
+     * @param out the OutputStream to write to
+     * @param numBytes the number of bytes to copy
+     * @return the total number of bytes copied
+     * @throws IOException if an I/O error occurs or fewer bytes are available than expected
+     */
     protected long copy(final InputStream in, final OutputStream out, final long numBytes) throws IOException {
         int bytesRead;
         long totalBytesRead = 0L;
@@ -110,6 +136,13 @@ public class FlowFileTwoStepUnpackagerV2 implements FlowFileTwoStepUnpackager {
         return totalBytesRead;
     }
 
+    /**
+     * Reads an 8-byte big-endian long value from the stream.
+     *
+     * @param in the InputStream to read from
+     * @return the long value read
+     * @throws IOException if an I/O error occurs
+     */
     protected long readLong(final InputStream in) throws IOException {
         fillBuffer(in, readBuffer, 8);
         return (((long) readBuffer[0] << 56)

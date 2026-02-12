@@ -17,7 +17,15 @@
  */
 package org.deltafi.common.http;
 
+/** Thrown when sending an HTTP request fails. */
 public class HttpSendException extends RuntimeException {
+    /**
+     * Construct an HttpSendException with the given class name, HTTP method, reason, and cause.
+     * @param clazz the class name of the original exception
+     * @param method the HTTP method that was attempted
+     * @param reason the failure reason
+     * @param e the underlying cause
+     */
     public HttpSendException(String clazz, String method, String reason, Throwable e) {
         super(clazz + "/" + method + ": " + reason, e);
     }

@@ -17,16 +17,32 @@
  */
 package org.deltafi.common.util;
 
+/**
+ * Thrown when a parameter template cannot be resolved or contains errors.
+ */
 public class ParameterTemplateException extends Exception {
 
+    /**
+     * Creates an exception with the given message.
+     * @param message the detail message
+     */
     public ParameterTemplateException(String message) {
         super(message);
     }
 
+    /**
+     * Creates an exception with the given cause.
+     * @param cause the underlying cause
+     */
     public ParameterTemplateException(Throwable cause) {
         this(null, cause);
     }
 
+    /**
+     * Creates an exception for a specific template text with the given cause.
+     * @param text the template text that caused the error, or null
+     * @param cause the underlying cause
+     */
     public ParameterTemplateException(String text, Throwable cause) {
         super(message(text, cause.getMessage()), cause);
     }

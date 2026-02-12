@@ -38,12 +38,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/** {@link ObjectStorageService} implementation backed by MinIO. */
 @RequiredArgsConstructor
 @Slf4j
 public class MinioObjectStorageService implements ObjectStorageService {
 
+    /** Log message used when a put operation fails. */
     public static final String FAILED_TO_SAVE_INCOMING_OBJECT = "Failed to save incoming object";
+    /** The MinIO client used for all storage operations. */
     protected final MinioClient minioClient;
+    /** Configuration properties for MinIO connections. */
     protected final MinioProperties minioProperties;
 
     @Override

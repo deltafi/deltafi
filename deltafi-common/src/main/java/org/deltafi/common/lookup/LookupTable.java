@@ -24,6 +24,9 @@ import org.deltafi.common.types.Variable;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+/**
+ * Represents a lookup table with columns, key columns, and optional service-backed refresh behavior.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,6 +36,7 @@ public class LookupTable {
 
     private PluginCoordinates sourcePlugin;
 
+    /** Variables used for parameterized lookup queries. */
     protected List<Variable> variables;
 
     private List<String> columns;

@@ -27,15 +27,29 @@ import org.deltafi.common.types.SaveManyContent;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Provides load, save, and delete operations for content stored in object storage.
+ */
 public class ContentStorageService {
     final ObjectStorageService objectStorageService;
     final String contentBucket;
 
+    /**
+     * Create a ContentStorageService with the given storage backend and bucket.
+     * @param objectStorageService the object storage backend
+     * @param bucketName the bucket to use for content, or null to use the default
+     */
     public ContentStorageService(ObjectStorageService objectStorageService, String bucketName) {
         this.objectStorageService = objectStorageService;
         this.contentBucket = bucketName == null || bucketName.isBlank() ? StorageProperties.STORAGE : bucketName;
     }
 
+    /**
+     * Load the content from object storage as an InputStream.
+     * @param content the content to load
+     * @return an InputStream for reading the content bytes
+     * @throws ObjectStorageException if reading from object storage fails
+     */
     public InputStream load(Content content) throws ObjectStorageException {
         if (content.getSize() == 0) {
             return InputStream.nullInputStream();
@@ -77,6 +91,15 @@ public class ContentStorageService {
         }
     }
 
+    /**
+     * Save a byte array as content in object storage.
+     * @param did the DeltaFile ID used to derive the storage path
+     * @param content the bytes to store
+     * @param name the content name
+     * @param mediaType the media type of the content
+     * @return the saved Content with segment information
+     * @throws ObjectStorageException if writing to object storage fails
+     */
     public Content save(UUID did, byte[] content, String name, String mediaType) throws ObjectStorageException {
         if (content.length == 0) {
             return new Content(name, mediaType, Collections.emptyList());
@@ -85,6 +108,13 @@ public class ContentStorageService {
         return save(did, new ByteArrayInputStream(content), name, mediaType);
     }
 
+    /**
+     * Save multiple content items to object storage in a single batch operation.
+     * @param did the DeltaFile ID used to derive the storage paths
+     * @param saveManyContentList the list of content items to save
+     * @return the list of saved Content with segment information
+     * @throws ObjectStorageException if writing to object storage fails
+     */
     public List<Content> saveMany(UUID did, List<SaveManyContent> saveManyContentList) throws ObjectStorageException {
         List<Content> updatedContent = new ArrayList<>();
 
@@ -108,6 +138,15 @@ public class ContentStorageService {
         return updatedContent;
     }
 
+    /**
+     * Save an InputStream as content in object storage.
+     * @param did the DeltaFile ID used to derive the storage path
+     * @param inputStream the data to store
+     * @param name the content name
+     * @param mediaType the media type of the content
+     * @return the saved Content with segment information
+     * @throws ObjectStorageException if writing to object storage fails
+     */
     public Content save(UUID did, InputStream inputStream, String name, String mediaType) throws ObjectStorageException {
         Segment segment = new Segment(did);
 
@@ -127,6 +166,10 @@ public class ContentStorageService {
         }
     }
 
+    /**
+     * Delete all segments of the given content from object storage.
+     * @param content the content to delete
+     */
     public void delete(Content content) {
         if (content.getSegments().size() == 1) {
             objectStorageService.removeObject(buildObjectReference(content.getSegments().getFirst()));
@@ -135,6 +178,10 @@ public class ContentStorageService {
         }
     }
 
+    /**
+     * Delete all distinct objects referenced by the given segments from object storage.
+     * @param segments the segments whose objects should be deleted
+     */
     public void deleteAll(List<Segment> segments) {
         deleteAllByObjectName(segments.stream()
                     .map(Segment::objectName)
@@ -142,12 +189,21 @@ public class ContentStorageService {
                     .toList());
     }
 
+    /**
+     * Delete all objects with the given names from the content bucket.
+     * @param objectNames the object names to delete
+     */
     public void deleteAllByObjectName(List<String> objectNames) {
         if (!objectNames.isEmpty()) {
             objectStorageService.removeObjects(contentBucket, objectNames);
         }
     }
 
+    /**
+     * Get the total size of the object referenced by the given segment.
+     * @param segment the segment to look up
+     * @return the total size in bytes, or -1 if not found
+     */
     public long getTotalSize(Segment segment) {
         return objectStorageService.getTotalSize(buildObjectReference(segment));
     }

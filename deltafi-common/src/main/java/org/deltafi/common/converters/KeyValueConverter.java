@@ -26,8 +26,16 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
+/**
+ * Converts between {@link KeyValue} lists and {@link Map} representations.
+ */
 public class KeyValueConverter {
 
+    /**
+     * Converts a list of {@link KeyValue} pairs to a map.
+     * @param keyValues the key-value pairs to convert, or null
+     * @return a mutable map of the key-value pairs, or an empty map if null
+     */
     public static Map<String, String> convertKeyValues(List<KeyValue> keyValues) {
         if (keyValues == null) {
             return new HashMap<>();
@@ -35,6 +43,11 @@ public class KeyValueConverter {
         return keyValues.stream().collect(CustomCollector.toMap(KeyValue::getKey, KeyValue::getValue));
     }
 
+    /**
+     * Converts a map to a list of {@link KeyValue} pairs.
+     * @param map the map to convert, or null
+     * @return a list of key-value pairs, or an empty list if null
+     */
     public static List<KeyValue> fromMap(Map<String, String> map) {
         if (map == null) {
             return new ArrayList<>();
@@ -42,6 +55,11 @@ public class KeyValueConverter {
         return map.entrySet().stream().map(KeyValueConverter::fromMapEntry).toList();
     }
 
+    /**
+     * Converts a single map entry to a {@link KeyValue}.
+     * @param entry the map entry to convert
+     * @return a KeyValue representing the entry
+     */
     public static KeyValue fromMapEntry(Map.Entry<String, String> entry) {
         return new KeyValue(entry.getKey(), entry.getValue());
     }

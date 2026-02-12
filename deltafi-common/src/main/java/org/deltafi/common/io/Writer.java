@@ -20,6 +20,15 @@ package org.deltafi.common.io;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Writes bytes to a provided OutputStream.
+ */
 public interface Writer {
+    /**
+     * Writes bytes to the given OutputStream.
+     *
+     * @param outputStream the stream to write to
+     * @throws IOException if an I/O error occurs
+     */
     void write(OutputStream outputStream) throws IOException;
 }

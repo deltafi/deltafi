@@ -28,11 +28,18 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 
+/** Creates configured {@link GraphQLClient} instances that execute queries over HTTP. */
 @RequiredArgsConstructor
 @Slf4j
 public class GraphQLClientFactory {
     private final HttpClient httpClient;
 
+    /**
+     * Build a {@link GraphQLClient} that sends requests to the given URL.
+     * @param coreUrl the GraphQL endpoint URL
+     * @param headers optional header name/value pairs to include with each request
+     * @return a configured {@link GraphQLClient}
+     */
     public GraphQLClient build(String coreUrl, String... headers) {
         return GraphQLClient.createCustom(coreUrl, (url, defaultHeaders, body) -> {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()

@@ -22,6 +22,9 @@ import lombok.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Contains the rows returned from a {@link LookupTableEvent} query.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

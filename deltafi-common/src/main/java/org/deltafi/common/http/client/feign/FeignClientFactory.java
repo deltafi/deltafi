@@ -28,6 +28,9 @@ import org.deltafi.common.ssl.SslContextProvider;
 
 import java.util.List;
 
+/**
+ * Factory for building Feign HTTP clients with optional SSL support.
+ */
 public class FeignClientFactory {
     /**
      * Builds a client for the provided Feign-annotated interface. Methods of the interface will accept a URI to

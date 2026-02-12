@@ -20,6 +20,7 @@ package org.deltafi.common.storage.s3.minio;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** Configuration properties for connecting to a MinIO server. */
 @ConfigurationProperties("minio")
 @Data
 public class MinioProperties {

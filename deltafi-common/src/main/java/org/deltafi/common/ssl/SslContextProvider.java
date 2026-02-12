@@ -27,11 +27,16 @@ import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.util.Objects;
 
+/** Provides SSL context and key material from a PEM-based SSL bundle. */
 @Getter
 public class SslContextProvider {
     private final SslBundle bundle;
     private final boolean configured;
 
+    /**
+     * Create an SslContextProvider from the given PEM SSL bundle properties.
+     * @param properties PEM SSL bundle configuration
+     */
     public SslContextProvider(PemSslBundleProperties properties) {
         this.bundle = PropertiesSslBundle.get(Objects.requireNonNullElseGet(properties, PemSslBundleProperties::new));
         this.configured = bundle.getStores().getKeyStore() != null;
@@ -48,6 +53,7 @@ public class SslContextProvider {
     /**
      * Get the private key from the KeyStore
      * @return private key or null if SSL is not configured
+     * @throws SslException if the key cannot be extracted from the keystore
      */
     public Key getPrivateKey() throws SslException {
         if (!configured) {
@@ -65,7 +71,13 @@ public class SslContextProvider {
         }
     }
 
+    /** Exception thrown when SSL key or context operations fail. */
     public static class SslException extends Exception {
+        /**
+         * Construct an SslException with a message and cause.
+         * @param message description of the failure
+         * @param cause the underlying exception
+         */
         public SslException(String message, Throwable cause) {
             super(message, cause);
         }

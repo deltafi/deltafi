@@ -28,10 +28,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+/** Validates publish and subscribe rules for correctness and evaluability. */
 public class RuleValidator {
 
     private final RuleEvaluator ruleEvaluator;
 
+    /**
+     * Create a RuleValidator with the given evaluator.
+     * @param ruleEvaluator used to validate rule conditions
+     */
     public RuleValidator(RuleEvaluator ruleEvaluator) {
         this.ruleEvaluator = ruleEvaluator;
     }

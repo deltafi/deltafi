@@ -33,6 +33,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * Utilities for resolving SpEL templates in action parameters.
+ */
 public class ParameterUtil {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -42,6 +45,7 @@ public class ParameterUtil {
     private static final String PLACEHOLDER_PREFIX = "{{";
     private static final String PLACEHOLDER_SUFFIX = "}}";
 
+    /** Parser for SpEL expressions used in parameter templates. */
     public static final SpelExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
     private static final TemplateParserContext EXP_PARSER_CONTEXT = new TemplateParserContext(PLACEHOLDER_PREFIX, PLACEHOLDER_SUFFIX);
 

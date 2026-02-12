@@ -19,6 +19,14 @@ package org.deltafi.common.uuid;
 
 import java.util.UUID;
 
+/**
+ * Generates UUIDs.
+ */
 public interface UUIDGenerator {
+    /**
+     * Generates a new UUID.
+     *
+     * @return a new UUID
+     */
     UUID generate();
 }

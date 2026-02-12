@@ -17,9 +17,16 @@
  */
 package org.deltafi.common.nifi;
 
+/**
+ * MIME type constants for NiFi FlowFile content types.
+ */
 public class ContentType {
+    /** MIME type for FlowFile format (unversioned). */
     public static final String APPLICATION_FLOWFILE = "application/flowfile";
+    /** MIME type for FlowFile version 1 format. */
     public static final String APPLICATION_FLOWFILE_V_1 = "application/flowfile-v1";
+    /** MIME type for FlowFile version 2 format. */
     public static final String APPLICATION_FLOWFILE_V_2 = "application/flowfile-v2";
+    /** MIME type for FlowFile version 3 format. */
     public static final String APPLICATION_FLOWFILE_V_3 = "application/flowfile-v3";
 }

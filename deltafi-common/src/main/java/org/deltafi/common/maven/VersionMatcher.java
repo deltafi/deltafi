@@ -21,6 +21,9 @@ import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
 
+/**
+ * Checks Maven artifact versions against version range specifications.
+ */
 public class VersionMatcher {
     /**
      * Determine if a given version satisfies a version spec.

@@ -36,11 +36,22 @@ public class BoundedLineReader extends BufferedReader {
     @Getter
     private long bytesRead = 0;
 
+    /**
+     * Creates a BoundedLineReader with a default-sized input buffer.
+     * @param in the underlying reader
+     * @param maxLineSize the maximum number of bytes allowed in a single line
+     */
     public BoundedLineReader(Reader in, long maxLineSize) {
         super(in);
         setMaxLineSize(maxLineSize);
     }
 
+    /**
+     * Creates a BoundedLineReader with the specified input buffer size.
+     * @param in the underlying reader
+     * @param sz the size of the input buffer
+     * @param maxLineSize the maximum number of bytes allowed in a single line
+     */
     public BoundedLineReader(Reader in, int sz, long maxLineSize) {
         super(in, sz);
         setMaxLineSize(maxLineSize);

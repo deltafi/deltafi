@@ -66,10 +66,25 @@ public class WriterPipedInputStream extends PipedInputStream {
 
     private Future<?> future;
 
+    /**
+     * Constructs a WriterPipedInputStream with a default buffer size.
+     *
+     * @param writer the Writer that will supply bytes
+     * @param executorService the ExecutorService for the writing thread
+     * @throws IOException if an I/O error occurs
+     */
     protected WriterPipedInputStream(Writer writer, ExecutorService executorService) throws IOException {
         this(writer, executorService, DEFAULT_BUFFER_SIZE);
     }
 
+    /**
+     * Constructs a WriterPipedInputStream with the specified buffer size.
+     *
+     * @param writer the Writer that will supply bytes
+     * @param executorService the ExecutorService for the writing thread
+     * @param bufferSize the pipe buffer size in bytes
+     * @throws IOException if an I/O error occurs
+     */
     protected WriterPipedInputStream(Writer writer, ExecutorService executorService, int bufferSize) throws IOException {
         super(bufferSize);
 
@@ -79,6 +94,7 @@ public class WriterPipedInputStream extends PipedInputStream {
         pipedOutputStream = new PipedOutputStream(this);
     }
 
+    /** Starts the writer in a background thread using the configured ExecutorService. */
     protected void runPipeWriter() {
         future = executorService.submit(() -> {
             try (pipedOutputStream) {

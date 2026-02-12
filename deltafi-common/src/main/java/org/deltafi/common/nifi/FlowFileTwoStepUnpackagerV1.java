@@ -29,6 +29,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Unpacks FlowFile version 1 (tar-based) streams in two steps: attributes then content.
+ */
 public class FlowFileTwoStepUnpackagerV1 implements FlowFileTwoStepUnpackager {
     private int flowFilesRead = 0;
     private TarArchiveInputStream tarIn;

@@ -22,6 +22,9 @@ import lombok.Data;
 
 import java.time.OffsetDateTime;
 
+/**
+ * An entry in a Valkey sorted set, consisting of a key, value, and timestamp score.
+ */
 @AllArgsConstructor
 @Data
 public class SortedSetEntry {

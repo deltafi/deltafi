@@ -20,9 +20,13 @@ package org.deltafi.common.action;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Configuration properties for connecting to the Valkey event queue.
+ */
 @ConfigurationProperties("valkey")
 @Data
 public class EventQueueProperties {
+    /** Queue name used by deltafi-core. */
     public static final String DGS_QUEUE = "dgs";
 
     private String url = "http://localhost:6379";

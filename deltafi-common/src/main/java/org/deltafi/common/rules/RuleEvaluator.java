@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** Evaluates SpEL-based publish/subscribe routing conditions against DeltaFile metadata and content. */
 @Slf4j
 @Service
 public class RuleEvaluator {
@@ -71,6 +72,12 @@ public class RuleEvaluator {
         }
     }
 
+    /**
+     * Evaluate a SpEL condition against the given flow data.
+     * @param condition SpEL expression to evaluate, or null to return true
+     * @param deltaFileFlow the metadata and content to evaluate against
+     * @return true if the condition matches or is null
+     */
     boolean doEvaluateCondition(String condition, ImmutableDeltaFileFlow deltaFileFlow) {
         if (condition == null) {
             return true;
@@ -96,8 +103,11 @@ public class RuleEvaluator {
      * Holds a copy of the DeltaFileFlow metadata and content list to prevent
      * SpEL expressions from modifying the original DeltaFile.
      * Metadata values are wrapped in CoercibleString to enable numeric comparisons.
+     * @param metadata the metadata map with values wrapped in CoercibleString
+     * @param content the list of content objects
      */
     public record ImmutableDeltaFileFlow(Map<String, CoercibleString> metadata, List<Content> content) {
+        /** Create an ImmutableDeltaFileFlow with defensive copies of the given metadata and content. */
         public ImmutableDeltaFileFlow(Map<String, CoercibleString> metadata, List<Content> content) {
             this.metadata = Collections.unmodifiableMap(metadata);
             this.content = content.stream().map(Content::copy).toList();
@@ -105,6 +115,9 @@ public class RuleEvaluator {
 
         /**
          * Create an ImmutableDeltaFileFlow from raw String metadata.
+         * @param metadata the raw metadata map
+         * @param content the list of content objects
+         * @return a new ImmutableDeltaFileFlow with coerced metadata values
          */
         public static ImmutableDeltaFileFlow from(Map<String, String> metadata, List<Content> content) {
             Map<String, CoercibleString> coercibleMap = new java.util.HashMap<>();

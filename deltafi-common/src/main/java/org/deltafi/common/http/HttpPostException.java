@@ -17,7 +17,14 @@
  */
 package org.deltafi.common.http;
 
+/** Thrown when an HTTP POST request fails. */
 public class HttpPostException extends HttpSendException {
+    /**
+     * Construct an HttpPostException with the given class name, reason, and cause.
+     * @param clazz the class name of the original exception
+     * @param reason the failure reason
+     * @param e the underlying cause
+     */
     public HttpPostException(String clazz, String reason, Throwable e) {
         super(clazz, "POST", reason, e);
     }

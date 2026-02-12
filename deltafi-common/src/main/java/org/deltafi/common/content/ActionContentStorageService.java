@@ -26,15 +26,27 @@ import org.deltafi.common.types.SaveManyContent;
 import java.io.InputStream;
 import java.util.*;
 
+/**
+ * Tracks content saved during action execution and supports cleanup of unused content.
+ */
 public class ActionContentStorageService extends ContentStorageService {
 
     private final List<Content> savedContent;
 
+    /**
+     * Create an ActionContentStorageService that delegates to the given storage service.
+     * @param contentStorageService the storage service to delegate to
+     */
     public ActionContentStorageService(ContentStorageService contentStorageService) {
         super(contentStorageService.objectStorageService, contentStorageService.contentBucket);
         savedContent = new ArrayList<>();
     }
 
+    /**
+     * Create an ActionContentStorageService with the given storage backend and bucket.
+     * @param objectStorageService the object storage backend
+     * @param bucketName the bucket to use for content
+     */
     public ActionContentStorageService(ObjectStorageService objectStorageService, String bucketName) {
         super(objectStorageService, bucketName);
         savedContent = new ArrayList<>();
@@ -56,14 +68,26 @@ public class ActionContentStorageService extends ContentStorageService {
         return contents;
     }
 
+    /**
+     * Clear the list of tracked saved content.
+     */
     public void clear() {
         savedContent.clear();
     }
 
+    /**
+     * Return the number of tracked saved content items.
+     * @return the number of content items saved since the last clear
+     */
     public int savedContentSize() {
         return savedContent.size();
     }
 
+    /**
+     * Delete any saved content whose segments are not referenced by the given action event.
+     * @param event the action event whose content references determine what is still in use
+     * @return the number of segments deleted
+     */
     public int deleteUnusedContent(ActionEvent event) {
         int count = 0;
         if (!savedContent.isEmpty()) {

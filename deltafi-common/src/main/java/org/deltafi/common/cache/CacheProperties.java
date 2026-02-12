@@ -23,6 +23,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Configuration properties for Caffeine caches, mapped from the {@code cache} prefix.
+ * Each entry maps a cache name to a Caffeine spec string.
+ */
 @ConfigurationProperties("cache")
 @Data
 public class CacheProperties {

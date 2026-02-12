@@ -20,14 +20,24 @@ package org.deltafi.common.storage.s3;
 import lombok.Getter;
 import org.deltafi.common.content.Segment;
 
+/** Exception thrown when referenced content does not exist in object storage. */
 @Getter
 public class MissingContentException extends ObjectStorageException {
     private final transient Segment segment;
 
+    /**
+     * Construct a MissingContentException with no associated segment.
+     * @param message description of the missing content
+     */
     public MissingContentException(String message) {
         this(null, message);
     }
 
+    /**
+     * Construct a MissingContentException for a specific content segment.
+     * @param segment the content segment that was not found, or null if unknown
+     * @param message description of the missing content
+     */
     public MissingContentException(Segment segment, String message) {
         super(message);
         this.segment = segment;
