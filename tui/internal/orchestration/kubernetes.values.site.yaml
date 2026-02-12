@@ -1,7 +1,28 @@
 # Site values file for Kubernetes installation
 # To restore to defaults, remove this file and run 'deltafi up'
 ---
+# toggle specific subcharts on (true) or off (false)
+enable:
+  local_object_storage: true
+  redis: true
+  headlamp: true
+  promtail: true
+  loki: true
+  graphite: true
+  grafana: true
+
+# toggle groups of subcharts on (true) or off (false)
+tags:
+  metrics: true
+  logs: true
+
 deltafi:
+  core:
+    ssl:
+      secret: ssl-secret
+  ingress:
+    envVar:
+      HTTP_MAX_BODY_SIZE: 5G
   auth:
     mode: basic # basic, cert, or disabled
     secret: auth-secret
@@ -23,16 +44,28 @@ deltafi:
       #         - one
       ssl:
         secret: ssl-secret
-  ingress:
-    envVar:
-      HTTP_MAX_BODY_SIZE: 5G
   egress_sink:
     enabled: true
     drop_metadata: false
+  analytics:
+    enabled: true
+    persistence:
+      size: 50Gi
+  nodemonitor:
+    period: 9
+  fastdelete:
+    workersPerNode: 1
   clustermonitor:
     enabled: true
+    period: 9
+  plugins:
+    ssl:
+      secret: ssl-secret
   storage:
     bucketName: storage
+    url: http://deltafi-s3proxy:9000
+  lookup:
+    enabled: false
 
 # Kubernetes ingress config
 ingress:
@@ -42,3 +75,47 @@ ingress:
     # ssl_ciphers: "ECDHE-RSA-AES256-GCM-SHA384"
     secrets:
       default: local-deltafi-org
+
+# Postgres Configuration
+postgres:
+  version: 16
+  resources:
+    requests:
+     cpu:
+     memory:
+    limits:
+     cpu:
+     memory:
+  parameters:
+    shared_buffers: "128MB"
+    max_connections: "1000"
+    log_statement: "ddl"
+    log_min_duration_statement: "1000"
+    log_destination: "stderr"
+    logging_collector: "off"
+    log_autovacuum_min_duration: "0"
+    log_connections: "off"
+    log_disconnections: "off"
+    max_worker_processes: "16"
+    timescaledb.max_background_workers: "16"
+    wal_level: "logical"
+    max_replication_slots: "1"
+    random_page_cost: "1.1"
+    effective_io_concurrency: "200"
+  lookup:
+    parameters:
+      shared_buffers: "32MB"
+      max_connections: "100"
+      log_statement: "ddl"
+      log_min_duration_statement: "1000"
+      log_destination: "stderr"
+      logging_collector: "off"
+      log_autovacuum_min_duration: "0"
+      log_connections: "off"
+      log_disconnections: "off"
+      max_worker_processes: "4"
+      timescaledb.max_background_workers: "4"
+      wal_level: "logical"
+      max_replication_slots: "1"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
