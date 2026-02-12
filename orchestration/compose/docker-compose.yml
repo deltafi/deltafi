@@ -306,7 +306,7 @@ services:
   deltafi-postgres:
     image: ${POSTGRES}
     container_name: deltafi-postgres
-    command: [ "-c", "max_connections=1000" ]
+    command: ${POSTGRES_ARGS}
     env_file:
       - ${SECRETS_DIR}/postgres.env
     healthcheck:
@@ -332,7 +332,7 @@ services:
     profiles: ["lookup-tables"]
     image: ${POSTGRES}
     container_name: deltafi-postgres-lookup
-    command: [ "-c", "max_connections=1000" ]
+    command: ${POSTGRES_LOOKUP_ARGS}
     env_file:
       - ${SECRETS_DIR}/postgres.env
     healthcheck:

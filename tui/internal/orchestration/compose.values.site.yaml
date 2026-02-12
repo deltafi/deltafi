@@ -61,6 +61,10 @@ deltafi:
       audit_schedule:
         max_size: 100M
         keep: 365
+# postgres:
+#   parameters:
+#     shared_buffers: 2GB          # Recommend 25% of available RAM
+
 ingress:
   domain: local.deltafi.org
   tls:

@@ -27,6 +27,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -549,6 +550,35 @@ func (o *ComposeOrchestrator) getValueOr(values map[string]interface{}, path str
 	return defaultValue
 }
 
+// getValueMap navigates a dot-separated path and returns the map at that location, or nil.
+func (o *ComposeOrchestrator) getValueMap(values map[string]interface{}, path string) map[string]interface{} {
+	parts := strings.Split(path, ".")
+	current := values
+	for _, part := range parts {
+		if next, ok := current[part].(map[string]interface{}); ok {
+			current = next
+		} else {
+			return nil
+		}
+	}
+	return current
+}
+
+// buildPostgresArgs constructs a postgres command string from parameter values at the given path.
+func (o *ComposeOrchestrator) buildPostgresArgs(values map[string]interface{}, path string) string {
+	params := o.getValueMap(values, path)
+	if len(params) == 0 {
+		return ""
+	}
+
+	var args []string
+	for key, value := range params {
+		args = append(args, fmt.Sprintf("-c %s=%v", key, value))
+	}
+	sort.Strings(args)
+	return strings.Join(args, " ")
+}
+
 // localObjectStorageEnabled checks both enable.local_object_storage and the deprecated enable.minio flag.
 // Returns "true" or "false" as a string for use in environment variables.
 func (o *ComposeOrchestrator) localObjectStorageEnabled(values map[string]interface{}) string {
@@ -818,6 +848,8 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		"DOCKER_WEB_GUI":                       o.getValue(values, "dependencies.docker_web_gui"),
 		"ENTITY_AUTHORIZER_PORT":               o.getValueOr(values, "deltafi.auth.entityAuthorizer.port", "8080"),
 		"ENTITY_RESOLVER_PORT":                 o.getValue(values, "deltafi.auth.entityResolver.port"),
+		"POSTGRES_ARGS":                        o.buildPostgresArgs(values, "postgres.parameters"),
+		"POSTGRES_LOOKUP_ARGS":                 o.buildPostgresArgs(values, "postgres.lookup.parameters"),
 		"UI_HTTP_PORT":                         o.getValue(values, "ingress.ui.http_port"),
 		"UI_HTTPS_PORT":                        o.getValue(values, "ingress.ui.https_port"),
 	}

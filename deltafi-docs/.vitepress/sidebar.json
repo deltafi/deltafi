@@ -86,6 +86,7 @@
       { "text": "DeltaFile Annotations", "link": "/advanced/deltafile_annotations" },
       { "text": "Leader Member", "link": "/advanced/leader_member" },
       { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" },
+      { "text": "PostgreSQL Tuning", "link": "/advanced/postgres-tuning" },
       { "text": "Provenance Tracking", "link": "/advanced/provenance" }
     ]
   },

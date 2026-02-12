@@ -83,6 +83,25 @@ ingress:
   ui:
     http_port: 80
     https_port: 443
+postgres:
+  parameters:
+    max_connections: 1000
+    shared_buffers: 128MB
+    log_statement: ddl
+    log_min_duration_statement: 1000
+    log_autovacuum_min_duration: 0
+    random_page_cost: 1.1
+    effective_io_concurrency: 200
+  lookup:
+    parameters:
+      max_connections: 100
+      shared_buffers: 32MB
+      log_statement: ddl
+      log_min_duration_statement: 1000
+      log_autovacuum_min_duration: 0
+      random_page_cost: 1.1
+      effective_io_concurrency: 200
+
 dependencies:
   grafana: {{.GrafanaContainer}}
   victoriametrics: {{.VictoriaMetricsContainer}}
