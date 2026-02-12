@@ -38,6 +38,9 @@ import java.net.URI;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 
+// ABOUTME: Handles authentication/authorization for nginx auth_request subrequests.
+// ABOUTME: Verifies user permissions based on the requested path and sets response headers.
+
 @RestController
 @RequestMapping("/api/v2/auth")
 @Slf4j
@@ -47,14 +50,12 @@ public class AuthRest {
     private static final String ORCHESTRATION_PATH = "/orchestration";
     private static final String VISUALIZATION_PATH = "/visualization";
 
-    private final String domain;
     private final AuthProperties authProperties;
     private final String headlampToken;
     private final CoreAuditLogger auditLogger;
 
-    public AuthRest(@Value("${DELTAFI_UI_DOMAIN}") String domain, AuthProperties authProperties,
+    public AuthRest(AuthProperties authProperties,
             @Value("${HEADLAMP_TOKEN:#{null}}") String headlampToken, CoreAuditLogger auditLogger) {
-        this.domain = domain;
         this.authProperties = authProperties;
         this.headlampToken = headlampToken;
         this.auditLogger = auditLogger;
@@ -64,8 +65,6 @@ public class AuthRest {
     public void get(@AuthenticationPrincipal UserDetails user, HttpServletResponse response,
                     @RequestHeader(value = X_ORIGINAL_URL, required = false) String originalUrl) {
         if (user instanceof DeltaFiUserDetails deltaFiUserDetails) {
-            String requestedDomain = extractDomain(originalUrl);
-            verifyDomainAccess(requestedDomain, deltaFiUserDetails);
             String requestedPath = extractPath(originalUrl);
             verifyPathAccess(requestedPath, deltaFiUserDetails);
             response.setStatus(HttpServletResponse.SC_OK);
@@ -81,7 +80,7 @@ public class AuthRest {
         }
     }
 
-    private void verifyPathAccess(String requestedPath, DeltaFiUserDetails user) {
+    void verifyPathAccess(String requestedPath, DeltaFiUserDetails user) {
         if (authProperties.noAuth()) {
             return;
         }
@@ -96,37 +95,6 @@ public class AuthRest {
             auditLogger.audit("request to '{}' was denied due to missing permission '{}'", requestedPath, requiredPermission);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-    }
-
-    private void verifyDomainAccess(String requestedDomain, DeltaFiUserDetails user) {
-        if (authProperties.noAuth()) {
-            return;
-        }
-
-        // calls to the standard domain will use the regular required permissions method for authorization
-        if (this.domain.equals(requestedDomain)) {
-            return;
-        }
-
-        String requiredPermission = domainPermission(requestedDomain);
-
-        if (!user.hasPermission(requiredPermission)) {
-            auditLogger.audit("request to the '{}' domain was denied due to missing permission '{}'", requestedDomain, requiredPermission);
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-    }
-
-    private String domainPermission(String domain) {
-        // Make sure this a valid domain and take the first chunk
-        if (domain.contains(".") && domain.endsWith(this.domain)) {
-            domain = domain.substring(0, domain.indexOf("."));
-        }
-
-        return switch(domain) {
-            case "graphite", "metrics" -> "MetricsView";
-            case "ingress" -> "DeltaFileIngress";
-            default -> "Admin";
-        };
     }
 
     private String pathPermission(String path) {
@@ -145,24 +113,7 @@ public class AuthRest {
         return null;
     }
 
-    private String extractDomain(String originalUrl) {
-        if (StringUtils.isBlank(originalUrl)) {
-            throw new InvalidRequestException("Missing required header " + X_ORIGINAL_URL);
-        }
-
-        try {
-            String host = URI.create(originalUrl).getHost();
-            if (StringUtils.isBlank(host)) {
-                throw invalidRequestException();
-            }
-            return host;
-        } catch (IllegalArgumentException e) {
-            log.error("Illegal URL in auth check {}", originalUrl, e);
-            throw invalidRequestException();
-        }
-    }
-
-    private String extractPath(String originalUrl) {
+    String extractPath(String originalUrl) {
         if (StringUtils.isBlank(originalUrl)) {
             throw new InvalidRequestException("Missing required header " + X_ORIGINAL_URL);
         }

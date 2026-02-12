@@ -5,19 +5,6 @@ events {
 http {
     proxy_cache_path /tmp/nginx-cache-auth levels=1:2 keys_zone=auth_cache:10m max_size=128m inactive=30m use_temp_path=off;
 
-    map $host $upstream_mapping {
-        "~^ingress.*" "deltafi-core:8080/api/v2/deltafile/ingress";
-        "~^victoriametrics.*" "deltafi-victoriametrics:8428";
-        "~^minio.*" "deltafi-s3proxy:9000";
-        default "deltafi-core:8080";
-    }
-
-    map $host $serviceName_mapping {
-        "~^graphite.*" "Graphite";
-        "~^minio.*" "MinIO";
-        default "DeltaFi";
-    }
-
     map $request_uri $auth_cache_path {
         ~^/visualization  "visualization";
         ~^/logs           "logs";
@@ -123,43 +110,6 @@ http {
             internal;
             default_type application/json;
             return 503 '{"error": "Service Unavailable", "message": "Unable to complete the request within timeout, please try again later"}';
-        }
-    }
-
-    server {
-        include /opt/nginx/conf/listen.conf;
-        ${INCLUDE_CERT_AUTH}
-
-        server_name *.${DOMAIN};
-        location /api/v2/auth {
-            internal;
-            proxy_intercept_errors off;
-            client_max_body_size    10G;
-            set $upstream_auth deltafi-core:8080;
-            proxy_pass              http://$upstream_auth;
-            proxy_pass_request_body off;
-            proxy_set_header        Content-Length "";
-            proxy_set_header        X-Original-URL http://$http_host;
-            proxy_cache_key ${PROXY_CACHE_KEY}$auth_cache_path;
-            proxy_cache auth_cache;
-            proxy_cache_valid 200 1m;
-            error_page 502 503 504 =502;
-        }
-
-        location / {
-            client_max_body_size 10G;
-            proxy_pass           http://$upstream_mapping;
-        }
-
-        location @unavailable_page {
-            internal;
-            return 302 $scheme://${DOMAIN}/unavailable?service=$serviceName_mapping;
-        }
-
-        location @static_unavailable {
-            internal;
-            root /etc/nginx/html;
-            try_files /unavailable.html =503;
         }
     }
 

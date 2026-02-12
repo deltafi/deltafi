@@ -437,8 +437,7 @@ class DeltaFiCoreApplicationTests {
 
 		@Bean
 		public AuthRest authRest(CoreAuditLogger coreAuditLogger) {
-			// manually create bean to mock wiring in the domain
-			return new AuthRest("local.deltafi.org", new AuthProperties("disabled"), "", coreAuditLogger);
+			return new AuthRest(new AuthProperties("disabled"), "", coreAuditLogger);
 		}
 
 		@Bean

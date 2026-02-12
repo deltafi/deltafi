@@ -40,14 +40,6 @@ data:
     - deltafi-s3proxy
     {{- end }}
   Ingress: |
-    {{- if $grafanaEnabled }}
-    - deltafi-grafana
-    - deltafi-victoriametrics
-    {{- end }}
-    - deltafi-ingress
-    {{- if $minioEnabled }}
-    - deltafi-s3proxy
-    {{- end }}
     - deltafi-ui-ingress
   Service: |
     - deltafi-core-service

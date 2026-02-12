@@ -35,20 +35,19 @@ import static org.deltafi.common.constant.DeltaFiConstants.*;
 
 class AuthRestTest {
 
-    private static final DeltaFiUserDetails ADMIN  = DeltaFiUserDetails.builder().username("admin").permissionSet(Set.of("Admin")).build();
-    private static final DeltaFiUserDetails UIOnly = DeltaFiUserDetails.builder().username("ui").permissionSet(Set.of("UIAccess")).build();
+    private static final DeltaFiUserDetails ADMIN = DeltaFiUserDetails.builder().username("admin").permissionSet(Set.of("Admin")).build();
+    private static final DeltaFiUserDetails UI_ONLY = DeltaFiUserDetails.builder().username("ui").permissionSet(Set.of("UIAccess")).build();
     private static final DeltaFiUserDetails METRICS_VIEWER = DeltaFiUserDetails.builder().username("metrics").permissionSet(Set.of("UIAccess", "MetricsView")).build();
-    private final AuthRest authRest = new AuthRest("local.deltafi", new AuthProperties("cert"), "abcde", new CoreAuditLogger(Mockito.mock(EventService.class)));
+    private final AuthRest authRest = new AuthRest(new AuthProperties("cert"), "abcde", new CoreAuditLogger(Mockito.mock(EventService.class)));
 
     @Test
-    void testDomainCheckHasAccessAdminAccess() {
-        HttpServletResponse response = new MockHttpServletResponse();
-        // admin can go anywhere
-        assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi")).doesNotThrowAnyException();
-        assertThatCode(() -> authRest.get(ADMIN, response, "https://metrics.local.deltafi")).doesNotThrowAnyException();
-        assertThatCode(() -> authRest.get(ADMIN, response, "https://does.not.matter")).doesNotThrowAnyException();
+    void testAdminCanAccessAllPaths() {
+        MockHttpServletResponse response = new MockHttpServletResponse();
 
+        assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi/")).doesNotThrowAnyException();
         assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi/orchestration/c/main")).doesNotThrowAnyException();
+        assertThatCode(() -> authRest.get(ADMIN, response, "https://local.deltafi/visualization/dashboards")).doesNotThrowAnyException();
+
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_OK);
         assertThat(response.getHeader(USER_NAME_HEADER)).isEqualTo(ADMIN.getUsername());
         assertThat(response.getHeader(USER_ID_HEADER)).isEqualTo(ADMIN.getId());
@@ -58,37 +57,30 @@ class AuthRestTest {
     }
 
     @Test
-    void testDomainCheckUiOnlyAccess() {
-        // UI only user can get to domain only, not a subdomain
-        assertThatCode(() -> authRest.get(UIOnly, new MockHttpServletResponse(), "https://local.deltafi")).doesNotThrowAnyException();
-        assertThatThrownBy(() -> authRest.get(UIOnly, new MockHttpServletResponse(), "https://metrics.local.deltafi"))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessage("403 FORBIDDEN");
-    }
-
-    @Test
     void testPathAccessDeniedWithoutPermission() {
-        // UIOnly user (no Admin permission) should be denied access to orchestration paths
-        assertThatThrownBy(() -> authRest.get(UIOnly, new MockHttpServletResponse(), "https://local.deltafi/orchestration/c/main"))
+        assertThatThrownBy(() -> authRest.verifyPathAccess("/orchestration/c/main", UI_ONLY))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessage("403 FORBIDDEN");
 
-        // UIOnly user (no MetricsView permission) should be denied access to visualization paths
-        assertThatThrownBy(() -> authRest.get(UIOnly, new MockHttpServletResponse(), "https://local.deltafi/visualization/dashboards"))
+        assertThatThrownBy(() -> authRest.verifyPathAccess("/visualization/dashboards", UI_ONLY))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessage("403 FORBIDDEN");
     }
 
     @Test
     void testMetricsViewerCanAccessVisualizationButNotOrchestration() {
-        // MetricsView user can access visualization paths
-        assertThatCode(() -> authRest.get(METRICS_VIEWER, new MockHttpServletResponse(), "https://local.deltafi/visualization/dashboards"))
+        assertThatCode(() -> authRest.verifyPathAccess("/visualization/dashboards", METRICS_VIEWER))
                 .doesNotThrowAnyException();
 
-        // MetricsView user (no Admin permission) should be denied access to orchestration paths
-        assertThatThrownBy(() -> authRest.get(METRICS_VIEWER, new MockHttpServletResponse(), "https://local.deltafi/orchestration/c/main"))
+        assertThatThrownBy(() -> authRest.verifyPathAccess("/orchestration/c/main", METRICS_VIEWER))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessage("403 FORBIDDEN");
+    }
+
+    @Test
+    void testRegularPathsAllowedForAllUsers() {
+        assertThatCode(() -> authRest.verifyPathAccess("/api/v2/deltafiles", UI_ONLY)).doesNotThrowAnyException();
+        assertThatCode(() -> authRest.verifyPathAccess("/", UI_ONLY)).doesNotThrowAnyException();
     }
 
     @Test
@@ -100,25 +92,32 @@ class AuthRestTest {
 
     @Test
     void testNullHeadlampToken() {
-        AuthRest authRestNullToken = new AuthRest("local.deltafi", new AuthProperties("cert"), null, new CoreAuditLogger(Mockito.mock(EventService.class)));
+        AuthRest authRestNullToken = new AuthRest(new AuthProperties("cert"), null, new CoreAuditLogger(Mockito.mock(EventService.class)));
         MockHttpServletResponse response = new MockHttpServletResponse();
-        // Should not set a "Bearer null" header when token is null
         authRestNullToken.get(ADMIN, response, "https://local.deltafi/orchestration/c/main");
         assertThat(response.getHeader(AUTHORIZATION_HEADER)).isNull();
     }
 
     @Test
-    void testHostExtractionErrorHandling() {
-        assertThatThrownBy(() -> authRest.get(ADMIN, new MockHttpServletResponse(), null))
+    void testExtractPathErrorHandling() {
+        assertThatThrownBy(() -> authRest.extractPath(null))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Missing required header X-ORIGINAL-URL");
 
-        assertThatThrownBy(() -> authRest.get(ADMIN, new MockHttpServletResponse(), ""))
+        assertThatThrownBy(() -> authRest.extractPath(""))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Missing required header X-ORIGINAL-URL");
+    }
 
-        assertThatThrownBy(() -> authRest.get(ADMIN, new MockHttpServletResponse(), "htps:www.malformed"))
-                .isInstanceOf(InvalidRequestException.class)
-                .hasMessage("Invalid X-ORIGINAL-URL header provided");
+    @Test
+    void testExtractPathMalformedUrlReturnsNull() {
+        // Malformed URLs return null path, which passes auth (backend will reject)
+        assertThat(authRest.extractPath("htps:www.malformed")).isNull();
+    }
+
+    @Test
+    void testExtractPath() {
+        assertThat(authRest.extractPath("https://local.deltafi/orchestration/c/main")).isEqualTo("/orchestration/c/main");
+        assertThat(authRest.extractPath("https://local.deltafi/visualization/dashboards")).isEqualTo("/visualization/dashboards");
     }
 }

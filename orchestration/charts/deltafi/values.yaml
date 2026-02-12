@@ -6,7 +6,6 @@ enable:
   headlamp: true
   promtail: true
   loki: true
-  graphite: true
   grafana: true
 
 # toggle groups of subcharts on (true) or off (false)
@@ -331,13 +330,6 @@ promtail:
               stages:
               - static_labels:
                   level: "ERROR"
-        # Squelch nasty graphite debug logs
-        - match:
-            selector: '{app="graphite"}'
-            stages:
-              # Filtering out graphite debug logs containing "(Tagging|Tagged)"
-              - drop:
-                  expression: "Tagg"
         # Clear out excessive post messages
         - match:
             selector: '{app="deltafi-egress-sink"}'
