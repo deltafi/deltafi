@@ -123,7 +123,6 @@
       },
       "id": 8,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -224,7 +223,6 @@
       },
       "id": 3,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -324,7 +322,6 @@
       },
       "id": 9,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -425,7 +422,6 @@
       },
       "id": 7,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -855,7 +851,6 @@
       },
       "id": 17,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [

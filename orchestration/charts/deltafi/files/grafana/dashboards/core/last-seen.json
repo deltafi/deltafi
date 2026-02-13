@@ -115,7 +115,7 @@
       },
       "id": 46,
       "interval": "10s",
-      "maxDataPoints": 99999,
+      "maxDataPoints": 1,
       "options": {
         "colorMode": "value",
         "graphMode": "none",

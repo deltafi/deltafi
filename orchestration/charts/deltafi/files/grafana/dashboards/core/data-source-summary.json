@@ -158,7 +158,7 @@
       },
       "id": 25,
       "interval": "10s",
-      "maxDataPoints": 9999,
+      "maxDataPoints": 1,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -335,7 +335,6 @@
       },
       "id": 81,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -487,7 +486,7 @@
       },
       "id": 26,
       "interval": "10s",
-      "maxDataPoints": 9999,
+      "maxDataPoints": 1,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -694,7 +693,6 @@
       },
       "id": 23,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -794,7 +792,6 @@
       },
       "id": 73,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "calculate": false,
         "calculation": {},
@@ -814,7 +811,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1e-09
         },
         "legend": {
           "show": true,
@@ -945,7 +942,7 @@
       },
       "id": 35,
       "interval": "10s",
-      "maxDataPoints": 9999,
+      "maxDataPoints": 1,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -1091,7 +1088,6 @@
       },
       "id": 38,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -1244,7 +1240,7 @@
       },
       "id": 40,
       "interval": "10s",
-      "maxDataPoints": 9999,
+      "maxDataPoints": 1,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
@@ -1466,7 +1462,6 @@
       },
       "id": 41,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],

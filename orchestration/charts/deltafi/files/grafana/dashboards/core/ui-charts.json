@@ -603,7 +603,6 @@
       },
       "id": 1,
       "interval": "10s",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
@@ -702,7 +701,6 @@
       },
       "id": 2,
       "interval": "1m",
-      "maxDataPoints": 99999,
       "options": {
         "legend": {
           "calcs": [],
