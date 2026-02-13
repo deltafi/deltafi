@@ -35,7 +35,7 @@ import java.util.*;
 
 @AllArgsConstructor
 @Slf4j
-public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements Snapshotter {
+public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo<FlowT>> implements Snapshotter {
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
     private final PluginRepository pluginRepo;
     private final FlowService<FlowPlanT, FlowT, FlowSnapshotT, FlowRepoT> flowService;

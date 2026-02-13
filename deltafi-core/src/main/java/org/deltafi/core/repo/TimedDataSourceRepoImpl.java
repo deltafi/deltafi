@@ -24,6 +24,8 @@ import org.deltafi.core.types.TimedDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -50,30 +52,77 @@ public class TimedDataSourceRepoImpl implements TimedDataSourceRepoCustom {
                     ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb)
         """;
 
-        jdbcTemplate.batchUpdate(sql, timedDataSources, 1000, (ps, timedDataSource) -> {
-            ps.setString(1, timedDataSource.getName());
-            ps.setString(2, timedDataSource.getType().name());
-            ps.setString(3, timedDataSource.getDescription());
-            ps.setString(4, toJson(timedDataSource.getSourcePlugin()));
-            ps.setString(5, toJson(timedDataSource.getFlowStatus()));
-            ps.setString(6, toJson(timedDataSource.getVariables()));
-            ps.setString(7, timedDataSource.getTopic());
-            ps.setString(8, toJson(timedDataSource.getTimedIngressAction()));
-            ps.setString(9, timedDataSource.getCronSchedule());
-            ps.setObject(10, timedDataSource.getLastRun());
-            ps.setObject(11, timedDataSource.getNextRun());
-            ps.setString(12, timedDataSource.getMemo());
-            ps.setObject(13, timedDataSource.getCurrentDid());
-            ps.setBoolean(14, timedDataSource.isExecuteImmediate());
-            ps.setString(15, timedDataSource.getIngressStatus().name());
-            ps.setString(16, timedDataSource.getIngressStatusMessage());
-            ps.setString(17, "TIMED_DATA_SOURCE");
-            ps.setObject(18, timedDataSource.getId());
-            ps.setInt(19, timedDataSource.getMaxErrors());
-            ps.setString(20, toJson(timedDataSource.getMetadata()));
-            ps.setString(21, toJson(timedDataSource.getAnnotationConfig()));
-            ps.setString(22, toJson(timedDataSource.getTags()));
-        });
+        jdbcTemplate.batchUpdate(sql, timedDataSources, 1000, (ps, flow) -> setupPreparedStatement(flow, ps));
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromSnapshot(TimedDataSource flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               topic, timed_ingress_action, cron_schedule, last_run, next_run,
+                               memo, current_did, execute_immediate, ingress_status,
+                               ingress_status_message, discriminator, id, max_errors,
+                               metadata, annotation_config, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                max_errors = EXCLUDED.max_errors,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_SNAPSHOT;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(flow, ps));
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromPlugin(TimedDataSource flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               topic, timed_ingress_action, cron_schedule, last_run, next_run,
+                               memo, current_did, execute_immediate, ingress_status,
+                               ingress_status_message, discriminator, id, max_errors,
+                               metadata, annotation_config, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                description = EXCLUDED.description,
+                source_plugin = EXCLUDED.source_plugin,
+                variables = EXCLUDED.variables,
+                topic = EXCLUDED.topic,
+                timed_ingress_action = EXCLUDED.timed_ingress_action,
+                cron_schedule = EXCLUDED.cron_schedule,
+                max_errors = flows.max_errors,
+                metadata = EXCLUDED.metadata,
+                annotation_config = EXCLUDED.annotation_config,
+                tags = EXCLUDED.tags,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_PLUGIN;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(flow, ps));
+    }
+
+    private void setupPreparedStatement(TimedDataSource flow, PreparedStatement ps) throws SQLException {
+        ps.setString(1, flow.getName());
+        ps.setString(2, flow.getType().name());
+        ps.setString(3, flow.getDescription());
+        ps.setString(4, toJson(flow.getSourcePlugin()));
+        ps.setString(5, toJson(flow.getFlowStatus()));
+        ps.setString(6, toJson(flow.getVariables()));
+        ps.setString(7, flow.getTopic());
+        ps.setString(8, toJson(flow.getTimedIngressAction()));
+        ps.setString(9, flow.getCronSchedule());
+        ps.setObject(10, flow.getLastRun());
+        ps.setObject(11, flow.getNextRun());
+        ps.setString(12, flow.getMemo());
+        ps.setObject(13, flow.getCurrentDid());
+        ps.setBoolean(14, flow.isExecuteImmediate());
+        ps.setString(15, flow.getIngressStatus() != null ? flow.getIngressStatus().name() : null);
+        ps.setString(16, flow.getIngressStatusMessage());
+        ps.setString(17, "TIMED_DATA_SOURCE");
+        ps.setObject(18, flow.getId());
+        ps.setInt(19, flow.getMaxErrors());
+        ps.setString(20, toJson(flow.getMetadata()));
+        ps.setString(21, toJson(flow.getAnnotationConfig()));
+        ps.setString(22, toJson(flow.getTags()));
     }
 
     private String toJson(Object object) {

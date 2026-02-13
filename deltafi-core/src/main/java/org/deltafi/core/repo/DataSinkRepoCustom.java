@@ -23,4 +23,6 @@ import java.util.List;
 
 public interface DataSinkRepoCustom {
     void batchInsert(List<DataSink> dataSinks);
+    void upsertFlowFromSnapshot(DataSink flow);
+    void upsertFlowFromPlugin(DataSink flow);
 }

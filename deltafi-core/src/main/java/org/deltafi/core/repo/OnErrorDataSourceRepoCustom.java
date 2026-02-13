@@ -23,4 +23,6 @@ import java.util.List;
 
 public interface OnErrorDataSourceRepoCustom {
     void batchInsert(List<OnErrorDataSource> onErrorDataSources);
+    void upsertFlowFromSnapshot(OnErrorDataSource flow);
+    void upsertFlowFromPlugin(OnErrorDataSource flow);
 }

@@ -23,4 +23,6 @@ import java.util.List;
 
 public interface TimedDataSourceRepoCustom {
     void batchInsert(List<TimedDataSource> timedDataSources);
+    void upsertFlowFromSnapshot(TimedDataSource flow);
+    void upsertFlowFromPlugin(TimedDataSource flow);
 }

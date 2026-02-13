@@ -52,7 +52,7 @@ public class OnErrorDataSourceService extends DataSourceService<OnErrorDataSourc
                                    EventService eventService) {
         super(FlowType.ON_ERROR_DATA_SOURCE, onErrorDataSourceRepo, pluginVariableService,
               ON_ERROR_DATA_SOURCE_FLOW_PLAN_CONVERTER, flowValidator, buildProperties,
-              flowCacheService, eventService, OnErrorDataSource.class, OnErrorDataSourcePlan.class, 
+              flowCacheService, eventService, OnErrorDataSource.class, OnErrorDataSourcePlan.class,
               errorCountService);
     }
 

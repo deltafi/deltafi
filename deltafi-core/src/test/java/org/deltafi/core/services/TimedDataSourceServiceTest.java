@@ -71,6 +71,9 @@ class TimedDataSourceServiceTest {
     @Captor
     ArgumentCaptor<Collection<TimedDataSource>> flowCaptor;
 
+    @Captor
+    ArgumentCaptor<TimedDataSource> singleFlowCaptor;
+
     @Mock
     FlowCacheService flowCacheService;
 
@@ -168,11 +171,9 @@ class TimedDataSourceServiceTest {
 
         Result result = timedDataSourceService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(timedDataSourceRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
+        Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
 
-        // First call is for updated flows, second is for placeholders
-        List<Collection<TimedDataSource>> allSaves = flowCaptor.getAllValues();
-        Map<String, DataSource> updatedFlows = allSaves.get(0).stream()
+        Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(4);
@@ -206,10 +207,9 @@ class TimedDataSourceServiceTest {
         assertThat(updatedInvalid.getCronSchedule()).isEqualTo("0 */3 * * * *");
         assertThat(updatedInvalid.getMaxErrors()).isEqualTo(1);
 
-        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
-        Collection<TimedDataSource> placeholders = allSaves.get(1);
-        assertThat(placeholders).hasSize(1);
-        TimedDataSource missingPlaceholder = placeholders.iterator().next();
+        // verify placeholder was upserted for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Mockito.verify(timedDataSourceRepo).upsertFlowFromSnapshot(singleFlowCaptor.capture());
+        TimedDataSource missingPlaceholder = singleFlowCaptor.getValue();
         assertThat(missingPlaceholder.getName()).isEqualTo("missing");
         assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
         assertThat(missingPlaceholder.isRunning()).isFalse();
@@ -249,10 +249,10 @@ class TimedDataSourceServiceTest {
 
         Result result = timedDataSourceService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
+        Mockito.verify(timedDataSourceRepo, Mockito.times(2)).upsertFlowFromSnapshot(singleFlowCaptor.capture());
 
-        Map<String, TimedDataSource> savedFlows = flowCaptor.getValue().stream()
-                .collect(Collectors.toMap(Flow::getName, f -> (TimedDataSource) f));
+        Map<String, TimedDataSource> savedFlows = singleFlowCaptor.getAllValues().stream()
+                .collect(Collectors.toMap(Flow::getName, f -> f));
 
         assertThat(savedFlows).hasSize(2);
 

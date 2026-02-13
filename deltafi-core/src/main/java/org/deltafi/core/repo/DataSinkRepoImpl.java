@@ -24,6 +24,8 @@ import org.deltafi.core.types.DataSink;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -46,20 +48,41 @@ public class DataSinkRepoImpl implements DataSinkRepoCustom {
             VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
         """;
 
-        jdbcTemplate.batchUpdate(sql, dataSinks, 1000, (ps, dataSink) -> {
-            ps.setString(1, dataSink.getName());
-            ps.setString(2, dataSink.getType().name());
-            ps.setString(3, dataSink.getDescription());
-            ps.setString(4, toJson(dataSink.getSourcePlugin()));
-            ps.setString(5, toJson(dataSink.getFlowStatus()));
-            ps.setString(6, toJson(dataSink.getVariables()));
-            ps.setString(7, toJson(dataSink.getEgressAction()));
-            ps.setString(8, toJson(dataSink.getExpectedAnnotations()));
-            ps.setString(9, toJson(dataSink.getSubscribe()));
-            ps.setString(10, "DATA_SINK");
-            ps.setObject(11, dataSink.getId());
-            ps.setString(12, toJson(dataSink.getTags()));
-        });
+        jdbcTemplate.batchUpdate(sql, dataSinks, 1000, (ps, dataSink) -> setupPreparedStatement(dataSink, ps));
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromSnapshot(DataSink flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               egress_action, expected_annotations, subscribe, discriminator, id, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                expected_annotations = EXCLUDED.expected_annotations,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_SNAPSHOT;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(flow, ps));
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromPlugin(DataSink flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               egress_action, expected_annotations, subscribe, discriminator, id, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                description = EXCLUDED.description,
+                source_plugin = EXCLUDED.source_plugin,
+                variables = EXCLUDED.variables,
+                egress_action = EXCLUDED.egress_action,
+                expected_annotations = EXCLUDED.expected_annotations,
+                subscribe = EXCLUDED.subscribe,
+                tags = EXCLUDED.tags,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_PLUGIN;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(flow, ps));
     }
 
     private String toJson(Object object) {
@@ -68,5 +91,20 @@ public class DataSinkRepoImpl implements DataSinkRepoCustom {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error converting object to JSON", e);
         }
+    }
+
+    private void setupPreparedStatement(DataSink flow, PreparedStatement ps) throws SQLException {
+        ps.setString(1, flow.getName());
+        ps.setString(2, flow.getType().name());
+        ps.setString(3, flow.getDescription());
+        ps.setString(4, toJson(flow.getSourcePlugin()));
+        ps.setString(5, toJson(flow.getFlowStatus()));
+        ps.setString(6, toJson(flow.getVariables()));
+        ps.setString(7, toJson(flow.getEgressAction()));
+        ps.setString(8, toJson(flow.getExpectedAnnotations()));
+        ps.setString(9, toJson(flow.getSubscribe()));
+        ps.setString(10, "DATA_SINK");
+        ps.setObject(11, flow.getId());
+        ps.setString(12, toJson(flow.getTags()));
     }
 }

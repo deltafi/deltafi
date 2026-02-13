@@ -21,7 +21,13 @@ import org.deltafi.core.types.OnErrorDataSource;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
-public interface OnErrorDataSourceRepo extends FlowRepo, OnErrorDataSourceRepoCustom {
+public interface OnErrorDataSourceRepo extends FlowRepo<OnErrorDataSource>, OnErrorDataSourceRepoCustom {
+    @Override
+    void upsertFlowFromSnapshot(OnErrorDataSource flow);
+
+    @Override
+    void upsertFlowFromPlugin(OnErrorDataSource flow);
+
 
     @Transactional
     @Query(value = "UPDATE flows " +

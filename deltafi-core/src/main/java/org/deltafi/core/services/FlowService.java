@@ -40,7 +40,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements PluginCleaner, PluginUninstallCheck, Snapshotter {
+public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo<FlowT>> implements PluginCleaner, PluginUninstallCheck, Snapshotter {
 
     protected final FlowRepoT flowRepo;
     protected final PluginVariableService pluginVariableService;
@@ -204,8 +204,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         // delete any system-plugin placeholders that were claimed
         flowRepo.deleteAll(systemPluginPlaceholders.values());
 
-        // save the replacement flows
-        flowRepo.saveAll(flows);
+        // save the replacement flows using upsert to handle race with snapshot restore
+        for (FlowT flow : flows) {
+            flowRepo.upsertFlowFromPlugin(flow);
+        }
 
         refreshCache();
     }
@@ -443,7 +445,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         }
 
         if (!placeholdersToCreate.isEmpty()) {
-            flowRepo.saveAll(placeholdersToCreate);
+            upsertPlaceholders(placeholdersToCreate);
         }
 
         if (!updatedFlows.isEmpty() || !placeholdersToCreate.isEmpty()) {
@@ -452,6 +454,21 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
         result.setSuccess(result.getErrors().isEmpty());
         return result;
+    }
+
+    /**
+     * Upsert placeholder flows using INSERT ... ON CONFLICT to atomically handle
+     * concurrent writes from multiple containers and plugin registration.
+     * - If flow doesn't exist: inserts the full placeholder
+     * - If flow exists: updates only snapshot-related fields (state, testMode, maxErrors, rateLimit)
+     * Each specific repository implements the type-safe upsert for its flow type.
+     *
+     * @param placeholders list of placeholder flows to upsert
+     */
+    private void upsertPlaceholders(List<FlowT> placeholders) {
+        for (FlowT placeholder : placeholders) {
+            flowRepo.upsertFlowFromSnapshot(placeholder);
+        }
     }
 
 
@@ -474,13 +491,15 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     public boolean updateFromSnapshot(FlowT flow, FlowSnapshotT flowSnapshot, Result result) {
         boolean changed = false;
-        if (flowSnapshot.isRunning() && flow.isStopped()) {
-            flow.getFlowStatus().setState(FlowState.RUNNING);
+
+        FlowState snapshotState = flowSnapshot.isRunning() ? FlowState.RUNNING : FlowState.STOPPED;
+        if (!snapshotState.equals(flow.getFlowStatus().getState())) {
+            flow.getFlowStatus().setState(snapshotState);
             changed = true;
         }
 
-        if (flowSnapshot.isTestMode() && !flow.isTestMode()) {
-            flow.setTestMode(true);
+        if (flowSnapshot.isTestMode() != flow.isTestMode()) {
+            flow.setTestMode(flowSnapshot.isTestMode());
             changed = true;
         }
 

@@ -24,6 +24,8 @@ import org.deltafi.core.types.RestDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -43,26 +45,70 @@ public class RestDataSourceRepoImpl implements RestDataSourceRepoCustom {
         String sql = """
             INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
                                topic, discriminator, id, max_errors,
-                               metadata, annotation_config, tags)
+                               metadata, annotation_config, tags, rate_limit)
             VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
-                    ?, ?::jsonb, ?::jsonb, ?::jsonb)
+                    ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb)
         """;
 
-        jdbcTemplate.batchUpdate(sql, restDataSources, 1000, (ps, restDataSource) -> {
-            ps.setString(1, restDataSource.getName());
-            ps.setString(2, restDataSource.getType().name());
-            ps.setString(3, restDataSource.getDescription());
-            ps.setString(4, toJson(restDataSource.getSourcePlugin()));
-            ps.setString(5, toJson(restDataSource.getFlowStatus()));
-            ps.setString(6, toJson(restDataSource.getVariables()));
-            ps.setString(7, restDataSource.getTopic());
-            ps.setString(8, "REST_DATA_SOURCE");
-            ps.setObject(9, restDataSource.getId());
-            ps.setInt(10, restDataSource.getMaxErrors());
-            ps.setString(11, toJson(restDataSource.getMetadata()));
-            ps.setString(12, toJson(restDataSource.getAnnotationConfig()));
-            ps.setString(13, toJson(restDataSource.getTags()));
-        });
+        jdbcTemplate.batchUpdate(sql, restDataSources, 1000, this::setupPreparedStatement);
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromSnapshot(RestDataSource flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               topic, discriminator, id, max_errors,
+                               metadata, annotation_config, tags, rate_limit)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
+                    ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                max_errors = EXCLUDED.max_errors,
+                rate_limit = EXCLUDED.rate_limit,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_SNAPSHOT;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(ps, flow));
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromPlugin(RestDataSource flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               topic, discriminator, id, max_errors,
+                               metadata, annotation_config, tags, rate_limit)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
+                    ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                description = EXCLUDED.description,
+                source_plugin = EXCLUDED.source_plugin,
+                variables = EXCLUDED.variables,
+                topic = EXCLUDED.topic,
+                max_errors = flows.max_errors,
+                metadata = EXCLUDED.metadata,
+                annotation_config = EXCLUDED.annotation_config,
+                tags = EXCLUDED.tags,
+                rate_limit = flows.rate_limit,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_PLUGIN;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(ps, flow));
+    }
+
+    private void setupPreparedStatement(PreparedStatement ps, RestDataSource restDataSource) throws SQLException {
+        ps.setString(1, restDataSource.getName());
+        ps.setString(2, restDataSource.getType().name());
+        ps.setString(3, restDataSource.getDescription());
+        ps.setString(4, toJson(restDataSource.getSourcePlugin()));
+        ps.setString(5, toJson(restDataSource.getFlowStatus()));
+        ps.setString(6, toJson(restDataSource.getVariables()));
+        ps.setString(7, restDataSource.getTopic());
+        ps.setString(8, "REST_DATA_SOURCE");
+        ps.setObject(9, restDataSource.getId());
+        ps.setInt(10, restDataSource.getMaxErrors());
+        ps.setString(11, toJson(restDataSource.getMetadata()));
+        ps.setString(12, toJson(restDataSource.getAnnotationConfig()));
+        ps.setString(13, toJson(restDataSource.getTags()));
+        ps.setString(14, toJson(restDataSource.getRateLimit()));
     }
 
     private String toJson(Object object) {

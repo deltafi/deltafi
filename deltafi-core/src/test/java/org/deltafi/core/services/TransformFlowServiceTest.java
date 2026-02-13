@@ -62,6 +62,9 @@ class TransformFlowServiceTest {
     @Captor
     ArgumentCaptor<Collection<TransformFlow>> flowCaptor;
 
+    @Captor
+    ArgumentCaptor<TransformFlow> singleFlowCaptor;
+
     @Mock
     FlowCacheService flowCacheService;
 
@@ -137,11 +140,9 @@ class TransformFlowServiceTest {
 
         Result result = transformFlowService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(transformFlowRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
+        Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
 
-        // First call is for updated flows, second is for placeholders
-        List<Collection<TransformFlow>> allSaves = flowCaptor.getAllValues();
-        Map<String, TransformFlow> updatedFlows = allSaves.get(0).stream()
+        Map<String, TransformFlow> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(3);
@@ -159,10 +160,9 @@ class TransformFlowServiceTest {
         assertThat(updatedFlows.get("running").isInvalid()).isTrue();
         assertThat(updatedFlows.get("running").isTestMode()).isFalse();
 
-        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
-        Collection<TransformFlow> placeholders = allSaves.get(1);
-        assertThat(placeholders).hasSize(1);
-        TransformFlow missingPlaceholder = placeholders.iterator().next();
+        // verify placeholder was upserted for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Mockito.verify(transformFlowRepo).upsertFlowFromSnapshot(singleFlowCaptor.capture());
+        TransformFlow missingPlaceholder = singleFlowCaptor.getValue();
         assertThat(missingPlaceholder.getName()).isEqualTo("missing");
         assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
         assertThat(missingPlaceholder.isRunning()).isTrue();
@@ -194,9 +194,9 @@ class TransformFlowServiceTest {
 
         Result result = transformFlowService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
+        Mockito.verify(transformFlowRepo, Mockito.times(2)).upsertFlowFromSnapshot(singleFlowCaptor.capture());
 
-        Map<String, TransformFlow> savedFlows = flowCaptor.getValue().stream()
+        Map<String, TransformFlow> savedFlows = singleFlowCaptor.getAllValues().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(savedFlows).hasSize(2);

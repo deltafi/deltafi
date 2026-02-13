@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * for managing data sources including error handling and configuration updates.
  */
 @Slf4j
-public abstract class DataSourceService<P extends FlowPlan, F extends DataSource, S extends DataSourceSnapshot, R extends FlowRepo>
+public abstract class DataSourceService<P extends FlowPlan, F extends DataSource, S extends DataSourceSnapshot, R extends FlowRepo<F>>
         extends FlowService<P, F, S, R> {
 
     protected final ErrorCountService errorCountService;

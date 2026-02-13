@@ -26,7 +26,13 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Repository
-public interface TimedDataSourceRepo extends FlowRepo, TimedDataSourceRepoCustom {
+public interface TimedDataSourceRepo extends FlowRepo<TimedDataSource>, TimedDataSourceRepoCustom {
+    @Override
+    void upsertFlowFromSnapshot(TimedDataSource flow);
+
+    @Override
+    void upsertFlowFromPlugin(TimedDataSource flow);
+
     @Transactional
     @Query(value = "UPDATE flows " +
             "SET cron_schedule = :cronSchedule, next_run = :nextRun " +
@@ -49,8 +55,8 @@ public interface TimedDataSourceRepo extends FlowRepo, TimedDataSourceRepoCustom
     TimedDataSource updateMemo(String flowName, String memo);
 
     @Transactional
-    @Query(value = "UPDATE flows " +
-            "SET current_did = null, " +
+    @Query(value = "UPDATE flows SET " +
+            "    current_did = null, " +
             "    memo = :memo, " +
             "    execute_immediate = :executeImmediate, " +
             "    ingress_status = :status, " +

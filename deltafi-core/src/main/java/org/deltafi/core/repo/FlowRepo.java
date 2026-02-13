@@ -35,7 +35,20 @@ import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
 import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_GROUP_ID;
 
 @Repository
-public interface FlowRepo extends JpaRepository<Flow, UUID> {
+public interface FlowRepo<R extends Flow> extends JpaRepository<Flow, UUID> {
+    // ON CONFLICT fragment: keep existing flow_status, apply state/testMode from snapshot
+    String FLOW_STATE_UPSERT_FROM_SNAPSHOT =
+            "flow_status = jsonb_set(jsonb_set(flows.flow_status, " +
+            "'{state}', EXCLUDED.flow_status->'state'), " +
+            "'{testMode}', EXCLUDED.flow_status->'testMode')";
+
+    // ON CONFLICT fragment: use plugin's flow_status, preserve state + testMode from existing, include plugin errors
+    String FLOW_STATE_UPSERT_FROM_PLUGIN =
+            "flow_status = jsonb_set(jsonb_set(jsonb_set(EXCLUDED.flow_status, " +
+            "'{state}', flows.flow_status->'state'), " +
+            "'{testMode}', flows.flow_status->'testMode'), " +
+            "'{errors}', COALESCE(EXCLUDED.flow_status->'errors', '[]'::jsonb))";
+
     @Query("SELECT f FROM Flow f WHERE f.name = ?1 AND f.type = ?2")
     <T extends Flow> Optional<T> findByNameAndType(String name, FlowType type, Class<T> clazz);
 
@@ -105,5 +118,33 @@ public interface FlowRepo extends JpaRepository<Flow, UUID> {
      */
     default Flow updateMaxErrors(String flowName, int maxErrors) {
         throw new UnsupportedOperationException("updateMaxErrors must be implemented by specific repository");
+    }
+
+    /**
+     * Upsert a flow from snapshot
+     * Uses INSERT ... ON CONFLICT to atomically insert or update in a single operation.
+     * - If flow doesn't exist: inserts the full placeholder
+     * - If flow exists (created by plugin): updates only snapshot-related fields (state, testMode, maxErrors, rateLimit)
+     * This ensures that real flows from plugin registration are preserved while applying snapshot state.
+     * Each specific repository must override this method to handle its own flow type.
+     *
+     * @param flow the flow to upsert
+     */
+    default void upsertFlowFromSnapshot(R flow) {
+        throw new UnsupportedOperationException("upsertFlowFromSnapshot must be implemented by specific repository");
+    }
+
+    /**
+     * Upsert a flow from plugin registration
+     * Uses INSERT ... ON CONFLICT to atomically insert or update in a single operation.
+     * - If flow doesn't exist: inserts the full flow
+     * - If flow exists (placeholder from snapshot): updates definition columns from the real flow
+     *   while preserving state columns (state, testMode, maxErrors, rateLimit) from the existing placeholder
+     * Each specific repository must override this method to handle its own flow type.
+     *
+     * @param flow the flow to upsert
+     */
+    default void upsertFlowFromPlugin(R flow) {
+        throw new UnsupportedOperationException("upsertFlowFromPlugin must be implemented by specific repository");
     }
 }

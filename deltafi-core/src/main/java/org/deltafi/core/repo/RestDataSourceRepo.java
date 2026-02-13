@@ -21,7 +21,13 @@ import org.deltafi.core.types.RestDataSource;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.repository.Query;
 
-public interface RestDataSourceRepo extends FlowRepo, RestDataSourceRepoCustom {
+public interface RestDataSourceRepo extends FlowRepo<RestDataSource>, RestDataSourceRepoCustom {
+    @Override
+    void upsertFlowFromSnapshot(RestDataSource flow);
+
+    @Override
+    void upsertFlowFromPlugin(RestDataSource flow);
+
     @Transactional
     @Query(value = "UPDATE flows " +
             "SET max_errors = :maxErrors " +

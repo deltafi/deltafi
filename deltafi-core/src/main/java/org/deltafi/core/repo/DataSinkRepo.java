@@ -19,6 +19,7 @@ package org.deltafi.core.repo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.deltafi.core.types.DataSink;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -28,7 +29,13 @@ import java.util.Set;
 
 @Repository
 @Transactional
-public interface DataSinkRepo extends FlowRepo, DataSinkRepoCustom {
+public interface DataSinkRepo extends FlowRepo<DataSink>, DataSinkRepoCustom {
+    @Override
+    void upsertFlowFromSnapshot(DataSink flow);
+
+    @Override
+    void upsertFlowFromPlugin(DataSink flow);
+
     @Modifying
     @Query(value = "UPDATE flows SET expected_annotations = cast(:expectedAnnotations AS jsonb) WHERE name = :flowName AND type = 'DATA_SINK'",
             nativeQuery = true)

@@ -19,12 +19,13 @@ package org.deltafi.core.repo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.hypersistence.utils.hibernate.type.array.internal.ArrayUtil;
-import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.core.types.TransformFlow;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -47,20 +48,55 @@ public class TransformFlowRepoImpl implements TransformFlowRepoCustom {
             VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
         """;
 
-        jdbcTemplate.batchUpdate(sql, transformFlows, 1000, (ps, transformFlow) -> {
-            ps.setString(1, transformFlow.getName());
-            ps.setString(2, transformFlow.getType().name());
-            ps.setString(3, transformFlow.getDescription());
-            ps.setString(4, toJson(transformFlow.getSourcePlugin()));
-            ps.setString(5, toJson(transformFlow.getFlowStatus()));
-            ps.setString(6, toJson(transformFlow.getVariables()));
-            ps.setString(7, toJson(transformFlow.getTransformActions()));
-            ps.setString(8, toJson(transformFlow.getSubscribe()));
-            ps.setString(9, toJson(transformFlow.getPublish()));
-            ps.setString(10, "TRANSFORM");
-            ps.setObject(11, transformFlow.getId());
-            ps.setString(12, toJson(transformFlow.getTags()));
-        });
+        jdbcTemplate.batchUpdate(sql, transformFlows, 1000, this::setupPreparedStatement);
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromSnapshot(TransformFlow flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               transform_actions, subscribe, publish, discriminator, id, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+            \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_SNAPSHOT;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(ps, flow));
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromPlugin(TransformFlow flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               transform_actions, subscribe, publish, discriminator, id, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                source_plugin = EXCLUDED.source_plugin,
+                description = EXCLUDED.description,
+                variables = EXCLUDED.variables,
+                tags = EXCLUDED.tags,
+                transform_actions = EXCLUDED.transform_actions,
+                subscribe = EXCLUDED.subscribe,
+                publish = EXCLUDED.publish,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_PLUGIN;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(ps, flow));
+    }
+
+    private void setupPreparedStatement(PreparedStatement ps, TransformFlow transformFlow) throws SQLException {
+        ps.setString(1, transformFlow.getName());
+        ps.setString(2, transformFlow.getType().name());
+        ps.setString(3, transformFlow.getDescription());
+        ps.setString(4, toJson(transformFlow.getSourcePlugin()));
+        ps.setString(5, toJson(transformFlow.getFlowStatus()));
+        ps.setString(6, toJson(transformFlow.getVariables()));
+        ps.setString(7, toJson(transformFlow.getTransformActions()));
+        ps.setString(8, toJson(transformFlow.getSubscribe()));
+        ps.setString(9, toJson(transformFlow.getPublish()));
+        ps.setString(10, "TRANSFORM");
+        ps.setObject(11, transformFlow.getId());
+        ps.setString(12, toJson(transformFlow.getTags()));
     }
 
     private String toJson(Object object) {

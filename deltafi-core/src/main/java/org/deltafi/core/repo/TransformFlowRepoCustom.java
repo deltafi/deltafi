@@ -23,4 +23,6 @@ import java.util.List;
 
 public interface TransformFlowRepoCustom {
     void batchInsert(List<TransformFlow> transformFlows);
+    void upsertFlowFromSnapshot(TransformFlow flow);
+    void upsertFlowFromPlugin(TransformFlow flow);
 }

@@ -37,7 +37,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.*;
 import org.deltafi.common.lookup.LookupTable;
@@ -7116,6 +7115,640 @@ class DeltaFiCoreApplicationTests {
 		results = deltaFileRepo.insertBatchIgnoreDuplicates(deltaFiles, 10);
 		assertThat(results.inserted()).isZero();
 		assertThat(results.skipped()).isEqualTo(3);
+	}
+
+	private static final PluginCoordinates UPSERT_PLUGIN = PluginCoordinates.builder()
+			.groupId("org.deltafi").artifactId("upsert-plugin").version("1.0.0").build();
+	private static final PluginCoordinates UPSERT_PLUGIN_V2 = PluginCoordinates.builder()
+			.groupId("org.deltafi").artifactId("upsert-plugin").version("2.0.0").build();
+
+	@Test
+	void upsertTransformFlowFromSnapshot_insertsWhenNotExists() {
+		TransformFlow placeholder = new TransformFlow();
+		placeholder.setName("tf-snap-insert");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+
+		transformFlowRepo.upsertFlowFromSnapshot(placeholder);
+
+		TransformFlow result = transformFlowRepo.findByNameAndType("tf-snap-insert", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+	}
+
+	@Test
+	void upsertTransformFlowFromSnapshot_updatesOnlyStateFields() {
+		// Insert a "real" flow first
+		TransformFlow existing = new TransformFlow();
+		existing.setName("tf-snap-update");
+		existing.setSourcePlugin(UPSERT_PLUGIN);
+		existing.setDescription("original description");
+		existing.getFlowStatus().setState(FlowState.STOPPED);
+		existing.setTestMode(false);
+		existing.getFlowStatus().setValid(true);
+		existing.setTransformActions(List.of(new ActionConfiguration()));
+		transformFlowRepo.save(existing);
+
+		// Upsert from snapshot should only update state and testMode
+		TransformFlow snapshot = new TransformFlow();
+		snapshot.setName("tf-snap-update");
+		snapshot.setSourcePlugin(UPSERT_PLUGIN_V2);
+		snapshot.setDescription("snapshot description");
+		snapshot.getFlowStatus().setState(FlowState.RUNNING);
+		snapshot.setTestMode(true);
+		snapshot.getFlowStatus().setValid(false);
+
+		transformFlowRepo.upsertFlowFromSnapshot(snapshot);
+
+		TransformFlow result = transformFlowRepo.findByNameAndType("tf-snap-update", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		// State fields updated from snapshot
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		// Definition fields preserved from existing
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+		assertThat(result.getDescription()).isEqualTo("original description");
+		assertThat(result.isInvalid()).isFalse();
+		assertThat(result.getTransformActions()).isNotEmpty();
+	}
+
+	@Test
+	void upsertTransformFlowFromPlugin_insertsWhenNotExists() {
+		TransformFlow flow = new TransformFlow();
+		flow.setName("tf-plugin-insert");
+		flow.setSourcePlugin(UPSERT_PLUGIN);
+		flow.setDescription("plugin flow");
+		flow.getFlowStatus().setState(FlowState.STOPPED);
+		flow.setTestMode(false);
+		flow.getFlowStatus().setValid(true);
+
+		transformFlowRepo.upsertFlowFromPlugin(flow);
+
+		TransformFlow result = transformFlowRepo.findByNameAndType("tf-plugin-insert", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+		assertThat(result.getDescription()).isEqualTo("plugin flow");
+		assertThat(result.isStopped()).isTrue();
+		assertThat(result.isTestMode()).isFalse();
+	}
+
+	@Test
+	void upsertTransformFlowFromPlugin_updatesDefinitionPreservesState() {
+		// Insert a placeholder first (simulating snapshot restore)
+		TransformFlow placeholder = new TransformFlow();
+		placeholder.setName("tf-plugin-update");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setDescription("placeholder");
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+		placeholder.getFlowStatus().setValid(false);
+		transformFlowRepo.save(placeholder);
+
+		// Plugin registration upsert should update definition, preserve state
+		TransformFlow pluginFlow = new TransformFlow();
+		pluginFlow.setName("tf-plugin-update");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		pluginFlow.setDescription("real plugin flow");
+		pluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		pluginFlow.setTestMode(false);
+		pluginFlow.getFlowStatus().setValid(true);
+		pluginFlow.setTransformActions(List.of(new ActionConfiguration("MyAction", ActionType.TRANSFORM, "type")));
+
+		transformFlowRepo.upsertFlowFromPlugin(pluginFlow);
+
+		TransformFlow result = transformFlowRepo.findByNameAndType("tf-plugin-update", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		// Definition updated from plugin
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN_V2);
+		assertThat(result.getDescription()).isEqualTo("real plugin flow");
+		assertThat(result.getTransformActions()).hasSize(1);
+		assertThat(result.getTransformActions().getFirst().getName()).isEqualTo("MyAction");
+		// State preserved from existing placeholder
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+	}
+
+	@Test
+	void upsertDataSinkFromSnapshot_insertsWhenNotExists() {
+		DataSink placeholder = new DataSink();
+		placeholder.setName("ds-snap-insert");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setExpectedAnnotations(Set.of("a", "b"));
+		placeholder.setTestMode(true);
+
+		dataSinkRepo.upsertFlowFromSnapshot(placeholder);
+
+		DataSink result = dataSinkRepo.findByNameAndType("ds-snap-insert", FlowType.DATA_SINK, DataSink.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getExpectedAnnotations()).hasSize(2).contains("a", "b");
+	}
+
+	@Test
+	void upsertDataSinkFromSnapshot_updatesOnlyStateFields() {
+		DataSink existing = new DataSink();
+		existing.setName("ds-snap-update");
+		existing.setSourcePlugin(UPSERT_PLUGIN);
+		existing.setDescription("original");
+		existing.setEgressAction(new ActionConfiguration("OriginalEgress", ActionType.EGRESS, "type"));
+		existing.getFlowStatus().setState(FlowState.STOPPED);
+		existing.setTestMode(false);
+		existing.setExpectedAnnotations(Set.of("a", "b"));
+		dataSinkRepo.save(existing);
+
+		DataSink snapshot = new DataSink();
+		snapshot.setName("ds-snap-update");
+		snapshot.setSourcePlugin(UPSERT_PLUGIN_V2);
+		snapshot.setDescription("snapshot");
+		snapshot.getFlowStatus().setState(FlowState.RUNNING);
+		snapshot.setExpectedAnnotations(Set.of("c", "d"));
+		snapshot.setTestMode(true);
+
+		dataSinkRepo.upsertFlowFromSnapshot(snapshot);
+
+		DataSink result = dataSinkRepo.findByNameAndType("ds-snap-update", FlowType.DATA_SINK, DataSink.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+		assertThat(result.getDescription()).isEqualTo("original");
+		assertThat(result.getEgressAction().getName()).isEqualTo("OriginalEgress");
+		assertThat(result.getExpectedAnnotations()).hasSize(2).contains("c", "d");
+	}
+
+	@Test
+	void upsertDataSinkFromPlugin_insertsWhenNotExists() {
+		DataSink flow = new DataSink();
+		flow.setName("ds-plugin-insert");
+		flow.setSourcePlugin(UPSERT_PLUGIN);
+		flow.setDescription("plugin sink");
+		flow.setEgressAction(new ActionConfiguration("MyEgress", ActionType.EGRESS, "type"));
+		flow.getFlowStatus().setState(FlowState.STOPPED);
+		flow.setExpectedAnnotations(Set.of("a", "b"));
+		dataSinkRepo.upsertFlowFromPlugin(flow);
+
+		DataSink result = dataSinkRepo.findByNameAndType("ds-plugin-insert", FlowType.DATA_SINK, DataSink.class).orElseThrow();
+		assertThat(result.getDescription()).isEqualTo("plugin sink");
+		assertThat(result.getEgressAction().getName()).isEqualTo("MyEgress");
+		assertThat(result.getExpectedAnnotations()).hasSize(2).contains("a", "b");
+	}
+
+	@Test
+	void upsertDataSinkFromPlugin_updatesDefinitionPreservesState() {
+		DataSink placeholder = new DataSink();
+		placeholder.setName("ds-plugin-update");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setDescription("placeholder");
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+		placeholder.setEgressAction(new ActionConfiguration());
+		placeholder.setExpectedAnnotations(Set.of("a", "b"));
+		dataSinkRepo.save(placeholder);
+
+		DataSink pluginFlow = new DataSink();
+		pluginFlow.setName("ds-plugin-update");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		pluginFlow.setDescription("real sink");
+		pluginFlow.setEgressAction(new ActionConfiguration("RealEgress", ActionType.EGRESS, "type"));
+		pluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		pluginFlow.setTestMode(false);
+		pluginFlow.getFlowStatus().setValid(true);
+		pluginFlow.setExpectedAnnotations(Set.of("c", "d"));
+		dataSinkRepo.upsertFlowFromPlugin(pluginFlow);
+
+		DataSink result = dataSinkRepo.findByNameAndType("ds-plugin-update", FlowType.DATA_SINK, DataSink.class).orElseThrow();
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN_V2);
+		assertThat(result.getDescription()).isEqualTo("real sink");
+		assertThat(result.getEgressAction().getName()).isEqualTo("RealEgress");
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		// expected annotations always take whatever happened most recently
+		assertThat(result.getExpectedAnnotations()).hasSize(2).contains("c", "d");
+	}
+
+	@Test
+	void upsertRestDataSourceFromSnapshot_insertsWhenNotExists() {
+		RestDataSource placeholder = new RestDataSource();
+		placeholder.setName("rds-snap-insert");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setTopic("topic");
+		placeholder.setMaxErrors(5);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+		RateLimit rateLimit = RateLimit.newBuilder()
+						.durationSeconds(30)
+						.maxAmount(3)
+						.unit(RateLimitUnit.FILES)
+						.build();
+		placeholder.setRateLimit(rateLimit);
+
+		restDataSourceRepo.upsertFlowFromSnapshot(placeholder);
+
+		RestDataSource result = restDataSourceRepo.findByNameAndType("rds-snap-insert", FlowType.REST_DATA_SOURCE, RestDataSource.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(5);
+		assertThat(result.getRateLimit()).isEqualTo(rateLimit);
+	}
+
+	@Test
+	void upsertRestDataSourceFromSnapshot_updatesOnlyStateFields() {
+		RestDataSource existing = new RestDataSource();
+		existing.setName("rds-snap-update");
+		existing.setSourcePlugin(UPSERT_PLUGIN);
+		existing.setDescription("original");
+		existing.setTopic("original-topic");
+		existing.setMaxErrors(3);
+		RateLimit existingLimit = RateLimit.newBuilder().unit(RateLimitUnit.FILES).maxAmount(100L).durationSeconds(60).build();
+		existing.setRateLimit(existingLimit);
+		existing.getFlowStatus().setState(FlowState.STOPPED);
+		existing.setTestMode(false);
+		restDataSourceRepo.save(existing);
+
+		RestDataSource snapshot = new RestDataSource();
+		snapshot.setName("rds-snap-update");
+		snapshot.setSourcePlugin(UPSERT_PLUGIN_V2);
+		snapshot.setDescription("snapshot");
+		snapshot.setTopic("snapshot-topic");
+		snapshot.setMaxErrors(10);
+		snapshot.getFlowStatus().setState(FlowState.RUNNING);
+		snapshot.setTestMode(true);
+
+		restDataSourceRepo.upsertFlowFromSnapshot(snapshot);
+
+		RestDataSource result = restDataSourceRepo.findByNameAndType("rds-snap-update", FlowType.REST_DATA_SOURCE, RestDataSource.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(10);
+		// Definition preserved
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+		assertThat(result.getDescription()).isEqualTo("original");
+		assertThat(result.getTopic()).isEqualTo("original-topic");
+		assertThat(result.getRateLimit()).isNull();
+	}
+
+	@Test
+	void upsertRestDataSourceFromPlugin_insertsWhenNotExists() {
+		RestDataSource flow = new RestDataSource();
+		flow.setName("rds-plugin-insert");
+		flow.setSourcePlugin(UPSERT_PLUGIN);
+		flow.setTopic("plugin-topic");
+		flow.setMaxErrors(5);
+		flow.getFlowStatus().setState(FlowState.STOPPED);
+		restDataSourceRepo.upsertFlowFromPlugin(flow);
+
+		RestDataSource result = restDataSourceRepo.findByNameAndType("rds-plugin-insert", FlowType.REST_DATA_SOURCE, RestDataSource.class).orElseThrow();
+		assertThat(result.getTopic()).isEqualTo("plugin-topic");
+		assertThat(result.getMaxErrors()).isEqualTo(5);
+	}
+
+	@Test
+	void upsertRestDataSourceFromPlugin_updatesDefinitionPreservesState() {
+		RestDataSource placeholder = new RestDataSource();
+		placeholder.setName("rds-plugin-update");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setDescription("placeholder");
+		placeholder.setTopic("placeholder-topic");
+		placeholder.setMaxErrors(10);
+		placeholder.setRateLimit(RateLimit.newBuilder().unit(RateLimitUnit.FILES).maxAmount(50L).durationSeconds(30).build());
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+		restDataSourceRepo.save(placeholder);
+
+		RestDataSource pluginFlow = new RestDataSource();
+		pluginFlow.setName("rds-plugin-update");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		pluginFlow.setDescription("real source");
+		pluginFlow.setTopic("real-topic");
+		pluginFlow.setMaxErrors(99);
+		pluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		pluginFlow.setTestMode(false);
+		pluginFlow.getFlowStatus().setValid(true);
+		restDataSourceRepo.upsertFlowFromPlugin(pluginFlow);
+
+		RestDataSource result = restDataSourceRepo.findByNameAndType("rds-plugin-update", FlowType.REST_DATA_SOURCE, RestDataSource.class).orElseThrow();
+		// Definition updated
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN_V2);
+		assertThat(result.getDescription()).isEqualTo("real source");
+		assertThat(result.getTopic()).isEqualTo("real-topic");
+		// State preserved from placeholder
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(10);
+		assertThat(result.getRateLimit()).isNotNull();
+		assertThat(result.getRateLimit().getMaxAmount()).isEqualTo(50L);
+	}
+
+	// -- TimedDataSource upserts --
+
+	@Test
+	void upsertTimedDataSourceFromSnapshot_insertsWhenNotExists() {
+		TimedDataSource placeholder = new TimedDataSource();
+		placeholder.setName("tds-snap-insert");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setTopic("topic");
+		placeholder.setCronSchedule("*/5 * * * * *");
+		placeholder.setMaxErrors(3);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+
+		timedDataSourceRepo.upsertFlowFromSnapshot(placeholder);
+
+		TimedDataSource result = timedDataSourceRepo.findByNameAndType("tds-snap-insert", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(3);
+	}
+
+	@Test
+	void upsertTimedDataSourceFromSnapshot_updatesOnlyStateFields() {
+		TimedDataSource existing = new TimedDataSource();
+		existing.setName("tds-snap-update");
+		existing.setSourcePlugin(UPSERT_PLUGIN);
+		existing.setDescription("original");
+		existing.setTopic("original-topic");
+		existing.setCronSchedule("*/5 * * * * *");
+		existing.setMaxErrors(1);
+		existing.getFlowStatus().setState(FlowState.STOPPED);
+		existing.setTestMode(false);
+		timedDataSourceRepo.save(existing);
+
+		TimedDataSource snapshot = new TimedDataSource();
+		snapshot.setName("tds-snap-update");
+		snapshot.setSourcePlugin(UPSERT_PLUGIN_V2);
+		snapshot.setDescription("snapshot");
+		snapshot.setTopic("snapshot-topic");
+		snapshot.setCronSchedule("*/10 * * * * *");
+		snapshot.setMaxErrors(20);
+		snapshot.getFlowStatus().setState(FlowState.RUNNING);
+		snapshot.setTestMode(true);
+
+		timedDataSourceRepo.upsertFlowFromSnapshot(snapshot);
+
+		TimedDataSource result = timedDataSourceRepo.findByNameAndType("tds-snap-update", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(20);
+		// Definition preserved
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+		assertThat(result.getDescription()).isEqualTo("original");
+		assertThat(result.getTopic()).isEqualTo("original-topic");
+		assertThat(result.getCronSchedule()).isEqualTo("*/5 * * * * *");
+	}
+
+	@Test
+	void upsertTimedDataSourceFromPlugin_insertsWhenNotExists() {
+		TimedDataSource flow = new TimedDataSource();
+		flow.setName("tds-plugin-insert");
+		flow.setSourcePlugin(UPSERT_PLUGIN);
+		flow.setTopic("plugin-topic");
+		flow.setCronSchedule("*/5 * * * * *");
+		flow.setMaxErrors(5);
+		flow.getFlowStatus().setState(FlowState.STOPPED);
+		timedDataSourceRepo.upsertFlowFromPlugin(flow);
+
+		TimedDataSource result = timedDataSourceRepo.findByNameAndType("tds-plugin-insert", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class).orElseThrow();
+		assertThat(result.getTopic()).isEqualTo("plugin-topic");
+		assertThat(result.getCronSchedule()).isEqualTo("*/5 * * * * *");
+	}
+
+	@Test
+	void upsertTimedDataSourceFromPlugin_updatesDefinitionPreservesState() {
+		TimedDataSource placeholder = new TimedDataSource();
+		placeholder.setName("tds-plugin-update");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setDescription("placeholder");
+		placeholder.setTopic("placeholder-topic");
+		placeholder.setCronSchedule("*/5 * * * * *");
+		placeholder.setMaxErrors(10);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+		timedDataSourceRepo.save(placeholder);
+
+		TimedDataSource pluginFlow = new TimedDataSource();
+		pluginFlow.setName("tds-plugin-update");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		pluginFlow.setDescription("real timed source");
+		pluginFlow.setTopic("real-topic");
+		pluginFlow.setCronSchedule("*/30 * * * * *");
+		pluginFlow.setMaxErrors(99);
+		pluginFlow.setTimedIngressAction(new ActionConfiguration("MyIngress", ActionType.TIMED_INGRESS, "type"));
+		pluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		pluginFlow.setTestMode(false);
+		pluginFlow.getFlowStatus().setValid(true);
+		timedDataSourceRepo.upsertFlowFromPlugin(pluginFlow);
+
+		TimedDataSource result = timedDataSourceRepo.findByNameAndType("tds-plugin-update", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class).orElseThrow();
+		// Definition updated
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN_V2);
+		assertThat(result.getDescription()).isEqualTo("real timed source");
+		assertThat(result.getTopic()).isEqualTo("real-topic");
+		assertThat(result.getCronSchedule()).isEqualTo("*/30 * * * * *");
+		assertThat(result.getTimedIngressAction().getName()).isEqualTo("MyIngress");
+		// State preserved from placeholder
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(10);
+	}
+
+	// -- OnErrorDataSource upserts --
+
+	@Test
+	void upsertOnErrorDataSourceFromSnapshot_insertsWhenNotExists() {
+		OnErrorDataSource placeholder = new OnErrorDataSource();
+		placeholder.setName("oeds-snap-insert");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setTopic("topic");
+		placeholder.setMaxErrors(5);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+
+		onErrorDataSourceRepo.upsertFlowFromSnapshot(placeholder);
+
+		OnErrorDataSource result = onErrorDataSourceRepo.findByNameAndType("oeds-snap-insert", FlowType.ON_ERROR_DATA_SOURCE, OnErrorDataSource.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(5);
+	}
+
+	@Test
+	void upsertOnErrorDataSourceFromSnapshot_updatesOnlyStateFields() {
+		OnErrorDataSource existing = new OnErrorDataSource();
+		existing.setName("oeds-snap-update");
+		existing.setSourcePlugin(UPSERT_PLUGIN);
+		existing.setDescription("original");
+		existing.setTopic("original-topic");
+		existing.setErrorMessageRegex(".*original.*");
+		existing.setMaxErrors(1);
+		existing.getFlowStatus().setState(FlowState.STOPPED);
+		existing.setTestMode(false);
+		onErrorDataSourceRepo.save(existing);
+
+		OnErrorDataSource snapshot = new OnErrorDataSource();
+		snapshot.setName("oeds-snap-update");
+		snapshot.setSourcePlugin(UPSERT_PLUGIN_V2);
+		snapshot.setDescription("snapshot");
+		snapshot.setTopic("snapshot-topic");
+		snapshot.setErrorMessageRegex(".*snapshot.*");
+		snapshot.setMaxErrors(20);
+		snapshot.getFlowStatus().setState(FlowState.RUNNING);
+		snapshot.setTestMode(true);
+
+		onErrorDataSourceRepo.upsertFlowFromSnapshot(snapshot);
+
+		OnErrorDataSource result = onErrorDataSourceRepo.findByNameAndType("oeds-snap-update", FlowType.ON_ERROR_DATA_SOURCE, OnErrorDataSource.class).orElseThrow();
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(20);
+		// Definition preserved
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+		assertThat(result.getDescription()).isEqualTo("original");
+		assertThat(result.getTopic()).isEqualTo("original-topic");
+		assertThat(result.getErrorMessageRegex()).isEqualTo(".*original.*");
+	}
+
+	@Test
+	void upsertOnErrorDataSourceFromPlugin_insertsWhenNotExists() {
+		OnErrorDataSource flow = new OnErrorDataSource();
+		flow.setName("oeds-plugin-insert");
+		flow.setSourcePlugin(UPSERT_PLUGIN);
+		flow.setTopic("plugin-topic");
+		flow.setErrorMessageRegex(".*error.*");
+		flow.setMaxErrors(5);
+		flow.getFlowStatus().setState(FlowState.STOPPED);
+		onErrorDataSourceRepo.upsertFlowFromPlugin(flow);
+
+		OnErrorDataSource result = onErrorDataSourceRepo.findByNameAndType("oeds-plugin-insert", FlowType.ON_ERROR_DATA_SOURCE, OnErrorDataSource.class).orElseThrow();
+		assertThat(result.getTopic()).isEqualTo("plugin-topic");
+		assertThat(result.getErrorMessageRegex()).isEqualTo(".*error.*");
+	}
+
+	@Test
+	void upsertOnErrorDataSourceFromPlugin_updatesDefinitionPreservesState() {
+		OnErrorDataSource placeholder = new OnErrorDataSource();
+		placeholder.setName("oeds-plugin-update");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.setDescription("placeholder");
+		placeholder.setTopic("placeholder-topic");
+		placeholder.setErrorMessageRegex(".*placeholder.*");
+		placeholder.setMaxErrors(10);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.setTestMode(true);
+		onErrorDataSourceRepo.save(placeholder);
+
+		OnErrorDataSource pluginFlow = new OnErrorDataSource();
+		pluginFlow.setName("oeds-plugin-update");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		pluginFlow.setDescription("real error source");
+		pluginFlow.setTopic("real-topic");
+		pluginFlow.setErrorMessageRegex(".*real.*");
+		pluginFlow.setMaxErrors(99);
+		pluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		pluginFlow.setTestMode(false);
+		pluginFlow.getFlowStatus().setValid(true);
+		onErrorDataSourceRepo.upsertFlowFromPlugin(pluginFlow);
+
+		OnErrorDataSource result = onErrorDataSourceRepo.findByNameAndType("oeds-plugin-update", FlowType.ON_ERROR_DATA_SOURCE, OnErrorDataSource.class).orElseThrow();
+		// Definition updated
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN_V2);
+		assertThat(result.getDescription()).isEqualTo("real error source");
+		assertThat(result.getTopic()).isEqualTo("real-topic");
+		assertThat(result.getErrorMessageRegex()).isEqualTo(".*real.*");
+		// State preserved from placeholder
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		assertThat(result.getMaxErrors()).isEqualTo(10);
+	}
+
+	// -- Race condition tests: snapshot upsert hits an existing real flow (not a placeholder) --
+	// These simulate the race where plugin registration creates a flow between the allFlows read
+	// and the upsertPlaceholders call. The ON CONFLICT path should match updateFromSnapshot semantics:
+	// the snapshot state is always applied (state and testMode).
+
+	@Test
+	void upsertFlowFromSnapshot_doesStopRunningPluginFlow() {
+		// Plugin registered this flow as RUNNING (simulates race: plugin created it after allFlows read)
+		TransformFlow pluginFlow = new TransformFlow();
+		pluginFlow.setName("tf-snap-no-stop");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN);
+		pluginFlow.setDescription("real plugin flow");
+		pluginFlow.getFlowStatus().setState(FlowState.RUNNING);
+		pluginFlow.getFlowStatus().setValid(true);
+		pluginFlow.setTestMode(false);
+		transformFlowRepo.save(pluginFlow);
+
+		// Snapshot placeholder says STOPPED
+		TransformFlow snapshotPlaceholder = new TransformFlow();
+		snapshotPlaceholder.setName("tf-snap-no-stop");
+		snapshotPlaceholder.setSourcePlugin(UPSERT_PLUGIN);
+		snapshotPlaceholder.getFlowStatus().setState(FlowState.STOPPED);
+		snapshotPlaceholder.setTestMode(false);
+
+		transformFlowRepo.upsertFlowFromSnapshot(snapshotPlaceholder);
+
+		TransformFlow result = transformFlowRepo.findByNameAndType("tf-snap-no-stop", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		assertThat(result.isRunning()).isFalse();
+		// Definition should be preserved from the real flow
+		assertThat(result.getDescription()).isEqualTo("real plugin flow");
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN);
+	}
+
+	@Test
+	void upsertFlowFromSnapshot_doesDisableTestMode() {
+		// Plugin registered this flow with testMode=true
+		TransformFlow pluginFlow = new TransformFlow();
+		pluginFlow.setName("tf-snap-keep-testmode");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN);
+		pluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		pluginFlow.getFlowStatus().setValid(true);
+		pluginFlow.setTestMode(true);
+		transformFlowRepo.save(pluginFlow);
+
+		// Snapshot placeholder says testMode=false — updateFromSnapshot would NOT disable testMode
+		TransformFlow snapshotPlaceholder = new TransformFlow();
+		snapshotPlaceholder.setName("tf-snap-keep-testmode");
+		snapshotPlaceholder.setSourcePlugin(UPSERT_PLUGIN);
+		snapshotPlaceholder.getFlowStatus().setState(FlowState.STOPPED);
+		snapshotPlaceholder.setTestMode(false);
+
+		transformFlowRepo.upsertFlowFromSnapshot(snapshotPlaceholder);
+
+		TransformFlow result = transformFlowRepo.findByNameAndType("tf-snap-keep-testmode", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		assertThat(result.isTestMode()).isFalse();
+	}
+
+	@Test
+	void upsertFlowFromPlugin_clearsPlaceholderFlag() {
+		// Snapshot created a placeholder
+		TransformFlow placeholder = new TransformFlow();
+		placeholder.setName("tf-plugin-clears-placeholder");
+		placeholder.setSourcePlugin(UPSERT_PLUGIN);
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.getFlowStatus().setPlaceholder(true);
+		placeholder.getFlowStatus().setValid(false);
+		placeholder.setTestMode(true);
+		transformFlowRepo.save(placeholder);
+
+		// Plugin registers the real flow
+		TransformFlow pluginFlow = new TransformFlow();
+		pluginFlow.setName("tf-plugin-clears-placeholder");
+		pluginFlow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		pluginFlow.setDescription("real flow");
+		pluginFlow.getFlowStatus().setState(FlowState.STOPPED);
+		pluginFlow.getFlowStatus().setValid(true);
+		pluginFlow.setTestMode(false);
+		pluginFlow.setTransformActions(List.of(new ActionConfiguration("Action", ActionType.TRANSFORM, "type")));
+
+		transformFlowRepo.upsertFlowFromPlugin(pluginFlow);
+
+		TransformFlow result = transformFlowRepo.findByNameAndType("tf-plugin-clears-placeholder", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		// Placeholder flag must be cleared
+		assertThat(result.getFlowStatus().getPlaceholder()).isFalse();
+		// State preserved from placeholder
+		assertThat(result.isRunning()).isTrue();
+		assertThat(result.isTestMode()).isTrue();
+		// Definition from plugin
+		assertThat(result.getSourcePlugin()).isEqualTo(UPSERT_PLUGIN_V2);
+		assertThat(result.getTransformActions()).hasSize(1);
 	}
 
 	private void setupFlowTagTestData() {

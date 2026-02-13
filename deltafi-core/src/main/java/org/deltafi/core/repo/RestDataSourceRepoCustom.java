@@ -23,4 +23,6 @@ import java.util.List;
 
 public interface RestDataSourceRepoCustom {
     void batchInsert(List<RestDataSource> restDataSources);
+    void upsertFlowFromSnapshot(RestDataSource flow);
+    void upsertFlowFromPlugin(RestDataSource flow);
 }

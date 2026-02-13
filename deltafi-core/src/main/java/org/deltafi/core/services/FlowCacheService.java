@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class FlowCacheService {
-    private final FlowRepo flowRepo;
+    private final FlowRepo<?> flowRepo;
     private volatile Map<FlowKey, Flow> flowCache;
 
     private record FlowKey(String name, FlowType type) {}

@@ -65,6 +65,9 @@ class OnErrorDataSourceServiceTest {
     @Captor
     ArgumentCaptor<Collection<OnErrorDataSource>> flowCaptor;
 
+    @Captor
+    ArgumentCaptor<OnErrorDataSource> singleFlowCaptor;
+
     @Mock
     FlowCacheService flowCacheService;
 
@@ -351,11 +354,9 @@ class OnErrorDataSourceServiceTest {
 
         Result result = onErrorDataSourceService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(onErrorDataSourceRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
+        Mockito.verify(onErrorDataSourceRepo).saveAll(flowCaptor.capture());
 
-        // First call is for updated flows, second is for placeholders
-        List<Collection<OnErrorDataSource>> allSaves = flowCaptor.getAllValues();
-        Map<String, DataSource> updatedFlows = allSaves.get(0).stream()
+        Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(2);
@@ -373,10 +374,9 @@ class OnErrorDataSourceServiceTest {
         assertThat(updatedStopped.isTestMode()).isTrue();
         assertThat(updatedStopped.getErrorMessageRegex()).isEqualTo(".*exception.*");
 
-        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
-        Collection<OnErrorDataSource> placeholders = allSaves.get(1);
-        assertThat(placeholders).hasSize(1);
-        OnErrorDataSource missingPlaceholder = placeholders.iterator().next();
+        // verify placeholder was upserted for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Mockito.verify(onErrorDataSourceRepo).upsertFlowFromSnapshot(singleFlowCaptor.capture());
+        OnErrorDataSource missingPlaceholder = singleFlowCaptor.getValue();
         assertThat(missingPlaceholder.getName()).isEqualTo("missing");
         assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
         assertThat(missingPlaceholder.isRunning()).isFalse();
@@ -414,10 +414,10 @@ class OnErrorDataSourceServiceTest {
 
         Result result = onErrorDataSourceService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(onErrorDataSourceRepo).saveAll(flowCaptor.capture());
+        Mockito.verify(onErrorDataSourceRepo, Mockito.times(2)).upsertFlowFromSnapshot(singleFlowCaptor.capture());
 
-        Map<String, OnErrorDataSource> savedFlows = flowCaptor.getValue().stream()
-                .collect(Collectors.toMap(Flow::getName, f -> (OnErrorDataSource) f));
+        Map<String, OnErrorDataSource> savedFlows = singleFlowCaptor.getAllValues().stream()
+                .collect(Collectors.toMap(Flow::getName, f -> f));
 
         assertThat(savedFlows).hasSize(2);
 

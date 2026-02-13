@@ -61,6 +61,9 @@ class DataSinkServiceTest {
     @Captor
     ArgumentCaptor<Collection<DataSink>> flowCaptor;
 
+    @Captor
+    ArgumentCaptor<DataSink> singleFlowCaptor;
+
     @Mock
     FlowCacheService flowCacheService;
 
@@ -119,11 +122,9 @@ class DataSinkServiceTest {
 
         Result result = dataSinkService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(dataSinkRepo, Mockito.times(2)).saveAll(flowCaptor.capture());
+        Mockito.verify(dataSinkRepo).saveAll(flowCaptor.capture());
 
-        // First call is for updated flows, second is for placeholders
-        List<Collection<DataSink>> allSaves = flowCaptor.getAllValues();
-        Map<String, DataSink> updatedFlows = allSaves.get(0).stream()
+        Map<String, DataSink> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(updatedFlows).hasSize(3);
@@ -141,10 +142,9 @@ class DataSinkServiceTest {
         assertThat(updatedFlows.get("invalid").isInvalid()).isTrue();
         assertThat(updatedFlows.get("invalid").isTestMode()).isFalse();
 
-        // verify placeholder was created for missing flow (with system-plugin since no sourcePlugin in old snapshot)
-        Collection<DataSink> placeholders = allSaves.get(1);
-        assertThat(placeholders).hasSize(1);
-        DataSink missingPlaceholder = placeholders.iterator().next();
+        // verify placeholder was upserted for missing flow (with system-plugin since no sourcePlugin in old snapshot)
+        Mockito.verify(dataSinkRepo).upsertFlowFromSnapshot(singleFlowCaptor.capture());
+        DataSink missingPlaceholder = singleFlowCaptor.getValue();
         assertThat(missingPlaceholder.getName()).isEqualTo("missing");
         assertThat(missingPlaceholder.getFlowStatus().getPlaceholder()).isTrue();
         assertThat(missingPlaceholder.isRunning()).isTrue();
@@ -177,9 +177,9 @@ class DataSinkServiceTest {
 
         Result result = dataSinkService.resetFromSnapshot(snapshot, true);
 
-        Mockito.verify(dataSinkRepo).saveAll(flowCaptor.capture());
+        Mockito.verify(dataSinkRepo, Mockito.times(2)).upsertFlowFromSnapshot(singleFlowCaptor.capture());
 
-        Map<String, DataSink> savedFlows = flowCaptor.getValue().stream()
+        Map<String, DataSink> savedFlows = singleFlowCaptor.getAllValues().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertThat(savedFlows).hasSize(2);

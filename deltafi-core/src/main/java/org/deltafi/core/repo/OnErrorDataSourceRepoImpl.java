@@ -24,6 +24,8 @@ import org.deltafi.core.types.OnErrorDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -50,28 +52,80 @@ public class OnErrorDataSourceRepoImpl implements OnErrorDataSourceRepoCustom {
                     ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb)
         """;
 
-        jdbcTemplate.batchUpdate(sql, onErrorDataSources, 1000, (ps, onErrorDataSource) -> {
-            ps.setString(1, onErrorDataSource.getName());
-            ps.setString(2, onErrorDataSource.getType().name());
-            ps.setString(3, onErrorDataSource.getDescription());
-            ps.setString(4, toJson(onErrorDataSource.getSourcePlugin()));
-            ps.setString(5, toJson(onErrorDataSource.getFlowStatus()));
-            ps.setString(6, toJson(onErrorDataSource.getVariables()));
-            ps.setString(7, onErrorDataSource.getTopic());
-            ps.setString(8, "ON_ERROR_DATA_SOURCE");
-            ps.setObject(9, onErrorDataSource.getId());
-            ps.setInt(10, onErrorDataSource.getMaxErrors());
-            ps.setString(11, toJson(onErrorDataSource.getMetadata()));
-            ps.setString(12, toJson(onErrorDataSource.getAnnotationConfig()));
-            ps.setString(13, onErrorDataSource.getErrorMessageRegex());
-            ps.setString(14, toJson(onErrorDataSource.getSourceFilters()));
-            ps.setString(15, toJson(onErrorDataSource.getMetadataFilters()));
-            ps.setString(16, toJson(onErrorDataSource.getAnnotationFilters()));
-            ps.setString(17, toJson(onErrorDataSource.getIncludeSourceMetadataRegex()));
-            ps.setString(18, onErrorDataSource.getSourceMetadataPrefix());
-            ps.setString(19, toJson(onErrorDataSource.getIncludeSourceAnnotationsRegex()));
-            ps.setString(20, toJson(onErrorDataSource.getTags()));
-        });
+        jdbcTemplate.batchUpdate(sql, onErrorDataSources, 1000, this::setupPreparedStatement);
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromSnapshot(OnErrorDataSource flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               topic, discriminator, id, max_errors,
+                               metadata, annotation_config, error_message_regex, source_filters,
+                               metadata_filters, annotation_filters, include_source_metadata_regex,
+                               source_metadata_prefix, include_source_annotations_regex, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
+                    ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                max_errors = EXCLUDED.max_errors,
+               \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_SNAPSHOT;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(ps, flow));
+    }
+
+    @Override
+    @Transactional
+    public void upsertFlowFromPlugin(OnErrorDataSource flow) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               topic, discriminator, id, max_errors,
+                               metadata, annotation_config, error_message_regex, source_filters,
+                               metadata_filters, annotation_filters, include_source_metadata_regex,
+                               source_metadata_prefix, include_source_annotations_regex, tags)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?,
+                    ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb)
+            ON CONFLICT (name, type) DO UPDATE SET
+                description = EXCLUDED.description,
+                source_plugin = EXCLUDED.source_plugin,
+                variables = EXCLUDED.variables,
+                topic = EXCLUDED.topic,
+                max_errors = flows.max_errors,
+                metadata = EXCLUDED.metadata,
+                annotation_config = EXCLUDED.annotation_config,
+                error_message_regex = EXCLUDED.error_message_regex,
+                source_filters = EXCLUDED.source_filters,
+                metadata_filters = EXCLUDED.metadata_filters,
+                annotation_filters = EXCLUDED.annotation_filters,
+                include_source_metadata_regex = EXCLUDED.include_source_metadata_regex,
+                source_metadata_prefix = EXCLUDED.source_metadata_prefix,
+                include_source_annotations_regex = EXCLUDED.include_source_annotations_regex, 
+                tags = EXCLUDED.tags,
+                \s""" + FlowRepo.FLOW_STATE_UPSERT_FROM_PLUGIN;
+
+        jdbcTemplate.update(sql, ps -> setupPreparedStatement(ps, flow));
+    }
+
+    private void setupPreparedStatement(PreparedStatement ps, OnErrorDataSource onErrorDataSource) throws SQLException {
+        ps.setString(1, onErrorDataSource.getName());
+        ps.setString(2, onErrorDataSource.getType().name());
+        ps.setString(3, onErrorDataSource.getDescription());
+        ps.setString(4, toJson(onErrorDataSource.getSourcePlugin()));
+        ps.setString(5, toJson(onErrorDataSource.getFlowStatus()));
+        ps.setString(6, toJson(onErrorDataSource.getVariables()));
+        ps.setString(7, onErrorDataSource.getTopic());
+        ps.setString(8, "ON_ERROR_DATA_SOURCE");
+        ps.setObject(9, onErrorDataSource.getId());
+        ps.setInt(10, onErrorDataSource.getMaxErrors());
+        ps.setString(11, toJson(onErrorDataSource.getMetadata()));
+        ps.setString(12, toJson(onErrorDataSource.getAnnotationConfig()));
+        ps.setString(13, onErrorDataSource.getErrorMessageRegex());
+        ps.setString(14, toJson(onErrorDataSource.getSourceFilters()));
+        ps.setString(15, toJson(onErrorDataSource.getMetadataFilters()));
+        ps.setString(16, toJson(onErrorDataSource.getAnnotationFilters()));
+        ps.setString(17, toJson(onErrorDataSource.getIncludeSourceMetadataRegex()));
+        ps.setString(18, onErrorDataSource.getSourceMetadataPrefix());
+        ps.setString(19, toJson(onErrorDataSource.getIncludeSourceAnnotationsRegex()));
+        ps.setString(20, toJson(onErrorDataSource.getTags()));
     }
 
     private String toJson(Object object) {

@@ -85,6 +85,9 @@ class RestDataSourceServiceTest {
     @Captor
     private ArgumentCaptor<Collection<RestDataSource>> flowCaptor;
 
+    @Captor
+    private ArgumentCaptor<RestDataSource> singleFlowCaptor;
+
     private RestDataSourceService restDataSourceService;
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -538,9 +541,9 @@ class RestDataSourceServiceTest {
 
         Result result = restDataSourceService.resetFromSnapshot(snapshot, true);
 
-        verify(restDataSourceRepo).saveAll(flowCaptor.capture());
+        verify(restDataSourceRepo, times(2)).upsertFlowFromSnapshot(singleFlowCaptor.capture());
 
-        Map<String, RestDataSource> savedFlows = flowCaptor.getValue().stream()
+        Map<String, RestDataSource> savedFlows = singleFlowCaptor.getAllValues().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
         assertEquals(2, savedFlows.size());

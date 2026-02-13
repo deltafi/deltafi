@@ -17,7 +17,14 @@
  */
 package org.deltafi.core.repo;
 
+import org.deltafi.core.types.TransformFlow;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TransformFlowRepo extends FlowRepo, TransformFlowRepoCustom {}
+public interface TransformFlowRepo extends FlowRepo<TransformFlow>, TransformFlowRepoCustom {
+    @Override
+    void upsertFlowFromSnapshot(TransformFlow flow);
+
+    @Override
+    void upsertFlowFromPlugin(TransformFlow flow);
+}
