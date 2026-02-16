@@ -5,6 +5,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.49.6] - 2026-02-16
+
+### Added
+- Add missing javadoc to deltafi-common 
+- Added `SET` variable data type for order-independent collection properties. SET values are stored in sorted order, preventing false positives in fleet configuration diffs when the same values are entered in different order.
+
+### Changed
+- Changed `allowedAnalyticsAnnotations` and `provenanceAnnotationsAllowed` system properties from `LIST` to `SET` data type
+- Collection property values (LIST, SET, MAP) are now displayed as pills instead of raw comma-separated strings
+
+### Fixed
+- Fixed list property editor creating duplicate entries when a value contains a comma
+- Fixed Grafana dashboard timeouts caused by excessive `maxDataPoints` values. With Graphite, high values meant "don't downsample." With VictoriaMetrics/PromQL, they cause the expression to be evaluated at every step (~100K times), overwhelming the server. Stat panels now use `maxDataPoints: 1`; time series panels use the Grafana default (panel width).
+- Fixed an issue where flows created by plugin registration could conflict with flow placeholders created by snapshot resets
+
+### Tech-Debt/Refactor
+- Add missing javadoc to deltafi-action-kit and deltafi-action-kit-test 
+- Update to plugin CI template
+
+### Upgrade and Migration
+- Existing `allowedAnalyticsAnnotations` and `provenanceAnnotationsAllowed` property values are automatically normalized (sorted) on startup
+
 ## [2.49.5] - 2026-02-12
 
 ### Added
@@ -5771,7 +5793,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.5...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.6...main
+[2.49.6]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.5...2.49.6
 [2.49.5]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.2...2.49.5
 [2.49.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.1...2.49.2
 [2.49.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.0...2.49.1
