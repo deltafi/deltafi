@@ -31,7 +31,7 @@ COPY --from=deltafi-ui-build-stage /ui/dist /deltafi
 COPY --from=deltafi-docs-build-stage /docs/.vitepress/dist /deltafi/docs
 COPY --from=deltafi-graphiql-build-stage /graphiql/build /deltafi/graphiql
 
-FROM deltafi/deltafi-java-jre:21.0.9-alpine-7 AS final
+FROM deltafi/deltafi-java-jre:21.0.10-alpine-0 AS final
 VOLUME /tmp
 COPY probe.sh .
 COPY --from=aggregator /deltafi /deltafi

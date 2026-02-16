@@ -1,6 +1,6 @@
 module deltafi.org/deltafi-analytics
 
-go 1.25
+go 1.26
 
 require (
 	github.com/duckdb/duckdb-go/v2 v2.5.5
