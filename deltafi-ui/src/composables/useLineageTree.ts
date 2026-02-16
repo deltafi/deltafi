@@ -33,11 +33,54 @@ export interface LineageNode {
   ancestorsExpanded: boolean;
   descendantsExpanded: boolean;
   loading: boolean;
+  overflowCount: number;
 }
 
 export interface LineageTree {
   nodes: Map<string, LineageNode>;
   rootDid: string;
+}
+
+const MAX_CHILDREN_PER_NODE = 20;
+
+// Cap a node's children or parents. Creates an overflow placeholder when over the limit.
+// Returns the real (non-placeholder) DIDs to fetch.
+function capRelationships(
+  nodes: Map<string, LineageNode>,
+  node: LineageNode,
+  direction: "children" | "parents"
+): string[] {
+  const dids = direction === "children" ? node.childDids : node.parentDids;
+  if (dids.length <= MAX_CHILDREN_PER_NODE) return dids;
+
+  const kept = dids.slice(0, MAX_CHILDREN_PER_NODE);
+  const overflowCount = dids.length - MAX_CHILDREN_PER_NODE;
+  const prefix = direction === "children" ? "overflow-desc" : "overflow-anc";
+  const overflowDid = `${prefix}-${node.did}`;
+
+  if (!nodes.has(overflowDid)) {
+    nodes.set(overflowDid, {
+      did: overflowDid,
+      name: `+${overflowCount} more`,
+      stage: "",
+      dataSource: "",
+      parentDids: [],
+      childDids: direction === "parents" ? [node.did] : [],
+      depth: direction === "children" ? node.depth + 1 : node.depth - 1,
+      ancestorsExpanded: true,
+      descendantsExpanded: true,
+      loading: false,
+      overflowCount,
+    });
+  }
+
+  if (direction === "children") {
+    node.childDids = [...kept, overflowDid];
+  } else {
+    node.parentDids = [...kept, overflowDid];
+  }
+
+  return kept;
 }
 
 export default function useLineageTree() {
@@ -84,6 +127,7 @@ export default function useLineageTree() {
       ancestorsExpanded: false,
       descendantsExpanded: false,
       loading: false,
+      overflowCount: 0,
     }));
   };
 
@@ -112,14 +156,16 @@ export default function useLineageTree() {
         ancestorsExpanded: ancestorDepth > 0,
         descendantsExpanded: descendantDepth > 0,
         loading: false,
+        overflowCount: 0,
       };
       nodes.set(rootDid, rootNode);
 
-      // Fetch ancestors (going up the tree)
-      await fetchAncestors(nodes, rootNode.parentDids, -1, -ancestorDepth);
+      // Cap root's relationships before fetching tree
+      const rootParentDids = capRelationships(nodes, rootNode, "parents");
+      const rootChildDids = capRelationships(nodes, rootNode, "children");
 
-      // Fetch descendants (going down the tree)
-      await fetchDescendants(nodes, rootNode.childDids, 1, descendantDepth);
+      await fetchAncestors(nodes, rootParentDids, -1, -ancestorDepth);
+      await fetchDescendants(nodes, rootChildDids, 1, descendantDepth);
 
       tree.value = { nodes, rootDid };
     } catch (e) {
@@ -150,7 +196,8 @@ export default function useLineageTree() {
       node.depth = currentDepth;
       node.ancestorsExpanded = currentDepth > maxDepth;
       nodes.set(node.did, node);
-      nextParentDids.push(...node.parentDids);
+      const realParentDids = capRelationships(nodes, node, "parents");
+      nextParentDids.push(...realParentDids);
     }
 
     // Recursively fetch next level of ancestors
@@ -178,7 +225,8 @@ export default function useLineageTree() {
       node.depth = currentDepth;
       node.descendantsExpanded = currentDepth < maxDepth;
       nodes.set(node.did, node);
-      nextChildDids.push(...node.childDids);
+      const realChildDids = capRelationships(nodes, node, "children");
+      nextChildDids.push(...realChildDids);
     }
 
     // Recursively fetch next level of descendants
@@ -194,8 +242,9 @@ export default function useLineageTree() {
 
     try {
       const nodes = tree.value.nodes;
+      const parentDidsToFetch = capRelationships(nodes, node, "parents");
       const targetDepth = node.depth - levels;
-      await fetchAncestors(nodes, node.parentDids, node.depth - 1, targetDepth);
+      await fetchAncestors(nodes, parentDidsToFetch, node.depth - 1, targetDepth);
       node.ancestorsExpanded = true;
       // Trigger reactivity
       tree.value = { ...tree.value, nodes: new Map(nodes) };
@@ -213,8 +262,9 @@ export default function useLineageTree() {
 
     try {
       const nodes = tree.value.nodes;
+      const childDidsToFetch = capRelationships(nodes, node, "children");
       const targetDepth = node.depth + levels;
-      await fetchDescendants(nodes, node.childDids, node.depth + 1, targetDepth);
+      await fetchDescendants(nodes, childDidsToFetch, node.depth + 1, targetDepth);
       node.descendantsExpanded = true;
       // Trigger reactivity
       tree.value = { ...tree.value, nodes: new Map(nodes) };

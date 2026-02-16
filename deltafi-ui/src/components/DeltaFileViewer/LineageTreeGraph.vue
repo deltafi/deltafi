@@ -57,7 +57,7 @@
           v-for="node in layoutNodes"
           :key="node.did"
           :transform="`translate(${node.x - nodeWidth / 2}, ${node.y - nodeHeight / 2})`"
-          class="node-group"
+          :class="['node-group', { 'overflow-node': node.overflowCount > 0 }]"
         >
           <!-- Main node rectangle -->
           <rect
@@ -68,12 +68,14 @@
             :fill="getNodeFill(node)"
             :stroke="getNodeStroke(node)"
             :stroke-width="node.did === rootDid ? 3 : 1.5"
+            :stroke-dasharray="node.overflowCount > 0 ? '4 3' : null"
             class="node-rect"
             @click="onNodeClick(node)"
           />
 
           <!-- Filename (line 1) -->
           <text
+            v-if="node.overflowCount === 0"
             :x="nodeWidth / 2"
             :y="14"
             text-anchor="middle"
@@ -85,7 +87,7 @@
           </text>
 
           <!-- Stage badge + DataSource (line 2) -->
-          <g :transform="`translate(${nodeWidth / 2}, 28)`">
+          <g v-if="node.overflowCount === 0" :transform="`translate(${nodeWidth / 2}, 28)`">
             <!-- Stage badge -->
             <rect
               :x="-getStageWidth(node.stage) / 2 - 2"
@@ -107,6 +109,7 @@
 
           <!-- Data Source (below stage) -->
           <text
+            v-if="node.overflowCount === 0"
             :x="nodeWidth / 2"
             :y="nodeHeight - 4"
             text-anchor="middle"
@@ -115,6 +118,17 @@
             @mouseleave="hideTooltip"
           >
             {{ truncateLabel(node.dataSource, 20) }}
+          </text>
+
+          <!-- Overflow placeholder -->
+          <text
+            v-if="node.overflowCount > 0"
+            :x="nodeWidth / 2"
+            :y="nodeHeight / 2 + 4"
+            text-anchor="middle"
+            class="node-overflow-label"
+          >
+            {{ node.name }}
           </text>
 
           <!-- Expand ancestors button (left side) -->
@@ -437,6 +451,9 @@ const viewBoxString = computed(() => {
 
 // Node styling based on stage
 function getNodeFill(node) {
+  if (node.overflowCount > 0) {
+    return "var(--surface-50)";
+  }
   if (node.did === props.rootDid) {
     return "var(--primary-100)";
   }
@@ -451,6 +468,9 @@ function getNodeFill(node) {
 }
 
 function getNodeStroke(node) {
+  if (node.overflowCount > 0) {
+    return "var(--surface-400)";
+  }
   if (node.did === props.rootDid) {
     return "var(--primary-500)";
   }
@@ -521,6 +541,7 @@ function hideTooltip() {
 
 // Node click - navigate to DeltaFile viewer
 function onNodeClick(node) {
+  if (node.overflowCount > 0) return;
   const route = router.resolve({ name: "DeltaFile Viewer", params: { did: node.did } });
   window.open(route.href, "_blank");
 }
@@ -648,6 +669,21 @@ watch(
 
 .node-rect:hover {
   filter: brightness(0.95);
+}
+
+.overflow-node {
+  cursor: default;
+}
+
+.overflow-node .node-rect:hover {
+  filter: none;
+}
+
+.node-overflow-label {
+  font-size: 11px;
+  font-style: italic;
+  fill: var(--text-color-secondary);
+  pointer-events: none;
 }
 
 .node-filename {
