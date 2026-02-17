@@ -46,13 +46,13 @@ func init() {
 	log.SetFlags(0) // Turn off default timestamp
 }
 
-func Log(level, msg string, v ...interface{}) {
+func Log(level, msg string, v ...any) {
 	logEntry := CustomLog{
 		Timestamp:  time.Now(),
 		Level:      level,
 		LoggerName: "deltafi-egress-sink",
 		HostName:   hostname,
-		Message: fmt.Sprintf(msg, v...),
+		Message:    fmt.Sprintf(msg, v...),
 	}
 
 	jsonLog, err := json.Marshal(logEntry)
@@ -64,18 +64,18 @@ func Log(level, msg string, v ...interface{}) {
 	log.Println(string(jsonLog))
 }
 
-func Info(msg string, v ...interface{}) {
+func Info(msg string, v ...any) {
 	Log("INFO", msg, v...)
 }
 
-func Debug(msg string, v ...interface{}) {
+func Debug(msg string, v ...any) {
 	Log("DEBUG", msg, v...)
 }
 
-func Warn(msg string, v ...interface{}) {
+func Warn(msg string, v ...any) {
 	Log("WARN", msg, v...)
 }
 
-func Error(msg string, v ...interface{}) {
+func Error(msg string, v ...any) {
 	Log("ERROR", msg, v...)
 }
