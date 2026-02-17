@@ -110,6 +110,17 @@ deltafi errored replay --acknowledge --reason "Replayed for retry"
 deltafi errored replay --acknowledge --reason "Fixed upstream issue" --data-source my-source
 ```
 
+## Fleet-Wide Error Management
+
+In a Fleet Leader-Member deployment, the **Fleet Errors** page provides centralized error management across all Fleet Member systems. From the Fleet Leader, you can:
+
+- View aggregated error counts by Fleet Member, flow, or error message
+- Filter errors by Fleet Member, tags, data source, error cause, and time range
+- Perform bulk acknowledge, resume, and replay operations across multiple Fleet Members
+- Execute actions in parallel on up to 5 Fleet Members simultaneously
+
+See [Fleet Leader-Member Deployment](/advanced/leader_member.md#fleet-errors) for full details.
+
 ## Error Thresholds and Ingress Flow Blocking
 
 In order to maintain a high level of data quality and system stability, DeltaFi allows you to set a maximum number of allowable errors within an ingress flow. This error threshold ensures that when a specific number of unacknowledged errors are reached, the ingress flow will be blocked, preventing any further data from entering the flow. This feature is particularly useful for identifying and addressing issues within a flow before they have a significant impact on the overall data processing pipeline.

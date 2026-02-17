@@ -21,7 +21,7 @@
 
 <template>
   <div class="search-date-toolbar btn-toolbar mb-2 mb-md-0">
-    <Dropdown v-model="dateTypeModel" :options="dateTypeOptions" class="deltafi-input-field date-type-dropdown" />
+    <Dropdown v-if="dateTypeOptions.length > 1" v-model="dateTypeModel" :options="dateTypeOptions" class="deltafi-input-field date-type-dropdown" />
     <CustomCalendar ref="customCalendarRef" :start-time-date="startTimeDate" :end-time-date="endTimeDate" :reset-default="resetDefault" class="ml-0" @update:start-time-date:end-time-date="onDateChange" />
     <Button class="p-button-text p-button-sm p-button-secondary" disabled>
       {{ shortTimezone() }}

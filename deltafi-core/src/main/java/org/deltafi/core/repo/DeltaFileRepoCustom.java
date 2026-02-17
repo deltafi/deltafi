@@ -194,10 +194,13 @@ public interface DeltaFileRepoCustom {
      * @param flowType type of flow to search for
      * @param flowName name of flow to search for
      * @param includeAcknowledged include dids of DeltaFiles with acknowledged errors when true
+     * @param modifiedAfter only include DeltaFiles modified after this time
+     * @param modifiedBefore only include DeltaFiles modified before this time
      * @param limit max number of DeltaFile dids to return
      * @return the list of dids who can be resumed
      */
-    List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit);
+    List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged,
+            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit);
 
     /**
      * Find the ids of the DeltaFiles with the given errorCause that can be resumed

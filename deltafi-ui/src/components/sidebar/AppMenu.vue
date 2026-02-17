@@ -138,6 +138,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("DeltaFileMetadataView")),
       },
       {
+        name: "Errors",
+        icon: "fas fa-exclamation-circle fa-fw",
+        path: "/fleet/errors",
+        visible: computed(() => hasPermission("DeltaFileMetadataView")),
+      },
+      {
         name: "Config",
         icon: "fas fa-sliders fa-fw",
         path: "/fleet/config",

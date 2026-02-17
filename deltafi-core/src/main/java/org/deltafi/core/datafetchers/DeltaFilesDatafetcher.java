@@ -231,9 +231,11 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileAcknowledge
-  public List<AcknowledgeResult> acknowledgeByFlow(@InputArgument FlowType flowType, @InputArgument String flowName, @InputArgument String reason, @InputArgument Integer limit) {
+  public List<AcknowledgeResult> acknowledgeByFlow(@InputArgument FlowType flowType, @InputArgument String flowName,
+          @InputArgument String reason, @InputArgument OffsetDateTime modifiedAfter, @InputArgument OffsetDateTime modifiedBefore,
+          @InputArgument Integer limit) {
     auditLogger.audit("acknowledging deltaFiles by flow {} {}", flowType, flowName);
-    return deltaFilesService.acknowledgeByFlow(flowType, flowName, reason, limit != null ? limit : 1000);
+    return deltaFilesService.acknowledgeByFlow(flowType, flowName, reason, modifiedAfter, modifiedBefore, limit != null ? limit : 1000);
   }
 
   @DgsMutation
@@ -250,9 +252,12 @@ public class DeltaFilesDatafetcher {
           @InputArgument String flowName,
           @InputArgument List<String> removeSourceMetadata,
           @InputArgument List<KeyValue> replaceSourceMetadata,
+          @InputArgument OffsetDateTime modifiedAfter,
+          @InputArgument OffsetDateTime modifiedBefore,
           @InputArgument Integer limit) {
     auditLogger.audit("replaying errored deltaFiles by flow {} {}", flowType, flowName);
-    return deltaFilesService.replayErrorsByFlow(flowType, flowName, removeSourceMetadata, replaceSourceMetadata, limit != null ? limit : 1000);
+    return deltaFilesService.replayErrorsByFlow(flowType, flowName, removeSourceMetadata, replaceSourceMetadata,
+            modifiedAfter, modifiedBefore, limit != null ? limit : 1000);
   }
 
   @DgsMutation
@@ -285,9 +290,12 @@ public class DeltaFilesDatafetcher {
           @InputArgument String reason,
           @InputArgument List<String> removeSourceMetadata,
           @InputArgument List<KeyValue> replaceSourceMetadata,
+          @InputArgument OffsetDateTime modifiedAfter,
+          @InputArgument OffsetDateTime modifiedBefore,
           @InputArgument Integer limit) {
     auditLogger.audit("replaying and acknowledging errored deltaFiles by flow {} {}", flowType, flowName);
-    return deltaFilesService.replayAndAcknowledgeByFlow(flowType, flowName, reason, removeSourceMetadata, replaceSourceMetadata, limit != null ? limit : 1000);
+    return deltaFilesService.replayAndAcknowledgeByFlow(flowType, flowName, reason, removeSourceMetadata, replaceSourceMetadata,
+            modifiedAfter, modifiedBefore, limit != null ? limit : 1000);
   }
 
   @DgsMutation
@@ -424,8 +432,12 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileResume
-  public List<RetryResult> resumeByFlow(@InputArgument FlowType flowType, @InputArgument String name, @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Boolean includeAcknowledged, @InputArgument Integer limit) {
-    return deltaFilesService.resumeByFlowTypeAndName(flowType, name, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged), limit != null ? limit : 1000);
+  public List<RetryResult> resumeByFlow(@InputArgument FlowType flowType, @InputArgument String name,
+          @InputArgument List<ResumeMetadata> resumeMetadata, @InputArgument Boolean includeAcknowledged,
+          @InputArgument OffsetDateTime modifiedAfter, @InputArgument OffsetDateTime modifiedBefore,
+          @InputArgument Integer limit) {
+    return deltaFilesService.resumeByFlowTypeAndName(flowType, name, resumeMetadata, Boolean.TRUE.equals(includeAcknowledged),
+            modifiedAfter, modifiedBefore, limit != null ? limit : 1000);
   }
 
   @DgsMutation

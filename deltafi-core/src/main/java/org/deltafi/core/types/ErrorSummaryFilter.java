@@ -33,4 +33,5 @@ public class ErrorSummaryFilter implements SummaryFilter {
     private OffsetDateTime modifiedBefore;
     private Boolean errorAcknowledged;
     private String flow;
+    private String errorCause;
 }

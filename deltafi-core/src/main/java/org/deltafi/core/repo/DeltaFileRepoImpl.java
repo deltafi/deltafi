@@ -375,8 +375,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged, int limit) {
-        String queryBuilder = """
+    public List<DeltaFile> findForResumeByFlowTypeAndName(FlowType flowType, String flowName, boolean includeAcknowledged,
+            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
+        StringBuilder queryBuilder = new StringBuilder("""
                     SELECT df.did
                     FROM delta_files df
                     WHERE df.stage = 'ERROR'
@@ -391,13 +392,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                         AND fd.name = :flowName
                         AND (:includeAcknowledged OR flow.error_acknowledged IS NULL)
                     )
-                    LIMIT :limit
-                """;
-        Query query = entityManager.createNativeQuery(queryBuilder, UUID.class)
+                """);
+        if (modifiedAfter != null) {
+            queryBuilder.append(" AND df.modified >= :modifiedAfter");
+        }
+        if (modifiedBefore != null) {
+            queryBuilder.append(" AND df.modified <= :modifiedBefore");
+        }
+        queryBuilder.append(" LIMIT :limit");
+
+        Query query = entityManager.createNativeQuery(queryBuilder.toString(), UUID.class)
                 .setParameter("flowType", flowType.name())
                 .setParameter("flowName", flowName)
                 .setParameter("includeAcknowledged", includeAcknowledged)
                 .setParameter(LIMIT, limit);
+
+        if (modifiedAfter != null) {
+            query.setParameter("modifiedAfter", modifiedAfter);
+        }
+        if (modifiedBefore != null) {
+            query.setParameter("modifiedBefore", modifiedBefore);
+        }
 
         @SuppressWarnings("unchecked")
         List<UUID> dids = query.getResultList();

@@ -210,11 +210,16 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
                 sql.append("AND fd.name = :flow ");
             }
 
-            if (filter instanceof ErrorSummaryFilter errorFilter && errorFilter.getErrorAcknowledged() != null) {
-                if (errorFilter.getErrorAcknowledged()) {
-                    sql.append("AND dff.error_acknowledged IS NOT NULL ");
-                } else {
-                    sql.append("AND dff.error_acknowledged IS NULL ");
+            if (filter instanceof ErrorSummaryFilter errorFilter) {
+                if (errorFilter.getErrorAcknowledged() != null) {
+                    if (errorFilter.getErrorAcknowledged()) {
+                        sql.append("AND dff.error_acknowledged IS NOT NULL ");
+                    } else {
+                        sql.append("AND dff.error_acknowledged IS NULL ");
+                    }
+                }
+                if (errorFilter.getErrorCause() != null) {
+                    sql.append("AND dff.error_or_filter_cause ILIKE :errorCause ");
                 }
             }
         }
@@ -294,6 +299,9 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
             }
             if (filter.getFlow() != null) {
                 query.setParameter("flow", filter.getFlow());
+            }
+            if (filter instanceof ErrorSummaryFilter errorFilter && errorFilter.getErrorCause() != null) {
+                query.setParameter("errorCause", "%" + errorFilter.getErrorCause() + "%");
             }
         }
     }

@@ -1593,12 +1593,12 @@ class DeltaFilesServiceTest {
     @Test
     void replayErrorsByFlow() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100))
+        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100))
                 .thenReturn(List.of(deltaFile));
 
-        deltaFilesService.replayErrorsByFlow(FlowType.TRANSFORM, "testFlow", null, null, 100);
+        deltaFilesService.replayErrorsByFlow(FlowType.TRANSFORM, "testFlow", null, null, null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100);
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100);
     }
 
     @Test
@@ -1633,12 +1633,12 @@ class DeltaFilesServiceTest {
     @Test
     void replayAndAcknowledgeByFlow() {
         DeltaFile deltaFile = utilService.buildDeltaFile(UUID.randomUUID());
-        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100))
+        Mockito.when(deltaFileRepo.findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100))
                 .thenReturn(List.of(deltaFile));
 
-        deltaFilesService.replayAndAcknowledgeByFlow(FlowType.TRANSFORM, "testFlow", "reason", null, null, 100);
+        deltaFilesService.replayAndAcknowledgeByFlow(FlowType.TRANSFORM, "testFlow", "reason", null, null, null, null, 100);
 
-        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, 100);
+        Mockito.verify(deltaFileRepo).findForResumeByFlowTypeAndName(FlowType.TRANSFORM, "testFlow", false, null, null, 100);
     }
 
     @Test

@@ -1080,8 +1080,10 @@ public class DeltaFilesService {
     }
 
     @Transactional
-    public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, List<ResumeMetadata> resumeMetadata, boolean includeAcknowledged, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged, limit);
+    public List<RetryResult> resumeByFlowTypeAndName(FlowType flowType, String name, List<ResumeMetadata> resumeMetadata,
+            boolean includeAcknowledged, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, name, includeAcknowledged,
+                modifiedAfter, modifiedBefore, limit);
         return this.resumeDeltaFiles(deltaFiles, resumeMetadata);
     }
 
@@ -1488,8 +1490,10 @@ public class DeltaFilesService {
     }
 
     @Transactional
-    public List<AcknowledgeResult> acknowledgeByFlow(FlowType flowType, String flowName, String reason, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false, limit);
+    public List<AcknowledgeResult> acknowledgeByFlow(FlowType flowType, String flowName, String reason,
+            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false,
+                modifiedAfter, modifiedBefore, limit);
         Map<UUID, DeltaFile> toAck = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return acknowledge(toAck, reason);
     }
@@ -1503,8 +1507,10 @@ public class DeltaFilesService {
 
     @Transactional
     public List<RetryResult> replayErrorsByFlow(FlowType flowType, String flowName,
-            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false, limit);
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata,
+            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false,
+                modifiedAfter, modifiedBefore, limit);
         return replay(deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d)), removeSourceMetadata, replaceSourceMetadata);
     }
 
@@ -1522,8 +1528,10 @@ public class DeltaFilesService {
     }
 
     public List<ReplayAndAcknowledgeResult> replayAndAcknowledgeByFlow(FlowType flowType, String flowName, String reason,
-            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false, limit);
+            List<String> removeSourceMetadata, List<KeyValue> replaceSourceMetadata,
+            OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, int limit) {
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, false,
+                modifiedAfter, modifiedBefore, limit);
         Map<UUID, DeltaFile> deltaFileMap = deltaFiles.stream().collect(Collectors.toMap(DeltaFile::getDid, d -> d));
         return replayAndAcknowledge(deltaFileMap, reason, removeSourceMetadata, replaceSourceMetadata);
     }
@@ -1646,7 +1654,7 @@ public class DeltaFilesService {
     }
 
     public int annotateByFlow(FlowType flowType, String flowName, Map<String, String> annotations, boolean allowOverwrites, int limit) {
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, true, limit);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForResumeByFlowTypeAndName(flowType, flowName, true, null, null, limit);
         annotateMatching(deltaFiles, annotations, allowOverwrites);
         return deltaFiles.size();
     }

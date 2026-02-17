@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.AggregatedSearchOptionsService;
+import org.deltafi.core.services.FederatedErrorService;
 import org.deltafi.core.services.FederatedSearchService;
 import org.deltafi.core.services.LeaderConfigService;
 import org.deltafi.core.services.MemberMonitorService;
@@ -29,6 +30,11 @@ import org.deltafi.core.types.leader.AggregatedStats;
 import org.deltafi.core.types.leader.ConfigDiff;
 import org.deltafi.core.types.leader.LeaderDashboardData;
 import org.deltafi.core.types.leader.AggregatedSearchOptions;
+import org.deltafi.core.types.leader.FederatedActionRequest;
+import org.deltafi.core.types.leader.FederatedActionResponse;
+import org.deltafi.core.types.leader.FederatedErrorFilter;
+import org.deltafi.core.types.leader.FederatedErrorResponse;
+import org.deltafi.core.types.leader.FederatedErrorSummaryResponse;
 import org.deltafi.core.types.leader.FederatedSearchResponse;
 import org.deltafi.core.types.leader.PluginsResponse;
 import org.deltafi.core.types.snapshot.Snapshot;
@@ -43,8 +49,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * REST controller for leader-member monitoring endpoints.
- * Provides access to member status and metrics for the leader dashboard.
+ * ABOUTME: REST controller for leader-member monitoring and federated operations.
+ * ABOUTME: Provides endpoints for member status, config management, and fleet-wide error handling.
  */
 @RestController
 @RequestMapping("/api/v2/leader")
@@ -53,6 +59,7 @@ public class LeaderRest {
     private final MemberMonitorService memberMonitorService;
     private final LeaderConfigService leaderConfigService;
     private final FederatedSearchService federatedSearchService;
+    private final FederatedErrorService federatedErrorService;
     private final AggregatedSearchOptionsService aggregatedSearchOptionsService;
 
     @GetMapping("/members")
@@ -150,5 +157,85 @@ public class LeaderRest {
     @NeedsPermission.DeltaFileMetadataView
     public AggregatedSearchOptions getSearchOptions() {
         return aggregatedSearchOptionsService.getAggregatedOptions();
+    }
+
+    // --- Federated Error Endpoints ---
+
+    /**
+     * Execute a federated error search across all members.
+     * Returns error counts per member for the given filter criteria.
+     *
+     * @param filter The error filter to apply
+     */
+    @PostMapping("/errors/search")
+    @NeedsPermission.DeltaFileMetadataView
+    public FederatedErrorResponse federatedErrorSearch(@RequestBody FederatedErrorFilter filter) {
+        return federatedErrorService.searchErrors(filter);
+    }
+
+    /**
+     * Acknowledge errors matching the filter across fleet members.
+     *
+     * @param request Contains filter criteria, reason, and optional member list
+     */
+    @PostMapping("/errors/acknowledge")
+    @NeedsPermission.DeltaFileAcknowledge
+    public FederatedActionResponse federatedAcknowledge(@RequestBody FederatedActionRequest request) {
+        return federatedErrorService.acknowledgeErrors(request);
+    }
+
+    /**
+     * Resume errors matching the filter across fleet members.
+     *
+     * @param request Contains filter criteria and optional member list
+     */
+    @PostMapping("/errors/resume")
+    @NeedsPermission.DeltaFileResume
+    public FederatedActionResponse federatedResume(@RequestBody FederatedActionRequest request) {
+        return federatedErrorService.resumeErrors(request);
+    }
+
+    /**
+     * Replay errors matching the filter across fleet members.
+     *
+     * @param request Contains filter criteria and optional member list
+     */
+    @PostMapping("/errors/replay")
+    @NeedsPermission.DeltaFileReplay
+    public FederatedActionResponse federatedReplay(@RequestBody FederatedActionRequest request) {
+        return federatedErrorService.replayErrors(request);
+    }
+
+    /**
+     * Replay and acknowledge errors matching the filter across fleet members.
+     *
+     * @param request Contains filter criteria, reason, and optional member list
+     */
+    @PostMapping("/errors/replay-and-acknowledge")
+    @NeedsPermission.DeltaFileReplayAndAcknowledge
+    public FederatedActionResponse federatedReplayAndAcknowledge(@RequestBody FederatedActionRequest request) {
+        return federatedErrorService.replayAndAcknowledgeErrors(request);
+    }
+
+    /**
+     * Get error summary by data source across all fleet members.
+     *
+     * @param filter The error filter to apply
+     */
+    @PostMapping("/errors/summary/by-data-source")
+    @NeedsPermission.DeltaFileMetadataView
+    public FederatedErrorSummaryResponse errorSummaryByDataSource(@RequestBody FederatedErrorFilter filter) {
+        return federatedErrorService.errorSummaryByDataSource(filter);
+    }
+
+    /**
+     * Get error summary by error message across all fleet members.
+     *
+     * @param filter The error filter to apply
+     */
+    @PostMapping("/errors/summary/by-message")
+    @NeedsPermission.DeltaFileMetadataView
+    public FederatedErrorSummaryResponse errorSummaryByMessage(@RequestBody FederatedErrorFilter filter) {
+        return federatedErrorService.errorSummaryByMessage(filter);
     }
 }
