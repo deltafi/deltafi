@@ -379,7 +379,7 @@ const menuItemClass = (item, isChild = false) => {
   if (item.name === "Dashboard") {
     if (activePage.value === item.path) classes.push("active");
   } else {
-    if (activePage.value.includes(item.path)) classes.push("active");
+    if (activePage.value.startsWith(item.path)) classes.push("active");
   }
   return classes.join(" ");
 };
