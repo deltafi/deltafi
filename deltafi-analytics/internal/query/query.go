@@ -141,7 +141,7 @@ func (s *Service) QueryAnalytics(req AnalyticsRequest) ([]AnalyticsRow, error) {
 	var results []AnalyticsRow
 	for rows.Next() {
 		var row AnalyticsRow
-		var timeVal interface{}
+		var timeVal any
 		var annotationValue sql.NullString
 
 		if err := rows.Scan(
@@ -177,10 +177,9 @@ func (s *Service) QueryAnalytics(req AnalyticsRequest) ([]AnalyticsRow, error) {
 
 // buildAnalyticsQuery constructs the SQL query for analytics (aggregated files only)
 func (s *Service) buildAnalyticsQuery(req AnalyticsRequest) string {
-	intervalSeconds := req.IntervalMs / 1000
-	if intervalSeconds < 300 {
-		intervalSeconds = 300 // Minimum 5 minutes
-	}
+	intervalSeconds := max(req.IntervalMs/1000,
+		// Minimum 5 minutes
+		300)
 
 	// Format time range for SQL
 	timeFrom := req.TimeFrom.Format("2006-01-02 15:04:05")
@@ -294,7 +293,6 @@ func (s *Service) buildAggregatedQuery(files []string, timeFrom, timeTo string, 
 		GROUP BY 1, 2, 3
 	`, intervalSeconds, dataSourceSelect, annotationSelect, fileList, strings.Join(filters, " AND "))
 }
-
 
 // normalizeAnnotationKey handles Grafana special values for annotation keys
 // Returns empty string if key is "All", "None", or in multi-value format
@@ -849,8 +847,8 @@ func (s *Service) GetAnnotationValuesForKeys(keys []string, timeFrom, timeTo tim
 
 // QueryResult represents results in a format suitable for Grafana
 type QueryResult struct {
-	Columns []string        `json:"columns"`
-	Rows    [][]interface{} `json:"rows"`
+	Columns []string `json:"columns"`
+	Rows    [][]any  `json:"rows"`
 }
 
 // Query executes a SQL query against the Parquet files
@@ -871,12 +869,12 @@ func (s *Service) Query(sqlQuery string) (*QueryResult, error) {
 
 	result := &QueryResult{
 		Columns: columns,
-		Rows:    make([][]interface{}, 0),
+		Rows:    make([][]any, 0),
 	}
 
 	for rows.Next() {
-		values := make([]interface{}, len(columns))
-		valuePtrs := make([]interface{}, len(columns))
+		values := make([]any, len(columns))
+		valuePtrs := make([]any, len(columns))
 		for i := range values {
 			valuePtrs[i] = &values[i]
 		}
@@ -885,7 +883,7 @@ func (s *Service) Query(sqlQuery string) (*QueryResult, error) {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
-		row := make([]interface{}, len(columns))
+		row := make([]any, len(columns))
 		for i, v := range values {
 			row[i] = convertValue(v)
 		}
@@ -902,7 +900,7 @@ func (s *Service) Query(sqlQuery string) (*QueryResult, error) {
 // GrafanaTableResponse is the table format for Grafana
 type GrafanaTableResponse struct {
 	Columns []GrafanaColumn `json:"columns"`
-	Rows    [][]interface{} `json:"rows"`
+	Rows    [][]any         `json:"rows"`
 	Type    string          `json:"type"`
 }
 
@@ -924,7 +922,7 @@ func (r *QueryResult) ToGrafanaTable() *GrafanaTableResponse {
 	}
 }
 
-func convertValue(v interface{}) interface{} {
+func convertValue(v any) any {
 	if v == nil {
 		return nil
 	}
@@ -956,8 +954,8 @@ func (s *Service) HasData() bool {
 }
 
 // GetDataStats returns statistics about available data
-func (s *Service) GetDataStats() map[string]interface{} {
-	stats := make(map[string]interface{})
+func (s *Service) GetDataStats() map[string]any {
+	stats := make(map[string]any)
 
 	// Count aggregated files (hourly + daily)
 	hourlyGlob := filepath.Join(s.dataDir, "aggregated", "*", "*.parquet")
@@ -1007,7 +1005,7 @@ func (s *Service) QueryEventAnalysis(req EventAnalysisRequest, eventType string)
 	var results []EventAnalysisRow
 	for rows.Next() {
 		var row EventAnalysisRow
-		var timeVal interface{}
+		var timeVal any
 		var groupValue sql.NullString
 
 		if err := rows.Scan(&timeVal, &groupValue, &row.Count); err != nil {
@@ -1037,10 +1035,9 @@ func (s *Service) QueryEventAnalysis(req EventAnalysisRequest, eventType string)
 
 // buildEventAnalysisQuery constructs the SQL query for error/filter analysis
 func (s *Service) buildEventAnalysisQuery(req EventAnalysisRequest, eventType string) string {
-	intervalSeconds := req.IntervalMs / 1000
-	if intervalSeconds < 300 {
-		intervalSeconds = 300 // Minimum 5 minutes
-	}
+	intervalSeconds := max(req.IntervalMs/1000,
+		// Minimum 5 minutes
+		300)
 
 	timeFrom := req.TimeFrom.Format("2006-01-02 15:04:05")
 	timeTo := req.TimeTo.Format("2006-01-02 15:04:05")
@@ -1471,8 +1468,8 @@ func parseAnnotationsString(s string) map[string]string {
 
 	result := make(map[string]string)
 	// Split by ", " (comma-space) to handle values that might contain commas
-	pairs := strings.Split(s, ", ")
-	for _, pair := range pairs {
+	pairs := strings.SplitSeq(s, ", ")
+	for pair := range pairs {
 		// Split on first "=" only (value might contain "=")
 		idx := strings.Index(pair, "=")
 		if idx > 0 {

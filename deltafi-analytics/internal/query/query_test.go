@@ -25,6 +25,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -993,40 +994,40 @@ func setupAnnotationTestData(t *testing.T, dataDir string) {
 		// Events with multiple annotations
 		{Bucket: bucket, DataSource: "src-alpha", EventType: "INGRESS", FlowName: "flow-1", ActionName: "ingest", IngressType: "DATA_SOURCE",
 			Annotations: map[string]string{"customer": "acme-corp", "region": "us-east-1", "env": "production"},
-			EventCount: 1, TotalBytes: 1000, TotalFileCount: 1},
+			EventCount:  1, TotalBytes: 1000, TotalFileCount: 1},
 		{Bucket: bucket, DataSource: "src-alpha", EventType: "EGRESS", FlowName: "flow-1", ActionName: "egress", IngressType: "DATA_SOURCE",
 			Annotations: map[string]string{"customer": "acme-corp", "region": "us-west-2"},
-			EventCount: 1, TotalBytes: 900, TotalFileCount: 1},
+			EventCount:  1, TotalBytes: 900, TotalFileCount: 1},
 
 		// Events with different customer
 		{Bucket: bucket, DataSource: "src-beta", EventType: "INGRESS", FlowName: "flow-2", ActionName: "ingest", IngressType: "CHILD",
 			Annotations: map[string]string{"customer": "globex-inc", "region": "eu-central-1"},
-			EventCount: 1, TotalBytes: 2000, TotalFileCount: 2},
+			EventCount:  1, TotalBytes: 2000, TotalFileCount: 2},
 		{Bucket: bucket, DataSource: "src-beta", EventType: "ERROR", FlowName: "flow-2", ActionName: "transform", IngressType: "CHILD",
 			Annotations: map[string]string{"customer": "globex-inc"},
-			EventCount: 1, TotalBytes: 0, TotalFileCount: 1},
+			EventCount:  1, TotalBytes: 0, TotalFileCount: 1},
 
 		// Events with long annotation values (test that we get full strings, not chars)
 		{Bucket: bucket, DataSource: "src-gamma", EventType: "INGRESS", FlowName: "flow-3", ActionName: "ingest", IngressType: "SURVEY",
 			Annotations: map[string]string{"customer": "wayne-enterprises-international", "department": "research-and-development"},
-			EventCount: 1, TotalBytes: 500, TotalFileCount: 1},
+			EventCount:  1, TotalBytes: 500, TotalFileCount: 1},
 
 		// Events with NO annotations (test "not present" handling)
 		{Bucket: bucket, DataSource: "src-delta", EventType: "INGRESS", FlowName: "flow-4", ActionName: "ingest", IngressType: "DATA_SOURCE",
 			Annotations: nil,
-			EventCount: 1, TotalBytes: 100, TotalFileCount: 1},
+			EventCount:  1, TotalBytes: 100, TotalFileCount: 1},
 		{Bucket: bucket, DataSource: "src-delta", EventType: "FILTER", FlowName: "flow-4", ActionName: "filter", IngressType: "DATA_SOURCE",
 			EventCount: 1, TotalBytes: 0, TotalFileCount: 1},
 
 		// Events with single-char annotation values (edge case)
 		{Bucket: bucket, DataSource: "src-epsilon", EventType: "INGRESS", FlowName: "flow-5", ActionName: "ingest", IngressType: "DATA_SOURCE",
 			Annotations: map[string]string{"tier": "A", "priority": "1"},
-			EventCount: 1, TotalBytes: 50, TotalFileCount: 1},
+			EventCount:  1, TotalBytes: 50, TotalFileCount: 1},
 
 		// Events with special characters in annotation values
 		{Bucket: bucket, DataSource: "src-zeta", EventType: "INGRESS", FlowName: "flow-6", ActionName: "ingest", IngressType: "DATA_SOURCE",
 			Annotations: map[string]string{"customer": "o'reilly-media", "tag": "test-value"},
-			EventCount: 1, TotalBytes: 75, TotalFileCount: 1},
+			EventCount:  1, TotalBytes: 75, TotalFileCount: 1},
 	}
 
 	aggregatedFile := filepath.Join(aggregatedDir, "10.parquet")
@@ -1065,10 +1066,10 @@ func TestAnnotationValueExtraction_FullStrings(t *testing.T) {
 
 	// Verify we get complete customer names, not just first characters
 	expectedCustomers := map[string]bool{
-		"acme-corp":                      false,
-		"globex-inc":                     false,
+		"acme-corp":                       false,
+		"globex-inc":                      false,
 		"wayne-enterprises-international": false,
-		"o'reilly-media":                 false,
+		"o'reilly-media":                  false,
 	}
 
 	for _, v := range values {
@@ -1222,10 +1223,10 @@ func TestQueryAnalytics_DataSourceWithAnnotation_FullValues(t *testing.T) {
 
 	// The DataSource field should be "source - customer_value" format
 	foundExpected := map[string]bool{
-		"src-alpha - acme-corp":                      false,
-		"src-beta - globex-inc":                      false,
+		"src-alpha - acme-corp":                       false,
+		"src-beta - globex-inc":                       false,
 		"src-gamma - wayne-enterprises-international": false,
-		"src-delta - not present":                    false,
+		"src-delta - not present":                     false,
 	}
 
 	for _, row := range results {
@@ -1765,13 +1766,7 @@ func TestAnnotationFilter_SpecialCharacters(t *testing.T) {
 	}
 
 	// Should include "o'reilly-media" with the apostrophe
-	found := false
-	for _, v := range values {
-		if v == "o'reilly-media" {
-			found = true
-			break
-		}
-	}
+	found := slices.Contains(values, "o'reilly-media")
 	if !found {
 		t.Errorf("Missing customer value with special character: o'reilly-media. Got: %v", values)
 	}
@@ -1835,13 +1830,7 @@ func TestAnnotationKeys_AllKeysExtracted(t *testing.T) {
 
 	expectedKeys := []string{"customer", "region", "env", "department", "tier", "priority", "tag"}
 	for _, expected := range expectedKeys {
-		found := false
-		for _, k := range keys {
-			if k == expected {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(keys, expected)
 		if !found {
 			t.Errorf("Missing expected annotation key: %s", expected)
 		}

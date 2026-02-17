@@ -178,13 +178,13 @@ func main() {
 }
 
 type appConfig struct {
-	ListenAddr         string
-	OutputDir          string
-	FlushCount         int
-	FlushInterval      time.Duration
-	CoreURL            string
-	ArchiveThreshold   time.Duration
-	DuckDBMemoryLimit  string
+	ListenAddr        string
+	OutputDir         string
+	FlushCount        int
+	FlushInterval     time.Duration
+	CoreURL           string
+	ArchiveThreshold  time.Duration
+	DuckDBMemoryLimit string
 }
 
 func loadConfig() appConfig {
@@ -342,7 +342,7 @@ func (h *handler) handleEvents(w http.ResponseWriter, r *http.Request) {
 
 	if len(rejected) > 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("rejected %d events: %s", len(rejected), strings.Join(rejected, "; "))))
+		w.Write(fmt.Appendf(nil, "rejected %d events: %s", len(rejected), strings.Join(rejected, "; ")))
 		return
 	}
 
@@ -505,8 +505,8 @@ func (h *handler) handleParquetGlob(w http.ResponseWriter, r *http.Request) {
 
 // Event time validation thresholds
 const (
-	maxEventAge    = 1 * time.Hour      // Reject events older than 1 hour
-	maxEventFuture = 5 * time.Minute    // Reject events more than 5 min in the future
+	maxEventAge      = 1 * time.Hour      // Reject events older than 1 hour
+	maxEventFuture   = 5 * time.Minute    // Reject events more than 5 min in the future
 	maxAnnotationAge = 3 * 24 * time.Hour // Reject annotations for DIDs created > 3 days ago
 )
 
@@ -745,10 +745,7 @@ func (h *handler) handleAnnotationValues(w http.ResponseWriter, r *http.Request)
 	limit := defaultValueLimit
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
-			if limit > 1000 {
-				limit = 1000
-			}
+			limit = min(l, 1000)
 		}
 	}
 

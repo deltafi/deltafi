@@ -37,12 +37,12 @@ import (
 )
 
 type Config struct {
-	DataDir                   string
-	CheckInterval             time.Duration // How often to check for compaction eligibility
-	MemoryLimit               string        // DuckDB memory limit (e.g., "1GB")
-	ArchiveThreshold          time.Duration // How old data must be before archiving (default 72h)
-	AgeOffDaysFunc            func() int    // Returns number of days to retain analytics data (0 = disabled)
-	ProvenanceAgeOffDaysFunc  func() int    // Returns number of days to retain provenance data (0 = disabled)
+	DataDir                  string
+	CheckInterval            time.Duration // How often to check for compaction eligibility
+	MemoryLimit              string        // DuckDB memory limit (e.g., "1GB")
+	ArchiveThreshold         time.Duration // How old data must be before archiving (default 72h)
+	AgeOffDaysFunc           func() int    // Returns number of days to retain analytics data (0 = disabled)
+	ProvenanceAgeOffDaysFunc func() int    // Returns number of days to retain provenance data (0 = disabled)
 }
 
 type Compactor struct {
@@ -240,7 +240,7 @@ func (c *Compactor) compactDate(db *sql.DB, date string) (int, error) {
 
 	var hoursProcessed int
 
-	for hour := 0; hour < 24; hour++ {
+	for hour := range 24 {
 		hourStr := fmt.Sprintf("%02d", hour)
 
 		// Check if this hour needs compaction
@@ -900,14 +900,14 @@ func (c *Compactor) findCorruptFiles(db *sql.DB, files []string, low, high int) 
 }
 
 func quoteFiles(files []string) string {
-	result := ""
+	var result strings.Builder
 	for i, f := range files {
 		if i > 0 {
-			result += ", "
+			result.WriteString(", ")
 		}
-		result += "'" + f + "'"
+		result.WriteString("'" + f + "'")
 	}
-	return result
+	return result.String()
 }
 
 // isHourOlderThanThreshold checks if a specific hour is older than the archive threshold
@@ -1106,9 +1106,9 @@ func (c *Compactor) ageOffAggregated(cutoffDate string) {
 		if entry.IsDir() {
 			// Hourly directory: YYYYMMDD
 			dateStr = name
-		} else if strings.HasSuffix(name, ".parquet") {
+		} else if before, ok := strings.CutSuffix(name, ".parquet"); ok {
 			// Daily file: YYYYMMDD.parquet
-			dateStr = strings.TrimSuffix(name, ".parquet")
+			dateStr = before
 		} else {
 			continue
 		}

@@ -124,7 +124,7 @@ func main() {
 		// Hourly distribution
 		hourWeights := make([]float64, 24)
 		var hourSum float64
-		for h := 0; h < 24; h++ {
+		for h := range 24 {
 			if h >= 9 && h <= 17 {
 				hourWeights[h] = 1.5 + rand.Float64()*0.5
 			} else if h >= 6 && h <= 21 {
@@ -150,7 +150,7 @@ func main() {
 			// Generate daily aggregated file directly (hourly buckets)
 			var dailyAggregated []schema.AggregatedEvent
 
-			for hour := 0; hour < 24; hour++ {
+			for hour := range 24 {
 				hourEvents := int(float64(dayEvents) * hourWeights[hour] / hourSum)
 				hourTime := dayStart.Add(time.Duration(hour) * time.Hour)
 
@@ -189,7 +189,7 @@ func main() {
 
 		} else {
 			// Generate raw + preagg + hourly aggregated for recent data
-			for hour := 0; hour < 24; hour++ {
+			for hour := range 24 {
 				hourStr := fmt.Sprintf("%02d", hour)
 				hourTime := dayStart.Add(time.Duration(hour) * time.Hour)
 				hourEvents := int(float64(dayEvents) * hourWeights[hour] / hourSum)
@@ -292,7 +292,7 @@ func generateHourEvents(hourTime time.Time, count int, dateStr string, hour int,
 	var events []schema.Event
 	var annotations []schema.Annotation
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		minute := rand.Intn(60)
 		second := rand.Intn(60)
 		eventTime := hourTime.Add(time.Duration(minute)*time.Minute + time.Duration(second)*time.Second)
@@ -342,7 +342,7 @@ func generateHourEvents(hourTime time.Time, count int, dateStr string, hour int,
 		if rand.Float64() < 0.6 {
 			numAnnotations := 1 + rand.Intn(3)
 			usedKeys := make(map[string]bool)
-			for a := 0; a < numAnnotations; a++ {
+			for range numAnnotations {
 				key := annotationKeys[rand.Intn(len(annotationKeys))]
 				if !usedKeys[key] {
 					usedKeys[key] = true
@@ -412,7 +412,7 @@ func generateHourlyAggregated(hourTime time.Time, count int,
 
 	aggregates := make(map[aggKey]*schema.AggregatedEvent)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		minute := rand.Intn(60)
 		eventTime := hourTime.Add(time.Duration(minute) * time.Minute)
 

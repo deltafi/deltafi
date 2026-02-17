@@ -128,14 +128,12 @@ func TestBuffer_Concurrent(t *testing.T) {
 
 	// Concurrent writers
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < 50; j++ {
+	for range 10 {
+		wg.Go(func() {
+			for range 50 {
 				buf.Add(schema.Event{DID: "test"})
 			}
-		}()
+		})
 	}
 	wg.Wait()
 
