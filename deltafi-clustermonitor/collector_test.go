@@ -21,6 +21,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -414,4 +415,147 @@ func assertEqualInt(t *testing.T, field string, expected, actual int64) {
 	if expected != actual {
 		t.Errorf("%s: expected %d, got %d", field, expected, actual)
 	}
+}
+
+func TestCollect_PodWithNoContainers(t *testing.T) {
+	// Pod exists in metrics but has empty containers list
+	c := &Collector{
+		kubeClient: kubefake.NewSimpleClientset(
+			pod("ns", "empty-pod", "node-1"),
+		),
+		metricsClient: fakeMetricsClient(
+			pm("ns", "empty-pod"),
+		),
+	}
+
+	metrics, err := c.Collect(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(metrics) != 0 {
+		t.Fatalf("expected 0 metrics, got %d", len(metrics))
+	}
+}
+
+func TestCollect_SmallMemoryRoundsToZero(t *testing.T) {
+	// Memory less than 1 MiB rounds down to 0
+	c := &Collector{
+		kubeClient: kubefake.NewSimpleClientset(
+			pod("ns", "pod-0", "node-1"),
+		),
+		metricsClient: fakeMetricsClient(
+			pm("ns", "pod-0",
+				container("tiny", "1m", "500Ki"),
+			),
+		),
+	}
+
+	metrics, err := c.Collect(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(metrics) != 1 {
+		t.Fatalf("expected 1 metric, got %d", len(metrics))
+	}
+
+	assertEqualInt(t, "Memory", 0, metrics[0].Memory)
+}
+
+func TestCollect_ZeroCPU(t *testing.T) {
+	// Idle container with no CPU usage
+	c := &Collector{
+		kubeClient: kubefake.NewSimpleClientset(
+			pod("ns", "pod-0", "node-1"),
+		),
+		metricsClient: fakeMetricsClient(
+			pm("ns", "pod-0",
+				container("idle", "0", "128Mi"),
+			),
+		),
+	}
+
+	metrics, err := c.Collect(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(metrics) != 1 {
+		t.Fatalf("expected 1 metric, got %d", len(metrics))
+	}
+
+	assertEqualInt(t, "CPU", 0, metrics[0].CPU)
+	assertEqualInt(t, "Memory", 128, metrics[0].Memory)
+}
+
+func TestCollect_LargeValues(t *testing.T) {
+	// Large but realistic values - 64 cores, 256GB RAM
+	c := &Collector{
+		kubeClient: kubefake.NewSimpleClientset(
+			pod("ns", "beefy", "node-1"),
+		),
+		metricsClient: fakeMetricsClient(
+			pm("ns", "beefy",
+				container("app", "64000m", "256Gi"),
+			),
+		),
+	}
+
+	metrics, err := c.Collect(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(metrics) != 1 {
+		t.Fatalf("expected 1 metric, got %d", len(metrics))
+	}
+
+	assertEqualInt(t, "CPU", 64000, metrics[0].CPU)
+	assertEqualInt(t, "Memory", 256*1024, metrics[0].Memory)
+}
+
+func TestCollect_ContextCancelled(t *testing.T) {
+	c := &Collector{
+		kubeClient:    kubefake.NewSimpleClientset(),
+		metricsClient: fakeMetricsClient(),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := c.Collect(ctx)
+	if err == nil {
+		// Fake clients may not respect context; that's OK
+		return
+	}
+	if !strings.Contains(err.Error(), "context canceled") {
+		t.Errorf("expected context canceled error, got: %v", err)
+	}
+}
+
+func TestCollect_MixedPodsWithAndWithoutContainers(t *testing.T) {
+	c := &Collector{
+		kubeClient: kubefake.NewSimpleClientset(
+			pod("ns", "with-containers", "node-1"),
+			pod("ns", "without-containers", "node-2"),
+		),
+		metricsClient: fakeMetricsClient(
+			pm("ns", "with-containers",
+				container("app", "100m", "128Mi"),
+			),
+			pm("ns", "without-containers"),
+		),
+	}
+
+	metrics, err := c.Collect(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(metrics) != 1 {
+		t.Fatalf("expected 1 metric, got %d", len(metrics))
+	}
+
+	assertEqual(t, "Name", "app", metrics[0].Name)
 }

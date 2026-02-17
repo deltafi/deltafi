@@ -6,9 +6,10 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o deltafi-clustermonitor .
 
 FROM builder AS test
+ARG CACHEBUST=1
 RUN go test -v ./...
 
-FROM chainguard/static:latest
+FROM chainguard/static:latest AS target
 WORKDIR /app
 COPY --from=builder /app/deltafi-clustermonitor .
 USER 65532

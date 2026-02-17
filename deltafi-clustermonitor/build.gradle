@@ -5,3 +5,11 @@ plugins {
 license {
     includes(["**/*.go"])
 }
+
+task dockerTest(type: Exec) {
+    group = 'verification'
+    description = 'Runs tests via the Dockerfile test stage'
+    dependsOn 'dockerPrepare'
+    workingDir layout.buildDirectory.dir('docker')
+    commandLine 'docker', 'build', '--target', 'test', '--build-arg', "CACHEBUST=${System.currentTimeMillis()}", '.'
+}

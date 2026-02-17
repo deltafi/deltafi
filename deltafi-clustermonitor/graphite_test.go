@@ -185,3 +185,140 @@ func extractTimestamp(t *testing.T, line string) int64 {
 	}
 	return ts
 }
+
+func TestSend_ZeroValues(t *testing.T) {
+	port, received := startTCPServer(t)
+
+	client := &GraphiteClient{host: "127.0.0.1", port: port}
+	err := client.Send([]Metric{
+		{Name: "idle", Namespace: "ns", Node: "node", CPU: 0, Memory: 0},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(received()), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+
+	if !strings.HasPrefix(lines[0], "gauge.app.memory;app=idle;namespace=ns;node=node 0 ") {
+		t.Errorf("unexpected memory line: %s", lines[0])
+	}
+	if !strings.HasPrefix(lines[1], "gauge.app.cpu;app=idle;namespace=ns;node=node 0 ") {
+		t.Errorf("unexpected cpu line: %s", lines[1])
+	}
+}
+
+func TestSend_EmptyNode(t *testing.T) {
+	port, received := startTCPServer(t)
+
+	client := &GraphiteClient{host: "127.0.0.1", port: port}
+	err := client.Send([]Metric{
+		{Name: "orphan", Namespace: "ns", Node: "", CPU: 100, Memory: 256},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(received()), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+
+	// Empty node results in node= with no value
+	if !strings.HasPrefix(lines[0], "gauge.app.memory;app=orphan;namespace=ns;node= 256 ") {
+		t.Errorf("unexpected memory line: %s", lines[0])
+	}
+}
+
+func TestSend_LargeValues(t *testing.T) {
+	port, received := startTCPServer(t)
+
+	client := &GraphiteClient{host: "127.0.0.1", port: port}
+	err := client.Send([]Metric{
+		{Name: "beefy", Namespace: "ns", Node: "node", CPU: 128000, Memory: 524288},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(received()), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+
+	if !strings.HasPrefix(lines[0], "gauge.app.memory;app=beefy;namespace=ns;node=node 524288 ") {
+		t.Errorf("unexpected memory line: %s", lines[0])
+	}
+	if !strings.HasPrefix(lines[1], "gauge.app.cpu;app=beefy;namespace=ns;node=node 128000 ") {
+		t.Errorf("unexpected cpu line: %s", lines[1])
+	}
+}
+
+func TestSend_NilMetricsSlice(t *testing.T) {
+	port, received := startTCPServer(t)
+
+	client := &GraphiteClient{host: "127.0.0.1", port: port}
+	err := client.Send(nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data := received()
+	if data != "" {
+		t.Errorf("expected empty payload, got %q", data)
+	}
+}
+
+func TestSend_ManyMetrics(t *testing.T) {
+	port, received := startTCPServer(t)
+
+	var metrics []Metric
+	for i := range 100 {
+		metrics = append(metrics, Metric{
+			Name:      "app-" + strconv.Itoa(i),
+			Namespace: "ns",
+			Node:      "node-" + strconv.Itoa(i%3),
+			CPU:       int64(i * 10),
+			Memory:    int64(i * 100),
+		})
+	}
+
+	client := &GraphiteClient{host: "127.0.0.1", port: port}
+	err := client.Send(metrics)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(received()), "\n")
+	// 100 metrics × 2 lines each = 200 lines
+	if len(lines) != 200 {
+		t.Fatalf("expected 200 lines, got %d", len(lines))
+	}
+}
+
+func TestSend_NegativeValues(t *testing.T) {
+	// Negative values shouldn't happen in practice but verify formatting
+	port, received := startTCPServer(t)
+
+	client := &GraphiteClient{host: "127.0.0.1", port: port}
+	err := client.Send([]Metric{
+		{Name: "weird", Namespace: "ns", Node: "node", CPU: -1, Memory: -100},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(received()), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+
+	if !strings.HasPrefix(lines[0], "gauge.app.memory;app=weird;namespace=ns;node=node -100 ") {
+		t.Errorf("unexpected memory line: %s", lines[0])
+	}
+	if !strings.HasPrefix(lines[1], "gauge.app.cpu;app=weird;namespace=ns;node=node -1 ") {
+		t.Errorf("unexpected cpu line: %s", lines[1])
+	}
+}
