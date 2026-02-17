@@ -18,6 +18,75 @@
 
 <template>
   <div class="system-map-page">
+    <!-- Filter sidebar -->
+    <FilterSidebar
+      v-model="filterSidebarOpen"
+      title="Filter Flows"
+      tab-label="Filters"
+      :has-active-filters="!!selectedFilterId"
+      @clear="clearSelectedFilter"
+    >
+      <div class="filter-section">
+        <label>Data Sources</label>
+        <Dropdown
+          v-model="selectedDataSource"
+          :options="dataSourceOptions"
+          option-label="name"
+          option-value="id"
+          placeholder="Select a Data Source"
+          class="w-full"
+          :filter="true"
+          :show-clear="true"
+          @change="onFilterChange('dataSource')"
+        />
+      </div>
+
+      <div class="filter-section">
+        <label>Transforms</label>
+        <Dropdown
+          v-model="selectedTransform"
+          :options="transformOptions"
+          option-label="name"
+          option-value="id"
+          placeholder="Select a Transform"
+          class="w-full"
+          :filter="true"
+          :show-clear="true"
+          @change="onFilterChange('transform')"
+        />
+      </div>
+
+      <div class="filter-section">
+        <label>Data Sinks</label>
+        <Dropdown
+          v-model="selectedDataSink"
+          :options="dataSinkOptions"
+          option-label="name"
+          option-value="id"
+          placeholder="Select a Data Sink"
+          class="w-full"
+          :filter="true"
+          :show-clear="true"
+          @change="onFilterChange('dataSink')"
+        />
+      </div>
+
+      <div class="filter-section">
+        <label>Topics</label>
+        <Dropdown
+          v-model="selectedTopic"
+          :options="topicOptions"
+          option-label="name"
+          option-value="id"
+          placeholder="Select a Topic"
+          class="w-full"
+          :filter="true"
+          :show-clear="true"
+          @change="onFilterChange('topic')"
+        />
+      </div>
+    </FilterSidebar>
+
     <ConfirmDialog group="stop-flow">
       <template #message="slotProps">
         <span class="p-confirm-dialog-icon pi pi-exclamation-triangle" />
@@ -240,6 +309,7 @@
 // ABOUTME: System map page showing full topology of all flows and topics.
 // ABOUTME: Uses SVG-based rendering with details panel and navigation options.
 
+import FilterSidebar from "@/components/FilterSidebar.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import SystemMapGraph from "@/components/pipeline/SystemMapGraph.vue";
@@ -258,8 +328,11 @@ import { useRouter } from "vue-router";
 
 import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
+import Dropdown from "primevue/dropdown";
 import { useConfirm } from "primevue/useconfirm";
 import MetricsControls from "@/components/pipeline/MetricsControls.vue";
+
+import _ from "lodash";
 
 const router = useRouter();
 const confirm = useConfirm();
@@ -281,6 +354,13 @@ const selectedNode = ref(null);
 const selectedNodeDetails = ref(null);
 const loadingDetails = ref(false);
 const refreshing = ref(false);
+
+// Filter sidebar state
+const filterSidebarOpen = ref(false);
+const selectedDataSource = ref(null);
+const selectedTransform = ref(null);
+const selectedDataSink = ref(null);
+const selectedTopic = ref(null);
 
 // Show loading only on initial load, not during refreshes
 const showLoading = computed(() => !loaded.value);
@@ -446,6 +526,57 @@ const flowGraph = computed(() => {
   };
 });
 
+// Filter options for sidebar
+const dataSourceOptions = computed(() => {
+  return _.sortBy(
+    flowGraph.value.nodes.filter((n) =>
+      ["REST_DATA_SOURCE", "TIMED_DATA_SOURCE", "ON_ERROR_DATA_SOURCE"].includes(n.type)
+    ),
+    (n) => n.name.toLowerCase()
+  );
+});
+
+const transformOptions = computed(() => {
+  return _.sortBy(
+    flowGraph.value.nodes.filter((n) => n.type === "TRANSFORM"),
+    (n) => n.name.toLowerCase()
+  );
+});
+
+const dataSinkOptions = computed(() => {
+  return _.sortBy(
+    flowGraph.value.nodes.filter((n) => n.type === "DATA_SINK"),
+    (n) => n.name.toLowerCase()
+  );
+});
+
+const topicOptions = computed(() => {
+  return _.sortBy(
+    flowGraph.value.nodes.filter((n) => n.type === "TOPIC"),
+    (n) => n.name.toLowerCase()
+  );
+});
+
+// Get the currently selected filter ID (only one can be active at a time)
+const selectedFilterId = computed(() => {
+  return selectedDataSource.value || selectedTransform.value || selectedDataSink.value || selectedTopic.value;
+});
+
+function clearSelectedFilter() {
+  selectedDataSource.value = null;
+  selectedTransform.value = null;
+  selectedDataSink.value = null;
+  selectedTopic.value = null;
+}
+
+// When a filter is changed, clear the others so only one is active
+function onFilterChange(changedFilter) {
+  if (changedFilter !== 'dataSource') selectedDataSource.value = null;
+  if (changedFilter !== 'transform') selectedTransform.value = null;
+  if (changedFilter !== 'dataSink') selectedDataSink.value = null;
+  if (changedFilter !== 'topic') selectedTopic.value = null;
+}
+
 // Get all transitively connected nodes (complete dataflow)
 function getConnectedNodes(startNodeId, edges) {
   const connected = new Set([startNodeId]);
@@ -469,14 +600,23 @@ function getConnectedNodes(startNodeId, edges) {
   return connected;
 }
 
-// Get nodes to display (all or filtered to complete dataflow)
+// Get nodes to display (all or filtered to complete dataflow, plus sidebar filters)
 const displayNodes = computed(() => {
-  if (!filterMode.value || !filterNodeId.value) {
-    return flowGraph.value.nodes;
+  let nodes = flowGraph.value.nodes;
+
+  // Apply dataflow filter if active (from "Show Dataflow" button)
+  if (filterMode.value && filterNodeId.value) {
+    const connectedIds = getConnectedNodes(filterNodeId.value, flowGraph.value.edges);
+    nodes = nodes.filter((n) => connectedIds.has(n.id));
   }
 
-  const connectedIds = getConnectedNodes(filterNodeId.value, flowGraph.value.edges);
-  return flowGraph.value.nodes.filter((n) => connectedIds.has(n.id));
+  // Apply sidebar filter if active (single selection)
+  if (selectedFilterId.value) {
+    const connectedIds = getConnectedNodes(selectedFilterId.value, flowGraph.value.edges);
+    nodes = nodes.filter((n) => connectedIds.has(n.id));
+  }
+
+  return nodes;
 });
 
 // Get edges to display
@@ -777,6 +917,18 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* Filter section styles (content inside FilterSidebar) */
+.filter-section {
+  margin-bottom: 1.25rem;
+}
+
+.filter-section label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
 }
 
 .dataflow-indicator {

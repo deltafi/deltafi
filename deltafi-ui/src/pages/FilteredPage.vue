@@ -70,7 +70,7 @@ import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 dayjs.extend(utc);
 
@@ -85,9 +85,11 @@ const loading = ref(false);
 const flowSelected = ref();
 const causeSelected = ref();
 const activeTab = ref(0);
+const isNavigating = ref(false);
 const params = useUrlSearchParams("history");
 const useURLSearch = ref(false);
 const route = useRoute();
+const router = useRouter();
 const filteredPanelState = useStorage("filtered-store", {}, sessionStorage, { serializer: StorageSerializers.object });
 const { fetchUniqueMessages } = useFiltered();
 const uniqueMessages = ref([]);
@@ -162,15 +164,15 @@ const setPersistedParams = () => {
     flowSelected: flowSelected.value,
     causeSelected: causeSelected.value,
   };
-  // URL
-  params.tab = activeTab.value;
-  params.flowName = flowSelected.value?.name;
-  params.flowType = flowSelected.value?.type;
-  if (activeTab.value === 0) {
-    params.cause = causeSelected.value ? encodeURIComponent(causeSelected.value) : null;
-  } else {
-    params.cause = null;
-  }
+  // URL - use router.replace to keep route.query in sync
+  const query = {
+    ...route.query,
+    tab: String(activeTab.value),
+    flowName: flowSelected.value?.name || undefined,
+    flowType: flowSelected.value?.type || undefined,
+    cause: activeTab.value === 0 && causeSelected.value ? encodeURIComponent(causeSelected.value) : undefined,
+  };
+  router.replace({ query });
 };
 
 const formatFlowNames = () => {
@@ -204,24 +206,28 @@ const filterOptionsSelected = computed(() => {
 
 const getPersistedParams = async () => {
   if (useURLSearch.value) {
-    activeTab.value = params.tab ? parseInt(params.tab) : 0;
-    if (params.flowName && params.flowType) {
+    activeTab.value = route.query.tab ? parseInt(route.query.tab) : 0;
+    if (route.query.flowName && route.query.flowType) {
       flowSelected.value = {
-        name: params.flowName,
-        type: params.flowType,
+        name: route.query.flowName,
+        type: route.query.flowType,
       };
     }
-    causeSelected.value = causeSelected.value = params.cause ? decodeURIComponent(params.cause) : filteredPanelState.value.causeSelected;
+    causeSelected.value = route.query.cause ? decodeURIComponent(route.query.cause) : filteredPanelState.value.causeSelected;
   } else {
     activeTab.value = filteredPanelState.value.tabs ? parseInt(filteredPanelState.value.tabs) : 0;
     flowSelected.value = _.get(filteredPanelState.value, "flowSelected", null);
-    causeSelected.value = causeSelected.value = _.get(filteredPanelState.value, "causeSelected", null);
+    causeSelected.value = _.get(filteredPanelState.value, "causeSelected", null);
   }
   setPersistedParams();
 };
 
 const setupWatchers = () => {
   watch([activeTab, flowSelected, causeSelected], () => {
+    if (isNavigating.value) {
+      isNavigating.value = false;
+      return;
+    }
     setPersistedParams();
   });
 
@@ -229,6 +235,20 @@ const setupWatchers = () => {
     () => [model.value.startTimeDate, model.value.endTimeDate],
     () => {
       onRefresh();
+    }
+  );
+
+  // Watch for tab changes from navigation links
+  watch(
+    () => route.query.tab,
+    (newTab) => {
+      if (newTab !== undefined && newTab !== null) {
+        const tabValue = parseInt(newTab);
+        if (!isNaN(tabValue) && tabValue !== activeTab.value) {
+          isNavigating.value = true;
+          activeTab.value = tabValue;
+        }
+      }
     }
   );
 };
@@ -262,7 +282,7 @@ const onRefresh = async () => {
 };
 
 onBeforeMount(() => {
-  useURLSearch.value = route.fullPath.includes("filteredD?");
+  useURLSearch.value = route.fullPath.includes("filtered?");
 });
 
 onMounted(async () => {

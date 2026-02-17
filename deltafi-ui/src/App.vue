@@ -21,14 +21,10 @@
     <nav class="sticky-top">
       <HeaderBanner />
       <AppTopBar />
+      <ContextualNavBar />
     </nav>
-    <div class="wrapper">
-      <div :class="sidebarClasses">
-        <AppMenu />
-      </div>
-      <div role="main" class="content-wrapper">
-        <router-view />
-      </div>
+    <div role="main" class="content-wrapper-full">
+      <router-view />
     </div>
     <FooterBanner />
     <CustomToast position="bottom-right" />
@@ -41,25 +37,28 @@
         <Button label="Acknowledge" @click="dismissMotd" />
       </template>
     </Dialog>
+    <CommandPalette />
   </div>
 </template>
 
 <script setup>
 import HeaderBanner from "@/components/header/HeaderBanner.vue";
 import AppTopBar from "@/components/header/AppTopBar.vue";
-import AppMenu from "@/components/sidebar/AppMenu.vue";
+import ContextualNavBar from "@/components/header/ContextualNavBar.vue";
+import CommandPalette from "@/components/header/CommandPalette.vue";
 import FooterBanner from "@/components/footer/FooterBanner.vue";
 import CustomToast from "@/components/CustomToast.vue";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
-import { useRoute } from "vue-router";
+import useCommandPalette from "@/composables/useCommandPalette";
+import { useRoute, useRouter } from "vue-router";
 import useUiConfig from "@/composables/useUiConfig";
 import useMotd from "@/composables/useMotd";
 import useCurrentUser from "@/composables/useCurrentUser";
 import useVersion from '@/composables/useVersion';
 import useServerSentEvents from "@/composables/useServerSentEvents";
 import useNotifications from "@/composables/useNotifications";
-import { computed, onBeforeMount, watch, nextTick, onBeforeUnmount, provide, ref, onMounted } from "vue";
+import { computed, onBeforeMount, watch, provide, onMounted, onUnmounted } from "vue";
 import { useTitle, useIdle } from "@vueuse/core";
 import { usePrimeVue } from "primevue/config";
 import MarkdownIt from "markdown-it";
@@ -69,6 +68,7 @@ const renderMarkdown = (source) => markdownIt.render(source);
 
 const primevue = usePrimeVue();
 const route = useRoute();
+const router = useRouter();
 const title = useTitle("DeltaFi");
 const notify = useNotifications();
 const { serverSentEvents } = useServerSentEvents();
@@ -80,13 +80,52 @@ const { fetchVersion } = useVersion();
 
 const idleTimeOut = (15 * 60 * 1000); // 15 min
 const { idle } = useIdle(idleTimeOut);
-const sidebarHidden = ref(false);
-provide("sidebarHidden", sidebarHidden);
 provide("isIdle", idle);
 
-const sidebarClasses = computed(() => {
-  return sidebarHidden.value ? "col sidebar hidden" : "col sidebar";
-});
+const { toggle: toggleCommandPalette, open: openCommandPalette, visible: commandPaletteVisible } = useCommandPalette();
+
+// Global keyboard shortcuts (Cmd on Mac, Ctrl on Windows/Linux)
+const globalShortcuts = {
+  k: () => toggleCommandPalette(),
+  d: () => router.push("/"),
+  s: () => router.push("/deltafile/search"),
+  e: () => router.push("/errors"),
+  u: () => router.push("/deltafile/upload/"),
+  m: () => router.push("/system-map"),
+  p: () => router.push("/config/plugins"),
+  t: () => router.push("/config/transforms"),
+};
+
+const handleGlobalKeydown = (e) => {
+  const target = e.target;
+  const isTyping = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable;
+
+  // "/" opens command palette (no modifier needed, but skip if typing)
+  if (e.key === "/" && !isTyping && !commandPaletteVisible.value) {
+    e.preventDefault();
+    openCommandPalette();
+    return;
+  }
+
+  // Cmd/Ctrl + key combinations
+  if (!e.metaKey && !e.ctrlKey) return;
+
+  const handler = globalShortcuts[e.key.toLowerCase()];
+  if (!handler) return;
+
+  // Skip Cmd+K if palette is already open (let the palette handle it)
+  if (e.key.toLowerCase() === "k" && commandPaletteVisible.value) {
+    return;
+  }
+
+  // Skip if user is typing in an input field (except for command palette which should always work)
+  if (isTyping && e.key.toLowerCase() !== "k") {
+    return;
+  }
+
+  e.preventDefault();
+  handler();
+};
 
 onBeforeMount(async () => {
   fetchVersion();
@@ -96,24 +135,12 @@ onBeforeMount(async () => {
 
 onMounted(async () => {
   primevue.config.locale.dateFormat = "yy-mm-dd";
-
-  // Resize related
-  await nextTick()
-  window.addEventListener("resize", onResize);
-  onResize();
+  document.addEventListener("keydown", handleGlobalKeydown);
 });
 
-onBeforeUnmount(() => {
-  window.removeEventListener("resize", onResize);
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleGlobalKeydown);
 });
-
-const onResize = () => {
-  const windowWidth = window.innerWidth;
-
-  if (!sidebarHidden.value && windowWidth < 1024) {
-    sidebarHidden.value = true;
-  }
-};
 
 const setPageTitle = () => {
   title.value = [route.name, uiConfig.title].filter((n) => n).join(" - ");

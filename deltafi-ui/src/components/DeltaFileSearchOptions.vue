@@ -21,70 +21,56 @@
 
 <template>
   <div class="deltafile-search-options">
-    <CollapsiblePanel :collapsed="collapsed">
-      <template #header>
-        <span class="align-advanced-options-header-title">
-          <span class="d-flex">
-            <span class="p-panel-title align-advanced-options-header">{{ title }}</span>
-            <span>
-              <Button v-tooltip.right="{ value: `Clear Options`, disabled: !activeAdvancedOptions }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${activeAdvancedOptions ? 'p-column-filter-menu-button-active' : null}`" :disabled="!activeAdvancedOptions" @click="onClearOptions">
-                <i class="pi pi-filter" style="font-size: 1rem" />
-              </Button>
-            </span>
-          </span>
-        </span>
-      </template>
-      <div class="search-options-wrapper">
-        <div class="flex-row">
-          <div v-for="columnNumber in 3" :key="columnNumber" :class="`flex-column ${_.isEqual(columnNumber, 2) ? 'flex-column-small' : ''}`">
-            <template v-for="[i, formInfo] of _.orderBy(_.filter(advanceOptionsPanelInfo, ['column', columnNumber]), ['order'], ['asc']).entries()" :key="formInfo">
-              <span class="dflex btn-group align-items-center">
-                <label :for="`${formInfo.field}` + 'Id'" :class="!_.isEqual(i, 0) ? 'mt-2' : ''">{{ formInfo.label }}</label>
-                <span @click="toggleAnnotationHelp">
-                  <i v-if="_.get(formInfo, 'description', false)" class="fas fa-info-circle fa-fw ml-1" />
-                </span>
+    <div class="search-options-wrapper">
+      <div class="flex-row">
+        <div v-for="columnNumber in 3" :key="columnNumber" :class="`flex-column ${_.isEqual(columnNumber, 2) ? 'flex-column-small' : ''}`">
+          <template v-for="[i, formInfo] of _.orderBy(_.filter(advanceOptionsPanelInfo, ['column', columnNumber]), ['order'], ['asc']).entries()" :key="formInfo">
+            <span class="dflex btn-group align-items-center">
+              <label :for="`${formInfo.field}` + 'Id'" :class="!_.isEqual(i, 0) ? 'mt-2' : ''">{{ formInfo.label }}</label>
+              <span @click="toggleAnnotationHelp">
+                <i v-if="_.get(formInfo, 'description', false)" class="fas fa-info-circle fa-fw ml-1" />
               </span>
-              <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
-              <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" @update:model-value="updateField(formInfo.field, $event)" />
-              <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
-                <Dropdown :model-value="modelValue.sizeType" :options="sizeTypesOptions" style="width: 8rem" class="deltafi-input-field mr-2" @update:model-value="updateField('sizeType', $event)" />
-                <InputNumber :model-value="modelValue.sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" @update:model-value="updateField('sizeMin', $event)" /> -
-                <InputNumber :model-value="modelValue.sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Max" @update:model-value="updateField('sizeMax', $event)" />
-                <Dropdown :model-value="modelValue.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" class="deltafi-input-field ml-2" @update:model-value="updateField('sizeUnit', $event)" />
-              </div>
-              <Dropdown v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="formInfo.showClear" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)">
-                <template #value="slotProps">
-                  <div v-if="slotProps.value != null" class="flex align-items-center">
-                    <div>{{ formatOption(formInfo.formatOptions, slotProps.value) }}</div>
-                  </div>
-                  <span v-else>
-                    {{ slotProps.placeholder }}
-                  </span>
-                </template>
-                <template #option="slotProps">
-                  <div class="flex align-items-center">
-                    <div>{{ formatOption(formInfo.formatOptions, slotProps.option) }}</div>
-                  </div>
-                </template>
-              </Dropdown>
-              <InputNumber v-if="_.isEqual(formInfo.componentType, 'InputNumber')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :input-style="{ width: '6rem' }" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
-              <div v-if="_.isEqual(formInfo.componentType, 'Annotations')" :id="`${formInfo.field}` + 'Id'" class="annotations-chips">
-                <Chip v-for="item in modelValue.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
-                <Chip class="add-annotations-btn" @click="showAnnotationsOverlay">
-                  &nbsp;
-                  <i class="pi pi-plus" />
-                  &nbsp;
-                </Chip>
-              </div>
-            </template>
-          </div>
-          <OverlayPanel ref="annotationsOverlay">
-            <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" /> :
-            <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" />
-          </OverlayPanel>
+            </span>
+            <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
+            <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" @update:model-value="updateField(formInfo.field, $event)" />
+            <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
+              <Dropdown :model-value="modelValue.sizeType" :options="sizeTypesOptions" style="width: 8rem" class="deltafi-input-field mr-2" @update:model-value="updateField('sizeType', $event)" />
+              <InputNumber :model-value="modelValue.sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '4rem' }" placeholder="Min" @update:model-value="updateField('sizeMin', $event)" /> -
+              <InputNumber :model-value="modelValue.sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '4rem' }" placeholder="Max" @update:model-value="updateField('sizeMax', $event)" />
+              <Dropdown :model-value="modelValue.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" class="deltafi-input-field ml-2" @update:model-value="updateField('sizeUnit', $event)" />
+            </div>
+            <Dropdown v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="formInfo.showClear" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)">
+              <template #value="slotProps">
+                <div v-if="slotProps.value != null" class="flex align-items-center">
+                  <div>{{ formatOption(formInfo.formatOptions, slotProps.value) }}</div>
+                </div>
+                <span v-else>
+                  {{ slotProps.placeholder }}
+                </span>
+              </template>
+              <template #option="slotProps">
+                <div class="flex align-items-center">
+                  <div>{{ formatOption(formInfo.formatOptions, slotProps.option) }}</div>
+                </div>
+              </template>
+            </Dropdown>
+            <InputNumber v-if="_.isEqual(formInfo.componentType, 'InputNumber')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :input-style="{ width: '6rem' }" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
+            <div v-if="_.isEqual(formInfo.componentType, 'Annotations')" :id="`${formInfo.field}` + 'Id'" class="annotations-chips">
+              <Chip v-for="item in modelValue.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
+              <Chip class="add-annotations-btn" @click="showAnnotationsOverlay">
+                &nbsp;
+                <i class="pi pi-plus" />
+                &nbsp;
+              </Chip>
+            </div>
+          </template>
         </div>
+        <OverlayPanel ref="annotationsOverlay">
+          <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" /> :
+          <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" />
+        </OverlayPanel>
       </div>
-    </CollapsiblePanel>
+    </div>
     <OverlayPanel ref="annotationHelpOverlay" class="annotations-help">
       <div v-html="markdownIt.render(annotationSearchOptions)" />
     </OverlayPanel>
@@ -92,12 +78,10 @@
 </template>
 
 <script setup>
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import { computed, ref } from "vue";
 
 import _ from "lodash";
 
-import Button from "primevue/button";
 import Chip from "primevue/chip";
 import Dropdown from "primevue/dropdown";
 import InputNumber from "primevue/inputnumber";
@@ -122,8 +106,6 @@ const props = defineProps({
   annotationKeysOptions: { type: Array, default: () => [] },
   sizeUnitsOptionsMap: { type: Map, required: true },
   sizeTypesOptions: { type: Array, required: true },
-  title: { type: String, default: "Advanced Search Options" },
-  collapsed: { type: Boolean, default: true },
   annotationValidationFn: { type: Function, default: () => true },
 });
 
@@ -141,11 +123,11 @@ const annotationsKeysOptions = computed(() => props.annotationKeysOptions);
 const advanceOptionsPanelInfo = computed(() => {
   return [
     // First Column fields
-    { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
-    { field: "dataSources", column: 1, order: 3, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: props.formattedDataSourceNames, optionGroupLabel: "group", optionGroupChildren: "sources", optionLabel: "label", optionValue: "label", filter: true, class: "deltafi-input-field responsive-width" },
-    { field: "transforms", column: 1, order: 4, componentType: "MultiSelect", label: "Transforms:", placeholder: "Select a Transform", options: props.transformOptions, class: "deltafi-input-field responsive-width" },
-    { field: "dataSinks", column: 1, order: 5, componentType: "MultiSelect", label: "Data Sinks:", placeholder: "Select a Data Sink", options: props.dataSinkOptions, class: "deltafi-input-field responsive-width" },
-    { field: "topics", column: 1, order: 6, componentType: "MultiSelect", label: "Topics:", placeholder: "Select a Topic", options: props.topicOptions, class: "deltafi-input-field responsive-width" },
+    { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height min-width" },
+    { field: "dataSources", column: 1, order: 3, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: props.formattedDataSourceNames, optionGroupLabel: "group", optionGroupChildren: "sources", optionLabel: "label", optionValue: "label", filter: true, class: "deltafi-input-field min-width" },
+    { field: "transforms", column: 1, order: 4, componentType: "MultiSelect", label: "Transforms:", placeholder: "Select a Transform", options: props.transformOptions, class: "deltafi-input-field min-width" },
+    { field: "dataSinks", column: 1, order: 5, componentType: "MultiSelect", label: "Data Sinks:", placeholder: "Select a Data Sink", options: props.dataSinkOptions, class: "deltafi-input-field min-width" },
+    { field: "topics", column: 1, order: 6, componentType: "MultiSelect", label: "Topics:", placeholder: "Select a Topic", options: props.topicOptions, class: "deltafi-input-field min-width" },
     { field: "size", column: 1, order: 7, componentType: "SizeUnit", label: "Size:" },
     // 2nd Column fields
     { field: "testMode", column: 2, order: 1, componentType: "Dropdown", label: "Test Mode:", placeholder: "Select if in Test Mode", options: booleanOptions, formatOptions: true, showClear: true, class: "deltafi-input-field min-width" },
@@ -191,10 +173,6 @@ const addAnnotationItemEvent = () => {
   }
 };
 
-const onClearOptions = () => {
-  emit("clearOptions");
-};
-
 const formatOption = (formatOpt, dropdownOption) => {
   if (formatOpt) {
     return _.capitalize(dropdownOption);
@@ -222,14 +200,6 @@ When performing a search using annotations, the following options are supported:
 
 <style>
 .deltafile-search-options {
-  .align-advanced-options-header-title {
-    align-content: flex-start;
-  }
-
-  .align-advanced-options-header {
-    align-self: center;
-  }
-
   label {
     font-weight: 500;
   }
@@ -241,10 +211,6 @@ When performing a search using annotations, the following options are supported:
 
   .input-area-height {
     height: 32px;
-  }
-
-  .p-panel-content {
-    padding: 1.25rem 0.75rem 1.5rem !important;
   }
 
   .search-options-wrapper {
@@ -290,34 +256,6 @@ When performing a search using annotations, the following options are supported:
   .size-container {
     > * {
       vertical-align: middle !important;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .responsive-width {
-      min-width: 32rem;
-      max-width: 32rem;
-    }
-  }
-
-  @media (min-width: 1200px) {
-    .responsive-width {
-      min-width: 36rem;
-      max-width: 36rem;
-    }
-  }
-
-  @media (min-width: 1600px) {
-    .responsive-width {
-      min-width: 42rem;
-      max-width: 42rem;
-    }
-  }
-
-  @media (min-width: 1900px) {
-    .responsive-width {
-      min-width: 44rem;
-      max-width: 44rem;
     }
   }
 }

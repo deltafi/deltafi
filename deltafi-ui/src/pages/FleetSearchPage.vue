@@ -21,22 +21,14 @@
 
 <template>
   <div class="fleet-search-page">
-    <div>
-      <PageHeader heading="Fleet Search">
-        <SearchDateToolbar
-          v-model:date-type="model.queryDateTypeOptions"
-          :date-type-options="queryDateTypes"
-          :start-time-date="model.startTimeDate"
-          :end-time-date="model.endTimeDate"
-          :reset-default="resetDefaultTimeDate"
-          :loading="loading"
-          @date-change="onDateChange"
-          @refresh="executeSearch"
-        />
-      </PageHeader>
-    </div>
-    <div class="row mb-3">
-      <div class="col-12">
+    <!-- Slide-out search options sidebar with multiple tabs -->
+    <FilterSidebar
+      v-model="sidebarOpen"
+      width="420px"
+      :tabs="sidebarTabs"
+      @clear="handleClearTab"
+    >
+      <template #search>
         <DeltaFileSearchOptions
           v-model="model"
           :active-advanced-options="activeAdvancedOptions"
@@ -48,41 +40,44 @@
           :annotation-keys-options="annotationsKeysOptions"
           :size-units-options-map="sizeUnitsMap"
           :size-types-options="sizeTypes"
-          :collapsed="collapsedSearchOption"
           :annotation-validation-fn="validAnnotation"
-          title="Search Options"
           @clear-options="clearOptions"
           @add-annotation="addAnnotationItem"
           @remove-annotation="removeAnnotationItem"
         />
-      </div>
-    </div>
-    <!-- Filters -->
-    <CollapsiblePanel v-if="searchResponse" class="filters-panel mb-3" :collapsed="true">
-      <template #header>
-        <span class="filters-header">
-          <span class="p-panel-title">Member Filters</span>
-          <Button v-tooltip.right="{ value: 'Clear filters', disabled: !hasActiveFilters }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${hasActiveFilters ? 'p-column-filter-menu-button-active' : ''}`" :disabled="!hasActiveFilters" @click.stop="clearFilters">
-            <i class="pi pi-filter" style="font-size: 1rem" />
-          </Button>
-        </span>
       </template>
-      <div class="filters-content">
-        <div class="filter-item">
-          <label>Search by Name</label>
-          <InputText v-model="systemNameFilter" placeholder="Filter by system name..." class="w-full" />
+      <template #members>
+        <div class="member-filters">
+          <div class="filter-item">
+            <label>Search by Name</label>
+            <InputText v-model="systemNameFilter" placeholder="Filter by system name..." class="w-full" />
+          </div>
+          <div class="filter-item">
+            <label>Filter by Tags</label>
+            <MultiSelect v-model="selectedResultTags" :options="availableResultTags" placeholder="Select tags..." class="w-full" />
+          </div>
+          <div v-if="searchResponse" class="filter-stats">
+            Showing {{ filteredResults.length }} of {{ searchResponse.results.length }} systems
+          </div>
         </div>
+      </template>
+    </FilterSidebar>
 
-        <div class="filter-item">
-          <label>Filter by Tags</label>
-          <MultiSelect v-model="selectedResultTags" :options="availableResultTags" placeholder="Select tags..." class="w-full" />
-        </div>
+    <div class="main-content">
+      <div>
+        <PageHeader heading="Fleet Search">
+          <SearchDateToolbar
+            v-model:date-type="model.queryDateTypeOptions"
+            :date-type-options="queryDateTypes"
+            :start-time-date="model.startTimeDate"
+            :end-time-date="model.endTimeDate"
+            :reset-default="resetDefaultTimeDate"
+            :loading="loading"
+            @date-change="onDateChange"
+            @refresh="executeSearch"
+          />
+        </PageHeader>
       </div>
-      <div class="filter-stats">
-        Showing {{ filteredResults.length }} of {{ searchResponse.results.length }} systems
-      </div>
-    </CollapsiblePanel>
-
     <Panel header="Results" class="table-panel results">
       <template #icons>
         <div v-if="searchResponse" class="summary-tags mr-3">
@@ -130,11 +125,13 @@
         </Column>
       </DataTable>
     </Panel>
+    </div>
   </div>
 </template>
 
 <script setup>
 import DeltaFileSearchOptions from "@/components/DeltaFileSearchOptions.vue";
+import FilterSidebar from "@/components/FilterSidebar.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SearchDateToolbar from "@/components/SearchDateToolbar.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
@@ -150,8 +147,6 @@ import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import Panel from "primevue/panel";
 import Tag from "primevue/tag";
-import Button from "primevue/button";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 
 const { getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { search: searchFederated, buildMemberSearchUrl, loading, response: searchResponse, fetchOptions, options: aggregatedOptions } = useFederatedSearch();
@@ -171,7 +166,7 @@ const {
   setupFilterWatchers,
 } = useDeltaFileSearchFilters({ storageKey: "fleet-search-persisted-params" });
 
-const collapsedSearchOption = ref(true);
+const sidebarOpen = ref(false);
 const formattedDataSourceNames = ref([]);
 
 // Dropdown options derived from aggregated options
@@ -200,13 +195,26 @@ const isResultFiltered = computed(() => {
   return systemNameFilter.value.length > 0 || selectedResultTags.value.length > 0;
 });
 
-const hasActiveFilters = computed(() => {
+const hasMemberFilters = computed(() => {
   return systemNameFilter.value.length > 0 || selectedResultTags.value.length > 0;
 });
 
-const clearFilters = () => {
+const sidebarTabs = computed(() => [
+  { name: "search", label: "Search", hasActiveFilters: activeAdvancedOptions.value },
+  { name: "members", label: "Members", hasActiveFilters: hasMemberFilters.value },
+]);
+
+const clearMemberFilters = () => {
   systemNameFilter.value = "";
   selectedResultTags.value = [];
+};
+
+const handleClearTab = (tabName) => {
+  if (tabName === "search") {
+    clearOptions();
+  } else if (tabName === "members") {
+    clearMemberFilters();
+  }
 };
 
 const filteredResults = computed(() => {
@@ -242,8 +250,8 @@ const stageOptions = ref([]);
 onBeforeMount(async () => {
   loadPersistedParams();
   fetchDropdownOptions();
-  // Expand search options if there are active filters
-  collapsedSearchOption.value = !activeAdvancedOptions.value;
+  // Open sidebar if there are active filters
+  sidebarOpen.value = activeAdvancedOptions.value;
   await nextTick();
   executeSearch();
   setupFilterWatchers(executeSearch);
@@ -327,8 +335,17 @@ const getStatusSeverity = (status) => {
 
 <style>
 .fleet-search-page {
+  position: relative;
+  display: flex;
+  height: 100%;
+
   label {
     font-weight: 500;
+  }
+
+  .main-content {
+    flex: 1;
+    overflow: auto;
   }
 
   .member-cell {
@@ -352,53 +369,30 @@ const getStatusSeverity = (status) => {
     gap: 0.25rem;
   }
 
-  .filters-panel {
-    margin-bottom: 1.5rem;
-    .p-panel-header {
-      padding: 0 1.25rem;
-
-      .p-panel-title {
-        padding: 1rem 0;
-      }
-
-      .p-panel-header-icon {
-        margin-top: 0.25rem;
-        margin-right: 0;
-      }
-    }
-  }
-
-  .filters-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    align-items: end;
-  }
-
-  .filter-item {
+  .member-filters {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-  }
+    gap: 1rem;
 
-  .filter-item label {
-    font-weight: 600;
-    font-size: 0.875rem;
-  }
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-  .filter-stats {
-    color: var(--text-color-secondary);
-    font-size: 0.875rem;
-    white-space: nowrap;
-    padding: 0;
-    margin-top: 1rem;
-    text-align: center;
-  }
+    .filter-item label {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
 
-  .filters-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    .filter-stats {
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+      text-align: center;
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface-border, #dee2e6);
+    }
   }
 
   .summary-tags {
@@ -435,6 +429,49 @@ const getStatusSeverity = (status) => {
 
   td.status-column {
     width: 15%;
+  }
+
+  /* Override DeltaFileSearchOptions styles when in sidebar */
+  .filter-sidebar-body {
+    .deltafile-search-options {
+      .p-panel {
+        border: none;
+        box-shadow: none;
+      }
+
+      .p-panel-header {
+        display: none;
+      }
+
+      .p-panel-content {
+        padding: 0 !important;
+      }
+
+      .flex-row {
+        flex-direction: column;
+      }
+
+      .flex-column {
+        flex: none;
+        margin: 0;
+        margin-bottom: 1rem;
+      }
+
+      .responsive-width {
+        min-width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .min-width {
+        width: 100%;
+      }
+
+      .size-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+    }
   }
 }
 </style>

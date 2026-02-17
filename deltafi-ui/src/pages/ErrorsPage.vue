@@ -17,35 +17,51 @@
 -->
 <template>
   <div class="errors-page">
-    <PageHeader heading="Errors">
-      <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
-          {{ shortTimezone() }}
-        </Button>
-        <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
-        <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
+    <FilterSidebar
+      v-model="sidebarOpen"
+      title="Error Filters"
+      tab-label="Filters"
+      width="350px"
+      :has-active-filters="filterOptionsSelected"
+      @clear="clearOptions"
+    >
+      <div class="filter-item">
+        <label>Flow</label>
+        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
       </div>
-    </PageHeader>
-    <div class="border-bottom mb-3 pb-3">
-      <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
-        <i class="pi pi-filter" style="font-size: 1rem" />
-      </Button>
-      <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field mx-1 flow-dropdown" />
-      <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" class="deltafi-input-field mx-1 flow-dropdown" />
-      <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field mx-1 ack-dropdown" />
+      <div class="filter-item">
+        <label>Error Message</label>
+        <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" filter filter-placeholder="Filter messages" class="w-full" />
+      </div>
+      <div class="filter-item">
+        <label>Status</label>
+        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="w-full" />
+      </div>
+    </FilterSidebar>
+
+    <div class="main-content">
+      <PageHeader heading="Errors">
+        <div class="time-range btn-toolbar mb-2 mb-md-0">
+          <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
+            {{ shortTimezone() }}
+          </Button>
+          <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
+          <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
+        </div>
+      </PageHeader>
+      <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
+      <TabView v-if="showTabs" v-model:active-index="activeTab" @tab-change="unSelectAllRows">
+        <TabPanel header="All">
+          <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" :query-params="model" @refresh-errors="onRefresh()" />
+        </TabPanel>
+        <TabPanel header="By Flow">
+          <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+        </TabPanel>
+        <TabPanel header="By Message">
+          <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+        </TabPanel>
+      </TabView>
     </div>
-    <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
-    <TabView v-if="showTabs" v-model:active-index="activeTab" @tab-change="unSelectAllRows">
-      <TabPanel header="All">
-        <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" :query-params="model" @refresh-errors="onRefresh()" />
-      </TabPanel>
-      <TabPanel header="By Flow">
-        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
-      </TabPanel>
-      <TabPanel header="By Message">
-        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
-      </TabPanel>
-    </TabView>
   </div>
 </template>
 
@@ -54,6 +70,7 @@ import AllErrorsPanel from "@/components/errors/AllPanel.vue";
 import CustomCalendar from "@/components/CustomCalendar.vue";
 import ErrorsSummaryByFlowPanel from "@/components/errors/SummaryByFlowPanel.vue";
 import ErrorsSummaryByMessagePanel from "@/components/errors/SummaryByMessagePanel.vue";
+import FilterSidebar from "@/components/FilterSidebar.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import useErrorCount from "@/composables/useErrorCount";
@@ -62,7 +79,7 @@ import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, inject, nextTick, onBeforeMount, onMounted, onUnmounted, ref, watch } from "vue";
 import { StorageSerializers, useStorage, useUrlSearchParams } from "@vueuse/core";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import _ from "lodash";
 import dayjs from "dayjs";
@@ -90,9 +107,11 @@ const newErrorsCount = ref(0);
 const lastServerContact = ref(new Date());
 const flowSelected = ref(null);
 const activeTab = ref(0);
+const isNavigating = ref(false);
 const params = useUrlSearchParams("history");
 const useURLSearch = ref(false);
 const route = useRoute();
+const router = useRouter();
 const errorPanelState = useStorage("error-store", {}, sessionStorage, { serializer: StorageSerializers.object });
 const { fetchUniqueErrorMessages } = useErrorsSummary();
 const formattedFlows = ref([]);
@@ -100,6 +119,7 @@ const allFlowNames = ref();
 const showTabs = ref(false);
 const uniqueErrorMessages = ref([]);
 const customCalendarRef = ref(null);
+const sidebarOpen = ref(false);
 
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const defaultStartTimeDate = computed(() => {
@@ -177,29 +197,29 @@ const setPersistedParams = () => {
     flowSelected: flowSelected.value,
     errorMessageSelected: errorMessageSelected.value,
   };
-  // URL
-  params.tab = activeTab.value > 0 ? activeTab.value : null;
-  params.ack = selectedAckOption.value > 0 ? selectedAckOption.value : null;
-  params.flowName = flowSelected.value?.name;
-  params.flowType = flowSelected.value?.type;
-  if (activeTab.value === 0) {
-    params.errorMsg = errorMessageSelected.value ? encodeURIComponent(errorMessageSelected.value) : null;
-  } else {
-    params.errorMsg = null;
-  }
+  // URL - use router.replace to keep route.query in sync
+  const query = {
+    ...route.query,
+    tab: String(activeTab.value),
+    ack: selectedAckOption.value > 0 ? String(selectedAckOption.value) : undefined,
+    flowName: flowSelected.value?.name || undefined,
+    flowType: flowSelected.value?.type || undefined,
+    errorMsg: activeTab.value === 0 && errorMessageSelected.value ? encodeURIComponent(errorMessageSelected.value) : undefined,
+  };
+  router.replace({ query });
 };
 
 const getPersistedParams = async () => {
   if (useURLSearch.value) {
-    activeTab.value = params.tab ? parseInt(params.tab) : 0;
-    selectedAckOption.value = params.ack ? parseInt(params.ack) : 0;
-    if (params.flowName && params.flowType) {
+    activeTab.value = route.query.tab ? parseInt(route.query.tab) : 0;
+    selectedAckOption.value = route.query.ack ? parseInt(route.query.ack) : 0;
+    if (route.query.flowName && route.query.flowType) {
       flowSelected.value = {
-        name: params.flowName,
-        type: params.flowType,
+        name: route.query.flowName,
+        type: route.query.flowType,
       };
     }
-    errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
+    errorMessageSelected.value = route.query.errorMsg ? decodeURIComponent(route.query.errorMsg) : errorPanelState.value.errorMessageSelected;
   } else {
     activeTab.value = errorPanelState.value.tabs ? parseInt(errorPanelState.value.tabs) : 0;
     selectedAckOption.value = _.get(errorPanelState.value, "ack", 0);
@@ -231,6 +251,10 @@ const filterOptionsSelected = computed(() => {
 
 const setupWatchers = () => {
   watch([activeTab, selectedAckOption, flowSelected, errorMessageSelected], () => {
+    if (isNavigating.value) {
+      isNavigating.value = false;
+      return;
+    }
     setPersistedParams();
   });
 
@@ -238,6 +262,20 @@ const setupWatchers = () => {
     () => [model.value.startTimeDate, model.value.endTimeDate],
     () => {
       onRefresh();
+    }
+  );
+
+  // Watch for tab changes from navigation links
+  watch(
+    () => route.query.tab,
+    (newTab) => {
+      if (newTab !== undefined && newTab !== null) {
+        const tabValue = parseInt(newTab);
+        if (!isNaN(tabValue) && tabValue !== activeTab.value) {
+          isNavigating.value = true;
+          activeTab.value = tabValue;
+        }
+      }
     }
   );
 };
@@ -342,6 +380,10 @@ const formatFlowNames = () => {
 
 <style>
 .errors-page {
+  position: relative;
+  display: flex;
+  height: 100%;
+
   .time-range .form-control:disabled,
   .time-range .form-control[readonly] {
     background-color: #ffffff;
@@ -349,6 +391,23 @@ const formatFlowNames = () => {
 
   .show-acknowledged-toggle {
     width: 14rem;
+  }
+
+  .main-content {
+    flex: 1;
+    overflow: auto;
+  }
+
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+
+    label {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
   }
 
   .p-panel {
@@ -408,14 +467,6 @@ const formatFlowNames = () => {
 
   .p-autocomplete-input {
     width: 16rem;
-  }
-
-  .flow-dropdown {
-    width: 20rem;
-  }
-
-  .ack-dropdown {
-    width: 11rem;
   }
 
   .vdpr-datepicker__calendar-dialog {

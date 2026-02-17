@@ -33,8 +33,8 @@ describe("Fleet Search Page", () => {
       cy.get(".p-dropdown").should("exist");
     });
 
-    it("displays the search options panel", () => {
-      cy.contains("Search Options").should("exist");
+    it("displays the search filter tab", () => {
+      cy.contains("Search").should("exist");
     });
 
     it("displays the results panel", () => {
@@ -54,8 +54,8 @@ describe("Fleet Search Page", () => {
       cy.get(".p-datatable").should("exist");
     });
 
-    it("search options panel exists", () => {
-      cy.contains("Search Options").should("exist");
+    it("search filter tab exists", () => {
+      cy.contains("Search").should("exist");
     });
 
     it("renders correctly at default viewport", () => {
@@ -74,8 +74,8 @@ describe("Fleet Search Page", () => {
       cy.visit(baseUrl);
     });
 
-    it("can interact with search options", () => {
-      cy.contains("Search Options").click();
+    it("can interact with search filter", () => {
+      cy.contains("Search").click();
     });
   });
 });

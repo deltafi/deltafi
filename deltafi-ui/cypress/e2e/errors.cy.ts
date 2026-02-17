@@ -41,20 +41,8 @@ describe("Errors Page", () => {
       cy.contains("Refresh").should("exist");
     });
 
-    it("displays clear filters button", () => {
-      cy.get(".p-column-filter-menu-button").should("exist");
-    });
-
-    it("displays Flow dropdown", () => {
-      cy.get(".flow-dropdown").should("exist");
-    });
-
-    it("displays Error Message dropdown", () => {
-      cy.get(".p-dropdown").should("have.length.greaterThan", 0);
-    });
-
-    it("displays Ack status dropdown", () => {
-      cy.get(".ack-dropdown").should("exist");
+    it("displays filter sidebar tab", () => {
+      cy.get(".filter-sidebar-tab").should("exist");
     });
 
     it("displays tabs", () => {

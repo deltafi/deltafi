@@ -18,6 +18,32 @@
 
 <template>
   <div class="leader-dashboard-page">
+    <FilterSidebar
+      v-model="sidebarOpen"
+      title="Member Filters"
+      tab-label="Filters"
+      :has-active-filters="hasActiveFilters"
+      @clear="clearFilters"
+    >
+      <div class="member-filters">
+        <div class="filter-item">
+          <label>Search by Name</label>
+          <InputText v-model="filterText" placeholder="Filter by member name..." class="w-full" />
+        </div>
+        <div class="filter-item">
+          <label>Filter by Tags</label>
+          <MultiSelect v-model="selectedTags" :options="allTags" placeholder="Select tags..." class="w-full" />
+        </div>
+        <div v-if="isMetricView" class="filter-item">
+          <label>Filter by {{ tableKeyHeader }}</label>
+          <InputText v-model="metricFilter" :placeholder="`Filter ${tableKeyHeader.toLowerCase()}...`" class="w-full" />
+        </div>
+        <div class="filter-stats">
+          Showing {{ sortedMembers.length }} of {{ members.length }} members
+        </div>
+      </div>
+    </FilterSidebar>
+
     <PageHeader heading="Fleet Dashboard">
       <Button label="Refresh" icon="pi pi-refresh" @click="refresh" :loading="loading" />
     </PageHeader>
@@ -35,37 +61,6 @@
       <SelectButton v-model="flowMetricsInterval" :options="intervalOptions" optionLabel="label" optionValue="value" :allow-empty="false" class="interval-selector" />
       <i class="pi pi-spin pi-spinner loading-indicator" :class="{ visible: flowMetricsLoading }" />
     </div>
-
-    <!-- Filters -->
-    <CollapsiblePanel class="filters-panel mb-3" :collapsed="true">
-      <template #header>
-        <span class="filters-header">
-          <span class="p-panel-title">Member Filters</span>
-          <Button v-tooltip.right="{ value: 'Clear filters', disabled: !hasActiveFilters }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${hasActiveFilters ? 'p-column-filter-menu-button-active' : ''}`" :disabled="!hasActiveFilters" @click.stop="clearFilters">
-            <i class="pi pi-filter" style="font-size: 1rem" />
-          </Button>
-        </span>
-      </template>
-      <div class="filters-content">
-        <div class="filter-item">
-          <label>Search by Name</label>
-          <InputText v-model="filterText" placeholder="Filter by member name..." class="w-full" />
-        </div>
-
-        <div class="filter-item">
-          <label>Filter by Tags</label>
-          <MultiSelect v-model="selectedTags" :options="allTags" placeholder="Select tags..." class="w-full" />
-        </div>
-
-        <div v-if="isMetricView" class="filter-item">
-          <label>Filter by {{ tableKeyHeader }}</label>
-          <InputText v-model="metricFilter" :placeholder="`Filter ${tableKeyHeader.toLowerCase()}...`" class="w-full" />
-        </div>
-      </div>
-      <div class="filter-stats">
-          Showing {{ sortedMembers.length }} of {{ members.length }} members
-        </div>
-    </CollapsiblePanel>
 
     <!-- Summary View -->
     <div v-if="displayMode === 'summary'" class="summary-view mb-3" :class="{ 'metric-summary': isMetricView }">
@@ -325,7 +320,7 @@ import Tag from "primevue/tag";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Timestamp from "@/components/Timestamp.vue";
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import FilterSidebar from "@/components/FilterSidebar.vue";
 
 const {
   members,
@@ -362,6 +357,7 @@ const loadPreferences = () => {
 };
 const savedPrefs = loadPreferences();
 
+const sidebarOpen = ref(false);
 const viewMode = ref(savedPrefs.viewMode || "summary");
 const metricFilter = ref("");
 const displayMode = ref<"cards" | "table" | "summary">(savedPrefs.displayMode || "cards");
@@ -915,27 +911,10 @@ const refresh = () => {
     }
   }
 
-  .filters-panel {
-    margin-bottom: 1.5rem;
-    .p-panel-header {
-      padding: 0 1.25rem;
-
-      .p-panel-title {
-        padding: 1rem 0;
-      }
-
-      .p-panel-header-icon {
-        margin-top: 0.25rem;
-        margin-right: 0;
-      }
-    }
-  }
-
-  .filters-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  .member-filters {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
-    align-items: end;
   }
 
   .filter-item {
@@ -952,9 +931,7 @@ const refresh = () => {
   .filter-stats {
     color: var(--text-color-secondary);
     font-size: 0.875rem;
-    white-space: nowrap;
-    padding: 0;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
     text-align: center;
   }
 
@@ -1012,12 +989,6 @@ const refresh = () => {
     &.visible {
       visibility: visible;
     }
-  }
-
-  .filters-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
   }
 
   .table-view {

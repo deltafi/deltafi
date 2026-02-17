@@ -17,26 +17,27 @@
 -->
 
 <template>
-  <nav class="navbar navbar-dark bg-dark p-0 shadow" :style="{ backgroundColor: backgroundColor, color: textColor }">
+  <nav class="navbar navbar-dark p-0 shadow" :style="{ backgroundColor: backgroundColor, color: textColor }">
     <span class="navbar-brand-wrapper">
       <div class="navbar-brand col mr-0 px-3">
-        <div class="row">
+        <div class="row align-items-center">
           <img class="logo" src="/logo.png">
           <div class="col title" :style="{ color: textColor }">{{ uiConfig.title }}</div>
-          <div class="col text-right">
-            <button v-tooltip.right="'Toggle sidebar menu'" class="navbar-toggler btn btn-sm" @click="toggleSidebar">
-              <i :class="toggleSidebarIcon" />
-            </button>
-          </div>
         </div>
       </div>
     </span>
     <span class="navbar-text col">
       <Version style="font-size: 0.9rem" />
     </span>
-    <span>
+    <span class="d-flex align-items-center">
+      <button class="search-trigger mr-3" @click="openCommandPalette">
+        <i class="pi pi-search" />
+        <span class="search-placeholder">Search...</span>
+        <kbd class="search-hotkey">{{ isMac ? '⌘' : 'Ctrl' }}K</kbd>
+      </button>
       <Clock class="mr-3" />
       <NotificationBadge v-if="$hasPermission('EventRead')" class="mr-3" />
+      <ErrorCountBadge v-if="$hasPermission('DeltaFileMetadataView')" class="mr-3" />
       <StatusBadge class="mr-3" />
       <UserBadge class="mr-3" />
     </span>
@@ -47,43 +48,36 @@
 import Clock from "@/components/Clock.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import NotificationBadge from "@/components/NotificationBadge.vue";
+import ErrorCountBadge from "@/components/header/ErrorCountBadge.vue";
 import UserBadge from "@/components/UserBadge.vue";
 import Version from "@/components/Version.vue";
-import { computed, inject } from "vue";
+import useCommandPalette from "@/composables/useCommandPalette";
+import { computed, inject, ref } from "vue";
 
 const uiConfig = inject("uiConfig");
-const sidebarHidden = inject("sidebarHidden");
+const { open: openCommandPalette } = useCommandPalette();
+const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
 
 const textColor = computed(() => {
   return uiConfig.topBar.textColor ? `${uiConfig.topBar.textColor} !important` : null;
 });
 
 const backgroundColor = computed(() => {
-  return uiConfig.topBar.backgroundColor ? `${uiConfig.topBar.backgroundColor} !important` : null;
+  return uiConfig.topBar.backgroundColor || "#343a40";
 });
-
-const toggleSidebarIcon = computed(() => {
-  return sidebarHidden.value ? "pi pi-angle-double-right" : "pi pi-angle-double-left";
-});
-
-const toggleSidebar = () => (sidebarHidden.value = !sidebarHidden.value);
 </script>
 
 <style scoped lang="scss">
 @use '/src/styles/global.scss';
 
 .navbar-brand-wrapper {
-  width: 300px;
+  flex-shrink: 0;
 }
 
 .navbar-brand {
   padding-top: 0.6rem;
   padding-bottom: 0.6rem;
   font-size: 1.1rem;
-  background-color: rgba(0, 0, 0, 0.25);
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
-  -ms-flex: 0 0 300px;
-  flex: 0 0 300px;
 }
 
 .navbar-brand .title {
@@ -92,47 +86,53 @@ const toggleSidebar = () => (sidebarHidden.value = !sidebarHidden.value);
   font-weight: 300;
 }
 
-.navbar-brand .navbar-toggler:focus {
-  outline: none;
-  box-shadow: none;
-}
-
 .navbar .form-control {
   padding: 0.75rem 1rem;
   border-width: 0;
   border-radius: 0;
 }
 
-@media (max-width: 768px) {
-  .navbar-brand {
-    padding-top: 0.6rem;
-    padding-bottom: 0.6rem;
-    font-size: 1.1rem;
-    background-color: rgba(0, 0, 0, 0.25);
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
-    -ms-flex: 0 0 150px;
-    flex: 0 0 150px;
-  }
-}
-
 .logo {
-  margin-left: 1rem;
+  margin-left: 0.5rem;
   width: 1.9rem;
   height: 1.9rem;
 }
 
-.navbar-toggler {
-  color: hsla(0, 0%, 100%, .5) !important;
-  border-color: hsla(0, 0%, 100%, .1) !important;
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
 
-  &:hover,
-  &:focus,
-  &:active {
-    outline: none !important;
-    box-shadow: none !important;
-    color: hsla(0, 0%, 100%, .5) !important;
-    border-color: hsla(0, 0%, 100%, .1) !important;
-    /* Styles here */
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .pi-search {
+    font-size: 0.85rem;
+  }
+
+  .search-placeholder {
+    opacity: 0.8;
+  }
+
+  .search-hotkey {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    font-family: inherit;
+    color: inherit;
   }
 }
 </style>

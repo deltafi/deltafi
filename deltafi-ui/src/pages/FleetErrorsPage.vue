@@ -379,6 +379,7 @@ import SearchDateToolbar from "@/components/SearchDateToolbar.vue";
 import useFederatedErrors from "@/composables/useFederatedErrors";
 import useFederatedSearch from "@/composables/useFederatedSearch";
 import { computed, inject, nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useUrlSearchParams } from "@vueuse/core";
 
 import dayjs from "dayjs";
@@ -399,6 +400,8 @@ import Tag from "primevue/tag";
 dayjs.extend(utc);
 
 const uiConfig = inject("uiConfig");
+const route = useRoute();
+const router = useRouter();
 
 const {
   searchErrors,
@@ -552,9 +555,7 @@ const savePersistedParams = () => {
       state.endTime = dateToISOString(endTimeDate.value);
     }
   }
-  if (activeTab.value !== 0) {
-    state.tab = String(activeTab.value);
-  }
+  state.tab = String(activeTab.value);
   if (sortField.value !== "count") {
     state.sortField = sortField.value;
   }
@@ -1002,6 +1003,8 @@ watch([dataSourcesFilter, errorCauseFilter, acknowledgedFilter, memberNamesFilte
 
 watch(activeTab, () => {
   savePersistedParams();
+  // Update Vue Router state so navigation components react to tab changes
+  router.replace({ query: { ...route.query, tab: String(activeTab.value) } });
 });
 
 // Sort handler

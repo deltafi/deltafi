@@ -28,7 +28,6 @@ describe("DeltaFile Search Page", () => {
 
     it("loads the page with default settings", () => {
       cy.get("h2").contains("DeltaFile Search");
-      cy.get("span.p-panel-title").contains("Advanced Search Options");
       cy.get("span.p-panel-title").contains("Results");
     });
 
@@ -109,28 +108,28 @@ describe("DeltaFile Search Page", () => {
     });
   });
 
-  // Group 2: Advanced Search Options Panel (expands panel, but read-only)
-  describe("Advanced Search Options Panel", { testIsolation: false }, () => {
+  // Group 2: Filter Sidebar (slide-out search options)
+  describe("Filter Sidebar", { testIsolation: false }, () => {
     retryableBefore(() => {
       cy.visit(baseUrl);
       cy.get(".p-datatable").should("exist");
     });
 
-    it("can toggle the advanced search options panel", () => {
-      cy.get("span.p-panel-title").contains("Advanced Search Options").click();
-      cy.get(".p-panel-content").should("be.visible");
+    it("can open the filter sidebar", () => {
+      cy.get(".filter-sidebar-tab").click();
+      cy.get(".filter-sidebar").should("be.visible");
     });
 
-    it("displays filter fields when panel is expanded", () => {
-      cy.get(".p-panel-content").first().within(() => {
+    it("displays filter fields when sidebar is open", () => {
+      cy.get(".filter-sidebar").within(() => {
         cy.contains("Filename");
         cy.contains("Data Sources");
         cy.contains("Stage");
       });
     });
 
-    it("has search options panel", () => {
-      cy.get(".p-panel-content").should("be.visible");
+    it("has filter sidebar", () => {
+      cy.get(".filter-sidebar").should("be.visible");
     });
   });
 

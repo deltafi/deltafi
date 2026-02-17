@@ -21,43 +21,50 @@
 
 <template>
   <div class="deltafile-search-page">
-    <div>
-      <PageHeader heading="DeltaFile Search">
-        <SearchDateToolbar
-          ref="searchToolbarRef"
-          v-model:date-type="model.queryDateTypeOptions"
-          :date-type-options="queryDateTypeOptions"
-          :start-time-date="model.startTimeDate"
-          :end-time-date="model.endTimeDate"
-          :reset-default="resetDefaultTimeDate"
-          :loading="loading"
-          @date-change="onDateChange"
-          @refresh="refreshDeltaFilesData"
-        />
-      </PageHeader>
-    </div>
-    <div class="row mb-3">
-      <div class="col-12">
-        <DeltaFileSearchOptions
-          v-model="model"
-          :active-advanced-options="activeAdvancedOptions"
-          :formatted-data-source-names="formattedDataSourceNames"
-          :data-sink-options="dataSinkOptions"
-          :transform-options="transformOptions"
-          :topic-options="topicOptions"
-          :stage-options="stageOptions"
-          :annotation-keys-options="annotationsKeysOptions"
-          :size-units-options-map="sizeUnitsOptionsMap"
-          :size-types-options="sizeTypesOptions"
-          :collapsed="collapsedSearchOption"
-          :annotation-validation-fn="validAnnotation"
-          @clear-options="clearOptionsAndRefresh"
-          @add-annotation="addAnnotationItem"
-          @remove-annotation="removeAnnotationItem"
-        />
+    <!-- Slide-out search options sidebar -->
+    <FilterSidebar
+      v-model="sidebarOpen"
+      title="Advanced Search Options"
+      tab-label="Filters"
+      width="420px"
+      :has-active-filters="activeAdvancedOptions"
+      @clear="clearOptionsAndRefresh"
+    >
+      <DeltaFileSearchOptions
+        v-model="model"
+        :active-advanced-options="activeAdvancedOptions"
+        :formatted-data-source-names="formattedDataSourceNames"
+        :data-sink-options="dataSinkOptions"
+        :transform-options="transformOptions"
+        :topic-options="topicOptions"
+        :stage-options="stageOptions"
+        :annotation-keys-options="annotationsKeysOptions"
+        :size-units-options-map="sizeUnitsOptionsMap"
+        :size-types-options="sizeTypesOptions"
+        :annotation-validation-fn="validAnnotation"
+        @clear-options="clearOptionsAndRefresh"
+        @add-annotation="addAnnotationItem"
+        @remove-annotation="removeAnnotationItem"
+      />
+    </FilterSidebar>
+
+    <div class="main-content">
+      <div>
+        <PageHeader heading="DeltaFile Search">
+          <SearchDateToolbar
+            ref="searchToolbarRef"
+            v-model:date-type="model.queryDateTypeOptions"
+            :date-type-options="queryDateTypeOptions"
+            :start-time-date="model.startTimeDate"
+            :end-time-date="model.endTimeDate"
+            :reset-default="resetDefaultTimeDate"
+            :loading="loading"
+            @date-change="onDateChange"
+            @refresh="refreshDeltaFilesData"
+          />
+        </PageHeader>
       </div>
-    </div>
-    <Panel header="Results" class="table-panel results" @contextmenu="onPanelRightClick">
+      <Panel header="Results" class="table-panel results" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
         <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
@@ -105,6 +112,7 @@
       </DataTable>
       <ScrollTop target="window" :threshold="150" icon="pi pi-arrow-up" />
     </Panel>
+    </div>
   </div>
   <ConfirmDialog />
   <ReplayDialog ref="replayDialog" :did="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
@@ -122,6 +130,7 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DeltaFileSearchOptions from "@/components/DeltaFileSearchOptions.vue";
+import FilterSidebar from "@/components/FilterSidebar.vue";
 import SearchDateToolbar from "@/components/SearchDateToolbar.vue";
 import DidLink from "@/components/DidLink.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
@@ -169,6 +178,7 @@ const { topicNames: topicOptions, getAllTopics } = useTopics();
 const { allDataSourceFlowNames, fetchAllDataSourceFlowNames, dataSinks: dataSinkOptions, fetchDataSinkNames, transforms: transformOptions, fetchTransformNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
+const sidebarOpen = ref(false);
 const selectedDids = ref([]);
 const menu = ref();
 const searchToolbarRef = ref(null);
@@ -514,6 +524,10 @@ const onAcknowledged = (dids, reason) => {
 
 <style>
 .deltafile-search-page {
+  position: relative;
+  display: flex;
+  height: 100%;
+
   label {
     font-weight: 500;
   }
@@ -593,6 +607,54 @@ const onAcknowledged = (dids, reason) => {
     a,
     button {
       color: #eeeeee;
+    }
+  }
+
+  .main-content {
+    flex: 1;
+    overflow: auto;
+  }
+
+  /* Override DeltaFileSearchOptions styles when in sidebar */
+  .search-sidebar-content {
+    .deltafile-search-options {
+      .p-panel {
+        border: none;
+        box-shadow: none;
+      }
+
+      .p-panel-header {
+        display: none;
+      }
+
+      .p-panel-content {
+        padding: 0 !important;
+      }
+
+      .flex-row {
+        flex-direction: column;
+      }
+
+      .flex-column {
+        flex: none;
+        margin: 0;
+        margin-bottom: 1rem;
+      }
+
+      .responsive-width {
+        min-width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .min-width {
+        width: 100%;
+      }
+
+      .size-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
     }
   }
 }

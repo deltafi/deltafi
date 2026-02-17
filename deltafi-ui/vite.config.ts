@@ -76,7 +76,7 @@ export default ({ mode }) => {
     css: {
       preprocessorOptions: {
         scss: {
-          silenceDeprecations: ["mixed-decls", "color-functions", "abs-percent", "global-builtin", "import"],
+          silenceDeprecations: ["color-functions", "abs-percent", "global-builtin", "import", "if-function"],
         },
       },
     },
