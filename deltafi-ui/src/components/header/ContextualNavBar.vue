@@ -21,56 +21,61 @@
 -->
 
 <template>
-  <nav class="contextual-navbar">
-    <div class="left-edge-trigger" @mouseenter="startHamburgerHover" @mouseleave="cancelHamburgerHover" />
-    <button class="hamburger-btn" @click="hamburgerMenuVisible = true" @mouseenter="startHamburgerHover" @mouseleave="cancelHamburgerHover">
-      <i class="fas fa-bars" />
-    </button>
-    <HamburgerMenu v-model="hamburgerMenuVisible" @sidebar-enter="onSidebarEnter" @sidebar-leave="onSidebarLeave" />
-    <template v-for="item in displayedItems" :key="item.path || getUrl(item.url)">
-      <!-- Item with children (dropdown) -->
-      <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper" @mouseenter="startHoverOpen(item.name)" @mouseleave="cancelHoverOpen">
-        <router-link v-if="item.path" :to="item.path" class="nav-item nav-item-link" :class="{ active: isActive(item) }">
-          <i :class="item.icon" class="mr-1" />
-          {{ item.name }}
-          <span v-if="item.badge && item.badge().visible" :class="item.badge().class" class="ml-1">{{ item.badge().value }}</span>
-        </router-link>
-        <a v-else-if="item.url" :href="getUrl(item.url)" target="_blank" class="nav-item nav-item-link">
-          <i :class="item.icon" class="mr-1" />
-          {{ item.name }}
-        </a>
-        <button class="nav-item-dropdown-toggle" @click="toggleDropdown(item.name)">
-          <i :class="['fas', openDropdown === item.name ? 'fa-chevron-up' : 'fa-chevron-down']" />
-        </button>
-        <div v-if="openDropdown === item.name" class="nav-dropdown">
-          <template v-for="child in item.children" :key="child.path || getUrl(child.url)">
-            <router-link v-if="child.path && isVisible(child)" :to="child.path" class="nav-dropdown-item" @click="openDropdown = null">
-              <i :class="child.icon" class="mr-1" />
-              {{ child.name }}
-            </router-link>
-            <a v-else-if="child.url && isVisible(child)" :href="getUrl(child.url)" target="_blank" class="nav-dropdown-item" @click="openDropdown = null">
-              <i :class="child.icon" class="mr-1" />
-              {{ child.name }}
-              <i class="fas fa-external-link-alt ml-1 small" />
-            </a>
-          </template>
+  <nav class="contextual-navbar justify-content-between">
+    <div>
+      <div class="left-edge-trigger" @mouseenter="startHamburgerHover" @mouseleave="cancelHamburgerHover" />
+      <button class="hamburger-btn" @click="hamburgerMenuVisible = true" @mouseenter="startHamburgerHover" @mouseleave="cancelHamburgerHover">
+        <i class="fas fa-bars" />
+      </button>
+      <HamburgerMenu v-model="hamburgerMenuVisible" @sidebar-enter="onSidebarEnter" @sidebar-leave="onSidebarLeave" />
+      <template v-for="item in displayedItems" :key="item.path || getUrl(item.url)">
+        <!-- Item with children (dropdown) -->
+        <div v-if="item.children && hasVisibleChildren(item)" class="nav-item-wrapper" @mouseenter="startHoverOpen(item.name)" @mouseleave="cancelHoverOpen">
+          <router-link v-if="item.path" :to="item.path" class="nav-item nav-item-link" :class="{ active: isActive(item) }">
+            <i :class="item.icon" class="mr-1" />
+            {{ item.name }}
+            <span v-if="item.badge && item.badge().visible" :class="item.badge().class" class="ml-1">{{ item.badge().value }}</span>
+          </router-link>
+          <a v-else-if="item.url" :href="getUrl(item.url)" target="_blank" class="nav-item nav-item-link">
+            <i :class="item.icon" class="mr-1" />
+            {{ item.name }}
+          </a>
+          <button class="nav-item-dropdown-toggle" @click="toggleDropdown(item.name)">
+            <i :class="['fas', openDropdown === item.name ? 'fa-chevron-up' : 'fa-chevron-down']" />
+          </button>
+          <div v-if="openDropdown === item.name" class="nav-dropdown">
+            <template v-for="child in item.children" :key="child.path || getUrl(child.url)">
+              <router-link v-if="child.path && isVisible(child)" :to="child.path" class="nav-dropdown-item" @click="openDropdown = null">
+                <i :class="child.icon" class="mr-1" />
+                {{ child.name }}
+              </router-link>
+              <a v-else-if="child.url && isVisible(child)" :href="getUrl(child.url)" target="_blank" class="nav-dropdown-item" @click="openDropdown = null">
+                <i :class="child.icon" class="mr-1" />
+                {{ child.name }}
+                <i class="fas fa-external-link-alt ml-1 small" />
+              </a>
+            </template>
+          </div>
         </div>
-      </div>
 
-      <!-- Simple internal link (no children) -->
-      <router-link v-else-if="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item) }">
-        <i :class="item.icon" class="mr-1" />
-        {{ item.name }}
-        <span v-if="item.badge && item.badge().visible" :class="item.badge().class" class="ml-2">{{ item.badge().value }}</span>
-      </router-link>
+        <!-- Simple internal link (no children) -->
+        <router-link v-else-if="item.path" :to="item.path" class="nav-item" :class="{ active: isActive(item) }">
+          <i :class="item.icon" class="mr-1" />
+          {{ item.name }}
+          <span v-if="item.badge && item.badge().visible" :class="item.badge().class" class="ml-2">{{ item.badge().value }}</span>
+        </router-link>
 
-      <!-- External link (no children) -->
-      <a v-else-if="item.url" :href="getUrl(item.url)" target="_blank" class="nav-item">
-        <i :class="item.icon" class="mr-1" />
-        {{ item.name }}
-        <i class="fas fa-external-link-alt ml-1 small" />
-      </a>
-    </template>
+        <!-- External link (no children) -->
+        <a v-else-if="item.url" :href="getUrl(item.url)" target="_blank" class="nav-item">
+          <i :class="item.icon" class="mr-1" />
+          {{ item.name }}
+          <i class="fas fa-external-link-alt ml-1 small" />
+        </a>
+      </template>
+    </div>
+    <div>
+      <CommandPaletteButton class="mt-2 mr-2"/>
+    </div>
   </nav>
 </template>
 
@@ -79,6 +84,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import HamburgerMenu from "@/components/header/HamburgerMenu.vue";
 import useMenuItems, { type MenuItem } from "@/composables/useMenuItems";
+import CommandPaletteButton from "@/components/header/CommandPaletteButton.vue";
 
 const route = useRoute();
 const { getSiblingMenuItems, pinnedPages, getUrl, isVisible } = useMenuItems();
