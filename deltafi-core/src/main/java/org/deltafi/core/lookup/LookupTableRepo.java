@@ -21,6 +21,7 @@ import lombok.Getter;
 import org.deltafi.common.lookup.LookupTable;
 import org.deltafi.common.types.SortDirection;
 import org.deltafi.core.generated.types.LookupResults;
+import org.deltafi.core.lookup.LookupMetadataExtractor.LookupMetadata;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
@@ -123,11 +124,8 @@ public class LookupTableRepo {
 
         String sql = """
         SELECT %s,
-               lt."created" AS "table_created",
-               lt."modified" AS "table_modified",
                COUNT(*) OVER() AS "total_matches"
         FROM %s t
-        JOIN "lookup_tables" lt ON lt."name" = :tableName
         %s
         %s
         OFFSET :offset
@@ -142,11 +140,27 @@ public class LookupTableRepo {
         int effectiveOffset = offset != null ? offset : 0;
         int effectiveLimit = limit != null ? limit : Integer.MAX_VALUE;
 
-        return jdbcClient.sql(sql)
-                .param("tableName", tableName)
+        // get the latest timestamps for this lookup table prior to running the lookup
+        LookupMetadata metadata = getLookupMetadata();
+
+        LookupResults result = jdbcClient.sql(sql)
                 .param("offset", effectiveOffset)
                 .param("limit", effectiveLimit)
                 .query(new LookupResultsExtractor(resultColumns, effectiveOffset));
+
+        result.setCreated(metadata.created());
+        result.setModified(metadata.modified());
+        return result;
+    }
+
+    private LookupMetadata getLookupMetadata() {
+        String sql = """
+                select created, modified from lookup_tables
+                where name = :table_name
+                """;
+
+        return jdbcClient.sql(sql).param("table_name", lookupTable.getName())
+                .query(new LookupMetadataExtractor());
     }
 
     public int count() {

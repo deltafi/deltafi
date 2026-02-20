@@ -25,12 +25,11 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class LookupResultsExtractor implements ResultSetExtractor<LookupResults> {
-    private static final Set<String> META_COLUMNS = Set.of("table_created", "table_modified", "total_matches");
+    private static final String TOTAL_MATCHES_COLUMN = "total_matches";
 
     private final Map<String, String> resultColumns;
     private final int offset;
@@ -45,14 +44,10 @@ public class LookupResultsExtractor implements ResultSetExtractor<LookupResults>
     public LookupResults extractData(ResultSet rs) throws SQLException, DataAccessException {
         List<List<ColumnValue>> rows = new ArrayList<>();
         int totalMatches = 0;
-        OffsetDateTime created = null;
-        OffsetDateTime modified = null;
 
         while (rs.next()) {
             if (rows.isEmpty()) {
-                totalMatches = rs.getInt("total_matches");
-                created = rs.getObject("table_created", OffsetDateTime.class);
-                modified = rs.getObject("table_modified", OffsetDateTime.class);
+                totalMatches = rs.getInt(TOTAL_MATCHES_COLUMN);
             }
             rows.add(mapRowToColumnValues(rs));
         }
@@ -61,8 +56,6 @@ public class LookupResultsExtractor implements ResultSetExtractor<LookupResults>
                 .offset(offset)
                 .count(rows.size())
                 .totalCount(totalMatches)
-                .created(created)
-                .modified(modified)
                 .rows(rows).build();
     }
 
@@ -85,7 +78,7 @@ public class LookupResultsExtractor implements ResultSetExtractor<LookupResults>
     }
 
     private boolean includeColumn(String columnName) {
-        return !META_COLUMNS.contains(columnName) && inResultColumns(columnName);
+        return !TOTAL_MATCHES_COLUMN.equals(columnName) && inResultColumns(columnName);
     }
 
     private boolean inResultColumns(String columnName) {

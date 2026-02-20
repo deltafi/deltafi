@@ -6651,7 +6651,26 @@ class DeltaFiCoreApplicationTests {
 
 		lookupTableService.deleteLookupTable(lookupTable.getName());
 
-		assertThat(lookupTableService.getLookupTables()).isEmpty();
+		assertThat(lookupTableService.getLookupTables()).noneMatch(table -> table.getName().equals(lookupTable.getName()));
+	}
+
+	@Test
+	@SneakyThrows
+	void testLookup_noMatches() {
+		LookupTable lookupTable = LookupTable.builder()
+				.name("empty_lookup_table")
+				.columns(List.of("column_a", "column_b", "column_c"))
+				.keyColumns(List.of("column_a"))
+				.serviceBacked(false)
+				.backingServiceActive(false)
+				.build();
+		lookupTableService.createLookupTable(lookupTable, true);
+
+		LookupResults results = lookupTableService.lookup("empty_lookup_table", null, null, null, null, 0, 1000);
+		assertThat(results.getTotalCount()).isZero();
+		assertThat(results.getRows()).isEmpty();
+		assertThat(results.getCreated()).isNotNull();
+		assertThat(results.getModified()).isNotNull();
 	}
 
 	private String getColumnValue(List<ColumnValue> columnValues, String columnName) {
