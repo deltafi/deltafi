@@ -44,6 +44,7 @@ spec:
         - name: LOCAL_STORAGE_CONTENT
           value: {{ include "localObjectStorageEnabled" . | quote }}
         {{- include "coreEnvVars" . | nindent 8 }}
+        {{- include "globalEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080
         {{- include "relaxedStartupProbe" . | nindent 8 }}

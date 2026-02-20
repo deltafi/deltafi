@@ -131,6 +131,12 @@ initContainers:
       done
 {{- end -}}
 
+{{- define "globalEnvVars" -}}
+{{- range .Values.deltafi.globalEnv }}
+- {{ toYaml . | nindent 2 | trim }}
+{{- end }}
+{{- end -}}
+
 {{- define "defaultEnvVars" -}}
 - name: NODE_NAME
   valueFrom:
@@ -286,6 +292,7 @@ env:
 {{- include "valkeyEnvVars" . | nindent 2 }}
 {{- include "minioEnvVars" . | nindent 2 }}
 {{- include "sslEnvVars" (merge (dict "secretName" .Values.deltafi.plugins.ssl.secret) .) | nindent 2 }}
+{{- include "globalEnvVars" . | nindent 2 }}
 {{ include "actionStartupProbe" . }}
 volumeMounts:
 {{- include "sslVolumeMount" . | nindent 2 }}

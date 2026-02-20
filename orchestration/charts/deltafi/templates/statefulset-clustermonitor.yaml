@@ -27,6 +27,7 @@ spec:
         env:
         {{- include "defaultEnvVars" . | nindent 12 }}
         {{- include "graphiteEnvVars" . | nindent 12 }}
+        {{- include "globalEnvVars" . | nindent 12 }}
             - name: PERIOD
               value: "{{ .Values.deltafi.clustermonitor.period }}"
         resources:

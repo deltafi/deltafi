@@ -37,6 +37,7 @@ spec:
         {{- include "postgresEnvVars" . | nindent 8 }}
         - name: FASTDELETE_WORKERS
           value: "{{ .Values.deltafi.fastdelete.workersPerNode | default 1 }}"
+        {{- include "globalEnvVars" . | nindent 8 }}
         resources:
           limits:
             memory: {{ mul (.Values.deltafi.fastdelete.workersPerNode | default 1) 200 }}Mi

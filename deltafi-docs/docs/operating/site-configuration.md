@@ -60,6 +60,11 @@ deltafi:
     ssl:
       secret: ssl-secret
 
+  # Inject environment variables into all DeltaFi-built services
+  globalEnv:
+    - name: MY_CUSTOM_VAR
+      value: "my-value"
+
 ingress:
   domain: local.deltafi.org
   tls:
@@ -71,9 +76,37 @@ ingress:
     https_port: 443
 ```
 
+### Global Environment Variables
+
+The `deltafi.globalEnv` setting injects environment variables into all DeltaFi-built services (core-scheduler, core-worker, core-actions, analytics, egress-sink, nodemonitor, node-fastdelete, clustermonitor). This is useful for setting JVM options, feature flags, or debug settings across the entire platform.
+
+```yaml
+# site/values.yaml
+deltafi:
+  globalEnv:
+    - name: MY_CUSTOM_VAR
+      value: "my-value"
+```
+
+In Kubernetes mode, the format follows the standard Kubernetes env var spec, so `valueFrom` references are also supported:
+
+```yaml
+deltafi:
+  globalEnv:
+    - name: MY_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: my-secret
+          key: password
+```
+
 ## Docker Compose Configuration
 
 When running DeltaFi in Compose mode, you can customize the Docker Compose configuration through the `site/compose.yaml` file.
+
+### Global Environment Variables
+
+The `deltafi.globalEnv` setting also works in Compose mode. Entries are written to `config/common.env` during `deltafi up`. Only simple `name`/`value` pairs are supported (`valueFrom` is a Kubernetes-only feature).
 
 ### site/compose.yaml
 
