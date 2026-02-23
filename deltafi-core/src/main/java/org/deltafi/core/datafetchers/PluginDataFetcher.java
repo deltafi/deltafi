@@ -85,16 +85,32 @@ public class PluginDataFetcher {
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean savePluginVariables(@InputArgument List<Variable> variables) {
-        auditLogger.audit("saved plugin variables {}", CoreAuditLogger.listToString(variables, Variable::getName));
+        auditLogger.audit("saved system plugin variables {}", CoreAuditLogger.listToString(variables, Variable::getName));
         pluginService.saveSystemVariables(variables);
         return true;
     }
 
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
+    public boolean saveSystemPluginVariable(@InputArgument Variable variable) {
+        auditLogger.audit("saved system plugin variable {}", variable.getName());
+        pluginService.saveSystemVariable(variable);
+        return true;
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginVariableUpdate
     public boolean removePluginVariables() {
-        auditLogger.audit("removed system plugin variables");
+        auditLogger.audit("removed all system plugin variables");
         pluginService.removeSystemVariables();
+        return true;
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginVariableUpdate
+    public boolean removeSystemPluginVariable(@InputArgument String name) {
+        auditLogger.audit("removed system plugin variable {}", name);
+        pluginService.removeSystemVariable(name);
         return true;
     }
 

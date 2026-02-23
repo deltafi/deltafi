@@ -41,11 +41,6 @@ type PluginVariables {
     variables: [Variable]!
 }
 
-input PluginVariablesInput {
-    sourcePlugin: PluginCoordinatesInput!
-    variables: [VariableInput]!
-}
-
 """
 Installation state of a plugin
 """
@@ -278,7 +273,17 @@ extend type Mutation {
     "Enable a previously disabled plugin - reinstalls it"
     enablePlugin(pluginCoordinates: PluginCoordinatesInput!): Boolean!
 
+    "Replace the set of System plugin variables and preseving values"
     savePluginVariables(variables: [VariableInput]!) : Boolean!
+
+    "Adds or updates a System plugin variable while preseving the others"
+    saveSystemPluginVariable(variable: VariableInput!) : Boolean!
+
+    "Remove all System plugin variables"
     removePluginVariables: Boolean!
+
+    "Remove a System plugin variable"
+    removeSystemPluginVariable(name: String!): Boolean!
+
     setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
 }

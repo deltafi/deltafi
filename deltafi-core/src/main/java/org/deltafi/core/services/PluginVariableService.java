@@ -109,6 +109,24 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
                 () -> insertVariables(pluginCoordinates, variables));
     }
 
+    public void validateAndUpsertVariable(PluginCoordinates pluginCoordinates, Variable variable) {
+        List<String> errors = validateVariables(List.of(variable));
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join(",", errors));
+        }
+        upsertVariable(pluginCoordinates, variable);
+    }
+
+    /**
+     * Replace or add one variable to a plugin variable set
+     * @param variable variable to insert or update
+     */
+    public void upsertVariable(PluginCoordinates pluginCoordinates, Variable variable) {
+        findExisting(pluginCoordinates).ifPresentOrElse(
+                existingVariables -> appendVariable(pluginCoordinates, variable, existingVariables),
+                () -> insertVariables(pluginCoordinates, List.of(variable)));
+    }
+
     public List<String> validateVariables(List<Variable> variables) {
         return variables != null ? checkNewDefaultValues(variables) : List.of();
     }
@@ -151,6 +169,30 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
         }
     }
 
+    private void appendVariable(PluginCoordinates pluginCoordinates, Variable variable, PluginVariables existing) {
+        Variable valuePreservedVariable = preserveValue(variable, existing.getVariables());
+        List<Variable> variableList = new ArrayList<>(
+                existing.getVariables().stream()
+                .filter(e -> !Objects.equals(e.getName(), valuePreservedVariable.getName()))
+                        .toList());
+        variableList.add(valuePreservedVariable);
+        insertVariables(pluginCoordinates, variableList);
+    }
+
+    private void removeVariable(PluginCoordinates pluginCoordinates, String name, PluginVariables existing) {
+        List<Variable> variableList = new ArrayList<>(
+                existing.getVariables().stream()
+                        .filter(e -> !Objects.equals(e.getName(), name))
+                        .toList());
+        if (!variableList.isEmpty()) {
+            // Save the variable list excluding the one being removed
+            insertVariables(pluginCoordinates, variableList);
+        } else {
+            // No variables left to save for this plugin
+            removeAllVariables(pluginCoordinates);
+        }
+    }
+
     private Variable preserveValue(Variable incoming, List<Variable> existingValues) {
         Variable variable = Variable.builder()
                 .name(incoming.getName())
@@ -179,15 +221,26 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     private void insertVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
-        pluginVariableRepo.upsertVariables(pluginCoordinates, variables);
+        pluginVariableRepo.upsertVariables(pluginCoordinates, variables.stream()
+                .sorted(Comparator.comparing(Variable::getName)).toList());
     }
 
     /**
-     * Remove the variables for given plugin
+     * Remove all variables for given plugin
      * @param pluginCoordinates plugin coordinates of the plugin whose variables should be removed
      */
-    public void removeVariables(PluginCoordinates pluginCoordinates) {
+    public void removeAllVariables(PluginCoordinates pluginCoordinates) {
         pluginVariableRepo.deleteBySourcePlugin(pluginCoordinates);
+    }
+
+    /**
+     * Remove the specified variable from the given plugin
+     * @param pluginCoordinates plugin coordinates of the plugin whose variable should be removed
+     * @param name name of variable to remove
+     */
+    public void removeVariable(PluginCoordinates pluginCoordinates, String name) {
+        findExisting(pluginCoordinates).ifPresent(
+                existingVariables -> removeVariable(pluginCoordinates, name, existingVariables));
     }
 
     /**
@@ -312,7 +365,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
 
     @Override
     public void cleanupFor(PluginEntity plugin) {
-        removeVariables(plugin.getPluginCoordinates());
+        removeAllVariables(plugin.getPluginCoordinates());
     }
 
     @Override

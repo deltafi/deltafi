@@ -363,8 +363,20 @@ public class PluginService implements Snapshotter {
     }
 
     @Transactional
+    public void saveSystemVariable(Variable variable) {
+        pluginVariableService.validateAndUpsertVariable(getSystemPluginCoordinates(), variable);
+        updateAllPlugins();
+    }
+
+    @Transactional
     public void removeSystemVariables() {
-        pluginVariableService.removeVariables(getSystemPluginCoordinates());
+        pluginVariableService.removeAllVariables(getSystemPluginCoordinates());
+        updateAllPlugins();
+    }
+
+    @Transactional
+    public void removeSystemVariable(String name) {
+        pluginVariableService.removeVariable(getSystemPluginCoordinates(), name);
         updateAllPlugins();
     }
 
@@ -731,7 +743,7 @@ public class PluginService implements Snapshotter {
             onErrorDataSourceService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
             transformFlowService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
             dataSinkService.removeBySourcePlugin(systemPlugin.getPluginCoordinates());
-            pluginVariableService.removeVariables(systemPlugin.getPluginCoordinates());
+            pluginVariableService.removeAllVariables(systemPlugin.getPluginCoordinates());
             systemPlugin.setFlowPlans(new ArrayList<>());
         }
 

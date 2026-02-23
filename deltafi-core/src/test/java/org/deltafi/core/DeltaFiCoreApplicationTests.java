@@ -2182,6 +2182,25 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testRemoveSystemPluginVariable() {
+		clearForFlowTests();
+		PluginCoordinates system = pluginService.getSystemPluginCoordinates();
+		List<Variable> variables = List.of(
+				Variable.builder().name("a").dataType(VariableDataType.STRING).value("test").build(),
+				Variable.builder().name("b").dataType(VariableDataType.STRING).value("test").build(),
+				Variable.builder().name("c").dataType(VariableDataType.STRING).value("test").build());
+		pluginVariableService.saveVariables(system, variables);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeSystemPluginVariable(dgsQueryExecutor, "d"));
+		assertThat(pluginVariableService.getVariablesByPlugin(system)).hasSize(3);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeSystemPluginVariable(dgsQueryExecutor, "b"));
+		assertThat(pluginVariableService.getVariablesByPlugin(system)).hasSize(2);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeSystemPluginVariable(dgsQueryExecutor, "c"));
+		assertThat(pluginVariableService.getVariablesByPlugin(system)).hasSize(1);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeSystemPluginVariable(dgsQueryExecutor, "a"));
+		assertThat(pluginVariableService.getVariablesByPlugin(system)).hasSize(0);
+	}
+
+	@Test
 	void testRemovePluginVariables() {
 		clearForFlowTests();
 		PluginCoordinates system = pluginService.getSystemPluginCoordinates();
@@ -2276,6 +2295,20 @@ class DeltaFiCoreApplicationTests {
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
 		refreshFlowCaches();
 		assertFalse(FlowPlanDatafetcherTestHelper.setTimedDataSourceMemo(dgsQueryExecutor, "100"));
+	}
+
+	@Test
+	void testSaveSystemVariable() {
+		assertTrue(FlowPlanDatafetcherTestHelper.saveSystemVariable(dgsQueryExecutor, "a"));
+		PluginVariables variables = pluginVariableRepo.findBySourcePlugin(pluginService.getSystemPluginCoordinates()).orElse(null);
+		assertThat(variables).isNotNull();
+		assertThat(variables.getVariables()).hasSize(1);
+
+		assertTrue(FlowPlanDatafetcherTestHelper.saveSystemVariable(dgsQueryExecutor, "b"));
+		variables = pluginVariableRepo.findBySourcePlugin(pluginService.getSystemPluginCoordinates()).orElse(null);
+		assertThat(variables.getVariables()).hasSize(2)
+				.anyMatch(v -> v.getName().equals("a"))
+				.anyMatch(v -> v.getName().equals("b"));
 	}
 
 	@Test

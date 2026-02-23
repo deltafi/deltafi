@@ -329,6 +329,15 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, SavePluginVariablesGraphQLQuery.newRequest().variables(variableInputs).build());
     }
 
+    public static boolean saveSystemVariable(DgsQueryExecutor dgsQueryExecutor, String name) {
+        Variable variableInput = Variable.builder().name(name).defaultValue("default").required(false).description("description").dataType(VariableDataType.STRING).build();
+        return executeQuery(dgsQueryExecutor, SaveSystemPluginVariableGraphQLQuery.newRequest().variable(variableInput).build());
+    }
+
+    public static boolean removeSystemPluginVariable(DgsQueryExecutor dgsQueryExecutor, String name) {
+        return executeQuery(dgsQueryExecutor, RemoveSystemPluginVariableGraphQLQuery.newRequest().name(name).build());
+    }
+
     public static boolean removePluginVariables(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, RemovePluginVariablesGraphQLQuery.newRequest().build());
     }
