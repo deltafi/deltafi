@@ -228,7 +228,7 @@ If no file is specified, reads from stdin.`,
 		}
 		reason, _ := cmd.Flags().GetString("reason")
 		restore, _ := cmd.Flags().GetBool("restore")
-		var resp interface{}
+		var resp any
 		if restore {
 			hardReset, _ := cmd.Flags().GetBool("hard")
 			resp, err = ImportAndReset(reason, hardReset, input)
@@ -284,14 +284,14 @@ var restoreSnapshotCmd = &cobra.Command{
 }
 
 func processSnapshotInput(reason string, input []byte) (graphql.SystemSnapshotInput, error) {
-	var rawInput map[string]interface{}
+	var rawInput map[string]any
 	var snapshotInput graphql.SystemSnapshotInput
 	if err := json.Unmarshal(input, &rawInput); err != nil {
 		return snapshotInput, fmt.Errorf("error parsing snapshot JSON: %v", err)
 	}
 
 	if rawInput["getSystemSnapshot"] != nil {
-		rawInput = rawInput["getSystemSnapshot"].(map[string]interface{})
+		rawInput = rawInput["getSystemSnapshot"].(map[string]any)
 	}
 
 	if rawInput["id"] != nil {
@@ -319,10 +319,10 @@ func processSnapshotInput(reason string, input []byte) (graphql.SystemSnapshotIn
 			return snapshotInput, fmt.Errorf("'schemaVersion' must be a number")
 		}
 		snapshotInput.SchemaVersion = int(schemaVersion)
-		snapshotInput.Snapshot = snapshotData.(map[string]interface{})
+		snapshotInput.Snapshot = snapshotData.(map[string]any)
 	} else {
 		// Old format - move everything except id, created, and reason into the snapshot field
-		snapshotData := make(map[string]interface{})
+		snapshotData := make(map[string]any)
 		for k, v := range rawInput {
 			if k != "id" && k != "created" && k != "reason" {
 				snapshotData[k] = v

@@ -122,7 +122,7 @@ func upsertKubernetesSecret(secret *corev1.Secret) error {
 func deltafiHelmUninstall(namespace string) error {
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
+	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...any) {
 		// Helm logging callback - we can ignore this for now
 	}); err != nil {
 		return fmt.Errorf("failed to initialize Helm configuration: %w", err)
@@ -149,7 +149,7 @@ func deltafiHelmInstall(namespace string, deltafiChartPath string, siteValuesFil
 	settings := cli.New()
 	settings.SetNamespace(namespace)
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
+	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...any) {
 		// Helm logging callback - we can ignore this for now
 	}); err != nil {
 		return fmt.Errorf("failed to initialize Helm configuration: %w", err)
@@ -275,7 +275,7 @@ func postgresOperatorInstall(namespace string, postgresOperatorPath string) erro
 	// Set up Helm client
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
+	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...any) {
 		// Helm logging callback - we can ignore this for now
 	}); err != nil {
 		return fmt.Errorf("failed to initialize Helm configuration: %w", err)

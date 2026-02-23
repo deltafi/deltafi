@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -508,21 +509,22 @@ func (c *FreezeCommand) renderExtraImages() string {
 }
 
 func (c *FreezeCommand) renderSnapshot() string {
-	content := "A site snapshot exists. Do you want to restore the site snapshot into DeltaFi?\n\n"
+	var content strings.Builder
+	content.WriteString("A site snapshot exists. Do you want to restore the site snapshot into DeltaFi?\n\n")
 
 	options := []string{"Yes", "No"}
 	for i, option := range options {
 		if i == c.selectedOption {
-			content += styles.MenuMarkerStyle.PaddingRight(1).Render("▶") + styles.SelectedMenuItemStyle.Padding(0, 1).Render(option) + "\n"
+			content.WriteString(styles.MenuMarkerStyle.PaddingRight(1).Render("▶") + styles.SelectedMenuItemStyle.Padding(0, 1).Render(option) + "\n")
 		} else {
-			content += styles.MenuItemStyle.PaddingLeft(3).Render(option) + "\n"
+			content.WriteString(styles.MenuItemStyle.PaddingLeft(3).Render(option) + "\n")
 		}
 	}
 
 	return lipgloss.NewStyle().
 		PaddingLeft(1).
 		PaddingRight(1).
-		Render(content)
+		Render(content.String())
 }
 
 func (c *FreezeCommand) renderComplete() string {

@@ -23,6 +23,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"os/exec"
 	"os/user"
@@ -337,8 +338,8 @@ func (o *ComposeOrchestrator) Down(args []string) error {
 	containerIDs := strings.TrimSpace(string(output))
 	if containerIDs != "" {
 		fmt.Println()
-		ids := strings.Split(containerIDs, "\n")
-		for _, id := range ids {
+		ids := strings.SplitSeq(containerIDs, "\n")
+		for id := range ids {
 			nameCmd := exec.Command("docker", "inspect", "-f", "{{slice .Name 1}}", id)
 			name, err := nameCmd.Output()
 			if err != nil {
@@ -474,7 +475,7 @@ func (o *ComposeOrchestrator) ContainerEnvironments() error {
 	return nil
 }
 
-func (o *ComposeOrchestrator) getMergedValues() (map[string]interface{}, error) {
+func (o *ComposeOrchestrator) getMergedValues() (map[string]any, error) {
 	// Read default values
 	defaultValues := filepath.Join(o.configPath, "values.yaml")
 	defaultData, err := os.ReadFile(defaultValues)
@@ -482,7 +483,7 @@ func (o *ComposeOrchestrator) getMergedValues() (map[string]interface{}, error) 
 		return nil, fmt.Errorf("error reading default values: %w", err)
 	}
 
-	var merged map[string]interface{}
+	var merged map[string]any
 	if err := yaml.Unmarshal(defaultData, &merged); err != nil {
 		return nil, fmt.Errorf("error parsing default values: %w", err)
 	}
@@ -490,7 +491,7 @@ func (o *ComposeOrchestrator) getMergedValues() (map[string]interface{}, error) 
 	// Read and merge site values if they exist
 	siteValues, _ := o.SiteValuesFile()
 	if siteData, err := os.ReadFile(siteValues); err == nil {
-		var site map[string]interface{}
+		var site map[string]any
 		if err := yaml.Unmarshal(siteData, &site); err != nil {
 			return nil, fmt.Errorf("error parsing site values: %w", err)
 		}
@@ -500,19 +501,17 @@ func (o *ComposeOrchestrator) getMergedValues() (map[string]interface{}, error) 
 	return merged, nil
 }
 
-func mergeMaps(base, override map[string]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
+func mergeMaps(base, override map[string]any) map[string]any {
+	result := make(map[string]any)
 
 	// Copy base map
-	for k, v := range base {
-		result[k] = v
-	}
+	maps.Copy(result, base)
 
 	// Override with values from override map
 	for k, v := range override {
 		if baseVal, exists := base[k]; exists {
-			if baseMap, ok := baseVal.(map[string]interface{}); ok {
-				if overrideMap, ok := v.(map[string]interface{}); ok {
+			if baseMap, ok := baseVal.(map[string]any); ok {
+				if overrideMap, ok := v.(map[string]any); ok {
 					result[k] = mergeMaps(baseMap, overrideMap)
 					continue
 				}
@@ -524,11 +523,11 @@ func mergeMaps(base, override map[string]interface{}) map[string]interface{} {
 	return result
 }
 
-func (o *ComposeOrchestrator) getValue(values map[string]interface{}, path string) string {
+func (o *ComposeOrchestrator) getValue(values map[string]any, path string) string {
 	return o.getValueOr(values, path, "")
 }
 
-func (o *ComposeOrchestrator) getValueOr(values map[string]interface{}, path string, defaultValue string) string {
+func (o *ComposeOrchestrator) getValueOr(values map[string]any, path string, defaultValue string) string {
 	parts := strings.Split(path, ".")
 	current := values
 
@@ -540,7 +539,7 @@ func (o *ComposeOrchestrator) getValueOr(values map[string]interface{}, path str
 			return defaultValue
 		}
 
-		if next, ok := current[part].(map[string]interface{}); ok {
+		if next, ok := current[part].(map[string]any); ok {
 			current = next
 		} else {
 			return defaultValue
@@ -551,11 +550,11 @@ func (o *ComposeOrchestrator) getValueOr(values map[string]interface{}, path str
 }
 
 // getValueMap navigates a dot-separated path and returns the map at that location, or nil.
-func (o *ComposeOrchestrator) getValueMap(values map[string]interface{}, path string) map[string]interface{} {
+func (o *ComposeOrchestrator) getValueMap(values map[string]any, path string) map[string]any {
 	parts := strings.Split(path, ".")
 	current := values
 	for _, part := range parts {
-		if next, ok := current[part].(map[string]interface{}); ok {
+		if next, ok := current[part].(map[string]any); ok {
 			current = next
 		} else {
 			return nil
@@ -565,7 +564,7 @@ func (o *ComposeOrchestrator) getValueMap(values map[string]interface{}, path st
 }
 
 // buildPostgresArgs constructs a postgres command string from parameter values at the given path.
-func (o *ComposeOrchestrator) buildPostgresArgs(values map[string]interface{}, path string) string {
+func (o *ComposeOrchestrator) buildPostgresArgs(values map[string]any, path string) string {
 	params := o.getValueMap(values, path)
 	if len(params) == 0 {
 		return ""
@@ -581,7 +580,7 @@ func (o *ComposeOrchestrator) buildPostgresArgs(values map[string]interface{}, p
 
 // localObjectStorageEnabled checks both enable.local_object_storage and the deprecated enable.minio flag.
 // Returns "true" or "false" as a string for use in environment variables.
-func (o *ComposeOrchestrator) localObjectStorageEnabled(values map[string]interface{}) string {
+func (o *ComposeOrchestrator) localObjectStorageEnabled(values map[string]any) string {
 	localStorage := o.getValueOr(values, "enable.local_object_storage", "true")
 	minio := o.getValueOr(values, "enable.minio", "true") // Deprecated: use local_object_storage
 	if localStorage != "false" || minio != "false" {
@@ -655,11 +654,11 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 	}
 
 	var globalVars map[string]string
-	if deltafi, ok := values["deltafi"].(map[string]interface{}); ok {
-		if globalEnv, ok := deltafi["globalEnv"].([]interface{}); ok {
+	if deltafi, ok := values["deltafi"].(map[string]any); ok {
+		if globalEnv, ok := deltafi["globalEnv"].([]any); ok {
 			globalVars = make(map[string]string)
 			for _, entry := range globalEnv {
-				if envVar, ok := entry.(map[string]interface{}); ok {
+				if envVar, ok := entry.(map[string]any); ok {
 					name, _ := envVar["name"].(string)
 					value, _ := envVar["value"].(string)
 					if name != "" {
@@ -971,9 +970,9 @@ func (o *ComposeOrchestrator) setupSecrets() error {
 		if !strings.Contains(string(content), "S3PROXY_CREDENTIAL") {
 			// Extract MINIO_SECRETKEY value to reuse as S3PROXY_CREDENTIAL
 			var secretKey string
-			for _, line := range strings.Split(string(content), "\n") {
-				if strings.HasPrefix(line, "MINIO_SECRETKEY=") {
-					secretKey = strings.TrimPrefix(line, "MINIO_SECRETKEY=")
+			for line := range strings.SplitSeq(string(content), "\n") {
+				if after, ok := strings.CutPrefix(line, "MINIO_SECRETKEY="); ok {
+					secretKey = after
 					secretKey = strings.Trim(secretKey, "'\"")
 					break
 				}
@@ -1092,8 +1091,8 @@ func (o *ComposeOrchestrator) createServiceConfig(dir, configPath string) error 
 	}
 
 	configValue := values
-	for _, part := range strings.Split(configPath, ".") {
-		if next, ok := configValue[part].(map[string]interface{}); ok {
+	for part := range strings.SplitSeq(configPath, ".") {
+		if next, ok := configValue[part].(map[string]any); ok {
 			configValue = next
 		} else {
 			// No config or invalid config, return without error
@@ -1109,7 +1108,7 @@ func (o *ComposeOrchestrator) createServiceConfig(dir, configPath string) error 
 		switch v := content.(type) {
 		case string:
 			contentBytes = []byte(v)
-		case map[string]interface{}, []interface{}:
+		case map[string]any, []any:
 			// Create a new YAML node
 			var node yaml.Node
 			if err := node.Encode(v); err != nil {
@@ -1124,7 +1123,7 @@ func (o *ComposeOrchestrator) createServiceConfig(dir, configPath string) error 
 			}
 			contentBytes = buf.Bytes()
 		default:
-			contentBytes = []byte(fmt.Sprintf("%v", v))
+			contentBytes = fmt.Appendf(nil, "%v", v)
 		}
 
 		if err := os.WriteFile(filePath, contentBytes, 0644); err != nil {

@@ -251,14 +251,12 @@ var ingressCmd = &cobra.Command{
 		// Start worker pool
 		var wg sync.WaitGroup
 		for i := 0; i < concurrency; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				for filePath := range jobs {
 					result := processFile(client, filePath, datasource, contentType, metadata, progressChan)
 					results <- result
 				}
-			}()
+			})
 		}
 
 		// Send jobs to workers

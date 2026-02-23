@@ -143,6 +143,20 @@ func TestGetDisabledReason(t *testing.T) {
 func TestConfigWizardNavigation(t *testing.T) {
 	wizard := NewConfigWizard()
 
+	// Count how many options are enabled
+	enabledCount := 0
+	for i := 0; i < len(wizard.orchestrationModes); i++ {
+		if !wizard.disabledOptions[i] {
+			enabledCount++
+		}
+	}
+
+	// If all options are disabled, skip the navigation test
+	// This is valid - the real wizard shows "no orchestration platform available"
+	if enabledCount == 0 {
+		t.Skip("All orchestration options are disabled (no Docker, Kubernetes, or Kind available)")
+	}
+
 	// Test navigation logic when Compose is disabled
 	if !isDockerAvailable() {
 		// Set selected option to a disabled option

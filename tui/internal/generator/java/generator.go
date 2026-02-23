@@ -356,8 +356,8 @@ func (g *JavaGenerator) UpdatePlugin(pluginName string, options *generator.Updat
 	description := fmt.Sprintf("Java plugin for DeltaFi: %s", pluginName)
 	if buildGradleContent, err := os.ReadFile(buildGradlePath); err == nil {
 		// Try to extract description from build.gradle
-		lines := strings.Split(string(buildGradleContent), "\n")
-		for _, line := range lines {
+		lines := strings.SplitSeq(string(buildGradleContent), "\n")
+		for line := range lines {
 			if strings.Contains(line, "pluginDescription") {
 				// Look for: ext.pluginDescription = '...'
 				re := regexp.MustCompile(`pluginDescription\s*=\s*['"]([^'"]+)['"]`)
@@ -625,7 +625,7 @@ func preserveBuildGradleDependencies(oldContent, newContent []byte) []byte {
 		depLineRe := regexp.MustCompile(`(?m)^\s*(implementation|api|testImplementation|testRuntimeOnly)\s+['"]([^'"]+)['"]`)
 		var additionalDeps []string
 
-		for _, line := range strings.Split(oldDepsStr, "\n") {
+		for line := range strings.SplitSeq(oldDepsStr, "\n") {
 			depMatch := depLineRe.FindStringSubmatch(line)
 			if len(depMatch) >= 3 {
 				dep := depMatch[2]
@@ -642,14 +642,15 @@ func preserveBuildGradleDependencies(oldContent, newContent []byte) []byte {
 			newDepsMatch := dependenciesRe.FindSubmatch([]byte(newContentStr))
 			if len(newDepsMatch) >= 2 {
 				// Format dependencies block with additional deps
-				depsBlock := "dependencies {\n"
+				var depsBlock strings.Builder
+				depsBlock.WriteString("dependencies {\n")
 				for _, dep := range additionalDeps {
-					depsBlock += "    " + dep + "\n"
+					depsBlock.WriteString("    " + dep + "\n")
 				}
-				depsBlock += "}"
+				depsBlock.WriteString("}")
 
 				// Replace the dependencies section
-				newContentStr = dependenciesRe.ReplaceAllString(newContentStr, depsBlock)
+				newContentStr = dependenciesRe.ReplaceAllString(newContentStr, depsBlock.String())
 			}
 		}
 	}

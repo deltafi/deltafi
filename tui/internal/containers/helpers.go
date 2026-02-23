@@ -134,13 +134,13 @@ func GetImageAnnotations(context context.Context, imageRef string, tag string) (
 
 	default:
 		// For other media types, try to parse as generic JSON
-		var genericManifest map[string]interface{}
+		var genericManifest map[string]any
 		if err := json.Unmarshal(manifestBytes, &genericManifest); err != nil {
 			return nil, err
 		}
 
 		// Try to extract annotations from common fields
-		if ann, ok := genericManifest["annotations"].(map[string]interface{}); ok {
+		if ann, ok := genericManifest["annotations"].(map[string]any); ok {
 			annotations = make(map[string]string)
 			for k, v := range ann {
 				if str, ok := v.(string); ok {

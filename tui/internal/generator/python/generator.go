@@ -346,10 +346,10 @@ func (g *PythonGenerator) UpdatePlugin(pluginName string, options *generator.Upd
 	description := fmt.Sprintf("Python plugin for DeltaFi: %s", pluginName)
 	if pyprojectContent, err := os.ReadFile(pyprojectPath); err == nil {
 		// Try to extract description from pyproject.toml
-		lines := strings.Split(string(pyprojectContent), "\n")
-		for _, line := range lines {
-			if strings.HasPrefix(strings.TrimSpace(line), "description = ") {
-				desc := strings.TrimPrefix(strings.TrimSpace(line), "description = ")
+		lines := strings.SplitSeq(string(pyprojectContent), "\n")
+		for line := range lines {
+			if after, ok := strings.CutPrefix(strings.TrimSpace(line), "description = "); ok {
+				desc := after
 				desc = strings.Trim(desc, "\"")
 				if desc != "" {
 					description = desc
@@ -592,7 +592,7 @@ func preservePyProjectVersion(oldContent, newContent []byte) []byte {
 		depLineRe := regexp.MustCompile(`(?m)^\s*"([^"]+)"`)
 		var additionalDeps []string
 
-		for _, line := range strings.Split(oldDepsStr, "\n") {
+		for line := range strings.SplitSeq(oldDepsStr, "\n") {
 			depMatch := depLineRe.FindStringSubmatch(line)
 			if len(depMatch) >= 2 {
 				dep := depMatch[1]
@@ -615,7 +615,7 @@ func preservePyProjectVersion(oldContent, newContent []byte) []byte {
 				// Extract the deltafi dependency from new content (it's already rendered with TUI version)
 				newDepsStr := string(newDepsMatch[1])
 				var deltafiDep string
-				for _, line := range strings.Split(newDepsStr, "\n") {
+				for line := range strings.SplitSeq(newDepsStr, "\n") {
 					depMatch := depLineRe.FindStringSubmatch(line)
 					if len(depMatch) >= 2 && strings.HasPrefix(depMatch[1], "deltafi==") {
 						deltafiDep = strings.TrimSpace(line)

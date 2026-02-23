@@ -98,7 +98,7 @@ type RequestOpts struct {
 //
 // If the request fails or the response status code is not 200, an error will be
 // returned.
-func (c *Client) Get(path string, result interface{}, opts *RequestOpts) error {
+func (c *Client) Get(path string, result any, opts *RequestOpts) error {
 	req, err := http.NewRequest("GET", c.baseURL+path, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
@@ -128,16 +128,16 @@ func (c *Client) Get(path string, result interface{}, opts *RequestOpts) error {
 	return nil
 }
 
-func (c *Client) Post(path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
+func (c *Client) Post(path string, requestBody any, result any, opts *RequestOpts) error {
 	return c.DoWithBody("POST", path, requestBody, result, opts)
 }
 
-func (c *Client) Put(path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
+func (c *Client) Put(path string, requestBody any, result any, opts *RequestOpts) error {
 	return c.DoWithBody("PUT", path, requestBody, result, opts)
 }
 
 // Post sends a request and returns a typed response
-func (c *Client) DoWithBody(method string, path string, requestBody interface{}, result interface{}, opts *RequestOpts) error {
+func (c *Client) DoWithBody(method string, path string, requestBody any, result any, opts *RequestOpts) error {
 	var req *http.Request
 	var err error
 
@@ -350,11 +350,11 @@ func (c *Client) ImportDeltaFile(archivePath string) (*ImportResponse, error) {
 
 // ExportDeltaFilesRequest represents the request body for bulk export
 type ExportDeltaFilesRequest struct {
-	DeltaFilesFilter interface{} `json:"deltaFilesFilter,omitempty"`
-	IncludeContent   bool        `json:"includeContent"`
-	Limit            int         `json:"limit"`
-	Offset           int         `json:"offset"`
-	Order            interface{} `json:"order,omitempty"`
+	DeltaFilesFilter any  `json:"deltaFilesFilter,omitempty"`
+	IncludeContent   bool `json:"includeContent"`
+	Limit            int  `json:"limit"`
+	Offset           int  `json:"offset"`
+	Order            any  `json:"order,omitempty"`
 }
 
 func (c *Client) ExportDeltaFiles(request ExportDeltaFilesRequest) (io.ReadCloser, string, error) {
@@ -420,7 +420,7 @@ func (c *Client) SetAdminPassword(password PasswordUpdate) (*UserResponse, error
 }
 
 // PostToFile sends a POST request and writes the response directly to a file
-func (c *Client) PostToFile(path string, requestBody interface{}, outfile string, opts *RequestOpts) error {
+func (c *Client) PostToFile(path string, requestBody any, outfile string, opts *RequestOpts) error {
 	var req *http.Request
 	var err error
 

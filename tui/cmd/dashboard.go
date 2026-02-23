@@ -19,6 +19,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -213,9 +214,9 @@ func (m model) View() string {
 		return fmt.Sprintf("Error: %v", m.err)
 	}
 
-	var s string
-	s += m.styles.titleStyle.Width(m.width).Render(m.title) + "\n"
-	s += m.styles.titleStyle.Width(m.width).Render(m.spinner.View()) + "\n"
+	var s strings.Builder
+	s.WriteString(m.styles.titleStyle.Width(m.width).Render(m.title) + "\n")
+	s.WriteString(m.styles.titleStyle.Width(m.width).Render(m.spinner.View()) + "\n")
 
 	var totalCount, inFlightCount string
 	if m.stats != nil {
@@ -232,21 +233,21 @@ func (m model) View() string {
 		m.styles.panelStyle.Align(lipgloss.Center).Width(m.width-m.width/2-2).Render(fmt.Sprintf("In Flight DeltaFiles\n%s", styles.AccentStyle.Render(inFlightCount))),
 	)
 
-	s += statsRow + "\n"
+	s.WriteString(statsRow + "\n")
 
 	for _, node := range m.nodes {
-		s += m.styles.panelStyle.Render(m.renderNode(node))
-		s += "\n"
+		s.WriteString(m.styles.panelStyle.Render(m.renderNode(node)))
+		s.WriteString("\n")
 	}
 	// s += m.styles.panelStyle.Width(m.width - 2).Render(fmt.Sprintf("Ticks: %d", m.ticks))
 	// s += "\n"
-	s += m.styles.panelStyle.PaddingTop(1).Width(m.width - 2).Render(RenderStatus(m.status, true, m.renderer))
+	s.WriteString(m.styles.panelStyle.PaddingTop(1).Width(m.width - 2).Render(RenderStatus(m.status, true, m.renderer)))
 
 	helpStyle := lipgloss.NewStyle().
 		Foreground(styles.Surface2)
-	s += helpStyle.Width(m.width).Align(lipgloss.Center).Render("\nPress q to " + m.quitResult)
+	s.WriteString(helpStyle.Width(m.width).Align(lipgloss.Center).Render("\nPress q to " + m.quitResult))
 
-	return s
+	return s.String()
 }
 
 var dashboardCmd = &cobra.Command{

@@ -253,10 +253,9 @@ func (pv *PropertiesViewer) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update viewport dimensions - fill remaining space
 		vpHeight := listHeight
 		// Calculate viewport width: total width - list width - 4 (spacer + padding)
-		vpWidth := pv.width - listWidth - 4
-		if vpWidth < 20 {
-			vpWidth = 20 // Ensure minimum viewport width
-		}
+		vpWidth := max(pv.width-listWidth-4,
+			// Ensure minimum viewport width
+			20)
 		pv.viewport.Width = vpWidth
 		pv.viewport.Height = vpHeight
 
@@ -344,14 +343,11 @@ func (pv *PropertiesViewer) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			// Add some padding for indicators and borders
-			pv.listWidth = maxKeyLength + 10
-			// Ensure minimum and maximum reasonable widths
-			if pv.listWidth < 40 {
-				pv.listWidth = 40
-			}
-			if pv.listWidth > 80 {
-				pv.listWidth = 80
-			}
+			pv.listWidth = min(
+				// Ensure minimum and maximum reasonable widths
+				max(
+
+					maxKeyLength+10, 40), 80)
 
 			// Update the list size with the calculated width if we have dimensions
 			if pv.ready && pv.height > 0 {
@@ -359,10 +355,7 @@ func (pv *PropertiesViewer) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				pv.list.SetSize(pv.listWidth, listHeight)
 
 				// Also update viewport width with the correct list width
-				vpWidth := pv.width - pv.listWidth - 4
-				if vpWidth < 20 {
-					vpWidth = 20
-				}
+				vpWidth := max(pv.width-pv.listWidth-4, 20)
 				pv.viewport.Width = vpWidth
 				pv.viewport.Height = listHeight
 			}
@@ -551,10 +544,11 @@ func (pv *PropertiesViewer) View() string {
 		listView = lipgloss.NewStyle().Width(listWidth).Render(listView)
 
 		// Calculate remaining space for viewport
-		remainingWidth := pv.width - listWidth - 4 // list width + 2 for spacer + 2 for padding
-		if remainingWidth < 20 {
-			remainingWidth = 20 // Minimum viewport width
-		}
+		remainingWidth := max(
+			// list width + 2 for spacer + 2 for padding
+			pv.width-listWidth-4,
+			// Minimum viewport width
+			20)
 
 		// Use a layout that right-justifies the viewport
 		content := lipgloss.JoinHorizontal(

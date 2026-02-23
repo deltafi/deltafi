@@ -108,7 +108,7 @@ Examples:
 			}
 
 			// First, parse to get the type
-			var rawData map[string]interface{}
+			var rawData map[string]any
 			ext := strings.ToLower(filepath.Ext(filename))
 			switch ext {
 			case ".json":

@@ -99,12 +99,9 @@ func (d *FileDiff) GenerateUnifiedDiff() string {
 	diff.WriteString(fmt.Sprintf("+++ %s\n", d.Path))
 
 	// Simple line-by-line comparison
-	maxLen := len(oldLines)
-	if len(newLines) > maxLen {
-		maxLen = len(newLines)
-	}
+	maxLen := max(len(newLines), len(oldLines))
 
-	for i := 0; i < maxLen; i++ {
+	for i := range maxLen {
 		if i < len(oldLines) && i < len(newLines) {
 			if oldLines[i] != newLines[i] {
 				diff.WriteString(fmt.Sprintf("-%s\n", oldLines[i]))
@@ -146,12 +143,9 @@ func (d *FileDiff) GenerateSideBySideDiff() string {
 	// Total width = padding + lineNumWidth + columnWidth + separator + lineNumWidth + columnWidth + padding
 	// So: columnWidth = (width - padding*2 - lineNumWidth*2 - separatorLen) / 2
 	availableWidth := width - padding*2 - lineNumWidth*2 - separatorLen
-	columnWidth := availableWidth / 2
-
-	// Ensure minimum column width
-	if columnWidth < 20 {
-		columnWidth = 20
-	}
+	columnWidth := max(
+		// Ensure minimum column width
+		availableWidth/2, 20)
 
 	// Define styles for diff lines
 	removedStyle := lipgloss.NewStyle().
@@ -290,15 +284,12 @@ func computeDiffLines(oldLines, newLines []string) []diffLine {
 	var result []diffLine
 
 	// Simple line-by-line comparison
-	maxLen := len(oldLines)
-	if len(newLines) > maxLen {
-		maxLen = len(newLines)
-	}
+	maxLen := max(len(newLines), len(oldLines))
 
 	oldNum := 1
 	newNum := 1
 
-	for i := 0; i < maxLen; i++ {
+	for i := range maxLen {
 		hasOld := i < len(oldLines)
 		hasNew := i < len(newLines)
 

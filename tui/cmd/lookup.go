@@ -321,7 +321,7 @@ func writeCSV(columns []string, rows [][]string, noHeader bool) error {
 	return w.Error()
 }
 
-func writeYAML(data interface{}) error {
+func writeYAML(data any) error {
 	yamlData, err := yaml.Marshal(data)
 	if err != nil {
 		return wrapInError("Error writing YAML", err)
@@ -411,11 +411,11 @@ func loadLookupRowsFromStdin(format string) ([][]graphql.ColumnValueInput, error
 	}
 }
 
-func unmarshalYAML(data []byte, v interface{}) error {
+func unmarshalYAML(data []byte, v any) error {
 	return yaml.Unmarshal(data, v)
 }
 
-func parseRowsFromContent(content []byte, unmarshal func([]byte, interface{}) error) ([][]graphql.ColumnValueInput, error) {
+func parseRowsFromContent(content []byte, unmarshal func([]byte, any) error) ([][]graphql.ColumnValueInput, error) {
 	// Try simple map format first: [{"col": "val", ...}, ...]
 	var simpleMaps []map[string]string
 	simpleErr := unmarshal(content, &simpleMaps)

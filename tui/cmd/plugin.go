@@ -539,10 +539,7 @@ Examples:
 					}
 				}
 				if verbose {
-					width := getTerminalWidth() - 6 - actionWidth
-					if width < 10 {
-						width = 10
-					}
+					width := max(getTerminalWidth()-6-actionWidth, 10)
 					if action.DocsMarkdown != nil {
 						description = renderMarkdown(*action.DocsMarkdown, width)
 					}

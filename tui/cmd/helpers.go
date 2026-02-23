@@ -77,7 +77,7 @@ func runProgram(model tea.Model) bool {
 	return true
 }
 
-func parseFile(cmd *cobra.Command, out interface{}) error {
+func parseFile(cmd *cobra.Command, out any) error {
 	filename, _ := cmd.Flags().GetString("file")
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -102,7 +102,7 @@ func parseFile(cmd *cobra.Command, out interface{}) error {
 
 // loadFile reads and parses a JSON or YAML file into the provided output struct.
 // Unlike parseFile, this takes the filename directly instead of from a command flag.
-func loadFile(filename string, out interface{}) error {
+func loadFile(filename string, out any) error {
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return wrapInError("Could not read the file", err)
@@ -132,7 +132,7 @@ func printLoadError(filename string, err error) {
 	fmt.Println(styles.FAIL(fmt.Sprintf("Error loading %s: %v", filename, err)))
 }
 
-func prettyPrint(cmd *cobra.Command, data interface{}) error {
+func prettyPrint(cmd *cobra.Command, data any) error {
 	format, _ := cmd.Flags().GetString("format")
 	switch format {
 	case "json":
@@ -146,7 +146,7 @@ func prettyPrint(cmd *cobra.Command, data interface{}) error {
 	}
 }
 
-func printJSON(data interface{}, plain bool) error {
+func printJSON(data any, plain bool) error {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return wrapInError("Error reading Json", err)
@@ -160,7 +160,7 @@ func printJSON(data interface{}, plain bool) error {
 	return nil
 }
 
-func asJSON(data interface{}) (string, error) {
+func asJSON(data any) (string, error) {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return "", wrapInError("Error reading Json", err)
@@ -168,7 +168,7 @@ func asJSON(data interface{}) (string, error) {
 	return string(jsonData), nil
 }
 
-func printYAML(data interface{}) error {
+func printYAML(data any) error {
 	yamlData, err := yaml.Marshal(data)
 	if err != nil {
 		return wrapInError("Error reading YAML", err)

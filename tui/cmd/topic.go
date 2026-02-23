@@ -289,7 +289,7 @@ func showTopicFlows(cmd *cobra.Command, topicName string) error {
 }
 
 // renderTopicParticipants renders a table of topic participants (publishers or subscribers)
-func renderTopicParticipants(participants interface{}, plain bool) {
+func renderTopicParticipants(participants any, plain bool) {
 	var rows [][]string
 
 	switch p := participants.(type) {

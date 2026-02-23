@@ -397,13 +397,6 @@ func (c *StatusCommand) fetchStatus() tea.Msg {
 
 // Helper functions
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func nextPoints(current string) string {
 	switch current {
 	case "⋅":

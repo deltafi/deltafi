@@ -1181,9 +1181,9 @@ func searchResultJSON(filter searchFilter, limit int, offset int, plain bool, ve
 	return printJSON(result, plain)
 }
 
-func getStructuredSearchResult(filter searchFilter, limit int, offset int, verbose bool) (interface{}, error) {
+func getStructuredSearchResult(filter searchFilter, limit int, offset int, verbose bool) (any, error) {
 	var err error
-	var deltaFiles interface{}
+	var deltaFiles any
 	var totalCount int
 
 	if verbose {
@@ -1202,7 +1202,7 @@ func getStructuredSearchResult(filter searchFilter, limit int, offset int, verbo
 		return nil, fmt.Errorf("failed to fetch errors: %v", err)
 	}
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"totalCount": totalCount,
 		"offset":     offset,
 		"limit":      limit,
