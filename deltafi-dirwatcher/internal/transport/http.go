@@ -94,7 +94,7 @@ func (c *HTTPClient) StartRetryWorker(ctx context.Context) {
 }
 
 func (c *HTTPClient) retryFailedFiles(ctx context.Context) {
-	c.failedFiles.Range(func(key, value interface{}) bool {
+	c.failedFiles.Range(func(key, value any) bool {
 		path := key.(string)
 		failedFile := value.(*FailedFile)
 

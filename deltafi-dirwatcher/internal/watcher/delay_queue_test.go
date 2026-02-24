@@ -234,7 +234,7 @@ func TestDelayQueue_ConcurrentAccess(t *testing.T) {
 
 	// Add items concurrently
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
@@ -293,7 +293,7 @@ func TestDelayQueue_EmptyQueueBehavior(t *testing.T) {
 type Task struct {
 	ID       string
 	Priority int
-	Data     map[string]interface{}
+	Data     map[string]any
 }
 
 func TestDelayQueue_WithCustomStruct(t *testing.T) {
@@ -311,8 +311,8 @@ func TestDelayQueue_WithCustomStruct(t *testing.T) {
 
 	queue := NewDelayQueue[Task](processor, logger)
 
-	task1 := Task{ID: "task1", Priority: 1, Data: map[string]interface{}{"key": "value1"}}
-	task2 := Task{ID: "task2", Priority: 2, Data: map[string]interface{}{"key": "value2"}}
+	task1 := Task{ID: "task1", Priority: 1, Data: map[string]any{"key": "value1"}}
+	task2 := Task{ID: "task2", Priority: 2, Data: map[string]any{"key": "value2"}}
 
 	queue.Add(task1, 50*time.Millisecond)
 	queue.Add(task2, 100*time.Millisecond)
@@ -349,7 +349,7 @@ func BenchmarkDelayQueue_Peek(b *testing.B) {
 	queue := NewDelayQueue[string](processor, logger)
 
 	// Add some items
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		queue.Add("item", time.Duration(i)*time.Millisecond)
 	}
 

@@ -59,14 +59,14 @@ func (h delayQueueHeap[T]) Swap(i, j int) {
 	h[j].index = j
 }
 
-func (h *delayQueueHeap[T]) Push(x interface{}) {
+func (h *delayQueueHeap[T]) Push(x any) {
 	n := len(*h)
 	item := x.(*DelayQueueItem[T])
 	item.index = n
 	*h = append(*h, item)
 }
 
-func (h *delayQueueHeap[T]) Pop() interface{} {
+func (h *delayQueueHeap[T]) Pop() any {
 	old := *h
 	n := len(old)
 	item := old[n-1]
@@ -200,10 +200,7 @@ func (dq *DelayQueue[T]) processLoop() {
 			now := time.Now()
 			if now.Before(scheduled) {
 				// Item not ready yet, wait until it's time or a new item is added
-				waitTime := scheduled.Sub(now)
-				if waitTime > 100*time.Millisecond {
-					waitTime = 100 * time.Millisecond
-				}
+				waitTime := min(scheduled.Sub(now), 100*time.Millisecond)
 				select {
 				case <-dq.ctx.Done():
 					return

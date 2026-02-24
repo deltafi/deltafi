@@ -80,8 +80,8 @@ func (c *Config) validate() error {
 		return fmt.Errorf("DIRWATCHER_RETRY_PERIOD must be greater than 0, got %d", c.RetryPeriod)
 	}
 
-	if c.SettlingTime < 100 {
-		return fmt.Errorf("DIRWATCHER_SETTLING_TIME must be at least 100ms, got %d", c.SettlingTime)
+	if c.SettlingTime < 100*time.Millisecond {
+		return fmt.Errorf("DIRWATCHER_SETTLING_TIME must be at least 100ms, got %v", c.SettlingTime)
 	}
 
 	if c.WatchDir == "" {

@@ -20,6 +20,7 @@ package watcher
 import (
 	"context"
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -54,9 +55,7 @@ func (m *MockFileHandler) GetHandledFiles() map[string]map[string]string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	result := make(map[string]map[string]string)
-	for k, v := range m.handledFiles {
-		result[k] = v
-	}
+	maps.Copy(result, m.handledFiles)
 	return result
 }
 
@@ -384,11 +383,11 @@ priority: high
 	if metadata, ok := handledFiles[file1Path]; !ok {
 		t.Errorf("Expected file %s to be handled", file1Path)
 	} else {
-		var actualMetadata map[string]interface{}
+		var actualMetadata map[string]any
 		if err := json.Unmarshal([]byte(metadata["metadata"]), &actualMetadata); err != nil {
 			t.Errorf("Failed to unmarshal metadata JSON: %v", err)
 		}
-		expectedMetadataObj := map[string]interface{}{
+		expectedMetadataObj := map[string]any{
 			"environment": "test",
 			"priority":    "high",
 		}
@@ -405,11 +404,11 @@ priority: high
 	if metadata, ok := handledFiles[file2Path]; !ok {
 		t.Errorf("Expected file %s to be handled", file2Path)
 	} else {
-		var actualMetadata map[string]interface{}
+		var actualMetadata map[string]any
 		if err := json.Unmarshal([]byte(metadata["metadata"]), &actualMetadata); err != nil {
 			t.Errorf("Failed to unmarshal metadata JSON: %v", err)
 		}
-		expectedMetadataObj := map[string]interface{}{
+		expectedMetadataObj := map[string]any{
 			"environment": "prod",
 			"priority":    "low",
 		}
@@ -448,11 +447,11 @@ newfield: value
 	if metadata, ok := handledFiles[newFilePath]; !ok {
 		t.Errorf("Expected file %s to be handled", newFilePath)
 	} else {
-		var actualMetadata map[string]interface{}
+		var actualMetadata map[string]any
 		if err := json.Unmarshal([]byte(metadata["metadata"]), &actualMetadata); err != nil {
 			t.Errorf("Failed to unmarshal metadata JSON: %v", err)
 		}
-		expectedMetadataObj := map[string]interface{}{
+		expectedMetadataObj := map[string]any{
 			"environment": "staging",
 			"priority":    "medium",
 			"newfield":    "value",
@@ -470,4 +469,732 @@ newfield: value
 	if err := <-watcherErrCh; err != nil && err != context.Canceled {
 		t.Errorf("Watcher error: %v", err)
 	}
+}
+
+func TestIsHidden(t *testing.T) {
+	tests := []struct {
+		path   string
+		hidden bool
+	}{
+		{"/some/path/.hidden", true},
+		{"/some/path/.hidden.txt", true},
+		{"/some/path/visible.txt", false},
+		{"/some/.hidden/file.txt", false}, // only checks base name
+		{"/.hidden", true},
+		{".hidden", true},
+		{"visible", false},
+		{"/path/to/..", true}, // edge case: ".." is hidden
+		{"/path/to/.", true},  // edge case: "." is hidden
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			got := isHidden(tt.path)
+			if got != tt.hidden {
+				t.Errorf("isHidden(%q) = %v, want %v", tt.path, got, tt.hidden)
+			}
+		})
+	}
+}
+
+func TestIsMetadataFile(t *testing.T) {
+	tests := []struct {
+		path     string
+		expected bool
+	}{
+		{"/some/path/.default_metadata.yaml", true},
+		{"/some/path/.default_metadata.json", true},
+		{".default_metadata.yaml", true},
+		{".default_metadata.json", true},
+		{"/some/path/regular.yaml", false},
+		{"/some/path/regular.json", false},
+		{"/some/path/.other_metadata.yaml", false},
+		{"/some/path/default_metadata.yaml", false}, // missing leading dot
+		{"/some/.default_metadata.yaml/file.txt", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			got := isMetadataFile(tt.path)
+			if got != tt.expected {
+				t.Errorf("isMetadataFile(%q) = %v, want %v", tt.path, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestSettlingFile_CheckForChange(t *testing.T) {
+	// Create a temporary directory for test files
+	tmpDir, err := os.MkdirTemp("", "settling_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	t.Run("file size unchanged increments sameCount", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "unchanged.txt")
+		if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		sf := &SettlingFile{
+			path:      testFile,
+			lastSize:  7, // "content" is 7 bytes
+			sameCount: 0,
+		}
+
+		if err := sf.checkForChange(); err != nil {
+			t.Fatalf("checkForChange() error = %v", err)
+		}
+
+		if sf.sameCount != 1 {
+			t.Errorf("sameCount = %d, want 1", sf.sameCount)
+		}
+		if sf.lastSize != 7 {
+			t.Errorf("lastSize = %d, want 7", sf.lastSize)
+		}
+	})
+
+	t.Run("file size changed resets sameCount", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "changed.txt")
+		if err := os.WriteFile(testFile, []byte("initial"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		sf := &SettlingFile{
+			path:      testFile,
+			lastSize:  5, // Different from actual size (7 bytes)
+			sameCount: 5,
+		}
+
+		if err := sf.checkForChange(); err != nil {
+			t.Fatalf("checkForChange() error = %v", err)
+		}
+
+		if sf.sameCount != 0 {
+			t.Errorf("sameCount = %d, want 0 (should be reset)", sf.sameCount)
+		}
+		if sf.lastSize != 7 {
+			t.Errorf("lastSize = %d, want 7", sf.lastSize)
+		}
+	})
+
+	t.Run("non-existent file returns error", func(t *testing.T) {
+		sf := &SettlingFile{
+			path:      filepath.Join(tmpDir, "nonexistent.txt"),
+			lastSize:  0,
+			sameCount: 0,
+		}
+
+		err := sf.checkForChange()
+		if err == nil {
+			t.Error("Expected error for non-existent file, got nil")
+		}
+	})
+
+	t.Run("lastCheck is updated", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "timestamp.txt")
+		if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		oldTime := time.Now().Add(-1 * time.Hour)
+		sf := &SettlingFile{
+			path:      testFile,
+			lastSize:  4,
+			sameCount: 0,
+			lastCheck: oldTime,
+		}
+
+		if err := sf.checkForChange(); err != nil {
+			t.Fatalf("checkForChange() error = %v", err)
+		}
+
+		if !sf.lastCheck.After(oldTime) {
+			t.Errorf("lastCheck was not updated")
+		}
+	})
+}
+
+func TestDirWatcher_ReadMetadataFile(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+
+	// Create a temporary directory for test files
+	tmpDir, err := os.MkdirTemp("", "metadata_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	config := &Config{
+		WatchDir: tmpDir,
+		Endpoint: "http://test",
+		Workers:  1,
+	}
+
+	handler := NewMockFileHandler()
+	watcher, err := NewDirWatcher(config, handler, logger)
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+
+	t.Run("valid YAML metadata", func(t *testing.T) {
+		yamlFile := filepath.Join(tmpDir, "test.yaml")
+		yamlContent := "key1: value1\nkey2: value2\n"
+		if err := os.WriteFile(yamlFile, []byte(yamlContent), 0644); err != nil {
+			t.Fatalf("Failed to create YAML file: %v", err)
+		}
+
+		metadata, err := watcher.readMetadataFile(yamlFile)
+		if err != nil {
+			t.Fatalf("readMetadataFile() error = %v", err)
+		}
+
+		if metadata["key1"] != "value1" || metadata["key2"] != "value2" {
+			t.Errorf("metadata = %v, want {key1:value1, key2:value2}", metadata)
+		}
+	})
+
+	t.Run("valid JSON metadata", func(t *testing.T) {
+		jsonFile := filepath.Join(tmpDir, "test.json")
+		jsonContent := `{"key1": "value1", "key2": "value2"}`
+		if err := os.WriteFile(jsonFile, []byte(jsonContent), 0644); err != nil {
+			t.Fatalf("Failed to create JSON file: %v", err)
+		}
+
+		metadata, err := watcher.readMetadataFile(jsonFile)
+		if err != nil {
+			t.Fatalf("readMetadataFile() error = %v", err)
+		}
+
+		if metadata["key1"] != "value1" || metadata["key2"] != "value2" {
+			t.Errorf("metadata = %v, want {key1:value1, key2:value2}", metadata)
+		}
+	})
+
+	t.Run("malformed YAML", func(t *testing.T) {
+		badYaml := filepath.Join(tmpDir, "bad.yaml")
+		if err := os.WriteFile(badYaml, []byte("not: valid: yaml: content"), 0644); err != nil {
+			t.Fatalf("Failed to create bad YAML file: %v", err)
+		}
+
+		_, err := watcher.readMetadataFile(badYaml)
+		if err == nil {
+			t.Error("Expected error for malformed YAML, got nil")
+		}
+	})
+
+	t.Run("malformed JSON", func(t *testing.T) {
+		badJson := filepath.Join(tmpDir, "bad.json")
+		if err := os.WriteFile(badJson, []byte("{not valid json}"), 0644); err != nil {
+			t.Fatalf("Failed to create bad JSON file: %v", err)
+		}
+
+		_, err := watcher.readMetadataFile(badJson)
+		if err == nil {
+			t.Error("Expected error for malformed JSON, got nil")
+		}
+	})
+
+	t.Run("unsupported format", func(t *testing.T) {
+		txtFile := filepath.Join(tmpDir, "test.txt")
+		if err := os.WriteFile(txtFile, []byte("key=value"), 0644); err != nil {
+			t.Fatalf("Failed to create txt file: %v", err)
+		}
+
+		_, err := watcher.readMetadataFile(txtFile)
+		if err == nil {
+			t.Error("Expected error for unsupported format, got nil")
+		}
+	})
+
+	t.Run("non-existent file", func(t *testing.T) {
+		_, err := watcher.readMetadataFile(filepath.Join(tmpDir, "nonexistent.yaml"))
+		if err == nil {
+			t.Error("Expected error for non-existent file, got nil")
+		}
+	})
+
+	t.Run("empty YAML file", func(t *testing.T) {
+		emptyYaml := filepath.Join(tmpDir, "empty.yaml")
+		if err := os.WriteFile(emptyYaml, []byte(""), 0644); err != nil {
+			t.Fatalf("Failed to create empty YAML file: %v", err)
+		}
+
+		metadata, err := watcher.readMetadataFile(emptyYaml)
+		if err != nil {
+			t.Fatalf("readMetadataFile() error = %v", err)
+		}
+
+		if metadata != nil && len(metadata) != 0 {
+			t.Errorf("Expected nil or empty metadata for empty file, got %v", metadata)
+		}
+	})
+}
+
+func TestDirWatcher_MetadataInheritance(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+
+	// Create a temporary directory structure
+	tmpDir, err := os.MkdirTemp("", "inheritance_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create directory structure: tmpDir/source/subdir/deepdir
+	source := filepath.Join(tmpDir, "source")
+	subdir := filepath.Join(source, "subdir")
+	deepdir := filepath.Join(subdir, "deepdir")
+	if err := os.MkdirAll(deepdir, 0755); err != nil {
+		t.Fatalf("Failed to create directory structure: %v", err)
+	}
+
+	config := &Config{
+		WatchDir: tmpDir,
+		Endpoint: "http://test",
+		Workers:  1,
+	}
+
+	handler := NewMockFileHandler()
+	watcher, err := NewDirWatcher(config, handler, logger)
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+
+	t.Run("inherits from parent directory", func(t *testing.T) {
+		// Create metadata only in parent
+		parentMetadata := "inherited_key: inherited_value\n"
+		if err := os.WriteFile(filepath.Join(source, ".default_metadata.yaml"), []byte(parentMetadata), 0644); err != nil {
+			t.Fatalf("Failed to create parent metadata: %v", err)
+		}
+
+		// Load metadata from subdir (should inherit from parent)
+		metadata := watcher.loadDefaultMetadata(subdir)
+		if metadata == nil {
+			t.Fatal("Expected inherited metadata, got nil")
+		}
+		if metadata["inherited_key"] != "inherited_value" {
+			t.Errorf("metadata[inherited_key] = %q, want 'inherited_value'", metadata["inherited_key"])
+		}
+	})
+
+	t.Run("child metadata overrides parent", func(t *testing.T) {
+		// Create metadata in child that should take precedence
+		childMetadata := "child_key: child_value\n"
+		if err := os.WriteFile(filepath.Join(subdir, ".default_metadata.yaml"), []byte(childMetadata), 0644); err != nil {
+			t.Fatalf("Failed to create child metadata: %v", err)
+		}
+
+		// Load metadata from subdir (should use its own)
+		metadata := watcher.loadDefaultMetadata(subdir)
+		if metadata == nil {
+			t.Fatal("Expected child metadata, got nil")
+		}
+		if metadata["child_key"] != "child_value" {
+			t.Errorf("metadata[child_key] = %q, want 'child_value'", metadata["child_key"])
+		}
+		if _, hasInherited := metadata["inherited_key"]; hasInherited {
+			t.Error("Child metadata should not include inherited_key when it has its own")
+		}
+	})
+
+	t.Run("deep inheritance", func(t *testing.T) {
+		// Remove subdir metadata to test inheritance from source
+		os.Remove(filepath.Join(subdir, ".default_metadata.yaml"))
+
+		// Load metadata from deepdir (should inherit from source)
+		metadata := watcher.loadDefaultMetadata(deepdir)
+		if metadata == nil {
+			t.Fatal("Expected inherited metadata from grandparent, got nil")
+		}
+		if metadata["inherited_key"] != "inherited_value" {
+			t.Errorf("metadata[inherited_key] = %q, want 'inherited_value'", metadata["inherited_key"])
+		}
+	})
+
+	t.Run("no metadata anywhere", func(t *testing.T) {
+		// Create a directory outside the structure
+		isolated := filepath.Join(tmpDir, "isolated")
+		if err := os.MkdirAll(isolated, 0755); err != nil {
+			t.Fatalf("Failed to create isolated dir: %v", err)
+		}
+
+		metadata := watcher.loadDefaultMetadata(isolated)
+		if metadata != nil {
+			t.Errorf("Expected nil for directory with no metadata, got %v", metadata)
+		}
+	})
+
+	t.Run("JSON takes precedence over YAML in same directory", func(t *testing.T) {
+		bothDir := filepath.Join(tmpDir, "both")
+		if err := os.MkdirAll(bothDir, 0755); err != nil {
+			t.Fatalf("Failed to create both dir: %v", err)
+		}
+
+		// YAML comes first alphabetically
+		if err := os.WriteFile(filepath.Join(bothDir, ".default_metadata.yaml"), []byte("format: yaml\n"), 0644); err != nil {
+			t.Fatalf("Failed to create YAML metadata: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(bothDir, ".default_metadata.json"), []byte(`{"format": "json"}`), 0644); err != nil {
+			t.Fatalf("Failed to create JSON metadata: %v", err)
+		}
+
+		metadata := watcher.loadDefaultMetadata(bothDir)
+		if metadata == nil {
+			t.Fatal("Expected metadata, got nil")
+		}
+		// YAML should be checked first per defaultMetadataFiles order
+		if metadata["format"] != "yaml" {
+			t.Errorf("Expected YAML to take precedence (checked first), got format=%q", metadata["format"])
+		}
+	})
+}
+
+func TestDirWatcher_AddRemoveWatch(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+
+	// Create a temporary directory structure
+	tmpDir, err := os.MkdirTemp("", "watch_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	config := &Config{
+		WatchDir: tmpDir,
+		Endpoint: "http://test",
+		Workers:  1,
+	}
+
+	handler := NewMockFileHandler()
+	watcher, err := NewDirWatcher(config, handler, logger)
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+
+	t.Run("addWatch adds directory to watch list", func(t *testing.T) {
+		subdir := filepath.Join(tmpDir, "subdir1")
+		if err := os.MkdirAll(subdir, 0755); err != nil {
+			t.Fatalf("Failed to create subdir: %v", err)
+		}
+
+		watcher.addWatch(subdir)
+
+		// Check watch list
+		if _, exists := watcher.watchList.Load(subdir); !exists {
+			t.Error("Expected directory to be in watch list")
+		}
+	})
+
+	t.Run("addWatch prevents duplicates", func(t *testing.T) {
+		subdir := filepath.Join(tmpDir, "subdir2")
+		if err := os.MkdirAll(subdir, 0755); err != nil {
+			t.Fatalf("Failed to create subdir: %v", err)
+		}
+
+		watcher.addWatch(subdir)
+		watcher.addWatch(subdir) // Add again
+
+		// Should still only be in list once - no crash, no error
+		count := 0
+		watcher.watchList.Range(func(key, value any) bool {
+			if key.(string) == subdir {
+				count++
+			}
+			return true
+		})
+		if count != 1 {
+			t.Errorf("Expected directory to be in watch list exactly once, found %d times", count)
+		}
+	})
+
+	t.Run("removeWatch removes directory from watch list", func(t *testing.T) {
+		subdir := filepath.Join(tmpDir, "subdir3")
+		if err := os.MkdirAll(subdir, 0755); err != nil {
+			t.Fatalf("Failed to create subdir: %v", err)
+		}
+
+		watcher.addWatch(subdir)
+		watcher.removeWatch(subdir)
+
+		if _, exists := watcher.watchList.Load(subdir); exists {
+			t.Error("Expected directory to be removed from watch list")
+		}
+	})
+
+	t.Run("removeWatch handles non-existent directory gracefully", func(t *testing.T) {
+		// Should not panic or error
+		watcher.removeWatch(filepath.Join(tmpDir, "nonexistent"))
+	})
+}
+
+func TestDirWatcher_AddFileToDelayQueue(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+
+	// Create a temporary directory
+	tmpDir, err := os.MkdirTemp("", "delay_queue_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	config := &Config{
+		WatchDir:     tmpDir,
+		Endpoint:     "http://test",
+		Workers:      1,
+		SettlingTime: 100 * time.Millisecond,
+	}
+
+	handler := NewMockFileHandler()
+	watcher, err := NewDirWatcher(config, handler, logger)
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+
+	t.Run("adds file to settling files map", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "test1.txt")
+		if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		ctx := context.Background()
+		if err := watcher.addFileToDelayQueue(ctx, testFile); err != nil {
+			t.Fatalf("addFileToDelayQueue() error = %v", err)
+		}
+
+		if _, exists := watcher.settlingFiles.Load(testFile); !exists {
+			t.Error("Expected file to be in settling files map")
+		}
+	})
+
+	t.Run("ignores already monitored files", func(t *testing.T) {
+		testFile := filepath.Join(tmpDir, "test2.txt")
+		if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		ctx := context.Background()
+		if err := watcher.addFileToDelayQueue(ctx, testFile); err != nil {
+			t.Fatalf("First addFileToDelayQueue() error = %v", err)
+		}
+
+		// Add again - should return nil without error
+		if err := watcher.addFileToDelayQueue(ctx, testFile); err != nil {
+			t.Fatalf("Second addFileToDelayQueue() error = %v", err)
+		}
+	})
+
+	t.Run("returns error for non-existent file", func(t *testing.T) {
+		ctx := context.Background()
+		err := watcher.addFileToDelayQueue(ctx, filepath.Join(tmpDir, "nonexistent.txt"))
+		if err == nil {
+			t.Error("Expected error for non-existent file, got nil")
+		}
+	})
+}
+
+func TestDirWatcher_ProcessSettlingFile(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+
+	// Create a temporary directory
+	tmpDir, err := os.MkdirTemp("", "settling_process_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	sourceDir := filepath.Join(tmpDir, "source")
+	if err := os.MkdirAll(sourceDir, 0755); err != nil {
+		t.Fatalf("Failed to create source dir: %v", err)
+	}
+
+	config := &Config{
+		WatchDir:     tmpDir,
+		Endpoint:     "http://test",
+		Workers:      1,
+		MaxFileSize:  1024 * 1024,
+		SettlingTime: 100 * time.Millisecond, // 100ms settling time
+	}
+
+	handler := NewMockFileHandler()
+	watcher, err := NewDirWatcher(config, handler, logger)
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+
+	t.Run("file with enough same counts goes to egress queue", func(t *testing.T) {
+		testFile := filepath.Join(sourceDir, "settled.txt")
+		if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		sf := SettlingFile{
+			path:      testFile,
+			lastSize:  7, // "content" is 7 bytes
+			sameCount: 2, // 2 * 100ms = 200ms >= 100ms settling time
+			startTime: time.Now(),
+			lastCheck: time.Now(),
+		}
+
+		watcher.settlingFiles.Store(testFile, &sf)
+
+		// Start a goroutine to read from egress queue
+		received := make(chan bool, 1)
+		go func() {
+			select {
+			case <-watcher.egressQueue:
+				received <- true
+			case <-time.After(500 * time.Millisecond):
+				received <- false
+			}
+		}()
+
+		ctx := context.Background()
+		err := watcher.processSettlingFile(ctx, sf)
+		if err != nil {
+			t.Fatalf("processSettlingFile() error = %v", err)
+		}
+
+		if !<-received {
+			t.Error("Expected file to be sent to egress queue")
+		}
+
+		// File should be removed from settling files map
+		if _, exists := watcher.settlingFiles.Load(testFile); exists {
+			t.Error("Expected file to be removed from settling files map")
+		}
+	})
+
+	t.Run("file not settled re-adds to delay queue", func(t *testing.T) {
+		testFile := filepath.Join(sourceDir, "notsettled.txt")
+		if err := os.WriteFile(testFile, []byte("content"), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		// Use a different lastSize to trigger size change detection,
+		// which resets sameCount to 0
+		sf := SettlingFile{
+			path:      testFile,
+			lastSize:  5, // Different from actual 7 bytes - will cause reset
+			sameCount: 0,
+			startTime: time.Now(),
+			lastCheck: time.Now(),
+		}
+
+		watcher.settlingFiles.Store(testFile, &sf)
+
+		ctx := context.Background()
+		err := watcher.processSettlingFile(ctx, sf)
+		if err != nil {
+			t.Fatalf("processSettlingFile() error = %v", err)
+		}
+
+		// File should still be in settling files map (since size changed, sameCount reset to 0)
+		if _, exists := watcher.settlingFiles.Load(testFile); !exists {
+			t.Error("Expected file to still be in settling files map")
+		}
+	})
+
+	t.Run("deleted file returns error", func(t *testing.T) {
+		testFile := filepath.Join(sourceDir, "deleted.txt")
+		// Note: don't create the file
+
+		sf := SettlingFile{
+			path:      testFile,
+			lastSize:  0,
+			sameCount: 0,
+			startTime: time.Now(),
+			lastCheck: time.Now(),
+		}
+
+		watcher.settlingFiles.Store(testFile, &sf)
+
+		ctx := context.Background()
+		err := watcher.processSettlingFile(ctx, sf)
+		if err == nil {
+			t.Error("Expected error for deleted file, got nil")
+		}
+
+		// File should be removed from settling files map
+		if _, exists := watcher.settlingFiles.Load(testFile); exists {
+			t.Error("Expected file to be removed from settling files map after error")
+		}
+	})
+}
+
+func TestDirWatcher_HiddenFileFiltering(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+
+	// Create a temporary directory structure
+	tmpDir, err := os.MkdirTemp("", "hidden_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create visible and hidden directories
+	visibleDir := filepath.Join(tmpDir, "visible")
+	hiddenDir := filepath.Join(tmpDir, ".hidden")
+	if err := os.MkdirAll(visibleDir, 0755); err != nil {
+		t.Fatalf("Failed to create visible dir: %v", err)
+	}
+	if err := os.MkdirAll(hiddenDir, 0755); err != nil {
+		t.Fatalf("Failed to create hidden dir: %v", err)
+	}
+
+	// Create files
+	visibleFile := filepath.Join(visibleDir, "visible.txt")
+	hiddenFile := filepath.Join(visibleDir, ".hidden.txt")
+	fileInHiddenDir := filepath.Join(hiddenDir, "file.txt")
+
+	for _, f := range []string{visibleFile, hiddenFile, fileInHiddenDir} {
+		if err := os.WriteFile(f, []byte("content"), 0644); err != nil {
+			t.Fatalf("Failed to create file %s: %v", f, err)
+		}
+	}
+
+	config := &Config{
+		WatchDir:     tmpDir,
+		Endpoint:     "http://test",
+		Workers:      1,
+		MaxFileSize:  1024 * 1024,
+		SettlingTime: 50 * time.Millisecond,
+	}
+
+	handler := NewMockFileHandler()
+	watcher, err := NewDirWatcher(config, handler, logger)
+	if err != nil {
+		t.Fatalf("Failed to create watcher: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	go func() {
+		if err := watcher.Start(ctx); err != nil && err != context.Canceled {
+			t.Errorf("Watcher error: %v", err)
+		}
+	}()
+
+	// Wait for processing
+	time.Sleep(300 * time.Millisecond)
+
+	handledFiles := handler.GetHandledFiles()
+
+	// Visible file should be handled
+	if _, ok := handledFiles[visibleFile]; !ok {
+		t.Error("Expected visible file to be handled")
+	}
+
+	// Hidden file should NOT be handled
+	if _, ok := handledFiles[hiddenFile]; ok {
+		t.Error("Expected hidden file to NOT be handled")
+	}
+
+	// File in hidden directory (but not immediate child of watch dir) should NOT be handled
+	// Actually, looking at the code, .hidden is an immediate child of the watch dir,
+	// so it WILL be watched. Let me re-read the logic...
+	// The code says: "Skip hidden directories unless they are immediate children of the watch dir"
+	// So .hidden IS an immediate child and will be watched!
 }

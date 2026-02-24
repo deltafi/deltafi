@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -545,12 +546,7 @@ func isHidden(path string) bool {
 
 func isMetadataFile(path string) bool {
 	base := filepath.Base(path)
-	for _, metadataFile := range defaultMetadataFiles {
-		if base == metadataFile {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(defaultMetadataFiles, base)
 }
 
 // Stop stops the watcher and cleans up resources
