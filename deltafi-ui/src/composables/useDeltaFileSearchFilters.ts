@@ -20,7 +20,8 @@
 // ABOUTME: Handles URL persistence, filter encoding/decoding, and filter building.
 
 import { ref, computed, inject, watch } from "vue";
-import { useUrlSearchParams, useStorage, StorageSerializers } from "@vueuse/core";
+import { useStorage, StorageSerializers } from "@vueuse/core";
+import { useRouter, useRoute } from "vue-router";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import _ from "lodash";
@@ -149,7 +150,8 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
   const { storageKey = "search-page-persisted-params", includePagination = false } = options;
 
   const uiConfig = inject("uiConfig") as { useUTC: boolean };
-  const params = useUrlSearchParams("history");
+  const router = useRouter();
+  const route = useRoute();
 
   // Default time range
   const defaultStartTimeDate = computed(() => {
@@ -286,13 +288,17 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
   const queryState = useStorage(storageKey, {}, sessionStorage, { serializer: StorageSerializers.object });
 
   // Check if URL has search params
-  const hasUrlParams = computed(() => Object.keys(params).some((k) => params[k] !== null && params[k] !== undefined && params[k] !== ""));
+  const hasUrlParams = computed(() => Object.keys(route.query).length > 0);
 
-  // Load persisted params from URL or storage
+  // Load persisted params from URL or storage.
+  // URL params take priority so that shared/pasted links are honored.
+  // This is safe because savePersistedParams uses router.replace() which keeps
+  // history.state.current in sync, preventing stale URL params on back navigation.
   const loadPersistedParams = () => {
     let persistedState: Record<string, unknown> = {};
     if (hasUrlParams.value) {
-      persistedState = _.cloneDeepWith(params, decodePersistedParams);
+      const urlParams = Object.fromEntries(Object.entries(route.query).filter(([, v]) => v !== null && v !== undefined && v !== ""));
+      persistedState = _.cloneDeepWith(urlParams, decodePersistedParams);
     } else if (Object.keys(queryState.value).length > 0) {
       persistedState = _.cloneDeepWith(queryState.value, decodePersistedParams);
     }
@@ -326,11 +332,12 @@ export default function useDeltaFileSearchFilters(options: UseDeltaFileSearchFil
     persistedQueryState = _.cloneDeepWith(persistedQueryState, encodePersistedParams);
     queryState.value = persistedQueryState;
 
-    // Update URL params
-    Object.keys(params).forEach((k) => ((params as Record<string, string | null>)[k] = null));
+    // Update URL via Vue Router to keep history.state.current in sync
+    const query: Record<string, string> = {};
     for (const key in persistedQueryState) {
-      (params as Record<string, string | null>)[key] = persistedQueryState[key] as string;
+      query[key] = String(persistedQueryState[key]);
     }
+    router.replace({ query }).catch(() => {});
   };
 
   // Compute size in bytes
