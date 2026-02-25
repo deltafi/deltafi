@@ -94,12 +94,23 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  filterText: {
+    type: String,
+    default: "",
+  },
 });
 
 const emit = defineEmits(["updated"]);
 
 const propertySet = reactive(props.propSet);
-const visibleProperties = computed(() => propertySet.properties.filter((p) => !p.hidden));
+const visibleProperties = computed(() => {
+  let filtered = propertySet.properties.filter((p) => !p.hidden);
+  if (props.filterText) {
+    const search = props.filterText.toLowerCase();
+    filtered = filtered.filter((p) => p.key?.toLowerCase().includes(search) || p.value?.toLowerCase().includes(search));
+  }
+  return filtered;
+});
 
 const viewList = splitEscaped;
 

@@ -17,8 +17,8 @@
 -->
 
 <template>
-  <CollapsiblePanel :header="header" class="table-panel">
-    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines table-striped plugin-variables-table" :row-hover="true" sort-field="name" :sort-order="1" data-key="name">
+  <CollapsiblePanel v-if="filteredVariables.length" :header="header" class="table-panel">
+    <DataTable :value="filteredVariables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines table-striped plugin-variables-table" :row-hover="true" sort-field="name" :sort-order="1" data-key="name">
       <template #empty>
         No variables included
       </template>
@@ -83,7 +83,7 @@ import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PropertyEditDialog from "@/components/properties/PropertyEditDialog.vue";
 import { splitEscaped, COLLECTION_TYPES } from "@/utils/collectionValues";
-import { toRefs } from "vue";
+import { computed, toRefs } from "vue";
 
 defineEmits(["updated"]);
 
@@ -101,9 +101,19 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  filterTextProp: {
+    type: String,
+    default: "",
+  },
 });
 
-const { headerProp: header, pluginCoordinatesProp: pluginCoordinates, variablesProp: variables } = toRefs(props);
+const { headerProp: header, pluginCoordinatesProp: pluginCoordinates, variablesProp: variables, filterTextProp: filterText } = toRefs(props);
+
+const filteredVariables = computed(() => {
+  if (!filterText.value) return variables.value;
+  const search = filterText.value.toLowerCase();
+  return variables.value.filter((v) => v.name?.toLowerCase().includes(search) || v.value?.toLowerCase().includes(search));
+});
 
 const viewList = splitEscaped;
 </script>

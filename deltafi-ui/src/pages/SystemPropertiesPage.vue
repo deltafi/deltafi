@@ -18,18 +18,23 @@
 
 <template>
   <div class="system-properties-page">
-    <PageHeader heading="System Properties" />
+    <PageHeader heading="System Properties">
+      <IconField iconPosition="left">
+        <InputIcon class="pi pi-search" />
+        <InputText v-model="filterText" type="text" placeholder="Search" class="p-inputtext deltafi-input-field" />
+      </IconField>
+    </PageHeader>
     <span v-if="hasErrors">
       <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
     </span>
     <span v-else-if="propertySets">
-      <span v-for="propertySet in propertySets" :key="propertySet.id">
-        <PropertySet :prop-set="propertySet" @updated="fetchPropertySets" />
+      <span v-for="propertySet in propertySets" v-show="propertySetHasMatch(propertySet)" :key="propertySet.id">
+        <PropertySet :prop-set="propertySet" :filter-text="filterText" @updated="fetchPropertySets" />
       </span>
     </span>
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
-    <div v-for="plugin in pluginsList" :key="plugin.displayName">
-      <PluginVariablesPanel v-if="plugin.variables.length" :header-prop="'Plugin Properties - ' + plugin.displayName" :plugin-coordinates-prop="plugin.pluginCoordinates" :variables-prop="plugin.variables" class="mb-3" @updated="loadPlugins" />
+    <div v-for="plugin in pluginsList" v-show="pluginHasMatch(plugin)" :key="plugin.displayName">
+      <PluginVariablesPanel v-if="plugin.variables.length" :header-prop="'Plugin Properties - ' + plugin.displayName" :plugin-coordinates-prop="plugin.pluginCoordinates" :variables-prop="plugin.variables" :filter-text-prop="filterText" class="mb-3" @updated="loadPlugins" />
     </div>
     <ScrollTop target="window" :threshold="10" icon="pi pi-arrow-up" />
   </div>
@@ -42,11 +47,15 @@ import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
 import PropertySet from "@/components/PropertySet.vue";
 import usePlugins from "@/composables/usePlugins";
 import usePropertySets from "@/composables/usePropertySets";
-import { computed, nextTick, onBeforeMount } from "vue";
+import { computed, nextTick, onBeforeMount, ref } from "vue";
 
+import IconField from "primevue/iconfield";
+import InputIcon from "primevue/inputicon";
+import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
 
+const filterText = ref("");
 const { data: propertySets, fetch: fetchPropertySets, errors } = usePropertySets();
 const { data: plugins, fetch: fetchPlugins } = usePlugins();
 
@@ -67,6 +76,21 @@ const loadPlugins = async () => {
 const pluginsList = computed(() => {
   return plugins.value?.plugins ?? [];
 });
+
+const matchesFilter = (text) => {
+  if (!filterText.value) return true;
+  return text?.toLowerCase().includes(filterText.value.toLowerCase());
+};
+
+const propertySetHasMatch = (ps) => {
+  if (!filterText.value) return true;
+  return ps.properties.some((p) => matchesFilter(p.key) || matchesFilter(p.value));
+};
+
+const pluginHasMatch = (plugin) => {
+  if (!filterText.value) return true;
+  return plugin.variables.some((v) => matchesFilter(v.name) || matchesFilter(v.value));
+};
 </script>
 
 <style>
