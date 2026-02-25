@@ -21,7 +21,36 @@
 
 <template>
   <div class="fleet-errors-page">
-    <div>
+    <FilterSidebar
+      v-model="sidebarOpen"
+      title="Error Filters"
+      tab-label="Filters"
+      width="350px"
+      :has-active-filters="hasActiveFilters"
+      @clear="clearFilters"
+    >
+      <div class="filter-item">
+        <label>Members</label>
+        <MultiSelect v-model="memberNamesFilter" :options="availableMemberNames" placeholder="All Members" :max-selected-labels="2" class="w-full" />
+      </div>
+      <div class="filter-item">
+        <label>Tags</label>
+        <MultiSelect v-model="memberTagsFilter" :options="availableTags" placeholder="All Tags" :max-selected-labels="2" class="w-full" />
+      </div>
+      <div class="filter-item">
+        <label>Data Sources</label>
+        <MultiSelect v-model="dataSourcesFilter" :options="availableDataSources" placeholder="All Data Sources" :max-selected-labels="2" class="w-full" />
+      </div>
+      <div class="filter-item">
+        <label>Error Message</label>
+        <InputText v-model="errorCauseFilter" placeholder="Contains text..." class="w-full" />
+      </div>
+      <div class="filter-item">
+        <label>Acknowledgement</label>
+        <Dropdown v-model="acknowledgedFilter" :options="ackOptions" option-label="name" option-value="value" class="w-full" />
+      </div>
+    </FilterSidebar>
+    <div class="main-content">
       <PageHeader heading="Fleet Errors">
         <SearchDateToolbar
           v-model:date-type="queryDateType"
@@ -34,7 +63,6 @@
           @refresh="refreshAll"
         />
       </PageHeader>
-    </div>
 
     <!-- Summary Stats Bar -->
     <div class="summary-stats-bar mb-3">
@@ -79,40 +107,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Filters -->
-    <CollapsiblePanel class="filters-panel mb-3" :collapsed="true">
-      <template #header>
-        <span class="filters-header">
-          <span class="p-panel-title">Filters</span>
-          <Button v-tooltip.right="{ value: 'Clear filters', disabled: !hasActiveFilters }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${hasActiveFilters ? 'p-column-filter-menu-button-active' : ''}`" :disabled="!hasActiveFilters" @click="clearFilters">
-            <i class="pi pi-filter" style="font-size: 1rem" />
-          </Button>
-        </span>
-      </template>
-      <div class="filters-content">
-        <div class="filter-item">
-          <label>Members</label>
-          <MultiSelect v-model="memberNamesFilter" :options="availableMemberNames" placeholder="All Members" :max-selected-labels="2" class="w-full" />
-        </div>
-        <div class="filter-item">
-          <label>Tags</label>
-          <MultiSelect v-model="memberTagsFilter" :options="availableTags" placeholder="All Tags" :max-selected-labels="2" class="w-full" />
-        </div>
-        <div class="filter-item">
-          <label>Data Sources</label>
-          <MultiSelect v-model="dataSourcesFilter" :options="availableDataSources" placeholder="All Data Sources" :max-selected-labels="2" class="w-full" />
-        </div>
-        <div class="filter-item">
-          <label>Error Message</label>
-          <InputText v-model="errorCauseFilter" placeholder="Contains text..." class="w-full" />
-        </div>
-        <div class="filter-item">
-          <label>Acknowledgement</label>
-          <Dropdown v-model="acknowledgedFilter" :options="ackOptions" option-label="name" option-value="value" class="w-full" />
-        </div>
-      </div>
-    </CollapsiblePanel>
 
     <!-- Tabbed Results -->
     <TabView v-model:active-index="activeTab" @tab-change="onTabChange">
@@ -368,11 +362,12 @@
       :messages="actionMessages"
       @completed="onActionCompleted"
     />
+    </div>
   </div>
 </template>
 
 <script setup>
-import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import FilterSidebar from "@/components/FilterSidebar.vue";
 import FleetErrorActionDialog from "@/components/FleetErrorActionDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SearchDateToolbar from "@/components/SearchDateToolbar.vue";
@@ -419,6 +414,9 @@ const urlParams = useUrlSearchParams("history");
 const initialized = ref(false);
 const timeExplicitlySet = ref(false);
 const initialSearchDone = ref(false);
+
+// Sidebar state
+const sidebarOpen = ref(false);
 
 // Tab state
 const activeTab = ref(0);
@@ -1034,6 +1032,15 @@ onMounted(async () => {
 
 <style>
 .fleet-errors-page {
+  position: relative;
+  display: flex;
+  height: 100%;
+
+  .main-content {
+    flex: 1;
+    overflow: auto;
+  }
+
   label {
     font-weight: 500;
   }
@@ -1073,45 +1080,16 @@ onMounted(async () => {
     gap: 0.25rem;
   }
 
-  .filters-panel {
-    margin-bottom: 1.5rem;
-
-    .p-panel-header {
-      padding: 0 1.25rem;
-
-      .p-panel-title {
-        padding: 1rem 0;
-      }
-
-      .p-panel-header-icon {
-        margin-top: 0.25rem;
-        margin-right: 0;
-      }
-    }
-  }
-
-  .filters-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    align-items: end;
-  }
-
   .filter-item {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
   .filter-item label {
     font-weight: 600;
     font-size: 0.875rem;
-  }
-
-  .filters-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
   }
 
   .action-buttons {
