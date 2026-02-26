@@ -275,6 +275,11 @@ onUnmounted(() => {
   position: relative;
   display: inline-flex;
   align-items: stretch;
+
+  &:hover > .nav-item-link,
+  &:hover > .nav-item-dropdown-toggle {
+    background-color: #e9ecef;
+  }
 }
 
 .nav-item {
@@ -332,6 +337,10 @@ onUnmounted(() => {
   &:hover {
     background-color: #e9ecef;
   }
+}
+
+.nav-item.active ~ .nav-item-dropdown-toggle {
+  border-bottom-color: #007bff;
 }
 
 .nav-dropdown {
