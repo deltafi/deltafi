@@ -17,17 +17,16 @@
  */
 // ABOUTME: Optional interface for customizing the JSON schema generator configuration.
 // ABOUTME: Implement as a Spring bean to add custom schema rules for action parameters.
-package org.deltafi.actionkit.action.parameters;
+package org.deltafi.common.json;
 
 import com.github.victools.jsonschema.generator.SchemaGeneratorConfigBuilder;
 
 /**
- * Optional interface for customizing the JSON schema generator configuration for action parameters
+ * Optional interface for customizing the JSON schema generator
  */
 public interface SchemaGeneratorConfigCustomizer {
     /**
-     * Implement this method to customize the SchemaGeneratorConfig that builds
-     * the SchemaGenerator (which generates the action parameter JSON schemas)
+     * Implement this method to customize the SchemaGeneratorConfig that builds the SchemaGenerator.
      * @param schemaGeneratorConfig config that will be modified
      */
     void customize(SchemaGeneratorConfigBuilder schemaGeneratorConfig);

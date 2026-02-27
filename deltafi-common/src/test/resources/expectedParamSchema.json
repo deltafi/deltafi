@@ -3,7 +3,8 @@
   "properties" : {
     "booleanParameter" : {
       "type" : "boolean",
-      "default" : true
+      "default" : true,
+      "readOnly" : true
     },
     "complexParam" : {
       "type" : "object",

@@ -19,37 +19,24 @@
 // ABOUTME: Creates the event queue, action runner, schema generator, and lookup table infrastructure.
 package org.deltafi.actionkit;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.victools.jsonschema.generator.*;
-import com.github.victools.jsonschema.module.jackson.JacksonModule;
-import com.github.victools.jsonschema.module.jackson.JacksonOption;
+import com.github.victools.jsonschema.generator.SchemaGenerator;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.parameters.DataSizeDefinitionProvider;
 import org.deltafi.actionkit.action.parameters.EnvVarDefinitionProvider;
-import org.deltafi.actionkit.action.parameters.SchemaGeneratorConfigCustomizer;
-import org.deltafi.actionkit.action.parameters.annotation.Size;
-import org.deltafi.actionkit.action.service.ActionInstanceFactory;
-import org.deltafi.actionkit.action.service.ActionRunner;
-import org.deltafi.actionkit.action.service.HeartbeatService;
+import org.deltafi.actionkit.action.service.*;
 import org.deltafi.actionkit.artifact.ArtifactConfiguration;
 import org.deltafi.actionkit.lookup.*;
 import org.deltafi.actionkit.properties.ActionsProperties;
-import org.deltafi.actionkit.registration.CoreClient;
-import org.deltafi.actionkit.registration.HttpCoreClient;
-import org.deltafi.actionkit.registration.PluginRegistrar;
+import org.deltafi.actionkit.registration.*;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.graphql.dgs.GraphQLClientFactory;
 import org.deltafi.common.http.HttpService;
+import org.deltafi.common.json.*;
 import org.deltafi.common.listener.StartupFailureListener;
-import org.deltafi.actionkit.lookup.LookupTableClient;
-import org.deltafi.actionkit.lookup.LookupTableSupplier;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.deltafi.common.types.BuildInfo;
@@ -60,16 +47,14 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.annotation.Nullable;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
-import java.util.*;
+import java.util.List;
 
 /**
  * Spring auto-configuration that wires up the action-kit infrastructure beans
@@ -221,58 +206,8 @@ public class ActionKitAutoConfiguration {
      */
     @Bean
     public SchemaGenerator parametersSchemaGenerator(@Nullable SchemaGeneratorConfigCustomizer schemaGeneratorCustomizer) {
-        SchemaGeneratorConfigBuilder configBuilder =
-                new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
-                        .without(Option.SCHEMA_VERSION_INDICATOR)
-                        .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
-                        .with(Option.INLINE_ALL_SCHEMAS)
-                        .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
-                                JacksonOption.IGNORE_TYPE_INFO_TRANSFORM,
-                                JacksonOption.FLATTENED_ENUMS_FROM_JSONPROPERTY));
-
-        configBuilder.forFields()
-                .withStringMinLengthResolver(fieldScope -> {
-                    Size size = fieldScope.getAnnotationConsideringFieldAndGetter(Size.class);
-                    return size == null ? null : size.minLength();
-                })
-                .withStringMaxLengthResolver(fieldScope -> {
-                    Size size = fieldScope.getAnnotationConsideringFieldAndGetter(Size.class);
-                    return size == null ? null : size.maxLength();
-                })
-                .withRequiredCheck(fieldScope -> {
-                    JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);
-                    return jsonProperty != null && jsonProperty.required();
-                })
-                .withDefaultResolver(fieldScope -> {
-                    JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);
-                    if ((jsonProperty == null) || jsonProperty.defaultValue().isEmpty()) {
-                        return null;
-                    }
-                    try {
-                        Class<?> type = fieldScope.getDeclaredType().getErasedType();
-                        // limit the default types that are mapped, sub-objects should have independent defaults defined as needed
-                        if (type.isPrimitive() || Map.class.isAssignableFrom(type) || Collection.class.isAssignableFrom(type)) {
-                            return OBJECT_MAPPER.readValue(jsonProperty.defaultValue(), new TypeReference<>() {});
-                        } else {
-                            return jsonProperty.defaultValue();
-                        }
-                    } catch (JsonProcessingException e) {
-                        return jsonProperty.defaultValue();
-                    }
-                });
-
-            configBuilder.forTypesInGeneral()
-                    .withAdditionalPropertiesResolver(scope ->
-                            scope.getType().isInstanceOf(Map.class) ? scope.getTypeParameterFor(Map.class, 1) : null);
-        configBuilder.forTypesInGeneral()
-                .withCustomDefinitionProvider(new DataSizeDefinitionProvider())
-                .withCustomDefinitionProvider(new EnvVarDefinitionProvider());
-
-        if (schemaGeneratorCustomizer != null) {
-            schemaGeneratorCustomizer.customize(configBuilder);
-        }
-
-        return new SchemaGenerator(configBuilder.build());
+        return SchemaGeneratorFactory.buildSchemaGenerator(schemaGeneratorCustomizer, new DataSizeDefinitionProvider(),
+                new EnvVarDefinitionProvider());
     }
 
     /**

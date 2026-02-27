@@ -17,14 +17,11 @@
  */
 // ABOUTME: JSON schema definition provider for Spring DataSize parameters.
 // ABOUTME: Generates a string schema with a pattern matching data size notation (e.g. 10MB).
-package org.deltafi.actionkit.action.parameters;
+package org.deltafi.common.json;
 
 import com.fasterxml.classmate.ResolvedType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.victools.jsonschema.generator.CustomDefinition;
-import com.github.victools.jsonschema.generator.CustomDefinitionProviderV2;
-import com.github.victools.jsonschema.generator.SchemaGenerationContext;
-import com.github.victools.jsonschema.generator.SchemaKeyword;
+import com.github.victools.jsonschema.generator.*;
 import org.springframework.util.unit.DataSize;
 
 /**

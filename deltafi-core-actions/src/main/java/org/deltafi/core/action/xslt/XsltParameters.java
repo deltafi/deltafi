@@ -19,7 +19,7 @@ package org.deltafi.core.action.xslt;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;
-import org.deltafi.actionkit.action.parameters.annotation.Size;
+import org.deltafi.common.json.Size;
 import org.deltafi.core.action.ContentSelectionParameters;
 
 import java.util.List;

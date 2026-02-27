@@ -11,9 +11,6 @@ dependencies {
 
     api 'org.springframework.boot:spring-boot-starter'
 
-    api "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
-    implementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
-
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
     testImplementation platform("org.junit:junit-bom:${jupiterVersion}")

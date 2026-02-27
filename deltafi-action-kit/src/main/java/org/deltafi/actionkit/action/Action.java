@@ -24,7 +24,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.parameters.DataSizeModule;
+import org.deltafi.common.json.DataSizeModule;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 

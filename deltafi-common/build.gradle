@@ -43,6 +43,9 @@ dependencies {
     api 'org.apache.httpcomponents.client5:httpclient5:5.5.1'
     api 'io.valkey:valkey-java:5.4.0'
 
+    api "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
+    api "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
+
     compileOnly 'org.springframework.boot:spring-boot-starter-cache'
     testImplementation 'org.springframework.boot:spring-boot-starter-cache'
     compileOnly 'com.github.ben-manes.caffeine:caffeine:3.2.2'

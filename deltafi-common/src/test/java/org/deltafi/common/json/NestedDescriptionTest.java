@@ -15,20 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.parameters;
+package org.deltafi.common.json;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.actionkit.ActionKitAutoConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * ABOUTME: Tests that JSON schema generation preserves descriptions for nested parameter structures.
@@ -40,8 +39,7 @@ class NestedDescriptionTest {
 
     @BeforeEach
     void setUp() {
-        ActionKitAutoConfiguration configuration = new ActionKitAutoConfiguration();
-        generator = configuration.parametersSchemaGenerator(null);
+        generator  = SchemaGeneratorFactory.buildSchemaGenerator(null);
     }
 
     @Test
@@ -90,21 +88,21 @@ class NestedDescriptionTest {
 
     @Data
     @EqualsAndHashCode(callSuper = false)
-    private static class ParamsWithNestedObject extends ActionParameters {
+    private static class ParamsWithNestedObject {
         @JsonPropertyDescription("The endpoint configuration")
         private EndpointConfig endpoint;
     }
 
     @Data
     @EqualsAndHashCode(callSuper = false)
-    private static class ParamsWithNestedList extends ActionParameters {
+    private static class ParamsWithNestedList {
         @JsonPropertyDescription("List of endpoints to try")
         private List<EndpointConfig> endpoints;
     }
 
     @Data
     @EqualsAndHashCode(callSuper = false)
-    private static class ParamsWithDeeplyNested extends ActionParameters {
+    private static class ParamsWithDeeplyNested {
         @JsonPropertyDescription("The outer configuration")
         private OuterConfig outer;
     }

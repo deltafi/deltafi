@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.parameters.annotation.Size;
+import org.deltafi.common.json.Size;
 
 import java.util.List;
 import java.util.Map;

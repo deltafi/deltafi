@@ -15,16 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.parameters;
+package org.deltafi.common.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.AllArgsConstructor;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.deltafi.actionkit.ActionKitAutoConfiguration;
-import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.deltafi.common.resource.Resource;
 import org.junit.jupiter.api.Test;
 
@@ -36,10 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ActionParametersSchemaGeneratorTest {
     @Test
     void testGetSchema() throws IOException {
-        ActionKitAutoConfiguration configuration = new ActionKitAutoConfiguration();
-        SchemaGenerator generator  = configuration.parametersSchemaGenerator(null);
+        SchemaGenerator generator  = SchemaGeneratorFactory.buildSchemaGenerator(null);
         JsonNode schemaJson = generator.generateSchema(TestActionParameters.class);
-        String expectedSchema = new String(Objects.requireNonNull(getClass().getResourceAsStream("/expectedParamSchema.json")).readAllBytes());
         assertEquals(Resource.read("/expectedParamSchema.json"), schemaJson.toPrettyString());
     }
 
@@ -68,8 +64,8 @@ class ActionParametersSchemaGeneratorTest {
     }
 
     @Getter
-    private static class TestActionParameters extends ActionParameters {
-        @JsonProperty(defaultValue = "true")
+    private static class TestActionParameters {
+        @JsonProperty(defaultValue = "true", access = JsonProperty.Access.READ_ONLY)
         boolean booleanParameter = true;
 
         TestEnum enumParameter = TestEnum.B;
@@ -95,6 +91,6 @@ class ActionParametersSchemaGeneratorTest {
 
         @JsonProperty(required = true)
         @JsonPropertyDescription("complex type should not allow additional properties")
-        ActionParametersSchemaGeneratorTest.ComplexParam complexParam;
+        ComplexParam complexParam;
     }
 }

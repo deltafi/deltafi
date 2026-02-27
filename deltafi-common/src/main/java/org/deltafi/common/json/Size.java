@@ -15,19 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.parameters.annotation;
+package org.deltafi.common.json;
 
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
- * Apply this annotation to a field in an {@link ActionParameters} class to generate minLength and maxLength properties
- * for the field in the generated JSON schema. Currently, the maxLength property is used by the user interface to
- * determine if the field should accept single (&lt;= 80) or multi-line (&gt; 80) input.
+ * Apply this annotation to a field to generate minLength and maxLength properties for the field in the generated JSON
+ * schema. Currently, the maxLength property is used by the user interface to determine if the field should accept
+ * single (&lt;= 80) or multi-line (&gt; 80) input.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

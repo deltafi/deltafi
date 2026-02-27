@@ -31,27 +31,20 @@ import org.apache.sshd.sftp.server.SftpSubsystemFactory;
 import org.deltafi.actionkit.action.ingress.IngressResult;
 import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
+import org.deltafi.actionkit.action.parameters.EnvVar;
 import org.deltafi.common.ssl.SslContextProvider;
 import org.deltafi.common.test.content.InMemoryContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.IngressStatus;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.ssl.PemSslBundleProperties;
 
-import org.deltafi.actionkit.action.parameters.EnvVar;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

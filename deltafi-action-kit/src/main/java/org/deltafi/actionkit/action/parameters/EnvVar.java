@@ -20,9 +20,7 @@ package org.deltafi.actionkit.action.parameters;
 // ABOUTME: A parameter type that references an environment variable by name.
 // ABOUTME: The actual secret value is resolved at runtime, never stored in DeltaFi.
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
