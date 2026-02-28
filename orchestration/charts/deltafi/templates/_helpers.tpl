@@ -330,6 +330,24 @@ volumeMounts:
 - name: ENTITY_AUTHORIZER_URL
   value: {{ .Values.deltafi.auth.entityAuthorizer.url | default "http://127.0.0.1:8081/" }}
 {{ end }}
+{{- $dashboardsEnabled := true }}
+{{- if .Values.deltafi.dashboards }}
+  {{- if hasKey .Values.deltafi.dashboards "enabled" }}
+    {{- $dashboardsEnabled = .Values.deltafi.dashboards.enabled }}
+  {{- end }}
+{{- end }}
+{{- $metricsEnabled := true }}
+{{- if .Values.deltafi.metrics }}
+  {{- if hasKey .Values.deltafi.metrics "enabled" }}
+    {{- $metricsEnabled = .Values.deltafi.metrics.enabled }}
+  {{- end }}
+{{- end }}
+- name: GRAFANA_ENABLED
+  value: {{ and .Values.enable.grafana $dashboardsEnabled | quote }}
+- name: METRICS_ENABLED
+  value: {{ and .Values.enable.victoriametrics $metricsEnabled | quote }}
+- name: ANALYTICS_ENABLED
+  value: {{ .Values.deltafi.analytics.enabled | quote }}
 - name: HEADLAMP_TOKEN
   valueFrom:
     secretKeyRef:

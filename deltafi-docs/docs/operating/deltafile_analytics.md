@@ -3,6 +3,20 @@
 DeltaFile analytics provide the ability to extract insights on behavior, performance, and volumetrics
 of processed DeltaFiles by dataSource and any applied annotations.
 
+## Disabling Analytics
+
+The analytics collector can be disabled via `site/values.yaml`:
+
+```yaml
+deltafi:
+  analytics:
+    enabled: false
+```
+
+When disabled, the analytics container is not started, and the `timescaleAnalyticsEnabled`, `parquetAnalyticsEnabled`, and `provenanceEnabled` system properties are forced to `false` and locked in the System Properties UI. No analytics events are produced or stored.
+
+See [Site Configuration - Observability Components](/operating/site-configuration#observability-components) for details.
+
 ## DeltaFile Analytics
 
 The following events result in creation or updates to analytic events:

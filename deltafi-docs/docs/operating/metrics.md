@@ -3,6 +3,22 @@
 A DeltaFi deployment provides normalized metrics generation and centralized metrics collection and visualization.
 Metrics are generated and sent to a VictoriaMetrics time-series database that is used as a data source for Grafana visualization.
 
+## Disabling Metrics
+
+Metrics collection and Grafana visualization can be independently disabled via `site/values.yaml`:
+
+```yaml
+deltafi:
+  metrics:
+    enabled: false      # Disables VictoriaMetrics and metrics production in core
+  dashboards:
+    enabled: false      # Disables Grafana dashboards and alert checks
+```
+
+When VictoriaMetrics is disabled, the `metricsEnabled` system property is forced to `false` and locked in the System Properties UI. No metrics are produced or stored. Grafana can be disabled independently — for example, you may want to keep VictoriaMetrics running for API-based metrics access while disabling the Grafana UI.
+
+See [Site Configuration - Observability Components](/operating/site-configuration#observability-components) for details.
+
 ## Default Metrics Generation
 
 DeltaFi automatically generates metrics for action cognizance, ingress and egress volume, and system utilization.

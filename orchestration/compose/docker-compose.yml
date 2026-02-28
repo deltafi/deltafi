@@ -159,9 +159,6 @@ services:
   deltafi-nodemonitor:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
-    depends_on:
-      deltafi-victoriametrics:
-        condition: service_healthy
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
@@ -180,9 +177,6 @@ services:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-node-fastdelete
     command: ["/bin/bash", "-c", "/app/deleteit.sh"]
-    depends_on:
-      deltafi-victoriametrics:
-        condition: service_healthy
     env_file:
       - ${CONFIG_DIR}/common.env
       - ${SECRETS_DIR}/postgres.env
@@ -248,6 +242,7 @@ services:
   deltafi-analytics:
     image: ${DELTAFI_ANALYTICS}
     container_name: deltafi-analytics
+    profiles: ["analytics"]
     environment:
       LISTEN_ADDR: ":8080"
       OUTPUT_DIR: /data/analytics
@@ -389,6 +384,7 @@ services:
   deltafi-grafana:
     image: ${GRAFANA}
     container_name: deltafi-grafana
+    profiles: ["grafana"]
     environment:
       GF_PATHS_DATA: /var/lib/grafana/
       GF_PATHS_LOGS: /var/log/grafana
@@ -427,6 +423,7 @@ services:
   dozzle:
     image: ${DOZZLE}
     container_name: deltafi-dozzle
+    profiles: ["dozzle"]
     expose:
       - 8080
     environment:
@@ -448,6 +445,7 @@ services:
   deltafi-victoriametrics:
     image: ${VICTORIAMETRICS}
     container_name: deltafi-victoriametrics
+    profiles: ["victoriametrics"]
     command:
       - "-storageDataPath=/victoria-metrics-data"
       - "-httpListenAddr=:8428"

@@ -241,12 +241,14 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 		return err
 	}
 
-	dockerUpArgs := []string{"up", "-d", "--wait", "--remove-orphans"}
-
 	values, err := o.getMergedValues()
 	if err != nil {
 		return err
 	}
+
+	o.stopDisabledServices(values)
+
+	dockerUpArgs := []string{"up", "-d", "--wait", "--remove-orphans"}
 	if o.getValue(values, "deltafi.core_worker.enabled") == "true" && o.getValue(values, "deltafi.core_worker.replicas") != "" {
 		dockerUpArgs = append(dockerUpArgs, "--scale", "core-worker="+o.getValue(values, "deltafi.core_worker.replicas"))
 	}
@@ -260,6 +262,50 @@ func (o *ComposeOrchestrator) Up(args []string) error {
 	}
 
 	return nil
+}
+
+// stopDisabledServices stops containers for services whose profiles are no longer active.
+// Docker Compose does not automatically stop profiled-out containers on `up`.
+func (o *ComposeOrchestrator) stopDisabledServices(values map[string]interface{}) {
+	type profiledService struct {
+		configKey    string
+		serviceNames []string
+	}
+
+	services := []profiledService{
+		{"deltafi.dirwatcher.enabled", []string{"deltafi-dirwatcher"}},
+		{"deltafi.egress_sink.enabled", []string{"deltafi-egress-sink"}},
+		{"deltafi.auth.entityAuthorizer.enabled", []string{"deltafi-entity-authorizer"}},
+		{"deltafi.auth.entityResolver.enabled", []string{"deltafi-entity-resolver"}},
+		{"deltafi.java_devcontainer.enabled", []string{"deltafi-java-devcontainer"}},
+		{"deltafi.java_ide.enabled", []string{"deltafi-java-ide"}},
+		{"deltafi.core_worker.enabled", []string{"core-worker"}},
+		{"deltafi.lookup.enabled", []string{"deltafi-postgres-lookup"}},
+		{"deltafi.logs.enabled", []string{"vector", "logrotate"}},
+		{"deltafi.dashboards.enabled", []string{"deltafi-grafana"}},
+		{"deltafi.metrics.enabled", []string{"deltafi-victoriametrics"}},
+		{"deltafi.analytics.enabled", []string{"deltafi-analytics"}},
+		{"deltafi.logviewer.enabled", []string{"dozzle"}},
+	}
+
+	var disabled []string
+	for _, svc := range services {
+		if o.getValue(values, svc.configKey) != "true" {
+			disabled = append(disabled, svc.serviceNames...)
+		}
+	}
+	if o.localObjectStorageEnabled(values) != "true" {
+		disabled = append(disabled, "deltafi-s3proxy", "s3proxy-setup")
+	}
+
+	if len(disabled) == 0 {
+		return
+	}
+
+	stopArgs := append([]string{"stop"}, disabled...)
+	_ = o.dockerCompose(stopArgs)
+	rmArgs := append([]string{"rm", "-f"}, disabled...)
+	_ = o.dockerCompose(rmArgs)
 }
 
 func (o *ComposeOrchestrator) dockerCompose(args []string) error {
@@ -611,7 +657,6 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"CORE_URL":                           "http://deltafi-core:8080",
 		"DATA_DIR":                           o.dataPath,
 		"LOGS_DIR":                           o.logsPath,
-		"DELTAFI_GRAFANA_URL":                "http://deltafi-grafana:3000",
 		"DELTAFI_MODE":                       "STANDALONE",
 		"DELTAFI_SECRET_CA_CHAIN":            "certs",
 		"DELTAFI_SECRET_ENTITY_RESOLVER_SSL": o.getValueOr(values, "deltafi.auth.entityResolver.ssl.secret", "ssl-secret"),
@@ -652,6 +697,18 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"VALKEY_PORT":                        "6379",
 		"VALKEY_URL":                         "http://deltafi-valkey:6379",
 	}
+
+	grafanaEnabled := o.getValueOr(values, "deltafi.dashboards.enabled", "true")
+	envVars["GRAFANA_ENABLED"] = grafanaEnabled
+	if grafanaEnabled == "true" {
+		envVars["DELTAFI_GRAFANA_URL"] = "http://deltafi-grafana:3000"
+	}
+
+	metricsEnabled := o.getValueOr(values, "deltafi.metrics.enabled", "true")
+	envVars["METRICS_ENABLED"] = metricsEnabled
+
+	analyticsEnabled := o.getValueOr(values, "deltafi.analytics.enabled", "true")
+	envVars["ANALYTICS_ENABLED"] = analyticsEnabled
 
 	var globalVars map[string]string
 	if deltafi, ok := values["deltafi"].(map[string]any); ok {
@@ -916,6 +973,10 @@ func (o *ComposeOrchestrator) startupEnvironment() error {
 		{"deltafi.core_worker.enabled", "worker"},
 		{"deltafi.lookup.enabled", "lookup-tables"},
 		{"deltafi.logs.enabled", "logs"},
+		{"deltafi.dashboards.enabled", "grafana"},
+		{"deltafi.metrics.enabled", "victoriametrics"},
+		{"deltafi.analytics.enabled", "analytics"},
+		{"deltafi.logviewer.enabled", "dozzle"},
 	}
 
 	profiles := []string{}

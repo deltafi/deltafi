@@ -51,6 +51,7 @@ deltafi:
     drop_metadata: false
     image: {{.Repo}}/deltafi-egress-sink:{{.Tag}}
   analytics:
+    enabled: true
     image: {{.Repo}}/deltafi-analytics:{{.Tag}}
   nodemonitor:
     image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
@@ -59,6 +60,12 @@ deltafi:
       secret: ssl-secret
   lookup:
     enabled: false
+  dashboards:
+    enabled: true
+  metrics:
+    enabled: true
+  logviewer:
+    enabled: true
   logs:
     enabled: true
     logrotate:

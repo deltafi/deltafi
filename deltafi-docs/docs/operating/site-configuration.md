@@ -60,6 +60,16 @@ deltafi:
     ssl:
       secret: ssl-secret
 
+  # Observability components (all default to true)
+  dashboards:
+    enabled: true           # Grafana dashboards and alerting
+  metrics:
+    enabled: true           # VictoriaMetrics time-series metrics
+  analytics:
+    enabled: true           # DeltaFile analytics collector
+  logviewer:
+    enabled: true           # Dozzle web-based log viewer (Compose only)
+
   # Inject environment variables into all DeltaFi-built services
   globalEnv:
     - name: MY_CUSTOM_VAR
@@ -99,6 +109,56 @@ deltafi:
           name: my-secret
           key: password
 ```
+
+## Observability Components
+
+DeltaFi bundles several observability components that can be individually disabled via `site/values.yaml`. All are enabled by default.
+
+| Component | Config Key | Description |
+|-----------|-----------|-------------|
+| Dashboards (Grafana) | `deltafi.dashboards.enabled` | Dashboards, alerting, and visualization |
+| Metrics (VictoriaMetrics) | `deltafi.metrics.enabled` | Time-series metrics storage |
+| Analytics | `deltafi.analytics.enabled` | DeltaFile analytics collector (Parquet/TimescaleDB) |
+| Log Viewer (Dozzle) | `deltafi.logviewer.enabled` | Web-based log viewer (Compose only) |
+
+### Disabling a Component
+
+Set the component's `enabled` flag to `false` in `site/values.yaml`:
+
+```yaml
+# site/values.yaml
+deltafi:
+  dashboards:
+    enabled: false
+```
+
+Then run `deltafi up` to apply. The container will not be started, and related core features will be automatically disabled.
+
+### Behavior When Disabled
+
+- **Grafana**: The Grafana container is not started. The Grafana Alert Check in core is disabled, so no Grafana API calls are made and no alert events are generated.
+- **VictoriaMetrics**: The VictoriaMetrics container is not started. The `metricsEnabled` system property is forced to `false` and locked in the System Properties UI.
+- **Analytics**: The analytics container is not started. The `timescaleAnalyticsEnabled`, `parquetAnalyticsEnabled`, and `provenanceEnabled` system properties are forced to `false` and locked in the System Properties UI.
+- **Dozzle**: The Dozzle container is not started. This is a Compose-only component and has no effect on Kubernetes deployments.
+
+When a system property is locked by configuration, it appears as non-editable in the System Properties UI with the description "Disabled by configuration."
+
+### Kubernetes
+
+In Kubernetes mode, the same config keys are used in the Helm chart values:
+
+```yaml
+# Helm values
+deltafi:
+  dashboards:
+    enabled: false
+  metrics:
+    enabled: false
+  analytics:
+    enabled: false
+```
+
+These control the `GRAFANA_ENABLED`, `METRICS_ENABLED`, and `ANALYTICS_ENABLED` environment variables passed to core. The Helm chart also supports the legacy `enable.grafana` and `enable.victoriametrics` flags for subchart deployment control. Dozzle is not deployed in Kubernetes.
 
 ## Docker Compose Configuration
 

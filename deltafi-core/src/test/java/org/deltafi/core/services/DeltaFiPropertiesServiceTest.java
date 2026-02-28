@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.deltafi.core.services.DeltaFiPropertiesService.DISABLED_FOR_EXTERNAL_STORAGE;
@@ -187,6 +188,121 @@ class DeltaFiPropertiesServiceTest {
 
         deltaFiPropertiesService.resetFromSnapshot(snapshot, true);
         Mockito.verify(deltaFiPropertiesRepo).updateProperty(validValue.getKey(), validValue.getValue());
+    }
+
+    @Test
+    void testEnvDisabledMetricsMarksPropertyNonEditable() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Map<String, String> envDisabled = Map.of("metricsEnabled", "false");
+        DeltaFiPropertiesService service = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+
+        ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
+        ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
+        ArgumentCaptor<String[]> descCaptor = ArgumentCaptor.forClass(String[].class);
+        Mockito.verify(deltaFiPropertiesRepo).batchUpsertAndDeleteProperties(
+                keyCaptor.capture(), Mockito.any(), descCaptor.capture(),
+                Mockito.any(), editableCaptor.capture(), Mockito.any(), Mockito.any());
+
+        String[] keys = keyCaptor.getValue();
+        Boolean[] editables = editableCaptor.getValue();
+        String[] descriptions = descCaptor.getValue();
+
+        for (int i = 0; i < keys.length; i++) {
+            if ("metricsEnabled".equals(keys[i])) {
+                Assertions.assertThat(editables[i]).isFalse();
+                Assertions.assertThat(descriptions[i]).startsWith("Disabled by configuration.");
+                return;
+            }
+        }
+        Assertions.fail("metricsEnabled property not found in upserted properties");
+    }
+
+    @Test
+    void testEnvDisabledAnalyticsMarksPropertiesNonEditable() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Map<String, String> envDisabled = Map.of(
+                "timescaleAnalyticsEnabled", "false",
+                "parquetAnalyticsEnabled", "false",
+                "provenanceEnabled", "false");
+        DeltaFiPropertiesService service = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+
+        ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
+        ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
+        Mockito.verify(deltaFiPropertiesRepo).batchUpsertAndDeleteProperties(
+                keyCaptor.capture(), Mockito.any(), Mockito.any(),
+                Mockito.any(), editableCaptor.capture(), Mockito.any(), Mockito.any());
+
+        String[] keys = keyCaptor.getValue();
+        Boolean[] editables = editableCaptor.getValue();
+
+        for (String disabledKey : envDisabled.keySet()) {
+            boolean found = false;
+            for (int i = 0; i < keys.length; i++) {
+                if (disabledKey.equals(keys[i])) {
+                    Assertions.assertThat(editables[i])
+                            .as("Expected %s to be non-editable", disabledKey)
+                            .isFalse();
+                    found = true;
+                    break;
+                }
+            }
+            Assertions.assertThat(found).as("Expected to find property %s", disabledKey).isTrue();
+        }
+    }
+
+    @Test
+    void testEnvDisabledPropertiesForcedInDatabase() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Map<String, String> envDisabled = Map.of("metricsEnabled", "false");
+        DeltaFiPropertiesService service = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+
+        Mockito.verify(deltaFiPropertiesRepo).updateProperty("metricsEnabled", "false");
+    }
+
+    @Test
+    void testEnvDisabledPropertyCannotBeUpdated() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Map<String, String> envDisabled = Map.of("metricsEnabled", "false");
+
+        Property metricsProperty = Property.builder().key("metricsEnabled").editable(false).build();
+        Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(metricsProperty));
+
+        DeltaFiPropertiesService service = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+
+        List<KeyValue> updates = List.of(new KeyValue("metricsEnabled", "true"));
+        Assertions.assertThatThrownBy(() -> service.updateProperties(updates, false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Property metricsEnabled is disabled and cannot be changed");
+    }
+
+    @Test
+    void testNoEnvDisabledPropertiesLeavesAllEditable() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Map<String, String> envDisabled = Map.of();
+        DeltaFiPropertiesService service = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, new LocalStorageProperties(true, true), true, envDisabled);
+
+        ArgumentCaptor<Boolean[]> editableCaptor = ArgumentCaptor.forClass(Boolean[].class);
+        ArgumentCaptor<String[]> keyCaptor = ArgumentCaptor.forClass(String[].class);
+        Mockito.verify(deltaFiPropertiesRepo).batchUpsertAndDeleteProperties(
+                keyCaptor.capture(), Mockito.any(), Mockito.any(),
+                Mockito.any(), editableCaptor.capture(), Mockito.any(), Mockito.any());
+
+        String[] keys = keyCaptor.getValue();
+        Boolean[] editables = editableCaptor.getValue();
+
+        for (int i = 0; i < keys.length; i++) {
+            if ("metricsEnabled".equals(keys[i]) || "timescaleAnalyticsEnabled".equals(keys[i])
+                    || "parquetAnalyticsEnabled".equals(keys[i]) || "provenanceEnabled".equals(keys[i])) {
+                Assertions.assertThat(editables[i])
+                        .as("Expected %s to be editable when no env override", keys[i])
+                        .isTrue();
+            }
+        }
     }
 
 }

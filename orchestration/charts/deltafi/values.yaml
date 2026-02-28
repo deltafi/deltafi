@@ -6,7 +6,8 @@ enable:
   headlamp: true
   promtail: true
   loki: true
-  grafana: true
+  grafana: true          # DEPRECATED: use deltafi.dashboards.enabled instead
+  victoriametrics: true  # DEPRECATED: use deltafi.metrics.enabled instead
 
 # toggle groups of subcharts on (true) or off (false)
 tags:
@@ -55,6 +56,11 @@ deltafi:
     enabled: true
     drop_metadata: false
     image: deltafi/deltafi-egress-sink:2.50.0
+  # Uncomment to override the deprecated enable.grafana and enable.victoriametrics flags
+  # dashboards:
+  #   enabled: true
+  # metrics:
+  #   enabled: true
   analytics:
     enabled: true
     image: deltafi/deltafi-analytics:2.50.0

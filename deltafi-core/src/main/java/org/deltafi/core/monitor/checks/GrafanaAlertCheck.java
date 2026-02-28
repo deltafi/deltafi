@@ -29,6 +29,7 @@ import org.deltafi.core.services.EventService;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
@@ -45,6 +46,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.USER_NAME_HEADER;
 
 @Slf4j
 @MonitorProfile
+@ConditionalOnProperty(name = "GRAFANA_ENABLED", havingValue = "true", matchIfMissing = true)
 public class GrafanaAlertCheck extends StatusCheck {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()

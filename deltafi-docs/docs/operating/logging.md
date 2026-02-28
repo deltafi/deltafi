@@ -14,7 +14,7 @@ All logging components are optional and can be enabled or disabled via configura
 
 ## Enabling Logging
 
-Logging is enabled by default in Compose deployments. To disable it, set the following in your `site/values.yaml`:
+Logging is enabled by default in Compose deployments. To disable log collection and rotation, set the following in your `site/values.yaml`:
 
 ```yaml
 deltafi:
@@ -22,7 +22,17 @@ deltafi:
     enabled: false
 ```
 
-When disabled, the Vector, Dozzle, and Logrotate containers will not be started.
+When disabled, the Vector and Logrotate containers will not be started.
+
+Dozzle (the web-based log viewer) has its own independent toggle:
+
+```yaml
+deltafi:
+  logviewer:
+    enabled: false
+```
+
+This allows you to disable the Dozzle UI while still collecting logs via Vector, or vice versa. See [Site Configuration - Observability Components](/operating/site-configuration#observability-components) for details.
 
 ## Log Collection
 

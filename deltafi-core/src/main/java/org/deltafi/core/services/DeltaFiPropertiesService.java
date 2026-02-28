@@ -48,6 +48,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
     private static final String AGE_OFF_META_ONLY = "Number of days that a DeltaFile metadata should live, any records older will be removed. " +
             "The externally stored content will not be removed by this setting.";
     private static final String DISABLED_DESCRIPTION = "Disabled due to using external storage.  ";
+    private static final String ENV_DISABLED_DESCRIPTION = "Disabled by configuration.  ";
     private static final Set<String> allowedProperties;
     private static final List<Property> defaultProperties;
     private static final Map<String, PropertyGroup> propertyToGroup;
@@ -76,21 +77,50 @@ public class DeltaFiPropertiesService implements Snapshotter {
     private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
     private final ApplicationEventPublisher eventPublisher;
     private final LocalStorageProperties localStorageProperties;
+    private final Map<String, String> envDisabledProperties;
     private Set<String> disabledProperties;
     private DeltaFiProperties cachedDeltaFiProperties;
     private List<Property> properties;
 
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
                                     LocalStorageProperties localStorageProperties, boolean isScheduler) {
+        this(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, isScheduler, buildEnvDisabledProperties());
+    }
+
+    DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo, ApplicationEventPublisher eventPublisher,
+                             LocalStorageProperties localStorageProperties, boolean isScheduler,
+                             Map<String, String> envDisabledProperties) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
         this.eventPublisher = eventPublisher;
         this.localStorageProperties = localStorageProperties;
+        this.envDisabledProperties = envDisabledProperties;
         this.disabledProperties = new HashSet<>();
         if (isScheduler) {
             // make sure the latest DeltaFiProperties structure is reflected in the properties collection
             upsertProperties();
         }
         refreshProperties();
+    }
+
+    /**
+     * Build a map of property names to forced values based on env var overrides.
+     * When a component is disabled via env var (e.g., METRICS_ENABLED=false),
+     * the corresponding DeltaFi properties are forced to false and made non-editable.
+     */
+    private static Map<String, String> buildEnvDisabledProperties() {
+        Map<String, String> disabled = new HashMap<>();
+
+        if ("false".equalsIgnoreCase(System.getenv("METRICS_ENABLED"))) {
+            disabled.put("metricsEnabled", "false");
+        }
+
+        if ("false".equalsIgnoreCase(System.getenv("ANALYTICS_ENABLED"))) {
+            disabled.put("timescaleAnalyticsEnabled", "false");
+            disabled.put("parquetAnalyticsEnabled", "false");
+            disabled.put("provenanceEnabled", "false");
+        }
+
+        return Collections.unmodifiableMap(disabled);
     }
 
     /**
@@ -108,24 +138,33 @@ public class DeltaFiPropertiesService implements Snapshotter {
         for (int i = 0; i < defaultProperties.size(); i++) {
             Property prop = defaultProperties.get(i);
             keys[i] = prop.getKey();
-
-            if (isExternalContent()) {
-                modifyForExternalStorage(prop);
-            }
             defaultValues[i] = prop.getDefaultValue();
             descriptions[i] = prop.getDescription();
             refreshables[i] = prop.isRefreshable();
             dataTypes[i] = prop.getDataType().name();
             editables[i] = prop.isEditable();
 
-            if (!prop.isEditable()) {
-                disabledProperties.add(prop.getKey());
+            if (isExternalContent()) {
+                applyExternalStorageOverrides(keys[i], descriptions, editables, defaultValues, i);
+            }
+            if (envDisabledProperties.containsKey(keys[i])) {
+                editables[i] = false;
+                descriptions[i] = ENV_DISABLED_DESCRIPTION + descriptions[i];
+            }
+
+            if (!editables[i]) {
+                disabledProperties.add(keys[i]);
             }
         }
 
         deltaFiPropertiesRepo.batchUpsertAndDeleteProperties(
                 keys, defaultValues, descriptions, refreshables, editables, dataTypes, allowedProperties
         );
+
+        // Force custom values for env-disabled properties
+        for (Map.Entry<String, String> entry : envDisabledProperties.entrySet()) {
+            deltaFiPropertiesRepo.updateProperty(entry.getKey(), entry.getValue());
+        }
 
         normalizeSetProperties();
     }
@@ -144,13 +183,12 @@ public class DeltaFiPropertiesService implements Snapshotter {
         }
     }
 
-    private void modifyForExternalStorage(Property property) {
-        String key = property.getKey();
+    private void applyExternalStorageOverrides(String key, String[] descriptions, Boolean[] editables, String[] defaultValues, int i) {
         if (DISABLED_FOR_EXTERNAL_STORAGE.contains(key)) {
-            property.setEditable(false);
-            property.setDescription(DISABLED_DESCRIPTION + property.getDescription());
+            editables[i] = false;
+            descriptions[i] = DISABLED_DESCRIPTION + descriptions[i];
         } else if (key.equals("ageOffDays")) {
-            property.setDescription(AGE_OFF_META_ONLY);
+            descriptions[i] = AGE_OFF_META_ONLY;
         }
     }
 
