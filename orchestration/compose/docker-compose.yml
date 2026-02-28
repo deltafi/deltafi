@@ -47,6 +47,7 @@ services:
         aliases:
           - "deltafi-core"
           - "deltafi-core-scheduler"
+    init: true
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -86,6 +87,7 @@ services:
       deltafi:
         aliases:
           - "deltafi-core"
+    init: true
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -152,6 +154,7 @@ services:
       deltafi-group: deltafi-core
     networks:
       - deltafi
+    init: true
     restart: unless-stopped
     user: "${USER_ID}:${GROUP_ID}"
     volumes:
@@ -264,6 +267,7 @@ services:
       deltafi:
         aliases:
           - "deltafi-analytics"
+    init: true
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/analytics:/data/analytics
@@ -288,6 +292,7 @@ services:
         aliases:
           - "deltafi-minio"
     profiles: ["localStorage"]
+    init: true
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/minio:/data
@@ -368,6 +373,7 @@ services:
       - deltafi
     expose:
       - "6379"
+    init: true
     restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/valkey/:/usr/local/etc/valkey/:ro
@@ -411,6 +417,7 @@ services:
       - ${SETTINGS_DIR}/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
       - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml:ro
       - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards:ro
+    init: true
     restart: unless-stopped
     user: "${USER_ID}:${GROUP_ID}"
     healthcheck:
@@ -467,6 +474,7 @@ services:
       deltafi:
         aliases:
           - "deltafi-victoriametrics"
+    init: true
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/victoriametrics:/victoria-metrics-data
@@ -581,6 +589,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${LOGS_DIR}:/logs
       - ${SETTINGS_DIR}/vector/vector.yaml:/etc/vector/vector.yaml:ro
+    init: true
     restart: unless-stopped
     group_add:
       - ${DOCKER_GID}
@@ -611,6 +620,7 @@ services:
       - AUDIT_KEEP_DAYS=${LOGROTATE_AUDIT_KEEP_DAYS:-365}
       - LOGROTATE_MAX_SIZE=${LOGROTATE_MAX_SIZE:-50M}
       - LOGROTATE_AUDIT_MAX_SIZE=${LOGROTATE_AUDIT_MAX_SIZE:-100M}
+    init: true
     restart: unless-stopped
     group_add:
       - ${DOCKER_GID}
