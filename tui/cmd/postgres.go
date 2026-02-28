@@ -78,8 +78,6 @@ var postgresStatusCmd = &cobra.Command{
 	Short: "Show Postgres instance status and administrative information",
 	Long:  "Display comprehensive information about the Postgres instance including storage usage, table sizes, row counts, connections, and other administrative metrics.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		RequireRunningDeltaFi()
-
 		// SQL queries to gather comprehensive status information
 		queries := map[string]string{
 			"version":         "SELECT version();",
