@@ -74,8 +74,8 @@ public class DeltaFiProperties {
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Comma-separated list of allowed analytics annotation keys to be promoted into metrics. Only these annotations will be used for grouping/filtering in analytics.", dataType = VariableDataType.SET)
     private String allowedAnalyticsAnnotations;
 
-    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics export to the Parquet-based analytics collector", defaultValue = "false", dataType = VariableDataType.BOOLEAN)
-    private boolean parquetAnalyticsEnabled = false;
+    @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Enable analytics export to the Parquet-based analytics collector", defaultValue = "true", dataType = VariableDataType.BOOLEAN)
+    private boolean parquetAnalyticsEnabled = true;
 
     @PropertyInfo(group = PropertyGroup.METRICS_AND_ANALYTICS, description = "Number of days to retain Parquet analytics data before automatic deletion", defaultValue = "30", dataType = VariableDataType.NUMBER)
     private int parquetAnalyticsAgeOffDays = 30;
