@@ -95,7 +95,7 @@ ingress:
       default: local-deltafi-org
 # S3Proxy config (S3-compatible storage using filesystem backend)
 s3proxy:
-  image: deltafi/s3proxy:3.0.0-1
+  image: deltafi/s3proxy:3.0.0-2
   resources:
     requests:
       memory: 256Mi
@@ -113,7 +113,7 @@ redis:
   fullnameOverride: deltafi-valkey
   image:
     repository: deltafi/valkey
-    tag: 9.0.1-1
+    tag: 9.0.2-0
   architecture: standalone
   auth:
     existingSecret: valkey-password
@@ -387,7 +387,7 @@ victoriametrics:
     fullnameOverride: deltafi-victoriametrics
     image:
       repository: deltafi/victoria-metrics
-      tag: v1.134.0-0
+      tag: v1.136.0-0
     retentionPeriod: "720d"
     extraArgs:
       envflag.enable: "true"
