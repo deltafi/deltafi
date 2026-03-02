@@ -5,6 +5,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.50.1] - 2026-03-02
+
+### Added
+- Enable provenance Grafana dashboard in Kubernetes orchestration
+- Enable/disable knobs in `site/values.yaml` for dashboards (Grafana), metrics (VictoriaMetrics), analytics, and log viewer (Dozzle)
+- `deltafi.dashboards.enabled` — controls Grafana container and GrafanaAlertCheck in core
+- `deltafi.metrics.enabled` — controls VictoriaMetrics container and `metricsEnabled` system property
+- `deltafi.analytics.enabled` — controls analytics container and `timescaleAnalyticsEnabled`, `parquetAnalyticsEnabled`, `provenanceEnabled` system properties
+- `deltafi.logviewer.enabled` — controls Dozzle container (Compose only)
+- System properties locked by env var configuration show "Disabled by configuration" in the UI
+
+### Changed
+- Changed the default value of `parquetAnalyticsEnabled` system property to `true`
+- Changed the `deltafi postgres status` command so it does not require a running core to execute
+- Removed `depends_on: deltafi-victoriametrics` from nodemonitor and node-fastdelete (required for victoriametrics profile support)
+
+### Fixed
+- Fixed an issue in compose orchestration where health checks left behind defunct processes
+- GUI: Highlight for current item on contextual menu bar for items with sub-menu was off-center
+
+### Deprecated
+- Helm `enable.grafana` — use `deltafi.dashboards.enabled` instead. When the new key is defined, `enable.grafana` is ignored.
+- Helm `enable.victoriametrics` — use `deltafi.metrics.enabled` instead. When the new key is defined, `enable.victoriametrics` is ignored.
+
+### Upgrade and Migration
+- Upgrade Dozzle image to deltafi/dozzle:v10.0.2-0
+
 ## [2.50.0] - 2026-02-26
 
 ### Added
@@ -5857,7 +5884,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.1...main
+[2.50.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.0...2.50.1
 [2.50.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.6...2.50.0
 [2.49.6]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.5...2.49.6
 [2.49.5]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.2...2.49.5
