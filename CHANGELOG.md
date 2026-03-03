@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.50.2] - 2026-03-03
+
+### Upgrade and Migration
+- VictoriaMetrics upgrade to deltafi/victoria-metrics:v1.136.0-0
+- S3Proxy upgrade to deltafi/s3proxy:3.0.0-2
+- Valkey upgrade to deltafi/valkey:9.0.2-0
+- Compose TimescaleDB upgrade to deltafi/timescaledb:2.19.3-pg16-8
+- Compose Postgres upgrade to deltafi/postgres:16.12-0
+
 ## [2.50.1] - 2026-03-02
 
 ### Added
@@ -5884,7 +5893,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.2...main
+[2.50.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.1...2.50.2
 [2.50.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.0...2.50.1
 [2.50.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.6...2.50.0
 [2.49.6]: https://gitlab.com/deltafi/deltafi/-/compare/2.49.5...2.49.6
