@@ -1,5 +1,9 @@
 # Ingressing Data into DeltaFi
 
+::: tip API Reference
+For complete ingress endpoint documentation including all status codes and error responses, see the [DeltaFiles REST API](/api/rest/deltafiles).
+:::
+
 DeltaFi can ingest data in any format, and provides special processing for Apache NiFi FlowFiles.
 
 ## Submitting Data

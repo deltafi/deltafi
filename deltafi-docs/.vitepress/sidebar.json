@@ -66,7 +66,7 @@
       { "text": "Configuration", "link": "/operating/configuration" },
       { "text": "Error Handling", "link": "/operating/errors" },
       { "text": "Emergency Operations", "link": "/operating/emergency-operations" },
-      { "text": "Events API", "link": "/operating/events_api" },
+      { "text": "Events", "link": "/operating/events_api" },
       { "text": "Metrics", "link": "/operating/metrics" },
       { "text": "Consolidated Logging in Compose", "link": "/operating/logging" },
       { "text": "DeltaFile Analytics and Survey", "link": "/operating/deltafile_analytics" },
@@ -88,6 +88,40 @@
       { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" },
       { "text": "PostgreSQL Tuning", "link": "/advanced/postgres-tuning" },
       { "text": "Provenance Tracking", "link": "/advanced/provenance" }
+    ]
+  },
+  {
+    "text": "API Reference",
+    "collapsed": true,
+    "items": [
+      { "text": "Overview", "link": "/api/" },
+      { "text": "Authentication", "link": "/api/authentication" },
+      {
+        "text": "REST API",
+        "collapsed": true,
+        "items": [
+          { "text": "DeltaFiles", "link": "/api/rest/deltafiles" },
+          { "text": "Events", "link": "/api/rest/events" },
+          { "text": "Users and Roles", "link": "/api/rest/users-and-roles" },
+          { "text": "Metrics", "link": "/api/rest/metrics" },
+          { "text": "System", "link": "/api/rest/system" },
+          { "text": "Plugins", "link": "/api/rest/plugins" },
+          { "text": "Federation", "link": "/api/rest/federation" }
+        ]
+      },
+      {
+        "text": "GraphQL API",
+        "collapsed": true,
+        "items": [
+          { "text": "Overview", "link": "/api/graphql/" },
+          { "text": "DeltaFiles", "link": "/api/graphql/deltafiles" },
+          { "text": "Flows", "link": "/api/graphql/flows" },
+          { "text": "Plugins", "link": "/api/graphql/plugins" },
+          { "text": "Policies", "link": "/api/graphql/policies" },
+          { "text": "System", "link": "/api/graphql/system" },
+          { "text": "Testing", "link": "/api/graphql/testing" }
+        ]
+      }
     ]
   },
   {

@@ -1,193 +1,99 @@
-# Events API
+# Events
 
-The Events API provides endpoints for managing system events and notifications in DeltaFi. These events appear as notifications in the alarm bell in the upper right corner of the GUI and can be acknowledged by users.
+::: tip API Reference
+For complete events endpoint documentation including all parameters and response formats, see the [Events REST API](/api/rest/events).
+:::
 
-## Event Object
+DeltaFi uses an events system to surface important system notifications to operators. Events track plugin installations, configuration changes, deployment operations, audit actions, and any custom notifications created by external systems or scripts.
 
-An Event object contains the following fields:
+## Viewing Events in the GUI
 
-- `id` (UUID): Unique identifier for the event
-- `severity` (String): Event severity level - `error`, `warn`, `info`, or `success`
-- `summary` (String): Brief summary of the event
-- `content` (String): Detailed content/description of the event (max 100,000 characters)
-- `source` (String): Source that generated the event
-- `timestamp` (OffsetDateTime): When the event was created
-- `notification` (Boolean): Whether this event should be shown as a notification
-- `acknowledged` (Boolean): Whether the event has been acknowledged by a user
+Events appear in the alarm bell icon in the upper right corner of the DeltaFi GUI. Unacknowledged events with `notification: true` trigger the bell indicator, drawing attention to items that need review.
 
-## API Endpoints
+From the GUI, operators can:
+- View event details (summary, content, source, timestamp)
+- Acknowledge events to clear notifications
+- Filter events by severity
 
-All Event API endpoints are available under `/api/v2/events` and require appropriate permissions.
+## Event Severity Levels
 
-### Get Events
+| Severity | Color | Use For |
+|----------|-------|---------|
+| `error` | Red | Critical issues requiring immediate attention |
+| `warn` | Yellow | Conditions that should be monitored |
+| `info` | Blue | Informational messages |
+| `success` | Green | Successful operations or positive status updates |
 
-Retrieves a list of events with optional filtering and pagination.
+The system normalizes common aliases: `failure` and `red` map to `error`, `warning` and `yellow` map to `warn`, `successful` and `green` map to `success`. All other values map to `info`.
 
-**Endpoint:** `GET /api/v2/events`
+## Common Event Sources
 
-**Required Permission:** `EventRead`
+DeltaFi generates events automatically for:
 
-**Query Parameters:**
-- `offset` (integer, default: 0): Number of records to skip for pagination
-- `size` (integer, default: 20): Maximum number of records to return
-- Additional filter parameters can be provided as key-value pairs
+- **Plugin lifecycle** — installation, uninstallation, upgrades, and failures
+- **Deployment operations** — container start/stop, health changes
+- **Audit logging** — configuration changes made by users
+- **Plugin restarts** — when a plugin is restarted due to action execution issues
 
-**Response:** Array of Event objects
+External systems and scripts can also create events through the REST API.
 
-**Example:**
+## Creating Events from Scripts
+
+Events are useful for integrating DeltaFi with external monitoring, CI/CD pipelines, or operational scripts.
+
 ```bash
-curl -X GET "http://deltafi-url/api/v2/events?offset=0&size=10&severity=error"
-```
-
-### Get Events with Count
-
-Retrieves events along with pagination metadata including total count.
-
-**Endpoint:** `GET /api/v2/events/with-count`
-
-**Required Permission:** `EventRead`
-
-**Query Parameters:**
-- `offset` (integer, default: 0): Number of records to skip for pagination
-- `size` (integer, default: 20): Maximum number of records to return
-- Additional filter parameters can be provided as key-value pairs
-
-**Response:**
-```json
-{
-  "offset": 0,
-  "count": 10,
-  "totalCount": 25,
-  "events": [
-    {
-      "id": "123e4567-e89b-12d3-a456-426614174000",
-      "severity": "error",
-      "summary": "System error occurred",
-      "content": "Detailed error description...",
-      "source": "core-service",
-      "timestamp": "2023-12-01T10:00:00Z",
-      "notification": true,
-      "acknowledged": false
-    }
-  ]
-}
-```
-
-### Get Single Event
-
-Retrieves a specific event by its ID.
-
-**Endpoint:** `GET /api/v2/events/{id}`
-
-**Required Permission:** `EventRead`
-
-**Path Parameters:**
-- `id` (UUID): The unique identifier of the event
-
-**Response:** Event object
-
-**Example:**
-```bash
-curl -X GET "http://deltafi-url/api/v2/events/123e4567-e89b-12d3-a456-426614174000"
-```
-
-### Create Event
-
-Creates a new system event.
-
-**Endpoint:** `POST /api/v2/events`
-
-**Required Permission:** `EventCreate`
-
-**Request Body:** Event object (id and timestamp will be auto-generated if not provided)
-
-**Response:** Created Event object
-
-**Example:**
-```bash
-curl -X POST "http://deltafi-url/api/v2/events" \
+# Post an informational event
+curl -X POST http://deltafi-host/api/v2/events \
   -H "Content-Type: application/json" \
   -d '{
-    "severity": "warn",
-    "summary": "Configuration updated",
-    "content": "System configuration has been updated by admin user",
-    "source": "admin-service",
-    "notification": true,
-    "acknowledged": false
+    "severity": "info",
+    "summary": "Nightly batch processing complete",
+    "content": "Processed 15,432 files in 2h 13m",
+    "source": "batch-scheduler",
+    "notification": false
+  }'
+
+# Post an error notification that shows in the alarm bell
+curl -X POST http://deltafi-host/api/v2/events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "severity": "error",
+    "summary": "Upstream feed offline",
+    "content": "The ACME data feed has not sent data in over 30 minutes",
+    "source": "feed-monitor",
+    "notification": true
   }'
 ```
 
-### Acknowledge Event
+## Acknowledging Events
 
-Marks an event as acknowledged.
+Acknowledged events remain in the system but no longer trigger the notification indicator. This is useful for tracking issues that have been seen but not yet resolved.
 
-**Endpoint:** `PUT /api/v2/events/{id}/acknowledge`
-
-**Required Permission:** `EventUpdate`
-
-**Path Parameters:**
-- `id` (UUID): The unique identifier of the event to acknowledge
-
-**Response:** Updated Event object with `acknowledged` set to `true`
-
-**Example:**
 ```bash
-curl -X PUT "http://deltafi-url/api/v2/events/123e4567-e89b-12d3-a456-426614174000/acknowledge"
+# Acknowledge an event
+curl -X PUT http://deltafi-host/api/v2/events/{id}/acknowledge
+
+# Unacknowledge if it needs attention again
+curl -X PUT http://deltafi-host/api/v2/events/{id}/unacknowledge
 ```
 
-### Unacknowledge Event
+## Querying Events
 
-Marks an event as unacknowledged.
+Filter events by severity, source, or other criteria for operational monitoring.
 
-**Endpoint:** `PUT /api/v2/events/{id}/unacknowledge`
-
-**Required Permission:** `EventUpdate`
-
-**Path Parameters:**
-- `id` (UUID): The unique identifier of the event to unacknowledge
-
-**Response:** Updated Event object with `acknowledged` set to `false`
-
-**Example:**
 ```bash
-curl -X PUT "http://deltafi-url/api/v2/events/123e4567-e89b-12d3-a456-426614174000/unacknowledge"
+# Get the 10 most recent error events
+curl "http://deltafi-host/api/v2/events?severity=error&size=10"
+
+# Get events with total count for pagination
+curl "http://deltafi-host/api/v2/events/with-count?offset=0&size=20"
 ```
 
-### Delete Event
+## Permissions
 
-Deletes an event from the system.
-
-**Endpoint:** `DELETE /api/v2/events/{id}`
-
-**Required Permission:** `EventDelete`
-
-**Path Parameters:**
-- `id` (UUID): The unique identifier of the event to delete
-
-**Response:** The deleted Event object
-
-**Example:**
-```bash
-curl -X DELETE "http://deltafi-url/api/v2/events/123e4567-e89b-12d3-a456-426614174000"
-```
-
-## Event Severities
-
-Events support the following severity levels:
-
-- `error`: Critical issues requiring immediate attention (red)
-- `warn`: Warning conditions that should be monitored (yellow)
-- `info`: Informational messages (blue)
-- `success`: Successful operations or positive status (green)
-
-The system automatically maps similar severity values:
-- `failure`, `red` → `error`
-- `warning`, `yellow` → `warn`  
-- `successful`, `green` → `success`
-- All other values → `info`
-
-## Integration with GUI
-
-Events marked with `notification: true` will appear in the alarm bell notification area in the upper right corner of the DeltaFi GUI. Users can acknowledge these notifications directly from the GUI, which calls the acknowledge endpoint described above.
-
-Acknowledged events may be filtered or hidden from the main notification view but remain accessible through the API and can be unacknowledged if needed.
+| Action | Permission |
+|--------|------------|
+| View events | `EventRead` |
+| Create events | `EventCreate` |
+| Acknowledge/unacknowledge | `EventUpdate` |
+| Delete events | `EventDelete` |
