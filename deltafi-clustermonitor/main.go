@@ -45,6 +45,7 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
+	metricsEnabled := os.Getenv("METRICS_ENABLED") != "false"
 	graphiteHost := envOrDefault("GRAPHITE_HOST", "deltafi-victoriametrics")
 	graphitePort := envOrDefault("GRAPHITE_PORT", "2003")
 	periodStr := envOrDefault("PERIOD", "9")
@@ -56,8 +57,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("starting up", "node", nodeName)
-	slog.Info("graphite target", "host", graphiteHost, "port", graphitePort)
+	slog.Info("starting up", "node", nodeName, "metricsEnabled", metricsEnabled)
+	if metricsEnabled {
+		slog.Info("graphite target", "host", graphiteHost, "port", graphitePort)
+	}
 	slog.Info("reporting period", "seconds", period)
 
 	config, err := rest.InClusterConfig()
@@ -101,8 +104,10 @@ func main() {
 			return
 		}
 		slog.Debug("collected metrics", "count", len(metrics))
-		if err := graphite.Send(metrics); err != nil {
-			slog.Error("failed to send metrics", "error", err)
+		if metricsEnabled {
+			if err := graphite.Send(metrics); err != nil {
+				slog.Error("failed to send metrics", "error", err)
+			}
 		}
 	}
 

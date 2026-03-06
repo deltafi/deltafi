@@ -19,6 +19,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 )
 
@@ -43,5 +44,34 @@ func TestEnvOrDefault_Empty(t *testing.T) {
 	got := envOrDefault("TEST_ENV_EMPTY", "fallback")
 	if got != "fallback" {
 		t.Errorf("expected %q, got %q", "fallback", got)
+	}
+}
+
+func TestMetricsEnabled(t *testing.T) {
+	tests := []struct {
+		name     string
+		envValue string
+		envSet   bool
+		want     bool
+	}{
+		{"unset defaults to enabled", "", false, true},
+		{"explicit true", "true", true, true},
+		{"explicit false", "false", true, false},
+		{"empty string defaults to enabled", "", true, true},
+		{"arbitrary value defaults to enabled", "yes", true, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.envSet {
+				t.Setenv("METRICS_ENABLED", tt.envValue)
+			} else {
+				os.Unsetenv("METRICS_ENABLED")
+			}
+			got := os.Getenv("METRICS_ENABLED") != "false"
+			if got != tt.want {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

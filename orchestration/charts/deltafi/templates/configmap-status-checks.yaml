@@ -1,5 +1,5 @@
 {{- $minioEnabled := include "localObjectStorageEnabled" . }}
-{{- $grafanaEnabled := and .Values.enable.grafana (or .Values.tags.metrics .Values.tags.logs) }}
+{{- $grafanaEnabled := include "dashboardsEnabled" . }}
 {{- $lokiEnabled := and .Values.enable.loki .Values.tags.logs }}
 {{- $graphiteEnabled := and .Values.enable.graphite .Values.tags.metrics }}
 {{- $egressSinkEnabled := .Values.deltafi.egress_sink.enabled }}
@@ -12,8 +12,11 @@ kind: ConfigMap
 metadata:
   name: deltafi-status-checks
 data:
+  {{- $metricsEnabled := include "metricsEnabled" . }}
   StatefulSet: |
+    {{- if $metricsEnabled }}
     - deltafi-victoriametrics
+    {{- end }}
     {{- if $lokiEnabled }}
     - deltafi-loki
     {{- end }}
@@ -51,6 +54,8 @@ data:
     {{- end }}
     {{- if $grafanaEnabled }}
     - deltafi-grafana
+    {{- end }}
+    {{- if $metricsEnabled }}
     - deltafi-victoriametrics
     {{- end }}
     - deltafi-ingress-service
@@ -78,6 +83,8 @@ data:
     {{- end }}
     {{- if $grafanaEnabled }}
     - deltafi-grafana
+    {{- end }}
+    {{- if $metricsEnabled }}
     - deltafi-victoriametrics
     {{- end }}
     {{- if $lokiEnabled }}

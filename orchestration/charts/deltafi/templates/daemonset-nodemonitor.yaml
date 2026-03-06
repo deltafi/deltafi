@@ -32,7 +32,10 @@ spec:
         {{- include "defaultEnvVars" . | nindent 12 }}
         {{- include "commonEnvVars" . | nindent 12 }}
         {{- include "valkeyEnvVars" . | nindent 12 }}
+        {{- if include "metricsEnabled" . }}
         {{- include "graphiteEnvVars" . | nindent 12 }}
+        {{- end }}
+        {{- include "metricsEnabledEnvVar" . | nindent 12 }}
         {{- include "globalEnvVars" . | nindent 12 }}
             - name: PERIOD
               value: "{{ .Values.deltafi.nodemonitor.period }}"

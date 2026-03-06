@@ -17,7 +17,9 @@ spec:
       labels:
         app: deltafi-clustermonitor
     spec:
+      {{- if include "metricsEnabled" . }}
       {{- include "initContainersWaitForGraphite" . | nindent 6 }}
+      {{- end }}
       serviceAccountName: deltafi-clustermonitor
       imagePullSecrets:
       - name: docker-secret
@@ -26,7 +28,10 @@ spec:
         image: {{ .Values.deltafi.clustermonitor.image }}
         env:
         {{- include "defaultEnvVars" . | nindent 12 }}
+        {{- if include "metricsEnabled" . }}
         {{- include "graphiteEnvVars" . | nindent 12 }}
+        {{- end }}
+        {{- include "metricsEnabledEnvVar" . | nindent 12 }}
         {{- include "globalEnvVars" . | nindent 12 }}
             - name: PERIOD
               value: "{{ .Values.deltafi.clustermonitor.period }}"

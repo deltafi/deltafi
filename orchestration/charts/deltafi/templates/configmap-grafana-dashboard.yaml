@@ -1,3 +1,4 @@
+{{- if include "dashboardsEnabled" . }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -190,3 +191,4 @@ metadata:
 data:
   diagnostic.json: |-
 {{ .Files.Get "files/grafana/dashboards/core/provenance.json" | indent 4 }}
+{{- end }}

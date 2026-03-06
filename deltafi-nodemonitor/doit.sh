@@ -53,7 +53,11 @@ _info() {
 }
 
 _info "Starting up on ${NODE_NAME}"
-_info "Graphite: ${GRAPHITE_HOST}:${GRAPHITE_PORT}"
+if [ "${METRICS_ENABLED}" != "false" ]; then
+    _info "Graphite: ${GRAPHITE_HOST}:${GRAPHITE_PORT}"
+else
+    _info "Metrics disabled, skipping graphite"
+fi
 _info "Valkey: ${VALKEY_HOST}:${VALKEY_PORT}"
 _info "Reporting period: ${PERIOD} seconds"
 
@@ -312,7 +316,9 @@ while true; do
     report_container_metrics
 
     flush_to_valkey
-    printf "%b" "${metrics}" | nc -w "$NC_TIMEOUT" -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    if [ "${METRICS_ENABLED}" != "false" ]; then
+        printf "%b" "${metrics}" | nc -w "$NC_TIMEOUT" -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    fi
 
     sleep "$PERIOD"
 done

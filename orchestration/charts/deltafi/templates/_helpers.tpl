@@ -97,6 +97,34 @@ initContainers:
     done
 {{- end -}}
 
+{{/*
+  Returns true if metrics (victoriametrics) is enabled.
+  Checks deltafi.metrics.enabled (preferred) and the deprecated enable.victoriametrics flag.
+*/}}
+{{- define "metricsEnabled" -}}
+{{- $metricsEnabled := true -}}
+{{- if .Values.deltafi.metrics -}}
+  {{- if hasKey .Values.deltafi.metrics "enabled" -}}
+    {{- $metricsEnabled = .Values.deltafi.metrics.enabled -}}
+  {{- end -}}
+{{- end -}}
+{{- if and .Values.enable.victoriametrics $metricsEnabled -}}true{{- end -}}
+{{- end -}}
+
+{{/*
+  Returns true if dashboards (grafana) is enabled.
+  Checks deltafi.dashboards.enabled (preferred) and the deprecated enable.grafana flag.
+*/}}
+{{- define "dashboardsEnabled" -}}
+{{- $dashboardsEnabled := true -}}
+{{- if .Values.deltafi.dashboards -}}
+  {{- if hasKey .Values.deltafi.dashboards "enabled" -}}
+    {{- $dashboardsEnabled = .Values.deltafi.dashboards.enabled -}}
+  {{- end -}}
+{{- end -}}
+{{- if and .Values.enable.grafana $dashboardsEnabled (or .Values.tags.metrics .Values.tags.logs) -}}true{{- end -}}
+{{- end -}}
+
 {{- define "initContainersWaitForGraphite" -}}
 initContainers:
 - name: wait-for-victoriametrics
@@ -149,7 +177,7 @@ initContainers:
   Checks both enable.local_object_storage and the deprecated enable.minio flag.
 */}}
 {{- define "localObjectStorageEnabled" -}}
-{{- or .Values.enable.local_object_storage .Values.enable.minio -}}
+{{- if or .Values.enable.local_object_storage .Values.enable.minio -}}true{{- end -}}
 {{- end -}}
 
 {{/*
@@ -253,6 +281,11 @@ initContainers:
   value: deltafi-victoriametrics
 - name: GRAPHITE_PORT
   value: "2003"
+{{- end -}}
+
+{{- define "metricsEnabledEnvVar" -}}
+- name: METRICS_ENABLED
+  value: {{ if include "metricsEnabled" . }}"true"{{ else }}"false"{{ end }}
 {{- end -}}
 
 {{- define "sslEnvVars" -}}
@@ -359,22 +392,10 @@ volumeMounts:
 - name: ENTITY_AUTHORIZER_URL
   value: {{ .Values.deltafi.auth.entityAuthorizer.url | default "http://127.0.0.1:8081/" }}
 {{ end }}
-{{- $dashboardsEnabled := true }}
-{{- if .Values.deltafi.dashboards }}
-  {{- if hasKey .Values.deltafi.dashboards "enabled" }}
-    {{- $dashboardsEnabled = .Values.deltafi.dashboards.enabled }}
-  {{- end }}
-{{- end }}
-{{- $metricsEnabled := true }}
-{{- if .Values.deltafi.metrics }}
-  {{- if hasKey .Values.deltafi.metrics "enabled" }}
-    {{- $metricsEnabled = .Values.deltafi.metrics.enabled }}
-  {{- end }}
-{{- end }}
 - name: GRAFANA_ENABLED
-  value: {{ and .Values.enable.grafana $dashboardsEnabled | quote }}
+  value: {{ if include "dashboardsEnabled" . }}"true"{{ else }}"false"{{ end }}
 - name: METRICS_ENABLED
-  value: {{ and .Values.enable.victoriametrics $metricsEnabled | quote }}
+  value: {{ if include "metricsEnabled" . }}"true"{{ else }}"false"{{ end }}
 - name: ANALYTICS_ENABLED
   value: {{ .Values.deltafi.analytics.enabled | quote }}
 - name: HEADLAMP_TOKEN
