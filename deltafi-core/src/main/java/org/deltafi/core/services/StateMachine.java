@@ -23,6 +23,8 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.JoinException;
 import org.deltafi.core.exceptions.MissingFlowException;
+import org.deltafi.core.generated.types.RateLimit;
+import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
@@ -30,6 +32,7 @@ import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,6 +56,7 @@ public class StateMachine {
     private final PublisherService publisherService;
     private final MetricService metricService;
     private final AnalyticEventService analyticEventService;
+    private final RateLimitService rateLimitService;
 
     private static final String FILTERED_TEST_MODE_CAUSE = "Filtered by test mode";
 
@@ -152,8 +156,41 @@ public class StateMachine {
             return new ArrayList<>();
         }
 
-        return input.flow().isTestMode() ?
-                syntheticEgress(input) : addNextAction(input, nextEgressAction, pendingQueued);
+        if (input.flow().isTestMode()) {
+            return syntheticEgress(input);
+        }
+
+        // Check rate limit before dispatching
+        if (dataSink != null && dataSink.getRateLimit() != null) {
+            if (queueManagementService.hasRateLimitedBacklog(dataSink.getName())) {
+                return addRateLimitedAction(input, nextEgressAction);
+            }
+            if (!tryConsumeRateLimit(dataSink, input.flow())) {
+                return addRateLimitedAction(input, nextEgressAction);
+            }
+        }
+
+        return addNextAction(input, nextEgressAction, pendingQueued);
+    }
+
+    private boolean tryConsumeRateLimit(DataSink dataSink, DeltaFileFlow flow) {
+        RateLimit rateLimit = dataSink.getRateLimit();
+        long tokens = (rateLimit.getUnit() == RateLimitUnit.BYTES) ? flow.lastContentSize() : 1;
+        Duration period = Duration.ofSeconds(rateLimit.getDurationSeconds());
+        String bucketName = DataSinkService.dataSinkBucketName(dataSink.getName());
+        log.debug("Rate limit check for data sink '{}': unit={}, tokens={}, maxAmount={}, period={}s",
+                dataSink.getName(), rateLimit.getUnit(), tokens, rateLimit.getMaxAmount(), rateLimit.getDurationSeconds());
+        return rateLimitService.tryConsume(bucketName, tokens, rateLimit.getMaxAmount(), period);
+    }
+
+    private List<WrappedActionInput> addRateLimitedAction(StateMachineInput input, ActionConfiguration nextAction) {
+        Action action = input.flow().addAction(nextAction.getName(), nextAction.getType(), nextAction.getActionType(),
+                ActionState.COLD_QUEUED, OffsetDateTime.now(clock));
+        action.setRateLimited(true);
+        queueManagementService.markRateLimitedBacklog(input.flow().getName());
+        log.debug("Rate limited DeltaFile {} for data sink '{}' action '{}'",
+                input.deltaFile().getDid(), input.flow().getName(), nextAction.getName());
+        return Collections.emptyList();
     }
 
     private List<WrappedActionInput> syntheticEgress(StateMachineInput input) {

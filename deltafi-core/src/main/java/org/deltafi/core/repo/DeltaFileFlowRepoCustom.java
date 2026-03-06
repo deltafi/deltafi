@@ -114,10 +114,20 @@ public interface DeltaFileFlowRepoCustom {
     /**
      * Get cold queue counts per (flowName, actionName, actionClass) from the cold_queue_entries table.
      * This uses the trigger-maintained entries for accurate counts and oldest timestamps.
+     * Excludes rate-limited items.
      *
-     * @return list of cold queue metrics
+     * @return list of cold queue metrics (excluding rate-limited)
      */
     List<ColdQueueMetrics> getColdQueueCounts();
+
+    /**
+     * Get rate-limited queue counts per (flowName, actionName, actionClass) from the cold_queue_entries table.
+     * This uses the trigger-maintained entries for accurate counts and oldest timestamps.
+     * Only includes rate-limited items.
+     *
+     * @return list of rate-limited queue metrics
+     */
+    List<ColdQueueMetrics> getRateLimitedQueueCounts();
 
     /**
      * Cold queue metrics per flow/action.
@@ -136,5 +146,20 @@ public interface DeltaFileFlowRepoCustom {
      * Info about the oldest cold queue entry.
      */
     record OldestColdQueueEntry(UUID did, java.time.OffsetDateTime queuedAt) {}
+
+    /**
+     * Get the distinct list of flow names that have rate-limited cold queued actions.
+     *
+     * @return distinct list of flow names (data sinks) with rate-limited cold queued items
+     */
+    List<String> distinctRateLimitedColdQueuedDataSinks();
+
+    /**
+     * Check whether a data sink currently has any rate-limited cold queued actions.
+     *
+     * @param flowName data sink name
+     * @return true if at least one rate-limited cold queued item exists for the sink
+     */
+    boolean existsRateLimitedColdQueuedDataSink(String flowName);
 
 }

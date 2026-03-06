@@ -244,12 +244,13 @@ func listAllDataSinks(cmd *cobra.Command) error {
 			dataSink.GetName(),
 			state,
 			strconv.FormatBool(dataSink.GetFlowStatus().TestMode),
+			formatRateLimit(dataSink.GetRateLimit()),
 		})
 		sort.Slice(rows, func(i, j int) bool {
 			return rows[i][0] < rows[j][0]
 		})
 	}
-	columns := []string{"Name", "State", "Test Mode"}
+	columns := []string{"Name", "State", "Test Mode", "Rate Limit"}
 
 	plain, _ := cmd.Flags().GetBool("plain")
 

@@ -29,6 +29,7 @@ export default function useVersion() {
         inFlightBytes: true,
         warmQueuedCount: true,
         coldQueuedCount: true,
+        rateLimitedCount: true,
         pausedCount: true,
         oldestInFlightCreated: true,
         oldestInFlightDid: true

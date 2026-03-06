@@ -25,6 +25,7 @@ public record AggregatedStats(
         long totalErrors,
         long totalWarmQueue,
         long totalColdQueue,
+        long totalRateLimited,
         long totalPaused,
         int memberCount,
         int healthyCount,

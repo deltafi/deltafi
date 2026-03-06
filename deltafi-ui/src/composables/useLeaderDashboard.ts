@@ -29,6 +29,7 @@ export interface MemberStatus {
   inFlightCount: number | null;
   warmQueuedCount: number | null;
   coldQueuedCount: number | null;
+  rateLimitedCount: number | null;
   pausedCount: number | null;
   oldestInFlightCreated: string | null;
   lastUpdated: string;
@@ -65,6 +66,7 @@ export interface AggregatedStats {
   totalErrors: number;
   totalWarmQueue: number;
   totalColdQueue: number;
+  totalRateLimited: number;
   totalPaused: number;
   memberCount: number;
   healthyCount: number;

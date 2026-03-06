@@ -73,6 +73,13 @@
         </div>
 
         <div class="metric">
+          <div class="metric-label">Rate Limited</div>
+          <div class="metric-value" :class="{ 'has-rate-limited': (member.rateLimitedCount ?? 0) > 0 }">
+            {{ member.rateLimitedCount ?? "—" }}
+          </div>
+        </div>
+
+        <div class="metric">
           <div class="metric-label">Paused</div>
           <div class="metric-value" :class="{ 'has-paused': (member.pausedCount ?? 0) > 0 }">
             {{ member.pausedCount ?? "—" }}

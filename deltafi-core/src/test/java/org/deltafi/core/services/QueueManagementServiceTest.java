@@ -19,19 +19,26 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.generated.types.RateLimit;
+import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.repo.DeltaFileFlowRepo;
 import org.deltafi.core.repo.DeltaFileFlowRepoCustom.OldestColdQueueEntry;
 import org.deltafi.core.repo.FlowDefinitionRepo;
+import org.deltafi.core.types.DataSink;
+import org.deltafi.core.types.DeltaFile;
+import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.core.types.FlowDefinition;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -69,8 +76,28 @@ class QueueManagementServiceTest {
     @Mock
     Environment env;
 
-    @InjectMocks
+    @Mock
+    RateLimitService rateLimitService;
+
+    @Mock
+    DataSinkService dataSinkService;
+
     QueueManagementService queueManagementService;
+
+    @BeforeEach
+    void setUp() {
+        queueManagementService = new QueueManagementService(
+                coreEventQueue,
+                deltaFileFlowRepo,
+                flowDefinitionRepo,
+                unifiedFlowService,
+                deltaFilesService,
+                deltaFiPropertiesService,
+                env,
+                rateLimitService,
+                dataSinkService
+        );
+    }
 
     @Test
     void testIdentifyColdQueuesAdd() {
@@ -150,6 +177,13 @@ class QueueManagementServiceTest {
         when(env.getProperty("schedule.maintenance")).thenReturn("true");
         queueManagementService.scheduleColdToWarm();
         verify(deltaFilesService).requeueColdQueueActions(QUEUE_NAME, 2);
+    }
+
+    @Test
+    void testRateLimitedColdToWarmWithoutCheckedQueues() {
+        queueManagementService.getCheckedQueues().set(false);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+        verify(deltaFileFlowRepo, never()).distinctRateLimitedColdQueuedDataSinks();
     }
 
     @Test
@@ -337,5 +371,288 @@ class QueueManagementServiceTest {
         assertNotNull(result);
         assertEquals(coldOldest, result.timestamp());
         assertEquals(coldDid, result.did());
+    }
+
+    // --- Rate-limited BYTES warming tests ---
+
+    @Test
+    void testWarmRateLimitedBytesFiles_firstFileExceedsLimit_stillWarmsIt() {
+        String flowName = "test-data-sink";
+        String bucketName = "datasink:" + flowName;
+
+        // Setup data sink with BYTES rate limit of 100 bytes
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build());
+
+        // Create a file with 500 bytes content (exceeds limit)
+        DeltaFile deltaFile = createDeltaFileWithFlow(flowName, 500L);
+        List<DeltaFile> candidates = List.of(deltaFile);
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(100L);
+        when(deltaFilesService.findRateLimitedColdQueuedFiles(flowName, 5000)).thenReturn(candidates);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // Should consume 500 bytes (exceeding the 100 limit) and warm the file
+        verify(rateLimitService).consume(bucketName, 500L, 100L, Duration.ofSeconds(60));
+        verify(deltaFilesService).requeueSpecificRateLimitedFiles(eq(flowName), eq(candidates));
+    }
+
+    @Test
+    void testWarmRateLimitedBytesFiles_multipleFilesWithinLimit() {
+        String flowName = "test-data-sink";
+        String bucketName = "datasink:" + flowName;
+
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(1000L)
+                .durationSeconds(60)
+                .build());
+
+        // Create files: 100, 200, 300 bytes = 600 total, within 1000 limit
+        DeltaFile file1 = createDeltaFileWithFlow(flowName, 100L);
+        DeltaFile file2 = createDeltaFileWithFlow(flowName, 200L);
+        DeltaFile file3 = createDeltaFileWithFlow(flowName, 300L);
+        List<DeltaFile> candidates = List.of(file1, file2, file3);
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(1000L);
+        when(deltaFilesService.findRateLimitedColdQueuedFiles(flowName, 5000)).thenReturn(candidates);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // Should consume all 600 bytes and warm all 3 files
+        verify(rateLimitService).consume(bucketName, 600L, 1000L, Duration.ofSeconds(60));
+        verify(deltaFilesService).requeueSpecificRateLimitedFiles(eq(flowName), eq(candidates));
+    }
+
+    @Test
+    void testWarmRateLimitedBytesFiles_stopsAfterExceedingLimit() {
+        String flowName = "test-data-sink";
+        String bucketName = "datasink:" + flowName;
+
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(500L)
+                .durationSeconds(60)
+                .build());
+
+        // Create files: 300, 400, 100 bytes
+        // First file (300) is under limit, second (400) would exceed, so stop after first
+        DeltaFile file1 = createDeltaFileWithFlow(flowName, 300L);
+        DeltaFile file2 = createDeltaFileWithFlow(flowName, 400L);
+        DeltaFile file3 = createDeltaFileWithFlow(flowName, 100L);
+        List<DeltaFile> candidates = List.of(file1, file2, file3);
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(500L);
+        when(deltaFilesService.findRateLimitedColdQueuedFiles(flowName, 5000)).thenReturn(candidates);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // Should only warm file1 (300 bytes)
+        verify(rateLimitService).consume(bucketName, 300L, 500L, Duration.ofSeconds(60));
+        verify(deltaFilesService).requeueSpecificRateLimitedFiles(eq(flowName), argThat(list ->
+            list.size() == 1 && list.contains(file1)));
+    }
+
+    @Test
+    void testWarmRateLimitedFilesUnit_consumesTokensPerFile() {
+        String flowName = "test-data-sink";
+        String bucketName = "datasink:" + flowName;
+
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(10L)
+                .durationSeconds(60)
+                .build());
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(5L);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // Should consume 5 tokens (files) and requeue up to 5 files
+        verify(rateLimitService).consume(bucketName, 5L, 10L, Duration.ofSeconds(60));
+        verify(deltaFilesService).requeueRateLimitedColdQueueActions(flowName, 5);
+    }
+
+    @Test
+    void testWarmRateLimitedBytesFiles_noTokensAvailable_skips() {
+        String flowName = "test-data-sink";
+        String bucketName = "datasink:" + flowName;
+
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build());
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(0L);
+        // These won't be called since we bail early when tokens <= 0, but are needed for cold queue processing
+        lenient().when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        lenient().when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // Should not consume or requeue anything for rate-limited items
+        verify(rateLimitService, never()).consume(anyString(), anyLong(), anyLong(), any());
+        verify(deltaFilesService, never()).requeueSpecificRateLimitedFiles(anyString(), any());
+        verify(deltaFilesService, never()).requeueRateLimitedColdQueueActions(anyString(), anyInt());
+    }
+
+    @Test
+    void testWarmRateLimitedFiles_dataSinkNoLongerExists_warmsAllToRemove() {
+        String flowName = "deleted-data-sink";
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenThrow(new RuntimeException("Not found"));
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // Should warm all entries for the deleted sink
+        verify(deltaFilesService).requeueRateLimitedColdQueueActions(flowName, 5000);
+    }
+
+    @Test
+    void testWarmRateLimitedFiles_rateLimitRemoved_warmsAllToRemove() {
+        String flowName = "test-data-sink";
+
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(null); // Rate limit was removed
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        // Should warm all entries since rate limit was removed
+        verify(deltaFilesService).requeueRateLimitedColdQueueActions(flowName, 5000);
+    }
+
+    @Test
+    void testRateLimitedColdToWarmDefersChecksUntilNextEligibleInterval() {
+        String flowName = "test-data-sink";
+        String bucketName = "datasink:" + flowName;
+
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(1L)
+                .durationSeconds(60)
+                .build());
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(flowName));
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(0L);
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        verify(rateLimitService, times(1)).getAvailableTokens(bucketName);
+    }
+
+    @Test
+    void testRateLimitedBacklogSetSelfHealsFromDbScan() {
+        String flowName = "test-data-sink";
+        String bucketName = "datasink:" + flowName;
+
+        DataSink dataSink = new DataSink();
+        dataSink.setName(flowName);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(1L)
+                .durationSeconds(1)
+                .build());
+
+        when(deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks()).thenReturn(List.of(), List.of(flowName));
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+        when(dataSinkService.getFlowOrThrow(flowName)).thenReturn(dataSink);
+        when(rateLimitService.getAvailableTokens(bucketName)).thenReturn(1L);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(5000);
+
+        queueManagementService.getCheckedQueues().set(true);
+        queueManagementService.scheduleRateLimitedColdToWarm();
+        queueManagementService.scheduleRateLimitedColdToWarm();
+
+        verify(deltaFileFlowRepo, times(2)).distinctRateLimitedColdQueuedDataSinks();
+        verify(dataSinkService).getFlowOrThrow(flowName);
+    }
+
+    @Test
+    void testHasRateLimitedBacklogFallsBackToDbExists() {
+        String flowName = "test-data-sink";
+
+        when(deltaFileFlowRepo.existsRateLimitedColdQueuedDataSink(flowName)).thenReturn(true, true);
+
+        assertTrue(queueManagementService.hasRateLimitedBacklog(flowName));
+        assertTrue(queueManagementService.hasRateLimitedBacklog(flowName));
+        verify(deltaFileFlowRepo, times(2)).existsRateLimitedColdQueuedDataSink(flowName);
+    }
+
+    private DeltaFile createDeltaFileWithFlow(String flowName, long contentSize) {
+        UUID did = UUID.randomUUID();
+
+        DeltaFileFlow flow = mock(DeltaFileFlow.class, withSettings().lenient());
+        when(flow.getName()).thenReturn(flowName);
+        when(flow.getState()).thenReturn(DeltaFileFlowState.IN_FLIGHT);
+        when(flow.lastContentSize()).thenReturn(contentSize);
+
+        DeltaFile deltaFile = mock(DeltaFile.class, withSettings().lenient());
+        when(deltaFile.getDid()).thenReturn(did);
+        when(deltaFile.getFlows()).thenReturn(new LinkedHashSet<>(List.of(flow)));
+
+        return deltaFile;
     }
 }

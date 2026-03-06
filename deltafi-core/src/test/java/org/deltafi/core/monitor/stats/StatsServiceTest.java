@@ -60,7 +60,7 @@ class StatsServiceTest {
     @Test
     void deltaFileStats_serializesOffsetDateTimeCorrectly() {
         OffsetDateTime oldest = OffsetDateTime.parse("2025-01-15T10:30:00Z");
-        DeltaFileStats stats = new DeltaFileStats(1000L, 50L, 5000L, 100L, 25L, 5L, oldest, java.util.UUID.randomUUID());
+        DeltaFileStats stats = new DeltaFileStats(1000L, 50L, 5000L, 100L, 25L, 10L, 5L, oldest, java.util.UUID.randomUUID());
 
         when(deltaFilesService.deltaFileStats()).thenReturn(stats);
 
@@ -78,7 +78,7 @@ class StatsServiceTest {
 
     @Test
     void deltaFileStats_handlesNullOldestInFlightCreated() {
-        DeltaFileStats stats = new DeltaFileStats(1000L, 50L, 5000L, 100L, 25L, 5L, null, null);
+        DeltaFileStats stats = new DeltaFileStats(1000L, 50L, 5000L, 100L, 25L, 10L, 5L, null, null);
 
         when(deltaFilesService.deltaFileStats()).thenReturn(stats);
 

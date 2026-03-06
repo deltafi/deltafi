@@ -36,7 +36,13 @@
           <SystemPropertySwitch class="mr-1" property-name="egressEnabled" off-confirmation="Are you sure? This will stop all data from flowing out of the system." off-tooltip="Enable egress" on-tooltip="Disable egress" />
         </div>
       </div>
-      <DataSinkDataTable :flow-data-prop="flowData" :flow-data-by-plugin-prop="flowDataByPlugin" :filter-flows-text-prop="filterFlowsText" @reload-data-sinks="refresh" />
+      <DataSinkDataTable
+        :flow-data-prop="flowData"
+        :flow-data-by-plugin-prop="flowDataByPlugin"
+        :filter-flows-text-prop="filterFlowsText"
+        @reload-data-sinks="refresh"
+        @update-rate-limit="updateRateLimit"
+      />
     </div>
   </div>
 </template>
@@ -113,5 +119,12 @@ const dataSinkExport = computed(() => {
 const refresh = async () => {
   if (editing.value) return;
   await fetchFlows();
+};
+
+const updateRateLimit = (updateData) => {
+  const dataSink = flowData.value.find(ds => ds.name === updateData.name);
+  if (dataSink) {
+    dataSink.rateLimit = updateData.rateLimit;
+  }
 };
 </script>

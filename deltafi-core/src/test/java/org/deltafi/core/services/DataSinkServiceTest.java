@@ -17,11 +17,17 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
+import org.deltafi.core.generated.types.RateLimit;
+import org.deltafi.core.generated.types.RateLimitInput;
+import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.repo.DataSinkRepo;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.DataSinkSnapshot;
@@ -35,41 +41,57 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.info.BuildProperties;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DataSinkServiceTest {
 
-    @InjectMocks
-    DataSinkService dataSinkService;
+    private DataSinkService dataSinkService;
 
     @Mock
-    DataSinkRepo dataSinkRepo;
+    private DataSinkRepo dataSinkRepo;
 
     @Mock
-    BuildProperties buildProperties;
+    private BuildProperties buildProperties;
 
     @Captor
-    ArgumentCaptor<Collection<DataSink>> flowCaptor;
+    private ArgumentCaptor<Collection<DataSink>> flowCaptor;
 
     @Captor
     ArgumentCaptor<DataSink> singleFlowCaptor;
 
     @Mock
-    FlowCacheService flowCacheService;
+    private FlowCacheService flowCacheService;
+
+    @Mock
+    private RateLimitService rateLimitService;
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
         Mockito.lenient().when(buildProperties.getVersion()).thenReturn("1.0.0");
+        dataSinkService = spy(new DataSinkService(
+                dataSinkRepo,
+                null,  // pluginVariableService
+                null,  // flowValidator
+                buildProperties,
+                flowCacheService,
+                null,  // eventService
+                rateLimitService
+        ));
     }
 
     @Test
@@ -224,5 +246,364 @@ class DataSinkServiceTest {
         dataSink.setFlowStatus(flowStatus);
         dataSink.setExpectedAnnotations(expectedAnnotations);
         return dataSink;
+    }
+
+    @Test
+    void testSetRateLimitSuccess() throws JsonProcessingException {
+        String flowName = "test-data-sink";
+        RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build();
+
+        DataSink dataSink = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        String expectedJson = OBJECT_MAPPER.writeValueAsString(rateLimitInput);
+
+        doReturn(dataSink).when(dataSinkService).getFlowOrThrow(flowName);
+        when(dataSinkRepo.updateRateLimit(flowName, expectedJson)).thenReturn(dataSink);
+
+        boolean result = dataSinkService.setRateLimit(flowName, rateLimitInput);
+
+        assertThat(result).isTrue();
+        verify(dataSinkRepo).updateRateLimit(flowName, expectedJson);
+        verify(rateLimitService).updateLimit("datasink:" + flowName, 100L, Duration.ofSeconds(60));
+        verify(flowCacheService).updateCache(dataSink);
+    }
+
+    @Test
+    void testSetRateLimitAlreadySet() {
+        String flowName = "test-data-sink";
+        RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build();
+
+        DataSink dataSink = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build());
+
+        doReturn(dataSink).when(dataSinkService).getFlowOrThrow(flowName);
+
+        boolean result = dataSinkService.setRateLimit(flowName, rateLimitInput);
+
+        assertThat(result).isFalse();
+        verify(dataSinkRepo, never()).updateRateLimit(any(), any());
+        verify(rateLimitService, never()).updateLimit(any(), anyLong(), any());
+        verify(flowCacheService, never()).updateCache(any());
+    }
+
+    @Test
+    void testSetRateLimitDatabaseUpdateFails() throws JsonProcessingException {
+        String flowName = "test-data-sink";
+        RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(1000L)
+                .durationSeconds(30)
+                .build();
+
+        DataSink dataSink = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        String expectedJson = OBJECT_MAPPER.writeValueAsString(rateLimitInput);
+
+        doReturn(dataSink).when(dataSinkService).getFlowOrThrow(flowName);
+        when(dataSinkRepo.updateRateLimit(flowName, expectedJson)).thenReturn(null);
+
+        boolean result = dataSinkService.setRateLimit(flowName, rateLimitInput);
+
+        assertThat(result).isFalse();
+        verify(dataSinkRepo).updateRateLimit(flowName, expectedJson);
+        verify(rateLimitService, never()).updateLimit(any(), anyLong(), any());
+        verify(flowCacheService, never()).updateCache(any());
+    }
+
+    @Test
+    void testSetRateLimitFlowNotFound() {
+        String flowName = "non-existent-flow";
+        RateLimitInput rateLimitInput = RateLimitInput.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(50L)
+                .durationSeconds(120)
+                .build();
+
+        doThrow(MissingFlowException.notFound("flow not found", FlowType.DATA_SINK))
+                .when(dataSinkService).getFlowOrThrow(flowName);
+
+        assertThatThrownBy(() -> dataSinkService.setRateLimit(flowName, rateLimitInput))
+                .isInstanceOf(MissingFlowException.class);
+
+        verify(dataSinkRepo, never()).updateRateLimit(any(), any());
+        verify(rateLimitService, never()).updateLimit(any(), anyLong(), any());
+        verify(flowCacheService, never()).updateCache(any());
+    }
+
+    @Test
+    void testRemoveRateLimitSuccess() {
+        String flowName = "test-data-sink";
+
+        DataSink dataSink = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build());
+
+        doReturn(dataSink).when(dataSinkService).getFlowOrThrow(flowName);
+        when(dataSinkRepo.removeRateLimit(flowName)).thenReturn(dataSink);
+
+        boolean result = dataSinkService.removeRateLimit(flowName);
+
+        assertThat(result).isTrue();
+        verify(dataSinkRepo).removeRateLimit(flowName);
+        verify(rateLimitService).removeBucket("datasink:" + flowName);
+        verify(flowCacheService).updateCache(dataSink);
+    }
+
+    @Test
+    void testRemoveRateLimitNotSet() {
+        String flowName = "test-data-sink";
+
+        DataSink dataSink = dataSink(flowName, FlowState.RUNNING, false, null, true);
+
+        doReturn(dataSink).when(dataSinkService).getFlowOrThrow(flowName);
+
+        boolean result = dataSinkService.removeRateLimit(flowName);
+
+        assertThat(result).isFalse();
+        verify(dataSinkRepo, never()).removeRateLimit(any());
+        verify(rateLimitService, never()).removeBucket(any());
+        verify(flowCacheService, never()).updateCache(any());
+    }
+
+    @Test
+    void testRemoveRateLimitDatabaseUpdateFails() {
+        String flowName = "test-data-sink";
+
+        DataSink dataSink = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(500L)
+                .durationSeconds(30)
+                .build());
+
+        doReturn(dataSink).when(dataSinkService).getFlowOrThrow(flowName);
+        when(dataSinkRepo.removeRateLimit(flowName)).thenReturn(null);
+
+        boolean result = dataSinkService.removeRateLimit(flowName);
+
+        assertThat(result).isFalse();
+        verify(dataSinkRepo).removeRateLimit(flowName);
+        verify(rateLimitService, never()).removeBucket(any());
+        verify(flowCacheService, never()).updateCache(any());
+    }
+
+    @Test
+    void testRemoveRateLimitFlowNotFound() {
+        String flowName = "non-existent-flow";
+
+        doThrow(MissingFlowException.notFound("flow not found", FlowType.DATA_SINK))
+                .when(dataSinkService).getFlowOrThrow(flowName);
+
+        assertThatThrownBy(() -> dataSinkService.removeRateLimit(flowName))
+                .isInstanceOf(MissingFlowException.class);
+
+        verify(dataSinkRepo, never()).removeRateLimit(any());
+        verify(rateLimitService, never()).removeBucket(any());
+        verify(flowCacheService, never()).updateCache(any());
+    }
+
+    @Test
+    void testSetRateLimitDifferentUnits() throws JsonProcessingException {
+        String flowName = "test-data-sink";
+        RateLimitInput fileLimitInput = RateLimitInput.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(10L)
+                .durationSeconds(60)
+                .build();
+
+        DataSink dataSink = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(1000L)
+                .durationSeconds(60)
+                .build());
+
+        String expectedJson = OBJECT_MAPPER.writeValueAsString(fileLimitInput);
+
+        doReturn(dataSink).when(dataSinkService).getFlowOrThrow(flowName);
+        when(dataSinkRepo.updateRateLimit(flowName, expectedJson)).thenReturn(dataSink);
+
+        boolean result = dataSinkService.setRateLimit(flowName, fileLimitInput);
+
+        assertThat(result).isTrue();
+        verify(dataSinkRepo).updateRateLimit(flowName, expectedJson);
+        verify(rateLimitService).updateLimit("datasink:" + flowName, 10L, Duration.ofSeconds(60));
+        verify(flowCacheService).updateCache(dataSink);
+    }
+
+    @Test
+    void testFlowSpecificUpdateFromSnapshotWithRateLimit() {
+        String flowName = "test-data-sink";
+        DataSink flow = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        flow.setRateLimit(null);
+
+        DataSinkSnapshot snapshot = new DataSinkSnapshot(flowName);
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build();
+        snapshot.setRateLimit(rateLimit);
+
+        Result result = new Result();
+        boolean changed = dataSinkService.flowSpecificUpdateFromSnapshot(flow, snapshot, result);
+
+        assertThat(changed).isTrue();
+        assertThat(flow.getRateLimit()).isEqualTo(rateLimit);
+        verify(rateLimitService).updateLimit("datasink:" + flowName, 100L, Duration.ofSeconds(60));
+    }
+
+    @Test
+    void testFlowSpecificUpdateFromSnapshotRemoveRateLimit() {
+        String flowName = "test-data-sink";
+        DataSink flow = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        RateLimit existingRateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(1000L)
+                .durationSeconds(30)
+                .build();
+        flow.setRateLimit(existingRateLimit);
+
+        DataSinkSnapshot snapshot = new DataSinkSnapshot(flowName);
+        snapshot.setRateLimit(null);
+
+        Result result = new Result();
+        boolean changed = dataSinkService.flowSpecificUpdateFromSnapshot(flow, snapshot, result);
+
+        assertThat(changed).isTrue();
+        assertThat(flow.getRateLimit()).isNull();
+        verify(rateLimitService).removeBucket("datasink:" + flowName);
+    }
+
+    @Test
+    void testFlowSpecificUpdateFromSnapshotNoChanges() {
+        String flowName = "test-data-sink";
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(50L)
+                .durationSeconds(120)
+                .build();
+
+        DataSink flow = dataSink(flowName, FlowState.RUNNING, false, null, true);
+        flow.setRateLimit(rateLimit);
+
+        DataSinkSnapshot snapshot = new DataSinkSnapshot(flowName);
+        snapshot.setRateLimit(rateLimit);
+
+        Result result = new Result();
+        boolean changed = dataSinkService.flowSpecificUpdateFromSnapshot(flow, snapshot, result);
+
+        assertThat(changed).isFalse();
+        assertThat(flow.getRateLimit()).isEqualTo(rateLimit);
+        verify(rateLimitService, never()).updateLimit(any(), anyLong(), any());
+        verify(rateLimitService, never()).removeBucket(any());
+    }
+
+    @Test
+    void testOnRefreshCacheDoesNotResetBuckets() {
+        DataSink flowWithRateLimit1 = dataSink("flow1", FlowState.RUNNING, false, null, true);
+        flowWithRateLimit1.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build());
+
+        DataSink flowWithRateLimit2 = dataSink("flow2", FlowState.RUNNING, false, null, true);
+        flowWithRateLimit2.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(500L)
+                .durationSeconds(30)
+                .build());
+
+        DataSink flowWithoutRateLimit = dataSink("flow3", FlowState.RUNNING, false, null, true);
+
+        List<Flow> allFlows = List.of(flowWithRateLimit1, flowWithRateLimit2, flowWithoutRateLimit);
+        when(flowCacheService.flowsOfType(FlowType.DATA_SINK)).thenReturn(allFlows);
+
+        dataSinkService.onRefreshCache();
+
+        verify(rateLimitService, never()).updateLimit(anyString(), anyLong(), any());
+    }
+
+    @Test
+    void testPostConstructInitializesBuckets() {
+        DataSink flowWithRateLimit1 = dataSink("flow1", FlowState.RUNNING, false, null, true);
+        flowWithRateLimit1.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build());
+
+        DataSink flowWithRateLimit2 = dataSink("flow2", FlowState.RUNNING, false, null, true);
+        flowWithRateLimit2.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.BYTES)
+                .maxAmount(500L)
+                .durationSeconds(30)
+                .build());
+
+        DataSink flowWithoutRateLimit = dataSink("flow3", FlowState.RUNNING, false, null, true);
+
+        List<Flow> allFlows = List.of(flowWithRateLimit1, flowWithRateLimit2, flowWithoutRateLimit);
+        when(flowCacheService.flowsOfType(FlowType.DATA_SINK)).thenReturn(allFlows);
+
+        dataSinkService.postConstruct();
+
+        verify(dataSinkRepo).updateSystemPluginFlowVersions("1.0.0", FlowType.DATA_SINK);
+        verify(rateLimitService).updateLimit("datasink:flow1", 100L, Duration.ofSeconds(60));
+        verify(rateLimitService).updateLimit("datasink:flow2", 500L, Duration.ofSeconds(30));
+        verify(rateLimitService, never()).updateLimit(eq("datasink:flow3"), anyLong(), any());
+    }
+
+    @Test
+    void testDataSinkBucketName() {
+        assertThat(DataSinkService.dataSinkBucketName("my-data-sink")).isEqualTo("datasink:my-data-sink");
+        assertThat(DataSinkService.dataSinkBucketName("another-sink")).isEqualTo("datasink:another-sink");
+    }
+
+    @Test
+    void testResetFromSnapshotWithRateLimit() {
+        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
+                .groupId("org.deltafi")
+                .artifactId("test-plugin")
+                .version("1.0.0")
+                .build();
+
+        RateLimit rateLimit = RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(100L)
+                .durationSeconds(60)
+                .build();
+
+        DataSinkSnapshot snapshotWithRateLimit = new DataSinkSnapshot("pending-with-rate-limit", true, false);
+        snapshotWithRateLimit.setSourcePlugin(pluginCoordinates);
+        snapshotWithRateLimit.setRateLimit(rateLimit);
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDataSinks(List.of(snapshotWithRateLimit));
+
+        when(flowCacheService.flowsOfType(FlowType.DATA_SINK)).thenReturn(List.of());
+
+        Result result = dataSinkService.resetFromSnapshot(snapshot, true);
+
+        verify(dataSinkRepo).upsertFlowFromSnapshot(singleFlowCaptor.capture());
+
+        DataSink placeholder = singleFlowCaptor.getValue();
+        assertThat(placeholder.getName()).isEqualTo("pending-with-rate-limit");
+        assertThat(placeholder.getRateLimit()).isEqualTo(rateLimit);
+
+        assertThat(result.isSuccess()).isTrue();
     }
 }

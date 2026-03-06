@@ -50,4 +50,12 @@ public interface DataSinkRepo extends FlowRepo<DataSink>, DataSinkRepoCustom {
             throw new RuntimeException("Error converting expectedAnnotations to JSON", e);
         }
     }
+
+    @Transactional
+    @Query(value = "UPDATE flows SET rate_limit = CAST(:rateLimitJson AS jsonb) WHERE name = :flowName AND type = 'DATA_SINK' RETURNING *", nativeQuery = true)
+    DataSink updateRateLimit(String flowName, String rateLimitJson);
+
+    @Transactional
+    @Query(value = "UPDATE flows SET rate_limit = NULL WHERE name = :flowName AND type = 'DATA_SINK' RETURNING *", nativeQuery = true)
+    DataSink removeRateLimit(String flowName);
 }

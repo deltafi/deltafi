@@ -106,6 +106,9 @@ public class Action {
   @JsonProperty("rs")
   @JsonAlias("replayStart")
   private boolean replayStart; // marker for the starting point of a replay
+  @JsonProperty("rl")
+  @JsonAlias("rateLimited")
+  private boolean rateLimited;
 
   public Action(Action other) {
     this.name = other.name;
@@ -128,6 +131,7 @@ public class Action {
     this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
     this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
     this.replayStart = other.replayStart;
+    this.rateLimited = other.rateLimited;
   }
 
   public List<Content> getContent() {

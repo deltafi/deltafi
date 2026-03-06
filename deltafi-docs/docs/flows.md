@@ -183,7 +183,7 @@ The `sourceFilters` field contains a list of ErrorSourceFilter objects. Each fil
 | `flowType` | The type of flow that must match for the error to trigger this data source. | No | `"TRANSFORM"`, `"DATA_SINK"`, `"REST_DATA_SOURCE"`, `"TIMED_DATA_SOURCE"` |
 | `flowName` | The name of the specific flow that must match for the error to trigger this data source. | No | `"customer-processing"`, `"order-validation"` |
 | `actionName` | The name of the specific action that must match for the error to trigger this data source. Note that action names are not unique across flows. | No | `"ValidateAction"`, `"TransformAction"` |
-| `actionClass` | The class name of the action that must match for the error to trigger this data source. This provides a way to target all actions of a specific type regardless of their name or flow. | No | `"com.example.ValidationAction"`, `"org.deltafi.core.action.RestPostEgressAction"` |
+| `actionClass` | The class name of the action that must match for the error to trigger this data source. This provides a way to target all actions of a specific type regardless of their name or flow. | No | `"com.example.ValidationAction"`, `"org.deltafi.core.action.egress.RestPostEgress"` |
 
 **Filter Matching Logic:**
 - Within a single ErrorSourceFilter, all specified fields must match (AND logic)
@@ -314,7 +314,7 @@ topics published by Data Sources or Transforms.
   ],
   "egressAction": {
     "name": "ExampleEgressAction",
-    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "type": "org.deltafi.core.action.egress.RestPostEgress",
     "parameters": {
       "url": "${egressUrl}",
       "metadataKey": "deltafiMetadata"
@@ -322,6 +322,76 @@ topics published by Data Sources or Transforms.
   }
 }
 ```
+
+#### Rate Limiting
+
+Data Sinks support rate limiting to control the volume of data egressed over time. This is useful for:
+
+- Protecting external systems from being overwhelmed
+- Complying with external API rate limits
+- Managing bandwidth consumption during egress
+
+Rate limits are configured with three parameters:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `unit` | The unit of measurement for the limit | `FILES` or `BYTES` |
+| `maxAmount` | Maximum amount allowed in the time window | `100` |
+| `durationSeconds` | The time window in seconds | `60` |
+
+**Example**: To limit a data sink to 50 files per minute:
+
+```json
+{
+  "name": "rate-limited-sink",
+  "type": "DATA_SINK",
+  "description": "A rate-limited data sink",
+  "subscribe": [
+    {"topic": "output-topic"}
+  ],
+  "egressAction": {
+    "name": "ExampleEgressAction",
+    "type": "org.deltafi.core.action.egress.RestPostEgress",
+    "parameters": {
+      "url": "${egressUrl}"
+    }
+  },
+  "rateLimit": {
+    "unit": "FILES",
+    "maxAmount": 50,
+    "durationSeconds": 60
+  }
+}
+```
+
+**Example**: To limit a data sink to 5 MB per hour:
+
+```json
+{
+  "name": "bandwidth-limited-sink",
+  "type": "DATA_SINK",
+  "description": "A bandwidth-limited data sink",
+  "subscribe": [
+    {"topic": "output-topic"}
+  ],
+  "egressAction": {
+    "name": "ExampleEgressAction",
+    "type": "org.deltafi.core.action.egress.RestPostEgress",
+    "parameters": {
+      "url": "${egressUrl}"
+    }
+  },
+  "rateLimit": {
+    "unit": "BYTES",
+    "maxAmount": 5242880,
+    "durationSeconds": 3600
+  }
+}
+```
+
+When a rate limit is exceeded, DeltaFiles are held in a rate-limited cold queue until capacity becomes available. The rate-limited count is displayed in the dashboard stats and queue metrics pages.
+
+Rate limits can also be configured through the UI on the Data Sinks page by clicking the options menu for a data sink and selecting "Add Rate Limit" or "Edit Rate Limit".
 
 ## Flow Configuration
 

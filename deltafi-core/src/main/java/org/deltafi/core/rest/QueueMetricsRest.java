@@ -59,12 +59,14 @@ public class QueueMetricsRest {
     public DetailedQueueMetrics getDetailedQueueMetrics() {
         List<WarmQueueMetrics> warmQueues = queueManagementService.getDetailedWarmQueueMetrics();
         List<ColdQueueMetrics> coldQueues = queueManagementService.getCachedColdQueueCounts();
-        return new DetailedQueueMetrics(warmQueues, coldQueues, OffsetDateTime.now());
+        List<ColdQueueMetrics> rateLimitedQueues = queueManagementService.getCachedRateLimitedCounts();
+        return new DetailedQueueMetrics(warmQueues, coldQueues, rateLimitedQueues, OffsetDateTime.now());
     }
 
     public record DetailedQueueMetrics(
             List<WarmQueueMetrics> warmQueues,
             List<ColdQueueMetrics> coldQueues,
+            List<ColdQueueMetrics> rateLimitedQueues,
             OffsetDateTime timestamp) {}
 
     /**

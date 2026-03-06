@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -33,6 +34,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	gstyles "github.com/charmbracelet/glamour/styles"
+	"github.com/deltafi/tui/graphql"
 	"github.com/deltafi/tui/internal/api"
 	"github.com/deltafi/tui/internal/ui/components"
 	"github.com/deltafi/tui/internal/ui/styles"
@@ -193,6 +195,23 @@ func formatState(state string) string {
 	default:
 		return state
 	}
+}
+
+type rateLimitDisplay interface {
+	GetMaxAmount() int64
+	GetUnit() graphql.RateLimitUnit
+	GetDurationSeconds() int
+}
+
+func formatRateLimit(limit rateLimitDisplay) string {
+	if limit == nil {
+		return "-"
+	}
+	value := reflect.ValueOf(limit)
+	if value.Kind() == reflect.Pointer && value.IsNil() {
+		return "-"
+	}
+	return fmt.Sprintf("%d %s / %ds", limit.GetMaxAmount(), strings.ToLower(string(limit.GetUnit())), limit.GetDurationSeconds())
 }
 
 func renderMarkdown(text string, width int) string {

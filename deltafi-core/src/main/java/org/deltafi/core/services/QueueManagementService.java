@@ -22,9 +22,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionExecution;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.generated.types.RateLimit;
+import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.repo.DeltaFileFlowRepo;
 import org.deltafi.core.repo.DeltaFileFlowRepoCustom;
 import org.deltafi.core.repo.FlowDefinitionRepo;
+import org.deltafi.common.types.DeltaFileFlowState;
+import org.deltafi.core.types.DataSink;
+import org.deltafi.core.types.DeltaFile;
+import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.core.types.FlowDefinition;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
@@ -32,6 +38,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +57,8 @@ public class QueueManagementService {
     @Getter
     private final Set<String> coldQueues = new ConcurrentSkipListSet<>();
 
+    private final Set<String> rateLimitedBacklogSinks = new ConcurrentSkipListSet<>();
+
     @Getter
     private final ConcurrentHashMap<String, Long> allQueues = new ConcurrentHashMap<>();
 
@@ -59,8 +68,12 @@ public class QueueManagementService {
     private final AtomicReference<List<DeltaFileFlowRepoCustom.ColdQueueMetrics>> cachedColdQueueMetrics = new AtomicReference<>(List.of());
     private volatile OffsetDateTime coldQueueMetricsCacheTime = OffsetDateTime.MIN;
 
+    private final AtomicReference<List<DeltaFileFlowRepoCustom.ColdQueueMetrics>> cachedRateLimitedMetrics = new AtomicReference<>(List.of());
+    private volatile OffsetDateTime rateLimitedMetricsCacheTime = OffsetDateTime.MIN;
+
     private final AtomicReference<List<ActionExecution>> cachedRunningTasks = new AtomicReference<>(List.of());
     private volatile OffsetDateTime runningTasksCacheTime = OffsetDateTime.MIN;
+    private final ConcurrentHashMap<String, OffsetDateTime> nextRateLimitedCheck = new ConcurrentHashMap<>();
 
     final CoreEventQueue coreEventQueue;
     final DeltaFileFlowRepo deltaFileFlowRepo;
@@ -69,6 +82,8 @@ public class QueueManagementService {
     final DeltaFilesService deltaFilesService;
     final DeltaFiPropertiesService deltaFiPropertiesService;
     final Environment env;
+    final RateLimitService rateLimitService;
+    final DataSinkService dataSinkService;
 
     public QueueManagementService(CoreEventQueue coreEventQueue,
                                   DeltaFileFlowRepo deltaFileFlowRepo,
@@ -76,7 +91,9 @@ public class QueueManagementService {
                                   UnifiedFlowService unifiedFlowService,
                                   @Lazy DeltaFilesService deltaFilesService,
                                   DeltaFiPropertiesService deltaFiPropertiesService,
-                                  Environment env) {
+                                  Environment env,
+                                  RateLimitService rateLimitService,
+                                  @Lazy DataSinkService dataSinkService) {
         this.coreEventQueue = coreEventQueue;
         this.deltaFileFlowRepo = deltaFileFlowRepo;
         this.flowDefinitionRepo = flowDefinitionRepo;
@@ -84,6 +101,8 @@ public class QueueManagementService {
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.env = env;
+        this.rateLimitService = rateLimitService;
+        this.dataSinkService = dataSinkService;
     }
 
     @Scheduled(fixedDelayString = "${cold.queue.refresh.duration:PT2S}")
@@ -149,12 +168,20 @@ public class QueueManagementService {
         }
     }
 
+    @Scheduled(fixedDelayString = "${rate.limited.cold.queue.refresh.duration:PT1S}")
+    public void scheduleRateLimitedColdToWarm() {
+        String scheduleMaintenance = env.getProperty("schedule.maintenance");
+        if (scheduleMaintenance == null || scheduleMaintenance.equals("true")) {
+            warmRateLimitedColdQueueActions();
+        }
+    }
+
     public void coldToWarm() {
         if (!checkedQueues.get()) {
             return;
         }
 
-        // get all the actions that are currently COLD in the DB
+        // get all the actions that are currently COLD in the DB (excluding rate-limited)
         List<String> coldQueuedActions = deltaFileFlowRepo.distinctColdQueuedActions();
 
         // for each of these, if there is space in the warm queue, grab the oldest entries and shift to warm
@@ -164,6 +191,142 @@ public class QueueManagementService {
             if (queueSize < maxQueueSize * 0.9) {
                 deltaFilesService.requeueColdQueueActions(queueName, (int) (maxQueueSize - queueSize));
             }
+        }
+
+    }
+
+    private void warmRateLimitedColdQueueActions() {
+        if (!checkedQueues.get()) {
+            return;
+        }
+
+        List<String> rateLimitedDataSinks = deltaFileFlowRepo.distinctRateLimitedColdQueuedDataSinks();
+        Set<String> rateLimitedSinkSet = new HashSet<>(rateLimitedDataSinks);
+        rateLimitedBacklogSinks.clear();
+        rateLimitedBacklogSinks.addAll(rateLimitedSinkSet);
+        nextRateLimitedCheck.keySet().removeIf(flowName -> !rateLimitedSinkSet.contains(flowName));
+        OffsetDateTime now = OffsetDateTime.now();
+
+        for (String flowName : rateLimitedDataSinks) {
+            if (!sinkReadyForRateLimitedCheck(flowName, now)) {
+                continue;
+            }
+
+            DataSink dataSink = null;
+            try {
+                dataSink = dataSinkService.getFlowOrThrow(flowName);
+            } catch (Exception e) {
+                // Data sink no longer exists - warm all entries to clear them
+                nextRateLimitedCheck.remove(flowName);
+                deltaFilesService.requeueRateLimitedColdQueueActions(flowName, maxQueueSize());
+                continue;
+            }
+
+            if (dataSink.getRateLimit() == null) {
+                // Data sink no longer has a rate limit - warm all entries
+                nextRateLimitedCheck.remove(flowName);
+                deltaFilesService.requeueRateLimitedColdQueueActions(flowName, maxQueueSize());
+                continue;
+            }
+
+            RateLimit rateLimit = dataSink.getRateLimit();
+            String bucketName = DataSinkService.dataSinkBucketName(flowName);
+            long availableTokens = rateLimitService.getAvailableTokens(bucketName);
+
+            if (availableTokens <= 0) {
+                deferNextRateLimitedCheck(flowName, rateLimit, now);
+                continue;
+            }
+
+            Duration period = Duration.ofSeconds(rateLimit.getDurationSeconds());
+
+            if (rateLimit.getUnit() == RateLimitUnit.FILES) {
+                // For FILES unit, tokens map 1:1 with files
+                int maxFilesToWarm = (int) Math.min(availableTokens, maxQueueSize());
+                if (maxFilesToWarm > 0) {
+                    rateLimitService.consume(bucketName, maxFilesToWarm, rateLimit.getMaxAmount(), period);
+                    deltaFilesService.requeueRateLimitedColdQueueActions(flowName, maxFilesToWarm);
+                }
+            } else {
+                // For BYTES unit, check content sizes and allow one file to exceed the limit
+                warmRateLimitedBytesFiles(flowName, bucketName, availableTokens, rateLimit.getMaxAmount(), period);
+            }
+
+            deferNextRateLimitedCheck(flowName, rateLimit, now);
+        }
+    }
+
+    private boolean sinkReadyForRateLimitedCheck(String flowName, OffsetDateTime now) {
+        OffsetDateTime nextCheckAt = nextRateLimitedCheck.get(flowName);
+        return nextCheckAt == null || !nextCheckAt.isAfter(now);
+    }
+
+    private void deferNextRateLimitedCheck(String flowName, RateLimit rateLimit, OffsetDateTime now) {
+        nextRateLimitedCheck.put(flowName, now.plus(minRateLimitedCheckInterval(rateLimit)));
+    }
+
+    private Duration minRateLimitedCheckInterval(RateLimit rateLimit) {
+        long totalNanos = Duration.ofSeconds(rateLimit.getDurationSeconds()).toNanos();
+        long nanosPerToken = Math.max(1L, (long) Math.ceil((double) totalNanos / rateLimit.getMaxAmount()));
+        return Duration.ofNanos(nanosPerToken);
+    }
+
+    public boolean hasRateLimitedBacklog(String flowName) {
+        return deltaFileFlowRepo.existsRateLimitedColdQueuedDataSink(flowName);
+    }
+
+    public void markRateLimitedBacklog(String flowName) {
+        rateLimitedBacklogSinks.add(flowName);
+    }
+
+    private void warmRateLimitedBytesFiles(String flowName, String bucketName, long availableTokens,
+                                           long maxAmount, Duration period) {
+        List<DeltaFile> candidates = deltaFilesService.findRateLimitedColdQueuedFiles(flowName, maxQueueSize());
+        if (candidates.isEmpty()) {
+            return;
+        }
+
+        List<DeltaFile> filesToWarm = new ArrayList<>();
+        long totalBytes = 0;
+        boolean firstFile = true;
+
+        for (DeltaFile deltaFile : candidates) {
+            // Find the flow for this data sink
+            Optional<DeltaFileFlow> flowOpt = deltaFile.getFlows().stream()
+                    .filter(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT && flowName.equals(f.getName()))
+                    .findFirst();
+
+            if (flowOpt.isEmpty()) {
+                continue;
+            }
+
+            long contentSize;
+            try {
+                contentSize = flowOpt.get().lastContentSize();
+            } catch (Exception e) {
+                log.warn("Failed to get content size for DeltaFile {} flow {}, skipping", deltaFile.getDid(), flowName, e);
+                continue;
+            }
+
+            // Allow the first file to exceed the limit (will drive bucket negative)
+            // Subsequent files only if we have tokens remaining
+            if (firstFile || totalBytes + contentSize <= availableTokens) {
+                filesToWarm.add(deltaFile);
+                totalBytes += contentSize;
+                firstFile = false;
+
+                // After adding first file, stop if we've exceeded available tokens
+                if (totalBytes >= availableTokens) {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        if (!filesToWarm.isEmpty()) {
+            rateLimitService.consume(bucketName, totalBytes, maxAmount, period);
+            deltaFilesService.requeueSpecificRateLimitedFiles(flowName, filesToWarm);
         }
     }
 
@@ -290,9 +453,9 @@ public class QueueManagementService {
 
     /**
      * Get cold queue metrics with caching to prevent hammering PostgreSQL.
-     * Results are cached for 5 seconds.
+     * Results are cached for 5 seconds. Excludes rate-limited items.
      *
-     * @return list of cold queue metrics per flow/action
+     * @return list of cold queue metrics per flow/action (excluding rate-limited)
      */
     public List<DeltaFileFlowRepoCustom.ColdQueueMetrics> getCachedColdQueueCounts() {
         OffsetDateTime now = OffsetDateTime.now();
@@ -302,6 +465,34 @@ public class QueueManagementService {
         List<DeltaFileFlowRepoCustom.ColdQueueMetrics> result = deltaFileFlowRepo.getColdQueueCounts();
         cachedColdQueueMetrics.set(result);
         coldQueueMetricsCacheTime = now;
+        return result;
+    }
+
+    /**
+     * Get total count of rate-limited items using cached metrics.
+     *
+     * @return total count of rate-limited items
+     */
+    public long rateLimitedCount() {
+        return getCachedRateLimitedCounts().stream()
+                .mapToLong(DeltaFileFlowRepoCustom.ColdQueueMetrics::count)
+                .sum();
+    }
+
+    /**
+     * Get rate-limited queue metrics with caching to prevent hammering PostgreSQL.
+     * Results are cached for 5 seconds.
+     *
+     * @return list of rate-limited queue metrics per flow/action
+     */
+    public List<DeltaFileFlowRepoCustom.ColdQueueMetrics> getCachedRateLimitedCounts() {
+        OffsetDateTime now = OffsetDateTime.now();
+        if (rateLimitedMetricsCacheTime.plusSeconds(5).isAfter(now)) {
+            return cachedRateLimitedMetrics.get();
+        }
+        List<DeltaFileFlowRepoCustom.ColdQueueMetrics> result = deltaFileFlowRepo.getRateLimitedQueueCounts();
+        cachedRateLimitedMetrics.set(result);
+        rateLimitedMetricsCacheTime = now;
         return result;
     }
 

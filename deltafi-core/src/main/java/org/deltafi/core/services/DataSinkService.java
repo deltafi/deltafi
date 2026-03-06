@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.DataSinkPlan;
@@ -26,16 +28,22 @@ import org.deltafi.core.converters.DataSinkPlanConverter;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.generated.types.RateLimit;
+import org.deltafi.core.generated.types.RateLimitInput;
 import org.deltafi.core.repo.DataSinkRepo;
+import org.deltafi.core.types.Result;
 import org.deltafi.core.services.pubsub.SubscriberService;
+import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.snapshot.Snapshot;
 import org.deltafi.core.types.snapshot.DataSinkSnapshot;
 import org.deltafi.core.types.DataSink;
 
 import org.deltafi.core.validation.FlowValidator;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,15 +53,26 @@ public
 class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapshot, DataSinkRepo> implements SubscriberService {
 
     private static final DataSinkPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new DataSinkPlanConverter();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private Map<String, Set<Subscriber>> topicSubscribers;
+    private final RateLimitService rateLimitService;
 
     public DataSinkService(DataSinkRepo flowRepo, PluginVariableService pluginVariableService,
                            FlowValidator flowValidator, BuildProperties buildProperties,
-                           FlowCacheService flowCacheService, EventService eventService) {
+                           FlowCacheService flowCacheService, EventService eventService,
+                           RateLimitService rateLimitService) {
         super(FlowType.DATA_SINK, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER,
                 flowValidator, buildProperties, flowCacheService,
                 eventService, DataSink.class, DataSinkPlan.class);
+        this.rateLimitService = rateLimitService;
+    }
+
+    @PostConstruct
+    @Override
+    public void postConstruct() {
+        super.postConstruct();
+        initializeRateLimitBuckets();
     }
 
     @Override
@@ -114,7 +133,32 @@ class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapsh
         flow.getFlowStatus().setPlaceholder(true);
         flow.setSubscribe(Set.of());
         flow.setExpectedAnnotations(snapshot.getExpectedAnnotations());
+        flow.setRateLimit(snapshot.getRateLimit());
         return flow;
+    }
+
+    @Override
+    public boolean flowSpecificUpdateFromSnapshot(DataSink flow, DataSinkSnapshot snapshot, Result result) {
+        boolean changed = false;
+
+        if (!Objects.equals(flow.getRateLimit(), snapshot.getRateLimit())) {
+            RateLimit newRateLimit = snapshot.getRateLimit();
+            flow.setRateLimit(newRateLimit);
+
+            if (newRateLimit == null) {
+                rateLimitService.removeBucket(dataSinkBucketName(flow.getName()));
+                log.debug("Removed rate limit bucket for data sink '{}' during snapshot restore", flow.getName());
+            } else {
+                Duration period = Duration.ofSeconds(newRateLimit.getDurationSeconds());
+                rateLimitService.updateLimit(dataSinkBucketName(flow.getName()), newRateLimit.getMaxAmount(), period);
+                log.debug("Updated rate limit bucket for data sink '{}' during snapshot restore: {} {} per {} seconds",
+                        flow.getName(), newRateLimit.getMaxAmount(), newRateLimit.getUnit(), newRateLimit.getDurationSeconds());
+            }
+
+            changed = true;
+        }
+
+        return changed;
     }
 
     @Override
@@ -133,5 +177,104 @@ class DataSinkService extends FlowService<DataSinkPlan, DataSink, DataSinkSnapsh
         return getAll().stream()
                 .map(DataSink::getEgressAction)
                 .anyMatch(action -> action.getType().equals(actionClass));
+    }
+
+    /**
+     * Sets the rate limit for a given data sink, identified by its name.
+     *
+     * @param flowName  the name of the data sink for which to set the rate limit
+     * @param rateLimit the rate limit configuration to set
+     * @return true if the update was successful, false otherwise
+     */
+    public boolean setRateLimit(String flowName, RateLimitInput rateLimit) {
+        DataSink flow = getFlowOrThrow(flowName);
+
+        if (isRateLimitEqual(flow.getRateLimit(), rateLimit)) {
+            log.warn("Tried to set rate limit on data sink {} to {} when already set", flowName, rateLimit);
+            return false;
+        }
+
+        try {
+            String rateLimitJson = OBJECT_MAPPER.writeValueAsString(rateLimit);
+            Flow updatedFlow = flowRepo.updateRateLimit(flowName, rateLimitJson);
+            if (updatedFlow != null) {
+                flowCacheService.updateCache(updatedFlow);
+                Duration period = Duration.ofSeconds(rateLimit.getDurationSeconds());
+                rateLimitService.updateLimit(dataSinkBucketName(flowName), rateLimit.getMaxAmount(), period);
+                return true;
+            }
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize rate limit for data sink {}: {}", flowName, e.getMessage());
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
+     * Removes the rate limit for a given data sink, identified by its name.
+     *
+     * @param flowName the name of the data sink for which to remove the rate limit
+     * @return true if the removal was successful, false otherwise
+     */
+    public boolean removeRateLimit(String flowName) {
+        DataSink flow = getFlowOrThrow(flowName);
+
+        if (flow.getRateLimit() == null) {
+            log.warn("Tried to remove rate limit on data sink {} when none is set", flowName);
+            return false;
+        }
+
+        Flow updatedFlow = flowRepo.removeRateLimit(flowName);
+        if (updatedFlow != null) {
+            flowCacheService.updateCache(updatedFlow);
+            rateLimitService.removeBucket(dataSinkBucketName(flowName));
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Generate a unique bucket name for data sink rate limiting.
+     * Prefixed with "datasink:" to distinguish from REST data source buckets.
+     */
+    public static String dataSinkBucketName(String flowName) {
+        return "datasink:" + flowName;
+    }
+
+    private boolean isRateLimitEqual(RateLimit existing, RateLimitInput input) {
+        if (existing == null && input == null) {
+            return true;
+        }
+        if (existing == null || input == null) {
+            return false;
+        }
+        return existing.getUnit() == input.getUnit() &&
+                existing.getMaxAmount() == input.getMaxAmount() &&
+                existing.getDurationSeconds() == input.getDurationSeconds();
+    }
+
+    private void initializeRateLimitBuckets() {
+        log.info("Initializing rate limit buckets for existing data sinks");
+
+        List<DataSink> flowsWithRateLimits = getAll().stream()
+                .filter(flow -> flow.getRateLimit() != null)
+                .toList();
+
+        for (DataSink flow : flowsWithRateLimits) {
+            try {
+                RateLimit rateLimit = flow.getRateLimit();
+                Duration period = Duration.ofSeconds(rateLimit.getDurationSeconds());
+                rateLimitService.updateLimit(dataSinkBucketName(flow.getName()), rateLimit.getMaxAmount(), period);
+
+                log.debug("Initialized rate limit bucket for data sink '{}': {} {} per {} seconds",
+                        flow.getName(), rateLimit.getMaxAmount(), rateLimit.getUnit(), rateLimit.getDurationSeconds());
+            } catch (Exception e) {
+                log.error("Failed to initialize rate limit bucket for data sink '{}': {}", flow.getName(), e.getMessage());
+            }
+        }
+
+        log.info("Initialized rate limit buckets for {} data sinks", flowsWithRateLimits.size());
     }
 }

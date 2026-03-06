@@ -61,6 +61,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -2141,22 +2142,82 @@ public class DeltaFilesService {
             return;
         }
 
-        OffsetDateTime modified = OffsetDateTime.now(clock);
         List<DeltaFile> filesToRequeue = deltaFileRepo.findColdQueuedForRequeue(actionClass, maxFiles);
+        List<WrappedActionInput> actionInputs = requeueColdQueuedFiles(filesToRequeue,
+                flow -> flow.getState() == DeltaFileFlowState.IN_FLIGHT,
+                action -> action.getState() == COLD_QUEUED && actionClass.equals(action.getActionClass()) && !action.isRateLimited(),
+                false);
 
+        if (!actionInputs.isEmpty()) {
+            log.info("Moving {} from the cold to warm queue", actionInputs.size());
+            deltaFileRepo.saveAll(filesToRequeue);
+            enqueueActions(actionInputs, true);
+        }
+    }
+
+    public void requeueRateLimitedColdQueueActions(String flowName, int maxFiles) {
+        if (isEgressDisabled()) {
+            return;
+        }
+
+        List<DeltaFile> filesToRequeue = deltaFileRepo.findRateLimitedColdQueuedForRequeue(flowName, maxFiles);
+        requeueRateLimitedFiles(flowName, filesToRequeue);
+    }
+
+    /**
+     * Fetch rate-limited cold queued files for a flow without requeuing them.
+     * Used by callers who need to inspect files before deciding which to warm.
+     */
+    public List<DeltaFile> findRateLimitedColdQueuedFiles(String flowName, int maxFiles) {
+        return deltaFileRepo.findRateLimitedColdQueuedForRequeue(flowName, maxFiles);
+    }
+
+    /**
+     * Requeue specific rate-limited files that have been pre-selected.
+     * Used for BYTES rate limiting where we need to check content sizes before warming.
+     */
+    public void requeueSpecificRateLimitedFiles(String flowName, List<DeltaFile> filesToRequeue) {
+        if (isEgressDisabled() || filesToRequeue.isEmpty()) {
+            return;
+        }
+        requeueRateLimitedFiles(flowName, filesToRequeue);
+    }
+
+    private void requeueRateLimitedFiles(String flowName, List<DeltaFile> filesToRequeue) {
+        List<WrappedActionInput> actionInputs = requeueColdQueuedFiles(filesToRequeue,
+                flow -> flow.getState() == DeltaFileFlowState.IN_FLIGHT && flowName.equals(flow.getName()),
+                action -> action.getState() == COLD_QUEUED && action.isRateLimited(),
+                true);
+
+        if (!actionInputs.isEmpty()) {
+            log.info("Moving {} rate-limited actions from cold to warm queue for data sink '{}'", actionInputs.size(), flowName);
+            deltaFileRepo.saveAll(filesToRequeue);
+            enqueueActions(actionInputs, true);
+        }
+    }
+
+    private List<WrappedActionInput> requeueColdQueuedFiles(List<DeltaFile> filesToRequeue,
+                                                            Predicate<DeltaFileFlow> flowFilter,
+                                                            Predicate<Action> actionFilter,
+                                                            boolean clearRateLimited) {
+        OffsetDateTime modified = OffsetDateTime.now(clock);
         List<WrappedActionInput> actionInputs = new ArrayList<>();
+
         filesToRequeue.forEach(deltaFile -> {
             deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
             deltaFile.setModified(modified);
             deltaFile.getFlows().stream()
-                    .filter(f -> f.getState() == DeltaFileFlowState.IN_FLIGHT)
+                    .filter(flowFilter)
                     .forEach(flow -> {
                         Action action = flow.lastAction();
-                        if ((action.getState() == COLD_QUEUED) && actionClass.equals(action.getActionClass())) {
+                        if (actionFilter.test(action)) {
                             WrappedActionInput actionInput = requeueActionInput(deltaFile, flow, action);
                             if (actionInput != null) {
                                 actionInput.setColdQueued(false);
                                 action.setState(QUEUED);
+                                if (clearRateLimited) {
+                                    action.setRateLimited(false);
+                                }
                                 action.setModified(modified);
                                 action.setQueued(modified);
                                 flow.updateState();
@@ -2166,11 +2227,7 @@ public class DeltaFilesService {
                     });
         });
 
-        if (!actionInputs.isEmpty()) {
-            log.info("Moving {} from the cold to warm queue", actionInputs.size());
-            deltaFileRepo.saveAll(filesToRequeue);
-            enqueueActions(actionInputs, true);
-        }
+        return actionInputs;
     }
 
     public void requeuePausedFlows() {
@@ -2631,6 +2688,7 @@ public class DeltaFilesService {
                 .mapToLong(Long::longValue)
                 .sum();
         long coldQueuedCount = getColdQueuedCountFromValkey();
+        long rateLimitedCount = getRateLimitedCountFromValkey();
         var oldestInfo = queueManagementService.getOldestQueuedInfo();
         return new DeltaFileStats(
                 dbStats.getTotalCount(),
@@ -2638,6 +2696,7 @@ public class DeltaFilesService {
                 dbStats.getInFlightBytes(),
                 warmQueuedCount,
                 coldQueuedCount,
+                rateLimitedCount,
                 dbStats.getPausedCount(),
                 oldestInfo != null ? oldestInfo.timestamp() : null,
                 oldestInfo != null ? oldestInfo.did() : null
@@ -2647,6 +2706,15 @@ public class DeltaFilesService {
     private long getColdQueuedCountFromValkey() {
         try {
             String value = valkeyQueue.getByKey(org.deltafi.core.monitor.checks.ColdQueueCheck.COLD_QUEUE_COUNT_KEY);
+            return value != null ? Long.parseLong(value) : 0L;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    private long getRateLimitedCountFromValkey() {
+        try {
+            String value = valkeyQueue.getByKey(org.deltafi.core.monitor.checks.ColdQueueCheck.RATE_LIMITED_COUNT_KEY);
             return value != null ? Long.parseLong(value) : 0L;
         } catch (Exception e) {
             return 0L;

@@ -3,6 +3,11 @@ query ListDataSinks {
   getAllFlows {
     dataSink {
       name
+      rateLimit {
+        maxAmount
+        unit
+        durationSeconds
+      }
       flowStatus {
         state
         testMode
@@ -37,6 +42,11 @@ query GetDataSink($flowName: String!) {
       condition
     }
     expectedAnnotations
+    rateLimit {
+      maxAmount
+      unit
+      durationSeconds
+    }
     egressAction {
       name
       type
@@ -74,6 +84,11 @@ query ValidateDataSink($flowName: String!) {
       condition
     }
     expectedAnnotations
+    rateLimit {
+      maxAmount
+      unit
+      durationSeconds
+    }
     egressAction {
       name
       type
@@ -111,6 +126,11 @@ mutation SaveDataSink($dataSinkPlan: DataSinkPlanInput!) {
       condition
     }
     expectedAnnotations
+    rateLimit {
+      maxAmount
+      unit
+      durationSeconds
+    }
     egressAction {
       name
       type

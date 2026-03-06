@@ -339,11 +339,22 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
 
     @Override
     public List<ColdQueueMetrics> getColdQueueCounts() {
+        return getColdQueueCountsByRateLimited(false);
+    }
+
+    @Override
+    public List<ColdQueueMetrics> getRateLimitedQueueCounts() {
+        return getColdQueueCountsByRateLimited(true);
+    }
+
+    private List<ColdQueueMetrics> getColdQueueCountsByRateLimited(boolean rateLimited) {
+        String whereClause = rateLimited ? "WHERE rate_limited = TRUE" : "WHERE rate_limited IS NOT TRUE";
         String sql = """
                 SELECT flow_name, flow_type, action_name, action_class,
                        COUNT(*) as count, MIN(queued_at) as oldest_queued_at
                 FROM cold_queue_entries
-                GROUP BY flow_name, flow_type, action_name, action_class""";
+                %s
+                GROUP BY flow_name, flow_type, action_name, action_class""".formatted(whereClause);
 
         Query query = entityManager.createNativeQuery(sql);
 
@@ -373,6 +384,32 @@ public class DeltaFileFlowRepoImpl implements DeltaFileFlowRepoCustom {
         return Optional.of(new OldestColdQueueEntry(
                 (UUID) row[0],
                 row[1] != null ? ((Instant) row[1]).atOffset(ZoneOffset.UTC) : null));
+    }
+
+    @Override
+    public List<String> distinctRateLimitedColdQueuedDataSinks() {
+        String sql = "SELECT DISTINCT flow_name FROM cold_queue_entries WHERE rate_limited = TRUE";
+
+        @SuppressWarnings("unchecked")
+        List<String> results = entityManager.createNativeQuery(sql).getResultList();
+        return results.stream().filter(Objects::nonNull).toList();
+    }
+
+    @Override
+    public boolean existsRateLimitedColdQueuedDataSink(String flowName) {
+        String sql = """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM cold_queue_entries
+                    WHERE flow_name = :flowName
+                    AND rate_limited = TRUE
+                )""";
+
+        Object result = entityManager.createNativeQuery(sql)
+                .setParameter("flowName", flowName)
+                .getSingleResult();
+
+        return Boolean.TRUE.equals(result) || (result instanceof Number number && number.intValue() != 0);
     }
 
 }

@@ -19,7 +19,7 @@
 <template>
   <Menu
     ref="menu"
-    :id="`overlay_menu_` + data.name + `_` + data.type"
+    :id="`overlay_menu_` + rowData.name + `_` + rowData.type"
     :model="items"
     :popup="true"
     @blur="blurTrigger"
@@ -32,11 +32,11 @@
     }"
   >
     <template #item="{ item, props }">
-      <PermissionedRouterLink v-if="item.route" ref="viewDataSinkPlugin" :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
+      <PermissionedRouterLink v-if="item.route" ref="viewDataSinkPlugin" :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(rowData.sourcePlugin) }">
         <a
           v-ripple
           v-tooltip.top="{
-            value: concatMvnCoordinates(data.sourcePlugin),
+            value: concatMvnCoordinates(rowData.sourcePlugin),
           }"
           class="flex align-items-center"
           v-bind="props.action"
@@ -51,17 +51,19 @@
       </a>
     </template>
   </Menu>
-  <Button :id="`${data.name}-${data.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
-  <DataSinkRemoveButton ref="removeDataSink" :row-data-prop="data" @reload-data-sinks="refresh" />
-  <DialogTemplate ref="editDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Edit Data Sink" dialog-width="50vw" :row-data-prop="data" edit-data-sink @refresh-page="refresh" />
-  <DialogTemplate ref="cloneDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Create Data Sink" dialog-width="50vw" :row-data-prop="formatCloneDataSink(data)" @refresh-page="refresh" />
+  <i v-if="hasRateLimit" v-tooltip.top="rateLimitTooltip" class="fa-solid fa-stopwatch fa-lg text-info cursor-pointer mr-2" @click="addRateLimit.showDialog()" />
+  <Button :id="`${rowData.name}-${rowData.type}`" ref="optionsButton" type="button" v-tooltip.top="`Options`" @click="menuButtonClick" severity="secondary" outlined iconPos="right" size="small" :icon="horizontalEllipsis ? 'pi pi-ellipsis-h' : 'pi pi-ellipsis-v'" class="mt-n1 mb-n1" />
+  <DataSinkRemoveButton ref="removeDataSink" :row-data-prop="rowData" @reload-data-sinks="refresh" />
+  <DialogTemplate ref="editDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Edit Data Sink" dialog-width="50vw" :row-data-prop="rowData" edit-data-sink @refresh-page="refresh" />
+  <DialogTemplate ref="cloneDataSink" component-name="dataSinks/DataSinkConfigurationDialog" header="Create Data Sink" dialog-width="50vw" :row-data-prop="formatCloneDataSink(rowData)" @refresh-page="refresh" />
+  <DialogTemplate ref="addRateLimit" component-name="dataSinks/RateLimitingForm" :header="rateLimitDialogHeader" dialog-width="35vw" dismissable-mask :data-sink-name="rowData['name']" :rate-limit="rowData['rateLimit']" @close-dialog-template="editing = false" @open-dialog-template="editing = true" @refresh-page="refresh" />
 </template>
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSinkRemoveButton from "@/components/dataSinks/DataSinkRemoveButton.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
-import { computed, inject, reactive, ref } from "vue";
+import { computed, inject, ref, toRef } from "vue";
 import { useRouter } from "vue-router";
 
 import _ from "lodash";
@@ -72,12 +74,13 @@ import Ripple from "primevue/ripple";
 
 const router = useRouter();
 const hasPermission = inject("hasPermission");
-const emit = defineEmits(["reloadDataSinks"]);
+const emit = defineEmits(["reloadDataSinks", "updateRateLimit"]);
 const editing = inject("isEditing");
 const vRipple = Ripple;
 const editDataSink = ref(null);
 const cloneDataSink = ref(null);
 const removeDataSink = ref(null);
+const addRateLimit = ref(null);
 const viewDataSinkPlugin = ref(null);
 const optionsButton = ref(null);
 const horizontalEllipsis = ref(false);
@@ -89,9 +92,21 @@ const props = defineProps({
   },
 });
 
-const { rowDataProp: data } = reactive(props);
+const rowData = toRef(props, "rowDataProp");
 
 const menu = ref();
+
+const hasRateLimit = computed(() => !_.isEmpty(rowData.value.rateLimit));
+
+const rateLimitTooltip = computed(() => {
+  if (!rowData.value.rateLimit) return "";
+  const { maxAmount, unit, durationSeconds } = rowData.value.rateLimit;
+  return `Rate limited: ${maxAmount} ${unit.toLowerCase()} every ${durationSeconds}s`;
+});
+
+const rateLimitDialogHeader = computed(() => {
+  return hasRateLimit.value ? `Edit Rate Limit: ${rowData.value.name}` : `Add Rate Limit: ${rowData.value.name}`;
+});
 
 const concatMvnCoordinates = (sourcePlugin) => {
   return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
@@ -102,13 +117,13 @@ const items = ref([
     icon: "text-muted pi pi-sitemap",
     visible: computed(() => hasPermission("FlowView")),
     command: () => {
-      router.push(`/pipeline/${data.type}/${data.name}`);
+      router.push(`/pipeline/${rowData.value.type}/${rowData.value.name}`);
     },
   },
   {
     label: "Edit",
     icon: "text-muted pi pi-pencil",
-    visible: computed(() => data.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanCreate")),
+    visible: computed(() => rowData.value.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanCreate")),
     command: () => {
       editDataSink.value.showDialog();
     },
@@ -116,7 +131,7 @@ const items = ref([
   {
     label: "Clone",
     icon: "text-muted pi pi-clone",
-    visible: computed(() => hasPermission("FlowPlanCreate") && !data.flowStatus?.placeholder),
+    visible: computed(() => hasPermission("FlowPlanCreate") && !rowData.value.flowStatus?.placeholder),
     command: () => {
       cloneDataSink.value.showDialog();
     },
@@ -136,8 +151,16 @@ const items = ref([
     route: "/config/plugins/",
   },
   {
+    label: computed(() => hasRateLimit.value ? "Edit Rate Limit" : "Add Rate Limit"),
+    icon: computed(() => hasRateLimit.value ? "text-muted fa-solid fa-stopwatch fa-sm" : "text-muted fa-solid fa-plus fa-sm"),
+    visible: computed(() => hasPermission("FlowUpdate")),
+    command: () => {
+      addRateLimit.value.showDialog();
+    },
+  },
+  {
     separator: true,
-    visible: computed(() => data.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
+    visible: computed(() => rowData.value.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
   },
   {
     label: "Remove",
@@ -145,7 +168,7 @@ const items = ref([
     command: async () => {
       removeDataSink.value.showDialog();
     },
-    visible: computed(() => data.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
+    visible: computed(() => rowData.value.sourcePlugin.artifactId === "system-plugin" && hasPermission("FlowPlanDelete")),
   },
 ]);
 
@@ -167,18 +190,23 @@ const blurTrigger = () => {
   editing.value = false;
 };
 
-const formatCloneDataSink = (data) => {
-  const clonedDataSinkObject = _.cloneDeepWith(data);
+const formatCloneDataSink = (dataValue) => {
+  const clonedDataSinkObject = _.cloneDeepWith(dataValue);
   clonedDataSinkObject["name"] = "";
   return clonedDataSinkObject;
 };
 
-const refresh = async () => {
-  emit("reloadDataSinks");
+const refresh = async (updateData) => {
+  editing.value = false;
+  if (updateData && updateData.name && updateData.rateLimit !== undefined) {
+    emit("updateRateLimit", updateData);
+  } else {
+    emit("reloadDataSinks");
+  }
 };
 
 const formatFlowData = () => {
-  let exportableData = JSON.parse(JSON.stringify(data));
+  let exportableData = JSON.parse(JSON.stringify(rowData.value));
   exportableData = _.pick(exportableData, ["name", "type", "description", "subscribe", "egressAction.name", "egressAction.type", "egressAction.parameters", "egressAction.apiVersion", "egressAction.join"]);
   exportableData["type"] = "DATA_SINK";
 
@@ -187,7 +215,7 @@ const formatFlowData = () => {
 
 const exportDataSink = () => {
   const link = document.createElement("a");
-  const downloadFileName = `${data.name}_data_sink_export_` + new Date(Date.now()).toLocaleDateString();
+  const downloadFileName = `${rowData.value.name}_data_sink_export_` + new Date(Date.now()).toLocaleDateString();
   link.download = downloadFileName.toLowerCase();
   const blob = new Blob([JSON.stringify(formatFlowData(), null, 2)], {
     type: "application/json",

@@ -457,7 +457,23 @@ func newDataSourceError(message string) *DataSourceError {
 }
 
 func getDataSource(cmd *cobra.Command, name string) error {
-	// Try REST data source PLAN first
+	// Try live flows first so configured rate limits are visible
+	restResp, err := graphql.GetRestDataSource(name)
+	if err == nil {
+		return prettyPrint(cmd, restResp.GetRestDataSource)
+	}
+
+	timedResp, err := graphql.GetTimedDataSource(name)
+	if err == nil {
+		return prettyPrint(cmd, timedResp.GetTimedDataSource)
+	}
+
+	onErrorResp, err := graphql.GetOnErrorDataSource(name)
+	if err == nil {
+		return prettyPrint(cmd, onErrorResp.GetOnErrorDataSource)
+	}
+
+	// Fall back to plans
 	restPlanResp, err := graphql.GetRestDataSourcePlan(name)
 	if err == nil {
 		return prettyPrint(cmd, restPlanResp.GetRestDataSourcePlan)
@@ -505,24 +521,24 @@ func listAllDataSources(cmd *cobra.Command) error {
 
 	// Add REST data sources
 	for _, dataSource := range resp.GetAllFlows.GetRestDataSource() {
-		rows = addDataSourceRow(&dataSource.DataSourceFieldsRestDataSource, "Rest", rows)
+		rows = addDataSourceRow(&dataSource.DataSourceFieldsRestDataSource, "Rest", formatRateLimit(dataSource.GetRateLimit()), rows)
 	}
 
 	// Add timed data sources
 	for _, dataSource := range resp.GetAllFlows.GetTimedDataSource() {
-		rows = addDataSourceRow(&dataSource.DataSourceFieldsTimedDataSource, "Timed", rows)
+		rows = addDataSourceRow(&dataSource.DataSourceFieldsTimedDataSource, "Timed", "-", rows)
 	}
 
 	// Add on-error data sources
 	for _, dataSource := range resp.GetAllFlows.GetOnErrorDataSource() {
-		rows = addDataSourceRow(&dataSource.DataSourceFieldsOnErrorDataSource, "On-Error", rows)
+		rows = addDataSourceRow(&dataSource.DataSourceFieldsOnErrorDataSource, "On-Error", "-", rows)
 	}
 
 	sort.Slice(rows, func(i, j int) bool {
 		return rows[i][0] < rows[j][0]
 	})
 
-	columns := []string{"Name", "Type", "State", "Test Mode", "Downstream"}
+	columns := []string{"Name", "Type", "State", "Test Mode", "Rate Limit", "Downstream"}
 
 	plain, _ := cmd.Flags().GetBool("plain")
 
@@ -532,13 +548,14 @@ func listAllDataSources(cmd *cobra.Command) error {
 	return nil
 }
 
-func addDataSourceRow(dataSource graphql.DataSourceFields, dataSourceType string, rows [][]string) [][]string {
+func addDataSourceRow(dataSource graphql.DataSourceFields, dataSourceType string, rateLimit string, rows [][]string) [][]string {
 	actionCounts, _ := countActionsInFlow(dataSource.GetName())
 	rows = append(rows, []string{
 		dataSource.GetName(),
 		dataSourceType,
 		formatDataSourceState(dataSource.GetFlowStatus()),
 		strconv.FormatBool(dataSource.GetFlowStatus().TestMode),
+		rateLimit,
 		formatActionCounts(actionCounts),
 	})
 	return rows

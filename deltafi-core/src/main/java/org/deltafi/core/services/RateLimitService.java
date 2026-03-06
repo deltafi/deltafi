@@ -34,36 +34,61 @@ public class RateLimitService {
 
     @Autowired
     public RateLimitService(JedisPool jedisPool) {
+        this(ValkeyBasedProxyManager.builderFor(jedisPool).build());
         log.info("Initializing RateLimitService with JedisPool: {}", jedisPool);
-        this.proxyManager = ValkeyBasedProxyManager.builderFor(jedisPool).build();
-        log.info("RateLimitService initialized successfully");
+    }
+
+    // Constructor for testing
+    RateLimitService(ProxyManager<String> proxyManager) {
+        this.proxyManager = proxyManager;
     }
 
     public void updateLimit(String bucketName, long capacity, Duration period) {
+        // Preserve consumed tokens when updating limits.
+        // Note: There's a small race window between reading available tokens and removing/recreating
+        // the bucket where tokens could be consumed by another thread. This is acceptable since rate
+        // limit updates are rare admin operations and the effect is just that the new limit may not
+        // immediately reflect in-flight consumption - the bucket will self-correct on next refill.
+        long previouslyConsumed = 0;
+        long previousAvailable = getAvailableTokens(bucketName);
+        if (previousAvailable < Long.MAX_VALUE) {
+            previouslyConsumed = Math.max(0, capacity - previousAvailable);
+        }
+
+        proxyManager.removeProxy(bucketName);
+
         BucketConfiguration configuration = BucketConfiguration.builder()
                 .addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, period).build())
                 .build();
 
-        proxyManager.builder().build(bucketName, () -> configuration);
-        
-        log.debug("Updated rate limit for bucket '{}': {} requests per {}", bucketName, capacity, period);
+        Bucket bucket = proxyManager.builder().build(bucketName, () -> configuration);
+
+        // Restore the consumed token count
+        if (previouslyConsumed > 0 && previouslyConsumed < capacity) {
+            bucket.consumeIgnoringRateLimits(previouslyConsumed);
+        }
+
+        log.debug("Updated rate limit for bucket '{}': {} tokens per {}", bucketName, capacity, period);
     }
 
     public boolean tryConsume(String bucketName, long tokens, long capacity, Duration period) {
         try {
             Bucket bucket = proxyManager.getProxy(bucketName, () -> {
-                // This supplier only gets called if the bucket doesn't exist
-                log.info("Creating new bucket '{}' with {}req/{}s", bucketName, capacity, period);
+                log.info("Creating new bucket '{}' with {} tokens per {}", bucketName, capacity, period);
                 return BucketConfiguration.builder()
                         .addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, period).build())
                         .build();
             });
-            
-            boolean consumed = bucket.tryConsume(tokens);
-            if (!consumed) {
-                log.debug("Rate limit exceeded for bucket '{}', requested {} tokens", bucketName, tokens);
+
+            long available = bucket.getAvailableTokens();
+            if (available <= 0) {
+                log.debug("Rate limit exceeded for bucket '{}', requested {} tokens, available {}", bucketName, tokens, available);
+                return false;
             }
-            return consumed;
+
+            // Allow oversized requests when bucket has tokens - drives bucket negative until refill
+            bucket.consumeIgnoringRateLimits(tokens);
+            return true;
         } catch (Exception e) {
             throw new RuntimeException("Rate limiting failed for bucket '" + bucketName + "'", e);
         }
@@ -81,13 +106,25 @@ public class RateLimitService {
     public void consume(String bucketName, long tokens) {
         Bucket bucket = getBucket(bucketName);
         if (bucket != null) {
-            bucket.consumeIgnoringRateLimits(tokens);
+            try {
+                bucket.consumeIgnoringRateLimits(tokens);
+            } catch (Exception e) {
+                // Bucket doesn't exist in storage - no rate limit to track
+            }
         }
     }
 
     public long getAvailableTokens(String bucketName) {
         Bucket bucket = getBucket(bucketName);
-        return bucket != null ? bucket.getAvailableTokens() : Long.MAX_VALUE;
+        if (bucket == null) {
+            return Long.MAX_VALUE;
+        }
+        try {
+            return bucket.getAvailableTokens();
+        } catch (Exception e) {
+            // Bucket doesn't exist in storage - supplier returned null
+            return Long.MAX_VALUE;
+        }
     }
 
     public void removeBucket(String bucketName) {

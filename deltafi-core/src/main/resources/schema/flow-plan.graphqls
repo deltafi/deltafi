@@ -274,6 +274,7 @@ type DataSink {
   subscribe: [Rule!]!
   expectedAnnotations: [String]
   egressAction: ActionConfiguration
+  rateLimit: RateLimit
   variables: [Variable]!
   tags: [String]
 }

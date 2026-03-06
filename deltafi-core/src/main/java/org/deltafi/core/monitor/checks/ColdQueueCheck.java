@@ -36,6 +36,7 @@ import static org.deltafi.core.monitor.checks.CheckResult.CODE_YELLOW;
 @Slf4j
 public class ColdQueueCheck extends StatusCheck {
     public static final String COLD_QUEUE_COUNT_KEY = "org.deltafi.cold.queue.count";
+    public static final String RATE_LIMITED_COUNT_KEY = "org.deltafi.rate.limited.count";
     // This is the max total cold queued items for counting per action
     static final int MAX_COLD_QUEUE_FOR_GROUPING = 250_000;
     // last 1 minute when scheduler is every 5 sec
@@ -71,12 +72,18 @@ public class ColdQueueCheck extends StatusCheck {
     @Override
     public CheckResult check() {
         long totalColdQueued = queueManagementService.coldQueuedCount();
+        long totalRateLimited = queueManagementService.rateLimitedCount();
 
-        // Publish count to Valkey for worker instances
+        // Publish counts to Valkey for worker instances
         try {
             valkeyQueue.set(COLD_QUEUE_COUNT_KEY, String.valueOf(totalColdQueued));
         } catch (Exception e) {
             log.error("Failed to publish cold queue count to Valkey", e);
+        }
+        try {
+            valkeyQueue.set(RATE_LIMITED_COUNT_KEY, String.valueOf(totalRateLimited));
+        } catch (Exception e) {
+            log.error("Failed to publish rate limited count to Valkey", e);
         }
 
         if (totalColdQueued >= MAX_COLD_QUEUE_FOR_GROUPING) {

@@ -23,6 +23,8 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.generated.types.RateLimit;
+import org.deltafi.core.generated.types.RateLimitUnit;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.services.analytics.AnalyticEventService;
@@ -72,6 +74,7 @@ class StateMachineTest {
     @Mock private PublisherService publisherService;
     @Mock private AnalyticEventService analyticEventService;
     @Mock private MetricService metricService;
+    @Mock private RateLimitService rateLimitService;
 
     private final FlowDefinitionService flowDefinitionService = new MockFlowDefinitionService();
     private final UtilService utilService = new UtilService(flowDefinitionService);
@@ -230,6 +233,62 @@ class StateMachineTest {
         Action joiningAction = joiningActions.getFirst();
         assertEquals("JoiningTransformAction", joiningAction.getName());
         assertEquals(ActionType.TRANSFORM, joiningAction.getType());
+    }
+
+    @Test
+    void existingRateLimitedBacklogQueuesNewDataSinkWorkWithoutConsumingTokens() {
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        DeltaFileFlow dataSinkFlow = deltaFile.addFlow(
+                FlowDefinition.builder().name(EGRESS_FLOW).type(FlowType.DATA_SINK).build(),
+                deltaFile.firstFlow(),
+                OffsetDateTime.now(clock));
+        dataSinkFlow.setPendingActions(new ArrayList<>(List.of(EGRESS_ACTION)));
+
+        DataSink dataSink = DataSinkMaker.builder().name(EGRESS_FLOW).flowState(FlowState.RUNNING).build().makeDataSink();
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(2L)
+                .durationSeconds(1)
+                .build());
+
+        when(dataSinkService.getActiveFlowByName(EGRESS_FLOW)).thenReturn(dataSink);
+        when(queueManagementService.hasRateLimitedBacklog(EGRESS_FLOW)).thenReturn(true);
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSinkFlow)));
+
+        assertThat(actionInputs).isEmpty();
+        assertThat(dataSinkFlow.lastAction().getState()).isEqualTo(ActionState.COLD_QUEUED);
+        assertThat(dataSinkFlow.lastAction().isRateLimited()).isTrue();
+        Mockito.verify(queueManagementService).markRateLimitedBacklog(EGRESS_FLOW);
+        Mockito.verifyNoInteractions(rateLimitService);
+    }
+
+    @Test
+    void noExistingRateLimitedBacklogConsumesTokenAndQueuesWarmAction() {
+        DeltaFile deltaFile = utilService.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+        DeltaFileFlow dataSinkFlow = deltaFile.addFlow(
+                FlowDefinition.builder().name(EGRESS_FLOW).type(FlowType.DATA_SINK).build(),
+                deltaFile.firstFlow(),
+                OffsetDateTime.now(clock));
+        dataSinkFlow.setPendingActions(new ArrayList<>(List.of(EGRESS_ACTION)));
+
+        DataSink dataSink = DataSinkMaker.builder().name(EGRESS_FLOW).flowState(FlowState.RUNNING).build().makeDataSink();
+        dataSink.setRateLimit(RateLimit.newBuilder()
+                .unit(RateLimitUnit.FILES)
+                .maxAmount(2L)
+                .durationSeconds(1)
+                .build());
+
+        when(dataSinkService.getActiveFlowByName(EGRESS_FLOW)).thenReturn(dataSink);
+        when(queueManagementService.hasRateLimitedBacklog(EGRESS_FLOW)).thenReturn(false);
+        when(rateLimitService.tryConsume("datasink:" + EGRESS_FLOW, 1L, 2L, Duration.ofSeconds(1))).thenReturn(true);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(new StateMachineInput(deltaFile, dataSinkFlow)));
+
+        assertThat(actionInputs).hasSize(1);
+        assertThat(dataSinkFlow.lastAction().getState()).isEqualTo(ActionState.QUEUED);
+        Mockito.verify(rateLimitService).tryConsume("datasink:" + EGRESS_FLOW, 1L, 2L, Duration.ofSeconds(1));
     }
 
     @Test

@@ -26,6 +26,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
+import org.deltafi.core.generated.types.RateLimit;
 import org.hibernate.annotations.Type;
 
 import java.util.*;
@@ -47,6 +48,10 @@ public class DataSink extends Flow implements Subscriber {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private Set<Rule> subscribe;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private RateLimit rateLimit;
 
     public DataSink() {
         super(null, FlowType.DATA_SINK, null, null);
@@ -84,6 +89,7 @@ public class DataSink extends Flow implements Subscriber {
     public void copyFlowSpecificState(Flow sourceFlow) {
         if (sourceFlow instanceof DataSink dataSink) {
             this.setExpectedAnnotations(dataSink.getExpectedAnnotations());
+            this.setRateLimit(dataSink.getRateLimit());
         }
     }
 }

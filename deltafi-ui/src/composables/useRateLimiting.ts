@@ -41,7 +41,6 @@ export default function useRateLimiting() {
     return sendGraphQLQuery(query, "setRestDataSourceRateLimit", "mutation");
   };
 
-  // Stops an egress flow
   const removeRestDataSourceRateLimit = (name: string) => {
     const query = {
       removeRestDataSourceRateLimit: {
@@ -51,6 +50,34 @@ export default function useRateLimiting() {
       },
     };
     return sendGraphQLQuery(query, "removeRestDataSourceRateLimit", "mutation");
+  };
+
+  const setDataSinkRateLimit = async (name: string, unit: string, maxAmount: Number, durationSeconds: Number) => {
+    const query = {
+      setDataSinkRateLimit: {
+        __args: {
+          name: name,
+          rateLimit: {
+            unit: new EnumType(unit),
+            maxAmount: maxAmount,
+            durationSeconds: durationSeconds,
+          },
+        },
+      },
+    };
+
+    return sendGraphQLQuery(query, "setDataSinkRateLimit", "mutation");
+  };
+
+  const removeDataSinkRateLimit = (name: string) => {
+    const query = {
+      removeDataSinkRateLimit: {
+        __args: {
+          name: name,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "removeDataSinkRateLimit", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
@@ -71,5 +98,7 @@ export default function useRateLimiting() {
     response,
     setRestDataSourceRateLimit,
     removeRestDataSourceRateLimit,
+    setDataSinkRateLimit,
+    removeDataSinkRateLimit,
   };
 }

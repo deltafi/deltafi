@@ -80,6 +80,7 @@ public class StatsService {
                 "gauge.deltafile.inFlightCount", stats.getInFlightCount(),
                 "gauge.deltafile.inFlightBytes", stats.getInFlightBytes(),
                 "gauge.deltafile.coldQueuedCount", stats.getColdQueuedCount(),
+                "gauge.deltafile.rateLimitedCount", stats.getRateLimitedCount(),
                 "gauge.deltafile.pausedCount", stats.getPausedCount(),
                 "gauge.deltafile.warmQueuedCount", stats.getWarmQueuedCount()
         ));

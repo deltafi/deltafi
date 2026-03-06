@@ -48,6 +48,11 @@ export default function useDataSink() {
             },
           },
           expectedAnnotations: true,
+          rateLimit: {
+            unit: true,
+            maxAmount: true,
+            durationSeconds: true,
+          },
           subscribe: {
             condition: true,
             topic: true,

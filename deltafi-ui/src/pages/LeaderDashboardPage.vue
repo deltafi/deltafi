@@ -101,6 +101,10 @@
               <div class="summary-label">Cold Queue</div>
             </div>
             <div class="summary-stat">
+              <div class="summary-value" :class="{ 'has-rate-limited': filteredTotalRateLimited > 0 }">{{ filteredTotalRateLimited.toLocaleString() }}</div>
+              <div class="summary-label">Rate Limited</div>
+            </div>
+            <div class="summary-stat">
               <div class="summary-value" :class="{ 'has-paused': filteredTotalPaused > 0 }">{{ filteredTotalPaused.toLocaleString() }}</div>
               <div class="summary-label">Paused</div>
             </div>
@@ -147,6 +151,10 @@
             <div class="summary-stat">
               <div class="summary-value" :class="{ 'has-cold-queue': (aggregatedStats?.totalColdQueue ?? 0) > 0 }">{{ (aggregatedStats?.totalColdQueue ?? 0).toLocaleString() }}</div>
               <div class="summary-label">Cold Queue</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-value" :class="{ 'has-rate-limited': (aggregatedStats?.totalRateLimited ?? 0) > 0 }">{{ (aggregatedStats?.totalRateLimited ?? 0).toLocaleString() }}</div>
+              <div class="summary-label">Rate Limited</div>
             </div>
             <div class="summary-stat">
               <div class="summary-value" :class="{ 'has-paused': (aggregatedStats?.totalPaused ?? 0) > 0 }">{{ (aggregatedStats?.totalPaused ?? 0).toLocaleString() }}</div>
@@ -514,6 +522,7 @@ const filteredTotalInFlight = computed(() => sortedMembers.value.reduce((sum, m)
 const filteredTotalErrors = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.errorCount ?? 0), 0));
 const filteredTotalWarmQueue = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.warmQueuedCount ?? 0), 0));
 const filteredTotalColdQueue = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.coldQueuedCount ?? 0), 0));
+const filteredTotalRateLimited = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.rateLimitedCount ?? 0), 0));
 const filteredTotalPaused = computed(() => sortedMembers.value.reduce((sum, m) => sum + (m.pausedCount ?? 0), 0));
 const filteredOldest = computed(() => {
   const timestamps = sortedMembers.value
@@ -602,6 +611,7 @@ const tableColumns = computed(() => {
       { field: "errors", header: "Errors" },
       { field: "warmQueue", header: "Warm Queue" },
       { field: "coldQueue", header: "Cold Queue" },
+      { field: "rateLimited", header: "Rate Limited" },
       { field: "paused", header: "Paused" },
     ];
   } else if (viewMode.value === "system") {
@@ -621,7 +631,7 @@ const tableData = computed(() => {
 
   if (viewMode.value === "summary") {
     // DataFlow metrics - one row per member
-    let totalInFlight = 0, totalErrors = 0, totalWarm = 0, totalCold = 0, totalPaused = 0;
+    let totalInFlight = 0, totalErrors = 0, totalWarm = 0, totalCold = 0, totalRateLimited = 0, totalPaused = 0;
 
     for (const member of sortedMembers.value) {
       rows.push({
@@ -631,6 +641,7 @@ const tableData = computed(() => {
         errors: member.errorCount,
         warmQueue: member.warmQueuedCount,
         coldQueue: member.coldQueuedCount,
+        rateLimited: member.rateLimitedCount,
         paused: member.pausedCount,
         oldest: member.oldestInFlightCreated,
       });
@@ -638,6 +649,7 @@ const tableData = computed(() => {
       totalErrors += member.errorCount ?? 0;
       totalWarm += member.warmQueuedCount ?? 0;
       totalCold += member.coldQueuedCount ?? 0;
+      totalRateLimited += member.rateLimitedCount ?? 0;
       totalPaused += member.pausedCount ?? 0;
     }
 
@@ -648,6 +660,7 @@ const tableData = computed(() => {
         errors: totalErrors,
         warmQueue: totalWarm,
         coldQueue: totalCold,
+        rateLimited: totalRateLimited,
         paused: totalPaused,
         oldest: filteredOldest.value,
         isTotal: true,
@@ -811,6 +824,7 @@ const getValueClass = (field: string, value: unknown): Record<string, boolean> =
   return {
     "has-errors": field === "errors" && value > 0,
     "has-cold-queue": field === "coldQueue" && value > 0,
+    "has-rate-limited": field === "rateLimited" && value > 0,
     "has-paused": field === "paused" && value > 0,
   };
 };
@@ -896,6 +910,10 @@ const refresh = () => {
 
       &.has-cold-queue {
         color: var(--orange-500);
+      }
+
+      &.has-rate-limited {
+        color: var(--blue-500);
       }
 
       &.has-paused {
@@ -1066,6 +1084,10 @@ const refresh = () => {
       color: var(--orange-500);
     }
 
+    .has-rate-limited {
+      color: var(--blue-500);
+    }
+
     .has-paused {
       color: var(--yellow-500);
     }
@@ -1179,6 +1201,7 @@ const refresh = () => {
       &.unhealthy { color: var(--red-500); }
       &.error { color: var(--red-500); }
       &.has-cold-queue { color: var(--orange-500); }
+      &.has-rate-limited { color: var(--blue-500); }
       &.has-paused { color: var(--yellow-500); }
       &.large { font-size: 3rem; }
       &.summary-value-small { font-size: 1.25rem; }

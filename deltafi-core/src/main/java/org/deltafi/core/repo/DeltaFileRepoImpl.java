@@ -139,6 +139,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             SELECT delta_file_id
             FROM cold_queue_entries
             WHERE action_class = :actionClass
+            AND rate_limited = FALSE
             ORDER BY queued_at ASC
             LIMIT :limit
         """;
@@ -150,6 +151,32 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         @SuppressWarnings("unchecked")
         List<UUID> dids = nativeQuery.getResultList();
         // Dedupe while preserving order (duplicates rare - only if delta_file has multiple flows with same action class cold-queued)
+        List<UUID> uniqueDids = dids.stream().distinct().toList();
+        return fetchByDidIn(uniqueDids);
+    }
+
+    @Override
+    @Transactional
+    public List<DeltaFile> findRateLimitedColdQueuedForRequeue(String flowName, int maxFiles) {
+        if (flowName == null) {
+            return Collections.emptyList();
+        }
+
+        String nativeQueryStr = """
+            SELECT delta_file_id
+            FROM cold_queue_entries
+            WHERE flow_name = :flowName
+            AND rate_limited = TRUE
+            ORDER BY queued_at ASC
+            LIMIT :limit
+        """;
+
+        Query nativeQuery = entityManager.createNativeQuery(nativeQueryStr, UUID.class)
+                .setParameter("flowName", flowName)
+                .setParameter(LIMIT, maxFiles);
+
+        @SuppressWarnings("unchecked")
+        List<UUID> dids = nativeQuery.getResultList();
         List<UUID> uniqueDids = dids.stream().distinct().toList();
         return fetchByDidIn(uniqueDids);
     }

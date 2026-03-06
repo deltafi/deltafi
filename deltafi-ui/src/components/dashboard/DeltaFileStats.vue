@@ -64,6 +64,7 @@ const statLabels = [
   "In-flight Bytes",
   "Warm Queue",
   "Cold Queue",
+  "Rate Limited",
   "Paused"
 ]
 const statValues = computed(() => {
@@ -75,6 +76,7 @@ const statValues = computed(() => {
     formattedBytes(deltaFileStats.value.inFlightBytes),
     (deltaFileStats.value.warmQueuedCount ?? 0).toLocaleString("en-US"),
     (deltaFileStats.value.coldQueuedCount ?? 0).toLocaleString("en-US"),
+    (deltaFileStats.value.rateLimitedCount ?? 0).toLocaleString("en-US"),
     (deltaFileStats.value.pausedCount ?? 0).toLocaleString("en-US")
   ]
 })
@@ -115,8 +117,8 @@ onMounted(async () => {
 }
 
 .stat-cell {
-  flex: 1 1 16%;
-  min-width: 100px;
+  flex: 1 1 14%;
+  min-width: 90px;
 }
 
 .stat-data {

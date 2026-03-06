@@ -124,6 +124,28 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
+    public boolean setDataSinkRateLimit(@InputArgument String name, @InputArgument RateLimitInput rateLimit) {
+        if (dataSinkService.hasFlow(name)) {
+            auditLogger.audit("set rate limit to {} for data sink {}", rateLimit, name);
+            return dataSinkService.setRateLimit(name, rateLimit);
+        } else {
+            throw new DgsEntityNotFoundException("No DataSink exists with the name: " + name);
+        }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean removeDataSinkRateLimit(@InputArgument String name) {
+        if (dataSinkService.hasFlow(name)) {
+            auditLogger.audit("remove rate limit for data sink {}", name);
+            return dataSinkService.removeRateLimit(name);
+        } else {
+            throw new DgsEntityNotFoundException("No DataSink exists with the name: " + name);
+        }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
     public boolean setDataSinkExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
         auditLogger.audit("set expected annotations for dataSource {} to {}", flowName, expectedAnnotations);
         return annotationService.setExpectedAnnotations(flowName, new HashSet<>(expectedAnnotations));

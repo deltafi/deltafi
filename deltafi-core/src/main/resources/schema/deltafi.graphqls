@@ -385,6 +385,7 @@ type DeltaFileStats {
   inFlightBytes: Long!
   warmQueuedCount: Long!
   coldQueuedCount: Long!
+  rateLimitedCount: Long!
   pausedCount: Long!
   oldestInFlightCreated: DateTime
   oldestInFlightDid: UUID
@@ -513,6 +514,8 @@ type Mutation {
   setOnErrorDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   setRestDataSourceRateLimit(name: String!, rateLimit: RateLimitInput!) : Boolean!
   removeRestDataSourceRateLimit(name: String!) : Boolean!
+  setDataSinkRateLimit(name: String!, rateLimit: RateLimitInput!) : Boolean!
+  removeDataSinkRateLimit(name: String!) : Boolean!
   enableDataSinkTestMode(flowName: String!) : Boolean!
   disableDataSinkTestMode(flowName: String!) : Boolean!
   setTimedDataSourceMemo(name: String!, memo: String) : Boolean!

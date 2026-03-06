@@ -54,6 +54,15 @@ public interface DeltaFileRepoCustom {
     List<DeltaFile> findColdQueuedForRequeue(String actionClass, int maxFiles);
 
     /**
+     * Find rate-limited COLD_QUEUED DeltaFiles for a specific flow name (data sink).
+     *
+     * @param flowName the name of the data sink flow
+     * @param maxFiles limit the query to this many files
+     * @return the list of the DeltaFiles to be requeued
+     */
+    List<DeltaFile> findRateLimitedColdQueuedForRequeue(String flowName, int maxFiles);
+
+    /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names
      *
      * @param skipRestDataSources Set of rest data sources to not requeue

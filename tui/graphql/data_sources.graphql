@@ -14,6 +14,11 @@ query ListDataSources {
   getAllFlows {
     restDataSource {
       ...DataSourceFields
+      rateLimit {
+        maxAmount
+        unit
+        durationSeconds
+      }
     }
     timedDataSource {
       ...DataSourceFields
@@ -120,6 +125,11 @@ query GetRestDataSource($name: String!) {
       version
     }
     maxErrors
+    rateLimit {
+      maxAmount
+      unit
+      durationSeconds
+    }
     flowStatus {
       state
       valid

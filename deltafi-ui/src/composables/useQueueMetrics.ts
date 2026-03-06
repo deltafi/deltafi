@@ -40,6 +40,7 @@ export interface ColdQueueMetrics {
 export interface DetailedQueueMetrics {
   warmQueues: WarmQueueMetrics[];
   coldQueues: ColdQueueMetrics[];
+  rateLimitedQueues: ColdQueueMetrics[];
   timestamp: string;
 }
 
@@ -113,6 +114,7 @@ export function useRunningTasks() {
 export interface FlowQueueCounts {
   warm: number;
   cold: number;
+  rateLimited: number;
   total: number;
 }
 
@@ -123,7 +125,7 @@ export function aggregateQueueCountsByFlow(metrics: DetailedQueueMetrics | null)
 
   const ensureEntry = (flowName: string) => {
     if (!counts[flowName]) {
-      counts[flowName] = { warm: 0, cold: 0, total: 0 };
+      counts[flowName] = { warm: 0, cold: 0, rateLimited: 0, total: 0 };
     }
   };
 
@@ -136,6 +138,11 @@ export function aggregateQueueCountsByFlow(metrics: DetailedQueueMetrics | null)
     ensureEntry(cold.flowName);
     counts[cold.flowName].cold += cold.count;
     counts[cold.flowName].total += cold.count;
+  }
+  for (const rateLimited of metrics.rateLimitedQueues || []) {
+    ensureEntry(rateLimited.flowName);
+    counts[rateLimited.flowName].rateLimited += rateLimited.count;
+    counts[rateLimited.flowName].total += rateLimited.count;
   }
 
   return counts;

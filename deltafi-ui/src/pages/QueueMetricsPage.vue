@@ -68,6 +68,13 @@
                 </span>
               </template>
             </Column>
+            <Column header="Rate Limited" field="rateLimitedCount" :sortable="true" class="metric-column">
+              <template #body="row">
+                <span :class="{ 'text-muted': row.data.rateLimitedCount === 0 }">
+                  {{ row.data.rateLimitedCount }}
+                </span>
+              </template>
+            </Column>
             <Column header="Total" field="totalCount" :sortable="true" class="metric-column">
               <template #body="row">
                 <strong>{{ row.data.totalCount }}</strong>
@@ -200,6 +207,7 @@ const mergedQueues = computed(() => {
 
   const warmQueues = queueMetrics.value.warmQueues || [];
   const coldQueues = queueMetrics.value.coldQueues || [];
+  const rateLimitedQueues = queueMetrics.value.rateLimitedQueues || [];
 
   const queueMap = new Map();
 
@@ -219,6 +227,7 @@ const mergedQueues = computed(() => {
           actionClass: warm.actionClass,
           warmCount: warm.count,
           coldCount: 0,
+          rateLimitedCount: 0,
           totalCount: warm.count,
           oldestQueuedAt: warm.oldestQueuedAt,
         });
@@ -239,8 +248,30 @@ const mergedQueues = computed(() => {
           actionClass: cold.actionClass,
           warmCount: 0,
           coldCount: cold.count,
+          rateLimitedCount: 0,
           totalCount: cold.count,
           oldestQueuedAt: cold.oldestQueuedAt,
+        });
+      }
+    }
+
+    for (const rateLimited of rateLimitedQueues) {
+      const key = rateLimited.actionClass;
+      const existing = queueMap.get(key);
+      if (existing) {
+        existing.rateLimitedCount += rateLimited.count;
+        existing.totalCount += rateLimited.count;
+        if (rateLimited.oldestQueuedAt && (!existing.oldestQueuedAt || rateLimited.oldestQueuedAt < existing.oldestQueuedAt)) {
+          existing.oldestQueuedAt = rateLimited.oldestQueuedAt;
+        }
+      } else {
+        queueMap.set(key, {
+          actionClass: rateLimited.actionClass,
+          warmCount: 0,
+          coldCount: 0,
+          rateLimitedCount: rateLimited.count,
+          totalCount: rateLimited.count,
+          oldestQueuedAt: rateLimited.oldestQueuedAt,
         });
       }
     }
@@ -255,6 +286,7 @@ const mergedQueues = computed(() => {
         actionClass: warm.actionClass,
         warmCount: warm.count,
         coldCount: 0,
+        rateLimitedCount: 0,
         totalCount: warm.count,
         oldestQueuedAt: warm.oldestQueuedAt,
       });
@@ -265,7 +297,7 @@ const mergedQueues = computed(() => {
       const existing = queueMap.get(key);
       if (existing) {
         existing.coldCount = cold.count;
-        existing.totalCount = existing.warmCount + cold.count;
+        existing.totalCount = existing.warmCount + cold.count + existing.rateLimitedCount;
         if (cold.oldestQueuedAt && (!existing.oldestQueuedAt || cold.oldestQueuedAt < existing.oldestQueuedAt)) {
           existing.oldestQueuedAt = cold.oldestQueuedAt;
         }
@@ -277,8 +309,33 @@ const mergedQueues = computed(() => {
           actionClass: cold.actionClass,
           warmCount: 0,
           coldCount: cold.count,
+          rateLimitedCount: 0,
           totalCount: cold.count,
           oldestQueuedAt: cold.oldestQueuedAt,
+        });
+      }
+    }
+
+    for (const rateLimited of rateLimitedQueues) {
+      const key = `${rateLimited.flowName}|${rateLimited.actionName}|${rateLimited.actionClass}`;
+      const existing = queueMap.get(key);
+      if (existing) {
+        existing.rateLimitedCount = rateLimited.count;
+        existing.totalCount = existing.warmCount + existing.coldCount + rateLimited.count;
+        if (rateLimited.oldestQueuedAt && (!existing.oldestQueuedAt || rateLimited.oldestQueuedAt < existing.oldestQueuedAt)) {
+          existing.oldestQueuedAt = rateLimited.oldestQueuedAt;
+        }
+      } else {
+        queueMap.set(key, {
+          flowName: rateLimited.flowName,
+          flowType: rateLimited.flowType,
+          actionName: rateLimited.actionName,
+          actionClass: rateLimited.actionClass,
+          warmCount: 0,
+          coldCount: 0,
+          rateLimitedCount: rateLimited.count,
+          totalCount: rateLimited.count,
+          oldestQueuedAt: rateLimited.oldestQueuedAt,
         });
       }
     }

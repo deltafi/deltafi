@@ -70,6 +70,7 @@ public class SystemRest {
                 stats.getInFlightCount(),
                 stats.getWarmQueuedCount(),
                 stats.getColdQueuedCount(),
+                stats.getRateLimitedCount(),
                 stats.getPausedCount(),
                 stats.getOldestInFlightCreated(),
                 cpuUsage,

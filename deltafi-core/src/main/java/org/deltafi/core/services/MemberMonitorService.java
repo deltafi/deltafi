@@ -94,6 +94,7 @@ public class MemberMonitorService {
             Long inFlightCount;
             Long warmQueuedCount = null;
             Long coldQueuedCount = null;
+            Long rateLimitedCount = null;
             Long pausedCount = null;
             OffsetDateTime oldestInFlightCreated = null;
             Double cpuUsage = null;
@@ -109,6 +110,7 @@ public class MemberMonitorService {
                 inFlightCount = report.inFlightCount();
                 warmQueuedCount = report.warmQueuedCount();
                 coldQueuedCount = report.coldQueuedCount();
+                rateLimitedCount = report.rateLimitedCount();
                 pausedCount = report.pausedCount();
                 oldestInFlightCreated = report.oldestInFlightCreated();
                 cpuUsage = report.cpuUsage();
@@ -140,6 +142,7 @@ public class MemberMonitorService {
                 inFlightCount,
                 warmQueuedCount,
                 coldQueuedCount,
+                rateLimitedCount,
                 pausedCount,
                 oldestInFlightCreated,
                 cpuUsage,
@@ -182,6 +185,7 @@ public class MemberMonitorService {
                 cachedStatus.inFlightCount(),
                 cachedStatus.warmQueuedCount(),
                 cachedStatus.coldQueuedCount(),
+                cachedStatus.rateLimitedCount(),
                 cachedStatus.pausedCount(),
                 cachedStatus.oldestInFlightCreated(),
                 cachedStatus.cpuUsage(),
@@ -199,6 +203,7 @@ public class MemberMonitorService {
                 memberConfig.url(),
                 memberConfig.tags(),
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -245,6 +250,7 @@ public class MemberMonitorService {
             stats.getInFlightCount(),
             stats.getWarmQueuedCount(),
             stats.getColdQueuedCount(),
+            stats.getRateLimitedCount(),
             stats.getPausedCount(),
             stats.getOldestInFlightCreated(),
             cpuUsage,
@@ -563,6 +569,7 @@ public class MemberMonitorService {
         long totalErrors = 0;
         long totalWarmQueue = 0;
         long totalColdQueue = 0;
+        long totalRateLimited = 0;
         long totalPaused = 0;
         int healthyCount = 0;
         int unhealthyCount = 0;
@@ -579,6 +586,9 @@ public class MemberMonitorService {
             }
             if (member.coldQueuedCount() != null) {
                 totalColdQueue += member.coldQueuedCount();
+            }
+            if (member.rateLimitedCount() != null) {
+                totalRateLimited += member.rateLimitedCount();
             }
             if (member.pausedCount() != null) {
                 totalPaused += member.pausedCount();
@@ -597,6 +607,7 @@ public class MemberMonitorService {
             totalErrors,
             totalWarmQueue,
             totalColdQueue,
+            totalRateLimited,
             totalPaused,
             allMembers.size(),
             healthyCount,

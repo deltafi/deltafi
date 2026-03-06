@@ -59,7 +59,7 @@
                 </DialogTemplate>
               </span>
               <span>
-                <DataSinkNameColumnButtonGroup :key="data.name" :row-data-prop="data" @reload-data-sinks="refresh" />
+                <DataSinkNameColumnButtonGroup :key="data.name" :row-data-prop="data" @reload-data-sinks="refresh" @update-rate-limit="updateRateLimit" />
               </span>
             </div>
           </template>
@@ -130,7 +130,7 @@ import _ from "lodash";
 const notify = useNotifications();
 const confirm = useConfirm();
 const editing = inject("isEditing");
-const emit = defineEmits(["reloadDataSinks"]);
+const emit = defineEmits(["reloadDataSinks", "updateRateLimit"]);
 const flowData = ref({});
 const flowDataByPlugin = ref({});
 const menu = ref();
@@ -284,6 +284,10 @@ const flowViewerPopup = () => {
 
 const refresh = async () => {
   emit("reloadDataSinks");
+};
+
+const updateRateLimit = (updateData) => {
+  emit("updateRateLimit", updateData);
 };
 </script>
 

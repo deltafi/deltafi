@@ -21,6 +21,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.deltafi.core.generated.types.RateLimit;
 import org.deltafi.core.types.DataSink;
 
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import java.util.Set;
 public class DataSinkSnapshot extends FlowSnapshot implements HasExpectedAnnotations {
 
     private Set<String> expectedAnnotations = new HashSet<>();
+    private RateLimit rateLimit;
 
     public DataSinkSnapshot(String name) {
         super(name);
@@ -46,5 +48,6 @@ public class DataSinkSnapshot extends FlowSnapshot implements HasExpectedAnnotat
         setTestMode(dataSink.isTestMode());
         setSourcePlugin(dataSink.getSourcePlugin());
         setExpectedAnnotations(dataSink.getExpectedAnnotations());
+        setRateLimit(dataSink.getRateLimit());
     }
 }

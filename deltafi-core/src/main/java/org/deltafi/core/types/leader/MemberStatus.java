@@ -36,6 +36,7 @@ public record MemberStatus(
         Long inFlightCount,
         Long warmQueuedCount,
         Long coldQueuedCount,
+        Long rateLimitedCount,
         Long pausedCount,
         OffsetDateTime oldestInFlightCreated,
         Double cpuUsage,
