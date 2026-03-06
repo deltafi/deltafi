@@ -314,6 +314,12 @@ export function useGraphPanZoom(
     userHasInteracted.value = true;
   }
 
+  function setZoom(newZoom: number) {
+    zoomLevel.value = Math.max(minZoom, Math.min(effectiveMaxZoom.value, newZoom));
+    panOffset.value = clampPanOffset(panOffset.value, zoomLevel.value);
+    userHasInteracted.value = true;
+  }
+
   // Pan by a percentage of the visible area in each direction
   const panStepFactor = 0.25; // 25% of visible area per click
 
@@ -409,6 +415,8 @@ export function useGraphPanZoom(
     baseViewBox,
     viewBoxString,
     isViewModified,
+    effectiveMaxZoom,
+    minZoomLevel: minZoom,
     canPanLeft,
     canPanRight,
     canPanUp,
@@ -422,6 +430,7 @@ export function useGraphPanZoom(
     doZoom,
     zoomIn,
     zoomOut,
+    setZoom,
     panLeft,
     panRight,
     panUp,

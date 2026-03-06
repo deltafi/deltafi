@@ -39,6 +39,16 @@
       <button class="zoom-button" @click="zoomIn" title="Zoom in">
         <i class="fas fa-plus" />
       </button>
+      <input
+        type="range"
+        class="zoom-slider"
+        :min="minZoomLevel"
+        :max="effectiveMaxZoom"
+        :step="0.01"
+        :value="zoomLevel"
+        title="Zoom level"
+        @input="setZoom(Number($event.target.value))"
+      />
       <button class="zoom-button" @click="zoomOut" title="Zoom out">
         <i class="fas fa-minus" />
       </button>
@@ -401,6 +411,9 @@ const {
   svgHeight,
   viewBoxString,
   isViewModified,
+  effectiveMaxZoom,
+  minZoomLevel,
+  zoomLevel,
   canPanLeft,
   canPanRight,
   canPanUp,
@@ -412,6 +425,7 @@ const {
   doZoom,
   zoomIn,
   zoomOut,
+  setZoom,
   panLeft,
   panRight,
   panUp,
@@ -421,7 +435,7 @@ const {
   setupResizeObserver,
   setupNodeCountWatcher,
 } = useGraphPanZoom(graphContainer, layoutNodes, nodeWidth, nodeHeight, padding, containerWidth, containerHeight, {
-  minZoom: 1,
+  minZoom: 0.3,
   maxZoom: 5,
   excludeSelectors: [".node-group", ".pan-indicator"],
 });
@@ -509,7 +523,40 @@ function isEdgeActive(edge) {
   right: 10px;
   z-index: 10;
   display: flex;
+  align-items: center;
   gap: 4px;
+}
+
+.zoom-slider {
+  width: 100px;
+  height: 4px;
+  appearance: none;
+  background: var(--surface-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  margin: 0 2px;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary-color, #007bff);
+  border: 2px solid var(--surface-card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.zoom-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary-color, #007bff);
+  border: 2px solid var(--surface-card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
 }
 
 .zoom-button {
