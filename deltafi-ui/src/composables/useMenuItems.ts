@@ -21,6 +21,7 @@
 
 import { computed, inject, ref, type ComputedRef, type Ref } from "vue";
 import useErrorCount from "./useErrorCount";
+import useUiConfig from "./useUiConfig";
 import useUtilFunctions from "./useUtilFunctions";
 
 export interface MenuItem {
@@ -55,7 +56,7 @@ export default function useMenuItems(): {
   isVisible: (item: { visible: boolean | ComputedRef<boolean> }) => boolean;
 } {
   const { errorCount } = useErrorCount();
-  const uiConfig = inject<any>("uiConfig");
+  const { uiConfig } = useUiConfig();
   const hasPermission = inject<(permission: string) => boolean>("hasPermission")!;
   const hasSomePermissions = inject<(...permissions: string[]) => boolean>("hasSomePermissions")!;
   const { buildURL } = useUtilFunctions();
@@ -97,7 +98,7 @@ export default function useMenuItems(): {
     {
       name: "Fleet",
       icon: "fas fa-server fa-fw",
-      visible: computed(() => uiConfig.leader && hasSomePermissions("StatusView", "SnapshotRead", "DeltaFileMetadataView")),
+      visible: computed(() => !!uiConfig.leader && hasSomePermissions("StatusView", "SnapshotRead", "DeltaFileMetadataView")),
       children: [
         {
           name: "Dashboard",
@@ -116,26 +117,6 @@ export default function useMenuItems(): {
           icon: "fas fa-exclamation-circle fa-fw",
           path: "/fleet/errors",
           visible: computed(() => hasPermission("DeltaFileMetadataView")),
-          children: [
-            {
-              name: "By Member",
-              icon: "fas fa-list fa-fw",
-              path: "/fleet/errors?tab=0",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-            {
-              name: "By Flow",
-              icon: "fas fa-project-diagram fa-fw",
-              path: "/fleet/errors?tab=1",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-            {
-              name: "By Message",
-              icon: "fas fa-comment-alt fa-fw",
-              path: "/fleet/errors?tab=2",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-          ],
         },
         {
           name: "Config",
@@ -162,52 +143,12 @@ export default function useMenuItems(): {
           path: "/errors",
           badge: () => errorsBadge.value,
           visible: computed(() => hasPermission("DeltaFileMetadataView")),
-          children: [
-            {
-              name: "All",
-              icon: "fas fa-list fa-fw",
-              path: "/errors?tab=0",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-            {
-              name: "By Flow",
-              icon: "fas fa-project-diagram fa-fw",
-              path: "/errors?tab=1",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-            {
-              name: "By Message",
-              icon: "fas fa-comment-alt fa-fw",
-              path: "/errors?tab=2",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-          ],
         },
         {
           name: "Filtered",
           icon: "fas fa-filter fa-fw",
           path: "/deltafile/filtered",
           visible: computed(() => hasPermission("DeltaFileMetadataView")),
-          children: [
-            {
-              name: "All",
-              icon: "fas fa-list fa-fw",
-              path: "/deltafile/filtered?tab=0",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-            {
-              name: "By Flow",
-              icon: "fas fa-project-diagram fa-fw",
-              path: "/deltafile/filtered?tab=1",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-            {
-              name: "By Cause",
-              icon: "fas fa-ban fa-fw",
-              path: "/deltafile/filtered?tab=2",
-              visible: computed(() => hasPermission("DeltaFileMetadataView")),
-            },
-          ],
         },
         {
           name: "Viewer",
@@ -251,26 +192,6 @@ export default function useMenuItems(): {
           icon: "icomoon grafana",
           url: "/visualization/dashboards",
           visible: computed(() => hasPermission("MetricsView")),
-          children: [
-            {
-              name: "System Overview",
-              icon: "icomoon grafana",
-              url: "/visualization/d/system-overview",
-              visible: computed(() => hasPermission("MetricsView")),
-            },
-            {
-              name: "System Performance",
-              icon: "icomoon grafana",
-              url: "/visualization/d/system-performance",
-              visible: computed(() => hasPermission("MetricsView")),
-            },
-            {
-              name: "Provenance",
-              icon: "icomoon grafana",
-              url: "/visualization/d/provenance",
-              visible: computed(() => hasPermission("MetricsView")),
-            },
-          ],
         },
       ],
     },
@@ -362,7 +283,7 @@ export default function useMenuItems(): {
           name: "Lookup Tables",
           icon: "fas fa-book-atlas fa-fw",
           path: "/admin/lookup-tables",
-          visible: computed(() => hasPermission("LookupTableRead") && uiConfig.lookupTablesEnabled),
+          visible: computed(() => hasPermission("LookupTableRead") && !!uiConfig.lookupTablesEnabled),
         },
         {
           name: "External Links",
@@ -374,7 +295,7 @@ export default function useMenuItems(): {
           name: "Kubernetes",
           icon: "icomoon kubernetes",
           url: "/orchestration/c/main/workloads",
-          visible: computed(() => hasPermission("Admin") && uiConfig.clusterMode),
+          visible: computed(() => hasPermission("Admin") && !!uiConfig.clusterMode),
         },
         {
           name: "Logs",
@@ -438,20 +359,6 @@ export default function useMenuItems(): {
             badge: child.badge,
             visible: child.visible,
           });
-          // Handle third level (e.g., Grafana dashboard sub-items)
-          if (child.children) {
-            for (const grandchild of child.children) {
-              pages.push({
-                name: `${child.name} » ${grandchild.name}`,
-                icon: grandchild.icon,
-                path: grandchild.path,
-                url: grandchild.url ? getUrl(grandchild.url) : undefined,
-                group: item.name,
-                badge: grandchild.badge,
-                visible: grandchild.visible,
-              });
-            }
-          }
         }
       } else if (item.path || item.url) {
         pages.push({

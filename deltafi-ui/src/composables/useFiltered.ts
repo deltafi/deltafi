@@ -20,6 +20,7 @@ import { ref } from "vue";
 import useGraphQL from "./useGraphQL";
 import { EnumType } from "json-to-graphql-query";
 import _ from "lodash";
+import { flowStateColors } from "@/components/pipeline/useGraphStyles";
 export default function useFiltered() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
@@ -146,9 +147,11 @@ export default function useFiltered() {
         countPerMessage: {
           count: true,
           message: true,
-          flow: true,
-          type: true,
-          dids: true,
+          flows: {
+            flow: true,
+            type: true,
+            count: true,
+          },
         },
       },
     };

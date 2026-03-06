@@ -45,7 +45,9 @@ export type UiConfig = {
   authMode?: String,
   clusterMode?: Boolean,
   contentPreviewSize?: Number,
-  messageOfTheDay?: string
+  messageOfTheDay?: string,
+  lookupTablesEnabled?: Boolean,
+  leader?: Boolean
 }
 
 const uiConfig: UiConfig = reactive({

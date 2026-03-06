@@ -41,12 +41,12 @@ describe("Filtered Page", () => {
       cy.contains("Refresh").should("exist");
     });
 
-    it("displays clear filters button", () => {
-      cy.get(".p-column-filter-menu-button").should("exist");
+    it("displays filter sidebar", () => {
+      cy.get(".filter-sidebar").should("exist");
     });
 
-    it("displays Flow dropdown", () => {
-      cy.get(".flow-dropdown").should("exist");
+    it("displays filter sidebar tab", () => {
+      cy.get(".filter-sidebar-tab").contains("Filters").should("exist");
     });
 
     it("displays tabs", () => {

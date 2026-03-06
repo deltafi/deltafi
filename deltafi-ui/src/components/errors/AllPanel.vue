@@ -49,9 +49,9 @@
         <Column field="dataSource" header="Data Source" :sortable="true" />
         <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
           <template #body="{ data: deltaFile }">
-            <ErrorAcknowledgedBadge v-if="deltaFile.lastErroredFlow.errorAcknowledged" :reason="deltaFile.lastErroredFlow.errorAcknowledgedReason" :timestamp="deltaFile.lastErroredFlow.errorAcknowledged" class="mr-1" />
-            <AutoResumeBadge v-if="deltaFile.lastErroredAction.nextAutoResume !== null" :timestamp="deltaFile.lastErroredAction.nextAutoResume" :reason="deltaFile.lastErroredAction.nextAutoResumeReason" />
-            {{ deltaFile.lastErroredAction.errorCause }}
+            <ErrorAcknowledgedBadge v-if="deltaFile.lastErroredFlow?.errorAcknowledged" :reason="deltaFile.lastErroredFlow?.errorAcknowledgedReason" :timestamp="deltaFile.lastErroredFlow?.errorAcknowledged" class="mr-1" />
+            <AutoResumeBadge v-if="deltaFile.lastErroredAction?.nextAutoResume != null" :timestamp="deltaFile.lastErroredAction?.nextAutoResume" :reason="deltaFile.lastErroredAction?.nextAutoResumeReason" />
+            {{ deltaFile.lastErroredAction?.errorCause }}
           </template>
         </Column>
         <Column field="created" header="Created" :sortable="true" class="timestamp-column">

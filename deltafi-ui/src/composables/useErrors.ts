@@ -61,6 +61,7 @@ export default function useErrors() {
           filter: {
             ...flowFilters,
             errorAcknowledged: showAcknowledged,
+            stage: new EnumType("ERROR"),
             errorCause: errorCause,
             filteredCause: filteredCause,
             modifiedAfter: queryParams.startTimeDateString,

@@ -81,6 +81,7 @@ const { fetchVersion } = useVersion();
 const idleTimeOut = (15 * 60 * 1000); // 15 min
 const { idle } = useIdle(idleTimeOut);
 provide("isIdle", idle);
+provide("uiConfig", uiConfig);
 
 const { toggle: toggleCommandPalette, open: openCommandPalette, visible: commandPaletteVisible } = useCommandPalette();
 
@@ -129,7 +130,6 @@ const handleGlobalKeydown = (e) => {
 
 onBeforeMount(async () => {
   fetchVersion();
-  provide("uiConfig", uiConfig);
   await fetchCurrentUser();
 });
 

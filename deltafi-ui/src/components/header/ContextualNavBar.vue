@@ -232,7 +232,7 @@ onUnmounted(() => {
   justify-content: flex-start;
   background-color: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
-  padding: 0 0.5rem 0 2.5rem;
+  padding: 0 0.5rem 0 3rem;
   overflow: visible;
   white-space: nowrap;
   position: relative;
@@ -249,7 +249,7 @@ onUnmounted(() => {
 
 .hamburger-btn {
   position: absolute;
-  left: 0;
+  left: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -257,17 +257,18 @@ onUnmounted(() => {
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
-  background-color: #343a40;
-  color: #fff;
+  background: transparent;
+  color: #666;
   border: none;
-  border-radius: 0 50% 50% 0;
+  border-radius: 0;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
+  font-size: 1.25rem;
+  transition: color 0.2s;
   z-index: 1;
+  -webkit-text-stroke: 0.5px;
 
   &:hover {
-    background-color: #495057;
+    color: #333;
   }
 }
 

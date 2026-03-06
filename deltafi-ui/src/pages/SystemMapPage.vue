@@ -336,7 +336,7 @@ import _ from "lodash";
 
 const router = useRouter();
 const confirm = useConfirm();
-const { clearTopicsCache, topics, getAllTopics, loading, loaded } = useTopics();
+const { clearTopicsCache, topics, getAllTopics, refreshTopics, loading, loaded } = useTopics();
 const { errorsByFlow, fetch: fetchFlowErrors } = useFlowErrors();
 const { setFlowState } = useFlows();
 const { getTransformFlowByName, getDataSinkByName } = useFlowQueryBuilder();
@@ -816,14 +816,14 @@ async function onFlowStateChange(node, newState) {
       accept: async () => {
         notify.info("Stopping Flow", `Stopping <b>${flowName}</b>...`, 3000);
         await setFlowState(flowType, flowName, newState);
-        await getAllTopics();
+        await refreshTopics();
       },
     });
   } else {
     const stateLabel = newState === "RUNNING" ? "Starting" : "Pausing";
     notify.info(`${stateLabel} Flow`, `${stateLabel} <b>${flowName}</b>...`, 3000);
     await setFlowState(flowType, flowName, newState);
-    await getAllTopics();
+    await refreshTopics();
   }
 }
 

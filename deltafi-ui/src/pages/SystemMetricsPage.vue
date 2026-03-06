@@ -50,7 +50,7 @@
         </Column>
         <Column header="Disk" field="resources.disk.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <span v-if="node.data.resources.disk.usage == 0 || node.data.resources.disk.limit == 0"> Metrics unavailable </span>
+            <span v-if="!node.data.resources.disk || node.data.resources.disk.usage == 0 || node.data.resources.disk.limit == 0"> Metrics unavailable </span>
             <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">
               {{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)
             </ProgressBar>

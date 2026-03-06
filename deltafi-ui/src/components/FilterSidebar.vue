@@ -322,7 +322,7 @@ onUnmounted(() => {
   transition:
     background-color 0.2s,
     opacity 0.3s ease;
-  opacity: 0.6;
+  opacity: 0.8;
 
   &:hover {
     background: var(--primary-600, #0056b3);

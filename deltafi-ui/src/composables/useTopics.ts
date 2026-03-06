@@ -124,5 +124,17 @@ export default function useTopics() {
     fetchPromise = null;
   };
 
-  return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getTopic, getAllTopics, getAllTopicNames, loading, loaded, errors, clearTopicsCache };
+  // Refresh topics without clearing existing data (avoids UI flicker)
+  const refreshTopics = async (): Promise<Array<Topic>> => {
+    fetchPromise = null;
+    fetchPromise = (async () => {
+      await queryGraphQL(getAllTopicsQuery, "getAllTopics");
+      topics.value = response.value.data.getAllTopics;
+      topicNames.value = _.map(topics.value, "name");
+      return topics.value;
+    })();
+    return fetchPromise;
+  };
+
+  return { topics: readonly(topics), topicNames: readonly(topicNames), response, hasActiveSubscribers, getTopic, getAllTopics, getAllTopicNames, loading, loaded, errors, clearTopicsCache, refreshTopics };
 }

@@ -18,40 +18,54 @@
 
 <template>
   <div class="filtered-page">
-    <PageHeader heading="Filtered">
-      <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
-          {{ shortTimezone() }}
-        </Button>
-        <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
-        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-1 p-button-outlined" @click="onRefresh" />
+    <FilterSidebar
+      v-model="sidebarOpen"
+      title="Filtered Filters"
+      tab-label="Filters"
+      width="350px"
+      :has-active-filters="filterOptionsSelected"
+      @clear="clearOptions"
+    >
+      <div class="filter-item">
+        <label>Flow</label>
+        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
       </div>
-    </PageHeader>
-    <div class="border-bottom mb-3 pb-3">
-      <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
-        <i class="pi pi-filter" style="font-size: 1rem" />
-      </Button>
-      <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field mx-1 flow-dropdown" />
-      <Dropdown v-model="causeSelected" placeholder="Select a Filter Cause" show-clear :options="uniqueMessages" class="deltafi-input-field mx-1 flow-dropdown" />
+      <div class="filter-item">
+        <label>Filter Cause</label>
+        <Dropdown v-model="causeSelected" placeholder="Select a Filter Cause" show-clear :options="uniqueMessages" filter filter-placeholder="Filter causes" class="w-full" />
+      </div>
+    </FilterSidebar>
+
+    <div class="main-content">
+      <PageHeader heading="Filtered">
+        <div class="time-range btn-toolbar mb-2 mb-md-0">
+          <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>
+            {{ shortTimezone() }}
+          </Button>
+          <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
+          <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-1 p-button-outlined" @click="onRefresh" />
+        </div>
+      </PageHeader>
+      <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
+      <TabView v-if="showTabs" v-model:active-index="activeTab">
+        <TabPanel header="All">
+          <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
+        </TabPanel>
+        <TabPanel header="By Flow">
+          <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+        </TabPanel>
+        <TabPanel header="By Cause">
+          <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+        </TabPanel>
+      </TabView>
     </div>
-    <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
-    <TabView v-if="showTabs" v-model:active-index="activeTab">
-      <TabPanel header="All">
-        <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
-      </TabPanel>
-      <TabPanel header="By Flow">
-        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
-      </TabPanel>
-      <TabPanel header="By Cause">
-        <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
-      </TabPanel>
-    </TabView>
   </div>
 </template>
 
 <script setup>
 import AllFilteredPanel from "@/components/filtered/AllPanel.vue";
 import CustomCalendar from "@/components/CustomCalendar.vue";
+import FilterSidebar from "@/components/FilterSidebar.vue";
 import SummaryByCausePanel from "@/components/filtered/SummaryByCausePanel.vue";
 import SummaryByFlowPanel from "@/components/filtered/SummaryByFlowPanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -82,6 +96,7 @@ const filterSummaryFlowPanel = ref();
 const filterSummaryPanel = ref();
 const { fetchAllFlowNames } = useFlows();
 const loading = ref(false);
+const sidebarOpen = ref(false);
 const flowSelected = ref();
 const causeSelected = ref();
 const activeTab = ref(0);
@@ -299,25 +314,30 @@ onMounted(async () => {
 
 <style>
 .filtered-page {
-  .p-autocomplete-empty-message {
-    margin-left: 0.5rem;
+  position: relative;
+  display: flex;
+  height: 100%;
+
+  .main-content {
+    flex: 1;
+    overflow: auto;
   }
 
-  .p-autocomplete-input {
-    width: 16rem;
-  }
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
 
-  .flow-dropdown {
-    width: 20rem;
+    label {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
   }
 
   .time-range .form-control:disabled,
   .time-range .form-control[readonly] {
     background-color: #ffffff;
-  }
-
-  .show-acknowledged-toggle {
-    width: 14rem;
   }
 
   .p-panel {
