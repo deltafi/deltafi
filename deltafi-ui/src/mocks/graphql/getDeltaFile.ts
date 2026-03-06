@@ -142,7 +142,7 @@ const generateData = () => {
         name: "hello-world-java-data-route-or-filter",
         number: 1,
         type: "TRANSFORM",
-        state: "COMPLETE",
+        state: "FILTERED",
         created: "2024-05-30T11:31:55.659Z",
         modified: "2024-05-30T11:31:55.659Z",
         input: {

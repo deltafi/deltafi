@@ -242,6 +242,7 @@ const contentDeleted = computed(() => {
 
 const rowClass = (flow) => {
   if (flow.state === "ERROR") return "table-danger cursor-pointer";
+  if (flow.state === "FILTERED") return "table-warning cursor-pointer";
   if (flow.state === "COMPLETE" && lastAction(flow.actions)?.state === "FILTERED") return "table-warning cursor-pointer";
 };
 

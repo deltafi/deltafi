@@ -323,7 +323,7 @@ const errorViewer = reactive({
 const nodeIsClickable = (node) => {
   const flow = getFlowByNumber(node.number);
   if (!flow) return false;
-  if (flow.state === "ERROR") return true;
+  if (flow.state === "ERROR" || flow.state === "FILTERED") return true;
   const lastAction = flow.actions?.[flow.actions.length - 1];
   if (flow.state === "COMPLETE" && lastAction?.state === "FILTERED") return true;
   return false;

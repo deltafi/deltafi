@@ -32,7 +32,7 @@
         <i class="pi pi-filter" style="font-size: 1rem" />
       </Button>
       <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" class="deltafi-input-field mx-1 flow-dropdown" />
-      <Dropdown v-model="causeSelected" placeholder="Select an Filter Cause" show-clear :options="uniqueMessages" class="deltafi-input-field mx-1 flow-dropdown" />
+      <Dropdown v-model="causeSelected" placeholder="Select a Filter Cause" show-clear :options="uniqueMessages" class="deltafi-input-field mx-1 flow-dropdown" />
     </div>
     <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
     <TabView v-if="showTabs" v-model:active-index="activeTab">
