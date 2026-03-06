@@ -176,8 +176,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 .map(flowPlan -> buildFlow(existingFlows, flowPlan, variables))
                 .toList();
 
-        updatedFlows.forEach(f -> flowRepo.deleteByNameAndType(f.getName(), f.getType()));
-        flowRepo.saveAll(updatedFlows);
+        for (FlowT flow : updatedFlows) {
+            flowRepo.upsertFlowFromPlugin(flow);
+        }
 
         refreshCache();
     }
@@ -201,8 +202,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 .filter(e -> !incomingFlowNames.contains(e.getName())).toList();
         flowRepo.deleteAll(deleteFlows);
 
-        // delete any system-plugin placeholders that were claimed
-        flowRepo.deleteAll(systemPluginPlaceholders.values());
+        // Note: system-plugin placeholders are NOT deleted here. The upsert below handles them
+        // via ON CONFLICT (name, type), which updates the placeholder row with the real plugin data
+        // while preserving the flow state. Deleting them via JPA before the JdbcTemplate upsert
+        // would cause a Hibernate flush ordering issue where the pending JPA delete removes the row
+        // that was just updated by the upsert.
 
         // save the replacement flows using upsert to handle race with snapshot restore
         for (FlowT flow : flows) {

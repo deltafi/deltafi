@@ -68,10 +68,6 @@ public interface FlowRepo<R extends Flow> extends JpaRepository<Flow, UUID> {
             nativeQuery = true)
     int deleteBySourcePluginAndType(PluginCoordinates sourcePlugin, FlowType type);
 
-    @Transactional
-    @Modifying
-    void deleteByNameAndType(String name, FlowType type);
-
     @Query(value = "SELECT * FROM flows WHERE " +
             "source_plugin->>'groupId' = :groupId AND " +
             "source_plugin->>'artifactId' = :artifactId AND " +

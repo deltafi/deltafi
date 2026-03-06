@@ -7803,6 +7803,89 @@ class DeltaFiCoreApplicationTests {
 		assertThat(result.getTransformActions()).hasSize(1);
 	}
 
+	@Test
+	@Transactional
+	void jpaDeleteBeforeJdbcUpsert_deleteClobberrsUpsert() {
+		// Regression test: proves that JPA deleteAll + JdbcTemplate upsert in the same
+		// Hibernate session causes data loss. The JPA delete is pending in the persistence
+		// context; when flush occurs (e.g. from findAll/refreshCache), Hibernate executes
+		// the DELETE after the upsert has already updated the row, wiping it out.
+		TransformFlow placeholder = createPlaceholderFlow("tf-flush-clobber");
+		transformFlowRepo.save(placeholder);
+		entityManager.flush();
+		entityManager.clear();
+
+		TransformFlow managed = transformFlowRepo.findByNameAndType(
+				"tf-flush-clobber", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+
+		// JPA deleteAll marks entity for deletion in persistence context (not yet flushed)
+		transformFlowRepo.deleteAll(List.of(managed));
+
+		// JdbcTemplate upsert bypasses Hibernate and updates the row directly in the DB
+		transformFlowRepo.upsertFlowFromPlugin(createPluginFlow("tf-flush-clobber"));
+
+		// Hibernate flush executes the pending DELETE, wiping out the upserted row
+		entityManager.flush();
+		entityManager.clear();
+
+		assertThat(transformFlowRepo.findByNameAndType("tf-flush-clobber", FlowType.TRANSFORM, TransformFlow.class))
+				.as("JPA delete clobbers the JdbcTemplate upsert — this is why we must not mix them")
+				.isEmpty();
+	}
+
+	@Test
+	@Transactional
+	void upsertWithoutJpaDelete_flowSurvivesFlush() {
+		// Proves the fix: using only upsert (no JPA deleteAll) preserves the flow through flush.
+		TransformFlow placeholder = createPlaceholderFlow("tf-flush-safe");
+		transformFlowRepo.save(placeholder);
+		entityManager.flush();
+		entityManager.clear();
+
+		// Load into persistence context (simulates getByPlugin in upgradeFlows)
+		transformFlowRepo.findByNameAndType("tf-flush-safe", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+
+		// Upsert without prior JPA delete
+		transformFlowRepo.upsertFlowFromPlugin(createPluginFlow("tf-flush-safe"));
+
+		entityManager.flush();
+		entityManager.clear();
+
+		Optional<TransformFlow> result = transformFlowRepo.findByNameAndType(
+				"tf-flush-safe", FlowType.TRANSFORM, TransformFlow.class);
+		assertThat(result).as("Upsert without JPA delete must survive flush").isPresent();
+		assertThat(result.get().getSourcePlugin()).isEqualTo(UPSERT_PLUGIN_V2);
+		assertThat(result.get().getDescription()).isEqualTo("real flow from plugin");
+		// State preserved from placeholder
+		assertThat(result.get().isRunning()).isTrue();
+		assertThat(result.get().isTestMode()).isTrue();
+	}
+
+	private TransformFlow createPlaceholderFlow(String name) {
+		TransformFlow placeholder = new TransformFlow();
+		placeholder.setName(name);
+		placeholder.setSourcePlugin(PluginCoordinates.builder()
+				.groupId(PluginService.SYSTEM_PLUGIN_GROUP_ID)
+				.artifactId(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID)
+				.version("1.0.0").build());
+		placeholder.getFlowStatus().setState(FlowState.RUNNING);
+		placeholder.getFlowStatus().setPlaceholder(true);
+		placeholder.getFlowStatus().setValid(false);
+		placeholder.setTestMode(true);
+		return placeholder;
+	}
+
+	private TransformFlow createPluginFlow(String name) {
+		TransformFlow flow = new TransformFlow();
+		flow.setName(name);
+		flow.setSourcePlugin(UPSERT_PLUGIN_V2);
+		flow.setDescription("real flow from plugin");
+		flow.getFlowStatus().setState(FlowState.STOPPED);
+		flow.getFlowStatus().setValid(true);
+		flow.setTransformActions(List.of(new ActionConfiguration("Action", ActionType.TRANSFORM, "type")));
+		return flow;
+	}
+
 	private void setupFlowTagTestData() {
 		// create matching flows, show only one of the `any` must be included
 		RestDataSource dataSourceMatch = FlowBuilders.buildRestDataSource("dataSourceMatch", FlowState.RUNNING,

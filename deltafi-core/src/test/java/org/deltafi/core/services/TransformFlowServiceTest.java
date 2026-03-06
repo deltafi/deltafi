@@ -20,6 +20,8 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.common.types.Variable;
+import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -43,6 +45,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class TransformFlowServiceTest {
@@ -55,6 +60,9 @@ class TransformFlowServiceTest {
 
     @Mock
     BuildProperties buildProperties;
+
+    @Mock
+    PluginVariableService pluginVariableService;
 
     @InjectMocks
     TransformFlowService transformFlowService;
@@ -265,6 +273,70 @@ class TransformFlowServiceTest {
 
     TransformFlow transformFlow(String name, FlowState flowState, boolean testMode) {
         return transformFlow(name, flowState, testMode, true);
+    }
+
+    @Test
+    void upgradeFlows_placeholderNotDeletedBeforeUpsert() {
+        PluginCoordinates systemPlugin = PluginCoordinates.builder()
+                .groupId(PluginService.SYSTEM_PLUGIN_GROUP_ID)
+                .artifactId(PluginService.SYSTEM_PLUGIN_ARTIFACT_ID)
+                .version("1.0.0")
+                .build();
+        PluginCoordinates realPlugin = PluginCoordinates.builder()
+                .groupId("com.example")
+                .artifactId("my-plugin")
+                .version("2.0.0")
+                .build();
+
+        // Create a system-plugin placeholder (e.g., from a snapshot restore)
+        TransformFlow placeholder = transformFlow("my-transform", FlowState.RUNNING, false);
+        placeholder.setSourcePlugin(systemPlugin);
+        placeholder.getFlowStatus().setPlaceholder(true);
+        placeholder.getFlowStatus().setValid(false);
+        placeholder.getFlowStatus().setErrors(new ArrayList<>(List.of(
+                FlowConfigError.newBuilder()
+                        .configName("my-transform")
+                        .errorType(FlowErrorType.INVALID_CONFIG)
+                        .message("Waiting for plugin")
+                        .build())));
+
+        // No existing flows for the real plugin (first registration)
+        Mockito.when(transformFlowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(
+                realPlugin.getGroupId(), realPlugin.getArtifactId(), FlowType.TRANSFORM))
+                .thenReturn(Collections.emptyList());
+
+        // System-plugin has the placeholder
+        Mockito.when(transformFlowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(
+                systemPlugin.getGroupId(), systemPlugin.getArtifactId(), FlowType.TRANSFORM))
+                .thenReturn(List.of(placeholder));
+
+        Mockito.when(flowValidator.validate(any())).thenReturn(Collections.emptyList());
+        Mockito.when(pluginVariableService.getVariablesByPlugin(realPlugin)).thenReturn(Collections.emptyList());
+
+        // Create the incoming flow plan
+        TransformFlowPlan flowPlan = new TransformFlowPlan("my-transform", FlowType.TRANSFORM, "My transform");
+        flowPlan.setSourcePlugin(realPlugin);
+
+        // Execute upgradeFlows
+        transformFlowService.upgradeFlows(realPlugin, List.of(flowPlan));
+
+        // The placeholder should NOT be deleted via JPA deleteAll (it would interfere with the upsert)
+        verify(transformFlowRepo, never()).deleteAll(Mockito.argThat(flows -> {
+            for (Object flow : flows) {
+                if (flow instanceof TransformFlow tf && tf.getName().equals("my-transform")) {
+                    return true;
+                }
+            }
+            return false;
+        }));
+
+        // The upsert should be called for the flow (ON CONFLICT handles the placeholder)
+        verify(transformFlowRepo).upsertFlowFromPlugin(singleFlowCaptor.capture());
+        TransformFlow upsertedFlow = singleFlowCaptor.getValue();
+        assertThat(upsertedFlow.getName()).isEqualTo("my-transform");
+        assertThat(upsertedFlow.getSourcePlugin()).isEqualTo(realPlugin);
+        // State should be preserved from the placeholder (RUNNING)
+        assertThat(upsertedFlow.isRunning()).isTrue();
     }
 
     TransformFlow transformFlow(String name, FlowState flowState, boolean testMode, boolean valid) {
