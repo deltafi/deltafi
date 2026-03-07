@@ -25,6 +25,7 @@ import org.deltafi.core.types.FlowKey;
 import org.deltafi.core.types.FlowMetrics;
 import org.deltafi.core.types.PerFlowMetrics;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -50,6 +51,7 @@ public class GraphiteQueryService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String graphiteUrl;
+    private final String victoriaMetricsBaseUrl;
     private final boolean enabled;
 
     public GraphiteQueryService(
@@ -60,6 +62,7 @@ public class GraphiteQueryService {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         this.graphiteUrl = graphiteUrl.replaceAll("/$", "");
+        this.victoriaMetricsBaseUrl = this.graphiteUrl.replaceAll("/graphite$", "");
         this.enabled = metricsEnabled;
     }
 
@@ -201,6 +204,28 @@ public class GraphiteQueryService {
         }
 
         return results;
+    }
+
+    /**
+     * Proxy a query_range request to VictoriaMetrics and return the response as-is.
+     */
+    public ResponseEntity<String> proxyQueryRange(String query, long start, long end, String step) {
+        String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
+        String url = String.format("%s/api/v1/query_range?query=%s&start=%d&end=%d&step=%s",
+                victoriaMetricsBaseUrl, encodedQuery, start, end, step);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(30))
+                .GET()
+                .build();
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return ResponseEntity.status(response.statusCode()).body(response.body());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to proxy query_range request: " + e.getMessage(), e);
+        }
     }
 
     private boolean isDataSource(String flowType) {

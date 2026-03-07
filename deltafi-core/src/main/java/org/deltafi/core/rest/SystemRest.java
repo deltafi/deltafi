@@ -26,6 +26,7 @@ import org.deltafi.core.types.*;
 import org.deltafi.core.types.snapshot.Snapshot;
 
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -198,6 +199,20 @@ public class SystemRest {
             @RequestParam(defaultValue = "60") int minutes) {
         int clampedMinutes = Math.max(1, Math.min(minutes, 1440));
         return graphiteQueryService.queryPerFlowMetrics(flowKeys, clampedMinutes);
+    }
+
+    /**
+     * Proxy a VictoriaMetrics query_range request through deltafi-core.
+     * Allows the TUI to query time-series data without direct access to VictoriaMetrics.
+     */
+    @GetMapping(value = "/timeseries", produces = MediaType.APPLICATION_JSON_VALUE)
+    @NeedsPermission.MetricsView
+    public ResponseEntity<String> queryRange(
+            @RequestParam String query,
+            @RequestParam long start,
+            @RequestParam long end,
+            @RequestParam String step) {
+        return graphiteQueryService.proxyQueryRange(query, start, end, step);
     }
 
     /**

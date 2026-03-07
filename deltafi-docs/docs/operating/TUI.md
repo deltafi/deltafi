@@ -172,7 +172,8 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
       - [uninstall](#plugin-uninstall)
       - [describe](#plugin-describe)
       - [generate](#plugin-generate)
-    - [graph](#graph)
+    - [flow](#flow)
+      - [graph](#flow-graph)
     - [topic](#topic)
   - [DeltaFiles](#deltafiles)
     - [deltafile](#deltafile)
@@ -200,6 +201,7 @@ Switch modes with `deltafi config`. The same commands (`up`, `down`, `status`, e
       - [clear](#integration-test-clear)
       - [remove](#integration-test-remove)
   - [Metrics](#metrics)
+    - [graph (metrics)](#graph-metrics)
     - [postgres](#postgres)
       - [cli](#postgres-cli)
       - [eval](#postgres-eval)
@@ -1030,13 +1032,25 @@ Manage plugins in DeltaFi.
     deltafi plugin generate action my-plugin SuperDuper
     ```
 
-#### `graph`
-Display a graph of data flow paths.
+#### `flow`
+Commands for visualizing data flow paths.
+
+##### `graph` {#flow-graph}
+Display a graph of data flow paths showing how data moves through data sources, transforms, and data sinks.
 
 ```bash
-deltafi graph [flowNames...] [--all]
+deltafi flow graph [flowNames...] [--all]
 ```
 - `--all`: Show all flows
+
+**Examples:**
+```bash
+# Show graph for a specific data source
+deltafi flow graph my-data-source
+
+# Show all flow paths
+deltafi flow graph --all
+```
 
 #### `topic`
 Manage and inspect publish/subscribe topics in DeltaFi.
@@ -1868,6 +1882,109 @@ For the complete configuration reference, see [Integration Testing](/integration
 
 ### Metrics
 
+#### `graph` {#graph-metrics}
+Display interactive time-series graphs from VictoriaMetrics data. Supports predefined metrics and custom MetricsQL queries with interactive time controls and auto-refresh.
+
+```bash
+deltafi graph [--metric|-m <metric>] [--query|-q <query>] [--title|-t <title>] [--from|-f <duration>] [--interval|-i <duration>] [--data-source|-d <names>] [--not-data-source|-D <names>] [--line] [--hide-legend]
+```
+
+**Flags:**
+- `--metric, -m`: Predefined metric to display (see available metrics below)
+- `--query, -q`: Custom MetricsQL query (takes precedence over --metric)
+- `--title, -t`: Title for a custom query (adds it to the metric selection list)
+- `--from, -f`: Time range to display (default: 1h). Supports: 30m, 1h, 4h, 1d, 1w
+- `--interval, -i`: Auto-refresh interval (default: 30s). Set to 0 to disable
+- `--data-source, -d`: Only show specified data sources (comma-separated)
+- `--not-data-source, -D`: Exclude specified data sources (comma-separated)
+- `--line`: Use line characters instead of braille for chart rendering
+- `--hide-legend`: Start with the legend hidden (toggle with `l`)
+
+**Available Metrics:**
+| Metric | Description |
+|--------|-------------|
+| `bytes` | Bytes ingested by data source |
+| `files` | Files ingested by data source |
+| `egress-bytes-source` | Bytes egressed by data source |
+| `egress-files-source` | Files egressed by data source |
+| `egress-bytes-sink` | Bytes egressed by data sink |
+| `egress-files-sink` | Files egressed by data sink |
+| `bytes-in` | Total bytes in |
+| `bytes-out` | Total bytes out |
+| `files-in` | Total files in |
+| `files-out` | Total files out |
+| `files-errored` | Files errored by data source |
+| `files-filtered` | Files filtered by data source |
+| `files-dropped` | Files dropped by data source |
+| `files-retried` | Files retried by data source |
+| `total-delta-files` | Total DeltaFiles in system |
+| `in-flight-files` | In-flight files count |
+| `in-flight-bytes` | In-flight bytes |
+| `cold-queued-files` | Cold-queued files count |
+| `paused-files` | Paused files count |
+| `queue-depth` | Action queue depth |
+| `action-exec-count` | Action execution count |
+| `action-exec-time` | Action execution time (ms) |
+| `exec-time-source` | Execution time by data source (ms) |
+| `files-deleted` | Files deleted by policy |
+| `bytes-deleted` | Bytes deleted by policy |
+| `disk-usage` | Disk usage by node |
+| `node-cpu` | Node CPU usage |
+| `node-memory` | Node memory usage |
+| `app-cpu` | App CPU usage |
+| `app-memory` | App memory usage |
+| `plugin-cpu` | Plugin CPU usage |
+| `plugin-memory` | Plugin memory usage |
+
+**Interactive Controls:**
+| Key | Action |
+|-----|--------|
+| `↑`/`↓` | Cycle through metrics |
+| `c` | Change metric (opens selection modal) |
+| `+`/`-` | Zoom time range (double/halve) |
+| `←`/`→` | Pan time window (back/forward) |
+| `x` | Return to now (reset pan) |
+| `1-0` | Toggle series 1-10 visibility |
+| `f` | Open filter modal |
+| `l` | Toggle legend visibility |
+| `a`/`n` | Show/hide all series |
+| `r` | Force refresh |
+| `?` | Show help |
+| `q`/`Esc` | Quit |
+
+**Examples:**
+```bash
+# Open metric selection modal
+deltafi graph
+
+# Show bytes ingested per data source (last 1h)
+deltafi graph --metric bytes
+
+# Show files ingested with 4 hour range
+deltafi graph --metric files --from 4h
+
+# Show custom MetricsQL query
+deltafi graph --query '{__name__="gauge.deltafile.totalCount"}'
+
+# Custom query with title (adds it to the metric selection list)
+deltafi graph --query '{__name__="gauge.deltafile.totalCount"}' --title "Total DeltaFiles"
+
+# Filter to specific data sources
+deltafi graph --metric bytes --data-source source1,source2
+
+# Exclude specific data sources
+deltafi graph --metric files --not-data-source test-source
+
+# Use line rendering instead of braille
+deltafi graph --metric bytes --line
+
+# Disable auto-refresh
+deltafi graph --metric bytes --interval 0
+
+# Start with legend hidden (more chart space)
+deltafi graph --metric bytes --hide-legend
+```
+
 #### `postgres`
 Command line access to the running DeltaFi Postgres instance.
 
@@ -1992,7 +2109,19 @@ deltafi upgrade changelog 2.25.0
 
 ### Viewing Flow Graph
 ```bash
-deltafi graph my-data-source
+deltafi flow graph my-data-source
+```
+
+### Viewing Metrics Graph
+```bash
+# Open interactive metric selection
+deltafi graph
+
+# View bytes ingested by data source
+deltafi graph --metric bytes
+
+# View files with custom time range
+deltafi graph --metric files --from 4h
 ```
 
 ### Managing Topics

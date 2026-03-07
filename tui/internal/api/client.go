@@ -59,6 +59,11 @@ func NewClient(baseURL string) *Client {
 	return client
 }
 
+// GetBaseURL returns the base URL for this client
+func (c *Client) GetBaseURL() string {
+	return c.baseURL
+}
+
 // AddCustomDNS adds a custom DNS resolution for a specific hostname.
 func (c *Client) AddCustomDNS(hostname string, ip string) {
 	c.dnsMap[hostname] = ip

@@ -15,6 +15,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
+// ABOUTME: Flow graph command for visualizing data flow paths
+// ABOUTME: Shows tree visualization of data sources, transforms, and sinks
 package cmd
 
 import (
@@ -40,11 +43,10 @@ var (
 )
 
 var flowGraphCmd = &cobra.Command{
-	Use:     "graph [flowNames...]",
-	Short:   "Display a graph of data flow paths",
-	Long:    `Display a graph showing all possible paths data can take from one or more data sources through transforms and to data sinks.`,
-	Args:    cobra.MinimumNArgs(0),
-	GroupID: "flow",
+	Use:   "graph [flowNames...]",
+	Short: "Display a graph of data flow paths",
+	Long:  `Display a graph showing all possible paths data can take from one or more data sources through transforms and to data sinks.`,
+	Args:  cobra.MinimumNArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		RequireRunningDeltaFi()
 		all, _ := cmd.Flags().GetBool("all")
@@ -451,6 +453,6 @@ func flowState(flowStatus FlowStatus) (string, bool) {
 }
 
 func init() {
-	rootCmd.AddCommand(flowGraphCmd)
+	flowCmd.AddCommand(flowGraphCmd)
 	flowGraphCmd.Flags().Bool("all", false, "Generate graphs for all data sources")
 }
