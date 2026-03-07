@@ -121,4 +121,4 @@ When creating flow JSON files for `deltafi transform load`, `deltafi data-source
 When you notice gaps, suggest fixes:
 - Missing or outdated documentation in `deltafi-docs/` → suggest additions
 - Missing test coverage → suggest tests
-- Gaps in this file → suggest updates to `CLAUDE.md`
+- Gaps in this file → suggest updates
