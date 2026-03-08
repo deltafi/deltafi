@@ -324,26 +324,24 @@ public class DeltaFiPropertiesService implements Snapshotter {
     @Override
     public void updateSnapshot(Snapshot snapshot) {
         List<KeyValue> propertiesSnapshot = deltaFiPropertiesRepo.findAll().stream()
-                .map(this::keyValue).filter(Objects::nonNull).toList();
+                .map(this::keyValue)
+                .filter(Objects::nonNull)
+                .toList();
 
         snapshot.setDeltaFiProperties(propertiesSnapshot);
     }
 
     private KeyValue keyValue(Property property) {
-        // Only include in snapshot if customValue differs from defaultValue
-        if (!property.hasValue()) {
+        String value = property.getValue();
+        if (value == null) {
             return null;
         }
-        String customValue = property.getCustomValue();
-        String defaultValue = property.getDefaultValue();
-        if (valuesEqual(customValue, defaultValue, property.getDataType())) {
-            return null;
-        }
+
         // Normalize SET values so snapshots have consistent ordering
         if (property.getDataType() == VariableDataType.SET) {
-            customValue = sortedSetValue(customValue);
+            value = sortedSetValue(value);
         }
-        return new KeyValue(property.getKey(), customValue);
+        return new KeyValue(property.getKey(), value);
     }
 
     private boolean valuesEqual(String value1, String value2, VariableDataType dataType) {
@@ -380,11 +378,35 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
         List<KeyValue> snapshotProperties = snapshot.getDeltaFiProperties();
         if (snapshotProperties != null) {
-            updateProperties(snapshotProperties, true);
+            applySnapshotProperties(snapshotProperties);
         }
 
         refreshProperties();
         return Result.successResult();
+    }
+
+    private void applySnapshotProperties(List<KeyValue> snapshotProperties) {
+        Map<String, Property> existingProperties = this.properties.stream()
+                .collect(Collectors.toMap(Property::getKey, property -> property));
+        List<KeyValue> updates = new ArrayList<>();
+        List<String> unsets = new ArrayList<>();
+
+        for (KeyValue snapshotProperty : snapshotProperties) {
+            Property existingProperty = existingProperties.get(snapshotProperty.getKey());
+            if (existingProperty != null &&
+                    valuesEqual(snapshotProperty.getValue(), existingProperty.getDefaultValue(), existingProperty.getDataType())) {
+                unsets.add(snapshotProperty.getKey());
+            } else {
+                updates.add(snapshotProperty);
+            }
+        }
+
+        if (!unsets.isEmpty()) {
+            unsetProperties(unsets);
+        }
+        if (!updates.isEmpty()) {
+            updateProperties(updates, true);
+        }
     }
 
     public boolean isExternalContent() {

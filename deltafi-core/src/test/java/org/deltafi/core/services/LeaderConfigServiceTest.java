@@ -20,7 +20,10 @@ package org.deltafi.core.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.types.Property;
+import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.types.leader.ConfigDiff;
 import org.deltafi.core.types.leader.DiffItem;
 import org.deltafi.core.types.leader.DiffSection;
@@ -63,6 +66,11 @@ class LeaderConfigServiceTest {
         lenient().when(deltaFiProperties.getMemberPollingTimeout()).thenReturn(5000);
         lenient().when(deltaFiProperties.getMemberConfigs()).thenReturn(List.of());
         lenient().when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        lenient().when(deltaFiPropertiesService.getPopulatedProperties(false)).thenReturn(List.of(createPropertySet(
+                createProperty("systemName", "DeltaFi", null),
+                createProperty("allowedAnalyticsAnnotations", null, VariableDataType.SET),
+                createProperty("checkContentStoragePercentThreshold", "90", VariableDataType.NUMBER)
+        )));
 
         leaderConfigService = new LeaderConfigService(
                 deltaFiPropertiesService,
@@ -360,6 +368,52 @@ class LeaderConfigServiceTest {
     }
 
     @Test
+    void computeDiff_knownDefaultMissingOnLeader_showsDefaultValue() {
+        Snapshot leaderSnapshot = createSnapshot(
+                List.of(), List.of(), List.of(), List.of()
+        );
+
+        Snapshot memberSnapshot = createSnapshot(
+                List.of(), List.of(), List.of(),
+                List.of(new KeyValue("checkContentStoragePercentThreshold", "89"))
+        );
+
+        ConfigDiff diff = leaderConfigService.computeDiffForTest(leaderSnapshot, memberSnapshot);
+
+        DiffSection propSection = findSection(diff, "deltaFiProperties");
+        assertNotNull(propSection);
+        assertEquals(1, propSection.diffCount());
+
+        DiffItem item = propSection.diffs().get(0);
+        assertEquals(DiffType.MODIFIED, item.type());
+        assertEquals("90", item.leaderValue());
+        assertEquals("89", item.memberValue());
+    }
+
+    @Test
+    void computeDiff_knownDefaultMissingOnMember_showsDefaultValue() {
+        Snapshot leaderSnapshot = createSnapshot(
+                List.of(), List.of(), List.of(),
+                List.of(new KeyValue("checkContentStoragePercentThreshold", "89"))
+        );
+
+        Snapshot memberSnapshot = createSnapshot(
+                List.of(), List.of(), List.of(), List.of()
+        );
+
+        ConfigDiff diff = leaderConfigService.computeDiffForTest(leaderSnapshot, memberSnapshot);
+
+        DiffSection propSection = findSection(diff, "deltaFiProperties");
+        assertNotNull(propSection);
+        assertEquals(1, propSection.diffCount());
+
+        DiffItem item = propSection.diffs().get(0);
+        assertEquals(DiffType.MODIFIED, item.type());
+        assertEquals("89", item.leaderValue());
+        assertEquals("90", item.memberValue());
+    }
+
+    @Test
     void computeDiff_nullLists_handledGracefully() {
         Snapshot leaderSnapshot = new Snapshot();
         Snapshot memberSnapshot = new Snapshot();
@@ -414,5 +468,19 @@ class LeaderConfigServiceTest {
         flow.setRunning(running);
         flow.setTestMode(testMode);
         return flow;
+    }
+
+    private PropertySet createPropertySet(Property... properties) {
+        PropertySet propertySet = new PropertySet();
+        propertySet.setProperties(List.of(properties));
+        return propertySet;
+    }
+
+    private Property createProperty(String key, String defaultValue, VariableDataType dataType) {
+        return Property.builder()
+                .key(key)
+                .defaultValue(defaultValue)
+                .dataType(dataType)
+                .build();
     }
 }

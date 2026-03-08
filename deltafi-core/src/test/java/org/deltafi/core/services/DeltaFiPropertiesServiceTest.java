@@ -159,7 +159,7 @@ class DeltaFiPropertiesServiceTest {
 
     @Test
     void testSnapshotSetValuesEqualRegardlessOfOrder() {
-        // A SET property whose custom value matches the default (just different order) should be excluded from snapshot
+        // Snapshot should contain the effective value even when the custom value matches the default.
         Property setProperty = Property.builder()
                 .key("allowedAnalyticsAnnotations")
                 .customValue("c, b, a")
@@ -171,7 +171,8 @@ class DeltaFiPropertiesServiceTest {
         Snapshot snapshot = new Snapshot();
         deltaFiPropertiesService.updateSnapshot(snapshot);
 
-        Assertions.assertThat(snapshot.getDeltaFiProperties()).isEmpty();
+        Assertions.assertThat(snapshot.getDeltaFiProperties())
+                .containsExactly(new KeyValue("allowedAnalyticsAnnotations", "a, b, c"));
     }
 
     @Test
@@ -188,6 +189,30 @@ class DeltaFiPropertiesServiceTest {
 
         deltaFiPropertiesService.resetFromSnapshot(snapshot, true);
         Mockito.verify(deltaFiPropertiesRepo).updateProperty(validValue.getKey(), validValue.getValue());
+    }
+
+    @Test
+    void testResetFromSnapshotUnsetsDefaultMatchingProperties() {
+        Mockito.reset(deltaFiPropertiesRepo);
+        Property property = Property.builder()
+                .key("systemName")
+                .customValue("Custom System")
+                .defaultValue("DeltaFi")
+                .dataType(VariableDataType.STRING)
+                .editable(true)
+                .build();
+        Mockito.when(deltaFiPropertiesRepo.findAll()).thenReturn(List.of(property));
+
+        deltaFiPropertiesService = new DeltaFiPropertiesService(
+                deltaFiPropertiesRepo, eventPublisher, localStorageProperties, true);
+
+        Snapshot snapshot = new Snapshot();
+        snapshot.setDeltaFiProperties(List.of(new KeyValue("systemName", "DeltaFi")));
+
+        deltaFiPropertiesService.resetFromSnapshot(snapshot, false);
+
+        Mockito.verify(deltaFiPropertiesRepo).unsetProperties(List.of("systemName"));
+        Mockito.verify(deltaFiPropertiesRepo, Mockito.never()).updateProperty("systemName", "DeltaFi");
     }
 
     @Test

@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.VariableDataType;
+import org.deltafi.core.types.Property;
 import org.deltafi.core.types.leader.*;
 import org.deltafi.core.types.snapshot.*;
 import org.springframework.stereotype.Service;
@@ -473,25 +475,83 @@ public class LeaderConfigService {
     private DiffSection compareDeltaFiProperties(List<KeyValue> leader, List<KeyValue> member) {
         List<DiffItem> diffs = new ArrayList<>();
 
-        Map<String, String> leaderMap = toKeyValueMap(leader);
-        Map<String, String> memberMap = toKeyValueMap(member);
+        Map<String, String> leaderOverrides = toKeyValueMap(leader);
+        Map<String, String> memberOverrides = toKeyValueMap(member);
+        Map<String, Property> knownProperties = getKnownProperties();
 
-        for (var entry : leaderMap.entrySet()) {
-            String memberValue = memberMap.get(entry.getKey());
-            if (memberValue == null) {
-                diffs.add(new DiffItem("properties." + entry.getKey(), DiffType.REMOVED, entry.getValue(), null));
-            } else if (!Objects.equals(entry.getValue(), memberValue)) {
-                diffs.add(new DiffItem("properties." + entry.getKey(), DiffType.MODIFIED, entry.getValue(), memberValue));
+        Set<String> allKeys = new TreeSet<>();
+        allKeys.addAll(knownProperties.keySet());
+        allKeys.addAll(leaderOverrides.keySet());
+        allKeys.addAll(memberOverrides.keySet());
+
+        for (String key : allKeys) {
+            Property property = knownProperties.get(key);
+            VariableDataType dataType = property != null ? property.getDataType() : null;
+            String leaderValue = resolvedPropertyValue(leaderOverrides, property, key);
+            String memberValue = resolvedPropertyValue(memberOverrides, property, key);
+
+            if (leaderValue == null && memberValue == null) {
+                continue;
             }
-        }
-
-        for (var entry : memberMap.entrySet()) {
-            if (!leaderMap.containsKey(entry.getKey())) {
-                diffs.add(new DiffItem("properties." + entry.getKey(), DiffType.ADDED, null, entry.getValue()));
+            if (leaderValue == null) {
+                diffs.add(new DiffItem("properties." + key, DiffType.ADDED, null, memberValue));
+            } else if (memberValue == null) {
+                diffs.add(new DiffItem("properties." + key, DiffType.REMOVED, leaderValue, null));
+            } else if (!propertyValuesEqual(leaderValue, memberValue, dataType)) {
+                diffs.add(new DiffItem("properties." + key, DiffType.MODIFIED, leaderValue, memberValue));
             }
         }
 
         return new DiffSection("deltaFiProperties", diffs);
+    }
+
+    private Map<String, Property> getKnownProperties() {
+        return deltaFiPropertiesService.getPopulatedProperties(false).stream()
+                .flatMap(propertySet -> propertySet.getProperties().stream())
+                .collect(Collectors.toMap(Property::getKey, property -> property, (first, second) -> first));
+    }
+
+    private String resolvedPropertyValue(Map<String, String> snapshotValues, Property property, String key) {
+        if (snapshotValues.containsKey(key)) {
+            return normalizePropertyValue(snapshotValues.get(key), property != null ? property.getDataType() : null);
+        }
+        if (property == null) {
+            return null;
+        }
+        return normalizePropertyValue(property.getDefaultValue(), property.getDataType());
+    }
+
+    private boolean propertyValuesEqual(String value1, String value2, VariableDataType dataType) {
+        if (Objects.equals(value1, value2)) {
+            return true;
+        }
+        if (value1 == null || value2 == null) {
+            return false;
+        }
+        if (dataType == VariableDataType.NUMBER) {
+            try {
+                return Double.parseDouble(value1) == Double.parseDouble(value2);
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        if (dataType == VariableDataType.SET) {
+            return Objects.equals(
+                    DeltaFiPropertiesService.sortedSetValue(value1),
+                    DeltaFiPropertiesService.sortedSetValue(value2)
+            );
+        }
+        return false;
+    }
+
+    private String normalizePropertyValue(String value, VariableDataType dataType) {
+        if (value == null) {
+            return null;
+        }
+        if (dataType == VariableDataType.SET) {
+            return DeltaFiPropertiesService.sortedSetValue(value);
+        }
+        return value;
     }
 
     private Map<String, String> toKeyValueMap(List<KeyValue> keyValues) {
