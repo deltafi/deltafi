@@ -4,7 +4,7 @@ FROM alpine:latest AS docker-src
 RUN apk add --no-cache bash curl ca-certificates jq
 
 # https://docs.docker.com/engine/release-notes/28/
-ARG DOCKER_VERSION=29.2.1
+ARG DOCKER_VERSION=29.3.0
 
 # Download and install the latest Docker CLI static binary for the current architecture
 RUN set -e; \
@@ -35,6 +35,7 @@ RUN apk -U --no-cache add \
   bash \
   curl \
   bc \
+  zlib \
   netcat-openbsd \
   postgresql-client \
   && apk -U --no-cache upgrade

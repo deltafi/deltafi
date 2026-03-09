@@ -8,7 +8,7 @@ WORKDIR /app
 COPY probe.sh /
 
 RUN apk -U --no-cache add curl \
-    && apk upgrade -U --no-cache libexpat libcrypto3 libssl3 busybox coreutils
+    && apk upgrade -U --no-cache
 
 RUN mkdir -p /data/deltafi/out && \
     adduser -u 1000 -D egressinator && \

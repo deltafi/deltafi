@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o deltafi-dirwatcher cmd/deltafi-dirwatch
 FROM alpine:latest
 WORKDIR /app
 RUN apk --no-cache add ca-certificates \
-    && apk upgrade -U --no-cache libssl3 libcrypto3 busybox coreutils
+    && apk upgrade -U --no-cache
 
 RUN mkdir -p /watched-dir && \
     adduser -u 1000 -D deltafi && \
