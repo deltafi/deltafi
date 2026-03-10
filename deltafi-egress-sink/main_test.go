@@ -36,11 +36,11 @@ import (
 
 func TestMetadataUnmarshal(t *testing.T) {
 	tests := []struct {
-		name        string
-		jsonInput   string
-		wantErr     bool
-		wantFile    string
-		wantFlow    string
+		name      string
+		jsonInput string
+		wantErr   bool
+		wantFile  string
+		wantFlow  string
 	}{
 		{
 			name:      "valid metadata",
@@ -235,9 +235,9 @@ func TestSaveContent(t *testing.T) {
 	tempDir := t.TempDir()
 
 	tests := []struct {
-		name     string
-		content  string
-		wantErr  bool
+		name    string
+		content string
+		wantErr bool
 	}{
 		{
 			name:    "simple text",
@@ -497,9 +497,9 @@ func TestDropMetadataFlag(t *testing.T) {
 	tempDir := t.TempDir()
 
 	testCases := []struct {
-		name           string
-		dropMetadata   bool
-		wantMetadata   bool
+		name         string
+		dropMetadata bool
+		wantMetadata bool
 	}{
 		{
 			name:         "metadata saved when dropMetadata is false",
@@ -860,7 +860,7 @@ func TestConcurrentSaveContent(t *testing.T) {
 	done := make(chan bool, numGoroutines)
 	errors := make(chan error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(idx int) {
 			filePath := filepath.Join(tempDir, "concurrent_"+string(rune('a'+idx))+".txt")
 			content := strings.Repeat(string(rune('a'+idx)), 1000)
@@ -874,7 +874,7 @@ func TestConcurrentSaveContent(t *testing.T) {
 	}
 
 	// Wait for all goroutines
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		<-done
 	}
 

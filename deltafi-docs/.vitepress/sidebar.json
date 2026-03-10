@@ -85,6 +85,7 @@
       { "text": "Advanced Routing", "link": "/advanced/advanced_routing" },
       { "text": "Data Retention", "link": "/advanced/data_retention" },
       { "text": "DeltaFile Annotations", "link": "/advanced/deltafile_annotations" },
+      { "text": "Egress Sink", "link": "/advanced/egress-sink" },
       { "text": "Leader Member", "link": "/advanced/leader_member" },
       { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" },
       { "text": "Directory Watcher", "link": "/advanced/directory-watcher" },

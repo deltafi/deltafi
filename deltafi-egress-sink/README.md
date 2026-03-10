@@ -1,0 +1,1 @@
+../deltafi-docs/docs/advanced/egress-sink.md
