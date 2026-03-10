@@ -1,5 +1,11 @@
 # Changes on branch `dev`
 Document any changes on this branch here.
+### Highlights
+- Artifact registry feature
+- TUI metric graphs
+- Egress rate limiting
+- Clean CVE bill of health
+
 ### Added
 - 
 
