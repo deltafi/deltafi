@@ -1,4 +1,4 @@
-{{- if include "localObjectStorageEnabled" . -}}
+{{- if or (include "localObjectStorageEnabled" .) (include "localArtifactStorageEnabled" .) -}}
 # ABOUTME: S3-compatible storage proxy deployment using s3proxy
 # ABOUTME: Provides object storage API for DeltaFi content with filesystem backend
 apiVersion: apps/v1

@@ -123,7 +123,8 @@ func (c *Client) Get(path string, result any, opts *RequestOpts) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d - %s", resp.StatusCode, c.baseURL+path)
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("%d - %s", resp.StatusCode, extractErrorMessage(body))
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
@@ -131,6 +132,21 @@ func (c *Client) Get(path string, result any, opts *RequestOpts) error {
 	}
 
 	return nil
+}
+
+// extractErrorMessage tries to pull the "error" field from a JSON error body.
+// Falls back to the raw body string when JSON parsing fails or the field is absent.
+func extractErrorMessage(body []byte) string {
+	if len(body) == 0 {
+		return "(empty response)"
+	}
+	var envelope struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(body, &envelope); err == nil && envelope.Error != "" {
+		return envelope.Error
+	}
+	return string(body)
 }
 
 func (c *Client) Post(path string, requestBody any, result any, opts *RequestOpts) error {
@@ -190,7 +206,7 @@ func (c *Client) DoWithBody(method string, path string, requestBody any, result 
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("%d - %s", resp.StatusCode, body)
+		return fmt.Errorf("%d - %s", resp.StatusCode, extractErrorMessage(body))
 	}
 
 	if result != nil {

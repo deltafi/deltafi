@@ -23,6 +23,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 
@@ -42,5 +43,13 @@ public class TestClock extends Clock {
     @Override
     public Clock withZone(ZoneId zone) {
         return new TestClock(instant, zone);
+    }
+
+    public void tickSeconds(int number) {
+        tick(Duration.ofSeconds(number));
+    }
+
+    public void tick(Duration duration) {
+        this.instant = instant.plus(duration);
     }
 }

@@ -1656,6 +1656,201 @@ deltafi lookup query [name] [--json|-j] [--yaml|-y] [--csv|-c] [--plain|-p] [--n
 - `--plain, -p`: Output as plain table (no styling)
 - `--no-header, -n`: Omit header row (for table, plain, and csv output)
 
+### Artifact Registry
+
+#### `artifacts`
+Manage versioned binary artifacts stored in the DeltaFi artifact registry. Artifacts are scoped to
+a plugin (`--owner <plugin-name>`) or shared across the organization (`--owner shared`).
+
+```bash
+deltafi artifacts [subcommand] [--owner <owner>] [options] [arguments]
+```
+
+The `--owner` flag is required for every subcommand. Use the plugin's artifact ID (e.g.
+`org.deltafi.my-plugin`) or `shared` for organization-wide artifacts.
+
+##### `publish`
+Publish a new artifact version to the registry. The artifact name defaults to the filename; the
+server generates a timestamp-based version if `--version` is omitted.
+
+```bash
+deltafi artifacts publish <file> [--owner <owner>] [--name <name>] [--version <version>]
+    [--description <text>] [--content-type <mime>] [--label key=value]... [--no-active]
+```
+
+- `--name`: Artifact name (defaults to the filename)
+- `--version`: Version string (server generates a timestamp version if omitted)
+- `--description`: Human-readable description of this version
+- `--content-type`: MIME content type (default: `application/octet-stream`)
+- `--label key=value`: Freeform label stored on the manifest; may be repeated
+- `--no-active`: Do not update the `active` alias after publishing
+
+```bash
+# Minimal publish — name and version are inferred
+deltafi artifacts publish --owner my-plugin ./routing-rules.json
+
+# Full publish with metadata
+deltafi artifacts publish --owner my-plugin ./routing-rules.json \
+    --name routing-rules --version 2.0.0 \
+    --description "Q2 routing update" \
+    --label env=prod --label team=infra
+
+# Publish a canary release without moving active
+deltafi artifacts publish --owner my-plugin ./routing-rules-canary.json --no-active
+```
+
+##### `list`
+List all artifacts for an owner with their active version summary. Pass `--all-owners` instead of
+`--owner` to show every artifact across all owners in a single view.
+
+```bash
+deltafi artifacts list [--owner <owner>] [--all-owners] [--plain|-p]
+```
+
+- `--all-owners`: List artifacts across all owners; mutually exclusive with `--owner`
+- `--plain, -p`: Plain output without table borders
+
+```bash
+deltafi artifacts list --owner my-plugin
+deltafi artifacts list --owner shared
+deltafi artifacts list --all-owners
+deltafi artifacts list --all-owners --plain
+```
+
+##### `versions`
+List all published versions of a specific artifact.
+
+```bash
+deltafi artifacts versions <artifactName> [--owner <owner>] [--plain|-p]
+```
+
+```bash
+deltafi artifacts versions --owner my-plugin routing-rules
+```
+
+##### `download`
+Download an artifact version to a local file. The `version` argument accepts a concrete version
+string or any alias (e.g. `active`, `stable`).
+
+```bash
+deltafi artifacts download <artifactName> <version> [--owner <owner>] [--output|-o <file>]
+```
+
+- `--output, -o`: Output file path (defaults to the artifact name)
+
+```bash
+# Download the active version
+deltafi artifacts download --owner my-plugin routing-rules active
+
+# Download a specific version to a named file
+deltafi artifacts download --owner my-plugin routing-rules 2.0.0 -o rules-v2.json
+
+# Download from the shared namespace by alias
+deltafi artifacts download --owner shared geo-regions stable
+```
+
+##### `rollback`
+Move the `active` alias to a previously published version without re-uploading.
+
+```bash
+deltafi artifacts rollback <artifactName> <version> [--owner <owner>]
+```
+
+```bash
+deltafi artifacts rollback --owner my-plugin routing-rules 1.0.0
+```
+
+##### `set-alias`
+Set any alias to point to a specific version. This is a generalization of `rollback` — you can
+move any alias, not just `active`.
+
+```bash
+deltafi artifacts set-alias <artifactName> <alias> <version> [--owner <owner>]
+```
+
+```bash
+# Point the 'stable' alias at version 2.0.0
+deltafi artifacts set-alias --owner my-plugin routing-rules stable 2.0.0
+
+# Roll back active using set-alias
+deltafi artifacts set-alias --owner my-plugin routing-rules active 1.0.0
+```
+
+##### `remove-alias`
+Remove a custom alias from an artifact. The `active` alias cannot be removed.
+
+```bash
+deltafi artifacts remove-alias <artifactName> <alias> [--owner <owner>]
+```
+
+```bash
+deltafi artifacts remove-alias --owner my-plugin routing-rules canary
+```
+
+##### `delete`
+Delete an artifact version or an entire artifact.
+
+```bash
+deltafi artifacts delete <artifactName> [version] [--owner <owner>] [--force|-f]
+```
+
+- If `version` is provided, only that version (blob + manifest) is deleted. The version currently
+  tagged as `active` cannot be deleted — roll back to another version first.
+- If `version` is omitted, the entire artifact is deleted: all versions, aliases, and configuration.
+- `--force, -f`: Skip the confirmation prompt
+
+```bash
+# Delete a specific version
+deltafi artifacts delete --owner my-plugin routing-rules 1.0.0
+
+# Delete the entire artifact (all versions)
+deltafi artifacts delete --owner my-plugin routing-rules
+
+# Skip confirmation
+deltafi artifacts delete --owner my-plugin routing-rules --force
+```
+
+##### `purge-config get`
+Get the current retention policy for an artifact.
+
+```bash
+deltafi artifacts purge-config get <artifactName> [--owner <owner>]
+```
+
+```bash
+deltafi artifacts purge-config get --owner my-plugin routing-rules
+```
+
+##### `purge-config set`
+Set a retention policy to automatically remove old versions. A version is eligible for purge only
+when it satisfies **both** criteria and is not the current `active` version.
+
+```bash
+deltafi artifacts purge-config set <artifactName> [--owner <owner>]
+    [--keep-latest <n>] [--max-age-minutes <minutes>]
+```
+
+- `--keep-latest`: Number of most-recent versions to always keep (default: 5)
+- `--max-age-minutes`: Versions older than this may be purged; `0` disables age-based purging (default: 43200, i.e. 30 days)
+
+```bash
+# Keep 3 versions; purge anything older than 7 days
+deltafi artifacts purge-config set --owner my-plugin routing-rules \
+    --keep-latest 3 --max-age-minutes 10080
+```
+
+##### `purge`
+Trigger an immediate purge run for an artifact, applying the configured retention policy now
+rather than waiting for the scheduled run.
+
+```bash
+deltafi artifacts purge <artifactName> [--owner <owner>]
+```
+
+```bash
+deltafi artifacts purge --owner my-plugin routing-rules
+```
+
 ### Testing
 
 #### `integration-test`

@@ -67,6 +67,18 @@ multiple Flows and Actions within that plugin.
 Join Configuration allows Transform Actions to process multiple DeltaFiles together. It defines criteria for collecting
 a batch of DeltaFiles before executing the Transform Action.
 
+## Artifact Registry
+
+The artifact registry provides versioned storage for binary files — configuration, rulesets, lookup tables, ML models —
+that plugins need at runtime. Artifacts are stored outside the plugin code and can be updated independently without
+rebuilding or redeploying.
+
+The framework provides notifications when artifacts are updated so plugins can get the latest artifact. In the java
+based deltafi-action-kit this is automatically managed by injecting the artifact into a component with
+the @PluginArtifact annotation.
+
+Artifacts can be scoped to a specific plugin or published to a shared namespace accessible by all plugins.
+
 ## Lookup Tables
 
 Lookup tables provide a centralized database solution for actions requiring tabular data. A simple API in the DeltaFi

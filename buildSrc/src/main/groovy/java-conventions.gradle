@@ -30,6 +30,7 @@ compileJava {
 
 compileTestJava {
     options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
 }
 
 test {

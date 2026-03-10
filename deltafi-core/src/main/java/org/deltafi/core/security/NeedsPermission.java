@@ -395,4 +395,14 @@ public class NeedsPermission {
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('LookupTableDelete'" + OR_ADMIN)
     public @interface LookupTableDelete {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('ArtifactRegistryRead'" + OR_ADMIN)
+    public @interface ArtifactRegistryRead {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('ArtifactRegistryWrite'" + OR_ADMIN)
+    public @interface ArtifactRegistryWrite {}
 }

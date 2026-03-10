@@ -152,6 +152,13 @@ initContainers:
 {{- or .Values.enable.local_object_storage .Values.enable.minio -}}
 {{- end -}}
 
+{{/*
+  Returns true if local artifact storage is enabled.
+*/}}
+{{- define "localArtifactStorageEnabled" -}}
+{{- if .Values.enable.local_artifact_storage -}}true{{- end -}}
+{{- end -}}
+
 {{- define "commonEnvVars" -}}
 - name: CORE_URL
   value: http://deltafi-core-service
@@ -176,6 +183,12 @@ initContainers:
   value: {{ .Values.ingress.domain }}
 - name: AUTH_MODE
   value: {{ .Values.deltafi.auth.mode | quote }}
+- name: LOCAL_STORAGE_ARTIFACTS
+  value: {{ include "localArtifactStorageEnabled" . | quote }}
+- name: ARTIFACT_STORAGE_URL
+  value: {{ .Values.deltafi.artifactStorage.url | quote }}
+- name: ARTIFACT_STORAGE_BUCKET_NAME
+  value: {{ .Values.deltafi.artifactStorage.bucketName | quote }}
 {{- end -}}
 
 {{- define "valkeyEnvVars" -}}
@@ -189,6 +202,21 @@ initContainers:
     secretKeyRef:
       name: valkey-password
       key: valkey-password
+{{- end -}}
+
+{{- define "artifactStorageEnvVars" -}}
+{{- if .Values.deltafi.artifactStorage.secret }}
+- name: ARTIFACT_STORAGE_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.deltafi.artifactStorage.secret }}
+      key: accessKey
+- name: ARTIFACT_STORAGE_SECRET_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.deltafi.artifactStorage.secret }}
+      key: secretKey
+{{- end }}
 {{- end -}}
 
 {{- define "minioEnvVars" -}}
@@ -306,6 +334,7 @@ volumeMounts:
 {{ include "commonEnvVars" . }}
 {{ include "postgresEnvVars" . }}
 {{ include "minioEnvVars" . }}
+{{ include "artifactStorageEnvVars" . }}
 {{ include "valkeyEnvVars" . }}
 {{ include "sslEnvVars" . }}
 - name: DELTAFI_SECRET_CA_CHAIN

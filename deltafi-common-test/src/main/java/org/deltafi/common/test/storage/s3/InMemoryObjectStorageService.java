@@ -18,6 +18,7 @@
 package org.deltafi.common.test.storage.s3;
 
 import org.apache.commons.io.input.BoundedInputStream;
+import org.deltafi.common.storage.s3.MissingContentException;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
@@ -33,10 +34,13 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
     final Map<String, Map<String, byte[]>> objects = new HashMap<>();
 
     @Override
-    public InputStream getObject(ObjectReference objectReference) {
-        byte[] bytes = objects.get(objectReference.getBucket()).get(objectReference.getName());
-
-        return new ByteArrayInputStream(subBytes(bytes, (int) objectReference.getOffset(), (int) objectReference.getSize()));
+    public InputStream getObject(ObjectReference objectReference) throws ObjectStorageException {
+        byte[] bytes = objects.getOrDefault(objectReference.getBucket(), Map.of()).get(objectReference.getName());
+        if (bytes == null) {
+            throw new MissingContentException("Object does not exist");
+        }
+        int size = objectReference.getSize() == -1 ? bytes.length : (int) objectReference.getSize();
+        return new ByteArrayInputStream(subBytes(bytes, (int) objectReference.getOffset(), size));
     }
 
     private static byte[] subBytes(byte[] bytes, int offset, int size) {
@@ -86,9 +90,7 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
     public boolean removeObjects(String bucket, List<String> objectNames) {
         Map<String, byte[]> entries = objects.get(bucket);
         if (entries != null) {
-            entries.entrySet().stream()
-                    .filter(mapEntry -> objectNames.contains(mapEntry.getKey()))
-                    .forEach(mapEntry -> entries.remove(mapEntry.getKey()));
+            objectNames.forEach(entries.keySet()::remove);
         }
         return true;
     }
@@ -106,5 +108,14 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
             return entry.get(objectReference.getName()).length;
         }
         return -1;
+    }
+
+    @Override
+    public List<String> listKeys(String bucket, String prefix) {
+        Map<String, byte[]> bucketObjects = objects.getOrDefault(bucket, Map.of());
+        return bucketObjects.keySet().stream()
+                .filter(k -> k.startsWith(prefix))
+                .sorted()
+                .toList();
     }
 }

@@ -1,0 +1,561 @@
+# Artifact Registry
+
+The artifact registry gives plugins access to versioned binary files — configuration, rulesets, lookup
+tables, ML models — that live outside the plugin code and can be updated independently without
+rebuilding or redeploying the plugin.
+
+Artifacts are stored in a dedicated S3-compatible object store, versioned immutably, and delivered to
+action code through a simple annotation. When an operator publishes a new version, running plugins are
+notified and update in place — no restart required.
+
+## Key Concepts
+
+**Artifact** — a named, versioned binary file associated with an owner. Each published version is
+immutable. Examples: `routing-rules.json`, `customer-lookup.csv`, `ml-model.bin`.
+
+**Active alias** — a pointer named `active` that tracks the current version. Publishing a new version
+moves `active` to it automatically. Plugin code resolves `active` by default, so it always uses the
+most recent version.
+
+**Custom aliases** — you can create additional aliases (e.g. `stable`, `canary`) and point them at
+any published version. Plugin code can resolve by alias name.
+
+**Plugin namespace** — each plugin's artifacts are stored under its plugin name (the `group.artifactId`
+from its build). Plugins can only publish to their own namespace or shared.
+
+**Shared namespace** — artifacts under the `shared` owner are readable by all plugins. Use this for
+organization-wide reference data, common lookup tables, or models consumed by multiple plugins.
+
+**Scope resolution** — by default, resolving an artifact checks the plugin's own namespace first, then
+falls back to `shared`. A plugin can override a shared artifact with its own copy when needed.
+
+---
+
+## Using Plugin Artifacts in Plugin Code
+
+The action-kit provides annotation-driven injection of artifacts into Spring-managed beans (actions,
+services, etc.). You declare what artifact you need; the framework handles fetching, caching, and
+live updates.
+
+### Basic Example
+
+```java
+@Component
+public class RoutingTransformAction extends TransformAction<RoutingParameters> {
+
+    @PluginArtifact(
+        artifactName = "routing-rules.json",
+        defaultResource = "defaults/routing-rules.json"
+    )
+    private ArtifactHandle routingRules;
+
+    @Override
+    public TransformResultType transform(ActionContext context,
+                                        RoutingParameters params,
+                                        TransformInput input) {
+        RoutingConfig config = parseJson(routingRules.getBytes(), RoutingConfig.class);
+        String region = config.resolveRegion(input.content());
+        context.addMetadata("targetRegion", region);
+        return input.toTransformResult(context);
+    }
+}
+```
+
+Place the default configuration at `src/main/resources/defaults/routing-rules.json`. On first
+deploy the framework publishes it to the registry automatically. When an operator publishes a real
+version, the action switches to it without a restart.
+
+### `@PluginArtifact` Reference
+
+| Attribute         | Type | Default | Description |
+|-------------------|---|---|---|
+| `artifactName`    | `String` | — | Artifact identifier in the registry |
+| `alias`           | `String` | `"active"` | Alias or concrete version to resolve |
+| `scope`           | `ArtifactScope` | `PLUGIN_FIRST` | Which namespace(s) to search |
+| `preload`         | `boolean` | `true` | Fetch eagerly at startup; false = lazy on first access |
+| `cacheable`       | `boolean` | `false` | Cache bytes in memory; `false` = always fetch fresh on every call (default) |
+| `defaultResource` | `String` | `""` | Classpath resource to seed on first deploy. When set, the resource is published as the first artifact version if none exists. When blank, startup fails if the artifact is missing. |
+
+**`ArtifactScope` values:**
+
+| Value | Behaviour |
+|---|---|
+| `PLUGIN_FIRST` | Try plugin namespace first, fall back to shared |
+| `PLUGIN_ONLY` | Plugin namespace only; never fall back to shared |
+| `SHARED_ONLY` | Shared namespace only; plugin namespace is never checked |
+
+### `ArtifactHandle` API
+
+The injected field is an `ArtifactHandle`. All methods are safe to call from multiple threads.
+
+| Method | Returns | Description |
+|---|---|---|
+| `getArtifactName()` | `String` | Artifact identifier as registered in the registry |
+| `getBytes()` | `byte[]` | Artifact content; never null |
+| `getInputStream()` | `InputStream` | Fresh stream over artifact bytes; caller must close |
+| `getString()` | `String` | Artifact content decoded as a UTF-8 string |
+| `getString(Charset)` | `String` | Artifact content decoded with the given charset |
+| `getVersion()` | `String` | Concrete version string, e.g. `"20240101-120000"` |
+| `getDescription()` | `String` | Human-readable description, or null |
+| `getContentType()` | `String` | MIME type |
+| `getSha256()` | `String` | SHA-256 digest of the content |
+| `getManifest()` | `ArtifactManifest` | Full manifest (version, description, contentType, sha256, labels) |
+| `getLabels()` | `Map<String,String>` | Freeform labels attached at publish time |
+| `isReady()` | `boolean` | `true` if an artifact was successfully resolved |
+| `isDefault()` | `boolean` | `true` if the artifact was seeded from the plugin's classpath default |
+| `isShared()` | `boolean` | `true` if the artifact came from the shared namespace |
+| `getSourcePrefix()` | `String` | Storage prefix: `"shared"` or `"plugins/{owner}"` |
+| `refresh()` | `void` | Force a re-download and update the cached bytes |
+| `onUpdate(Consumer<VersionChangedEvent>)` | `ArtifactHandle` | Register a programmatic update callback |
+| `onUpdate(Runnable)` | `ArtifactHandle` | Convenience overload without the event |
+
+### Reacting to Version Changes
+
+When a new version is published, connected plugins receive a notification. The cache is
+refreshed automatically — `getBytes()` will return the new content on the next call. If you need
+to trigger application logic on an update (e.g. recompile a rule engine), register a callback
+programmatically using `ArtifactHandle.onUpdate()`:
+
+```java
+@Component
+public class RuleEngineAction extends TransformAction<RuleParameters> {
+
+    @PluginArtifact(
+        artifactName = "rules.yaml",
+        defaultResource = "defaults/rules.yaml"
+    )
+    private ArtifactHandle rulesHandle;
+
+    // volatile because the callback fires on the listener thread
+    // while transform() runs on action-kit worker threads
+    private volatile RuleEngine ruleEngine;
+
+    @PostConstruct
+    public void initialize() {
+        ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
+        rulesHandle.onUpdate(event -> {
+            log.info("Rules updated: {} → {}", event.previousVersion(), event.newVersion());
+            ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
+        });
+    }
+
+    @Override
+    public TransformResultType transform(ActionContext context,
+                                        RuleParameters params,
+                                        TransformInput input) {
+        return ruleEngine.evaluate(context, input);
+    }
+}
+```
+
+Callbacks can also be registered in a constructor, or as method references:
+
+```java
+// With the event:
+rulesHandle.onUpdate(event ->
+    log.info("Rules updated to {}", event.newVersion()));
+
+// Runnable overload if you don't need the event:
+rulesHandle.onUpdate(this::rebuildEngine);
+```
+
+Key points:
+- The callback fires **after** the shared cache has been refreshed. `getBytes()` returns the
+  new content inside the callback.
+- The callback runs on the notification listener thread. Long-running work should be dispatched to
+  an executor to avoid blocking future notifications.
+- If the callback throws, the error is logged and the action continues with the previous version.
+  The next version-change event will trigger another attempt.
+- Mark state derived from the artifact `volatile` (or use `AtomicReference`) so action worker
+  threads see the updated value.
+
+### Requiring an Externally-Provided Artifact
+
+When there is no sensible default, omit `defaultResource`. If preload is true, startup will fail with a clear error
+until the artifact is uploaded:
+
+```java
+@PluginArtifact(artifactName = "classification-model.bin")
+private ArtifactHandle model;
+
+private volatile Classifier classifier;
+
+@PostConstruct
+public void initialize() {
+    classifier = Classifier.load(model.getInputStream());
+    log.info("Model loaded: version={}, sha256={}",
+            model.getVersion(), model.getSha256());
+    model.onUpdate(event -> {
+        classifier = Classifier.load(model.getInputStream());
+    });
+}
+```
+
+### Multiple Artifacts
+
+An action can declare multiple artifacts, each with its own strategy:
+
+```java
+// Ships with a default; operators can customize later
+@PluginArtifact(
+    artifactName = "enrichment-config.json",
+    defaultResource = "defaults/enrichment-config.json"
+)
+private ArtifactHandle config;
+
+// Must be provided by the operator — no default makes sense
+@PluginArtifact(artifactName = "customer-extract.csv")
+private ArtifactHandle customerData;
+
+// Platform-wide lookup table in the shared namespace
+@PluginArtifact(
+    artifactName = "geo-regions.csv",
+    scope = ArtifactScope.SHARED_ONLY
+)
+private ArtifactHandle geoRegions;
+
+@PostConstruct
+public void initialize() {
+    rebuild();
+    // Each artifact can be updated independently; all trigger a rebuild
+    config.onUpdate(this::rebuild);
+    customerData.onUpdate(this::rebuild);
+    geoRegions.onUpdate(this::rebuild);
+}
+
+private void rebuild() {
+    service = new EnrichmentService(
+        parseJson(config.getBytes(), EnrichmentConfig.class),
+        CsvParser.parse(customerData.getBytes()),
+        CsvParser.parse(geoRegions.getBytes())
+    );
+}
+```
+
+Startup completes once all artifacts without a `defaultResource` have been resolved. Each artifact
+can be updated independently and the callback rebuilds the service from all current versions.
+
+### Edge Cases and Operator Guidance
+
+#### PLUGIN_FIRST: plugin-specific version added after startup
+
+When a plugin starts with `scope = PLUGIN_FIRST` and only a shared artifact exists, the cache
+resolves from the shared namespace. When an operator later publishes a plugin-specific version of
+the same artifact, a version-change notification arrives and the framework automatically promotes
+the cached entry to serve the plugin-specific bytes — no restart required. Registered callbacks
+fire normally after the promotion.
+
+If the plugin was offline when the notification was sent and misses it, the background poller will
+not detect the new plugin-specific version on its own (it polls the currently-cached namespace
+only). In that case a pod restart will pick up the plugin-specific version correctly on the next
+startup resolve.
+
+#### Deleted artifact: graceful degradation
+
+Artifact deletion does not publish a version-change notification. If an artifact is deleted from
+the registry while a plugin has it cached, the plugin continues serving the cached bytes
+indefinitely.
+
+When the background poller runs and finds the artifact absent from the registry listing it logs a
+`WARN` message and retains the cached bytes. If a version-change event is received that triggers
+a re-download and the artifact is gone, the same warning is logged and the old bytes are kept.
+
+In either case the plugin operates normally using the last-known content. To restore normal
+registry-backed operation: either re-upload a replacement artifact or restart the plugin pod
+(which will fail fast if the artifact is truly gone and no `defaultResource` is configured).
+
+### Pinning to a Specific Version
+
+Setting `alias` to a concrete version string (rather than an alias like `"active"`) pins the
+handle to that exact version. Pinned entries are never considered stale — `getBytes()` always
+returns the same bytes without re-downloading. They still respond to explicit version-change
+notifications, so if an artifact is deleted and republished with the same version string
+the cache will update.
+
+```java
+// Always uses version "1.0.0" regardless of what 'active' points to
+@PluginArtifact(artifactName = "stable-model.bin", alias = "1.0.0")
+private ArtifactHandle pinnedModel;
+```
+
+### Programmatic Access
+
+For dynamic artifact names or conditional loading, inject `ArtifactRegistryService` directly. This
+bean is scoped to the plugin's own namespace and the shared namespace:
+
+```java
+@Autowired
+private ArtifactRegistryService artifactRegistry;
+
+// Fetch the active version of a plugin-scoped artifact
+ArtifactHandle handle = artifactRegistry.getArtifact("routing-rules.json", "active");
+byte[] bytes = handle.getBytes();
+
+// Fetch a shared artifact by alias
+ArtifactHandle shared = artifactRegistry.getSharedArtifact("geo-regions.csv", "active");
+
+// Publish a new version from action code
+artifactRegistry.publishArtifact(
+    "output-rules.json",
+    new ArtifactManifest(null, "Generated rules", "application/json", null, null),
+    new ByteArrayInputStream(rulesJson));
+```
+
+`getArtifact()` and `getSharedArtifact()` throw `IOException` if the artifact is not found.
+`publishArtifact()` sets the `active` alias by default; pass `makeActive = false` to suppress.
+
+### Streaming Large Artifacts
+
+`getArtifact()` buffers the entire artifact in the JVM heap. For large binary artifacts — ML
+models, embedding matrices, large lookup tables — use the streaming variants instead. These open
+a direct HTTP connection to the registry and return an `InputStream` without copying bytes into
+memory:
+
+```java
+// Load a 2 GB ONNX model directly into the runtime — no heap buffer
+try (ArtifactRegistryService.ArtifactStream s =
+        artifactRegistry.streamArtifact("large-model.onnx")) {
+    session = onnxEnvironment.createSession(s.stream());
+}
+
+// Pipe a large lookup table to disk without buffering
+try (ArtifactRegistryService.ArtifactStream s =
+        artifactRegistry.streamArtifact("embeddings.bin")) {
+    log.info("Streaming {} bytes, content-type: {}",
+            s.manifest().size(), s.manifest().contentType());
+    Files.copy(s.stream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+}
+
+// Shared artifact — same pattern
+try (ArtifactRegistryService.ArtifactStream s =
+        artifactRegistry.streamSharedArtifact("geo-regions.csv")) {
+    geoIndex = GeoIndex.load(s.stream());
+}
+```
+
+The `ArtifactStream` implements `Closeable` and **must** be closed when done (the underlying HTTP
+connection stays open until then). Streaming bypasses the shared cache — each call opens a new
+connection. Use `getArtifact()` for small, frequently-accessed artifacts and `streamArtifact()`
+only when memory pressure is a concern.
+
+---
+
+## Managing Artifacts with the TUI
+
+All artifact operations require `--owner`, which is either the plugin name or `shared`.
+
+### Publish
+
+```bash
+# Version defaults to a server-generated timestamp; --name defaults to the filename
+deltafi artifacts publish --owner my-plugin ./routing-rules.json
+deltafi artifacts publish --owner my-plugin ./routing-rules.json \
+    --name routing-rules --version 2.0.0 \
+    --description "Q2 routing update" \
+    --label env=prod
+
+# Publish without updating the active alias (e.g. for staged rollout)
+deltafi artifacts publish --owner my-plugin ./routing-rules.json --no-active
+```
+
+### List and Inspect
+
+```bash
+# List all artifacts with their active version
+deltafi artifacts list --owner my-plugin
+
+# View all published versions of a specific artifact
+deltafi artifacts versions --owner my-plugin routing-rules
+```
+
+### Download
+
+```bash
+# Download the active version
+deltafi artifacts download --owner my-plugin routing-rules active
+
+# Download a specific version
+deltafi artifacts download --owner my-plugin routing-rules 2.0.0 -o rules.json
+
+# Download by custom alias
+deltafi artifacts download --owner my-plugin routing-rules stable
+```
+
+### Rollback
+
+Move the `active` alias back to a prior version without re-uploading anything:
+
+```bash
+deltafi artifacts rollback --owner my-plugin routing-rules 1.0.0
+```
+
+### Aliases
+
+Rollback is shorthand for moving `active`. The `set-alias` command lets you move any alias:
+
+```bash
+# Point 'stable' at a specific version
+deltafi artifacts set-alias --owner my-plugin routing-rules stable 2.0.0
+
+# Remove an alias (the 'active' alias cannot be removed)
+deltafi artifacts remove-alias --owner my-plugin routing-rules canary
+```
+
+### Delete
+
+```bash
+# Delete a specific version (the active version cannot be deleted; roll back first)
+deltafi artifacts delete --owner my-plugin routing-rules 1.0.0
+
+# Delete all versions, aliases, and configuration for an artifact
+deltafi artifacts delete --owner my-plugin routing-rules
+
+# Skip the confirmation prompt
+deltafi artifacts delete --owner my-plugin routing-rules --force
+```
+
+### Purge (Retention Policy)
+
+Set a retention policy to automatically clean up old versions:
+
+```bash
+# Keep the 3 most recent versions; remove versions older than 7 days (10080 minutes)
+deltafi artifacts purge-config set --owner my-plugin routing-rules \
+    --keep-latest 3 --max-age-minutes 10080
+
+# View the current policy
+deltafi artifacts purge-config get --owner my-plugin routing-rules
+
+# Trigger a purge immediately (without waiting for the scheduled run)
+deltafi artifacts purge --owner my-plugin routing-rules
+```
+
+**Default policy:** `--keep-latest 5`, `--max-age-minutes 43200` (30 days). Both criteria must be
+met for a version to be eligible — outside the most-recent 5 **and** older than 30 days. The
+current active version is always protected regardless of age or position.
+
+---
+
+## REST API
+
+The TUI wraps all registry endpoints, but you can call them directly from scripts or CI/CD
+pipelines. Full request/response documentation is in the [Artifact Registry REST API](api/rest/artifact-registry.md).
+
+---
+
+## Configuration
+
+### External Artifact Storage
+
+By default, artifact storage shares the same S3-compatible endpoint (the local s3proxy instance) as
+content storage. When you want to separate concerns — for example, to store artifacts in a managed
+S3 bucket while keeping content storage local — you can point artifact storage at an independent
+endpoint.
+
+#### Kubernetes
+
+Set `deltafi.artifactStorage.url` to the external endpoint and `enable.local_artifact_storage` to
+`false` in your `site/values.yaml`:
+
+```yaml
+enable:
+  local_artifact_storage: false   # do not run s3proxy for artifacts
+
+deltafi:
+  artifactStorage:
+    url: https://s3.us-east-1.amazonaws.com
+    bucketName: my-artifact-bucket
+    secret: artifact-storage-credentials
+```
+
+Setting `local_artifact_storage: false` prevents DeltaFi from trying to create the bucket in the
+local storage instance. The local storage pod is still deployed as long as `enable.local_object_storage` is true
+(for content storage). If you move both content and artifact storage to external endpoints, set
+both flags to `false` and the storage pod will not be created.
+
+**Credentials** — create a Kubernetes Secret with two keys, `accessKey` and `secretKey`, then
+reference the secret name in `deltafi.artifactStorage.secret`. The Helm chart injects the
+credentials into core pods automatically.
+
+```bash
+kubectl create secret generic artifact-storage-credentials \
+  --namespace deltafi \
+  --from-literal=accessKey=AKIAIOSFODNN7EXAMPLE \
+  --from-literal=secretKey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
+
+#### Docker Compose (standalone)
+
+Set `url`, `bucketName`, and `local_artifact_storage` in `site/values.yaml` as above, then run
+`deltafi update` to apply.
+
+**Credentials** — add them to your installation's `config/secrets/minio.env` file, which is
+already loaded into the core containers and created with `0600` permissions. The path is
+`<installDirectory>/config/secrets/minio.env`, where `installDirectory` is defined in
+`~/.deltafi/config.yaml`.
+
+```bash
+INSTALL_DIR=$(grep 'installDirectory:' ~/.deltafi/config.yaml | awk '{print $2}')
+SECRETS_FILE="${INSTALL_DIR}/config/secrets/minio.env"
+
+cat >> "$SECRETS_FILE" << 'EOF'
+ARTIFACT_STORAGE_ACCESS_KEY='AKIAIOSFODNN7EXAMPLE'
+ARTIFACT_STORAGE_SECRET_KEY='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+EOF
+```
+
+Run `deltafi up` after updating the file so the new credentials are picked up by the
+running containers.
+
+---
+
+### Cache tuning
+
+The in-process artifact cache can be tuned via application properties:
+
+```yaml
+deltafi:
+  artifact-registry:
+    cache:
+      max-entries: 100          # Maximum number of cached artifacts (0 = unlimited)
+      max-bytes: 268435456      # Maximum total cache size in bytes (0 = unlimited, default: 256 MB)
+      poll-interval-seconds: 300  # How often to poll the registry for alias drift (0 = disabled)
+```
+
+When a limit is exceeded, the least-recently-fetched non-pinned entries are evicted first.
+Entries pinned to a concrete version (see [Pinning to a Specific Version](#pinning-to-a-specific-version))
+are skipped during eviction.
+
+The cache is kept current through two mechanisms:
+- **Push** — version-change notifications arrive immediately and update the affected entry.
+- **Poll** — a background thread queries the registry every `poll-interval-seconds` (default 5 minutes) to compare each alias-based entry against the registry's current mapping. Any entry that has drifted is re-fetched and its registered callbacks are fired. This is a safety net for missed notifications.
+
+Multiple injection points that resolve the same artifact share a single cache entry. By default (`cacheable = false`), every `getBytes()` call downloads fresh bytes and updates the shared cache entry as a side effect, so any co-located handles with `cacheable = true` also stay current. Set `cacheable = true` to retain bytes in memory and only re-fetch on version-change notifications or background poll drift detection.
+
+---
+
+## How It Works
+
+Artifacts are stored in a single S3-compatible bucket with path-based isolation:
+
+```
+plugins/{pluginName}/{artifactName}/{version}/blob            # blob
+plugins/{pluginName}/{artifactName}/{version}/manifest.json   # manifest
+plugins/{pluginName}/{artifactName}/_aliases/active           # alias → version pointer
+plugins/{pluginName}/{artifactName}/_config/purge.json        # purge config
+shared/{artifactName}/...
+```
+
+Each artifact version is an immutable blob with an accompanying JSON manifest containing metadata,
+labels, and a SHA-256 digest. Alias files contain only the version string they point to.
+
+When a new version is published (or `set-alias` / `rollback` is called), a `VersionChangedEvent`
+is broadcast via the platform message bus. Every plugin node subscribed to that artifact:
+
+1. Re-downloads the new version into its local cache
+2. Atomically replaces the cached bytes
+3. Fires any registered update callbacks
+
+In-flight action invocations are never interrupted — they complete with the bytes they already
+hold. Callbacks fire after the cache is updated, so `getBytes()` inside the callback returns the
+new content.

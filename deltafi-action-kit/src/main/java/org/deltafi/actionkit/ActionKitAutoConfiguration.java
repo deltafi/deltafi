@@ -34,6 +34,7 @@ import org.deltafi.actionkit.action.parameters.SchemaGeneratorConfigCustomizer;
 import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.deltafi.actionkit.action.service.ActionRunner;
 import org.deltafi.actionkit.action.service.HeartbeatService;
+import org.deltafi.actionkit.artifact.ArtifactConfiguration;
 import org.deltafi.actionkit.lookup.*;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
@@ -55,6 +56,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -70,6 +72,7 @@ import java.util.*;
 @EnableConfigurationProperties({ActionsProperties.class, EventQueueProperties.class})
 @AutoConfigureAfter(SslAutoConfiguration.class)
 @EnableScheduling
+@Import(ArtifactConfiguration.class)
 public class ActionKitAutoConfiguration {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 

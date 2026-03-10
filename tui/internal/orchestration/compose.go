@@ -624,12 +624,30 @@ func (o *ComposeOrchestrator) buildPostgresArgs(values map[string]any, path stri
 	return strings.Join(args, " ")
 }
 
-// localObjectStorageEnabled checks both enable.local_object_storage and the deprecated enable.minio flag.
+// localContentStorageEnabled checks both enable.local_object_storage and the deprecated enable.minio flag.
 // Returns "true" or "false" as a string for use in environment variables.
-func (o *ComposeOrchestrator) localObjectStorageEnabled(values map[string]any) string {
+func (o *ComposeOrchestrator) localContentStorageEnabled(values map[string]any) string {
 	localStorage := o.getValueOr(values, "enable.local_object_storage", "true")
 	minio := o.getValueOr(values, "enable.minio", "true") // Deprecated: use local_object_storage
 	if localStorage != "false" || minio != "false" {
+		return "true"
+	}
+	return "false"
+}
+
+// localArtifactStorageEnabled checks enable.local_artifact_storage.
+// Returns "true" or "false" as a string for use in environment variables.
+func (o *ComposeOrchestrator) localArtifactStorageEnabled(values map[string]any) string {
+	if o.getValueOr(values, "enable.local_artifact_storage", "true") != "false" {
+		return "true"
+	}
+	return "false"
+}
+
+// localObjectStorageEnabled returns "true" if either content or artifact storage is local.
+// Gates the s3proxy service — true when EITHER content OR artifact storage uses local s3proxy.
+func (o *ComposeOrchestrator) localObjectStorageEnabled(values map[string]any) string {
+	if o.localContentStorageEnabled(values) == "true" || o.localArtifactStorageEnabled(values) == "true" {
 		return "true"
 	}
 	return "false"
@@ -646,12 +664,17 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		return fmt.Errorf("error getting hostname: %w", err)
 	}
 
-	localStorage := o.localObjectStorageEnabled(values)
+	localContentStorage := o.localContentStorageEnabled(values)
+	localArtifactStorage := o.localArtifactStorageEnabled(values)
+
+	artifactStorageURL := o.getValueOr(values, "deltafi.artifactStorage.url", "")
 
 	entityAuthPort := o.getValueOr(values, "deltafi.auth.entityAuthorizer.port", "8081")
 	entityAuthDefaultUrl := fmt.Sprintf("http://deltafi-entity-authorizer:%s/", entityAuthPort)
 
 	envVars := map[string]string{
+		"ARTIFACT_STORAGE_BUCKET_NAME":       o.getValueOr(values, "deltafi.artifactStorage.bucketName", "deltafi-artifacts"),
+		"ARTIFACT_STORAGE_URL":               artifactStorageURL,
 		"AUTH_MODE":                          o.getValue(values, "deltafi.auth.mode"),
 		"CONFIG_DIR":                         o.configPath,
 		"CORE_URL":                           "http://deltafi-core:8080",
@@ -676,7 +699,8 @@ func (o *ComposeOrchestrator) writeCommonEnv(path string) error {
 		"GRAPHITE_PORT":                      "2003",
 		"HOSTNAME":                           hostname,
 		"INGRESS_URL":                        "http://deltafi-core:8080",
-		"LOCAL_STORAGE_CONTENT":              localStorage,
+		"LOCAL_STORAGE_ARTIFACTS":            localArtifactStorage,
+		"LOCAL_STORAGE_CONTENT":              localContentStorage,
 		"METRICS_PERIOD_SECONDS":             "10",
 		"MINIO_PARTSIZE":                     "5242880",
 		"MINIO_URL":                          o.getValueOr(values, "deltafi.storage.url", "http://deltafi-s3proxy:9000"),

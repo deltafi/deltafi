@@ -22,6 +22,7 @@ import io.minio.errors.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.ErrorResponse;
+import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.BoundedInputStream;
@@ -53,12 +54,16 @@ public class MinioObjectStorageService implements ObjectStorageService {
     @Override
     public InputStream getObject(ObjectReference objectReference) throws ObjectStorageException {
         try {
-            return minioClient.getObject(GetObjectArgs.builder()
+            GetObjectArgs.Builder builder = GetObjectArgs.builder()
                     .bucket(objectReference.getBucket())
                     .object(objectReference.getName())
-                    .offset(objectReference.getOffset())
-                    .length(objectReference.getSize())
-                    .build());
+                    .offset(objectReference.getOffset());
+
+            if (objectReference.getSize() != ObjectReference.UNKNOWN_SIZE) {
+                builder.length(objectReference.getSize());
+            }
+
+            return minioClient.getObject(builder.build());
         } catch (ErrorResponseException e) {
             ErrorResponse errorResponse = e.errorResponse();
             // MinioClient maps 404 responses to an ErrorResponse with NoSuchKey as the code
@@ -142,6 +147,26 @@ public class MinioObjectStorageService implements ObjectStorageService {
         }
 
         return !hasError;
+    }
+
+    @Override
+    public List<String> listKeys(String bucket, String prefix) {
+        List<String> keys = new ArrayList<>();
+        Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder()
+                .bucket(bucket)
+                .prefix(prefix)
+                .recursive(true)
+                .build());
+        for (Result<Item> result : results) {
+            try {
+                keys.add(result.get().objectName());
+            } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException |
+                     InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException |
+                     XmlParserException e) {
+                log.warn("Error reading list result under prefix {}/{}: {}", bucket, prefix, e.getMessage());
+            }
+        }
+        return keys;
     }
 
     @Override

@@ -93,4 +93,12 @@ public interface ObjectStorageService {
      * @return size of the object reference or -1 if it was not found
      */
     long getTotalSize(ObjectReference objectReference);
+
+    /**
+     * List all object keys in a bucket that start with the given prefix.
+     * @param bucket the bucket to list
+     * @param prefix key prefix to filter on (use empty string for all keys)
+     * @return sorted list of matching object keys
+     */
+    List<String> listKeys(String bucket, String prefix);
 }

@@ -2,6 +2,7 @@
 enable:
   local_object_storage: true
   minio: true # Deprecated: use local_object_storage instead
+  local_artifact_storage: true # set to false when artifactStorage.url points to external S3
   redis: true
   headlamp: true
   promtail: true
@@ -81,6 +82,10 @@ deltafi:
   storage:
     bucketName: storage
     url: http://deltafi-s3proxy:9000
+  artifactStorage:
+    bucketName: deltafi-artifacts
+    url: ""     # empty = use the same endpoint as deltafi.storage (shared s3proxy)
+    secret: ""  # Kubernetes Secret name containing accessKey and secretKey; only needed when url is set
   lookup:
     enabled: false
   globalEnv:

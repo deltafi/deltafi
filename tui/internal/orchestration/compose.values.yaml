@@ -1,5 +1,6 @@
 enable:
   local_object_storage: true
+  local_artifact_storage: true
 
 deltafi:
   java_ide:
@@ -55,6 +56,9 @@ deltafi:
     image: {{.Repo}}/deltafi-analytics:{{.Tag}}
   nodemonitor:
     image: {{.Repo}}/deltafi-nodemonitor:{{.Tag}}
+  artifactStorage:
+    bucketName: deltafi-artifacts
+    url: ""   # empty = use the same endpoint as deltafi.storage (shared s3proxy)
   plugins:
     ssl:
       secret: ssl-secret

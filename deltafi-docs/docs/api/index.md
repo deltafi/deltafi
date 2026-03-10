@@ -93,6 +93,7 @@ type Result {
 - [System](rest/system.md) — Status, versions, configuration, snapshots, SSE
 - [Plugins](rest/plugins.md) — Plugin registration and scaffold generation
 - [Federation](rest/federation.md) — Fleet leader operations and federated search
+- [Artifact Registry](rest/artifact-registry.md) — Versioned artifact publishing, download, aliases, and purge
 
 ### GraphQL API
 

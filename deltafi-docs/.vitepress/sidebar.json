@@ -45,6 +45,7 @@
       { "text": "Egress Action", "link": "/actions/egress" },
       { "text": "Flows", "link": "/flows" },
       { "text": "Action Parameters", "link": "/action_parameters" },
+      { "text": "Artifact Registry", "link": "/artifact-registry" },
       { "text": "Lookup Tables", "link": "/lookup-tables" },
       { "text": "Action Unit Testing", "link": "/unit-test" },
       { "text": "Integration Testing", "link": "/integration-test" }
@@ -106,7 +107,8 @@
           { "text": "Metrics", "link": "/api/rest/metrics" },
           { "text": "System", "link": "/api/rest/system" },
           { "text": "Plugins", "link": "/api/rest/plugins" },
-          { "text": "Federation", "link": "/api/rest/federation" }
+          { "text": "Federation", "link": "/api/rest/federation" },
+          { "text": "Artifact Registry", "link": "/api/rest/artifact-registry" }
         ]
       },
       {

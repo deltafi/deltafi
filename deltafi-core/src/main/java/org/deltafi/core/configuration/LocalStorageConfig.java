@@ -49,4 +49,5 @@ public class LocalStorageConfig {
     public StorageConfigurationService storageConfigurationService(MinioClient minioClient, DeltaFiPropertiesService deltaFiPropertiesService, StorageProperties storageProperties) {
         return new StorageConfigurationService(minioClient, deltaFiPropertiesService, storageProperties);
     }
+
 }

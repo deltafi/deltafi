@@ -221,6 +221,13 @@ Some endpoints require multiple permissions simultaneously:
 | `ResumePolicyUpdate` | Edit Resume Policies |
 | `ResumePolicyDelete` | Delete Resume Policies |
 
+### Artifacts
+
+| Permission | Description |
+|------------|-------------|
+| `ArtifactRegistryRead` | Read artifacts from the artifact registry |
+| `ArtifactRegistryWrite` | Write artifacts to the artifact registry |
+
 ## Open Endpoints
 
 The following endpoints do not require authentication:
