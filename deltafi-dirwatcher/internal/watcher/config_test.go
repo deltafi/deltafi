@@ -49,8 +49,8 @@ func TestLoadConfig(t *testing.T) {
 			name: "custom values",
 			envVars: map[string]string{
 				"DIRWATCHER_WATCH_DIR":     "/custom/dir",
-				"DELTAFI_URL":           "http://custom-core:8080",
-				"DELTAFI_INGRESS_API":   "/custom/ingress",
+				"DELTAFI_URL":              "http://custom-core:8080",
+				"DELTAFI_INGRESS_API":      "/custom/ingress",
 				"DIRWATCHER_WORKERS":       "10",
 				"DIRWATCHER_MAX_FILE_SIZE": "209715200",
 				"DIRWATCHER_RETRY_PERIOD":  "60",

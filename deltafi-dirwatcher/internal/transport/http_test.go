@@ -555,8 +555,8 @@ func TestHTTPClient_ResponseCodes(t *testing.T) {
 		shouldError bool
 	}{
 		{http.StatusOK, false},
-		{http.StatusCreated, true},               // Only 200 is accepted
-		{http.StatusAccepted, true},              // Only 200 is accepted
+		{http.StatusCreated, true},  // Only 200 is accepted
+		{http.StatusAccepted, true}, // Only 200 is accepted
 		{http.StatusBadRequest, true},
 		{http.StatusUnauthorized, true},
 		{http.StatusForbidden, true},
