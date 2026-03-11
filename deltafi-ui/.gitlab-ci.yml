@@ -65,9 +65,7 @@ GUI License Check:
     - cd deltafi-ui
     # link node_modules from base image, then update any changed packages
     - ln -s /app/node_modules ./node_modules
-    # - npm install
     - npm run test-server &
-    # wait for the server to start
     - npx wait-on -t 120000 http://127.0.0.1:8080
   artifacts:
     when: on_failure
@@ -78,10 +76,13 @@ GUI License Check:
 GUI Tests:
   extends: .cypress-test-base
   timeout: 15m
-  parallel: 10
+  parallel:
+    matrix:
+      - CYPRESS_SPEC: "cypress/e2e/admin-suite.cy.ts"
+      - CYPRESS_SPEC: "cypress/e2e/config-suite.cy.ts"
+      - CYPRESS_SPEC: "cypress/e2e/deltafiles-suite.cy.ts"
+      - CYPRESS_SPEC: "cypress/e2e/operations-suite.cy.ts"
+      - CYPRESS_SPEC: "cypress/e2e/topology-suite.cy.ts"
   script:
-    - |
-      SPECS=$(ls cypress/e2e/*.cy.ts | awk -v total="$CI_NODE_TOTAL" -v idx="$CI_NODE_INDEX" 'NR % total == (idx - 1)' | tr '\n' ',')
-      SPECS="${SPECS%,}"
-      echo "Node $CI_NODE_INDEX/$CI_NODE_TOTAL running specs: $SPECS"
-      npx cypress run --config video=false --spec "$SPECS"
+    - 'echo "Running Cypress spec: $CYPRESS_SPEC"'
+    - 'npx cypress run --config video=false --spec "$CYPRESS_SPEC"'
