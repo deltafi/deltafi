@@ -126,3 +126,68 @@ class HelloWorldTimedIngressAction(TimedIngressAction):
         ingress_result.memo = str(index)
         return ingress_result
 ```
+
+## Go
+
+### Interface
+
+A TimedIngressAction must implement the `Ingress` method which receives:
+* `context.Context` for cancellation and timeouts
+* `IngressInput` providing the action context and parameters
+
+### Return Types
+
+The `Ingress` method must return a `Result` and an `error`. The `Result` is one of: `IngressResult` or `ErrorResult`.
+
+The `IngressResult` contains a list of `IngressResultItem`, a string `Memo`, boolean `ExecuteImmediate`,
+string `Status`, and string `StatusMessage`.
+
+Each `IngressResultItem` contains the content, metadata, and annotations used to create a DeltaFile.
+
+### Example
+
+```go
+package actions
+
+import (
+    "context"
+    "fmt"
+    "strconv"
+
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+)
+
+func init() {
+    actionkit.Register("HelloWorldGoTimedIngressAction", &HelloWorldGoTimedIngress{}).
+        Describe("Create some DeltaFiles for hello-world consumption")
+}
+
+type HelloWorldGoTimedIngress struct{}
+
+func (a *HelloWorldGoTimedIngress) Ingress(ctx context.Context, input actionkit.IngressInput) (actionkit.Result, error) {
+    index := 0
+    if input.ActionContext.Memo != "" {
+        if parsed, err := strconv.Atoi(input.ActionContext.Memo); err == nil {
+            index = parsed + 1
+        }
+    }
+
+    filename := fmt.Sprintf("%s-%d", input.ActionContext.FlowName, index)
+
+    item := actionkit.NewIngressResultItem(filename)
+    item.AddMetadata("index", strconv.Itoa(index))
+
+    contentData := fmt.Sprintf("Some content, part %d", index)
+    content, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService, input.ActionContext, contentData, filename, "text/plain")
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to save content"), nil
+    }
+
+    item.AddContent(*content)
+
+    result := actionkit.NewIngressResult(input.ActionContext)
+    result.AddItem(*item)
+    result.SetMemo(strconv.Itoa(index))
+    return result, nil
+}
+```

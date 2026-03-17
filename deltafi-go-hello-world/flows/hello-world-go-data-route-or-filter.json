@@ -1,0 +1,26 @@
+{
+  "name": "hello-world-go-data-route-or-filter",
+  "type": "TRANSFORM",
+  "description": "Publish generated data based on metadata, else filters",
+  "subscribe": [
+    {
+      "topic": "hello-world-go-data"
+    }
+  ],
+  "publish": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {
+      "defaultBehavior": "FILTER"
+    },
+    "rules": [
+      {
+        "topic": "hello-world-go-transform",
+        "condition": "metadata['hello'] == 'transform'"
+      },
+      {
+        "topic": "hello-world-go-join",
+        "condition": "metadata['hello'] == 'join'"
+      }
+    ]
+  }
+}

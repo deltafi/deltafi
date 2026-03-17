@@ -173,6 +173,31 @@ class MyActionParameters(BaseModel):
     fallback_endpoints: List[EndpointConfig] = Field(default=[], description="Optional fallback endpoints to try if primary fails")
 ```
 
+### Defining Nested Parameters (Go)
+
+```go
+package actions
+
+import actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+
+type MyActionParams struct {
+    PrimaryEndpoint   EndpointConfig   `json:"primaryEndpoint" jsonschema:"description=Primary endpoint configuration,required"`
+    FallbackEndpoints []EndpointConfig `json:"fallbackEndpoints" jsonschema:"description=Optional fallback endpoints to try if primary fails"`
+}
+
+type EndpointConfig struct {
+    URL       string      `json:"url" jsonschema:"description=The URL to connect to,required"`
+    TimeoutMs int         `json:"timeoutMs" jsonschema:"description=Connection timeout in milliseconds,default=30000"`
+    Auth      *AuthConfig `json:"auth" jsonschema:"description=Authentication settings for this endpoint"`
+}
+
+type AuthConfig struct {
+    Type       string           `json:"type" jsonschema:"description=Authentication type: NONE\\, BASIC\\, or BEARER,default=NONE"`
+    Username   string           `json:"username" jsonschema:"description=Username for BASIC auth"`
+    Credential actionkit.EnvVar `json:"credential" jsonschema:"description=Environment variable containing the password or token"`
+}
+```
+
 ### Configuring Nested Parameters in Flows
 
 ```yaml
@@ -198,8 +223,8 @@ The UI displays nested parameters with expandable sections. Each field shows its
 
 ## Secure Parameters with EnvVar
 
-::: warning Java Action Kit Only
-The `EnvVar` type is currently only supported in the Java Action Kit. Python support is planned for a future release.
+::: warning Java and Go Action Kits Only
+The `EnvVar` type is currently supported in the Java and Go Action Kits. Python support is planned for a future release.
 :::
 
 The `EnvVar` type provides a secure way to reference sensitive values like passwords, API keys, and other credentials in action parameters. Instead of storing secrets directly in flow configurations (which are persisted and may be logged), you store the **name** of an environment variable that contains the secret. The actual secret value is resolved at runtime from the environment.
@@ -258,6 +283,31 @@ public Result myAction(ActionContext context, MyActionParameters params, MyInput
     }
 
     // ... use the resolved values
+}
+```
+
+### Defining and Resolving EnvVar in Go
+
+In Go, use the `actionkit.EnvVar` type in your parameter struct:
+
+```go
+type MyActionParams struct {
+    APIKeyEnvVar    actionkit.EnvVar `json:"apiKeyEnvVar" jsonschema:"description=Environment variable containing the API key"`
+    PasswordEnvVar  actionkit.EnvVar `json:"passwordEnvVar" jsonschema:"description=Environment variable containing the password"`
+}
+```
+
+The `EnvVar` type resolves the environment variable value at runtime:
+
+```go
+func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+    var params MyActionParams
+    if err := input.ParseParameters(&params); err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, err.Error()), nil
+    }
+
+    // Resolve() returns the value of the named environment variable
+    apiKey := params.APIKeyEnvVar.Resolve()
 }
 ```
 

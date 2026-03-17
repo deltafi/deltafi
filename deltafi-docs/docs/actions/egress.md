@@ -106,3 +106,62 @@ class HelloWorldEgressAction(EgressAction):
     def egress(self, context: Context, params: BaseModel, egress_input: EgressInput):
         return EgressResult(context, 100)
 ```
+
+## Go
+
+### Interface
+
+An EgressAction must implement the `Egress` method which receives:
+* `context.Context` for cancellation and timeouts
+* `EgressInput` providing the formatted content and metadata to send
+
+### Egress Input
+
+```go
+type EgressInput struct {
+    ActionContext *ActionContext
+    Content       []ActionContent
+    Metadata      map[string]string
+    Params        map[string]any
+}
+```
+
+### Return Types
+
+The `Egress` method must return a `Result` and an `error`. The `Result` is one of: `EgressResult` or `ErrorResult`.
+
+Returning an `EgressResult` indicates a successful egress.
+
+### Example
+
+```go
+package actions
+
+import (
+    "context"
+    "strings"
+
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+)
+
+func init() {
+    actionkit.Register("HelloWorldGoEgressAction", &HelloWorldGoEgress{}).
+        Describe("Hello pretends to egress")
+}
+
+type HelloWorldGoEgress struct{}
+
+func (a *HelloWorldGoEgress) Egress(ctx context.Context, input actionkit.EgressInput) (actionkit.Result, error) {
+    content := input.FirstContent()
+    data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to load content"), nil
+    }
+
+    if strings.Contains(data, "error") {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to egress"), nil
+    }
+
+    return actionkit.NewEgressResult(input.ActionContext), nil
+}
+```

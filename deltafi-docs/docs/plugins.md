@@ -9,9 +9,9 @@ Typically, a plugin includes one or more Flows which use the custom Actions and 
 optional. Flows and Flow Variables are also included in the Plugin registration.
 
 A plugin project can be created in a variety of ways. The simplest way to start is using a single Git repository to host
-a single Plugin, which builds with Gradle. DeltaFi provides two examples for this: one in Java, and one in Python. For
+a single Plugin, which builds with Gradle. DeltaFi provides examples for this in Java, Python, and Go. For
 Java, DeltaFi provides a custom Gradle plugin to facilitate the Docker build and Plugin structure. The Python structure
-requires a few extra files.
+requires a few extra files. The Go structure uses standard Go modules and a multi-stage Docker build.
 
 ## Java
 
@@ -265,6 +265,121 @@ Plugin([MyTransformAction],
     "This is the description of the demo plugin").run()
 ```
 
+## Go
+
+The Go action kit is published as a Go module. A project structure for a DeltaFi Go Plugin is shown below:
+
+```
+myplugin/
+├── go.mod
+├── go.sum
+├── main.go
+├── Makefile
+├── Dockerfile
+├── actions/
+│   └── transform.go
+├── flows/
+│   └── my-transform.json
+└── integration/
+    └── basic-test.json
+```
+
+### Go Module
+
+Start with a `go.mod` that imports the action kit:
+
+```
+module gitlab.com/deltafi/deltafi/my-plugin
+
+go 1.26
+
+require gitlab.com/deltafi/deltafi/deltafi-go-action-kit v0.0.0
+```
+
+### Go Entrypoint
+
+The entrypoint registers actions and starts the plugin. Actions self-register via `init()` functions, so they only need a blank import. The `RunPlugin` function handles all plugin lifecycle boilerplate.
+
+```go
+package main
+
+import (
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+    _ "gitlab.com/deltafi/deltafi/my-plugin/actions"
+)
+
+var (
+    version     = "0.0.0-dev"
+    description = "My DeltaFi plugin"
+)
+
+func main() {
+    actionkit.RunPlugin(&actionkit.PluginConfig{
+        Coordinates: &actionkit.PluginCoordinates{
+            GroupID:    "org.myorg",
+            ArtifactID: "my-plugin",
+            Version:    version,
+        },
+        Domain:      "org.myorg.my-plugin",
+        Description: description,
+    })
+}
+```
+
+### Dockerfile
+
+Go plugins use a multi-stage Docker build:
+
+```dockerfile
+FROM golang:1.26-alpine AS builder
+
+WORKDIR /build
+COPY deltafi-go-action-kit/go.mod deltafi-go-action-kit/go.sum ./deltafi-go-action-kit/
+COPY my-plugin/go.mod my-plugin/go.sum ./my-plugin/
+
+WORKDIR /build/my-plugin
+RUN go mod download -x
+
+WORKDIR /build
+COPY deltafi-go-action-kit/ ./deltafi-go-action-kit/
+COPY my-plugin/ ./my-plugin/
+
+WORKDIR /build/my-plugin
+ARG VERSION=0.0.0-dev
+ARG DESCRIPTION=My DeltaFi plugin
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "\
+  -X main.version=${VERSION} \
+  -X 'main.description=${DESCRIPTION}'" \
+  -o my-plugin .
+
+FROM alpine:3.23
+RUN apk --no-cache add ca-certificates
+WORKDIR /app
+COPY --from=builder /build/my-plugin/my-plugin deltafi-plugin
+COPY --from=builder /build/my-plugin/flows ./flows
+RUN chmod +x deltafi-plugin
+ENTRYPOINT ["/app/deltafi-plugin"]
+```
+
+### Makefile
+
+A Makefile simplifies common tasks:
+
+```makefile
+VERSION ?= $(shell git describe --tags --always --dirty)
+
+.PHONY: build test vet
+
+build:
+	go build -ldflags "-X main.version=$(VERSION)" -o my-plugin .
+
+test:
+	go test ./...
+
+vet:
+	go vet ./...
+```
+
 ## Flows
 
 Flows may be defined for a Plugin. See [Flows](/flows).
@@ -277,6 +392,6 @@ Lookup tables may be used by a Plugin. See [Lookup Tables](/lookup-tables).
 
 ## Testing Plugin Actions
 
-Java based actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. See [Action Unit Testing](/unit-test).
+Java actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. Go actions use the test helpers built into the `deltafi-go-action-kit` package. See [Action Unit Testing](/unit-test).
 
 To test complete data flows end-to-end, use integration tests. Integration tests validate that your data sources, transforms, and data sinks work together correctly. See [Integration Testing](/integration-test). 

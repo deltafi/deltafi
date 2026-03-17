@@ -1,0 +1,146 @@
+{
+  "name": "deltafi-go-hello-world.transform-many-test",
+  "description": "Tests Go Hello World transform many topics",
+  "plugins": [
+    {
+      "groupId": "org.deltafi",
+      "artifactId": "deltafi-core-actions",
+      "version": "ANY"
+    },
+    {
+      "groupId": "org.deltafi",
+      "artifactId": "deltafi-go-hello-world",
+      "version": "ANY"
+    }
+  ],
+  "dataSources": [
+    "hello-world-go-transform-many-rest-data-source"
+  ],
+  "transformationFlows": [
+    "hello-world-go-transform-many"
+  ],
+  "dataSinks": [
+    "hello-world-go-data-sink"
+  ],
+  "inputs": [
+    {
+      "flow": "hello-world-go-transform-many-rest-data-source",
+      "ingressFileName": "test.txt",
+      "base64Encoded": false,
+      "data": "This is a test"
+    }
+  ],
+  "timeout": "PT3M",
+  "expectedDeltaFiles": [
+    {
+      "stage": "COMPLETE",
+      "childCount": 2,
+      "expectedFlows": [
+        {
+          "flow": "hello-world-go-transform-many-rest-data-source",
+          "type": "REST_DATA_SOURCE",
+          "actions": [
+            "IngressAction"
+          ]
+        },
+        {
+          "flow": "hello-world-go-transform-many",
+          "type": "TRANSFORM",
+          "actions": [
+            "HelloWorldGoSplitTransformAction"
+          ]
+        }
+      ],
+      "children": [
+        {
+          "stage": "COMPLETE",
+          "childCount": 0,
+          "parentCount": 1,
+          "annotations": {
+            "keyValueMatchers": [
+              {
+                "name": "childIndex",
+                "value": "0"
+              }
+            ]
+          },
+          "expectedFlows": [
+            {
+              "flow": "hello-world-go-transform-many",
+              "type": "TRANSFORM",
+              "actions": [
+                "HelloWorldGoSplitTransformAction"
+              ]
+            },
+            {
+              "flow": "hello-world-go-data-sink",
+              "type": "DATA_SINK",
+              "actions": [
+                "HelloWorldGoEgressAction"
+              ]
+            }
+          ],
+          "expectedContent": {
+            "flow": "hello-world-go-data-sink",
+            "type": "DATA_SINK",
+            "action": "HelloWorldGoEgressAction",
+            "data": [
+              {
+                "name": "transformed content",
+                "value": "This is a test\nHelloWorldGoSplitTransformAction spawned me"
+              }
+            ]
+          }
+        },
+        {
+          "stage": "COMPLETE",
+          "childCount": 0,
+          "parentCount": 1,
+          "annotations": {
+            "keyValueMatchers": [
+              {
+                "name": "childIndex",
+                "value": "1"
+              }
+            ]
+          },
+          "expectedFlows": [
+            {
+              "flow": "hello-world-go-transform-many",
+              "type": "TRANSFORM",
+              "actions": [
+                "HelloWorldGoSplitTransformAction"
+              ]
+            },
+            {
+              "flow": "hello-world-go-data-sink",
+              "type": "DATA_SINK",
+              "actions": [
+                "HelloWorldGoEgressAction"
+              ]
+            }
+          ],
+          "expectedContent": {
+            "flow": "hello-world-go-data-sink",
+            "type": "DATA_SINK",
+            "action": "HelloWorldGoEgressAction",
+            "data": [
+              {
+                "name": "transformed content",
+                "extraSubstitutions": [
+                  {
+                    "key": "exampleMatch",
+                    "value": "exampleReplace"
+                  }
+                ],
+                "ignoreWhitespace": true,
+                "base64Encoded": true,
+                "value": "ClRoaXMgaXMgYSB0ZXN0CgpIZWxsb1dvcmxkR29TcGxpdFRyYW5zZm9ybUFjdGlvbiAKCnNwYXduZWQgbWUKCg=="
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

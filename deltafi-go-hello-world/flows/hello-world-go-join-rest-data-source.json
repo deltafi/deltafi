@@ -1,0 +1,22 @@
+{
+  "name": "hello-world-go-join-rest-data-source",
+  "type": "REST_DATA_SOURCE",
+  "description": "Used to upload test file for join topic",
+  "topic": "hello-world-go-join",
+  "metadata": {
+    "helloKey1": "restJoin1",
+    "helloKey2": "restJoin2",
+    "metaKey3": "go",
+    "join-group": "rest"
+  },
+  "annotationConfig": {
+    "metadataPatterns": [
+      "metaKey.*"
+    ],
+    "discardPrefix": "meta",
+    "annotations": {
+      "extraAnnot1": "valueW",
+      "extraAnnot2": "valueX"
+    }
+  }
+}

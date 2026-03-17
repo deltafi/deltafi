@@ -304,6 +304,93 @@ artifactRegistry.publishArtifact(
 `getArtifact()` and `getSharedArtifact()` throw `IOException` if the artifact is not found.
 `publishArtifact()` sets the `active` alias by default; pass `makeActive = false` to suppress.
 
+### Go
+
+The Go action kit provides artifact access through the `ArtifactClient`, available on the `ActionContext`. Go does not use annotations — artifacts are accessed programmatically.
+
+#### Fetching Artifacts
+
+```go
+func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+    // Fetch a plugin-scoped artifact (cached by default)
+    fetched, err := input.ActionContext.ArtifactClient.GetArtifact(ctx, "routing-rules.json", "active")
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to load artifact"), nil
+    }
+
+    var config RoutingConfig
+    json.Unmarshal(fetched.Data, &config)
+
+    // Fetch a shared artifact
+    shared, err := input.ActionContext.ArtifactClient.GetSharedArtifact(ctx, "geo-regions.csv", "active")
+
+    // Stream a large artifact without buffering
+    stream, err := input.ActionContext.ArtifactClient.StreamArtifact(ctx, "large-model.bin", "active")
+    if err == nil {
+        defer stream.Reader.Close()
+        // read from stream.Reader
+    }
+
+    // ...
+}
+```
+
+#### Reacting to Version Changes
+
+Register callbacks at plugin startup to react when artifacts are updated. The `OnUpdateFetch` helper fetches the artifact and passes it to your callback whenever a new version is published:
+
+```go
+type MyAction struct {
+    config actionkit.SafeStringMap
+}
+
+func (a *MyAction) ConfigureArtifacts(client *actionkit.ArtifactClient) {
+    client.OnUpdateFetchWithDefault("config.json", "",
+        actionkit.ArtifactDefault{
+            Data:        []byte(`{"key": "default"}`),
+            ContentType: "application/json",
+            Description: "Default configuration",
+        },
+        func(fetched *actionkit.FetchedArtifact, err error) {
+            if err != nil {
+                log.Printf("Failed to load config: %v", err)
+                return
+            }
+            var cfg map[string]string
+            json.Unmarshal(fetched.Data, &cfg)
+            a.config.Store(cfg)
+        })
+}
+```
+
+Plugin-level artifact watching (outside of actions) uses `WatchArtifact` in an `init()` function:
+
+```go
+func init() {
+    actionkit.WatchArtifact("global-config.yaml", &actionkit.ArtifactDefault{
+        Data:        []byte("config: []"),
+        ContentType: "application/yaml",
+        Description: "Global configuration",
+    }, func(fetched *actionkit.FetchedArtifact, err error) {
+        if err != nil {
+            log.Printf("Failed to load config: %v", err)
+            return
+        }
+        log.Printf("Config updated (version=%s)", fetched.Manifest.Version)
+    })
+}
+```
+
+#### Publishing Artifacts
+
+```go
+data := bytes.NewReader(rulesJSON)
+resp, err := input.ActionContext.ArtifactClient.PublishArtifact(ctx, "output-rules.json", data, "application/json", nil)
+
+// Publish to shared namespace
+resp, err = input.ActionContext.ArtifactClient.PublishSharedArtifact(ctx, "shared-data.csv", data, "text/csv", nil)
+```
+
 ### Streaming Large Artifacts
 
 `getArtifact()` buffers the entire artifact in the JVM heap. For large binary artifacts — ML

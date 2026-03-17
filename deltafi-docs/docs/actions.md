@@ -4,8 +4,8 @@ Actions are isolated units of business logic that perform functions within Timed
 Actions receive required data from the DeltaFile on a queue, perform the necessary logic, and issue a response that
 augments the DeltaFile so that it can be handed off to the next Action in the flow or published to a topic.
 
-Actions are currently implemented on two platforms. Core actions and several plugins are implemented in Spring Boot and
-utilize a Java DeltaFi development kit. A Python DeltaFi development kit has also been implemented. However, Actions can
+Actions are currently implemented on three platforms. Core actions and several plugins are implemented in Spring Boot and
+utilize a Java DeltaFi development kit. Python and Go DeltaFi development kits have also been implemented. However, Actions can
 be developed in any language as long as certain integration interfaces are met.
 
 Actions may be configured differently in each flow that uses them. The Action itself defines the configuration parameters
@@ -75,6 +75,34 @@ class Context(NamedTuple):
   logger: Logger = None
 ```
 
+Go actions receive an `ActionContext` through their input struct, which gives access to information
+about where the action is running and the DeltaFile(s) being processed.
+
+```go
+// the did is the DeltaFile's id
+did := actx.DID
+// the name of the DeltaFile, typically the original filename
+deltaFileName := actx.DeltaFileName
+// the original dataSource of this DeltaFile
+dataSource := actx.DataSource
+// the name of the flow in which the action is being invoked
+flowName := actx.FlowName
+// the id of the flow in which the action is being invoked
+flowID := actx.FlowID
+// name of the Action as configured in a flow
+actionName := actx.ActionName
+// hostname where the Action is running
+hostname := actx.Hostname
+// version of Core Actions or plugin containing the Action
+actionVersion := actx.ActionVersion
+// when the Action began execution
+startTime := actx.StartTime
+// system name from DeltaFi System Properties
+systemName := actx.SystemName
+// the optional memo field used to pass bookmarking info to timed ingress actions
+memo := actx.Memo
+```
+
 ### Input
 
 Each `Action` has a specific `Input` class passed to its execution method. For example, a Transform Action receives the
@@ -117,6 +145,12 @@ class DecompressionTransformParameters(BaseModel):
     myParameter: str = Field(description="Description goes here")
 ```
 
+```go
+type MyTransformParams struct {
+    MyParameter string `json:"myParameter" jsonschema:"description=Description goes here,required"`
+}
+```
+
 ### Content Storage
 
 Actions are passed or can create `ActionContent` that serve as pointers to content data that is stored on disk.
@@ -137,6 +171,15 @@ To retrieve content as a string or byte array in a Python action execution:
         string = transform_input.content[0].load_str()
         bytes = transform_input.content[0].load_bytes()
 
+```
+
+To retrieve content as a byte array or string in a Go action execution:
+
+```go
+func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+    data, err := input.FirstContent().LoadString(ctx, input.ActionContext.ContentService)
+    bytes, err := input.FirstContent().LoadBytes(ctx, input.ActionContext.ContentService)
+}
 ```
 
 To store content from a byte array or a stream and add to a Result:
@@ -165,6 +208,20 @@ Or in Python save content to a Result:
 
 ```python
 result.save_content(data, content_name, media_type)
+```
+
+Or in Go save content to a Result:
+
+```go
+newContent, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService, input.ActionContext, data, fileName, "text/plain")
+result.AddContent(*newContent)
+
+// You can also manipulate existing content without saving to disk:
+copied := existingContent.Copy()
+copied.SetName("new-name.txt")
+partial := anotherContent.Subcontent(0, 50)
+copied = copied.Append(partial)
+result.AddContent(copied)
 ```
 
 ### Results
@@ -199,6 +256,17 @@ or
 return new FilterResult(context, "Common summary reason of why this DeltaFile was filtered", "Detailed reason");
 ```
 
+In Go, use the result constructors:
+
+```go
+// return an error
+return actionkit.NewErrorResult(input.ActionContext, "Description of failure").
+    SetContext("additional context"), nil
+
+// return a filter
+return actionkit.NewFilterResult(input.ActionContext, "Description of why filtered"), nil
+```
+
 ### Join
 
 Transform actions may be configured to join multiple DeltaFiles before executing the transform method. When a transform action
@@ -230,6 +298,16 @@ The `join` method may be overridden by an action to change the default behavior:
         for transform_input in transform_inputs:
             all_content += transform_input.content
         return TransformInput(content=all_content)
+```
+
+```go
+func (a *MyJoiningAction) Join(inputs []actionkit.TransformInput) actionkit.TransformInput {
+    var allContent []actionkit.ActionContent
+    for _, input := range inputs {
+        allContent = append(allContent, input.Content...)
+    }
+    return actionkit.TransformInput{Content: allContent}
+}
 ```
 
 The join configuration that defines the criteria for collecting DeltaFiles that will be joined may include the following fields: 

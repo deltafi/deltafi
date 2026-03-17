@@ -57,6 +57,48 @@ public class MyLookupTableSupplier extends LookupTableSupplier {
 }
 ```
 
+### Go
+
+A lookup table supplier in Go implements the `LookupTableSupplier` interface, which defines the table schema and provides rows on demand.
+
+```go
+package suppliers
+
+import (
+    "log"
+    "math/rand"
+
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+)
+
+var colors = []string{"red", "orange", "yellow", "green", "blue", "indigo", "violet"}
+
+func init() {
+    actionkit.RegisterLookupTableSupplier(&MyLookupTableSupplier{})
+}
+
+type MyLookupTableSupplier struct{}
+
+func (s *MyLookupTableSupplier) TableDefinition() actionkit.LookupTableDefinition {
+    return actionkit.LookupTableDefinition{
+        Name:            "my_lookup_table",
+        Columns:         []string{"column_a", "column_b", "color"},
+        KeyColumns:      []string{"column_a"},
+        RefreshDuration: "PT1M",
+    }
+}
+
+func (s *MyLookupTableSupplier) GetRows(variables map[string]string,
+    matchingColumns map[string][]string, resultColumns []string) []map[string]string {
+    log.Println("Getting rows for my_lookup_table")
+    return []map[string]string{
+        {"column_a": "A1", "column_b": "B1", "color": colors[rand.Intn(len(colors))]},
+        {"column_a": "A2", "column_b": "B2", "color": colors[rand.Intn(len(colors))]},
+        {"column_a": "A3", "column_b": "B3", "color": colors[rand.Intn(len(colors))]},
+    }
+}
+```
+
 ## Lookup Table API
 
 ### Java
@@ -85,3 +127,31 @@ use it as follows:
 ```
 
 To return all (unsorted) rows with all result columns, pass LookupOptions.defaultLookupOptions().
+
+### Go
+
+The `LookupClient` is available on the `ActionContext` and provides a `Lookup` method for querying lookup tables:
+
+```go
+func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+    lookupResults, err := input.ActionContext.LookupClient.Lookup(ctx, "my_lookup_table",
+        &actionkit.LookupOptions{
+            MatchingColumnValues: map[string][]string{"color": {"red", "green", "blue"}},
+            ResultColumns:        []string{"column_a", "color"},
+            SortColumn:           "column_a",
+            SortDirection:        "DESC",
+            Offset:               0,
+            Limit:                100,
+        })
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Unable to lookup rows").SetContext(err.Error()), nil
+    }
+
+    result := actionkit.NewTransformResult(input.ActionContext)
+    result.AddMetadata("totalRows", fmt.Sprintf("%d", lookupResults.TotalCount))
+    // ... use lookupResults.Rows
+    return result, nil
+}
+```
+
+To return all (unsorted) rows with all result columns, pass `nil` as the options.

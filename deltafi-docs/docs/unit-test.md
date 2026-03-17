@@ -108,3 +108,123 @@ class HelloWorldTransformActionTest {
     }
 }
 ```
+
+## Go Action Testing
+
+The `deltafi-go-action-kit` package includes test helpers for unit testing actions without external services (Redis, MinIO). The package provides:
+
+- `InMemoryContentStore` — an in-memory content store replacing MinIO
+- `MockLookupClient` — configurable mock for lookup table queries
+- `MockArtifactClient` — configurable mock for artifact registry access
+- `NewTestContext(did)` — creates a pre-configured `ActionContext` wired to the in-memory store
+- `RunTransform`, `RunEgress`, `RunIngress` — test runners that execute actions and return inspectable results
+- `RequireTransform`, `RequireError`, `RequireFilter`, `RequireEgress` — result assertions
+
+### Test Setup
+
+```go
+package actions
+
+import (
+    "context"
+    "testing"
+
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+)
+
+func TestMyTransformAction(t *testing.T) {
+    // Create a test context with an in-memory content store
+    tc := actionkit.NewTestContext("test-did")
+
+    // Store test content
+    content := tc.Content("input.txt", "text/plain", "hello world")
+
+    // Build the input
+    input := actionkit.TransformInput{
+        ActionContext: tc.ActionContext,
+        Content:       []actionkit.ActionContent{content},
+        Metadata:      map[string]string{"key": "value"},
+        Params:        map[string]any{},
+    }
+
+    // Execute the action and get the result event
+    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+
+    // Assert it's a transform result
+    te := event.RequireTransform(t)
+
+    // Verify the output content
+    require.Len(t, te[0].Content, 1)
+    data, err := te[0].Content[0].LoadString(context.Background(), tc.Store)
+    require.NoError(t, err)
+    assert.Contains(t, data, "hello world")
+    assert.Contains(t, data, "transformed")
+
+    // Verify metadata and annotations
+    assert.Equal(t, "transformValue", te[0].Metadata["transformKey"])
+}
+```
+
+### Result Verification
+
+The `ActionEvent` returned by the test runners provides assertion methods for each result type:
+
+```go
+func TestFilterResult(t *testing.T) {
+    tc := actionkit.NewTestContext("2-starts-with-two")
+    input := actionkit.TransformInput{
+        ActionContext: tc.ActionContext,
+        Content:       []actionkit.ActionContent{tc.Content("in.txt", "text/plain", "data")},
+        Metadata:      map[string]string{},
+        Params:        map[string]any{},
+    }
+
+    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+    event.RequireFilter(t, "We prefer dids that do not start with 2")
+}
+
+func TestErrorResult(t *testing.T) {
+    tc := actionkit.NewTestContext("test-did")
+    input := actionkit.TransformInput{
+        ActionContext: tc.ActionContext,
+        Content:       nil, // no content
+        Metadata:      map[string]string{},
+        Params:        map[string]any{},
+    }
+
+    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+    event.RequireError(t, "No content provided")
+}
+```
+
+### Mock Lookup Client
+
+```go
+func TestWithLookup(t *testing.T) {
+    tc := actionkit.NewTestContext("test-did")
+    tc.LookupClient = &actionkit.MockLookupClient{
+        Results: map[string]*actionkit.LookupResults{
+            "my_table": {
+                TotalCount: 2,
+                Rows: []map[string]string{
+                    {"name": "Alice"},
+                    {"name": "Bob"},
+                },
+            },
+        },
+    }
+
+    input := actionkit.TransformInput{
+        ActionContext: tc.ActionContext,
+        Content:       []actionkit.ActionContent{tc.Content("in.txt", "text/plain", "data")},
+        Metadata:      map[string]string{},
+        Params:        map[string]any{},
+    }
+
+    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+    te := event.RequireTransform(t)
+    assert.NotEmpty(t, te[0].Metadata["lookupResult"])
+}
+```

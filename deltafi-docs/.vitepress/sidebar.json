@@ -87,7 +87,7 @@
       { "text": "DeltaFile Annotations", "link": "/advanced/deltafile_annotations" },
       { "text": "Egress Sink", "link": "/advanced/egress-sink" },
       { "text": "Leader Member", "link": "/advanced/leader_member" },
-      { "text": "Multithreading Java Actions", "link": "/advanced/multithreading_java_action_kit" },
+      { "text": "Multithreading in Action Kits", "link": "/advanced/multithreading_java_action_kit" },
       { "text": "Directory Watcher", "link": "/advanced/directory-watcher" },
       { "text": "PostgreSQL Tuning", "link": "/advanced/postgres-tuning" },
       { "text": "Provenance Tracking", "link": "/advanced/provenance" }

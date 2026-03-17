@@ -4,7 +4,7 @@ This guide is for developers who want to build custom DeltaFi plugins with their
 
 ## Overview
 
-DeltaFi plugins are containerized applications that provide custom actions for data transformation. You can write plugins in **Java** or **Python**.
+DeltaFi plugins are containerized applications that provide custom actions for data transformation. You can write plugins in **Java**, **Python**, or **Go**.
 
 ## Prerequisites
 
@@ -12,6 +12,7 @@ DeltaFi plugins are containerized applications that provide custom actions for d
 - Git
 - For Java plugins: JDK 21+, Gradle
 - For Python plugins: (optional) Python 3.13+, uv
+- For Go plugins: Go 1.26+
 
 ## Setup
 
@@ -122,15 +123,32 @@ my-plugin/
     └── my-transform.yaml
 ```
 
+### Go Plugin
+
+```
+my-plugin/
+├── go.mod
+├── go.sum
+├── main.go
+├── Dockerfile
+├── Makefile
+├── actions/
+│   └── my_transform_action.go
+├── flows/
+│   └── my-transform.json
+└── integration/
+    └── basic-test.json
+```
+
 ## Writing Actions
 
 ### Action Types
 
-| Type | Purpose | Java Class | Python Class |
-|------|---------|------------|--------------|
-| Transform | Modify content/metadata | `TransformAction<P>` | `TransformAction` |
-| Timed Ingress | Pull data on schedule | `TimedIngressAction<P>` | `TimedIngressAction` |
-| Egress | Send data to external systems | `EgressAction<P>` | `EgressAction` |
+| Type | Purpose | Java Class | Python Class | Go Interface |
+|------|---------|------------|--------------|--------------|
+| Transform | Modify content/metadata | `TransformAction<P>` | `TransformAction` | `TransformAction` |
+| Timed Ingress | Pull data on schedule | `TimedIngressAction<P>` | `TimedIngressAction` | `TimedIngressAction` |
+| Egress | Send data to external systems | `EgressAction<P>` | `EgressAction` | `EgressAction` |
 
 ### Java Transform Action Example
 
@@ -188,9 +206,49 @@ class MyTransformAction(TransformAction):
         return result
 ```
 
+### Go Transform Action Example
+
+```go
+package actions
+
+import (
+    "context"
+    "strings"
+
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+)
+
+func init() {
+    actionkit.Register("MyTransformAction", &MyTransformAction{}).
+        Describe("Transforms input data")
+}
+
+type MyTransformAction struct{}
+
+func (a *MyTransformAction) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+    content := input.FirstContent()
+    data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to load content"), nil
+    }
+
+    transformed := strings.ToUpper(data)
+
+    newContent, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService,
+        input.ActionContext, transformed, "output.txt", "text/plain")
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to save"), nil
+    }
+
+    result := actionkit.NewTransformResult(input.ActionContext)
+    result.AddContent(*newContent)
+    return result, nil
+}
+```
+
 ## Defining Flows
 
-Flows wire your actions together. Create YAML files in `src/main/resources/flows/` (Java) or `flows/` (Python):
+Flows wire your actions together. Create YAML or JSON files in `src/main/resources/flows/` (Java), `flows/` (Python), or `flows/` (Go):
 
 ```yaml
 name: my-transform
@@ -237,6 +295,28 @@ public class MyTransformActionTest {
         TransformResultAssert.assertThat(result)
             .hasContentMatching(c -> c.loadString().equals("HELLO"));
     }
+}
+```
+
+### Unit Testing (Go)
+
+```go
+func TestMyTransformAction(t *testing.T) {
+    tc := actionkit.NewTestContext("test-did")
+    content := tc.Content("input.txt", "text/plain", "hello")
+
+    input := actionkit.TransformInput{
+        ActionContext: tc.ActionContext,
+        Content:       []actionkit.ActionContent{content},
+        Metadata:      map[string]string{},
+        Params:        map[string]any{},
+    }
+
+    event := actionkit.RunTransform(t, &MyTransformAction{}, input)
+    te := event.RequireTransform(t)
+
+    data, _ := te[0].Content[0].LoadString(context.Background(), tc.Store)
+    assert.Equal(t, "HELLO", data)
 }
 ```
 

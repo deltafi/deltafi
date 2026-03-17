@@ -119,3 +119,73 @@ class HelloWorldTransformAction(TransformAction):
             .add_metadata('transformKey', 'transformValue')
             .annotate('transformAnnotation', 'value')
 ```
+
+## Go
+
+### Interface
+
+A TransformAction must implement the `Transform` method which receives:
+* `context.Context` for cancellation and timeouts
+* `TransformInput` providing the content, metadata, and action context
+
+### Transform Input
+
+```go
+type TransformInput struct {
+    ActionContext *ActionContext
+    Content       []ActionContent
+    Metadata      map[string]string
+    Params        map[string]any
+}
+```
+
+### Return Types
+
+The `Transform` method must return a `Result` and an `error`. The `Result` is one of: `TransformResult`, `ErrorResult`, or `FilterResult`.
+
+The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
+
+### Example
+
+```go
+package actions
+
+import (
+    "context"
+    "strings"
+
+    actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+)
+
+func init() {
+    actionkit.Register("HelloWorldGoTransformAction", &HelloWorldGoTransform{}).
+        Describe("Add some content noting that we did a really good job")
+}
+
+type HelloWorldGoTransform struct{}
+
+func (a *HelloWorldGoTransform) Transform(ctx context.Context, input actionkit.TransformInput) (actionkit.Result, error) {
+    if strings.HasPrefix(input.ActionContext.DID, "2") {
+        return actionkit.NewFilterResult(input.ActionContext, "We prefer dids that do not start with 2"), nil
+    }
+
+    content := input.FirstContent()
+    data, err := content.LoadString(ctx, input.ActionContext.ContentService)
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to load content"), nil
+    }
+
+    transformed := data + "\nHelloWorldGoTransformAction did a great job"
+
+    newContent, err := actionkit.SaveContentString(ctx, input.ActionContext.ContentService, input.ActionContext, transformed, "transform-named-me", "text/plain")
+    if err != nil {
+        return actionkit.NewErrorResult(input.ActionContext, "Failed to save content"), nil
+    }
+
+    result := actionkit.NewTransformResult(input.ActionContext)
+    result.AddContent(*newContent)
+    result.AddMetadata("transformKey", "transformValue")
+    result.AddAnnotation("transformAnnotation", "value")
+    return result, nil
+}
+```
