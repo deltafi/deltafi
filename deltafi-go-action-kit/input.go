@@ -185,7 +185,7 @@ func parseRawParams(raw map[string]any, dest any) error {
 		return nil
 	}
 	t := reflect.TypeOf(dest)
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	data, err := json.Marshal(coerceParams(raw, t))
@@ -213,7 +213,7 @@ func coerceParams(m map[string]any, structType reflect.Type) map[string]any {
 				out[k] = v
 			}
 		case map[string]any:
-			if ft == reflect.Struct || ft == reflect.Ptr {
+			if ft == reflect.Struct || ft == reflect.Pointer {
 				nested := structFieldType(structType, k)
 				out[k] = coerceParams(val, nested)
 			} else {
@@ -232,8 +232,7 @@ func jsonFieldMap(t reflect.Type) map[string]reflect.Kind {
 		return nil
 	}
 	m := make(map[string]reflect.Kind, t.NumField())
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
+	for f := range t.Fields() {
 		name := f.Tag.Get("json")
 		if idx := strings.IndexByte(name, ','); idx >= 0 {
 			name = name[:idx]
@@ -242,7 +241,7 @@ func jsonFieldMap(t reflect.Type) map[string]reflect.Kind {
 			name = f.Name
 		}
 		kind := f.Type.Kind()
-		if kind == reflect.Ptr {
+		if kind == reflect.Pointer {
 			kind = f.Type.Elem().Kind()
 		}
 		m[name] = kind
@@ -255,8 +254,7 @@ func structFieldType(parent reflect.Type, jsonName string) reflect.Type {
 	if parent == nil || parent.Kind() != reflect.Struct {
 		return nil
 	}
-	for i := 0; i < parent.NumField(); i++ {
-		f := parent.Field(i)
+	for f := range parent.Fields() {
 		name := f.Tag.Get("json")
 		if idx := strings.IndexByte(name, ','); idx >= 0 {
 			name = name[:idx]
@@ -266,7 +264,7 @@ func structFieldType(parent reflect.Type, jsonName string) reflect.Type {
 		}
 		if name == jsonName {
 			t := f.Type
-			for t.Kind() == reflect.Ptr {
+			for t.Kind() == reflect.Pointer {
 				t = t.Elem()
 			}
 			return t

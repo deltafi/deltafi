@@ -93,10 +93,7 @@ func (m *InMemoryContentStore) Load(ctx context.Context, segments []Segment) ([]
 		if !ok {
 			return nil, fmt.Errorf("segment %s not found", seg.UUID)
 		}
-		end := seg.Offset + seg.Size
-		if end > int64(len(data)) {
-			end = int64(len(data))
-		}
+		end := min(seg.Offset+seg.Size, int64(len(data)))
 		buf.Write(data[seg.Offset:end])
 	}
 	return buf.Bytes(), nil

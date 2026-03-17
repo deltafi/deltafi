@@ -96,7 +96,8 @@ GOCLEAN   = $(GOCMD) clean
 GOTEST    = $(GOTOOLCMD) test -modcacherw
 GOGET     = $(GOCMD) get -modcacherw
 GOVET     = $(GOCMD) vet -modcacherw
-GOFMT     = $(CMD_PREFIX) gofmt
+GOFMT     = $(GOCMD) fmt
+GOFIX     = $(GOCMD) fix
 GOTIDY    = $(GOCMD) mod tidy -modcacherw
 GOLINT    = $(CMD_PREFIX) $(GOBINPATH)/golangci-lint
 GOINSTALL = $(GOCMD) install -modcacherw
@@ -104,9 +105,9 @@ GOINSTALL = $(GOCMD) install -modcacherw
 # Extra modules
 LINT_MODULE = github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-.PHONY: all build clean test lint fmt deps tidy very-clean help check-env
+.PHONY: all build clean test lint fmt fix vet deps tidy very-clean help check-env
 
-all: check-env build test
+all: check-env fix vet fmt build test
 
 check-env:
 	@if [ "$(USE_DOCKER)" = "false" ] && [ "$(GO_VERSION_CHECK)" = "0" ]; then \
@@ -140,7 +141,7 @@ help:
 	@echo "Build options:"
 	@echo "  USE_DOCKER=true|false - Use Docker for building (auto-detected: $(USE_DOCKER))"
 
-build: check-env fmt
+build: check-env fmt fix
 	@echo "Building deltafi-go-action-kit"
 	@$(GOBUILD) ./...
 
@@ -155,15 +156,18 @@ very-clean: clean
 	$(GOCLEAN) -modcache
 	rm -rf $(GOPATH)
 
-lint: deps
+lint: deps vet fix fmt
 	@echo "Running static analysis"
-	@$(GOVET) ./...
 	@$(GOLINT) run
 
-GO_FILES := $(shell find . -name '*.go' -not -path './.go/*')
+vet:
+	@$(GOVET) ./...
+
+fix:
+	@$(GOFIX) ./...
 
 fmt:
-	@$(GOFMT) -w $(GO_FILES)
+	@$(GOFMT) ./...
 
 tidy: fmt
 	@$(GOTIDY)
