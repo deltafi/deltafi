@@ -1,0 +1,21 @@
+.docs:
+  variables:
+    PROJECT_NAME: deltafi-docs
+
+"🐳 Publish docs (GitLab)":
+  variables:
+    CONTEXT: "${CI_PROJECT_DIR}"
+    DOCKERFILE: "${CI_PROJECT_DIR}/${PROJECT_NAME}/Dockerfile"
+  extends:
+    - .docs
+    - .docker
+  needs: []
+
+"🐳 Publish docs (docker.io)":
+  variables:
+    CONTEXT: "${CI_PROJECT_DIR}"
+    DOCKERFILE: "${CI_PROJECT_DIR}/${PROJECT_NAME}/Dockerfile"
+  extends:
+    - .docs
+    - .docker-multiarch
+  needs: []
