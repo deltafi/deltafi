@@ -381,6 +381,69 @@ func init() {
 }
 ```
 
+### C++
+
+The C++ action kit provides artifact access through the `ArtifactClient`, available on the `ActionContext`. Like Go, C++ uses programmatic access rather than annotations.
+
+#### Fetching Artifacts
+
+```cpp
+// Fetch a plugin-scoped artifact (cached by default)
+auto fetched = context.artifact_client->get_artifact("routing-rules.json", "active");
+auto config = nlohmann::json::parse(fetched.data);
+
+// Fetch a shared artifact
+auto shared = context.artifact_client->get_shared_artifact("geo-regions.csv", "active");
+```
+
+#### Reacting to Version Changes
+
+Actions that implement the `ArtifactAware` concept can register callbacks at startup:
+
+```cpp
+class MyAction {
+public:
+    void configure_artifacts(deltafi::ArtifactClient& client) {
+        client.on_update_fetch_with_default("config.json",
+            deltafi::ArtifactDefault(R"({"key": "default"})", "application/json", "Default configuration"),
+            [this](const deltafi::FetchedArtifact* fetched, const std::string& err) {
+                if (err.empty() && fetched) {
+                    auto cfg = nlohmann::json::parse(fetched->data);
+                    config_.store(cfg.get<std::map<std::string, std::string>>());
+                }
+            });
+    }
+
+    // ... action methods use config_
+private:
+    deltafi::SafeStringMap config_;
+};
+```
+
+Plugin-level artifact watching (outside of actions) uses the `DELTAFI_WATCH_ARTIFACT` macro:
+
+```cpp
+DELTAFI_WATCH_ARTIFACT(
+    "global-config.yaml",
+    deltafi::ArtifactDefault("config: []", "application/yaml", "Global configuration"),
+    [](const deltafi::FetchedArtifact* fetched, const std::string& err) {
+        if (err.empty() && fetched) {
+            spdlog::info("Config updated (version={})", fetched->manifest.version);
+        }
+    }
+)
+```
+
+#### Publishing Artifacts
+
+```cpp
+std::vector<uint8_t> data(rules_json.begin(), rules_json.end());
+auto resp = context.artifact_client->publish_artifact("output-rules.json", data, "application/json");
+
+// Publish to shared namespace
+resp = context.artifact_client->publish_shared_artifact("shared-data.csv", data, "text/csv");
+```
+
 #### Publishing Artifacts
 
 ```go

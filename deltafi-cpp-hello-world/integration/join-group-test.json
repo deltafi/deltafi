@@ -1,0 +1,157 @@
+{
+  "name": "deltafi-cpp-hello-world.join-group-test",
+  "description": "Tests C++ Hello World join topics",
+  "plugins": [
+    {
+      "groupId": "org.deltafi",
+      "artifactId": "deltafi-core-actions",
+      "version": "ANY"
+    },
+    {
+      "groupId": "org.deltafi",
+      "artifactId": "deltafi-cpp-hello-world",
+      "version": "ANY"
+    }
+  ],
+  "dataSources": [
+    "hello-world-cpp-join-rest-data-source"
+  ],
+  "transformationFlows": [
+    "hello-world-cpp-join"
+  ],
+  "dataSinks": [
+    "hello-world-cpp-data-sink"
+  ],
+  "inputs": [
+    {
+      "dataSource": "hello-world-cpp-join-rest-data-source",
+      "ingressFileName": "A1.txt",
+      "base64Encoded": false,
+      "data": "This has join-group A",
+      "metadata": [
+        {
+          "key": "join-group",
+          "value": "GROUP-A-XXX_TESTPREFIX_XXX"
+        },
+        {
+          "key": "index",
+          "value": "50"
+        }
+      ]
+    },
+    {
+      "dataSource": "hello-world-cpp-join-rest-data-source",
+      "ingressFileName": "B1.txt",
+      "base64Encoded": false,
+      "data": "This has a different join-group",
+      "metadata": [
+        {
+          "key": "join-group",
+          "value": "GROUP-B-XXX_TESTPREFIX_XXX"
+        },
+        {
+          "key": "index",
+          "value": "51"
+        }
+      ]
+    },
+    {
+      "dataSource": "hello-world-cpp-join-rest-data-source",
+      "ingressFileName": "A2.txt",
+      "base64Encoded": false,
+      "data": "This also has join-group A",
+      "metadata": [
+        {
+          "key": "join-group",
+          "value": "GROUP-A-XXX_TESTPREFIX_XXX"
+        },
+        {
+          "key": "index",
+          "value": "52"
+        }
+      ]
+    }
+  ],
+  "timeout": "PT3M",
+  "expectedDeltaFiles": [
+    {
+      "stage": "COMPLETE",
+      "childCount": 1,
+      "expectedFlows": [
+        {
+          "flow": "hello-world-cpp-join-rest-data-source",
+          "type": "REST_DATA_SOURCE",
+          "actions": [
+            "IngressAction"
+          ]
+        },
+        {
+          "flow": "hello-world-cpp-join",
+          "type": "TRANSFORM",
+          "actions": [
+            "HelloWorldCppJoiningTransformAction"
+          ]
+        }
+      ],
+      "children": [
+        {
+          "stage": "COMPLETE",
+          "childCount": 0,
+          "parentCount": 2,
+          "annotations": {
+            "keyValueMatchers": [
+              {
+                "name": "indexThresholdMet",
+                "value": "true"
+              }
+            ]
+          },
+          "expectedFlows": [
+            {
+              "flow": "hello-world-cpp-join",
+              "type": "TRANSFORM",
+              "actions": [
+                "HelloWorldCppJoiningTransformAction"
+              ]
+            },
+            {
+              "flow": "hello-world-cpp-data-sink",
+              "type": "DATA_SINK",
+              "actions": [
+                "HelloWorldCppEgressAction"
+              ],
+              "metadata": {
+                "keyValueMatchers": [
+                  {
+                    "name": "indexSum",
+                    "value": "102",
+                    "exact": true
+                  }
+                ]
+              }
+            }
+          ],
+          "expectedContent": {
+            "flow": "hello-world-cpp-data-sink",
+            "type": "DATA_SINK",
+            "action": "HelloWorldCppEgressAction",
+            "data": [
+              {
+                "name": "single-102",
+                "value": "This also has join-group A\nThis has join-group A\n"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "stage": "ERROR",
+      "childCount": 0
+    },
+    {
+      "stage": "COMPLETE",
+      "childCount": 1
+    }
+  ]
+}

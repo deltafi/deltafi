@@ -99,6 +99,40 @@ func (s *MyLookupTableSupplier) GetRows(variables map[string]string,
 }
 ```
 
+### C++
+
+A lookup table supplier in C++ extends `LookupTableSupplierBase`, which defines the table schema and provides rows on demand.
+
+```cpp
+#pragma once
+#include <deltafi/plugin>
+
+class MyLookupTableSupplier : public deltafi::LookupTableSupplierBase {
+public:
+    deltafi::LookupTableDefinition table() const override {
+        return {
+            .name = "my_lookup_table",
+            .columns = {"column_a", "column_b", "color"},
+            .key_columns = {"column_a"},
+            .refresh_duration = "PT1M",
+        };
+    }
+
+    std::vector<std::map<std::string, std::string>> get_rows(
+        const std::map<std::string, std::string>& variables,
+        const std::map<std::string, std::vector<std::string>>& matching_column_values,
+        const std::vector<std::string>& result_columns) override {
+        return {
+            {{"column_a", "A1"}, {"column_b", "B1"}, {"color", "red"}},
+            {{"column_a", "A2"}, {"column_b", "B2"}, {"color", "green"}},
+            {{"column_a", "A3"}, {"column_b", "B3"}, {"color", "blue"}},
+        };
+    }
+};
+
+DELTAFI_SUPPLIER(MyLookupTableSupplier)
+```
+
 ## Lookup Table API
 
 ### Java
@@ -155,3 +189,28 @@ func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput
 ```
 
 To return all (unsorted) rows with all result columns, pass `nil` as the options.
+
+### C++
+
+The `LookupClient` is available on the `ActionContext` and provides a `lookup` method for querying lookup tables:
+
+```cpp
+deltafi::LookupOptions opts;
+opts.matching_column_values = {{"color", {"red", "green", "blue"}}};
+opts.result_columns = {"column_a", "color"};
+opts.sort_column = "column_a";
+opts.sort_direction = deltafi::SortDirection::DESC;
+opts.offset = 0;
+opts.limit = 100;
+
+try {
+    auto results = context.lookup_client->lookup("my_lookup_table", &opts);
+    result.add_metadata("totalRows", std::to_string(results.total_count));
+    // ... use results.rows
+} catch (const std::exception& ex) {
+    return deltafi::ErrorResult(context, "Unable to lookup rows")
+        .set_context(ex.what());
+}
+```
+
+To return all (unsorted) rows with all result columns, pass `nullptr` as the options.

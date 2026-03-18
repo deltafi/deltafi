@@ -4,8 +4,8 @@ Actions are isolated units of business logic that perform functions within Timed
 Actions receive required data from the DeltaFile on a queue, perform the necessary logic, and issue a response that
 augments the DeltaFile so that it can be handed off to the next Action in the flow or published to a topic.
 
-Actions are currently implemented on three platforms. Core actions and several plugins are implemented in Spring Boot and
-utilize a Java DeltaFi development kit. Python and Go DeltaFi development kits have also been implemented. However, Actions can
+Actions are currently implemented on four platforms. Core actions and several plugins are implemented in Spring Boot and
+utilize a Java DeltaFi development kit. Python, Go, and C++ DeltaFi development kits have also been implemented. However, Actions can
 be developed in any language as long as certain integration interfaces are met.
 
 Actions may be configured differently in each flow that uses them. The Action itself defines the configuration parameters
@@ -103,6 +103,34 @@ systemName := actx.SystemName
 memo := actx.Memo
 ```
 
+C++ actions receive an `ActionContext` by reference, which gives access to information
+about where the action is running and the DeltaFile(s) being processed.
+
+```cpp
+// the did is the DeltaFile's id
+auto& did = context.did;
+// the name of the DeltaFile, typically the original filename
+auto& deltaFileName = context.delta_file_name;
+// the original dataSource of this DeltaFile
+auto& dataSource = context.data_source;
+// the name of the flow in which the action is being invoked
+auto& flowName = context.flow_name;
+// the id of the flow in which the action is being invoked
+auto& flowID = context.flow_id;
+// name of the Action as configured in a flow
+auto& actionName = context.action_name;
+// hostname where the Action is running
+auto& hostname = context.hostname;
+// version of Core Actions or plugin containing the Action
+auto& actionVersion = context.action_version;
+// when the Action began execution
+auto startTime = context.start_time;
+// system name from DeltaFi System Properties
+auto& systemName = context.system_name;
+// the optional memo field used to pass bookmarking info to timed ingress actions
+auto& memo = context.memo;
+```
+
 ### Input
 
 Each `Action` has a specific `Input` class passed to its execution method. For example, a Transform Action receives the
@@ -151,6 +179,15 @@ type MyTransformParams struct {
 }
 ```
 
+```cpp
+struct MyTransformParams {
+    std::string my_parameter;
+
+    DELTAFI_PARAMS(MyTransformParams,
+        FIELD(my_parameter, "Description goes here"))
+};
+```
+
 ### Content Storage
 
 Actions are passed or can create `ActionContent` that serve as pointers to content data that is stored on disk.
@@ -180,6 +217,14 @@ func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput
     data, err := input.FirstContent().LoadString(ctx, input.ActionContext.ContentService)
     bytes, err := input.FirstContent().LoadBytes(ctx, input.ActionContext.ContentService)
 }
+```
+
+To retrieve content as a byte array, string, or stream in a C++ action execution:
+
+```cpp
+auto bytes = input.first_content().load_bytes();     // vector<uint8_t>
+auto str = input.first_content().load_string();       // string
+auto reader = input.first_content().load_reader();    // unique_ptr<istream>
 ```
 
 To store content from a byte array or a stream and add to a Result:
@@ -222,6 +267,20 @@ copied.SetName("new-name.txt")
 partial := anotherContent.Subcontent(0, 50)
 copied = copied.Append(partial)
 result.AddContent(copied)
+```
+
+Or in C++ save content to a Result:
+
+```cpp
+// Save directly via the result (stores to MinIO and adds content)
+result.save_content(data_string, "output.txt", "text/plain");
+
+// Manipulate existing content without saving to disk:
+auto copied = existing_content.copy();
+copied.set_name("new-name.txt");
+auto partial = another_content.subcontent(0, 50);
+copied.append(partial);
+result.add_content(copied);
 ```
 
 ### Results
@@ -267,6 +326,17 @@ return actionkit.NewErrorResult(input.ActionContext, "Description of failure").
 return actionkit.NewFilterResult(input.ActionContext, "Description of why filtered"), nil
 ```
 
+In C++, result types are returned as variants:
+
+```cpp
+// return an error
+return deltafi::ErrorResult(context, "Description of failure")
+    .set_context("additional context");
+
+// return a filter
+return deltafi::FilterResult(context, "Description of why filtered");
+```
+
 ### Join
 
 Transform actions may be configured to join multiple DeltaFiles before executing the transform method. When a transform action
@@ -307,6 +377,18 @@ func (a *MyJoiningAction) Join(inputs []actionkit.TransformInput) actionkit.Tran
         allContent = append(allContent, input.Content...)
     }
     return actionkit.TransformInput{Content: allContent}
+}
+```
+
+```cpp
+deltafi::TransformInput join(std::vector<deltafi::TransformInput> inputs) {
+    std::vector<deltafi::ActionContent> all_content;
+    for (auto& input : inputs) {
+        all_content.insert(all_content.end(),
+            std::make_move_iterator(input.content.begin()),
+            std::make_move_iterator(input.content.end()));
+    }
+    return deltafi::TransformInput{std::move(all_content), {}};
 }
 ```
 

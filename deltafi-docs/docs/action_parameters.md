@@ -198,6 +198,43 @@ type AuthConfig struct {
 }
 ```
 
+### Defining Nested Parameters (C++)
+
+```cpp
+#include <deltafi/plugin>
+
+struct AuthConfig {
+    std::string type = "NONE";
+    std::string username;
+    deltafi::EnvVar credential;
+
+    DELTAFI_PARAMS(AuthConfig,
+        FIELD(type, "Authentication type: NONE, BASIC, or BEARER"),
+        FIELD(username, "Username for BASIC auth"),
+        FIELD(credential, "Environment variable containing the password or token"))
+};
+
+struct EndpointConfig {
+    std::string url;
+    int timeout_ms = 30000;
+    std::optional<AuthConfig> auth;
+
+    DELTAFI_PARAMS(EndpointConfig,
+        FIELD(url, "The URL to connect to"),
+        FIELD(timeout_ms, "Connection timeout in milliseconds"),
+        FIELD(auth, "Authentication settings for this endpoint"))
+};
+
+struct MyActionParams {
+    EndpointConfig primary_endpoint;
+    std::vector<EndpointConfig> fallback_endpoints;
+
+    DELTAFI_PARAMS(MyActionParams,
+        FIELD(primary_endpoint, "Primary endpoint configuration"),
+        FIELD(fallback_endpoints, "Optional fallback endpoints to try if primary fails"))
+};
+```
+
 ### Configuring Nested Parameters in Flows
 
 ```yaml
@@ -223,8 +260,8 @@ The UI displays nested parameters with expandable sections. Each field shows its
 
 ## Secure Parameters with EnvVar
 
-::: warning Java and Go Action Kits Only
-The `EnvVar` type is currently supported in the Java and Go Action Kits. Python support is planned for a future release.
+::: warning Java, Go, and C++ Action Kits Only
+The `EnvVar` type is currently supported in the Java, Go, and C++ Action Kits. Python support is planned for a future release.
 :::
 
 The `EnvVar` type provides a secure way to reference sensitive values like passwords, API keys, and other credentials in action parameters. Instead of storing secrets directly in flow configurations (which are persisted and may be logged), you store the **name** of an environment variable that contains the secret. The actual secret value is resolved at runtime from the environment.
@@ -308,6 +345,36 @@ func (a *MyAction) Transform(ctx context.Context, input actionkit.TransformInput
 
     // Resolve() returns the value of the named environment variable
     apiKey := params.APIKeyEnvVar.Resolve()
+}
+```
+
+### Defining and Resolving EnvVar in C++
+
+In C++, use the `deltafi::EnvVar` type in your parameter struct:
+
+```cpp
+struct MyActionParams {
+    deltafi::EnvVar api_key_env_var;
+    deltafi::EnvVar password_env_var;
+
+    DELTAFI_PARAMS(MyActionParams,
+        FIELD(api_key_env_var, "Environment variable containing the API key"),
+        FIELD(password_env_var, "Environment variable containing the password"))
+};
+```
+
+The `EnvVar` type resolves the environment variable value at runtime:
+
+```cpp
+// resolve() throws if the env var is not set
+auto api_key = params.api_key_env_var.resolve();
+
+// resolve_or_default() returns the default if the env var is not set
+auto password = params.password_env_var.resolve_or_default("");
+
+// is_set() checks if an env var name has been configured
+if (params.password_env_var.is_set()) {
+    // use the password
 }
 ```
 

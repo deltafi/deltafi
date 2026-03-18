@@ -1,0 +1,6 @@
+// ABOUTME: Convenience umbrella header for DeltaFi plugin authors.
+// ABOUTME: Single include that provides all action kit types, macros, and utilities.
+
+#pragma once
+
+#include "deltafi/action_kit.hpp"

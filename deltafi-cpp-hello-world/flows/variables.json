@@ -1,0 +1,42 @@
+[
+  {
+    "name": "convertToUpper",
+    "description": "If true, convert the content to uppercase.",
+    "dataType": "BOOLEAN",
+    "required": false,
+    "defaultValue": false
+  },
+  {
+    "name": "numChildren",
+    "description": "The number of children to create from the transform many action.",
+    "dataType": "NUMBER",
+    "required": true,
+    "defaultValue": "2"
+  },
+  {
+    "name": "didErrorPrefix",
+    "description": "Override the default DID prefix (44) that may trigger an error by HelloWorldCppTransformAction.",
+    "dataType": "STRING",
+    "required": false
+  },
+  {
+    "name": "didFilterPrefix",
+    "description": "Override the default DID prefix (2) that may trigger filtering by HelloWorldCppTransformAction.",
+    "dataType": "STRING",
+    "required": false
+  },
+  {
+    "name": "alwaysErrorOnPrefixHit",
+    "description": "If true, an error will occur by HelloWorldCppTransformAction every time the didErrorPrefix is matched.\nIf false, the error will occur randomly.",
+    "dataType": "BOOLEAN",
+    "required": true,
+    "defaultValue": false
+  },
+  {
+    "name": "alwaysFilterOnPrefixHit",
+    "description": "If true, filtering will occur by HelloWorldCppTransformAction every time the didFilterPrefix is matched.\nIf false, the filtering will occur randomly.",
+    "dataType": "BOOLEAN",
+    "required": true,
+    "defaultValue": true
+  }
+]

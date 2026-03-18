@@ -9,7 +9,7 @@ Typically, a plugin includes one or more Flows which use the custom Actions and 
 optional. Flows and Flow Variables are also included in the Plugin registration.
 
 A plugin project can be created in a variety of ways. The simplest way to start is using a single Git repository to host
-a single Plugin, which builds with Gradle. DeltaFi provides examples for this in Java, Python, and Go. For
+a single Plugin, which builds with Gradle. DeltaFi provides examples for this in Java, Python, Go, and C++. For
 Java, DeltaFi provides a custom Gradle plugin to facilitate the Docker build and Plugin structure. The Python structure
 requires a few extra files. The Go structure uses standard Go modules and a multi-stage Docker build.
 
@@ -380,6 +380,119 @@ vet:
 	go vet ./...
 ```
 
+## C++
+
+The C++ action kit is a header-only library. A project structure for a DeltaFi C++ Plugin is shown below:
+
+```
+myplugin/
+├── CMakeLists.txt
+├── Makefile
+├── Dockerfile
+├── main.cpp
+├── actions/
+│   └── transform.hpp
+├── flows/
+│   └── my-transform.json
+└── integration/
+    └── basic-test.json
+```
+
+### CMake
+
+Start with a `CMakeLists.txt` that imports the action kit:
+
+```cmake
+cmake_minimum_required(VERSION 3.20)
+project(my_plugin VERSION 0.1.0 LANGUAGES CXX)
+
+set(DELTAFI_ACTION_KIT_PATH "" CACHE PATH "Local path to deltafi-cpp-action-kit")
+
+if(DELTAFI_ACTION_KIT_PATH)
+    add_subdirectory(${DELTAFI_ACTION_KIT_PATH}
+                     ${CMAKE_CURRENT_BINARY_DIR}/deltafi-cpp-action-kit)
+else()
+    include(FetchContent)
+    FetchContent_Declare(deltafi_cpp_action_kit
+        GIT_REPOSITORY https://gitlab.com/deltafi/deltafi.git
+        GIT_TAG        main
+        SOURCE_SUBDIR  deltafi-cpp-action-kit
+    )
+    FetchContent_MakeAvailable(deltafi_cpp_action_kit)
+endif()
+
+if(NOT DEFINED VERSION)
+    set(VERSION "0.0.0-dev")
+endif()
+
+add_executable(my-plugin main.cpp)
+target_link_libraries(my-plugin PRIVATE deltafi::action_kit)
+target_compile_definitions(my-plugin PRIVATE VERSION="${VERSION}")
+target_include_directories(my-plugin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+```
+
+### C++ Entrypoint
+
+Actions self-register via `DELTAFI_ACTION` macros, so the entrypoint only needs to include action headers and use the `DELTAFI_PLUGIN` macro:
+
+```cpp
+#include <deltafi/plugin>
+#include "actions/transform.hpp"
+
+DELTAFI_PLUGIN(
+    "org.myorg",
+    "my-plugin",
+    "My DeltaFi C++ plugin",
+    "org.myorg.my-plugin"
+)
+```
+
+### Dockerfile
+
+C++ plugins use a multi-stage Docker build with static linking:
+
+```dockerfile
+FROM alpine:3.21 AS builder
+RUN apk add --no-cache cmake ninja g++ git
+
+WORKDIR /build
+COPY deltafi-cpp-action-kit/ ./deltafi-cpp-action-kit/
+COPY my-plugin/ ./my-plugin/
+
+WORKDIR /build/my-plugin
+ARG VERSION=0.0.0-dev
+RUN cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    -DDELTAFI_ACTION_KIT_PATH=../deltafi-cpp-action-kit \
+    -DVERSION=${VERSION} \
+    -DCMAKE_EXE_LINKER_FLAGS="-static"
+RUN cmake --build build
+
+FROM gcr.io/distroless/static:nonroot
+COPY --from=builder /build/my-plugin/build/my-plugin /app/deltafi-plugin
+COPY --from=builder /build/my-plugin/flows /app/flows
+ENTRYPOINT ["/app/deltafi-plugin"]
+```
+
+### Makefile
+
+A Makefile simplifies common tasks:
+
+```makefile
+VERSION ?= $(shell git describe --tags --always --dirty)
+
+.PHONY: build test clean
+
+build:
+	cmake -B build -DVERSION=$(VERSION) -DDELTAFI_ACTION_KIT_PATH=../deltafi-cpp-action-kit
+	cmake --build build
+
+test: build
+	ctest --test-dir build --output-on-failure
+
+clean:
+	rm -rf build
+```
+
 ## Flows
 
 Flows may be defined for a Plugin. See [Flows](/flows).
@@ -392,6 +505,6 @@ Lookup tables may be used by a Plugin. See [Lookup Tables](/lookup-tables).
 
 ## Testing Plugin Actions
 
-Java actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. Go actions use the test helpers built into the `deltafi-go-action-kit` package. See [Action Unit Testing](/unit-test).
+Java actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. Go actions use the test helpers built into the `deltafi-go-action-kit` package. C++ actions use the test helpers in the `deltafi/testing.hpp` header. See [Action Unit Testing](/unit-test).
 
 To test complete data flows end-to-end, use integration tests. Integration tests validate that your data sources, transforms, and data sinks work together correctly. See [Integration Testing](/integration-test). 

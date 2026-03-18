@@ -189,3 +189,56 @@ func (a *HelloWorldGoTransform) Transform(ctx context.Context, input actionkit.T
     return result, nil
 }
 ```
+
+## C++
+
+### Interface
+
+A TransformAction must implement the `transform` method which receives:
+* `ActionContext&` describing the action's environment and current execution
+* `TransformInput&` providing the content and metadata to be transformed
+
+Actions with typed parameters receive an additional `Params&` argument between context and input.
+
+### Transform Input
+
+```cpp
+struct TransformInput {
+    std::vector<ActionContent> content;
+    std::map<std::string, std::string> metadata;
+};
+```
+
+### Return Types
+
+The `transform` method must return a `TransformResultType`, which is a `std::variant` of `TransformResult`, `TransformResults` (multi-child), `FilterResult`, and `ErrorResult`.
+
+### Example
+
+```cpp
+#pragma once
+#include <deltafi/plugin>
+
+class HelloWorldCppTransformAction {
+public:
+    deltafi::TransformResultType transform(deltafi::ActionContext& context,
+                                            deltafi::TransformInput& input) {
+        if (context.did.starts_with("2")) {
+            return deltafi::FilterResult(context, "We prefer dids that do not start with 2");
+        }
+
+        auto data = input.first_content().load_string()
+            + "\nHelloWorldCppTransformAction did a great job";
+
+        deltafi::TransformResult result(context);
+        result.save_content(data, "transform-named-me", "text/plain");
+        result.add_metadata("transformKey", "transformValue");
+        result.add_annotation("transformAnnotation", "value");
+        return result;
+    }
+};
+
+DELTAFI_ACTION(HelloWorldCppTransformAction,
+    "HelloWorldCppTransformAction",
+    "Add some content noting that we did a really good job")
+```

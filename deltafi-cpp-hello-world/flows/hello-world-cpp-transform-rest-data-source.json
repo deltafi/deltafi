@@ -1,0 +1,6 @@
+{
+  "name": "hello-world-cpp-transform-rest-data-source",
+  "type": "REST_DATA_SOURCE",
+  "description": "Hello World C++ REST data source for transform flow",
+  "topic": "hello-world-cpp-transform"
+}

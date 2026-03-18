@@ -228,3 +228,102 @@ func TestWithLookup(t *testing.T) {
     assert.NotEmpty(t, te[0].Metadata["lookupResult"])
 }
 ```
+
+## C++ Action Testing
+
+The `deltafi/testing.hpp` header provides test helpers for unit testing C++ actions without external services (Redis, MinIO). It includes:
+
+- `InMemoryContentStore` — an in-memory content store replacing MinIO
+- `MockLookupClient` — configurable mock for lookup table queries
+- `MockArtifactClient` — configurable mock for artifact registry access
+- `new_test_context(did)` — creates a pre-configured `ActionContext` wired to the in-memory store
+- `run_transform`, `run_egress`, `run_ingress` — test runners that execute actions and return inspectable results
+- `require_transform`, `require_error`, `require_filter`, `require_egress`, `require_ingress` — result assertions
+
+### Test Setup
+
+```cpp
+#include <catch2/catch_test_macros.hpp>
+#include <deltafi/testing.hpp>
+#include "actions/transform.hpp"
+
+using namespace deltafi;
+using namespace deltafi::testing;
+
+TEST_CASE("Transform produces expected output") {
+    auto tc = new_test_context("test-did");
+    auto content = tc.content("input.txt", "text/plain", "hello world");
+
+    TransformInput input;
+    input.content = {content};
+    input.metadata = {{"key", "value"}};
+
+    MyTransformAction action;
+    auto event = run_transform(action, tc.action_context, input);
+
+    // Assert it's a transform result
+    auto& transforms = require_transform(event);
+
+    // Verify the output content
+    REQUIRE(transforms[0].content.size() == 1);
+    auto data = transforms[0].content[0].load_string();
+    CHECK(data.find("hello world") != std::string::npos);
+    CHECK(data.find("transformed") != std::string::npos);
+
+    // Verify metadata
+    CHECK(transforms[0].metadata.at("transformKey") == "transformValue");
+}
+```
+
+### Result Verification
+
+The test assertion functions validate the result type and return the typed event for inspection:
+
+```cpp
+TEST_CASE("Filter result on DID prefix") {
+    auto tc = new_test_context("2-starts-with-two");
+    auto content = tc.content("in.txt", "text/plain", "data");
+
+    TransformInput input;
+    input.content = {content};
+
+    MyTransformAction action;
+    auto event = run_transform(action, tc.action_context, input);
+    require_filter(event, "We prefer dids that do not start with 2");
+}
+
+TEST_CASE("Error result on no content") {
+    auto tc = new_test_context("test-did");
+    TransformInput input;  // no content
+
+    MyTransformAction action;
+    auto event = run_transform(action, tc.action_context, input);
+    require_error(event, "No content provided");
+}
+```
+
+### Mock Lookup Client
+
+```cpp
+TEST_CASE("Action uses lookup table") {
+    auto tc = new_test_context("test-did");
+    MockLookupClient lookup;
+    lookup.set_results("my_table", LookupResults{
+        2, std::nullopt, std::nullopt,
+        {
+            {{"name", "Alice"}},
+            {{"name", "Bob"}},
+        }
+    });
+    tc.action_context.lookup_client = &lookup;
+
+    auto content = tc.content("in.txt", "text/plain", "data");
+    TransformInput input;
+    input.content = {content};
+
+    MyTransformAction action;
+    auto event = run_transform(action, tc.action_context, input);
+    auto& transforms = require_transform(event);
+    CHECK(!transforms[0].metadata.at("lookupResult").empty());
+}
+```

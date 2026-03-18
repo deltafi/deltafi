@@ -1,0 +1,36 @@
+{
+  "name": "hello-world-cpp-join",
+  "type": "TRANSFORM",
+  "description": "Joins up to 3 files at a time with the same metadata value for the join-group key and saves the content in reverse order into a single content. If at least 2 files are not received within 35 seconds, the transform action for each DeltaFile joined will have an error status and no new DeltaFile will be created",
+  "subscribe": [
+    {
+      "topic": "hello-world-cpp-join"
+    }
+  ],
+  "transformActions": [
+    {
+      "name": "HelloWorldCppJoiningTransformAction",
+      "type": "org.deltafi.cpp-hello-world.HelloWorldCppJoiningTransformAction",
+      "join": {
+        "maxAge": "PT35S",
+        "minNum": 2,
+        "maxNum": 3,
+        "metadataKey": "join-group"
+      },
+      "parameters": {
+        "indexThreshold": 50
+      }
+    }
+  ],
+  "publish": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {
+      "defaultBehavior": "ERROR"
+    },
+    "rules": [
+      {
+        "topic": "hello-world-cpp-egress"
+      }
+    ]
+  }
+}

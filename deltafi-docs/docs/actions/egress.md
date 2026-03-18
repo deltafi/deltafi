@@ -165,3 +165,54 @@ func (a *HelloWorldGoEgress) Egress(ctx context.Context, input actionkit.EgressI
     return actionkit.NewEgressResult(input.ActionContext), nil
 }
 ```
+
+## C++
+
+### Interface
+
+An EgressAction must implement the `egress` method which receives:
+* `ActionContext&` describing the action's environment and current execution
+* `EgressInput&` providing the formatted content and metadata to send
+
+Actions with typed parameters receive an additional `Params&` argument between context and input.
+
+### Egress Input
+
+```cpp
+struct EgressInput {
+    std::vector<ActionContent> content;
+    std::map<std::string, std::string> metadata;
+};
+```
+
+### Return Types
+
+The `egress` method must return an `EgressResultType`, which is a `std::variant` of `EgressResult` and `ErrorResult`.
+
+### Example
+
+```cpp
+#pragma once
+#include <deltafi/plugin>
+
+class HelloWorldCppEgressAction {
+public:
+    deltafi::EgressResultType egress(deltafi::ActionContext& context,
+                                     deltafi::EgressInput& input) {
+        auto& content = input.first_content();
+        auto data = content.load_string();
+
+        if (data.find("error") != std::string::npos) {
+            return deltafi::ErrorResult(context, "Failed to egress");
+        }
+
+        deltafi::EgressResult result(context);
+        result.log_info() << "Egressed " << data.size() << " bytes";
+        return result;
+    }
+};
+
+DELTAFI_ACTION(HelloWorldCppEgressAction,
+    "HelloWorldCppEgressAction",
+    "Hello pretends to egress")
+```

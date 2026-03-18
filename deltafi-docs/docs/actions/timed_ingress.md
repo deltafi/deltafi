@@ -191,3 +191,47 @@ func (a *HelloWorldGoTimedIngress) Ingress(ctx context.Context, input actionkit.
     return result, nil
 }
 ```
+
+## C++
+
+### Interface
+
+A TimedIngressAction must implement the `ingress` method which receives:
+* `ActionContext&` describing the action's environment and current execution
+
+Actions with typed parameters receive an additional `Params&` argument.
+
+### Return Types
+
+The `ingress` method must return an `IngressResultType`, which is a `std::variant` of `IngressResult` and `ErrorResult`.
+
+### Example
+
+```cpp
+#pragma once
+#include <deltafi/plugin>
+
+class HelloWorldCppTimedIngressAction {
+public:
+    deltafi::IngressResultType ingress(deltafi::ActionContext& context) {
+        int index = 0;
+        if (!context.memo.empty()) {
+            try { index = std::stoi(context.memo) + 1; } catch (...) {}
+        }
+
+        auto filename = context.flow_name + "-" + std::to_string(index);
+
+        deltafi::IngressResult result(context);
+        auto& item = result.create_item(filename);
+        item.add_metadata("index", std::to_string(index));
+        item.save_content("Some content, part " + std::to_string(index), filename, "text/plain");
+
+        result.set_memo(std::to_string(index));
+        return result;
+    }
+};
+
+DELTAFI_ACTION(HelloWorldCppTimedIngressAction,
+    "HelloWorldCppTimedIngressAction",
+    "Create some DeltaFiles for hello-world consumption")
+```

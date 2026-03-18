@@ -46,3 +46,31 @@ plugin.SetWorkerCount("org.myorg.my-plugin.MyTransformAction", 4)
 ```
 
 By default, if an action does not have a specific thread count configuration, it will use 1 worker goroutine.
+
+## C++
+
+The C++ action kit supports the same configurable worker counts as Go.
+
+### Global Worker Count
+
+Set the `ACTION_THREADS` environment variable in your Dockerfile:
+
+```dockerfile
+ENV ACTION_THREADS=2
+```
+
+### Per-Action Worker Count
+
+Set an environment variable using the pattern `ACTIONS_ACTIONTHREADS_{UPPERCASED_ACTION_NAME}`, where dots and hyphens in the action name are replaced with underscores:
+
+```dockerfile
+ENV ACTIONS_ACTIONTHREADS_ORG_DELTAFI_MY_PLUGIN_MYTRANSFORMACTION=4
+```
+
+Or set it programmatically:
+
+```cpp
+plugin.set_worker_count("org.myorg.my-plugin.MyTransformAction", 4);
+```
+
+By default, if an action does not have a specific thread count configuration, it will use 1 worker thread.
