@@ -5,6 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.51.2] - 2026-03-18
+
+### Highlights
+- C++ action kit [beta]
+- Go action kit [beta]
+
+### Added
+- C++ language plugin action kit
+  - Full support for all action kit features (full parity with Java)
+  - Plugin test framework
+  - Example plugin (deltafi-cpp-hello-world) replicates Java hello world plugin functionality
+  - Published as monolithic single header cmake project at  gitlab.com/deltafi/deltafi/deltafi-cpp-action-kit
+- Go language plugin action kit
+  - Full support for all action kit features (full parity with Java)
+  - Plugin test framework
+  - Example plugin (deltafi-go-hello-world) replicates Java hello world plugin functionality
+  - Go module published to gitlab.com/deltafi/deltafi/deltafi-go-action-kit
+
+### Tech-Debt/Refactor
+- Reorganized DeltaFi UI Cypress coverage into area suites and updated CI to run those suites directly, reducing Cypress startup overhead and improving UI test runtime.
+
+### Upgrade and Migration
+- Upgrade tui to compile with golang 1.26.1
+
 ## [2.51.0] - 2026-03-10
 
 ### Highlights
@@ -5953,7 +5977,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.2...main
+[2.51.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.0...2.51.2
 [2.51.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.2...2.51.0
 [2.50.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.1...2.50.2
 [2.50.1]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.0...2.50.1
