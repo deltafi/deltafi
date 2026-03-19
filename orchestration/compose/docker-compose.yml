@@ -508,7 +508,7 @@ services:
       - "${UI_HTTPS_PORT}:443"
       - "127.0.0.1:8042:8042"
     healthcheck:
-      test: ["CMD-SHELL", "curl -so /dev/null http://localhost/ || exit 1"]
+      test: ["CMD-SHELL", "curl -so /dev/null http://localhost/health || exit 1"]
       interval: 20s
       timeout: 3s
       retries: 3
