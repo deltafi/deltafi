@@ -156,12 +156,12 @@ watch(selectedItem, (newItem, oldValue) => {
     padding: 0.15rem 0.4rem;
   }
 
-  .p-listbox-item.p-highlight .tag-badge.badge-primary {
+  .p-listbox-option.p-listbox-option-selected .tag-badge.badge-primary {
     background-color: white !important;
     color: var(--primary-color, #007bff) !important;
   }
 
-  .p-listbox-item.p-highlight .tag-badge.badge-secondary {
+  .p-listbox-option.p-listbox-option-selected .tag-badge.badge-secondary {
     background-color: white !important;
     color: #6c757d !important;
   }

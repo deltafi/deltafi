@@ -10,7 +10,7 @@ export function retryableBefore(fn: () => void) {
       // Wait for Vue app to mount so loading indicators are in the DOM
       // before we assert their absence
       cy.get("#app").children().should("have.length.greaterThan", 0);
-      cy.get(".p-datatable-loading-overlay", { timeout: 30000 }).should("not.exist");
+      cy.get(".p-datatable-mask", { timeout: 30000 }).should("not.exist");
       cy.get(".p-progressbar", { timeout: 30000 }).should("not.exist");
       shouldRun = false;
     }

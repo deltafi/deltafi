@@ -26,13 +26,12 @@
 
 <script setup>
 import { CalendarDialog } from "vue-time-date-range-picker";
-import { computed, inject, onBeforeMount, ref, watch } from "vue";
+import { computed, inject, onBeforeMount, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { useNow } from "@vueuse/core";
 import _ from "lodash";
 
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import $ from "jquery";
 
 dayjs.extend(utc);
 
@@ -145,34 +144,46 @@ const updateInputDateTime = async (startDate, endDate) => {
 
 const tempEndDate = ref(null);
 
-// This JQuery code is used to watch for click events in the calendar table of the datePicker. If a date is clicked on the calendar, the selectedEndDate is taken and
-// the time of that date is set to the end of the day(23:59)
-$("body").on("click", "table.vdpr-datepicker__calendar-table > tbody > tr", function () {
-  calendarDialogRef.value.selectedEndDate = dayjs(tempEndDate.value).endOf("day").toDate();
-});
-
 const helperButtonText = ref(null);
 const tmpHelperButtonText = ref(null);
-// This JQuery code is used to watch for click events of the helper buttons. If the helper buttons are clicked
-// the helper buttons display text is shown over the search pages date picker field when applied.
-$("body").on("click", "button.vdpr-datepicker__button.vdpr-datepicker__button--block.vdpr-datepicker__button-default", function (e) {
-  tmpHelperButtonSelected.value = true;
-  tmpHelperButtonText.value = e.currentTarget.textContent;
-});
 
-// This JQuery code is used to watch for click events in the time control input fields. If the time control input are clicked
-// the helper buttons time provided has changed so we remove the helper button displayed text displayed text shown over the search
-// pages date picker field when applied.
-$("body").on("click", ".vdpr-datepicker__calendar-input-time-control", function () {
-  tmpHelperButtonSelected.value = false;
-});
-
-// This JQuery code is used to watch for click events on the isAllDay switch. If the switch is clicked off,
-// the selectedEndDate is taken and the time of that date is set to the end of the day(23:59).
-$("body").on("change", ".vdpr-datepicker__switch", function () {
-  if (!calendarDialogRef.value.isAllDay) {
-    calendarDialogRef.value.selectedEndDate = dayjs(calendarDialogRef.value.selectedEndDate).endOf("day").toDate();
+// Native event delegation handlers (replacing jQuery delegated events)
+const onBodyClick = (e) => {
+  // Calendar table row click: set end date to end of day
+  if (e.target.closest("table.vdpr-datepicker__calendar-table > tbody > tr")) {
+    calendarDialogRef.value.selectedEndDate = dayjs(tempEndDate.value).endOf("day").toDate();
   }
+
+  // Helper button click: capture button text for display
+  const helperBtn = e.target.closest("button.vdpr-datepicker__button.vdpr-datepicker__button--block.vdpr-datepicker__button-default");
+  if (helperBtn) {
+    tmpHelperButtonSelected.value = true;
+    tmpHelperButtonText.value = helperBtn.textContent;
+  }
+
+  // Time control input click: reset helper button selection
+  if (e.target.closest(".vdpr-datepicker__calendar-input-time-control")) {
+    tmpHelperButtonSelected.value = false;
+  }
+};
+
+// All-day switch change: set end date to end of day when toggled off
+const onBodyChange = (e) => {
+  if (e.target.closest(".vdpr-datepicker__switch")) {
+    if (!calendarDialogRef.value.isAllDay) {
+      calendarDialogRef.value.selectedEndDate = dayjs(calendarDialogRef.value.selectedEndDate).endOf("day").toDate();
+    }
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", onBodyClick);
+  document.addEventListener("change", onBodyChange);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", onBodyClick);
+  document.removeEventListener("change", onBodyChange);
 });
 
 // The dateSelected function is called every time a new date is selected. It is used to hold the new end date(newEndDate) to be used if the calendar date was selected.
@@ -294,6 +305,14 @@ const helperButtons = ref([
 
   .input-area-width {
     width: 335px;
+    border: 1px solid #ced4da;
+    border-radius: var(--p-inputtext-border-radius, 6px);
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #3b82f6;
+    }
   }
 }
 

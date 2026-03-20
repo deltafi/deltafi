@@ -19,7 +19,7 @@
 <template>
   <span>
     <Dialog v-model:visible="showStatusDialog" icon :header="props.header" :style="{ width: '50vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" class="status-dialog">
-      <DataTable v-model:expanded-rows="rowsExpanded" :value="props.checks" data-key="description" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines status-table">
+      <DataTable v-model:expanded-rows="rowsExpanded" aria-label="Status checks" :value="props.checks" data-key="description" class="p-datatable-sm p-datatable-gridlines status-table">
         <Column :expander="true" header-style="width: 3rem" class="expander-col" />
         <Column field="code" header="Status" class="severity-col">
           <template #body="slotProps">
@@ -63,7 +63,7 @@
       </template>
     </Dialog>
     <Dialog v-if="!props.readonly" v-model:visible="showPauseDialog" icon :header="'Pause ' + pauseStatusCheckId" :style="{ width: '30vw' }" :modal="true" :dismissable-mask="true" class="pause-dialog">
-      <Dropdown :options="pauseDurations" placeholder="Choose duration..." optionLabel="label" @change="onPauseChange($event, pauseStatusCheckId)" />
+      <Select :options="pauseDurations" placeholder="Choose duration..." optionLabel="label" @change="onPauseChange($event, pauseStatusCheckId)" />
     </Dialog>
   </span>
 </template>
@@ -75,7 +75,7 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import Timestamp from "@/components/Timestamp.vue";
 import EventSeverityBadge from "./events/EventSeverityBadge.vue";
 import { ref, nextTick } from "vue";

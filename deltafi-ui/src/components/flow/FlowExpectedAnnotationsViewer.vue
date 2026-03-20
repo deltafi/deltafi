@@ -20,7 +20,7 @@
   <div class="flow-expected-annotations-viewer">
     <div class="btn-group">
       <div class="btn-group-vertical">
-        <Chips id="expectedAnnotationsInputId" ref="expectedAnnotationsInputRef" v-model="readReceiptsList" :class="newAnnotationDataPresent ? 'p-invalid' : ''" :disabled="!$hasPermission('FlowUpdate')" />
+        <InputChips id="expectedAnnotationsInputId" ref="expectedAnnotationsInputRef" v-model="readReceiptsList" :class="newAnnotationDataPresent ? 'p-invalid' : ''" :disabled="!$hasPermission('FlowUpdate')" />
         <small v-if="newAnnotationDataPresent" id="expectedAnnotationsInputId-input-help" class="mt-2">Press enter to add to the list</small>
       </div>
       <div>
@@ -46,7 +46,7 @@ import { computed, reactive, ref } from "vue";
 import _ from "lodash";
 
 import Button from "primevue/button";
-import Chips from "primevue/chips";
+import InputChips from "primevue/inputchips";
 import ConfirmPopup from "primevue/confirmpopup";
 import { useConfirm } from "primevue/useconfirm";
 

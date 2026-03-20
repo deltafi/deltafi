@@ -19,13 +19,13 @@
 <template>
   <span>
     <ConfirmDialog :group="dialogGroup" />
-    <InputSwitch v-tooltip="tooltip" v-model="isOn" :disabled="updating" @click="onChange($event)" />
+    <ToggleSwitch v-tooltip="tooltip" v-model="isOn" :disabled="updating" @click="onChange($event)" />
   </span>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import InputSwitch from "primevue/inputswitch";
+import ToggleSwitch from "primevue/toggleswitch";
 import useSystemProperties from "@/composables/useSystemProperties";
 import useNotifications from "@/composables/useNotifications";
 import ConfirmDialog from "primevue/confirmdialog";

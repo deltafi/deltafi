@@ -226,7 +226,7 @@
       });
 
       it("displays backing service toggle switches", () => {
-        cy.get(".p-inputswitch").should("exist");
+        cy.get(".p-toggleswitch").should("exist");
       });
 
       it("displays action buttons in each row", () => {
@@ -262,7 +262,7 @@
 
       it("can sort by Name column", () => {
         cy.get(".p-datatable-thead").contains("Name").click();
-        cy.get(".p-datatable-thead").contains("Name").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Name").parent().find(".p-datatable-sort-icon").should("exist");
       });
     });
 
@@ -337,7 +337,7 @@
       });
 
       it("displays row editor column", () => {
-        cy.get(".p-row-editor-init").should("exist");
+        cy.get(".p-datatable-row-editor-init").should("exist");
       });
 
       it("displays delete row button", () => {

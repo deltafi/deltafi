@@ -43,7 +43,7 @@
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
 import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import PropertySet from "@/components/PropertySet.vue";
 import usePlugins from "@/composables/usePlugins";
 import usePropertySets from "@/composables/usePropertySets";

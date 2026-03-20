@@ -24,7 +24,7 @@
       <div class="content-viewer-section">
         <Toolbar>
           <template #start>
-            <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
+            <Select v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
             <slot name="toolbar-start" />
           </template>
           <template #end>
@@ -80,7 +80,7 @@ import { Buffer } from "buffer";
 
 import Button from "primevue/button";
 import Divider from "primevue/divider";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import Message from "primevue/message";
 import Toolbar from "primevue/toolbar";
 import ScrollTop from "primevue/scrolltop";

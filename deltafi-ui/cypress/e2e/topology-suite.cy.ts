@@ -22,7 +22,7 @@
     describe("Page Tests", { testIsolation: false }, () => {
       retryableBefore(() => { cy.visit(baseUrl); });
       it("loads the page with default settings", () => { cy.get("h2").contains("Fleet Search"); });
-      it("displays the search date toolbar", () => { cy.get(".p-dropdown").should("exist"); });
+      it("displays the search date toolbar", () => { cy.get(".p-select").should("exist"); });
       it("displays the search filter tab", () => { cy.contains("Search").should("exist"); });
       it("displays the results panel", () => { cy.get("span.p-panel-title").contains("Results"); });
       it("displays expected table columns", () => {
@@ -49,7 +49,7 @@
       it("has Egress view option", () => { cy.contains("Egress").should("exist"); });
       it("has Storage view option", () => { cy.contains("Storage").should("exist"); });
       it("has Deleted view option", () => { cy.contains("Deleted").should("exist"); });
-      it("displays display mode icons", () => { cy.get(".display-mode-selector .p-button").should("have.length", 3); });
+      it("displays display mode icons", () => { cy.get(".display-mode-selector .p-togglebutton").should("have.length", 3); });
       it("displays member filters panel", () => { cy.contains("Member Filters").should("exist"); });
       it("page container exists", () => { cy.get(".leader-dashboard-page").should("exist"); });
       it("renders correctly at default viewport", () => { cy.get(".leader-dashboard-page").should("be.visible"); });
@@ -107,10 +107,10 @@
       it("displays flow options in listboxes", () => { cy.get(".p-listbox").should("have.length", 4); });
       it("renders correctly at default viewport", () => { cy.get(".pipeline-visualization-page").should("be.visible"); });
       it("renders correctly at smaller viewport", () => { cy.viewport(1024, 768); cy.get(".pipeline-visualization-page").should("be.visible"); });
-      it("can select a data source", () => { cy.get(".flow-selection-column").contains("Data Sources").parent().within(() => { cy.get(".p-listbox-item").first().click(); }); });
-      it("can select a transform", () => { cy.visit(baseUrl); cy.get(".flow-selection-column").contains("Transforms").parent().within(() => { cy.get(".p-listbox-item").first().click(); }); });
-      it("can select a data sink", () => { cy.visit(baseUrl); cy.get(".flow-selection-column").contains("Data Sinks").parent().within(() => { cy.get(".p-listbox-item").first().click(); }); });
-      it("can select a topic", () => { cy.visit(baseUrl); cy.get(".flow-selection-column").contains("Topics").parent().within(() => { cy.get(".p-listbox-item").first().click(); }); });
+      it("can select a data source", () => { cy.get(".flow-selection-column").contains("Data Sources").parent().within(() => { cy.get(".p-listbox-option").first().click(); }); });
+      it("can select a transform", () => { cy.visit(baseUrl); cy.get(".flow-selection-column").contains("Transforms").parent().within(() => { cy.get(".p-listbox-option").first().click(); }); });
+      it("can select a data sink", () => { cy.visit(baseUrl); cy.get(".flow-selection-column").contains("Data Sinks").parent().within(() => { cy.get(".p-listbox-option").first().click(); }); });
+      it("can select a topic", () => { cy.visit(baseUrl); cy.get(".flow-selection-column").contains("Topics").parent().within(() => { cy.get(".p-listbox-option").first().click(); }); });
     });
     describe("With Flow Selected", { testIsolation: false }, () => {
       retryableBefore(() => { cy.visit(`${baseUrl}/TRANSFORM/smoke-test-transform`); });

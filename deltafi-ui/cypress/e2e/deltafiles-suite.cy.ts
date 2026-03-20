@@ -105,7 +105,7 @@
       });
 
       it("displays Data Source dropdown", () => {
-        cy.get(".p-dropdown").should("exist");
+        cy.get(".p-select").should("exist");
       });
 
       it("displays file upload component", () => {
@@ -174,7 +174,7 @@
       });
 
       it("displays the search date toolbar", () => {
-        cy.get(".p-dropdown").should("exist");
+        cy.get(".p-select").should("exist");
         cy.get("button").find(".fa-sync-alt, .fa-refresh, .pi-refresh").should("exist");
       });
 
@@ -200,12 +200,12 @@
       });
 
       it("rows are selectable", () => {
-        cy.get(".p-datatable-tbody tr.p-selectable-row").should("have.length.greaterThan", 0);
+        cy.get(".p-datatable-tbody tr.p-datatable-selectable-row").should("have.length.greaterThan", 0);
       });
 
       it("table supports row selection", () => {
         cy.get(".p-datatable").should("exist");
-        cy.get(".p-datatable-tbody tr.p-selectable-row").first().should("exist");
+        cy.get(".p-datatable-tbody tr.p-datatable-selectable-row").first().should("exist");
       });
 
       it("panel header exists", () => {
@@ -227,11 +227,11 @@
       });
 
       it("data table has rows", () => {
-        cy.get(".p-datatable-tbody tr.p-selectable-row").should("have.length.greaterThan", 0);
+        cy.get(".p-datatable-tbody tr.p-datatable-selectable-row").should("have.length.greaterThan", 0);
       });
 
       it("table rows are interactive", () => {
-        cy.get(".p-datatable-tbody tr.p-selectable-row").first().should("exist");
+        cy.get(".p-datatable-tbody tr.p-datatable-selectable-row").first().should("exist");
       });
 
       it("displays timezone button", () => {
@@ -268,40 +268,40 @@
 
       it("can sort by Filename column", () => {
         cy.get(".p-datatable-thead").contains("Filename").click({ force: true });
-        cy.get(".p-datatable-thead").contains("Filename").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Filename").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Data Source column", () => {
         cy.get(".p-datatable-thead").contains("Data Source").click({ force: true });
-        cy.get(".p-datatable-thead").contains("Data Source").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Data Source").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Stage column", () => {
         cy.get(".p-datatable-thead").contains("Stage").click({ force: true });
-        cy.get(".p-datatable-thead").contains("Stage").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Stage").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Created column", () => {
         cy.get(".p-datatable-thead").contains("Created").click({ force: true });
-        cy.get(".p-datatable-thead").contains("Created").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Created").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Modified column", () => {
         cy.get(".p-datatable-thead").contains("Modified").click({ force: true });
-        cy.get(".p-datatable-thead").contains("Modified").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Modified").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Size column", () => {
         cy.get(".p-datatable-thead").contains("Size").click({ force: true });
-        cy.get(".p-datatable-thead").contains("Size").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Size").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can change rows per page", () => {
-        cy.get(".p-paginator-rpp-options").click();
-        cy.get(".p-dropdown-item").contains("50").click();
+        cy.get(".p-paginator .p-select").click();
+        cy.get(".p-select-option").contains("50").click();
         cy.get("span.p-paginator-current").should("contain", "1 - 50");
-        cy.get(".p-paginator-rpp-options").click();
-        cy.get(".p-dropdown-item").contains("20").click();
+        cy.get(".p-paginator .p-select").click();
+        cy.get(".p-select-option").contains("20").click();
         cy.get("span.p-paginator-current").should("contain", "1 - 20");
       });
 
@@ -327,7 +327,7 @@
       });
 
       it("shows context menu when right-clicking on a row", () => {
-        cy.get(".p-datatable-tbody tr.p-selectable-row").first().rightclick({ force: true });
+        cy.get(".p-datatable-tbody tr.p-datatable-selectable-row").first().rightclick({ force: true });
         cy.get(".p-contextmenu").should("be.visible");
       });
 
@@ -339,8 +339,8 @@
       });
 
       it("has date type dropdown with Created/Modified options", () => {
-        cy.get(".p-dropdown").first().click({ force: true });
-        cy.get(".p-dropdown-items").should("be.visible");
+        cy.get(".p-select").first().click({ force: true });
+        cy.get(".p-select-list").should("be.visible");
       });
     });
 
@@ -440,15 +440,15 @@
       });
 
       it("displays Flow Graph tab", () => {
-        cy.contains("span.p-tabview-title", "Flow Graph").should("exist");
+        cy.contains("button.p-tab", "Flow Graph").should("exist");
       });
 
       it("displays Flow Table tab", () => {
-        cy.contains("span.p-tabview-title", "Flow Table").should("exist");
+        cy.contains("button.p-tab", "Flow Table").should("exist");
       });
 
       it("displays Flow Trace tab", () => {
-        cy.contains("span.p-tabview-title", "Flow Trace").should("exist");
+        cy.contains("button.p-tab", "Flow Trace").should("exist");
       });
 
       it("opens menu when Menu button is clicked", () => {
@@ -465,6 +465,7 @@
       });
 
       it("displays Export DeltaFile option in menu", () => {
+        cy.contains("Menu").click();
         cy.get(".p-menu").contains("Export DeltaFile").should("exist");
       });
 

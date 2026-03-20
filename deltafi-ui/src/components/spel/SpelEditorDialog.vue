@@ -36,6 +36,7 @@
   <Dialog
     v-model:visible="dialogVisible"
     :header="dialogHeader"
+    :aria-label="dialogHeader"
     modal
     :style="{ width: '70vw', maxWidth: '900px' }"
     :content-style="{ overflow: 'visible' }"

@@ -34,7 +34,7 @@
           <InputText v-model="field.values" type="text" placeholder="Value" @change="onInputChange(field)" />
         </div>
         <div class="col-2 text-right">
-          <Button icon="pi pi-times" @click="removeMetadataField(field)" />
+          <Button icon="pi pi-times" aria-label="Remove metadata field" @click="removeMetadataField(field)" />
         </div>
       </div>
     </div>
@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import { computed, nextTick, onBeforeMount, ref } from "vue";
 import { useMounted } from "@vueuse/core";

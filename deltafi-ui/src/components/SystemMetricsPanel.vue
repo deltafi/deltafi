@@ -20,8 +20,8 @@
   <Panel header="Metrics" class="metrics-panel pb-3">
     <template #icons>
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="timeFrame" :options="timeFrames" option-label="name" style="min-width: 11rem" class="mx-1 deltafi-input-field" />
-        <Dropdown v-model="node" :options="optionsDropdown" style="min-width: 11rem" class="mx-1 deltafi-input-field" />
+        <Select v-model="timeFrame" :options="timeFrames" option-label="name" style="min-width: 11rem" class="mx-1 deltafi-input-field" />
+        <Select v-model="node" :options="optionsDropdown" style="min-width: 11rem" class="mx-1 deltafi-input-field" />
         <Button class="p-button-sm p-button-outlined mx-1" icon="fa fa-sync-alt" label="Refresh" @click="refreshDashboard" />
       </div>
     </template>
@@ -36,7 +36,7 @@
 <script setup>
 import GrafanaChartWrapper from "@/components/dashboard/GrafanaChartWrapper.vue";
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import Panel from "primevue/panel";
 import { ref, onBeforeMount, watch, computed } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";

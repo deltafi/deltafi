@@ -3,7 +3,8 @@ WORKDIR /ui
 # Cache package installation
 RUN npm config set fetch-timeout 600000 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-retries 5
 COPY ui/package.json ui/package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm install
+ENV CACHE_BUST=1
+RUN --mount=type=cache,target=/root/.npm,id=npm-${BUILDPLATFORM} npm install
 COPY ui ./
 RUN npm run build
 
@@ -12,7 +13,8 @@ WORKDIR /docs
 # Cache package installation
 RUN npm config set fetch-timeout 600000 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-retries 5
 COPY docs/package.json ./
-RUN --mount=type=cache,target=/root/.npm npm install
+ENV CACHE_BUST=1
+RUN --mount=type=cache,target=/root/.npm,id=npm-${BUILDPLATFORM} npm install
 COPY docs ./
 ENV VUE_APP_EMBEDDED=true
 RUN npm run build
@@ -22,7 +24,7 @@ WORKDIR /graphiql
 # Cache package installation
 RUN yarn config set network-timeout 60000
 COPY graphiql/package.json /graphiql/package.json
-RUN --mount=type=cache,target=/root/.cache/yarn yarn install --network-timeout 60000
+RUN --mount=type=cache,target=/root/.cache/yarn,id=yarn-${BUILDPLATFORM} yarn install --network-timeout 60000
 COPY graphiql .
 RUN yarn build
 

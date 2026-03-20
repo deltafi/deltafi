@@ -20,7 +20,7 @@
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl class="boolean-field">
       <dd class="boolean-row">
-        <InputSwitch :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        <ToggleSwitch :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         <label :for="schemaData.control.id + '-input'" class="boolean-label">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span></label>
         <i v-if="schemaData.control.description" v-tooltip.right="schemaData.control.description" class="pi pi-info-circle info-icon" />
       </dd>
@@ -37,7 +37,7 @@ import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 
 import _ from "lodash";
 
-import InputSwitch from "primevue/inputswitch";
+import ToggleSwitch from "primevue/toggleswitch";
 
 const { useControl } = useSchemaComposition();
 

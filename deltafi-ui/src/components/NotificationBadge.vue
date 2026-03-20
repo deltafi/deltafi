@@ -20,7 +20,7 @@
   <span class="notifications-wrapper">
 
     <Tag v-tooltip.bottom="tooltip" :class="tagClass" icon="pi pi-bell" :value="tagValue" @click="openNotificationsPanel" />
-    <OverlayPanel ref="notificationOverlayPanel" class="notification-overlay-panel" append-to=".notifications-wrapper">
+    <Popover ref="notificationOverlayPanel" class="notification-overlay-panel" append-to=".notifications-wrapper">
       <div class="list-group list-group-flush">
         <div style="text-align: right; margin-bottom: 0.5rem">
           <router-link v-slot="{ navigate }" to="/events" custom>
@@ -46,13 +46,13 @@
           <a style="font-style: italic">No notifications to display</a>
         </div>
       </div>
-    </OverlayPanel>
+    </Popover>
     <EventViewerDialog v-model:visible="showEventDialog" :event="activeEvent" />
   </span>
 </template>
 
 <script setup>
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 import { useTimeAgo } from "@vueuse/core";
 import Tag from "primevue/tag";
 import { onMounted, ref, computed } from "vue";
@@ -190,7 +190,7 @@ const tooltip = computed(() => {
     top: 46px !important;
     margin-top: 0 !important;
 
-    .p-overlaypanel-content {
+    .p-popover-content {
       padding: 0.5rem;
 
       .list-group {

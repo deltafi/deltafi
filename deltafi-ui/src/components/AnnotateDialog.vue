@@ -46,7 +46,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import MapEdit from "@/components/plugin/MapEdit.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
 import Checkbox from "primevue/checkbox";

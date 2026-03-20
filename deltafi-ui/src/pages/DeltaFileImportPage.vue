@@ -46,12 +46,12 @@
       <div class="col-12">
         <CollapsiblePanel v-if="imports.length" header="Imported DeltaFiles" class="table-panel">
           <template #icons>
-            <Button class="p-panel-header-icon p-link p-mr-2" @click="importsMenuToggle">
+            <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="importsMenuToggle">
               <span class="fas fa-cog" />
             </Button>
             <Menu id="config_menu" ref="importsMenu" :model="importsMenuItems" :popup="true" />
           </template>
-          <DataTable responsive-layout="scroll" sort-field="importedTimestamp" :sort-order="-1" :value="imports" striped-rows class="p-datatable-sm p-datatable-gridlines imports-table" :row-class="importsRowClass" data-key="filename">
+          <DataTable aria-label="DeltaFile imports" sort-field="importedTimestamp" :sort-order="-1" :value="imports" striped-rows class="p-datatable-sm p-datatable-gridlines imports-table" :row-class="importsRowClass" data-key="filename">
             <Column field="filename" header="Filename" class="filename-column" />
             <Column field="status" header="Status" class="status-column">
               <template #body="row">
@@ -89,7 +89,7 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import Timestamp from "@/components/Timestamp.vue";
 import useImportDeltaFile from "@/composables/useImportDeltaFile";
 import { ref } from "vue";

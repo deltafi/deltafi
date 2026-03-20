@@ -44,7 +44,7 @@ GUI License Check:
 
 # Shared configuration for Cypress test jobs
 .cypress-test-base:
-  image: deltafi/deltafi-ui-test:2.48.1
+  image: deltafi/deltafi-ui-test:primevue4
   stage: test
   allow_failure: false
   needs:

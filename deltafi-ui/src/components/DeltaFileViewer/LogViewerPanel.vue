@@ -30,21 +30,21 @@
       <template #icons>
         <div class="float-left">
           <div class="btn-group align-items-center">
-            <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
+            <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-1 p-column-filter-menu-button p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
               <i class="pi pi-filter" style="font-size: 1rem" />
             </Button>
             <IconField iconPosition="left">
               <InputIcon class="pi pi-search" />
               <InputText v-model="filters['global'].value" type="text" placeholder="Search" class="p-inputtext deltafi-input-field mx-1" />
             </IconField>
-            <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+            <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
               <span class="fas fa-bars" />
             </Button>
             <Menu ref="menu" :model="menuItems" :popup="true" />
           </div>
         </div>
       </template>
-      <DataTable v-model:filters="filters" dataKey="created" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="deltaFile.messages" :globalFilterFields="['message', 'source', 'severity']">
+      <DataTable v-model:filters="filters" aria-label="DeltaFile logs" dataKey="created" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="deltaFile.messages" :globalFilterFields="['message', 'source', 'severity']">
         <template #empty> No Logs </template>
         <Column header="Message" field="message" :style="{ width: '55%' }">
           <template #body="{ data }">
@@ -78,7 +78,7 @@ import { computed, ref, reactive, watch } from "vue";
 
 import _ from "lodash";
 
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -152,7 +152,7 @@ const getSeverity = (severity) => {
     case "INFO":
       return "info";
     case "WARNING":
-      return "warning";
+      return "warn";
     case null:
       return null;
   }

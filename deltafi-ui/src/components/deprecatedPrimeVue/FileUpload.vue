@@ -61,9 +61,8 @@
 
 <script>
 import Button from 'primevue/button';
-import ProgressBar from '@/components/deprecatedPrimeVue/ProgressBar.vue';
+import ProgressBar from 'primevue/progressbar';
 import Message from 'primevue/message';
-import { DomHandler } from 'primevue/utils';
 import Ripple from 'primevue/ripple';
 
 export default {
@@ -413,19 +412,19 @@ export default {
         },
         onDragOver(event) {
             if (!this.disabled) {
-                DomHandler.addClass(this.$refs.content, 'p-fileupload-highlight');
+                this.$refs.content.classList.add('p-fileupload-highlight');
                 event.stopPropagation();
                 event.preventDefault();
             }
         },
         onDragLeave() {
             if (!this.disabled) {
-                DomHandler.removeClass(this.$refs.content, 'p-fileupload-highlight');
+                this.$refs.content.classList.remove('p-fileupload-highlight');
             }
         },
         onDrop(event) {
             if (!this.disabled) {
-                DomHandler.removeClass(this.$refs.content, 'p-fileupload-highlight');
+                this.$refs.content.classList.remove('p-fileupload-highlight');
                 event.stopPropagation();
                 event.preventDefault();
 

@@ -20,7 +20,7 @@
 <!-- ABOUTME: Provides a customizable sidebar with slot for filter content. -->
 
 <template>
-  <div ref="sidebarRef" class="filter-sidebar" :class="{ open: modelValue, 'position-left': position === 'left' }" :style="sidebarStyle">
+  <div v-if="visible" ref="sidebarRef" class="filter-sidebar" :class="{ open: modelValue, 'position-left': position === 'left' }" :style="sidebarStyle">
     <div class="filter-sidebar-content">
       <div class="filter-sidebar-header">
         <h5 class="mb-0">{{ hasTabs ? tabs?.find((t) => t.name === activeTab)?.label : title }}</h5>
@@ -125,6 +125,10 @@ const props = defineProps({
   clearButtonTooltip: {
     type: String,
     default: "Clear Filters",
+  },
+  visible: {
+    type: Boolean,
+    default: true,
   },
   position: {
     type: String,
@@ -244,7 +248,7 @@ function handleClickOutside(event: MouseEvent) {
   if (sidebarRef.value.contains(target)) return;
 
   // Don't close when clicking inside PrimeVue overlay portals (dropdowns, multiselects, popovers, etc.)
-  if (target.closest?.(".p-select-overlay, .p-multiselect-overlay, .p-popover, .p-overlaypanel, .p-datepicker-panel, .p-autocomplete-overlay, .p-tooltip, .p-confirmpopup, .p-dropdown-panel, .p-multiselect-panel")) return;
+  if (target.closest?.(".p-select-overlay, .p-multiselect-overlay, .p-popover, .p-datepicker-panel, .p-autocomplete-overlay, .p-tooltip, .p-confirmpopup")) return;
 
   emit("update:modelValue", false);
 }

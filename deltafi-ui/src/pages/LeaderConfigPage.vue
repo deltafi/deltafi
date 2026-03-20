@@ -37,7 +37,7 @@
       <div v-else-if="memberSummaries.length === 0" class="empty-message">
         <Message severity="info" :closable="false">No members found.</Message>
       </div>
-      <DataTable v-else :value="memberSummaries" responsiveLayout="scroll" class="p-datatable-sm members-table">
+      <DataTable v-else aria-label="Cluster members" :value="memberSummaries" responsiveLayout="scroll" class="p-datatable-sm members-table">
         <Column field="name" header="Member" :sortable="true" style="min-width: 200px">
           <template #body="{ data }">
             <span class="member-name">{{ data.name }}</span>
@@ -62,7 +62,7 @@
               <Tag severity="success" value="In sync" icon="pi pi-check" />
             </template>
             <template v-else-if="data.diffCount !== null">
-              <Tag severity="warning" :value="`${data.diffCount} difference${data.diffCount === 1 ? '' : 's'}`" icon="pi pi-exclamation-triangle" />
+              <Tag severity="warn" :value="`${data.diffCount} difference${data.diffCount === 1 ? '' : 's'}`" icon="pi pi-exclamation-triangle" />
             </template>
             <template v-else>
               <span class="text-color-secondary">Unable to compare</span>
@@ -90,7 +90,7 @@
         <Message v-if="membersNotReporting.length > 0" severity="warn" :closable="false" class="mb-3">
           <strong>{{ membersNotReporting.length }}</strong> member{{ membersNotReporting.length === 1 ? '' : 's' }} not reporting config data: {{ membersNotReporting.join(', ') }}
         </Message>
-      <DataTable v-if="uniquePlugins.length > 0" :value="uniquePlugins" responsiveLayout="scroll" class="p-datatable-sm plugins-table" :expandedRows="expandedPluginRows" @update:expandedRows="expandedPluginRows = $event" dataKey="coordinates">
+      <DataTable v-if="uniquePlugins.length > 0" aria-label="Installed plugins" :value="uniquePlugins" responsiveLayout="scroll" class="p-datatable-sm plugins-table" :expandedRows="expandedPluginRows" @update:expandedRows="expandedPluginRows = $event" dataKey="coordinates">
         <Column :expander="true" style="width: 3rem" />
         <Column field="displayName" header="Plugin" :sortable="true" style="min-width: 250px">
           <template #body="{ data }">
@@ -107,16 +107,16 @@
         <Column header="Members" style="min-width: 200px">
           <template #body="{ data }">
             <span>{{ getPluginMemberSummary(data) }}</span>
-            <Tag v-if="getPluginMismatchCount(data) > 0" severity="warning" :value="`${getPluginMismatchCount(data)} mismatch`" class="ml-2" />
+            <Tag v-if="getPluginMismatchCount(data) > 0" severity="warn" :value="`${getPluginMismatchCount(data)} mismatch`" class="ml-2" />
           </template>
         </Column>
         <template #expansion="{ data }">
           <div class="plugin-expansion p-3">
-            <DataTable :value="getPluginMemberDetails(data)" class="p-datatable-sm">
+            <DataTable aria-label="Plugin member details" :value="getPluginMemberDetails(data)" class="p-datatable-sm">
               <Column field="member" header="Member" style="width: 200px" />
               <Column header="Version">
                 <template #body="{ data: row }">
-                  <Tag v-if="row.version" :severity="row.matchesLeader ? 'success' : 'warning'" :value="row.version" />
+                  <Tag v-if="row.version" :severity="row.matchesLeader ? 'success' : 'warn'" :value="row.version" />
                   <span v-else class="text-color-secondary">Not installed</span>
                 </template>
               </Column>
@@ -138,7 +138,7 @@
     <div v-if="viewMode === 'snapshot'" class="snapshot-view">
       <div class="snapshot-controls mb-3">
         <span class="control-label">Compare Leader with:</span>
-        <Dropdown v-model="selectedMember" :options="memberDropdownOptions" optionLabel="name" optionValue="name" optionDisabled="disabled" placeholder="Select member..." class="w-15rem" @change="onMemberChange">
+        <Select v-model="selectedMember" :options="memberDropdownOptions" optionLabel="name" optionValue="name" optionDisabled="disabled" placeholder="Select member..." class="w-15rem" @change="onMemberChange">
           <template #option="{ option }">
             <span :class="{ 'text-color-secondary': option.disabled }">
               {{ option.name }}
@@ -146,9 +146,9 @@
               <span v-if="option.disabled" class="text-sm text-color-secondary ml-1">(not reporting)</span>
             </span>
           </template>
-        </Dropdown>
+        </Select>
         <span v-if="selectedMember && !snapshotLoading && memberSnapshot">
-          <Tag v-if="totalDiffCount > 0" severity="warning" :value="`${totalDiffCount} difference${totalDiffCount === 1 ? '' : 's'}`" />
+          <Tag v-if="totalDiffCount > 0" severity="warn" :value="`${totalDiffCount} difference${totalDiffCount === 1 ? '' : 's'}`" />
           <Tag v-else severity="success" value="In sync" icon="pi pi-check" />
         </span>
       </div>
@@ -172,325 +172,342 @@
           </div>
         </div>
 
-        <Accordion :multiple="true" :activeIndex="[0]">
+        <Accordion :multiple="true" :value="['plugins']">
           <!-- Plugins -->
-          <AccordionTab v-if="mergedPlugins.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedPlugins.length > 0" value="plugins">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Plugins ({{ mergedPlugins.length }})</span>
-                <Tag v-if="pluginDiffCount > 0" severity="warning" :value="pluginDiffCount" class="ml-2" />
+                <Tag v-if="pluginDiffCount > 0" severity="warn" :value="pluginDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th class="plugin-col">Plugin</th>
-                    <th class="version-col leader-col">Leader Version</th>
-                    <th class="version-col member-col">{{ selectedMember || 'Member' }} Version</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="plugin in mergedPlugins" :key="plugin.coordinates">
-                    <td class="plugin-col">
-                      <div class="plugin-name">{{ plugin.displayName }}</div>
-                      <div class="plugin-coords text-sm text-color-secondary">{{ plugin.coordinates }}</div>
-                    </td>
-                    <td class="version-col leader-col" :class="[plugin.diffClass, { 'diff-missing': !plugin.leaderVersion }]">
-                      <Tag v-if="plugin.leaderVersion" :severity="plugin.hasDiff ? 'warning' : 'info'" :value="plugin.leaderVersion" />
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="version-col member-col" :class="[plugin.diffClass, { 'diff-missing': selectedMember && !plugin.memberVersion }]">
-                      <template v-if="selectedMember">
-                        <Tag v-if="plugin.memberVersion" :severity="plugin.hasDiff ? 'warning' : 'info'" :value="plugin.memberVersion" />
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th class="plugin-col">Plugin</th>
+                      <th class="version-col leader-col">Leader Version</th>
+                      <th class="version-col member-col">{{ selectedMember || 'Member' }} Version</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="plugin in mergedPlugins" :key="plugin.coordinates">
+                      <td class="plugin-col">
+                        <div class="plugin-name">{{ plugin.displayName }}</div>
+                        <div class="plugin-coords text-sm text-color-secondary">{{ plugin.coordinates }}</div>
+                      </td>
+                      <td class="version-col leader-col" :class="[plugin.diffClass, { 'diff-missing': !plugin.leaderVersion }]">
+                        <Tag v-if="plugin.leaderVersion" :severity="plugin.hasDiff ? 'warn' : 'info'" :value="plugin.leaderVersion" />
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="version-col member-col" :class="[plugin.diffClass, { 'diff-missing': selectedMember && !plugin.memberVersion }]">
+                        <template v-if="selectedMember">
+                          <Tag v-if="plugin.memberVersion" :severity="plugin.hasDiff ? 'warn' : 'info'" :value="plugin.memberVersion" />
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Flows comparison (REST, Timed, Transform, DataSinks combined) -->
-          <AccordionTab v-if="mergedFlows.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedFlows.length > 0" value="flows">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Flows ({{ mergedFlows.length }})</span>
-                <Tag v-if="flowDiffCount > 0" severity="warning" :value="flowDiffCount" class="ml-2" />
+                <Tag v-if="flowDiffCount > 0" severity="warn" :value="flowDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th class="flow-name-col">Flow</th>
-                    <th class="flow-type-col">Type</th>
-                    <th class="flow-status-col leader-col">Leader</th>
-                    <th class="flow-status-col member-col">{{ selectedMember || 'Member' }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="flow in mergedFlows" :key="`${flow.type}-${flow.name}`">
-                    <td class="flow-name-col">{{ flow.name }}</td>
-                    <td class="flow-type-col">
-                      <Tag :value="flow.typeLabel" :severity="getFlowTypeSeverity(flow.type)" />
-                    </td>
-                    <td class="flow-status-col leader-col" :class="[flow.diffClass, { 'diff-missing': !flow.leaderExists }]">
-                      <template v-if="flow.leaderExists">
-                        <Tag :severity="flow.leaderRunning ? 'success' : 'secondary'" :value="flow.leaderRunning ? 'Running' : 'Stopped'" class="mr-1" />
-                        <Tag v-if="flow.leaderTestMode" severity="warning" value="Test" />
-                      </template>
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="flow-status-col member-col" :class="[flow.diffClass, { 'diff-missing': selectedMember && !flow.memberExists }]">
-                      <template v-if="selectedMember">
-                        <template v-if="flow.memberExists">
-                          <Tag :severity="flow.memberRunning ? 'success' : 'secondary'" :value="flow.memberRunning ? 'Running' : 'Stopped'" class="mr-1" />
-                          <Tag v-if="flow.memberTestMode" severity="warning" value="Test" />
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th class="flow-name-col">Flow</th>
+                      <th class="flow-type-col">Type</th>
+                      <th class="flow-status-col leader-col">Leader</th>
+                      <th class="flow-status-col member-col">{{ selectedMember || 'Member' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="flow in mergedFlows" :key="`${flow.type}-${flow.name}`">
+                      <td class="flow-name-col">{{ flow.name }}</td>
+                      <td class="flow-type-col">
+                        <Tag :value="flow.typeLabel" :severity="getFlowTypeSeverity(flow.type)" />
+                      </td>
+                      <td class="flow-status-col leader-col" :class="[flow.diffClass, { 'diff-missing': !flow.leaderExists }]">
+                        <template v-if="flow.leaderExists">
+                          <Tag :severity="flow.leaderRunning ? 'success' : 'secondary'" :value="flow.leaderRunning ? 'Running' : 'Stopped'" class="mr-1" />
+                          <Tag v-if="flow.leaderTestMode" severity="warn" value="Test" />
                         </template>
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="flow-status-col member-col" :class="[flow.diffClass, { 'diff-missing': selectedMember && !flow.memberExists }]">
+                        <template v-if="selectedMember">
+                          <template v-if="flow.memberExists">
+                            <Tag :severity="flow.memberRunning ? 'success' : 'secondary'" :value="flow.memberRunning ? 'Running' : 'Stopped'" class="mr-1" />
+                            <Tag v-if="flow.memberTestMode" severity="warn" value="Test" />
+                          </template>
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Properties -->
-          <AccordionTab v-if="mergedProperties.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedProperties.length > 0" value="properties">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Properties ({{ mergedProperties.length }})</span>
-                <Tag v-if="propertyDiffCount > 0" severity="warning" :value="propertyDiffCount" class="ml-2" />
+                <Tag v-if="propertyDiffCount > 0" severity="warn" :value="propertyDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th class="prop-key-col">Property</th>
-                    <th class="prop-value-col leader-col">Leader Value</th>
-                    <th class="prop-value-col member-col">{{ selectedMember || 'Member' }} Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="prop in mergedProperties" :key="prop.key">
-                    <td class="prop-key-col font-mono text-sm">{{ prop.key }}</td>
-                    <td class="prop-value-col leader-col" :class="[prop.diffClass, { 'diff-missing': prop.leaderValue === undefined }]">
-                      <span v-if="prop.leaderValue !== undefined" class="prop-value">{{ prop.leaderValue }}</span>
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="prop-value-col member-col" :class="[prop.diffClass, { 'diff-missing': selectedMember && prop.memberValue === undefined }]">
-                      <template v-if="selectedMember">
-                        <span v-if="prop.memberValue !== undefined" class="prop-value">{{ prop.memberValue }}</span>
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th class="prop-key-col">Property</th>
+                      <th class="prop-value-col leader-col">Leader Value</th>
+                      <th class="prop-value-col member-col">{{ selectedMember || 'Member' }} Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="prop in mergedProperties" :key="prop.key">
+                      <td class="prop-key-col font-mono text-sm">{{ prop.key }}</td>
+                      <td class="prop-value-col leader-col" :class="[prop.diffClass, { 'diff-missing': prop.leaderValue === undefined }]">
+                        <span v-if="prop.leaderValue !== undefined" class="prop-value">{{ prop.leaderValue }}</span>
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="prop-value-col member-col" :class="[prop.diffClass, { 'diff-missing': selectedMember && prop.memberValue === undefined }]">
+                        <template v-if="selectedMember">
+                          <span v-if="prop.memberValue !== undefined" class="prop-value">{{ prop.memberValue }}</span>
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Links -->
-          <AccordionTab v-if="mergedLinks.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedLinks.length > 0" value="links">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Links ({{ mergedLinks.length }})</span>
-                <Tag v-if="linkDiffCount > 0" severity="warning" :value="linkDiffCount" class="ml-2" />
+                <Tag v-if="linkDiffCount > 0" severity="warn" :value="linkDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th>Link Name</th>
-                    <th class="presence-col leader-col">Leader</th>
-                    <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in mergedLinks" :key="item.name">
-                    <td>{{ item.name }}</td>
-                    <td class="presence-col leader-col" :class="item.diffClass">
-                      <i v-if="item.leaderExists" class="pi pi-check text-success" />
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="presence-col member-col" :class="item.diffClass">
-                      <template v-if="selectedMember">
-                        <i v-if="item.memberExists" class="pi pi-check text-success" />
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th>Link Name</th>
+                      <th class="presence-col leader-col">Leader</th>
+                      <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in mergedLinks" :key="item.name">
+                      <td>{{ item.name }}</td>
+                      <td class="presence-col leader-col" :class="item.diffClass">
+                        <i v-if="item.leaderExists" class="pi pi-check text-success" />
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="presence-col member-col" :class="item.diffClass">
+                        <template v-if="selectedMember">
+                          <i v-if="item.memberExists" class="pi pi-check text-success" />
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Users -->
-          <AccordionTab v-if="mergedUsers.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedUsers.length > 0" value="users">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Users ({{ mergedUsers.length }})</span>
-                <Tag v-if="userDiffCount > 0" severity="warning" :value="userDiffCount" class="ml-2" />
+                <Tag v-if="userDiffCount > 0" severity="warn" :value="userDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th class="presence-col leader-col">Leader</th>
-                    <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in mergedUsers" :key="item.name">
-                    <td>{{ item.name }}</td>
-                    <td class="presence-col leader-col" :class="item.diffClass">
-                      <i v-if="item.leaderExists" class="pi pi-check text-success" />
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="presence-col member-col" :class="item.diffClass">
-                      <template v-if="selectedMember">
-                        <i v-if="item.memberExists" class="pi pi-check text-success" />
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th>Username</th>
+                      <th class="presence-col leader-col">Leader</th>
+                      <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in mergedUsers" :key="item.name">
+                      <td>{{ item.name }}</td>
+                      <td class="presence-col leader-col" :class="item.diffClass">
+                        <i v-if="item.leaderExists" class="pi pi-check text-success" />
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="presence-col member-col" :class="item.diffClass">
+                        <template v-if="selectedMember">
+                          <i v-if="item.memberExists" class="pi pi-check text-success" />
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Roles -->
-          <AccordionTab v-if="mergedRoles.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedRoles.length > 0" value="roles">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Roles ({{ mergedRoles.length }})</span>
-                <Tag v-if="roleDiffCount > 0" severity="warning" :value="roleDiffCount" class="ml-2" />
+                <Tag v-if="roleDiffCount > 0" severity="warn" :value="roleDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th>Role Name</th>
-                    <th class="presence-col leader-col">Leader</th>
-                    <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in mergedRoles" :key="item.name">
-                    <td>{{ item.name }}</td>
-                    <td class="presence-col leader-col" :class="item.diffClass">
-                      <i v-if="item.leaderExists" class="pi pi-check text-success" />
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="presence-col member-col" :class="item.diffClass">
-                      <template v-if="selectedMember">
-                        <i v-if="item.memberExists" class="pi pi-check text-success" />
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th>Role Name</th>
+                      <th class="presence-col leader-col">Leader</th>
+                      <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in mergedRoles" :key="item.name">
+                      <td>{{ item.name }}</td>
+                      <td class="presence-col leader-col" :class="item.diffClass">
+                        <i v-if="item.leaderExists" class="pi pi-check text-success" />
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="presence-col member-col" :class="item.diffClass">
+                        <template v-if="selectedMember">
+                          <i v-if="item.memberExists" class="pi pi-check text-success" />
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Resume Policies -->
-          <AccordionTab v-if="mergedResumePolicies.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedResumePolicies.length > 0" value="resumePolicies">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Resume Policies ({{ mergedResumePolicies.length }})</span>
-                <Tag v-if="resumePolicyDiffCount > 0" severity="warning" :value="resumePolicyDiffCount" class="ml-2" />
+                <Tag v-if="resumePolicyDiffCount > 0" severity="warn" :value="resumePolicyDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th>Policy Name</th>
-                    <th class="presence-col leader-col">Leader</th>
-                    <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in mergedResumePolicies" :key="item.name">
-                    <td>{{ item.name }}</td>
-                    <td class="presence-col leader-col" :class="item.diffClass">
-                      <i v-if="item.leaderExists" class="pi pi-check text-success" />
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="presence-col member-col" :class="item.diffClass">
-                      <template v-if="selectedMember">
-                        <i v-if="item.memberExists" class="pi pi-check text-success" />
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th>Policy Name</th>
+                      <th class="presence-col leader-col">Leader</th>
+                      <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in mergedResumePolicies" :key="item.name">
+                      <td>{{ item.name }}</td>
+                      <td class="presence-col leader-col" :class="item.diffClass">
+                        <i v-if="item.leaderExists" class="pi pi-check text-success" />
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="presence-col member-col" :class="item.diffClass">
+                        <template v-if="selectedMember">
+                          <i v-if="item.memberExists" class="pi pi-check text-success" />
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Delete Policies -->
-          <AccordionTab v-if="mergedDeletePolicies.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedDeletePolicies.length > 0" value="deletePolicies">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Delete Policies ({{ mergedDeletePolicies.length }})</span>
-                <Tag v-if="deletePolicyDiffCount > 0" severity="warning" :value="deletePolicyDiffCount" class="ml-2" />
+                <Tag v-if="deletePolicyDiffCount > 0" severity="warn" :value="deletePolicyDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
-              <table class="diff-table">
-                <thead>
-                  <tr>
-                    <th>Policy Name</th>
-                    <th class="presence-col leader-col">Leader</th>
-                    <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in mergedDeletePolicies" :key="item.name">
-                    <td>{{ item.name }}</td>
-                    <td class="presence-col leader-col" :class="item.diffClass">
-                      <i v-if="item.leaderExists" class="pi pi-check text-success" />
-                      <span v-else class="missing-indicator">—</span>
-                    </td>
-                    <td class="presence-col member-col" :class="item.diffClass">
-                      <template v-if="selectedMember">
-                        <i v-if="item.memberExists" class="pi pi-check text-success" />
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
+                <table class="diff-table">
+                  <thead>
+                    <tr>
+                      <th>Policy Name</th>
+                      <th class="presence-col leader-col">Leader</th>
+                      <th class="presence-col member-col">{{ selectedMember || 'Member' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in mergedDeletePolicies" :key="item.name">
+                      <td>{{ item.name }}</td>
+                      <td class="presence-col leader-col" :class="item.diffClass">
+                        <i v-if="item.leaderExists" class="pi pi-check text-success" />
                         <span v-else class="missing-indicator">—</span>
-                      </template>
-                      <span v-else class="text-color-secondary">—</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </AccordionTab>
+                      </td>
+                      <td class="presence-col member-col" :class="item.diffClass">
+                        <template v-if="selectedMember">
+                          <i v-if="item.memberExists" class="pi pi-check text-success" />
+                          <span v-else class="missing-indicator">—</span>
+                        </template>
+                        <span v-else class="text-color-secondary">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
 
           <!-- Plugin Variables -->
-          <AccordionTab v-if="mergedPluginVariables.length > 0">
-            <template #header>
+          <AccordionPanel v-if="mergedPluginVariables.length > 0" value="pluginVariables">
+            <AccordionHeader>
               <span class="accordion-header-with-badge">
                 <span>Plugin Variables ({{ mergedPluginVariables.length }})</span>
-                <Tag v-if="pluginVariablesDiffCount > 0" severity="warning" :value="pluginVariablesDiffCount" class="ml-2" />
+                <Tag v-if="pluginVariablesDiffCount > 0" severity="warn" :value="pluginVariablesDiffCount" class="ml-2" />
               </span>
-            </template>
-            <div class="comparison-table">
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="comparison-table">
               <table class="diff-table">
                 <thead>
                   <tr>
@@ -518,8 +535,9 @@
                   </tr>
                 </tbody>
               </table>
-            </div>
-          </AccordionTab>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
         </Accordion>
       </div>
     </div>
@@ -541,9 +559,11 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Tag from "primevue/tag";
 import Message from "primevue/message";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import Accordion from "primevue/accordion";
-import AccordionTab from "primevue/accordiontab";
+import AccordionPanel from "primevue/accordionpanel";
+import AccordionHeader from "primevue/accordionheader";
+import AccordionContent from "primevue/accordioncontent";
 import Dialog from "primevue/dialog";
 
 interface FlowItem {
@@ -916,7 +936,7 @@ const getFlowTypeSeverity = (type: string): string => {
     case "transformFlows":
       return "success";
     case "dataSinks":
-      return "warning";
+      return "warn";
     default:
       return "info";
   }

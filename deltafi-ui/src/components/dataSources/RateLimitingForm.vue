@@ -33,7 +33,7 @@
       <InputNumber id="maxAmount" v-model="formData.maxAmount" :min="1" :useGrouping="false" placeholder="e.g. 100" class="w-full" />
 
       <label for="unit">Unit</label>
-      <Dropdown id="unit" v-model="formData.unit" :options="unitOptions" optionLabel="label" optionValue="value" class="w-full" />
+      <Select id="unit" v-model="formData.unit" :options="unitOptions" optionLabel="label" optionValue="value" class="w-full" />
 
       <label for="duration">Duration (seconds)</label>
       <InputNumber id="duration" v-model="formData.durationSeconds" :min="1" :useGrouping="false" placeholder="e.g. 60" class="w-full" />
@@ -60,7 +60,7 @@ import { computed, inject, onMounted, onUnmounted, reactive } from "vue";
 import { useMounted } from "@vueuse/core";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputNumber from "primevue/inputnumber";
 import Message from "primevue/message";
 

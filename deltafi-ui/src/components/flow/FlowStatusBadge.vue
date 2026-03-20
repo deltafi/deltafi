@@ -20,10 +20,10 @@
 
 <template>
   <div class="d-flex justify-content-center">
-    <Tag v-if="rowData.flowStatus.placeholder" v-tooltip.left="'Waiting for plugin to claim this flow'" :value="'PLUGIN'" severity="warning" icon="pi pi-clock" :rounded="true" />
+    <Tag v-if="rowData.flowStatus.placeholder" v-tooltip.left="'Waiting for plugin to claim this flow'" :value="'PLUGIN'" severity="warn" icon="pi pi-clock" :rounded="true" />
     <Tag v-else-if="!rowData.flowStatus.valid" v-tooltip.left="invalidTooltip" :value="'INVALID'" severity="danger" icon="pi pi-exclamation-triangle" :rounded="true" />
-    <Tag v-else-if="pluginDisabled && rowData.flowStatus.state === 'RUNNING'" v-tooltip.left="'Plugin is disabled'" :value="'PLUGIN'" severity="warning" icon="pi pi-pause" :rounded="true" />
-    <Tag v-else-if="!rowData.pluginReady && rowData.flowStatus.state === 'RUNNING'" v-tooltip.left="rowData.pluginNotReadyReason || 'Plugin is not ready'" :value="'PLUGIN'" severity="warning" icon="pi pi-clock" :rounded="true" />
+    <Tag v-else-if="pluginDisabled && rowData.flowStatus.state === 'RUNNING'" v-tooltip.left="'Plugin is disabled'" :value="'PLUGIN'" severity="warn" icon="pi pi-pause" :rounded="true" />
+    <Tag v-else-if="!rowData.pluginReady && rowData.flowStatus.state === 'RUNNING'" v-tooltip.left="rowData.pluginNotReadyReason || 'Plugin is not ready'" :value="'PLUGIN'" severity="warn" icon="pi pi-clock" :rounded="true" />
     <Tag v-else :value="rowData.flowStatus.state" :severity="stateSeverity" :rounded="true" />
   </div>
 </template>
@@ -54,7 +54,7 @@ const stateSeverity = computed(() => {
     case "RUNNING":
       return "success";
     case "PAUSED":
-      return "warning";
+      return "warn";
     case "STOPPED":
       return "secondary";
     default:

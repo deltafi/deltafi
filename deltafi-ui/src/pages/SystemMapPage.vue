@@ -21,6 +21,7 @@
     <!-- Filter sidebar -->
     <FilterSidebar
       v-model="filterSidebarOpen"
+      :visible="false"
       title="Filter Flows"
       tab-label="Filters"
       :has-active-filters="!!selectedFilterId"
@@ -28,7 +29,7 @@
     >
       <div class="filter-section">
         <label>Data Sources</label>
-        <Dropdown
+        <Select
           v-model="selectedDataSource"
           :options="dataSourceOptions"
           option-label="name"
@@ -43,7 +44,7 @@
 
       <div class="filter-section">
         <label>Transforms</label>
-        <Dropdown
+        <Select
           v-model="selectedTransform"
           :options="transformOptions"
           option-label="name"
@@ -58,7 +59,7 @@
 
       <div class="filter-section">
         <label>Data Sinks</label>
-        <Dropdown
+        <Select
           v-model="selectedDataSink"
           :options="dataSinkOptions"
           option-label="name"
@@ -73,7 +74,7 @@
 
       <div class="filter-section">
         <label>Topics</label>
-        <Dropdown
+        <Select
           v-model="selectedTopic"
           :options="topicOptions"
           option-label="name"
@@ -311,7 +312,7 @@
 
 import FilterSidebar from "@/components/FilterSidebar.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import SystemMapGraph from "@/components/pipeline/SystemMapGraph.vue";
 import { formatTypeLong } from "@/components/pipeline/useGraphStyles";
 import useFlowErrors from "@/components/pipeline/useFlowErrors";
@@ -328,7 +329,7 @@ import { useRouter } from "vue-router";
 
 import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import { useConfirm } from "primevue/useconfirm";
 import MetricsControls from "@/components/pipeline/MetricsControls.vue";
 
@@ -577,24 +578,41 @@ function onFilterChange(changedFilter) {
   if (changedFilter !== 'topic') selectedTopic.value = null;
 }
 
-// Get all transitively connected nodes (complete dataflow)
+// When the sidebar filter selection changes, activate dataflow mode for that node
+watch(selectedFilterId, (filterId) => {
+  if (filterId) {
+    const node = flowGraph.value.nodes.find((n) => n.id === filterId);
+    if (node) {
+      filterMode.value = true;
+      filterNodeId.value = node.id;
+      filterNodeName.value = node.name;
+      onSelectNode(node);
+    }
+  } else {
+    clearFilter();
+    selectedNode.value = null;
+    selectedNodeDetails.value = null;
+  }
+});
+
+// Get directly connected nodes (flow → topic → flow, one hop each direction)
 function getConnectedNodes(startNodeId, edges) {
   const connected = new Set([startNodeId]);
-  let changed = true;
 
-  // Keep expanding until no new nodes are found
-  while (changed) {
-    changed = false;
-    for (const edge of edges) {
-      if (connected.has(edge.source) && !connected.has(edge.target)) {
-        connected.add(edge.target);
-        changed = true;
-      }
-      if (connected.has(edge.target) && !connected.has(edge.source)) {
-        connected.add(edge.source);
-        changed = true;
-      }
-    }
+  // Follow edges downstream from the start node
+  const directDownstream = edges.filter((e) => e.source === startNodeId).map((e) => e.target);
+  directDownstream.forEach((id) => connected.add(id));
+
+  // Follow edges upstream to the start node
+  const directUpstream = edges.filter((e) => e.target === startNodeId).map((e) => e.source);
+  directUpstream.forEach((id) => connected.add(id));
+
+  // One more hop through topics: downstream topics → their subscribers, upstream topics → their publishers
+  for (const id of directDownstream) {
+    edges.filter((e) => e.source === id).forEach((e) => connected.add(e.target));
+  }
+  for (const id of directUpstream) {
+    edges.filter((e) => e.target === id).forEach((e) => connected.add(e.source));
   }
 
   return connected;

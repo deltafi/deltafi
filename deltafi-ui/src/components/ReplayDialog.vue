@@ -31,10 +31,10 @@
             <Checkbox v-model="acknowledgeOnReplay" input-id="acknowledgeOnReplay" :binary="true" />
             <label for="acknowledgeOnReplay" class="ml-2 mb-0" style="line-height: 1;">Acknowledge error on replay</label>
           </div>
-          <span class="p-float-label mt-2">
-            <InputText id="reason" v-model="reason" type="text" :disabled="!acknowledgeOnReplay" :class="{ 'p-invalid': reasonInvalid }" autofocus />
+          <div class="field mt-2">
             <label for="reason">Acknowledge Reason</label>
-          </span>
+            <InputText id="reason" v-model="reason" type="text" :disabled="!acknowledgeOnReplay" :class="{ 'p-invalid': reasonInvalid }" autofocus />
+          </div>
           <small v-if="reasonInvalid" class="p-error">Reason is required when acknowledging</small>
         </div>
       </div>
@@ -63,7 +63,7 @@
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useNotifications from "@/composables/useNotifications";
 import useReplay from "@/composables/useReplay";
 import useReplayAndAcknowledge from "@/composables/useReplayAndAcknowledge";

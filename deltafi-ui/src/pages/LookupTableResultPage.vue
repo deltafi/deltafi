@@ -31,7 +31,7 @@
     </PageHeader>
     <label>Filter:</label>
     <div class="btn-toolbar border-bottom mb-3 pb-3 align-items-center">
-      <Button v-tooltip.right="{ value: `Clear Filters`, disabled: _.isEmpty(columnValueInputs) }" rounded :class="`mr-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${!_.isEmpty(columnValueInputs) ? 'p-column-filter-menu-button-active' : null}`" :disabled="_.isEmpty(columnValueInputs)" @click="clearFilterOptions()">
+      <Button v-tooltip.right="{ value: `Clear Filters`, disabled: _.isEmpty(columnValueInputs) }" rounded :class="`mr-1 p-column-filter-menu-button p-column-filter-menu-button-open ${!_.isEmpty(columnValueInputs) ? 'p-column-filter-menu-button-active' : null}`" :disabled="_.isEmpty(columnValueInputs)" @click="clearFilterOptions()">
         <i class="pi pi-filter" style="font-size: 1rem" />
       </Button>
 
@@ -43,24 +43,24 @@
           &nbsp;
         </Chip>
       </div>
-      <OverlayPanel ref="columnValueOverlay" @hide="hideColumnValuesOverlay">
-        <Dropdown v-model="newColumnKey" placeholder="Key" :options="filterColumnOptions" option-label="column" style="width: 13rem" @keyup.enter="addColumnValueItemEvent" /> :
+      <Popover ref="columnValueOverlay" @hide="hideColumnValuesOverlay">
+        <Select v-model="newColumnKey" placeholder="Key" :options="filterColumnOptions" option-label="column" style="width: 13rem" @keyup.enter="addColumnValueItemEvent" /> :
         <AutoComplete v-model.trim="newColumnValue" placeholder="Value" :suggestions="items" :disabled="_.isEmpty(newColumnKey)" @complete="search($event, newColumnKey)" @keyup.enter="addColumnValueItemEvent" @item-select="addColumnValueItemEvent" />
-      </OverlayPanel>
+      </Popover>
     </div>
     <Panel header="Results" class="table-panel results">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+        <Paginator v-if="lookupDataTable.length > 0" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="offset" :rows="rowsPerPage" :total-records="totalRecords" :rows-per-page-options="[1, 10, 20, 50, 100, 1000]" @page="onPage" />
+        <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="lookupDataTable.length > 0" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="offset" :rows="rowsPerPage" :total-records="totalRecords" :rows-per-page-options="[1, 10, 20, 50, 100, 1000]" style="float: left" @page="onPage" />
       </template>
-      <DataTable v-model:selection="selectedRows" selection-mode="multiple" v-model:editingRows="editingRows" editMode="row" :value="lookupDataTable" :data-key="getDataKey" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" loading-icon="pi pi-spinner" @row-edit-save="onRowEditSave">
+      <DataTable aria-label="Lookup table data" v-model:selection="selectedRows" selection-mode="multiple" v-model:editingRows="editingRows" editMode="row" :value="lookupDataTable" :data-key="getDataKey" striped-rows class="p-datatable-sm p-datatable-gridlines" loading-icon="pi pi-spinner" @row-edit-save="onRowEditSave">
         <template #header>
           <div class="btn-toolbar align-items-center" style="text-align: left">
-            <Button v-tooltip.right="{ value: `Clear Filters`, disabled: _.isEqual(selectedColumns, nonKeyColumnsArray) }" rounded :class="`mr-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${!_.isEqual(selectedColumns, nonKeyColumnsArray) ? 'p-column-filter-menu-button-active' : null}`" :disabled="_.isEqual(selectedColumns, nonKeyColumnsArray)" @click="clearMultiSelectOptions()">
+            <Button v-tooltip.right="{ value: `Clear Filters`, disabled: _.isEqual(selectedColumns, nonKeyColumnsArray) }" rounded :class="`mr-1 p-column-filter-menu-button p-column-filter-menu-button-open ${!_.isEqual(selectedColumns, nonKeyColumnsArray) ? 'p-column-filter-menu-button-active' : null}`" :disabled="_.isEqual(selectedColumns, nonKeyColumnsArray)" @click="clearMultiSelectOptions()">
               <i class="pi pi-filter" style="font-size: 1rem" />
             </Button>
             <MultiSelect :model-value="selectedColumns" :options="nonKeyColumnsArray" option-label="header" placeholder="Select Columns" style="width: 22rem" @update:model-value="onToggleSelectableColumn" />
@@ -108,11 +108,11 @@ import Chip from "primevue/chip";
 import Column from "primevue/column";
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import MultiSelect from "primevue/multiselect";
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
 

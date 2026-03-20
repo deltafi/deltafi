@@ -43,7 +43,7 @@
           <dt class="d-flex inputWidth justify-content-between">
             <div>Subscribe*</div>
             <div>
-              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
+              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
             </div>
           </dt>
           <dd>
@@ -55,7 +55,7 @@
           </dd>
           <dt>Egress Action*</dt>
           <dd>
-            <Dropdown v-model="model['egressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
+            <Select v-model="model['egressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
           </dd>
           <template v-if="!_.isEmpty(model['egressActionOption'])">
             <template v-if="schemaProvided(model['egressActionOption']['schema'])">
@@ -97,7 +97,7 @@ import { JsonForms } from "@jsonforms/vue";
 
 import Badge from "primevue/badge";
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import TextArea from "primevue/textarea";

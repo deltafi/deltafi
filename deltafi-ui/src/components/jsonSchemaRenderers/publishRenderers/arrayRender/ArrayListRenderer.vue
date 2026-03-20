@@ -21,7 +21,7 @@
     <dl :class="schemaData.styles.arrayList.legend + ' mb-0'">
       <div class="btn-group pb-0 align-items-center">
         <dt :class="schemaData.styles.arrayList.label">{{ computedLabel }}<span v-if="schemaData.control.required" class="required-indicator">*</span></dt>
-        <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
+        <Button icon="pi pi-plus" aria-label="Add item" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
       </div>
       <dd class="pb-0">
         <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">

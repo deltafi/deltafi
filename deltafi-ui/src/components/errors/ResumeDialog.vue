@@ -48,7 +48,7 @@
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useErrorResume from "@/composables/useErrorResume";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";

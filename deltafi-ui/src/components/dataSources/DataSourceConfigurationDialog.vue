@@ -34,37 +34,37 @@
         <dl>
           <dt>Name*</dt>
           <dd>
-            <InputText v-model="model['name']" placeholder="Data Source Name." :disabled="editDataSource" class="inputWidth" />
+            <InputText v-model="model['name']" placeholder="Data Source Name." :disabled="editDataSource" class="inputWidth" aria-label="Data source name" />
           </dd>
           <dt>Description*</dt>
           <dd>
-            <TextArea v-model="model['description']" placeholder="Data Source Description." class="inputWidth" rows="5" />
+            <TextArea v-model="model['description']" placeholder="Data Source Description." class="inputWidth" rows="5" aria-label="Data source description" />
           </dd>
           <dt>Data Source Type*</dt>
           <dd>
-            <Dropdown v-model="model['dataSourceType']" :options="dataSourceTypeOptions" placeholder="Select a Data Source Type" show-clear class="inputWidth" />
+            <Select v-model="model['dataSourceType']" :options="dataSourceTypeOptions" placeholder="Select a Data Source Type" show-clear class="inputWidth" aria-label="Data source type" />
           </dd>
           <template v-if="_.isEqual(model['dataSourceType'], 'On-Error Data Source')">
             <dt>Error Message Regex</dt>
             <dd>
-              <InputText v-model="model['errorMessageRegex']" placeholder="Error Message Regex" class="inputWidth" />
+              <InputText v-model="model['errorMessageRegex']" placeholder="Error Message Regex" class="inputWidth" aria-label="Error message regex" />
             </dd>
             <dt>Source Metadata Prefix</dt>
             <dd>
-              <InputText v-model="model['sourceMetadataPrefix']" placeholder="Source Metadata Prefix" class="inputWidth" />
+              <InputText v-model="model['sourceMetadataPrefix']" placeholder="Source Metadata Prefix" class="inputWidth" aria-label="Source metadata prefix" />
             </dd>
             <dt>Include Source Metadata Regex</dt>
             <dd>
-              <Chips v-model="model['includeSourceMetadataRegex']" class="inputWidth" />
+              <InputChips v-model="model['includeSourceMetadataRegex']" class="inputWidth" />
             </dd>
             <dt>Source Filters</dt>
             <dd>
               <div v-for="(_, index) in model['sourceFilters']" :key="index" class="mb-2">
-                <Dropdown v-model="model['sourceFilters'][index]['flowType']" :options="flowTypeOptions" option-value="value" option-label="name" show-clear="true" placeholder="Flow Type" class="mb-1 mr-1" style="width: 14rem"/>
-                <InputText v-model="model['sourceFilters'][index]['flowName']" placeholder="Flow Name" class="mb-1 mr-1" />
-                <InputText v-model="model['sourceFilters'][index]['actionName']" placeholder="Action Name" class="mb-1 mr-1" />
-                <InputText v-model="model['sourceFilters'][index]['actionClass']" placeholder="Action Class" class="mb-1 mr-1" />
-                <Button icon="pi pi-times" class="p-button-rounded p-button-text p-button-danger" @click="model['sourceFilters'].splice(index, 1)" />
+                <Select v-model="model['sourceFilters'][index]['flowType']" :options="flowTypeOptions" option-value="value" option-label="name" show-clear="true" placeholder="Flow Type" class="mb-1 mr-1" style="width: 14rem" aria-label="Flow type filter" />
+                <InputText v-model="model['sourceFilters'][index]['flowName']" placeholder="Flow Name" class="mb-1 mr-1" aria-label="Flow name filter" />
+                <InputText v-model="model['sourceFilters'][index]['actionName']" placeholder="Action Name" class="mb-1 mr-1" aria-label="Action name filter" />
+                <InputText v-model="model['sourceFilters'][index]['actionClass']" placeholder="Action Class" class="mb-1 mr-1" aria-label="Action class filter" />
+                <Button icon="pi pi-times" aria-label="Remove source filter" class="p-button-rounded p-button-text p-button-danger" @click="model['sourceFilters'].splice(index, 1)" />
               </div>
               <Button label="Add Source Filter" icon="pi pi-plus" class="p-button-text" @click="model['sourceFilters'] = model['sourceFilters'] ? model['sourceFilters'].concat([{}]) : [{}]" />
             </dd>
@@ -73,11 +73,11 @@
             <dt>Cron Schedule*</dt>
             <dd>
               <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)" />
-              <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" />
+              <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" aria-label="Cron schedule" />
             </dd>
             <dt>Action*</dt>
             <dd>
-              <Dropdown v-model="model['timedIngressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
+              <Select v-model="model['timedIngressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
             </dd>
             <template v-if="!_.isEmpty(model['timedIngressActionOption'])">
               <template v-if="schemaProvided(model['timedIngressActionOption']['schema'])">
@@ -129,7 +129,7 @@
 </template>
 
 <script setup>
-import Chips from "primevue/chips";
+import InputChips from "primevue/inputchips";
 import useFlows from "@/composables/useFlows";
 import useDataSource from "@/composables/useDataSource";
 import useFlowActions from "@/composables/useFlowActions";
@@ -142,7 +142,7 @@ import { JsonForms } from "@jsonforms/vue";
 
 import AutoComplete from "primevue/autocomplete";
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import TextArea from "primevue/textarea";
@@ -573,7 +573,7 @@ const metadataSchema = {
   .inputWidth {
     width: 90% !important;
 
-    .p-chips-multiple-container {
+    .p-inputchips-input {
       width: 100% !important;
     }
   }

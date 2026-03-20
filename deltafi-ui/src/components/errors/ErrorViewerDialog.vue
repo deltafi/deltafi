@@ -41,31 +41,35 @@
       </div>
     </div>
     <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
-    <TabView v-model:active-index="activeTab">
-      <TabPanel v-if="cause || context" header="Cause">
-        <div v-if="cause" class="error-row">
-          <div class="error-col">
-            <strong>Cause</strong>
-            <HighlightedCode :highlight="false" :code="cause" />
+    <Tabs v-model:value="activeTab">
+      <TabList>
+        <Tab value="cause" :disabled="!(cause || context)">Cause</Tab>
+        <Tab value="content" :disabled="!(content && hasPointerContext)">Content</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel v-if="cause || context" value="cause">
+          <div v-if="cause" class="error-row">
+            <div class="error-col">
+              <strong>Cause</strong>
+              <HighlightedCode :highlight="false" :code="cause" />
+            </div>
           </div>
-        </div>
-        <div v-if="context" class="error-row">
-          <div class="error-col">
-            <strong>Context</strong>
-            <HighlightedCode :highlight="false" :code="context" />
+          <div v-if="context" class="error-row">
+            <div class="error-col">
+              <strong>Context</strong>
+              <HighlightedCode :highlight="false" :code="context" />
+            </div>
           </div>
-        </div>
-      </TabPanel>
-      <TabPanel v-else header="Cause" :disabled="true" />
-      <TabPanel v-if="content && hasPointerContext" header="Content">
-        <div class="error-row">
-          <div class="error-col">
-            <ContentSelector :did="did" :flow-number="flowNumber" :action-index="actionIndex" :content="content" @content-selected="content" />
+        </TabPanel>
+        <TabPanel v-if="content && hasPointerContext" value="content">
+          <div class="error-row">
+            <div class="error-col">
+              <ContentSelector :did="did" :flow-number="flowNumber" :action-index="actionIndex" :content="content" @content-selected="content" />
+            </div>
           </div>
-        </div>
-      </TabPanel>
-      <TabPanel v-else header="Content" :disabled="true" />
-    </TabView>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
   </Dialog>
 </template>
 
@@ -79,10 +83,13 @@ import _ from "lodash";
 
 import Dialog from "primevue/dialog";
 import ScrollTop from "primevue/scrolltop";
+import Tab from "primevue/tab";
+import TabList from "primevue/tablist";
 import TabPanel from "primevue/tabpanel";
-import TabView from "primevue/tabview";
+import TabPanels from "primevue/tabpanels";
+import Tabs from "primevue/tabs";
 
-const activeTab = ref(0);
+const activeTab = ref("cause");
 const attrs = useAttrs();
 const props = defineProps({
   did: {

@@ -33,7 +33,7 @@
         <div class="member-status-badge">
           <!-- Connection state indicator -->
           <Tag v-if="member.connectionState === 'UNREACHABLE'" severity="danger" value="Unreachable" />
-          <Tag v-else-if="member.connectionState === 'STALE'" severity="warning" :value="`Stale (${formatAge(member.lastUpdated)})`" class="cursor-pointer" @click="showDetails" v-tooltip.top="'View cached status'" />
+          <Tag v-else-if="member.connectionState === 'STALE'" severity="warn" :value="`Stale (${formatAge(member.lastUpdated)})`" class="cursor-pointer" @click="showDetails" v-tooltip.top="'View cached status'" />
           <!-- Health badge - clickable -->
           <Tag v-else-if="member.status" :severity="healthSeverity" :value="member.status.state" :icon="healthIcon" class="cursor-pointer" @click="showDetails" />
         </div>
@@ -255,7 +255,7 @@ const healthSeverity = computed(() => {
   if (!props.member.status) return "secondary";
   const code = props.member.status.code;
   if (code === 0) return "success";
-  if (code === 1) return "warning";
+  if (code === 1) return "warn";
   return "danger";
 });
 

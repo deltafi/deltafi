@@ -34,7 +34,7 @@
         </div>
       </div>
     </div>
-    <OverlayPanel ref="publishOverlayPanel">
+    <Popover ref="publishOverlayPanel">
       <template v-if="!_.isEmpty(publishData.defaultRule)">
         <div class="mb-2 text-muted">
           <strong>Publish Rules</strong>
@@ -69,14 +69,14 @@
           </div>
         </div>
       </template>
-    </OverlayPanel>
+    </Popover>
   </div>
 </template>
 
 <script setup>
 import { computed, reactive, ref } from "vue";
 import Divider from "primevue/divider";
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 import TopicSubscribers from "@/components/topics/TopicSubscribers.vue";
 import _ from "lodash";
 

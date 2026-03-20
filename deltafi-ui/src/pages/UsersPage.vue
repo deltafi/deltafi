@@ -29,7 +29,7 @@
       </div>
     </PageHeader>
     <Panel header="Users" class="users-panel table-panel">
-      <DataTable :value="users" data-Key="id" :loading="loading && !loaded" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
+      <DataTable aria-label="Users" :value="users" data-Key="id" :loading="loading && !loaded" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
         <template #header>
           <div style="text-align: left">
             <MultiSelect :model-value="selectedColumns" :options="columns" option-label="header" placeholder="Select Columns" style="width: 22rem" @update:model-value="onToggle" />
@@ -57,8 +57,8 @@
         </Column>
         <Column style="width: 5rem; padding: 0" :hidden="!$hasSomePermissions('UserUpdate', 'UserDelete')">
           <template #body="{ data }">
-            <Button v-tooltip.top="`Edit User ${data.name}`" :hidden="!$hasPermission('UserUpdate')" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editUser(data)" />
-            <Button v-tooltip.top="`Remove User ${data.name}`" :hidden="!$hasPermission('UserDelete')" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteUser(data)" />
+            <Button v-tooltip.top="`Edit User ${data.name}`" :hidden="!$hasPermission('UserUpdate')" icon="pi pi-pencil" :aria-label="`Edit user ${data.name}`" class="p-button-text p-button-sm p-button-rounded p-button-secondary" @click="editUser(data)" />
+            <Button v-tooltip.top="`Remove User ${data.name}`" :hidden="!$hasPermission('UserDelete')" icon="pi pi-trash" :aria-label="`Delete user ${data.name}`" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmDeleteUser(data)" />
           </template>
         </Column>
       </DataTable>
@@ -80,30 +80,36 @@
           <dd>
             <div class="deltafi-fieldset">
               <div class="px-2 pt-3">
-                <TabView :active-index="activeTabIndex">
-                  <TabPanel header="Basic">
-                    <Message v-if="uiConfig.authMode != 'basic' && !isReadOnly" severity="warn">
-                      Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>basic</strong> before changes to this section will take effect.
-                    </Message>
-                    <div class="field mb-2">
-                      <label for="dn">Username*</label>
-                      <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" :disabled="isReadOnly" />
-                    </div>
-                    <div v-if="!isReadOnly" class="field mb-2">
-                      <label for="dn">Password</label>
-                      <Password v-model="user.password" autocomplete="off" toggle-mask />
-                    </div>
-                  </TabPanel>
-                  <TabPanel header="Certificate">
-                    <Message v-if="uiConfig.authMode != 'cert' && !isReadOnly" severity="warn">
-                      Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>cert</strong> before changes to this section will take effect.
-                    </Message>
-                    <div class="field mb-2">
-                      <label for="dn">Distinguished Name (DN)</label>
-                      <InputText id="DN" v-model="user.dn" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" :disabled="isReadOnly" />
-                    </div>
-                  </TabPanel>
-                </TabView>
+                <Tabs :value="activeTabIndex">
+                  <TabList>
+                    <Tab :value="0">Basic</Tab>
+                    <Tab :value="1">Certificate</Tab>
+                  </TabList>
+                  <TabPanels>
+                    <TabPanel :value="0">
+                      <Message v-if="uiConfig.authMode != 'basic' && !isReadOnly" severity="warn">
+                        Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>basic</strong> before changes to this section will take effect.
+                      </Message>
+                      <div class="field mb-2">
+                        <label for="dn">Username*</label>
+                        <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" :disabled="isReadOnly" />
+                      </div>
+                      <div v-if="!isReadOnly" class="field mb-2">
+                        <label for="dn">Password</label>
+                        <Password v-model="user.password" autocomplete="off" toggle-mask />
+                      </div>
+                    </TabPanel>
+                    <TabPanel :value="1">
+                      <Message v-if="uiConfig.authMode != 'cert' && !isReadOnly" severity="warn">
+                        Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>cert</strong> before changes to this section will take effect.
+                      </Message>
+                      <div class="field mb-2">
+                        <label for="dn">Distinguished Name (DN)</label>
+                        <InputText id="DN" v-model="user.dn" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" :disabled="isReadOnly" />
+                      </div>
+                    </TabPanel>
+                  </TabPanels>
+                </Tabs>
               </div>
             </div>
           </dd>
@@ -169,8 +175,11 @@ import PageHeader from "@/components/PageHeader.vue";
 import Panel from "primevue/panel";
 import Password from "primevue/password";
 import RolePill from "@/components/RolePill.vue";
+import Tab from "primevue/tab";
+import TabList from "primevue/tablist";
 import TabPanel from "primevue/tabpanel";
-import TabView from "primevue/tabview";
+import TabPanels from "primevue/tabpanels";
+import Tabs from "primevue/tabs";
 
 const notify = useNotifications();
 const submitted = ref(false);
@@ -345,7 +354,7 @@ watch(
 }
 
 .users-page-dialog {
-  .p-tabview .p-tabview-panels {
+  .p-tabs .p-tabpanels {
     padding: 1rem 0 0 0;
   }
 

@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions" :row-class="rowClass" data-key="name" @row-click="rowClick">
+    <DataTable aria-label="DeltaFile actions" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions" :row-class="rowClass" data-key="name" @row-click="rowClick">
       <Column field="name" header="Action" :sortable="true" />
       <Column field="type" header="Type" :sortable="true" />
       <Column field="state" header="State" class="state-column" :sortable="true">

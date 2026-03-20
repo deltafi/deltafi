@@ -33,7 +33,7 @@
           <InputText v-model="field.value" type="text" placeholder="Value" />
         </div>
         <div class="col-2 text-right">
-          <Button icon="pi pi-times" @click="removeMetadataField(index)" />
+          <Button icon="pi pi-times" aria-label="Remove metadata field" @click="removeMetadataField(index)" />
         </div>
       </div>
     </div>

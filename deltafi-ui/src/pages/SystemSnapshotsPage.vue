@@ -27,14 +27,14 @@
     <Panel header="Snapshots" class="table-panel system-snapshots-panel">
       <template #icons>
         <div class="btn-group align-items-center">
-          <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalCount" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage" />
+          <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalCount" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage" />
           <IconField iconPosition="left">
             <InputIcon class="pi pi-search"> </InputIcon>
             <InputText v-model="filter" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
           </IconField>
         </div>
       </template>
-      <DataTable :value="snapshots" :first="pageFirst" :rows="pageRows" :total-records="totalCount" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading" data-key="id" :lazy="true" @sort="onSort($event)">
+      <DataTable aria-label="System snapshots" :value="snapshots" :first="pageFirst" :rows="pageRows" :total-records="totalCount" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading" data-key="id" :lazy="true" @sort="onSort($event)">
         <template #empty> No snapshots to display. </template>
         <template #loading> Loading. Please wait... </template>
         <Column field="id" header="ID" class="id-column">
@@ -65,19 +65,19 @@
       <HighlightedCode :code="snapshotJSON" language="json" :style="{ width: '65vw'}" />
     </div>
     <template #footer>
-      <span class="btn-group">
+      <span class="btn-group mt-2">
         <Button label="Download" icon="fas fa-download fa-fw" class="p-button p-button-primary mr-2" @click="onDownload(snapshot)" />
-        <Button v-has-permission:SnapshotRevert label="Restore Snapshot" icon="fas fa-history fa-fw" class="p-button p-button-warning mr-2" @click="onRestoreClick(snapshot)" />
+        <Button v-has-permission:SnapshotRevert label="Restore Snapshot" icon="fas fa-history fa-fw" severity="warn" class="mr-2" @click="onRestoreClick(snapshot)" />
         <Button v-has-permission:SnapshotDelete label="Delete Snapshot" icon="pi pi-trash" class="p-button p-button-danger" @click="onDeleteClick(snapshot)" />
       </span>
     </template>
   </Dialog>
   <Dialog v-model:visible="showCreateSnapshotDialog" header="Create Snapshot" :style="{ width: '25vw' }" :modal="true" :draggable="false" :dismissable-mask="true" @update:visible="close">
     <div class="p-fluid">
-      <span class="p-float-label mt-3">
-        <InputText id="reason" v-model="reason" type="text" autofocus />
+      <div class="field mt-3">
         <label for="reason">Reason</label>
-      </span>
+        <InputText id="reason" v-model="reason" type="text" autofocus />
+      </div>
     </div>
     <template #footer>
       <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="close" />

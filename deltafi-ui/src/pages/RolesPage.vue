@@ -22,7 +22,7 @@
       <Button :hidden="!$hasPermission('RoleCreate')" label="Add Role" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="newRole" />
     </PageHeader>
     <Panel header="Roles" class="roles-panel table-panel">
-      <DataTable :value="roles" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
+      <DataTable aria-label="Roles" :value="roles" :loading="loading && !loaded" data-Key="id" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true">
         <template #empty>
           No roles to display
         </template>

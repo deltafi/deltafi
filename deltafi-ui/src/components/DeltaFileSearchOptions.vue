@@ -34,12 +34,12 @@
             <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
             <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" @update:model-value="updateField(formInfo.field, $event)" />
             <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
-              <Dropdown :model-value="modelValue.sizeType" :options="sizeTypesOptions" style="width: 8rem" class="deltafi-input-field mr-2" @update:model-value="updateField('sizeType', $event)" />
+              <Select :model-value="modelValue.sizeType" :options="sizeTypesOptions" style="width: 8rem" class="deltafi-input-field mr-2" @update:model-value="updateField('sizeType', $event)" />
               <InputNumber :model-value="modelValue.sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '4rem' }" placeholder="Min" @update:model-value="updateField('sizeMin', $event)" /> -
               <InputNumber :model-value="modelValue.sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '4rem' }" placeholder="Max" @update:model-value="updateField('sizeMax', $event)" />
-              <Dropdown :model-value="modelValue.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" class="deltafi-input-field ml-2" @update:model-value="updateField('sizeUnit', $event)" />
+              <Select :model-value="modelValue.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" class="deltafi-input-field ml-2" @update:model-value="updateField('sizeUnit', $event)" />
             </div>
-            <Dropdown v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="formInfo.showClear" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)">
+            <Select v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="formInfo.showClear" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)">
               <template #value="slotProps">
                 <div v-if="slotProps.value != null" class="flex align-items-center">
                   <div>{{ formatOption(formInfo.formatOptions, slotProps.value) }}</div>
@@ -53,7 +53,7 @@
                   <div>{{ formatOption(formInfo.formatOptions, slotProps.option) }}</div>
                 </div>
               </template>
-            </Dropdown>
+            </Select>
             <InputNumber v-if="_.isEqual(formInfo.componentType, 'InputNumber')" :id="`${formInfo.field}` + 'Id'" :model-value="modelValue[formInfo.field]" :input-style="{ width: '6rem' }" :placeholder="formInfo.placeholder" :class="formInfo.class" @update:model-value="updateField(formInfo.field, $event)" />
             <div v-if="_.isEqual(formInfo.componentType, 'Annotations')" :id="`${formInfo.field}` + 'Id'" class="annotations-chips">
               <Chip v-for="item in modelValue.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
@@ -65,15 +65,15 @@
             </div>
           </template>
         </div>
-        <OverlayPanel ref="annotationsOverlay">
-          <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" /> :
+        <Popover ref="annotationsOverlay">
+          <Select v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" /> :
           <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 13rem" @keyup.enter="addAnnotationItemEvent" />
-        </OverlayPanel>
+        </Popover>
       </div>
     </div>
-    <OverlayPanel ref="annotationHelpOverlay" class="annotations-help">
+    <Popover ref="annotationHelpOverlay" class="annotations-help">
       <div v-html="markdownIt.render(annotationSearchOptions)" />
-    </OverlayPanel>
+    </Popover>
   </div>
 </template>
 
@@ -83,11 +83,11 @@ import { computed, ref } from "vue";
 import _ from "lodash";
 
 import Chip from "primevue/chip";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 
 import MarkdownIt from "markdown-it";
 
@@ -261,7 +261,7 @@ When performing a search using annotations, the following options are supported:
 }
 
 .annotations-help {
-  .p-overlaypanel-content {
+  .p-popover-content {
     max-width: 30rem !important;
     font-size: 12px !important;
   }

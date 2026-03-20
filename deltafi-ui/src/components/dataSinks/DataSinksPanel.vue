@@ -19,7 +19,7 @@
 <template>
   <div class="egress-actions-panel">
     <CollapsiblePanel header="Data Sinks" class="table-panel pb-3">
-      <DataTable v-model:filters="filters" :loading="showLoading" :value="dataSinkList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
+      <DataTable v-model:filters="filters" aria-label="Data sinks" :loading="showLoading" :value="dataSinkList" edit-mode="cell" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
         <template #empty> No Data Sinks found. </template>
         <template #loading> Loading Data Sinks. Please wait. </template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
@@ -85,7 +85,7 @@ import { computed, inject, onMounted, ref, watch } from "vue";
 
 import _ from "lodash";
 
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 
@@ -161,7 +161,7 @@ defineExpose({ refresh });
         padding: 0 !important;
         width: 7rem;
 
-        .p-inputswitch {
+        .p-toggleswitch {
           padding: 0.25rem !important;
           margin: 0.25rem 0 0 0.25rem !important;
         }
@@ -175,7 +175,7 @@ defineExpose({ refresh });
       td.egress-action-state-column {
         padding: 0 !important;
 
-        .p-inputswitch {
+        .p-toggleswitch {
           padding: 0.25rem !important;
           margin: 0.25rem 0 0 0.25rem !important;
         }

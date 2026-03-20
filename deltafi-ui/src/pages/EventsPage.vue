@@ -36,7 +36,7 @@
           <InputText v-model="filters['global'].value" class="deltafi-input-field" placeholder="Search" />
         </IconField>
       </template>
-      <DataTable ref="eventsTable" v-model:filters="filters" v-model:selection="selectedEvents" filter-display="menu" :value="events" data-key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true" sort-field="timestamp" :sort-order="-1" :loading="loading">
+      <DataTable ref="eventsTable" aria-label="System events" v-model:filters="filters" v-model:selection="selectedEvents" filter-display="menu" :value="events" data-key="id" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true" sort-field="timestamp" :sort-order="-1" :loading="loading">
         <template #empty> No events to display </template>
         <template #loading> Loading events. Please wait. </template>
         <Column selection-mode="multiple" header-style="width: 3rem" />
@@ -88,11 +88,7 @@
             <i v-if="data.notification" class="pi pi-check" />
           </template>
           <template #filter="{ filterModel }">
-            <TriStateCheckbox v-model="filterModel.value" />
-            &nbsp;&nbsp;
-            <span v-if="filterModel.value">True</span>
-            <span v-else-if="!filterModel.value && filterModel.value != null && filterModel.value != undefined">False</span>
-            <span v-else />
+            <Select v-model="filterModel.value" :options="[true, false]" placeholder="All" show-clear />
           </template>
         </Column>
         <Column field="acknowledged" data-type="boolean" sortable class="acknowledged-col">
@@ -105,11 +101,7 @@
             <i v-if="data.acknowledged" class="pi pi-check" />
           </template>
           <template #filter="{ filterModel }">
-            <TriStateCheckbox v-model="filterModel.value" />
-            &nbsp;&nbsp;
-            <span v-if="filterModel.value">Acknowledged</span>
-            <span v-else-if="!filterModel.value && filterModel.value != null && filterModel.value != undefined">Unacknowledged</span>
-            <span v-else />
+            <Select v-model="filterModel.value" :options="[true, false]" placeholder="All" show-clear />
           </template>
         </Column>
       </DataTable>
@@ -135,7 +127,7 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
@@ -143,7 +135,7 @@ import MultiSelect from "primevue/multiselect";
 import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
 import Tag from "primevue/tag";
-import TriStateCheckbox from "primevue/tristatecheckbox";
+import Select from "primevue/select";
 
 dayjs.extend(utc);
 

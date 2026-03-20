@@ -18,7 +18,7 @@
 
 <template>
   <CollapsiblePanel :header="props.header" class="table-panel">
-    <DataTable responsive-layout="scroll" :value="props.versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="props.loading" data-key="app">
+    <DataTable aria-label="Application versions" :value="props.versions" striped-rows class="p-datatable-sm p-datatable-gridlines" :loading="props.loading" data-key="app">
       <template #empty>
         No version information available.
       </template>

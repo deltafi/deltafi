@@ -28,11 +28,11 @@
     >
       <div class="filter-item">
         <label>Flow</label>
-        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
+        <Select v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
       </div>
       <div class="filter-item">
         <label>Filter Cause</label>
-        <Dropdown v-model="causeSelected" placeholder="Select a Filter Cause" show-clear :options="uniqueMessages" filter filter-placeholder="Filter causes" class="w-full" />
+        <Select v-model="causeSelected" placeholder="Select a Filter Cause" show-clear :options="uniqueMessages" filter filter-placeholder="Filter causes" class="w-full" />
       </div>
     </FilterSidebar>
 
@@ -47,17 +47,24 @@
         </div>
       </PageHeader>
       <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
-      <TabView v-if="showTabs" v-model:active-index="activeTab">
-        <TabPanel header="All">
-          <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
-        </TabPanel>
-        <TabPanel header="By Flow">
-          <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
-        </TabPanel>
-        <TabPanel header="By Cause">
-          <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
-        </TabPanel>
-      </TabView>
+      <Tabs v-if="showTabs" v-model:value="activeTab">
+        <TabList>
+          <Tab :value="0">All</Tab>
+          <Tab :value="1">By Flow</Tab>
+          <Tab :value="2">By Cause</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel :value="0">
+            <AllFilteredPanel ref="filterSummaryPanel" :flow="flowSelected" :cause="causeSelected" :query-params="model" @refresh-filters="onRefresh()" />
+          </TabPanel>
+          <TabPanel :value="1">
+            <SummaryByFlowPanel ref="filterSummaryFlowPanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+          </TabPanel>
+          <TabPanel :value="2">
+            <SummaryByCausePanel ref="filterSummaryMessagePanel" :flow="flowSelected" :query-params="model" @refresh-filters="onRefresh()" @show-all-tab="showAllTab" />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
   </div>
 </template>
@@ -69,7 +76,7 @@ import FilterSidebar from "@/components/FilterSidebar.vue";
 import SummaryByCausePanel from "@/components/filtered/SummaryByCausePanel.vue";
 import SummaryByFlowPanel from "@/components/filtered/SummaryByFlowPanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useFiltered from "@/composables/useFiltered";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
@@ -81,9 +88,12 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
+import Tabs from "primevue/tabs";
+import TabList from "primevue/tablist";
+import Tab from "primevue/tab";
+import TabPanels from "primevue/tabpanels";
 import TabPanel from "primevue/tabpanel";
-import TabView from "primevue/tabview";
 import { useRoute, useRouter } from "vue-router";
 
 dayjs.extend(utc);

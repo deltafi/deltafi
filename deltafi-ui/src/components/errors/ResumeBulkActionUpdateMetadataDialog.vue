@@ -34,7 +34,7 @@
             <InputText v-model="field.value" type="text" placeholder="Value" />
           </div>
           <div class="col-2 text-right">
-            <Button icon="pi pi-times" @click="removeBatchField(index)" />
+            <Button icon="pi pi-times" aria-label="Remove metadata field" @click="removeBatchField(index)" />
           </div>
         </div>
         <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addBatchField" />
@@ -54,7 +54,7 @@
                 <InputText v-model="pairs.values" type="text" placeholder="Value" @change="onCellEditComplete(pairs, actions.flow, actions.action)" />
               </div>
               <div class="col-2 text-right">
-                <Button icon="pi pi-times" @click="removeMetadataField(pairs, actions.flow, actions.action)" />
+                <Button icon="pi pi-times" aria-label="Remove metadata field" @click="removeMetadataField(pairs, actions.flow, actions.action)" />
               </div>
             </div>
           </div>
@@ -79,7 +79,7 @@
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import { computed, onBeforeMount, ref } from "vue";
 import { useMounted } from "@vueuse/core";

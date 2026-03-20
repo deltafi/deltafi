@@ -21,7 +21,7 @@
 -->
 
 <template>
-  <Dialog v-model:visible="visible" modal :dismissableMask="!pendingAction" :closable="false" :showHeader="false" class="command-palette-dialog" :pt="{ root: { class: 'command-palette-root' } }">
+  <Dialog v-model:visible="visible" modal :dismissableMask="!pendingAction" :closable="false" :showHeader="false" aria-label="Command palette" class="command-palette-dialog" :pt="{ root: { class: 'command-palette-root' } }">
     <div class="command-palette">
       <!-- Confirmation Overlay -->
       <div v-if="pendingAction" class="confirmation-overlay" @keydown="handleConfirmationKeydown">
@@ -48,6 +48,7 @@
             v-model="searchQuery"
             type="text"
             class="search-input"
+            aria-label="Search pages and DeltaFiles"
             :placeholder="searchPlaceholder"
             @keydown="handleKeydown"
           >

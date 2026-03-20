@@ -21,7 +21,7 @@
     <span @click="show()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="false" :closable="false" :draggable="false" :style="{ width: '30vw', minWidth: '400px' }" @show="onShow" @keydown.esc="hide">
+    <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="false" :closable="false" :draggable="false" :style="{ width: '30vw', minWidth: '400px' }" :aria-label="'Editing ' + localProperty.key" @show="onShow" @keydown.esc="hide">
       <template #header>
         <div class="p-dialog-title">
           Editing {{ localProperty.key }}
@@ -39,7 +39,7 @@
         </span>
         <InputNumber v-if="localProperty.dataType === 'NUMBER'" v-model="localProperty.value" style="width: 100%" />
         <span v-if="localProperty.dataType === 'BOOLEAN'">
-          <Checkbox v-model="localProperty.value" :binary="true" />
+          <Checkbox v-model="localProperty.value" :binary="true" aria-label="Property value" />
           {{ localProperty.value }}
         </span>
       </div>

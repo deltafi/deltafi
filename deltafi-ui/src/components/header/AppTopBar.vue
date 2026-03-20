@@ -21,7 +21,7 @@
     <span class="navbar-brand-wrapper">
       <div class="navbar-brand col mr-0 px-3">
         <div class="row align-items-center">
-          <img class="logo" src="/logo.png">
+          <img class="logo" src="/logo.png" alt="DeltaFi logo">
           <div class="col title" :style="{ color: textColor }">{{ uiConfig.title }}</div>
         </div>
       </div>

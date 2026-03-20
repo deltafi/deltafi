@@ -384,7 +384,7 @@ const submit = async () => {
 
     /* Ensure consistent input widths */
     :deep(.p-inputtext),
-    :deep(.p-dropdown),
+    :deep(.p-select),
     :deep(.p-inputnumber) {
       width: 100%;
     }

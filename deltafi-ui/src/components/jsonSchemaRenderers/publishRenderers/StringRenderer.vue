@@ -35,7 +35,7 @@
           />
         </template>
         <template v-else-if="optionList !== undefined">
-          <Dropdown :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="optionList" :option-label="optionsDisplay" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+          <Select :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="optionList" :option-label="optionsDisplay" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <template v-else-if="schemaData.control.schema.maxLength !== undefined && schemaData.control.schema.maxLength > 80">
           <Textarea :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" rows="10" cols="80" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
@@ -62,7 +62,7 @@ import { SpelEditorDialog } from "@/components/spel";
 import _ from "lodash";
 
 import AutoComplete from "primevue/autocomplete";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 

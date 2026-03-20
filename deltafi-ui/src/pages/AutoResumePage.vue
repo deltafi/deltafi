@@ -35,13 +35,13 @@
             <InputIcon class="pi pi-search"> </InputIcon>
             <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
           </IconField>
-          <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+          <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
             <span class="fas fa-bars" />
           </Button>
         </div>
         <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
-      <DataTable v-model:selection="selectedRules" v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" selection-mode="multiple" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['dataSource', 'errorSubstring', 'action']" :row-hover="true" @row-contextmenu="onRowContextMenu" @cell-edit-complete="onCellEditComplete">
+      <DataTable aria-label="Auto resume rules" v-model:selection="selectedRules" v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" selection-mode="multiple" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['dataSource', 'errorSubstring', 'action']" :row-hover="true" @row-contextmenu="onRowContextMenu" @cell-edit-complete="onCellEditComplete">
         <template #empty> No Auto Resume rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15%' }">
           <template #body="{ data }">
@@ -90,7 +90,7 @@ import { nextTick, onMounted, ref, inject, computed } from "vue";
 
 const hasPermission = inject("hasPermission");
 
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import Button from "primevue/button";
 import Column from "primevue/column";
 import ContextMenu from "primevue/contextmenu";

@@ -26,7 +26,7 @@
         </IconField>
       </div>
     </PageHeader>
-    <DataTable v-model:filters="filters" responsive-layout="scroll" :value="searchableTopics" striped-rows class="p-datatable-sm topics-table" :loading="showLoading" data-key="name" :global-filter-fields="['name', 'subscriberNames', 'publisherNames']">
+    <DataTable aria-label="Topics" v-model:filters="filters" :value="searchableTopics" striped-rows class="p-datatable-sm topics-table" :loading="showLoading" data-key="name" :global-filter-fields="['name', 'subscriberNames', 'publisherNames']">
       <template #empty> No topic information available. </template>
       <template #loading> Loading topics. Please wait. </template>
       <Column field="publishers" header="Publishers" :sortable="true">
@@ -35,7 +35,7 @@
             <Tag v-tooltip.right="publisher.type" :icon="pubsubIcon(publisher.type)" :value="publisher.name" :class="publisher.state.toLowerCase()" rounded />
           </div>
           <div v-if="data.publishers.length === 0" class="my-1">
-            <Tag icon="pi pi-exclamation-triangle" severity="warning" value="No Publishers" rounded />
+            <Tag icon="pi pi-exclamation-triangle" severity="warn" value="No Publishers" rounded />
           </div>
         </template>
       </Column>
@@ -60,7 +60,7 @@
             <Tag v-tooltip.left="subscriber.type" :icon="pubsubIcon(subscriber.type)" :value="subscriber.name" :class="subscriber.state.toLowerCase()" rounded />
           </div>
           <div v-if="data.subscribers.length === 0" class="my-1">
-            <Tag icon="pi pi-exclamation-triangle" severity="warning" value="No Subscribers" rounded />
+            <Tag icon="pi pi-exclamation-triangle" severity="warn" value="No Subscribers" rounded />
           </div>
         </template>
       </Column>
@@ -77,7 +77,7 @@ import _ from "lodash";
 
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";

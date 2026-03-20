@@ -31,7 +31,7 @@
           </div>
         </template>
       </ConfirmPopup>
-      <InputSwitch v-tooltip.top="tooltip" :model-value="rowData.flowStatus.testMode" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.testMode)" />
+      <ToggleSwitch v-tooltip.top="tooltip" :model-value="rowData.flowStatus.testMode" class="p-button-sm" @click.prevent="confirmationPopup($event, rowData.name, rowData.flowStatus.testMode)" />
     </span>
     <span v-else>
       <Button :label="testModeToolTip" :class="testModeButtonClass" style="width: 5.5rem" disabled />
@@ -46,7 +46,7 @@ import { computed, toRefs, ref } from "vue";
 
 import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";
-import InputSwitch from "primevue/inputswitch";
+import ToggleSwitch from "primevue/toggleswitch";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 

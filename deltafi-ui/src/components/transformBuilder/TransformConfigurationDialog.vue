@@ -42,7 +42,7 @@
           </dd>
           <dt>Clone From <small class="text-muted">- Optional</small></dt>
           <dd>
-            <Dropdown v-model="model.selectedTransform" :options="_.orderBy(allTransforms[`${_.toLower(model.type)}`], [(transform) => transform.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Transform" :show-clear="!editTransform" :disabled="editTransform" class="inputWidth" />
+            <Select v-model="model.selectedTransform" :options="_.orderBy(allTransforms[`${_.toLower(model.type)}`], [(transform) => transform.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Transform" :show-clear="!editTransform" :disabled="editTransform" class="inputWidth" />
           </dd>
         </dl>
       </div>
@@ -62,7 +62,7 @@ import { useMounted } from "@vueuse/core";
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Textarea from "primevue/textarea";

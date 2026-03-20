@@ -128,7 +128,7 @@ const openStatusDialog = async () => {
 };
 
 const tagSeverity = (code) => {
-  const severities = ["success", "warning", "danger"];
+  const severities = ["success", "warn", "danger"];
   return severities[code] || "info";
 };
 

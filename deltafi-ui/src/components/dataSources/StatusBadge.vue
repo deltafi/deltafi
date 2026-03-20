@@ -39,7 +39,7 @@ const { status, message } = toRefs(props);
 
 const tagSeverity = computed(() => {
   if (status.value == "HEALTHY") return "success";
-  if (status.value == "DEGRADED") return "warning";
+  if (status.value == "DEGRADED") return "warn";
   if (status.value == "UNHEALTHY") return "danger";
 
   return null;

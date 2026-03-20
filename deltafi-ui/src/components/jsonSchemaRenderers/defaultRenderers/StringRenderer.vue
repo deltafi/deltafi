@@ -28,7 +28,7 @@
           <AutoComplete :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' auto-complete-input-width'" :suggestions="topicList" @complete="search" @change="schemaData.onChange(schemaData.control.data)" />
         </template>
         <template v-else-if="optionList !== undefined">
-          <Dropdown :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="optionList" :option-label="optionsDisplay" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+          <Select :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="optionList" :option-label="optionsDisplay" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         </template>
         <template v-else-if="schemaData.control.schema.maxLength !== undefined && schemaData.control.schema.maxLength > 80">
           <Textarea :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth align-items-center'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" rows="10" cols="80" @input="schemaData.onChange(undefinedStringCheck(schemaData.control.data))" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
@@ -81,7 +81,7 @@ import MarkdownIt from "markdown-it";
 import AutoComplete from "primevue/autocomplete";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 
@@ -202,8 +202,8 @@ const optionsDisplay = computed(() => {
   width: 90% !important;
 }
 
-/* Style dropdown trigger to match AutoComplete dropdown button */
-.p-dropdown .p-dropdown-trigger {
+/* Style select trigger to match AutoComplete dropdown button */
+.p-select .p-select-dropdown {
   background: var(--primary-color);
   color: white;
   border-top-right-radius: 4px;

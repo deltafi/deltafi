@@ -29,7 +29,7 @@
     <Panel v-else header="Plugins" class="table-panel">
       <Splitter style="height: 77vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
         <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
-          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" data-key="displayName">
+          <DataTable id="dataTableId" ref="dataTableIdRef" aria-label="Installed plugins" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" data-key="displayName">
             <template #empty> No Plugins found. </template>
             <template #loading> Loading Plugins. Please wait. </template>
             <Column header="Name" field="displayName" :style="{ width: '25%' }" :sortable="true">
@@ -93,7 +93,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import PluginActionsPanel from "@/components/plugin/ActionsPanel.vue";
 import PluginActionMenu from "@/components/plugin/PluginActionMenu.vue";
 import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
 import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from "vue";
@@ -241,7 +241,7 @@ const scrollToRow = async (pluginSelected) => {
   }
   const dataTableElement = document.getElementById("splitterPanelId");
   await nextTick();
-  dataTableElement.getElementsByClassName("p-selectable-row")[rowIndex.value].scrollIntoView();
+  dataTableElement.getElementsByClassName("p-datatable-selectable-row")[rowIndex.value].scrollIntoView();
   document.documentElement.scrollTop = 0;
 };
 

@@ -18,7 +18,7 @@
 
 <template>
   <CollapsiblePanel header="Actions" class="table-panel">
-    <DataTable :value="props.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" data-key="name">
+    <DataTable aria-label="Plugin actions" :value="props.actions" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" data-key="name">
       <template #empty>
         No actions included
       </template>

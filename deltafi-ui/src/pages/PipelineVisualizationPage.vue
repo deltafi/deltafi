@@ -302,7 +302,7 @@
 // ABOUTME: Shows a focused flow with expandable upstream and downstream connections.
 
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import PipelineGraph from "@/components/pipeline/PipelineGraph.vue";
 import { formatTypeLong } from "@/components/pipeline/useGraphStyles";
 import useFlowErrors from "@/components/pipeline/useFlowErrors";

@@ -21,7 +21,7 @@
 -->
 
 <template>
-  <Sidebar ref="sidebarRef" v-model:visible="visible" position="left" class="hamburger-menu-sidebar">
+  <Drawer ref="sidebarRef" v-model:visible="visible" position="left" class="hamburger-menu-sidebar">
     <template #header>
       <div class="sidebar-header">
         <img class="logo" src="/logo.png" alt="DeltaFi">
@@ -102,11 +102,11 @@
         </template>
       </template>
     </div>
-  </Sidebar>
+  </Drawer>
 </template>
 
 <script setup lang="ts">
-import Sidebar from "primevue/sidebar";
+import Drawer from "primevue/drawer";
 import { ref, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import useMenuItems, { type MenuItem } from "@/composables/useMenuItems";
@@ -342,12 +342,12 @@ const getGroupBadge = (item: MenuItem) => {
   width: 280px !important;
 }
 
-.hamburger-menu-sidebar .p-sidebar-header {
+.hamburger-menu-sidebar .p-drawer-header {
   padding: 1rem !important;
   border-bottom: 1px solid #dee2e6;
 }
 
-.hamburger-menu-sidebar .p-sidebar-content {
+.hamburger-menu-sidebar .p-drawer-content {
   padding: 0.5rem !important;
 }
 </style>

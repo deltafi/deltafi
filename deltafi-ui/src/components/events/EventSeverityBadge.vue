@@ -37,7 +37,7 @@ const props = defineProps({
 const { severity } = toRefs(props);
 
 const tagSeverity = computed(() => {
-  if (severity.value == "warn") return "warning";
+  if (severity.value == "warn") return "warn";
   if (severity.value == "error") return "danger";
   if (severity.value == "inactive") return "secondary";
 

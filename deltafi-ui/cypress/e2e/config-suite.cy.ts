@@ -82,12 +82,12 @@
 
       it("can sort by Name column", () => {
         cy.get(".p-datatable-thead").contains("Name").click();
-        cy.get(".p-datatable-thead").contains("Name").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Name").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Priority column", () => {
         cy.get(".p-datatable-thead").contains("Priority").click();
-        cy.get(".p-datatable-thead").contains("Priority").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Priority").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("shows context menu on right click", () => {
@@ -152,7 +152,7 @@
       });
 
       it("displays toggle switches for policy state", () => {
-        cy.get(".p-inputswitch").should("exist");
+        cy.get(".p-toggleswitch").should("exist");
       });
 
       it("page container exists", () => {
@@ -203,7 +203,7 @@
 
       it("displays Ingress Enabled toggle", () => {
         cy.contains("Ingress Enabled").should("exist");
-        cy.get(".p-inputswitch").should("exist");
+        cy.get(".p-toggleswitch").should("exist");
       });
 
       it("displays data source panels grouped by plugin", () => {
@@ -255,7 +255,7 @@
 
       it("displays Egress Enabled toggle", () => {
         cy.contains("Egress Enabled").should("exist");
-        cy.get(".p-inputswitch").should("exist");
+        cy.get(".p-toggleswitch").should("exist");
       });
 
       it("displays data sink panels grouped by plugin", () => {
@@ -346,17 +346,17 @@
 
       it("can sort by Name column", () => {
         cy.get(".p-datatable-thead").contains("Name").click();
-        cy.get(".p-datatable-thead").contains("Name").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Name").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Status column", () => {
         cy.get(".p-datatable-thead").contains("Status").click();
-        cy.get(".p-datatable-thead").contains("Status").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Status").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can select a plugin to view details", () => {
         cy.get(".p-datatable-tbody tr").first().click();
-        cy.get(".p-splitter-panel").last().should("exist");
+        cy.get(".p-splitterpanel").last().should("exist");
       });
     });
   });
@@ -426,17 +426,17 @@
 
       it("can sort by Topic column", () => {
         cy.get(".p-datatable-thead").contains("Topic").click();
-        cy.get(".p-datatable-thead").contains("Topic").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Topic").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Publishers column", () => {
         cy.get(".p-datatable-thead").contains("Publishers").click();
-        cy.get(".p-datatable-thead").contains("Publishers").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Publishers").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Subscribers column", () => {
         cy.get(".p-datatable-thead").contains("Subscribers").click();
-        cy.get(".p-datatable-thead").contains("Subscribers").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Subscribers").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can filter topics by search", () => {

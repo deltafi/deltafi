@@ -27,15 +27,15 @@
     >
       <div class="filter-item">
         <label>Flow</label>
-        <Dropdown v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
+        <Select v-model="flowSelected" placeholder="Select a Flow" show-clear :options="formattedFlows" option-group-label="label" option-group-children="sources" option-label="name" :editable="false" filter filter-placeholder="Filter flows" class="w-full" />
       </div>
       <div class="filter-item">
         <label>Error Message</label>
-        <Dropdown v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" filter filter-placeholder="Filter messages" class="w-full" />
+        <Select v-model="errorMessageSelected" placeholder="Select an Error Message" show-clear :options="uniqueErrorMessages" filter filter-placeholder="Filter messages" class="w-full" />
       </div>
       <div class="filter-item">
         <label>Status</label>
-        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="w-full" />
+        <Select v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="w-full" />
       </div>
     </FilterSidebar>
 
@@ -46,21 +46,28 @@
             {{ shortTimezone() }}
           </Button>
           <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
-          <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
+          <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" class="deltafi-input-field ml-1" :severity="refreshButtonSeverity" :variant="refreshButtonVariant" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
         </div>
       </PageHeader>
       <ProgressBar v-if="!showTabs" mode="indeterminate" style="height: 0.5em" />
-      <TabView v-if="showTabs" v-model:active-index="activeTab" @tab-change="unSelectAllRows">
-        <TabPanel header="All">
-          <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" :query-params="model" @refresh-errors="onRefresh()" />
-        </TabPanel>
-        <TabPanel header="By Flow">
-          <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
-        </TabPanel>
-        <TabPanel header="By Message">
-          <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
-        </TabPanel>
-      </TabView>
+      <Tabs v-if="showTabs" v-model:value="activeTab" @update:value="unSelectAllRows">
+        <TabList>
+          <Tab :value="0">All</Tab>
+          <Tab :value="1">By Flow</Tab>
+          <Tab :value="2">By Message</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel :value="0">
+            <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :flow="flowSelected" :errors-message-selected="errorMessageSelected" :query-params="model" @refresh-errors="onRefresh()" />
+          </TabPanel>
+          <TabPanel :value="1">
+            <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+          </TabPanel>
+          <TabPanel :value="2">
+            <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :flow="flowSelected" :query-params="model" @refresh-errors="onRefresh()" @change-tab:show-errors="showErrors" />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
   </div>
 </template>
@@ -72,7 +79,7 @@ import ErrorsSummaryByFlowPanel from "@/components/errors/SummaryByFlowPanel.vue
 import ErrorsSummaryByMessagePanel from "@/components/errors/SummaryByMessagePanel.vue";
 import FilterSidebar from "@/components/FilterSidebar.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useErrorCount from "@/composables/useErrorCount";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import useFlows from "@/composables/useFlows";
@@ -86,9 +93,12 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
+import Tab from "primevue/tab";
+import TabList from "primevue/tablist";
 import TabPanel from "primevue/tabpanel";
-import TabView from "primevue/tabview";
+import TabPanels from "primevue/tabpanels";
+import Tabs from "primevue/tabs";
 
 dayjs.extend(utc);
 
@@ -294,14 +304,12 @@ const showErrors = (errorMessage, flowName, flowType) => {
   activeTab.value = 0;
 };
 
-const refreshButtonClass = computed(() => {
-  const classes = ["p-button", "deltafi-input-field", "ml-1"];
-  if (newErrorsCount.value > 0) {
-    classes.push("p-button-warning");
-  } else {
-    classes.push("p-button-outlined");
-  }
-  return classes.join(" ");
+const refreshButtonSeverity = computed(() => {
+  return newErrorsCount.value > 0 ? "warn" : undefined;
+});
+
+const refreshButtonVariant = computed(() => {
+  return newErrorsCount.value > 0 ? undefined : "outlined";
 });
 
 const refreshButtonTooltip = computed(() => {
@@ -467,6 +475,10 @@ const formatFlowNames = () => {
 
   .p-autocomplete-input {
     width: 16rem;
+  }
+
+  .vdpr-datepicker {
+    position: relative;
   }
 
   .vdpr-datepicker__calendar-dialog {

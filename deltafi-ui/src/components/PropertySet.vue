@@ -25,7 +25,7 @@
           <i v-if="propertySet.description" v-tooltip.right="propertySet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
-      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines property-set-table" :row-hover="true" data-key="key">
+      <DataTable aria-label="System properties" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm p-datatable-gridlines property-set-table" striped-rows :row-hover="true" data-key="key">
         <template #empty> No properties in this property set. </template>
         <Column header="Key" field="key" :sortable="true" :style="{ width: '50%' }">
           <template #body="property">
@@ -157,7 +157,7 @@ const onSaved = (property) => {
     max-width: 200px;
     overflow: hidden;
 
-    .p-chip-text {
+    .p-chip-label {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;

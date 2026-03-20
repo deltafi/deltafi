@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Panel header="External Links" class="links-panel pb-3">
+  <Panel header="External Links" class="links-panel">
     <div v-if="externalLinks.length == 0" class="d-flex no-data-panel-content">
       <span class="p-2">No external links configured</span>
     </div>

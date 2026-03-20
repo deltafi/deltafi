@@ -19,10 +19,10 @@
 <template>
   <Dialog v-model:visible="displayAcknowledgeDialog" :header="acknowledgeButtonLabel" :maximizable="false" :modal="true" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" @update:visible="close">
     <div class="p-fluid">
-      <span class="p-float-label mt-3">
-        <InputText id="reason" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" autofocus />
+      <div class="field mt-3">
         <label for="reason">Reason</label>
-      </span>
+        <InputText id="reason" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" autofocus />
+      </div>
     </div>
     <template #footer>
       <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="close" />
@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useAcknowledgeErrors from "@/composables/useAcknowledgeErrors";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, ref, watch } from "vue";

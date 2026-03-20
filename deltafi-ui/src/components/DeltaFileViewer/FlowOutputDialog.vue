@@ -25,88 +25,97 @@
   <Dialog
     v-model:visible="dialogVisible"
     :header="flowName"
+    :aria-label="flowName || 'Flow output'"
     :style="{ width: '75vw', height: '90vh' }"
     :maximizable="true"
     :modal="true"
     :dismissable-mask="true"
     :draggable="false"
   >
-    <TabView>
-      <TabPanel header="Metadata">
-        <div class="metadata-panel">
-          <Toolbar>
-            <template #start>
-              <Badge v-if="canShowUnchangedBadge && !metadataHasChanges" value="unchanged" severity="secondary" />
-            </template>
-            <template #end>
-              <span v-if="canShowDiffToggle" v-tooltip.top="!metadataHasChanges ? 'No metadata changes' : (showDiff ? 'Hide diff' : 'Show diff')">
-                <Button icon="fas fa-code-compare" :class="['p-button-text', showDiff ? 'p-button-primary' : 'p-button-secondary']" :disabled="!metadataHasChanges" @click="showDiff = !showDiff" />
-              </span>
-              <Button v-tooltip.top="'Copy to Clipboard'" icon="fas fa-copy" class="p-button-text p-button-secondary" @click="onCopyMetadata" />
-              <Button v-tooltip.top="'Download Metadata'" icon="fas fa-download" class="p-button-text p-button-secondary" @click="onDownloadMetadata" />
-            </template>
-          </Toolbar>
-          <div v-if="hasMetadata" class="metadata-table-container">
-            <DataTable
-              responsive-layout="scroll"
-              :value="diffMetadataArray"
-              striped-rows
-              sort-field="key"
-              :sort-order="1"
-              class="p-datatable-sm"
-              scroll-height="flex"
-              data-key="key"
-            >
-              <Column field="key" header="Key" :style="{ width: '30%' }" :sortable="true">
-                <template #body="{ data }">
-                  <span :class="getDiffClass(data.diffStatus)">{{ data.key }}</span>
-                </template>
-              </Column>
-              <Column field="value" header="Value" :style="{ width: '70%' }" :sortable="true" class="metadata-value">
-                <template #body="{ data }">
-                  <div :class="getDiffClass(data.diffStatus)">
-                    <pre v-if="data.diffStatus === 'modified'" class="diff-modified">
+    <Tabs value="metadata">
+      <TabList>
+        <Tab value="metadata">Metadata</Tab>
+        <Tab v-if="contentIsUnchanged" value="content" :disabled="!hasInputContent">Content</Tab>
+        <Tab v-if="!contentIsUnchanged" value="input-content" :disabled="!hasInputContent">Input Content</Tab>
+        <Tab v-if="!contentIsUnchanged" value="output-content" :disabled="!hasOutputContent">Output Content</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel value="metadata">
+          <div class="metadata-panel">
+            <Toolbar>
+              <template #start>
+                <Badge v-if="canShowUnchangedBadge && !metadataHasChanges" value="unchanged" severity="secondary" />
+              </template>
+              <template #end>
+                <span v-if="canShowDiffToggle" v-tooltip.top="!metadataHasChanges ? 'No metadata changes' : (showDiff ? 'Hide diff' : 'Show diff')">
+                  <Button icon="fas fa-code-compare" :class="['p-button-text', showDiff ? 'p-button-primary' : 'p-button-secondary']" :disabled="!metadataHasChanges" @click="showDiff = !showDiff" />
+                </span>
+                <Button v-tooltip.top="'Copy to Clipboard'" icon="fas fa-copy" class="p-button-text p-button-secondary" @click="onCopyMetadata" />
+                <Button v-tooltip.top="'Download Metadata'" icon="fas fa-download" class="p-button-text p-button-secondary" @click="onDownloadMetadata" />
+              </template>
+            </Toolbar>
+            <div v-if="hasMetadata" class="metadata-table-container">
+              <DataTable
+                aria-label="Flow metadata"
+                :value="diffMetadataArray"
+                striped-rows
+                sort-field="key"
+                :sort-order="1"
+                class="p-datatable-sm"
+                scroll-height="flex"
+                data-key="key"
+              >
+                <Column field="key" header="Key" :style="{ width: '30%' }" :sortable="true">
+                  <template #body="{ data }">
+                    <span :class="getDiffClass(data.diffStatus)">{{ data.key }}</span>
+                  </template>
+                </Column>
+                <Column field="value" header="Value" :style="{ width: '70%' }" :sortable="true" class="metadata-value">
+                  <template #body="{ data }">
+                    <div :class="getDiffClass(data.diffStatus)">
+                      <pre v-if="data.diffStatus === 'modified'" class="diff-modified">
 <span class="diff-old">{{ data.oldValue }}</span>
 <span class="diff-new">{{ data.value }}</span></pre>
-                    <pre v-else>{{ data.value }}</pre>
-                  </div>
-                </template>
-              </Column>
-            </DataTable>
+                      <pre v-else>{{ data.value }}</pre>
+                    </div>
+                  </template>
+                </Column>
+              </DataTable>
+            </div>
+            <div v-else class="empty-panel">
+              No metadata available
+            </div>
+          </div>
+        </TabPanel>
+        <!-- Single Content tab when input equals output -->
+        <TabPanel v-if="contentIsUnchanged" value="content">
+          <div class="content-panel">
+            <ContentSelector :did="did" :flow-number="flowNumber" :content="inputContent">
+              <template v-if="canShowUnchangedBadge" #toolbar-start>
+                <Badge value="unchanged" severity="secondary" class="mr-2" />
+              </template>
+            </ContentSelector>
+          </div>
+        </TabPanel>
+        <!-- Separate Input/Output tabs when content differs -->
+        <TabPanel v-if="!contentIsUnchanged" value="input-content">
+          <div v-if="hasInputContent" class="content-panel">
+            <ContentSelector :did="did" :flow-number="flowNumber" :content="inputContent" />
           </div>
           <div v-else class="empty-panel">
-            No metadata available
+            No input content available
           </div>
-        </div>
-      </TabPanel>
-      <!-- Single Content tab when input equals output -->
-      <TabPanel v-if="contentIsUnchanged" header="Content" :disabled="!hasInputContent">
-        <div class="content-panel">
-          <ContentSelector :did="did" :flow-number="flowNumber" :content="inputContent">
-            <template v-if="canShowUnchangedBadge" #toolbar-start>
-              <Badge value="unchanged" severity="secondary" class="mr-2" />
-            </template>
-          </ContentSelector>
-        </div>
-      </TabPanel>
-      <!-- Separate Input/Output tabs when content differs -->
-      <TabPanel v-if="!contentIsUnchanged" header="Input Content" :disabled="!hasInputContent">
-        <div v-if="hasInputContent" class="content-panel">
-          <ContentSelector :did="did" :flow-number="flowNumber" :content="inputContent" />
-        </div>
-        <div v-else class="empty-panel">
-          No input content available
-        </div>
-      </TabPanel>
-      <TabPanel v-if="!contentIsUnchanged" header="Output Content" :disabled="!hasOutputContent">
-        <div v-if="hasOutputContent" class="content-panel">
-          <ContentSelector :did="did" :flow-number="flowNumber" :action-index="outputActionIndex" :content="outputContent" />
-        </div>
-        <div v-else class="empty-panel">
-          No output content available
-        </div>
-      </TabPanel>
-    </TabView>
+        </TabPanel>
+        <TabPanel v-if="!contentIsUnchanged" value="output-content">
+          <div v-if="hasOutputContent" class="content-panel">
+            <ContentSelector :did="did" :flow-number="flowNumber" :action-index="outputActionIndex" :content="outputContent" />
+          </div>
+          <div v-else class="empty-panel">
+            No output content available
+          </div>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
   </Dialog>
 </template>
 
@@ -118,8 +127,11 @@ import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
+import Tab from "primevue/tab";
+import TabList from "primevue/tablist";
 import TabPanel from "primevue/tabpanel";
-import TabView from "primevue/tabview";
+import TabPanels from "primevue/tabpanels";
+import Tabs from "primevue/tabs";
 import Toolbar from "primevue/toolbar";
 import ContentSelector from "@/components/ContentSelector.vue";
 import useNotifications from "@/composables/useNotifications";

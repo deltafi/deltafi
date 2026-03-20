@@ -234,7 +234,7 @@
 
       <!-- Flow Metrics Summary -->
       <Panel v-else-if="isMetricView" :header="metricSummaryHeader" class="summary-panel metric-panel">
-        <DataTable :value="summaryTableData" size="small" class="metrics-table" scrollable scrollHeight="flex" :rowClass="rowClass">
+        <DataTable aria-label="Metrics summary" :value="summaryTableData" size="small" class="metrics-table" scrollable scrollHeight="flex" :rowClass="rowClass">
           <Column field="key" :header="tableKeyHeader" style="min-width: 200px">
             <template #body="{ data }">
               <strong v-if="data.isTotal">{{ data.key }}</strong>
@@ -258,7 +258,7 @@
 
     <!-- Table View -->
     <div v-else-if="displayMode === 'table'" class="table-view">
-      <DataTable :value="sortedTableData" size="small" class="metrics-table" scrollable scrollHeight="flex" :rowClass="rowClass" v-model:sortField="tableSortField" v-model:sortOrder="tableSortOrder" @sort="onTableSort">
+      <DataTable aria-label="Detailed metrics" :value="sortedTableData" size="small" class="metrics-table" scrollable scrollHeight="flex" :rowClass="rowClass" v-model:sortField="tableSortField" v-model:sortOrder="tableSortOrder" @sort="onTableSort">
         <Column field="member" header="Member" frozen style="width: 1%; white-space: nowrap" sortable>
           <template #body="{ data }">
             <strong v-if="data.isTotal">{{ data.member }}</strong>
@@ -272,7 +272,7 @@
               <i v-else class="pi pi-external-link" style="visibility: hidden" />
               <i class="pi pi-tag text-muted" v-tooltip.top="data.memberData.tags.length > 0 ? 'Tags: ' + data.memberData.tags.join(', ') : 'No tags'" />
               <Tag v-if="data.memberData.connectionState === 'UNREACHABLE'" severity="danger" value="Unreachable" class="status-tag" />
-              <Tag v-else-if="data.memberData.connectionState === 'STALE'" severity="warning" value="Stale" class="status-tag" />
+              <Tag v-else-if="data.memberData.connectionState === 'STALE'" severity="warn" value="Stale" class="status-tag" />
               <Tag v-else-if="data.memberData.status" :severity="getHealthSeverity(data.memberData)" :icon="getHealthIcon(data.memberData)" :value="data.memberData.status.state" class="status-tag" />
             </div>
           </template>
@@ -797,11 +797,11 @@ const formatBytes = (bytes: number): string => {
   return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 };
 
-const getHealthSeverity = (member: { status?: { code?: number } }): "success" | "warning" | "danger" | "info" => {
+const getHealthSeverity = (member: { status?: { code?: number } }): "success" | "warn" | "danger" | "info" => {
   if (!member.status) return "info";
   switch (member.status.code) {
     case 0: return "success";
-    case 1: return "warning";
+    case 1: return "warn";
     case 2: return "danger";
     default: return "info";
   }

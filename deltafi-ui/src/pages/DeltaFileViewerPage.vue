@@ -26,12 +26,12 @@
       </div>
     </PageHeader>
     <ProgressBar v-if="showProgressBar" mode="indeterminate" style="height: 0.5em" />
-    <div v-else-if="showForm" class="p-float-label">
+    <div v-else-if="showForm">
       <div class="row">
         <div class="col-4">
           <div class="p-inputgroup">
             <InputText v-model="did" placeholder="DID (UUID)" :class="{ 'p-invalid': did && !validDID }" @keyup.enter="navigateToDID" />
-            <Button class="p-button-primary" :disabled="!did || !validDID" @click="navigateToDID"> View </Button>
+            <Button class="p-button-primary ml-2" :disabled="!did || !validDID" @click="navigateToDID"> View </Button>
           </div>
           <small v-if="did && !validDID" class="p-error ml-1">Invalid UUID</small>
         </div>
@@ -64,17 +64,24 @@
       </div>
       <div class="row mb-3">
         <div class="col-12">
-          <TabView>
-            <TabPanel header="Flow Graph">
-              <DeltaFileFlowGraphPanel :delta-file-data="deltaFile" hide-header />
-            </TabPanel>
-            <TabPanel header="Flow Table">
-              <DeltaFileFlowsPanel :delta-file-data="deltaFile" hide-header />
-            </TabPanel>
-            <TabPanel header="Flow Trace">
-              <DeltaFileTracePanel :delta-file-data="deltaFile" hide-header />
-            </TabPanel>
-          </TabView>
+          <Tabs value="0">
+            <TabList>
+              <Tab value="0">Flow Graph</Tab>
+              <Tab value="1">Flow Table</Tab>
+              <Tab value="2">Flow Trace</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel value="0">
+                <DeltaFileFlowGraphPanel :delta-file-data="deltaFile" hide-header />
+              </TabPanel>
+              <TabPanel value="1">
+                <DeltaFileFlowsPanel :delta-file-data="deltaFile" hide-header />
+              </TabPanel>
+              <TabPanel value="2">
+                <DeltaFileTracePanel :delta-file-data="deltaFile" hide-header />
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
         </div>
       </div>
       <div class="row mb-3">
@@ -112,7 +119,7 @@ import ContentTagsPanel from "@/components/DeltaFileViewer/ContentTagsPanel.vue"
 import LogViewerPanel from "@/components/DeltaFileViewer/LogViewerPanel.vue";
 import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import ReplayDialog from "@/components/ReplayDialog.vue";
 import ResumeDialog from "@/components/errors/ResumeDialog.vue";
@@ -133,8 +140,11 @@ import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
+import Tab from "primevue/tab";
+import TabList from "primevue/tablist";
 import TabPanel from "primevue/tabpanel";
-import TabView from "primevue/tabview";
+import TabPanels from "primevue/tabpanels";
+import Tabs from "primevue/tabs";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
@@ -545,7 +555,7 @@ const filterLogsBySeverity = (logSeverity) => {
     }
   }
 
-  .p-tabview .p-tabview-nav {
+  .p-tabs .p-tablist {
     background: rgb(239, 239, 239);
     border: 1px solid #e5e7eb;
     border-bottom: none;
@@ -553,19 +563,19 @@ const filterLogsBySeverity = (logSeverity) => {
     border-top-right-radius: 6px;
   }
 
-  .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link {
+  .p-tabs .p-tablist .p-tab:not([data-p-active="true"]) {
     background: #e9e9e9;
     border-bottom: 1px solid #e5e7eb;
   }
 
-  .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  .p-tabs .p-tablist .p-tab[data-p-active="true"] {
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-bottom: none;
     margin-bottom: -1px;
   }
 
-  .p-tabview .p-tabview-panels {
+  .p-tabs .p-tabpanels {
     border: 1px solid #e5e7eb;
     border-top: none;
     border-bottom-left-radius: 6px;

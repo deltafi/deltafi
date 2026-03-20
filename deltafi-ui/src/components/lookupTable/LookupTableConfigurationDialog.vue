@@ -38,7 +38,7 @@
           </dd>
           <dt>Columns*</dt>
           <dd>
-            <Chips
+            <InputChips
               v-model="model['columns']"
               separator=","
               :placeholder="!_.isEmpty(model['columns']) ? null : 'Lookup Table Columns'"
@@ -52,7 +52,7 @@
           </dd>
           <dt>Key Columns*</dt>
           <dd>
-            <Chips
+            <InputChips
               v-model="model['keyColumns']"
               separator=","
               :placeholder="!_.isEmpty(model['keyColumns']) ? null : 'Lookup Table Key Columns'"
@@ -66,15 +66,15 @@
           </dd>
           <dt>Service Backed*</dt>
           <dd>
-            <Checkbox v-model="model['serviceBacked']" :binary="true" />
+            <Checkbox v-model="model['serviceBacked']" :binary="true" aria-label="Service backed" />
           </dd>
           <dt>Backing Service Active*</dt>
           <dd>
-            <Checkbox v-model="model['backingServiceActive']" :binary="true" />
+            <Checkbox v-model="model['backingServiceActive']" :binary="true" aria-label="Backing service active" />
           </dd>
           <dt>Pull Through*</dt>
           <dd>
-            <Checkbox v-model="model['pullThrough']" :binary="true" />
+            <Checkbox v-model="model['pullThrough']" :binary="true" aria-label="Pull through" />
           </dd>
           <dt>Refresh Duration</dt>
           <dd>
@@ -99,7 +99,7 @@ import { useMounted } from "@vueuse/core";
 
 import Button from "primevue/button";
 import Checkbox from "primevue/checkbox";
-import Chips from "primevue/chips";
+import InputChips from "primevue/inputchips";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import _ from "lodash";

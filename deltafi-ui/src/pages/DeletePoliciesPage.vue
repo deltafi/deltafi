@@ -36,7 +36,7 @@
           <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
         </IconField>
       </template>
-      <DataTable v-model:filters="filters" :value="uiDeletePoliciesList" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">
+      <DataTable aria-label="Delete policies" v-model:filters="filters" :value="uiDeletePoliciesList" :loading="loading && !loaded" data-Key="id" striped-rows class="p-datatable-sm p-datatable-gridlines delete-policy-table" :global-filter-fields="['name', 'flow']" :row-hover="true">
         <template #empty> No delete policies to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '40%' }">
           <template #body="{ data }">
@@ -79,7 +79,7 @@ import { computed, nextTick, onMounted, ref } from "vue";
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
@@ -161,7 +161,7 @@ const exportDeletePolicies = () => {
     td.deletePolicy-state-column {
       padding: 0 !important;
 
-      .p-inputswitch {
+      .p-toggleswitch {
         padding: 0.25rem !important;
         margin: 0.25rem 0 0 0.25rem !important;
       }

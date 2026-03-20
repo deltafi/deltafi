@@ -25,8 +25,8 @@
         </span>
       </span>
       <span class="text-muted">→ </span>
-      <OverlayPanel ref="publishersOverlayPanel" class="topicOverlay">
-        <DataTable removableSort :value="topic.publishers" size="small">
+      <Popover ref="publishersOverlayPanel" class="topicOverlay">
+        <DataTable removableSort aria-label="Topic publishers" :value="topic.publishers" size="small">
           <ColumnGroup type="header">
             <Row>
               <Column header="Upstream Publishers" field="name" />
@@ -48,13 +48,13 @@
             </template>
           </Column>
         </DataTable>
-      </OverlayPanel>
+      </Popover>
     </span>
   </span>
 </template>
 
 <script setup>
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 import DataTable from "primevue/datatable";
 import ColumnGroup from "primevue/columngroup";
 import Row from "primevue/row";
@@ -109,7 +109,7 @@ const showOverlayPanel = (event) => { publishersOverlayPanel.value.show(event); 
 
 <style>
 .topicOverlay {
-  .p-overlaypanel-content {
+  .p-popover-content {
     padding: 0.75rem;
   }
   .p-datatable-sm td {

@@ -20,7 +20,7 @@
   <div v-if="jsonSchema.control.visible" class="additional-properties-inline">
     <div v-if="noData" class="additional-properties-empty">
       <span>No entries</span>
-      <Button v-tooltip.bottom="'Add entry'" icon="pi pi-plus" class="p-button-text p-button-sm p-button-rounded" :disabled="!jsonSchema.control.enabled" @click="addNewEntry" />
+      <Button v-tooltip.bottom="'Add entry'" icon="pi pi-plus" aria-label="Add entry" class="p-button-text p-button-sm p-button-rounded" :disabled="!jsonSchema.control.enabled" @click="addNewEntry" />
     </div>
 
     <div v-else class="additional-properties-list">
@@ -34,7 +34,7 @@
           <InputText v-if="isSimpleStringType" :model-value="element.value ?? ''" class="value-input" :disabled="!jsonSchema.control.enabled" placeholder="value" @update:model-value="updatePropertyValue(index, $event)" />
           <dispatch-renderer v-else-if="element.schema && element.uischema" :visible="jsonSchema.control.visible" :enabled="jsonSchema.control.enabled" :schema="element.schema" :uischema="element.uischema" :path="element.path" :renderers="jsonSchema.control.renderers" :cells="jsonSchema.control.cells" />
         </div>
-        <Button v-if="jsonSchema.control.enabled" v-tooltip.bottom="'Remove'" icon="pi pi-times" class="p-button-text p-button-sm p-button-rounded p-button-danger remove-btn" @click="removeProperty(index)" />
+        <Button v-if="jsonSchema.control.enabled" v-tooltip.bottom="'Remove'" icon="pi pi-times" aria-label="Remove property" class="p-button-text p-button-sm p-button-rounded p-button-danger remove-btn" @click="removeProperty(index)" />
       </div>
       <div class="additional-properties-add">
         <Button v-tooltip.bottom="'Add entry'" icon="pi pi-plus" label="Add" class="p-button-text p-button-sm" :disabled="!jsonSchema.control.enabled" @click="addNewEntry" />

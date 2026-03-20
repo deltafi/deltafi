@@ -82,10 +82,10 @@
       <template #icons>
         <div v-if="searchResponse" class="summary-tags mr-3">
           <Tag severity="info" :value="`${formatTotalCount(searchResponse)} total matches`" class="mr-2" />
-          <Tag v-if="searchResponse.membersFailed > 0" severity="warning" :value="`${searchResponse.membersFailed} member(s) unreachable`" />
+          <Tag v-if="searchResponse.membersFailed > 0" severity="warn" :value="`${searchResponse.membersFailed} member(s) unreachable`" />
         </div>
       </template>
-      <DataTable :value="filteredResults" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner">
+      <DataTable aria-label="Fleet search results" :value="filteredResults" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner">
         <template #empty>
           <span v-if="searchResponse?.results?.length > 0 && isResultFiltered">No member systems match your filter criteria.</span>
           <span v-else>Click "Search Fleet" to search across all systems.</span>
@@ -324,7 +324,7 @@ const getStatusSeverity = (status) => {
     case "CONNECTED":
       return "success";
     case "STALE":
-      return "warning";
+      return "warn";
     case "UNREACHABLE":
       return "danger";
     default:

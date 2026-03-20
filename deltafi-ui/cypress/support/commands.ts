@@ -2,13 +2,13 @@
 
 // Wait for loading overlays to disappear
 Cypress.Commands.add("waitForLoading", () => {
-  cy.get(".p-datatable-loading-overlay", { timeout: 1000 }).should("not.exist");
+  cy.get(".p-datatable-mask", { timeout: 1000 }).should("not.exist");
 });
 
 // Wait for page to be fully loaded (no loading overlays)
 Cypress.Commands.add("waitForPageReady", () => {
   cy.get("body").should("be.visible");
-  cy.get(".p-datatable-loading-overlay").should("not.exist");
+  cy.get(".p-datatable-mask").should("not.exist");
 });
 
 // Extend Cypress Chainable interface

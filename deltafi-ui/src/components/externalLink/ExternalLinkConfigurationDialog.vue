@@ -33,7 +33,7 @@
       <dl>
         <dt>{{ linkConfigurationMap.get("linkType").header }}</dt>
         <dd>
-          <Dropdown v-model="selectedLinkType" :options="linkConfigurationMap.get('linkType').types" :placeholder="linkConfigurationMap.get('linkType').placeholder" :disabled="linkConfigurationMap.get('linkType').disabled" :show-clear="!linkConfigurationMap.get('linkType').disabled" class="inputWidth" />
+          <Select v-model="selectedLinkType" :options="linkConfigurationMap.get('linkType').types" :placeholder="linkConfigurationMap.get('linkType').placeholder" :disabled="linkConfigurationMap.get('linkType').disabled" :show-clear="!linkConfigurationMap.get('linkType').disabled" class="inputWidth" />
         </dd>
         <dt>{{ linkConfigurationMap.get("name").header }}</dt>
         <dd>
@@ -64,7 +64,7 @@ import { useMounted } from "@vueuse/core";
 import { EnumType } from "json-to-graphql-query";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import _ from "lodash";

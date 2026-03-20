@@ -21,13 +21,13 @@
     <Panel header="DeltaFiles" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+        <Paginator v-if="errors.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+        <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="errors.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrors" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
-      <DataTable id="errorsTable" v-model:expanded-rows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+      <DataTable id="errorsTable" v-model:expanded-rows="expandedRows" v-model:selection="selectedErrors" v-model:filters="filters" aria-label="Errors by DeltaFile" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errors" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrors" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty> No results to display. </template>
         <template #loading> Loading. Please wait... </template>
         <Column class="expander-column" :expander="true" />
@@ -66,7 +66,7 @@
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable v-model:expanded-rows="expandedRows" data-key="name" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="(e) => flowRowClick(e, error.data.did)">
+            <DataTable v-model:expanded-rows="expandedRows" aria-label="Error flows" data-key="name" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="(e) => flowRowClick(e, error.data.did)">
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
@@ -82,7 +82,7 @@
               </Column>
               <template #expansion="slotProps">
                 <div class="errors-Subtable">
-                  <DataTable responsive-layout="scroll" data-key="name" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actionsWithIndex(slotProps.data.actions)" :row-class="actionRowClass" @row-click="(e) => actionRowClick(e, error.data.did, slotProps.data)">
+                  <DataTable aria-label="Error actions" data-key="name" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actionsWithIndex(slotProps.data.actions)" :row-class="actionRowClass" @row-click="(e) => actionRowClick(e, error.data.did, slotProps.data)">
                     <Column field="name" header="Action" :sortable="true" />
                     <Column field="state" header="State" class="state-column" :sortable="true" />
                     <Column field="created" header="Created" class="timestamp-column" :sortable="true">
@@ -143,7 +143,7 @@ import DataTable from "primevue/datatable";
 import Menu from "primevue/menu";
 import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");

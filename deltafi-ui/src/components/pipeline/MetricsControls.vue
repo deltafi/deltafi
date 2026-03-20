@@ -22,7 +22,7 @@
 <template>
   <div class="metrics-controls">
     <label class="mr-2">Metrics:</label>
-    <Dropdown
+    <Select
       :model-value="modelValue"
       :options="intervalOptions"
       option-label="label"
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import Button from "primevue/button";
 
 defineProps({
@@ -80,7 +80,7 @@ const intervalOptions = [
   width: 140px;
 }
 
-.interval-dropdown :deep(.p-dropdown-label) {
+.interval-dropdown :deep(.p-select-label) {
   font-size: 0.875rem;
   padding: 0.4rem 0.75rem;
 }

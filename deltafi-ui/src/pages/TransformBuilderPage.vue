@@ -37,7 +37,7 @@
         <div class="col pl-2 pr-1">
           <Panel header="Subscribe" :pt="{ content: { class: 'p-1' } }">
             <template #icons>
-              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
+              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
             </template>
             <div class="px-0">
               <dd>
@@ -56,9 +56,9 @@
           <div>
             <Panel header="Transform Actions" class="table-panel">
               <template #icons>
-                <button class="p-panel-header-icon p-link" @click="viewTransformActionsPicker($event)">
+                <Button severity="secondary" variant="text" class="p-panel-header-icon" @click="viewTransformActionsPicker($event)">
                   <span class="pi pi-plus-circle" />
-                </button>
+                </Button>
               </template>
               <div class="action-panel-content p-2">
                 <template v-if="transformActions.length == 0">
@@ -67,7 +67,7 @@
                 <draggable id="transformActions" v-model="transformActions" item-key="id" :sort="true" group="transformActions" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
                   <template #item="{ element, index }">
                     <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
-                      <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
+                      <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
                       <div class="d-flex align-items-center justify-content-between">
                         <span class="one-line">
                           <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
@@ -95,7 +95,7 @@
         <div class="col pl-2 pr-1">
           <Panel header="Publish" :pt="{ content: { class: 'p-1' } }">
             <template #icons>
-              <Badge v-if="!_.isEmpty(validatePublish)" v-tooltip.left="{ value: `${validatePublish}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger" />
+              <Badge v-if="!_.isEmpty(validatePublish)" v-tooltip.left="{ value: `${validatePublish}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle validation-badge'" severity="danger" />
             </template>
             <div class="px-0">
               <dd>
@@ -114,7 +114,7 @@
     <Dialog ref="actionsOverlayPanel" v-model:visible="actionPickerVisible" header="Available Actions" class="transform-builder-page-overlay" :dismissable-mask="false" style="width: 50%" position="right">
       <Splitter style="height: 80vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
         <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
-          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedTransformAction" v-model:filters="filters" :value="actionsDataTable" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" :global-filter-fields="['displayName', 'pluginCoordinate.groupId', 'pluginCoordinate.version']" data-key="id">
+          <DataTable id="dataTableId" ref="dataTableIdRef" aria-label="Transform actions" v-model:selection="selectedTransformAction" v-model:filters="filters" :value="actionsDataTable" selection-mode="single" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" :global-filter-fields="['displayName', 'pluginCoordinate.groupId', 'pluginCoordinate.version']" data-key="id">
             <template #header>
               <div class="flex justify-content-end">
                 <IconField iconPosition="left">
@@ -174,10 +174,10 @@
     <Dialog v-model:visible="displayRawJsonDialog" :style="{ width: '90vw' }" modal maximizable close-on-escape dismissable-mask :draggable="false" header="Transform Raw Json" class="transform-raw-json-dialog" @hide="hideTransformRawJsonDialog">
       <Panel header="Output">
         <template #icons>
-          <Button v-tooltip.left="'Show Schema'" class="p-panel-header-icon p-link p-me-2" @click="showSchema()">
+          <Button v-tooltip.left="'Show Schema'" severity="secondary" variant="text" class="p-panel-header-icon p-me-2" @click="showSchema()">
             <span class="fa-solid fa-file-invoice" />
           </Button>
-          <Button v-tooltip.left="'Copy to Clipboard'" class="p-panel-header-icon p-link p-me-2" @click="copy(rawOutput)">
+          <Button v-tooltip.left="'Copy to Clipboard'" severity="secondary" variant="text" class="p-panel-header-icon p-me-2" @click="copy(rawOutput)">
             <span class="fa-solid fa-copy" />
           </Button>
         </template>
@@ -198,7 +198,7 @@ import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import useTopics from "@/composables/useTopics";
 import { computed, nextTick, onBeforeMount, provide, ref, watch } from "vue";
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
 import { useRouter } from "vue-router";
 
@@ -223,7 +223,7 @@ import SplitterPanel from "primevue/splitterpanel";
 import draggable from "vuedraggable";
 
 import { jsPlumb } from "jsplumb";
-import $ from "jquery";
+
 import _ from "lodash";
 
 import MarkdownIt from "markdown-it";
@@ -584,15 +584,8 @@ const connectActions = async () => {
     plumbIns.reset();
   });
 
-  // Get all the actions in the panel.
-  const actionsInPanel = [];
-  $(`#transformActions`)
-    .find("div")
-    .each(function () {
-      actionsInPanel.push(this);
-    });
-  // Remove all the actions that don't have an id.
-  _.remove(actionsInPanel, { id: "" });
+  // Get all the actions in the panel that have an id.
+  const actionsInPanel = Array.from(document.querySelectorAll("#transformActions div")).filter((el) => el.id);
 
   // Connect all the actions in the panel
   for (let i = 0; i < actionsInPanel.length - 1; i++) {
@@ -1185,7 +1178,7 @@ const publishUISchema = {
     }
   }
 
-  .p-overlaypanel-close.p-link {
+  .p-popover-close.p-link {
     z-index: 2100 !important;
   }
 
@@ -1211,7 +1204,7 @@ const publishUISchema = {
   }
 
   /* Removes extra border around the action tree in the overlay panel */
-  .p-overlaypanel-content {
+  .p-popover-content {
     padding: 0 !important;
   }
 

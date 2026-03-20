@@ -28,18 +28,18 @@
         </div>
       </div>
     </div>
-    <OverlayPanel ref="subscribeOverlayPanel">
+    <Popover ref="subscribeOverlayPanel">
       <div class="mb-2 text-muted">
         <strong>Condition</strong>
       </div>
       {{ conditionsByTopic[activeTopic][0] }}
-    </OverlayPanel>
+    </Popover>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, reactive, ref } from "vue";
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 import TopicPublishers from "@/components/topics/TopicPublishers.vue";
 import _ from "lodash";
 

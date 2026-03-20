@@ -21,17 +21,17 @@
     <PageHeader heading="Dashboard">
       <Button class="p-button p-button-outlined deltafi-input-field" icon="fa fa-sync-alt" label="Refresh" @click="refreshDashboard" />
     </PageHeader>
-    <div class="row">
+    <div class="row mb-3">
       <div class="col-12">
         <DeltaFileStats :key="refreshKey" />
       </div>
     </div>
-    <div class="row">
+    <div class="row mb-3">
       <div class="col-12">
         <MetricsPanel :key="refreshKey" />
       </div>
     </div>
-    <div class="row">
+    <div class="row mb-3">
       <div v-for="(components, column) in columns" :key="column" :class="`col-6 ${column}`">
         <div v-for="component of components" :key="component">
           <Component :is="loadComponent(component)" :key="refreshKey" />

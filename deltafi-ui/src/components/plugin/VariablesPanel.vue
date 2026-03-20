@@ -18,7 +18,7 @@
 
 <template>
   <CollapsiblePanel v-if="filteredVariables.length" :header="header" class="table-panel">
-    <DataTable :value="filteredVariables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines table-striped plugin-variables-table" :row-hover="true" sort-field="name" :sort-order="1" data-key="name">
+    <DataTable aria-label="Plugin variables" :value="filteredVariables" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true" sort-field="name" :sort-order="1" data-key="name">
       <template #empty>
         No variables included
       </template>
@@ -153,7 +153,7 @@ const viewList = splitEscaped;
     max-width: 200px;
     overflow: hidden;
 
-    .p-chip-text {
+    .p-chip-label {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;

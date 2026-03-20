@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Panel header="Installed Plugins" class="links-panel pb-3">
+  <Panel header="Installed Plugins" class="links-panel">
     <ProgressBar v-if="loading" mode="indeterminate" style="height: 0.5em" />
     <div v-else-if="pluginsList.length == 0" class="d-flex no-data-panel-content">
       <span class="p-2">No installed plugins</span>
@@ -36,7 +36,7 @@
 
 <script setup>
 import PermissionedRouterLink from "@/components/PermissionedRouterLink.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import usePlugins from "@/composables/usePlugins";
 import { computed, onMounted } from "vue";
 

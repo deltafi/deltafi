@@ -24,8 +24,8 @@
 <script setup>
 import { computed } from "vue";
 
-import ChevronDownIcon from "primevue/icons/chevrondown";
-import ChevronRightIcon from "primevue/icons/chevronright";
+import ChevronDownIcon from "@primevue/icons/chevrondown";
+import ChevronRightIcon from "@primevue/icons/chevronright";
 
 import _ from "lodash";
 

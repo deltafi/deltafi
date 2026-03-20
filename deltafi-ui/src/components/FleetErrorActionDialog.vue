@@ -35,10 +35,10 @@
       </div>
 
       <div v-if="requiresReason" class="mt-3">
-        <span class="p-float-label">
-          <InputText id="reason" ref="reasonInput" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" />
+        <div class="field">
           <label for="reason">Reason (required)</label>
-        </span>
+          <InputText id="reason" ref="reasonInput" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" />
+        </div>
       </div>
 
       <div v-if="activeFilters.length > 0" class="mt-3">
@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useFederatedErrors from "@/composables/useFederatedErrors";
 import { computed, nextTick, ref, watch } from "vue";
 

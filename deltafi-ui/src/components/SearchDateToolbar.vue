@@ -21,7 +21,7 @@
 
 <template>
   <div class="search-date-toolbar btn-toolbar mb-2 mb-md-0">
-    <Dropdown v-if="dateTypeOptions.length > 1" v-model="dateTypeModel" :options="dateTypeOptions" class="deltafi-input-field date-type-dropdown" />
+    <Select v-if="dateTypeOptions.length > 1" v-model="dateTypeModel" :options="dateTypeOptions" class="deltafi-input-field date-type-dropdown" />
     <CustomCalendar ref="customCalendarRef" :start-time-date="startTimeDate" :end-time-date="endTimeDate" :reset-default="resetDefault" class="ml-0" @update:start-time-date:end-time-date="onDateChange" />
     <Button class="p-button-text p-button-sm p-button-secondary" disabled>
       {{ shortTimezone() }}
@@ -36,7 +36,7 @@ import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, ref } from "vue";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 
 const props = defineProps({
   dateType: { type: String, required: true },
@@ -73,7 +73,7 @@ defineExpose({
 <style>
 .search-date-toolbar {
   .date-type-dropdown {
-    width: 8rem;
+    width: 10rem;
     margin-right: 0.5rem;
   }
 }

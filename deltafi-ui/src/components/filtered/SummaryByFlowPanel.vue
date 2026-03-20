@@ -20,13 +20,13 @@
   <Panel header="DeltaFiles by Flow" @contextmenu="onPanelRightClick">
     <ContextMenu ref="menu" :model="menuItems" />
     <template #icons>
-      <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+      <Paginator v-if="filteredFlow.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+      <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="filteredFlow.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredFlow" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
-    <DataTable id="filteredSummaryTable" v-model:selection="selectedFiltered" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+    <DataTable id="filteredSummaryTable" v-model:selection="selectedFiltered" aria-label="Filtered summary by flow" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty> No results to display. </template>
       <template #loading> Loading. Please wait... </template>
       <Column field="flow" header="Flow" :sortable="true" class="filename-column">

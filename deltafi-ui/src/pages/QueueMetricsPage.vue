@@ -28,12 +28,12 @@
               <span>Action Queues</span>
               <div class="d-flex align-items-center">
                 <span style="font-size: 0.875rem; color: var(--text-color-secondary); margin-right: 12px;">Group by Action Class</span>
-                <InputSwitch v-model="rollupByClass" />
+                <ToggleSwitch v-model="rollupByClass" />
               </div>
             </div>
           </template>
           <DataTable
-            responsive-layout="scroll"
+            aria-label="Action queue metrics"
             :value="mergedQueues"
             striped-rows
             row-hover
@@ -106,7 +106,7 @@
             </div>
           </template>
           <DataTable
-            responsive-layout="scroll"
+            aria-label="Cold queued actions"
             :value="runningTasks?.tasks || []"
             striped-rows
             row-hover
@@ -165,7 +165,7 @@ import { computed, onMounted, onUnmounted, inject, ref } from "vue";
 
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import InputSwitch from "primevue/inputswitch";
+import ToggleSwitch from "primevue/toggleswitch";
 import Panel from "primevue/panel";
 
 const refreshInterval = 5000; // 5 seconds

@@ -38,15 +38,15 @@
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("dataSource").header }}</dt>
           <dd>
-            <Dropdown v-model="selectedDeleteFlow" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="deletePolicyConfigurationMap.get('dataSource').placeholder" :disabled="deletePolicyConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
+            <Select v-model="selectedDeleteFlow" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="deletePolicyConfigurationMap.get('dataSource').placeholder" :disabled="deletePolicyConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
           </dd>
           <dt v-if="deletePolicyTypes.length > 1">{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
           <dd v-if="deletePolicyTypes.length > 1">
-            <Dropdown v-model="selectedDeleteType" :options="deletePolicyTypes" :placeholder="deletePolicyConfigurationMap.get('__typename').placeholder" :disabled="deletePolicyConfigurationMap.get('__typename').disabled" class="inputWidth" />
+            <Select v-model="selectedDeleteType" :options="deletePolicyTypes" :placeholder="deletePolicyConfigurationMap.get('__typename').placeholder" :disabled="deletePolicyConfigurationMap.get('__typename').disabled" class="inputWidth" />
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("enabled").header }}</dt>
           <dd>
-            <InputSwitch v-model="selectedEnabledBoolean" :disabled="deletePolicyConfigurationMap.get('enabled').disabled" />
+            <ToggleSwitch v-model="selectedEnabledBoolean" :disabled="deletePolicyConfigurationMap.get('enabled').disabled" />
           </dd>
           <template v-if="selectedDeleteType">
             <template v-if="_.isEqual(selectedDeleteType, 'TimedDeletePolicy')">
@@ -72,7 +72,7 @@
                     </dd>
                     <dt>{{ deletePolicyConfigurationMap.get("deleteMetadata").header }}</dt>
                     <dd>
-                      <InputSwitch v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
+                      <ToggleSwitch v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
                     </dd>
                   </div>
                 </div>
@@ -99,9 +99,9 @@ import { useMounted } from "@vueuse/core";
 import { onMounted, reactive, ref } from "vue";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputNumber from "primevue/inputnumber";
-import InputSwitch from "primevue/inputswitch";
+import ToggleSwitch from "primevue/toggleswitch";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import _ from "lodash";

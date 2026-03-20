@@ -23,13 +23,13 @@
       <div class="col-12">
         <Panel class="metadata-panel" header="Metadata">
           <template #header>
-            <Button label="Add Metadata Field" icon="pi pi-plus" class="mr-2" @click="addMetadataField" />
-            <Button label="Clear" icon="pi pi-times" :disabled="metadataClearDisabled" class="mr-2" @click="clearMetadata" />
+            <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-sm mr-2" @click="addMetadataField" />
+            <Button label="Clear" icon="pi pi-times" :disabled="metadataClearDisabled" class="p-button-sm mr-2" @click="clearMetadata" />
             <div class="float-right btn-group">
-              <Button v-tooltip.bottom="'Download Metadata To File'" label="Download Metadata" icon="fas fa-download fa-fw" class="p-button-md p-button-secondary p-button-outlined mx-1" :disabled="metadataClearDisabled" @click="onExportMetadata" />
-              <FileUpload ref="metadataFileUploader" v-tooltip.bottom="'Upload Metadata From File'" auto mode="basic" choose-label="Upload Metadata" choose-icon="fas fa-upload fa-fw" accept=".json,application/json" :file-limit="1" custom-upload class="metadata-upload p-button-secondary p-button-outlined mx-1" @uploader="preUploadMetadataValidation" @click="setOverlayPanelPosition" />
-              <Button v-tooltip.bottom="'Import Metadata From DeltaFile'" class="metadata-upload p-button-secondary p-button-outlined mx-1" icon="pi pi-file-import" label="Import Metadata" @click="showImportDialog" />
-              <OverlayPanel ref="errorOverlayPanel" dismissable show-close-icon @hide="clearMetadataUploadErrors">
+              <Button v-tooltip.bottom="'Download Metadata To File'" label="Download Metadata" icon="fas fa-download fa-fw" class="p-button-sm p-button-secondary p-button-outlined mx-1" :disabled="metadataClearDisabled" @click="onExportMetadata" />
+              <FileUpload ref="metadataFileUploader" v-tooltip.bottom="'Upload Metadata From File'" auto mode="basic" choose-label="Upload Metadata" choose-icon="fas fa-upload fa-fw" accept=".json,application/json" :file-limit="1" custom-upload class="metadata-upload p-button-sm p-button-secondary p-button-outlined mx-1" @uploader="preUploadMetadataValidation" @click="setOverlayPanelPosition" />
+              <Button v-tooltip.bottom="'Import Metadata From DeltaFile'" class="metadata-upload p-button-sm p-button-secondary p-button-outlined mx-1" icon="pi pi-file-import" label="Import Metadata" @click="showImportDialog" />
+              <Popover ref="errorOverlayPanel" dismissable show-close-icon @hide="clearMetadataUploadErrors">
                 <Message severity="error" :sticky="true" class="mb-2 mt-0" :closable="false">
                   <ul>
                     <div v-for="(error, key) in _.uniq(errorsList)" :key="key">
@@ -39,7 +39,7 @@
                     </div>
                   </ul>
                 </Message>
-              </OverlayPanel>
+              </Popover>
             </div>
           </template>
           <div class="row">
@@ -47,7 +47,7 @@
               <InputText type="text" value="Data Source" disabled />
             </div>
             <div class="col-5">
-              <Dropdown v-model="selectedDataSource" :options="formattedDataSourceNames" placeholder="Select a REST Data Source" show-clear :class="dataSourceDropdownClass" />
+              <Select v-model="selectedDataSource" :options="formattedDataSourceNames" placeholder="Select a REST Data Source" show-clear :class="dataSourceDropdownClass" />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -86,7 +86,7 @@
             </div>
           </template>
           <template #empty>
-            <i class="ml-3">Drag and drop files to here to upload.</i>
+            <i class="ml-3" style="display: block; padding-bottom: 1.5rem">Drag and drop files to here to upload.</i>
           </template>
         </FileUpload>
       </div>
@@ -96,12 +96,12 @@
       <div class="col-12">
         <CollapsiblePanel v-if="deltaFiles.length" header="Uploaded DeltaFiles" class="table-panel">
           <template #icons>
-            <Button class="p-panel-header-icon p-link p-mr-2" @click="deltaFilesMenuToggle">
+            <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="deltaFilesMenuToggle">
               <span class="fas fa-cog" />
             </Button>
             <Menu id="config_menu" ref="deltaFilesMenu" :model="deltaFilesMenuItems" :popup="true" />
           </template>
-          <DataTable responsive-layout="scroll" sort-field="uploadedTimestamp" :sort-order="-1" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass" data-key="filename">
+          <DataTable aria-label="DeltaFile uploads" sort-field="uploadedTimestamp" :sort-order="-1" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass" data-key="filename">
             <Column field="dids" header="DID(s)" class="did-column">
               <template #body="file">
                 <span v-if="file.data.loading">
@@ -146,7 +146,7 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import DidLink from "@/components/DidLink.vue";
 import ImportMetadataDialog from "@/components/ImportMetadataDialog.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import Timestamp from "@/components/Timestamp.vue";
 import useFlows from "@/composables/useFlows";
 import useIngress from "@/composables/useIngress";
@@ -160,12 +160,12 @@ import { usePrimeVue } from "primevue/config";
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import FileUpload from "primevue/fileupload";
 import InputText from "primevue/inputtext";
 import Menu from "primevue/menu";
 import Message from "primevue/message";
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 import Panel from "primevue/panel";
 import ScrollTop from "primevue/scrolltop";
 
@@ -490,6 +490,10 @@ const onRemoveFile = (removeFileCallback, index) => {
   .metadata-panel {
     .p-panel-header {
       display: block;
+
+      .p-button {
+        height: 35.15px;
+      }
     }
 
     .p-inputtext:disabled {
@@ -499,6 +503,11 @@ const onRemoveFile = (removeFileCallback, index) => {
     .p-panel-content {
       max-height: 45vh;
       overflow: auto;
+
+      .col-5 .p-inputtext {
+        width: 675px;
+        max-width: 100%;
+      }
     }
   }
 
@@ -557,6 +566,12 @@ const onRemoveFile = (removeFileCallback, index) => {
     >* {
       margin-right: 0.5rem;
     }
+  }
+
+  .p-fileupload .p-button {
+    font-size: var(--p-button-sm-font-size, 0.875rem) !important;
+    padding: 0.42rem 0.65rem !important;
+    height: 35.15px;
   }
 
   .p-fileupload-choose.metadata-upload:not(.p-disabled):hover {
@@ -620,7 +635,7 @@ const onRemoveFile = (removeFileCallback, index) => {
   /* additional code */
 }
 
-.p-dropdown.invalid {
+.p-select.invalid {
   border-color: #f87171;
 }
 </style>

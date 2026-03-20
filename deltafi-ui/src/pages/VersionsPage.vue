@@ -28,7 +28,7 @@
 
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import VersionsPanel from "@/components/VersionsPanel.vue";
 import useVersion from "@/composables/useVersion";
 import useVersions from "@/composables/useVersions";

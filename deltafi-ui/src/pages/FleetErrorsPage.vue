@@ -47,7 +47,7 @@
       </div>
       <div class="filter-item">
         <label>Acknowledgement</label>
-        <Dropdown v-model="acknowledgedFilter" :options="ackOptions" option-label="name" option-value="value" class="w-full" />
+        <Select v-model="acknowledgedFilter" :options="ackOptions" option-label="name" option-value="value" class="w-full" />
       </div>
     </FilterSidebar>
     <div class="main-content">
@@ -109,9 +109,15 @@
     </div>
 
     <!-- Tabbed Results -->
-    <TabView v-model:active-index="activeTab" @tab-change="onTabChange">
+    <Tabs v-model:value="activeTab" @update:value="onTabChange">
+      <TabList>
+        <Tab :value="0">By Member</Tab>
+        <Tab :value="1">By Flow</Tab>
+        <Tab :value="2">By Message</Tab>
+      </TabList>
+      <TabPanels>
       <!-- By Member Tab -->
-      <TabPanel header="By Member">
+      <TabPanel :value="0">
         <Panel header="Error Counts by Member" class="table-panel results">
           <template #icons>
             <div class="panel-toolbar">
@@ -129,7 +135,7 @@
           <DataTable
             v-model:selection="selectedMembers"
             :value="filteredMemberResults"
-            responsive-layout="scroll"
+            aria-label="Fleet errors by DeltaFile"
             class="p-datatable p-datatable-sm p-datatable-gridlines clickable-rows"
             striped-rows
             :loading="loading"
@@ -201,7 +207,7 @@
       </TabPanel>
 
       <!-- By Flow Tab -->
-      <TabPanel header="By Flow">
+      <TabPanel :value="1">
         <Panel header="Error Counts by Flow" class="table-panel results">
           <template #icons>
             <div class="panel-toolbar">
@@ -219,7 +225,7 @@
           <DataTable
             v-model:selection="selectedFlows"
             :value="dataSourceSummary?.summaries || []"
-            responsive-layout="scroll"
+            aria-label="Fleet errors by flow"
             class="p-datatable p-datatable-sm p-datatable-gridlines clickable-rows"
             striped-rows
             :loading="summaryLoading"
@@ -280,7 +286,7 @@
       </TabPanel>
 
       <!-- By Message Tab -->
-      <TabPanel header="By Message">
+      <TabPanel :value="2">
         <Panel header="Error Counts by Message" class="table-panel results">
           <template #icons>
             <div class="panel-toolbar">
@@ -298,7 +304,7 @@
           <DataTable
             v-model:selection="selectedMessages"
             :value="messageSummary?.summaries || []"
-            responsive-layout="scroll"
+            aria-label="Fleet errors by message"
             class="p-datatable p-datatable-sm p-datatable-gridlines clickable-rows"
             striped-rows
             :loading="summaryLoading"
@@ -348,7 +354,8 @@
           </DataTable>
         </Panel>
       </TabPanel>
-    </TabView>
+      </TabPanels>
+    </Tabs>
 
     <!-- Action Dialog -->
     <FleetErrorActionDialog
@@ -383,12 +390,15 @@ import utc from "dayjs/plugin/utc";
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import Panel from "primevue/panel";
+import Tab from "primevue/tab";
+import TabList from "primevue/tablist";
 import TabPanel from "primevue/tabpanel";
-import TabView from "primevue/tabview";
+import TabPanels from "primevue/tabpanels";
+import Tabs from "primevue/tabs";
 import Skeleton from "primevue/skeleton";
 import Tag from "primevue/tag";
 
@@ -938,7 +948,7 @@ const getStatusSeverity = (status) => {
     case "CONNECTED":
       return "success";
     case "STALE":
-      return "warning";
+      return "warn";
     case "UNREACHABLE":
       return "danger";
     default:
@@ -952,7 +962,7 @@ const getFlowTypeInfo = (flowType) => {
       return {
         label: "Transform",
         icon: "pi pi-arrows-h",
-        severity: "warning",
+        severity: "warn",
         tooltip: "Transform flow - processes and transforms data",
       };
     case "EGRESS":

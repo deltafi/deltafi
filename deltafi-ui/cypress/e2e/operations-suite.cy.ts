@@ -137,7 +137,7 @@
       });
 
       it("severity column has filter menu", () => {
-        cy.get(".p-column-filter-menu-button").first().should("exist");
+        cy.get(".p-datatable-column-filter-button").first().should("exist");
       });
 
       it("displays date picker", () => {
@@ -210,19 +210,19 @@
       });
 
       it("displays tabs", () => {
-        cy.get(".p-tabview").should("exist");
+        cy.get(".p-tabs").should("exist");
       });
 
       it("displays All tab", () => {
-        cy.contains("span.p-tabview-title", "All").should("exist");
+        cy.contains("button.p-tab", "All").should("exist");
       });
 
       it("displays By Flow tab", () => {
-        cy.contains("span.p-tabview-title", "By Flow").should("exist");
+        cy.contains("button.p-tab", "By Flow").should("exist");
       });
 
       it("displays By Message tab", () => {
-        cy.contains("span.p-tabview-title", "By Message").should("exist");
+        cy.contains("button.p-tab", "By Message").should("exist");
       });
 
       it("page container exists", () => {
@@ -243,12 +243,12 @@
       });
 
       it("can switch to By Flow tab", () => {
-        cy.contains("span.p-tabview-title", "By Flow").click();
+        cy.contains("button.p-tab", "By Flow").click();
         cy.get("span.p-panel-title").contains("DeltaFiles by Flow");
       });
 
       it("can switch to By Message tab", () => {
-        cy.contains("span.p-tabview-title", "By Message").click();
+        cy.contains("button.p-tab", "By Message").click();
         cy.get("span.p-panel-title").contains("DeltaFiles by Message");
       });
 
@@ -261,22 +261,22 @@
       });
 
       it("displays By Flow panel when tab is clicked", () => {
-        cy.contains("span.p-tabview-title", "By Flow").click();
+        cy.contains("button.p-tab", "By Flow").click();
         cy.get("span.p-panel-title").contains("DeltaFiles by Flow");
       });
 
       it("displays By Flow action menu button in panel header", () => {
-        cy.contains("span.p-tabview-title", "By Flow").click();
+        cy.contains("button.p-tab", "By Flow").click();
         cy.get(".p-panel-header-icon").should("exist");
       });
 
       it("displays By Message panel when tab is clicked", () => {
-        cy.contains("span.p-tabview-title", "By Message").click();
+        cy.contains("button.p-tab", "By Message").click();
         cy.get("span.p-panel-title").contains("DeltaFiles by Message");
       });
 
       it("displays By Message action menu button in panel header", () => {
-        cy.contains("span.p-tabview-title", "By Message").click();
+        cy.contains("button.p-tab", "By Message").click();
         cy.get(".p-panel-header-icon").should("exist");
       });
     });
@@ -317,19 +317,19 @@
       });
 
       it("displays tabs", () => {
-        cy.get(".p-tabview").should("exist");
+        cy.get(".p-tabs").should("exist");
       });
 
       it("displays All tab", () => {
-        cy.contains("span.p-tabview-title", "All").should("exist");
+        cy.contains("button.p-tab", "All").should("exist");
       });
 
       it("displays By Flow tab", () => {
-        cy.contains("span.p-tabview-title", "By Flow").should("exist");
+        cy.contains("button.p-tab", "By Flow").should("exist");
       });
 
       it("displays By Cause tab", () => {
-        cy.contains("span.p-tabview-title", "By Cause").should("exist");
+        cy.contains("button.p-tab", "By Cause").should("exist");
       });
 
       it("page container exists", () => {
@@ -350,12 +350,12 @@
       });
 
       it("can switch to By Flow tab", () => {
-        cy.contains("span.p-tabview-title", "By Flow").click();
+        cy.contains("button.p-tab", "By Flow").click();
         cy.get("span.p-panel-title").contains("DeltaFiles by Flow");
       });
 
       it("can switch to By Cause tab", () => {
-        cy.contains("span.p-tabview-title", "By Cause").click();
+        cy.contains("button.p-tab", "By Cause").click();
         cy.get("span.p-panel-title").contains("DeltaFiles by Cause");
       });
     });
@@ -403,7 +403,7 @@
 
       it("displays the toggle switch", () => {
         cy.contains("Group by Action Class").should("exist");
-        cy.get(".p-inputswitch").should("exist");
+        cy.get(".p-toggleswitch").should("exist");
       });
 
       it("displays running tasks count in header", () => {
@@ -442,22 +442,22 @@
 
       it("can sort by Flow column", () => {
         cy.get(".p-datatable-thead").contains("Flow").click();
-        cy.get(".p-datatable-thead").contains("Flow").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Flow").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Warm column", () => {
         cy.get(".p-datatable-thead").contains("Warm").click();
-        cy.get(".p-datatable-thead").contains("Warm").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Warm").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Cold column", () => {
         cy.get(".p-datatable-thead").contains("Cold").click();
-        cy.get(".p-datatable-thead").contains("Cold").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Cold").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can sort by Total column", () => {
         cy.get(".p-datatable-thead").contains("Total").click();
-        cy.get(".p-datatable-thead").contains("Total").parent().find(".p-sortable-column-icon").should("exist");
+        cy.get(".p-datatable-thead").contains("Total").parent().find(".p-datatable-sort-icon").should("exist");
       });
 
       it("can toggle the running tasks panel", () => {
@@ -470,7 +470,7 @@
       it("can toggle group by action class", () => {
         cy.visit(baseUrl);
         cy.get(".p-datatable-thead").contains("Flow").should("exist");
-        cy.get(".p-inputswitch").click();
+        cy.get(".p-toggleswitch").click();
         cy.get(".p-datatable-thead").contains("Flow").should("not.exist");
         cy.get(".p-datatable-thead").contains("Action Class").should("exist");
       });

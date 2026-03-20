@@ -36,7 +36,7 @@
 import FlowDataTable from "@/components/flow/FlowDataTable.vue";
 import FlowPageHeaderButtonGroup from "@/components/flow/FlowPageHeaderButtonGroup.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useTopics from "@/composables/useTopics";
 import { onMounted, ref, computed } from "vue";

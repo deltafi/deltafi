@@ -67,13 +67,13 @@
       <Panel header="Results" class="table-panel results" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
-        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+        <Paginator v-if="results.length > 0" :rows="model.perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+        <Button severity="secondary" variant="text" class="p-panel-header-icon" @click="toggleMenu">
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="results.length > 0" :rows="model.perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
       </template>
-      <DataTable v-model:selection="selectedDids" :value="results" data-key="did" selection-mode="multiple" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner" :rows="model.perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+      <DataTable aria-label="DeltaFile search results" v-model:selection="selectedDids" :value="results" data-key="did" selection-mode="multiple" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner" :rows="model.perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty> No DeltaFiles match the provided search criteria. </template>
         <template #loading> Loading results. Please wait. </template>
         <Column field="did" header="DID" class="did-column">
@@ -135,7 +135,7 @@ import SearchDateToolbar from "@/components/SearchDateToolbar.vue";
 import DidLink from "@/components/DidLink.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import ReplayDialog from "@/components/ReplayDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useAnnotate from "@/composables/useAnnotate";

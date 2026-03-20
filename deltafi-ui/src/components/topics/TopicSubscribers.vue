@@ -25,8 +25,8 @@
           <span :class="stateBadgeClass[state]">{{ subscribersByState[state].length }}</span>
         </span>
       </span>
-      <OverlayPanel ref="subscribesOverlayPanel" class="subscribersOverlayPanel">
-        <DataTable removableSort :value="topic.subscribers" size="small">
+      <Popover ref="subscribesOverlayPanel" class="subscribersOverlayPanel">
+        <DataTable removableSort aria-label="Topic subscribers" :value="topic.subscribers" size="small">
           <ColumnGroup type="header">
             <Row>
               <Column header="Downstream Subscribers" field="name" />
@@ -48,13 +48,13 @@
             </template>
           </Column>
         </DataTable>
-      </OverlayPanel>
+      </Popover>
     </span>
   </span>
 </template>
 
 <script setup>
-import OverlayPanel from "primevue/overlaypanel";
+import Popover from "primevue/popover";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import ColumnGroup from "primevue/columngroup";
@@ -110,7 +110,7 @@ const showOverlayPanel = (event) => {
 
 <style>
 .subscribersOverlayPanel {
-  .p-overlaypanel-content {
+  .p-popover-content {
     padding: 0.75rem;
   }
   .p-datatable-sm td {

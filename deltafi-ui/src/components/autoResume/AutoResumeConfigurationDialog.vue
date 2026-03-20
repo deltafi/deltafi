@@ -38,7 +38,7 @@
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("dataSource").header }}</dt>
           <dd>
-            <Dropdown v-model="selectedRuleDataSource" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="autoResumeConfigurationMap.get('dataSource').placeholder" :disabled="autoResumeConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
+            <Select v-model="selectedRuleDataSource" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="autoResumeConfigurationMap.get('dataSource').placeholder" :disabled="autoResumeConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("action").header }}</dt>
           <dd>
@@ -90,7 +90,7 @@
                   </dd>
                   <dt>{{ autoResumeConfigurationMap.get("random").header }}</dt>
                   <dd class="mb-0">
-                    <InputSwitch id="randomId" v-model="selectedRuleRandom" :disabled="autoResumeConfigurationMap.get('random').disabled" />
+                    <ToggleSwitch id="randomId" v-model="selectedRuleRandom" :disabled="autoResumeConfigurationMap.get('random').disabled" />
                   </dd>
                   <dd>
                     <small id="randomId-help">Setting Random calculates the delay by using a random value between the Delay and Max Delay. If Random is true, Max Delay must also be set.</small>
@@ -123,11 +123,11 @@ import { onMounted, reactive, ref } from "vue";
 import ConfirmPopup from "primevue/confirmpopup";
 import { useConfirm } from "primevue/useconfirm";
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import Select from "primevue/select";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
-import InputSwitch from "primevue/inputswitch";
+import ToggleSwitch from "primevue/toggleswitch";
 import _ from "lodash";
 
 const props = defineProps({
@@ -367,7 +367,7 @@ const submit = async () => {
     width: 90% !important;
   }
 
-  .p-chips .p-chips-multiple-container {
+  .p-inputchips .p-inputchips-input {
     padding: 0.25rem 0.75rem;
     width: 100% !important;
   }

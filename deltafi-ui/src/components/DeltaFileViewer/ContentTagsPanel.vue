@@ -21,7 +21,7 @@
 <template>
   <div class="deltafile-content-tags-panel">
     <CollapsiblePanel :header="headerWithCount" :collapsed="isEmpty" class="table-panel">
-      <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="contentTags" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}" data-key="did">
+      <DataTable aria-label="Content tags" class="p-datatable-sm p-datatable-gridlines parent-child-table" striped-rows :value="contentTags" paginator-template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :rows-per-page-options="[10, 20, 50, 100, 500, 1000]" current-page-report-template="Showing {first} to {last} of {totalRecords}" data-key="did">
         <template #empty>
           No Content Tags
         </template>

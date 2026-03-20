@@ -25,7 +25,7 @@
     </PageHeader>
     <div class="lookup-tables-page">
       <Panel header="Lookup Table" class="table-panel">
-        <DataTable :value="lookupTables" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines lookup-tables-data-table">
+        <DataTable aria-label="Lookup tables" :value="lookupTables" striped-rows class="p-datatable-sm p-datatable-gridlines lookup-tables-data-table">
           <template #empty> No Lookup Tables found </template>
           <Column field="name" header="Name" :sortable="true">
             <template #body="{ data }">
@@ -125,7 +125,7 @@ const lookupTablesExport = computed(() => {
         padding: 0 !important;
         width: 13rem;
 
-        .p-inputswitch {
+        .p-toggleswitch {
           padding: 0.25rem !important;
           margin: 0.25rem 0 0 0.25rem !important;
         }

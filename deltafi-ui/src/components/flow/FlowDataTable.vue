@@ -19,7 +19,7 @@
 <template>
   <ContextMenu ref="menu" :model="menuItems" />
   <div v-for="(pluginFlows, pluginName) in filteredFlowDataByPlugin" :key="pluginName">
-    <CollapsiblePanel :header="pluginName" class="table-panel pb-3" @contextmenu="onPanelRightClick($event, pluginName)">
+    <CollapsiblePanel :header="pluginName" class="table-panel mb-3" @contextmenu="onPanelRightClick($event, pluginName)">
       <template #header>
         <span class="p-panel-title d-flex align-items-center">
           {{ pluginName === 'system-plugin' ? 'Local System Plugin' : pluginName }}
@@ -27,10 +27,10 @@
           <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + pluginFlows[0].mvnCoordinates }" class="ml-2">
             <i v-tooltip.top="pluginFlows[0].mvnCoordinates" class="text-muted fas fa-plug fa-rotate-90 fa-fw" />
           </PermissionedRouterLink>
-          <Button v-tooltip.top="'Plugin actions'" severity="secondary" text size="small" icon="pi pi-ellipsis-v" class="p-0 ml-1" @click.stop="onPanelRightClick($event, pluginName)" />
+          <Button v-tooltip.top="'Plugin actions'" severity="secondary" text size="small" icon="pi pi-ellipsis-v" aria-label="Plugin actions menu" class="p-0 ml-1" @click.stop="onPanelRightClick($event, pluginName)" />
         </span>
       </template>
-      <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
+      <DataTable v-model:filters="filters" aria-label="Transforms" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
         <template #empty> No flows found. </template>
         <Column header="Name" field="name" class="name-column" :sortable="true">
           <template #body="{ data }">
@@ -119,7 +119,7 @@ import ContextMenu from "primevue/contextmenu";
 import Column from "primevue/column";
 import ConfirmPopup from "primevue/confirmpopup";
 import DataTable from "primevue/datatable";
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import { useConfirm } from "primevue/useconfirm";
 import ConfirmDialog from "primevue/confirmdialog";
 import _ from "lodash";
@@ -316,7 +316,7 @@ const refresh = async () => {
   td.flow-state-column {
     padding: 0 !important;
 
-    .p-inputswitch {
+    .p-toggleswitch {
       margin: 0.25rem 0 0 0.25rem !important;
     }
 

@@ -20,7 +20,7 @@
   <div class="system-metrics-page">
     <PageHeader heading="System Metrics" />
     <Panel header="Nodes" class="table-panel">
-      <DataTable v-model:expanded-rows="expandedRows" :value="nodes" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading" loading-icon="p-datatable-loading-icon pi-spin" sort-field="name" :sort-order="1">
+      <DataTable aria-label="System nodes" v-model:expanded-rows="expandedRows" :value="nodes" data-key="name" striped-rows class="p-datatable-gridlines p-datatable-sm node-table" :loading="showLoading" loading-icon="p-datatable-loading-icon pi-spin" sort-field="name" :sort-order="1">
         <template #empty>
           No System Metrics available
         </template>
@@ -58,7 +58,7 @@
         </Column>
         <template #expansion="node">
           <div class="apps-subtable">
-            <DataTable :value="node.data.apps" responsive-layout="scroll" class="app-table" sort-field="name" :sort-order="1">
+            <DataTable aria-label="Node applications" :value="node.data.apps" class="app-table" sort-field="name" :sort-order="1">
               <Column header="App Name" field="name" :sortable="true" />
             </DataTable>
           </div>
@@ -71,7 +71,7 @@
 
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
-import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar.vue";
+import ProgressBar from "primevue/progressbar";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, inject, onMounted, onUnmounted, ref } from "vue";

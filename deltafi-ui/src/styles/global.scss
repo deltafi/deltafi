@@ -16,6 +16,185 @@
    limitations under the License.
 */
 
+/* Force light mode for PrimeVue 4 components */
+:root {
+  --p-surface-0: #ffffff;
+  --p-surface-50: #f8fafc;
+  --p-surface-100: #f1f5f9;
+  --p-surface-200: #e2e8f0;
+  --p-surface-300: #cbd5e1;
+  --p-surface-400: #94a3b8;
+  --p-surface-500: #64748b;
+  --p-surface-600: #475569;
+  --p-surface-700: #334155;
+  --p-surface-800: #1e293b;
+  --p-surface-900: #0f172a;
+  --p-surface-950: #020617;
+  --p-content-background: #ffffff;
+  --p-content-color: #334155;
+  --p-panel-header-background: #f8fafc;
+  --p-panel-header-color: #334155;
+  --p-panel-content-background: #ffffff;
+  color-scheme: light;
+
+  /* Semantic variables (backwards compatibility with PrimeVue 3 styles) */
+  --surface-card: #ffffff;
+  --surface-ground: #f8fafc;
+  --surface-hover: #e2e8f0;
+  --text-color: #334155;
+  --text-color-secondary: #64748b;
+  --primary-color: var(--blue-500, #3b82f6);
+  --primary-color-text: #ffffff;
+
+  /* Color palette variables (for backwards compatibility with PrimeVue 3 styles) */
+  /* Surface/Gray (Slate) */
+  --surface-0: #ffffff;
+  --surface-50: #f8fafc;
+  --surface-100: #f1f5f9;
+  --surface-200: #e2e8f0;
+  --surface-300: #cbd5e1;
+  --surface-400: #94a3b8;
+  --surface-500: #64748b;
+  --surface-600: #475569;
+  --surface-700: #334155;
+  --surface-800: #1e293b;
+  --surface-900: #0f172a;
+  --surface-950: #020617;
+  --surface-border: #dee2e6;
+
+  /* Gray */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Blue */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+
+  /* Green */
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+  --green-900: #14532d;
+
+  /* Yellow */
+  --yellow-50: #fefce8;
+  --yellow-100: #fef9c3;
+  --yellow-200: #fef08a;
+  --yellow-300: #fde047;
+  --yellow-400: #facc15;
+  --yellow-500: #eab308;
+  --yellow-600: #ca8a04;
+  --yellow-700: #a16207;
+  --yellow-800: #854d0e;
+  --yellow-900: #713f12;
+
+  /* Orange */
+  --orange-50: #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-200: #fed7aa;
+  --orange-300: #fdba74;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+  --orange-700: #c2410c;
+  --orange-800: #9a3412;
+  --orange-900: #7c2d12;
+
+  /* Red */
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+
+  /* Cyan */
+  --cyan-50: #ecfeff;
+  --cyan-100: #cffafe;
+  --cyan-200: #a5f3fc;
+  --cyan-300: #67e8f9;
+  --cyan-400: #22d3ee;
+  --cyan-500: #06b6d4;
+  --cyan-600: #0891b2;
+  --cyan-700: #0e7490;
+  --cyan-800: #155e75;
+  --cyan-900: #164e63;
+
+  /* Purple */
+  --purple-50: #faf5ff;
+  --purple-100: #f3e8ff;
+  --purple-200: #e9d5ff;
+  --purple-300: #d8b4fe;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  --purple-600: #9333ea;
+  --purple-700: #7e22ce;
+  --purple-800: #6b21a8;
+  --purple-900: #581c87;
+
+  /* Pink */
+  --pink-50: #fdf2f8;
+  --pink-100: #fce7f3;
+  --pink-200: #fbcfe8;
+  --pink-300: #f9a8d4;
+  --pink-400: #f472b6;
+  --pink-500: #ec4899;
+  --pink-600: #db2777;
+  --pink-700: #be185d;
+  --pink-800: #9d174d;
+  --pink-900: #831843;
+
+  /* Teal */
+  --teal-50: #f0fdfa;
+  --teal-100: #ccfbf1;
+  --teal-200: #99f6e4;
+  --teal-300: #5eead4;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-900: #134e4a;
+
+  /* Primary (alias for blue) */
+  --primary-50: var(--blue-50);
+  --primary-100: var(--blue-100);
+  --primary-200: var(--blue-200);
+  --primary-300: var(--blue-300);
+  --primary-400: var(--blue-400);
+  --primary-500: var(--blue-500);
+  --primary-600: var(--blue-600);
+  --primary-700: var(--blue-700);
+  --primary-800: var(--blue-800);
+  --primary-900: var(--blue-900);
+}
+
 html {
   font-size: 14px;
 }
@@ -43,7 +222,7 @@ a {
   }
 }
 
-.p-tabview .p-tabview-panels {
+.p-tabs .p-tabpanels {
   padding: 1.25rem 0;
 }
 
@@ -69,7 +248,7 @@ a {
 
 .deltafi-input-field {
   height: 32px;
-  .p-dropdown-label,
+  .p-select-label,
   .p-multiselect-label {
     padding-top: 6px;
     padding-left: 10px;
@@ -104,16 +283,26 @@ a {
   max-width: 20rem;
 }
 
-.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+.p-tabs .p-tablist .p-tab[data-p-active="true"] {
   color: #495057;
 }
 
-.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+.p-tabs .p-tablist .p-tab {
   color: #6c757d;
 }
 
+/* PrimeVue 3 .p-link utility class (removed in PrimeVue 4) */
+.p-link {
+  cursor: pointer;
+  user-select: none;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-decoration: none;
+}
+
 .p-link:focus,
-.p-tabview-nav-link:focus {
+.p-tab:focus {
   outline: none !important;
   box-shadow: none !important;
 }
@@ -146,17 +335,65 @@ td.did-column {
 .p-tag-secondary {
   background-color: #6c757d;
 }
+/* Ensure panel header actions (icons slot) align items vertically */
+.p-panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  > .p-button.p-panel-header-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    margin-left: 0.25rem;
+  }
+}
+
 .p-paginator {
   background: none !important;
   color: #212529 !important;
+
+  /* Match PrimeVue 3 paginator button styling (rectangular with slight rounding) */
+  .p-paginator-page {
+    border-radius: var(--p-content-border-radius, 6px);
+    min-width: 2rem;
+    height: 2rem;
+  }
+
+  /* Compact rows-per-page dropdown to match PrimeVue 3 Dropdown look */
+  .p-paginator-rpp-dropdown.p-select {
+    border: 1px solid #ced4da;
+    background: #ffffff;
+    border-radius: 4px;
+    height: 2rem;
+
+    .p-select-label {
+      padding: 0.25rem 0.5rem;
+      font-size: inherit;
+    }
+
+    .p-select-dropdown {
+      width: 2rem;
+      color: #ffffff;
+    }
+
+    &:hover {
+      border-color: #3b82f6;
+    }
+  }
 }
 
 .p-progressbar .p-progressbar-label {
   color: #212529 !important;
 }
 
-.p-confirm-popup-accept,
-.p-confirm-popup-reject {
+/* PrimeIcons have no built-in width like FontAwesome's fa-fw, so add spacing between icon and label */
+.p-button .p-button-icon.pi {
+  margin-right: 0.25rem;
+}
+
+.p-confirmpopup-accept-button,
+.p-confirmpopup-reject-button {
   span.p-button-icon:empty {
     display: none;
   }
@@ -201,4 +438,17 @@ td.inline-edit-column {
   align-items: center;
   position: relative;
   top: -6px;
+}
+
+/* Center icon inside Badge when used as a validation indicator */
+.validation-badge.p-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure form labels appear above their inputs (PrimeVue 3 provided this via .p-fluid, PrimeVue 4 does not) */
+.field > label {
+  display: block;
+  margin-bottom: 0.25rem;
 }

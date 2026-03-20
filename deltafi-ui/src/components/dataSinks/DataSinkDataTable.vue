@@ -22,7 +22,7 @@
 <template>
   <ContextMenu ref="menu" :model="menuItems" />
   <div v-for="(pluginFlows, pluginName) in filteredFlowDataByPlugin" :key="pluginName">
-    <CollapsiblePanel :header="pluginName" class="table-panel pb-3" @contextmenu="onPanelRightClick($event, pluginName)">
+    <CollapsiblePanel :header="pluginName" class="table-panel mb-3" @contextmenu="onPanelRightClick($event, pluginName)">
       <template #header>
         <span class="p-panel-title d-flex align-items-center">
           {{ pluginName === 'system-plugin' ? 'Local System Plugin' : pluginName }}
@@ -30,14 +30,15 @@
           <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + pluginFlows[0].mvnCoordinates }" class="ml-2">
             <i v-tooltip.top="pluginFlows[0].mvnCoordinates" class="text-muted fas fa-plug fa-rotate-90 fa-fw" />
           </PermissionedRouterLink>
-          <Button v-tooltip.top="'Plugin actions'" severity="secondary" text size="small" icon="pi pi-ellipsis-v" class="p-0 ml-1" @click.stop="onPanelRightClick($event, pluginName)" />
+          <Button v-tooltip.top="'Plugin actions'" severity="secondary" text size="small" icon="pi pi-ellipsis-v" aria-label="Plugin actions menu" class="p-0 ml-1" @click.stop="onPanelRightClick($event, pluginName)" />
         </span>
       </template>
       <DataTable
         v-model:filters="filters"
+        aria-label="Data sinks"
         :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null"
         :value="pluginFlows"
-        responsive-layout="scroll"
+
         striped-rows
         class="p-datatable-sm p-datatable-gridlines data-sinks-table"
         :row-class="actionRowClass"
@@ -123,7 +124,7 @@ import Column from "primevue/column";
 import ConfirmDialog from "primevue/confirmdialog";
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
-import { FilterMatchMode } from "primevue/api";
+import { FilterMatchMode } from "@primevue/core/api";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
@@ -301,7 +302,7 @@ const updateRateLimit = (updateData) => {
     padding: 0 !important;
     width: 7rem;
 
-    .p-inputswitch {
+    .p-toggleswitch {
       padding: 0.25rem !important;
       margin: 0.25rem 0 0 0.25rem !important;
     }

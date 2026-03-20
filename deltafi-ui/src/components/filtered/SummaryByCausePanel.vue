@@ -20,13 +20,13 @@
   <Panel header="DeltaFiles by Cause" @contextmenu="onPanelRightClick">
     <ContextMenu ref="menu" :model="menuItems" />
     <template #icons>
-      <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+      <Paginator v-if="filteredCause.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" @page="onPage($event)" />
+      <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="filteredCause.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)" />
     </template>
-    <DataTable id="filteredSummaryTable" v-model:expanded-rows="expandedCauseGroups" v-model:selection="selectedCauseGroups" data-key="message" responsive-layout="scroll" selection-mode="multiple" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="groupCauseData" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredMessage" :row-hover="true" @row-contextmenu="onGroupContextMenu" @sort="onSort($event)" @row-select="onGroupRowSelect" @row-unselect="onGroupRowUnSelect">
+    <DataTable id="filteredSummaryTable" v-model:expanded-rows="expandedCauseGroups" v-model:selection="selectedCauseGroups" aria-label="Filtered summary by cause" data-key="message" selection-mode="multiple" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="groupCauseData" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredMessage" :row-hover="true" @row-contextmenu="onGroupContextMenu" @sort="onSort($event)" @row-select="onGroupRowSelect" @row-unselect="onGroupRowUnSelect">
       <template #empty> No results to display. </template>
       <template #loading> Loading. Please wait... </template>
       <Column v-if="groupCauseData.length > 0" expander class="expander-column">
@@ -44,7 +44,7 @@
       <Column field="count" header="Count" sortable />
       <template #expansion="slotProps">
         <div class="filtered-Subtable">
-          <DataTable :value="slotProps.data.flows" v-model:selection="selectedFilters" data-key="flow" selection-mode="multiple" class="p-datatable-sm p-datatable-gridlines" @row-select="onRowSelect" @row-unselect="onRowUnSelect" @row-contextmenu="onRowContextMenu">
+          <DataTable :value="slotProps.data.flows" v-model:selection="selectedFilters" aria-label="Filtered flows by cause" data-key="flow" selection-mode="multiple" class="p-datatable-sm p-datatable-gridlines" @row-select="onRowSelect" @row-unselect="onRowUnSelect" @row-contextmenu="onRowContextMenu">
             <Column field="flow" header="Flow" sortable class="filename-column" />
             <Column field="type" header="Flow Type" sortable />
             <Column field="count" header="Count" sortable />

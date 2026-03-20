@@ -27,7 +27,7 @@
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="tooltip" :model-value="rowData.backingServiceActive" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.backingServiceActive)" />
+    <ToggleSwitch v-tooltip.top="tooltip" :model-value="rowData.backingServiceActive" class="p-button-sm" @click.prevent="confirmationPopup($event, rowData.name, rowData.backingServiceActive)" />
   </span>
   <span v-else class="pr-2 float-left">
     <Button :label="backingServiceActiveToolTip" :class="backingServiceActiveButtonClass" style="width: 5.5rem" disabled />
@@ -41,7 +41,7 @@ import { computed, toRefs, ref } from "vue";
 
 import Button from "primevue/button";
 import ConfirmPopup from "primevue/confirmpopup";
-import InputSwitch from "primevue/inputswitch";
+import ToggleSwitch from "primevue/toggleswitch";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 

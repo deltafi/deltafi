@@ -22,7 +22,7 @@
   <div class="spel-reference">
     <TabView>
       <TabPanel header="Variables">
-        <DataTable :value="variables" class="p-datatable-sm">
+        <DataTable :value="variables" aria-label="SpEL variables" class="p-datatable-sm">
           <Column field="name" header="Variable" style="width: 30%">
             <template #body="{ data }">
               <code class="clickable" @click="insert(data.insertText || data.name)">{{ data.name }}</code>
@@ -34,7 +34,7 @@
       </TabPanel>
 
       <TabPanel header="Methods">
-        <DataTable :value="methods" class="p-datatable-sm">
+        <DataTable :value="methods" aria-label="SpEL methods" class="p-datatable-sm">
           <Column field="name" header="Method" style="width: 35%">
             <template #body="{ data }">
               <code class="clickable" @click="insert(data.insertText || data.name)">{{ data.name }}</code>
@@ -46,7 +46,7 @@
       </TabPanel>
 
       <TabPanel header="Operators">
-        <DataTable :value="operators" class="p-datatable-sm">
+        <DataTable :value="operators" aria-label="SpEL operators" class="p-datatable-sm">
           <Column field="operator" header="Operator" style="width: 15%">
             <template #body="{ data }">
               <code class="clickable" @click="insert(data.insertText || data.operator)">{{ data.operator }}</code>

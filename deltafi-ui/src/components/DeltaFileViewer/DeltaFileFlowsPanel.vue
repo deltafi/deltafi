@@ -19,7 +19,7 @@
 <template>
   <div>
     <component :is="hideHeader ? 'div' : CollapsiblePanel" :header="hideHeader ? undefined : 'Flows'" class="actions-panel table-panel">
-      <DataTable v-model:expanded-rows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" data-key="name" @row-click="rowClick">
+      <DataTable v-model:expanded-rows="expandedRows" aria-label="DeltaFile flows" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" data-key="name" @row-click="rowClick">
         <Column class="expander-column" :expander="true" />
         <Column field="name" header="Name" class="flow-name-column" :sortable="true">
           <template #body="{ data }">
