@@ -34,7 +34,7 @@
         <dl>
           <dt>Name*</dt>
           <dd>
-            <InputText v-model.trim="model['name']" placeholder="Lookup Table Name" :disabled="editLookupTable" class="inputWidth" />
+            <InputText v-model="model['name']" placeholder="Lookup Table Name" :disabled="editLookupTable" class="inputWidth" />
           </dd>
           <dt>Columns*</dt>
           <dd>

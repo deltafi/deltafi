@@ -91,7 +91,7 @@ const items = ref([
   {
     label: "Add Lookup Table",
     icon: "pi pi-plus",
-    visible: computed(() => hasPermission("FlowPlanCreate")),
+    visible: computed(() => hasPermission("LookupTableCreate")),
     command: () => {
       addLookupTable.value.showDialog();
     },
@@ -99,7 +99,7 @@ const items = ref([
   {
     label: "Import Lookup Tables",
     icon: "text-muted fas fa-upload fa-fw",
-    visible: computed(() => hasPermission("FlowPlanCreate")),
+    visible: computed(() => hasPermission("LookupTableCreate")),
     command: () => {
       document.getElementById("lookupTableFileUploaderButton").click();
     },
@@ -107,7 +107,7 @@ const items = ref([
   {
     label: "Export Lookup Tables",
     icon: "text-muted fas fa-download fa-fw",
-    visible: true,
+    visible: computed(() => hasPermission("LookupTableRead")),
     command: () => {
       exportLookupTables();
     },

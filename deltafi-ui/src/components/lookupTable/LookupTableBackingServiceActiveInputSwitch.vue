@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <span v-if="$hasPermission('FlowUpdate')">
+  <span v-if="$hasPermission('LookupTableUpdate')">
     <ConfirmPopup />
     <ConfirmPopup :group="rowData.name + '_backingServiceActive'">
       <template #message="slotProps">
