@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 func init() {

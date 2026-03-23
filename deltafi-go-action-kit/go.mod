@@ -1,4 +1,4 @@
-module gitlab.com/deltafi/deltafi/deltafi-go-action-kit
+module gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2
 
 go 1.26.1
 

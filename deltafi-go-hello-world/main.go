@@ -6,7 +6,7 @@ package main
 import (
 	"log"
 
-	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 	_ "gitlab.com/deltafi/deltafi/deltafi-go-hello-world/actions"
 	_ "gitlab.com/deltafi/deltafi/deltafi-go-hello-world/suppliers"
 )

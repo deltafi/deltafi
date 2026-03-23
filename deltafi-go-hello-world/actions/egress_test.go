@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit"
+	actionkit "gitlab.com/deltafi/deltafi/deltafi-go-action-kit/v2"
 )
 
 func TestEgress_Normal(t *testing.T) {
