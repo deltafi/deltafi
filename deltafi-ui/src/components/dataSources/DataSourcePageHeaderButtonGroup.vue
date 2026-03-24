@@ -1,4 +1,4 @@
-<!--
+v<!--
    DeltaFi - Data transformation and enrichment platform
 
    Copyright 2021-2026 DeltaFi Contributors <deltafi@deltafi.org>
@@ -105,25 +105,35 @@ const preUploadValidation = async (request) => {
       }
 
       const validJson = JSON.parse(reader.result);
+      let response = null;
 
-      if (_.has(validJson, "restDataSources") || _.has(validJson, "timedDataSources")) {
+      if (_.has(validJson, "restDataSources") || _.has(validJson, "timedDataSources") || _.has(validJson, "onErrorDataSources")) {
         if (_.has(validJson, "restDataSources")) {
           for (const restDataSource of validJson.restDataSources) {
-            uploadDataSource(restDataSource, true);
+            response = uploadDataSource(restDataSource, "REST_DATA_SOURCE");
           }
         }
 
         if (_.has(validJson, "timedDataSources")) {
           for (const timedDataSource of validJson.timedDataSources) {
-            uploadDataSource(timedDataSource, false);
+            response = uploadDataSource(timedDataSource, "TIMED_DATA_SOURCE");
+          }
+        }
+
+        if (_.has(validJson, "onErrorDataSources")) {
+          for (const onErrorDataSource of validJson.onErrorDataSources) {
+            response = uploadDataSource(onErrorDataSource, "ON_ERROR_DATA_SOURCE");
           }
         }
       } else if (_.has(validJson, "type")) {
         if (_.isEqual(validJson.type, "REST_DATA_SOURCE")) {
-          uploadDataSource(validJson, true);
+          response = uploadDataSource(validJson, "REST_DATA_SOURCE");
         }
         if (_.isEqual(validJson.type, "TIMED_DATA_SOURCE")) {
-          uploadDataSource(validJson, false);
+          response = uploadDataSource(validJson, "TIMED_DATA_SOURCE");
+        }
+        if (_.isEqual(validJson.type, "ON_ERROR_DATA_SOURCE")) {
+          response = uploadDataSource(validJson, "ON_ERROR_DATA_SOURCE");
         }
       } else {
         notify.error(`Invalid file format`, 4000);
@@ -132,14 +142,17 @@ const preUploadValidation = async (request) => {
   }
 };
 
-const uploadDataSource = async (data, isRestDataSource) => {
+const uploadDataSource = async (data, dataSourceType) => {
   let response = null;
-  if (isRestDataSource) {
+  if (dataSourceType === "REST_DATA_SOURCE") {
     response = await saveRestDataSourcePlan(data);
     response = response.data.saveRestDataSourcePlan;
-  } else {
+  } else if (dataSourceType === "TIMED_DATA_SOURCE") {
     response = await saveTimedDataSourcePlan(data);
     response = response.data.saveTimedDataSourcePlan;
+  } else if (dataSourceType === "ON_ERROR_DATA_SOURCE") {
+    response = await saveOnErrorDataSourcePlan(data);
+    response = response.data.saveOnErrorDataSourcePlan;
   }
 
   if (_.isEmpty(_.get(response, "name", null))) {
