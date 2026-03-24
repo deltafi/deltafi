@@ -21,7 +21,7 @@
 <template>
   <div class="content-selector-container">
     <div v-if="showListbox" class="left-column">
-      <Listbox v-model="selectedItem" :options="listboxItems" filter option-label="name">
+      <Listbox v-model="selectedItem" :options="listboxItems" filter option-label="name" scrollHeight="100%">
         <template #option="{ option }">
           <div class="listbox-item">
             <span class="listbox-item-name">{{ option.name }}</span>
