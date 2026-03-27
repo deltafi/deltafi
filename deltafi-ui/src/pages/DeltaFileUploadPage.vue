@@ -96,7 +96,7 @@
       <div class="col-12">
         <CollapsiblePanel v-if="deltaFiles.length" header="Uploaded DeltaFiles" class="table-panel">
           <template #icons>
-            <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="deltaFilesMenuToggle">
+            <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="deltaFilesMenuToggle">
               <span class="fas fa-cog" />
             </Button>
             <Menu id="config_menu" ref="deltaFilesMenu" :model="deltaFilesMenuItems" :popup="true" />

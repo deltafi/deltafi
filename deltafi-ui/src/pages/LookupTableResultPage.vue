@@ -52,7 +52,7 @@
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
         <Paginator v-if="lookupDataTable.length > 0" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="offset" :rows="rowsPerPage" :total-records="totalRecords" :rows-per-page-options="[1, 10, 20, 50, 100, 1000]" @page="onPage" />
-        <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
+        <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />

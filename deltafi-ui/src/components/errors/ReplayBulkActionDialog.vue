@@ -20,18 +20,18 @@
 
 <template>
   <div class="replay-dialog">
-    <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true" :style="{ width: '35vw' }">
+    <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true" :style="{ width: '30vw' }">
       <template #header>
         <strong>Replay</strong>
       </template>
-      <div v-if="!displayBatchingDialog" class="metadata-body">
-        <p class="mb-3">Replay {{ pluralized }}?</p>
+      <div v-if="!displayBatchingDialog" class="metadata-body my-3">
+        <p>Replay {{ pluralized }}?</p>
         <div class="p-fluid">
-          <div class="flex align-items-center mb-4">
+          <div class="flex align-items-center mb-3">
             <Checkbox v-model="acknowledgeOnReplay" input-id="acknowledgeOnReplay" :binary="true" />
             <label for="acknowledgeOnReplay" class="ml-2 mb-0" style="line-height: 1;">Acknowledge error on replay</label>
           </div>
-          <div class="field mt-2">
+          <div class="field mt-2" v-if="acknowledgeOnReplay">
             <label for="reason">Acknowledge Reason</label>
             <InputText id="reason" v-model="reason" type="text" :disabled="!acknowledgeOnReplay" :class="{ 'p-invalid': reasonInvalid }" />
           </div>

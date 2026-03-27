@@ -22,7 +22,7 @@
       <template #header>
         <strong>Resume</strong>
       </template>
-      <div v-if="!displayBatchingDialog" class="metadata-body">Resume {{ pluralized }}?</div>
+      <div v-if="!displayBatchingDialog" class="metadata-body my-3">Resume {{ pluralized }}?</div>
       <div v-else-if="displayBatchingDialog">
         <div>
           <p v-if="!stopped">Resume in progress.<span v-if="props.did.length > 1"> If you navigate away, the operation will stop after the current batch.</span></p>

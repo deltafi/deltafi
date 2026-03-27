@@ -28,15 +28,6 @@ import { definePreset } from "@primeuix/themes";
 
 // Custom theme preset based on Lara with Bootstrap-like colors
 const DeltaFiPreset = definePreset(Lara, {
-  components: {
-    paginator: {
-      navButton: {
-        borderRadius: "{content.border.radius}",
-        width: "2rem",
-        height: "2rem",
-      },
-    },
-  },
   semantic: {
     primary: {
       50: "{blue.50}",

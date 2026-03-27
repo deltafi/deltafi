@@ -19,7 +19,7 @@
 <template>
   <Dialog v-model:visible="displayAcknowledgeDialog" :header="acknowledgeButtonLabel" :maximizable="false" :modal="true" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" @update:visible="close">
     <div class="p-fluid">
-      <div class="field mt-3">
+      <div class="field">
         <label for="reason">Reason</label>
         <InputText id="reason" v-model="reason" type="text" :class="{ 'p-invalid': reasonInvalid }" autofocus />
       </div>

@@ -74,7 +74,7 @@
   </Dialog>
   <Dialog v-model:visible="showCreateSnapshotDialog" header="Create Snapshot" :style="{ width: '25vw' }" :modal="true" :draggable="false" :dismissable-mask="true" @update:visible="close">
     <div class="p-fluid">
-      <div class="field mt-3">
+      <div class="field">
         <label for="reason">Reason</label>
         <InputText id="reason" v-model="reason" type="text" autofocus />
       </div>

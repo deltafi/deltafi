@@ -261,15 +261,6 @@ a {
   min-width: 25rem;
 }
 
-.noselect {
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Old versions of Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
-}
-
 .p-datatable-sm {
   .expander-column {
     width: 1%;
@@ -353,6 +344,13 @@ td.did-column {
   background: none !important;
   color: #212529 !important;
 
+  /* Match PrimeVue 3 paginator nav button styling */
+  .p-paginator-nav-button {
+    border-radius: var(--p-content-border-radius, 6px);
+    width: 2rem;
+    height: 2rem;
+  }
+
   /* Match PrimeVue 3 paginator button styling (rectangular with slight rounding) */
   .p-paginator-page {
     border-radius: var(--p-content-border-radius, 6px);
@@ -388,7 +386,7 @@ td.did-column {
 }
 
 /* PrimeIcons have no built-in width like FontAwesome's fa-fw, so add spacing between icon and label */
-.p-button .p-button-icon.pi {
+.p-button:has(.p-button-label:not(:empty)) .p-button-icon.pi {
   margin-right: 0.25rem;
 }
 
@@ -396,34 +394,6 @@ td.did-column {
 .p-confirmpopup-reject-button {
   span.p-button-icon:empty {
     display: none;
-  }
-}
-
-td.inline-edit-column {
-  width: 7rem;
-  padding: 0 !important;
-
-  >span {
-    padding: 0.5rem !important;
-  }
-
-  .value-clickable {
-    cursor: pointer;
-    width: 100%;
-    display: flex;
-  }
-
-  .value-clickable>* {
-    flex: 0 0 auto;
-  }
-
-  .p-inputnumber {
-    padding: 0 !important;
-    margin: 0;
-
-    .p-inputtext {
-      width: 6.5rem;
-    }
   }
 }
 
@@ -451,4 +421,44 @@ td.inline-edit-column {
 .field > label {
   display: block;
   margin-bottom: 0.25rem;
+}
+
+/* ── PrimeVue 3 Dialog look ────────────────────────────────────────────── */
+.p-dialog-header {
+  padding: 0.5rem 1.5rem !important;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.p-dialog-title {
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+}
+
+.p-dialog-content {
+  padding: 0.5rem 1.5rem 0.5rem 1.5rem !important;
+}
+
+.p-dialog-footer {
+  padding: 0.5rem 1.5rem 0.5rem 1.5rem !important;
+  border-top: 1px solid #dee2e6;
+  align-items: center;
+}
+
+/* PrimeVue 3 .p-fluid utility: make form controls stretch to full width */
+.p-fluid .p-inputtext,
+.p-fluid .p-inputnumber,
+.p-fluid .p-select,
+.p-fluid .p-multiselect,
+.p-fluid .p-textarea,
+.p-fluid .p-autocomplete,
+.p-fluid .p-cascadeselect,
+.p-fluid .p-datepicker,
+.p-fluid .p-inputmask,
+.p-fluid .p-treeselect {
+  width: 100%;
+}
+
+.p-button-label {
+  /* Do not wrap button labels to multiple lines, as PrimeVue 4 does by default */
+  white-space: nowrap;
 }

@@ -38,9 +38,9 @@
       </div>
     </div>
     <div v-else-if="loaded">
-      <Message v-if="deltaFile.pinned" severity="warn" :closable="false"> This DeltaFile is pinned and won't be deleted by delete policies </Message>
-      <Message v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
-      <Message v-if="testMode" severity="info" :closable="false"> This DeltaFile was processed in test mode. </Message>
+      <Message class="mb-3" v-if="deltaFile.pinned" severity="warn" :closable="false"> This DeltaFile is pinned and won't be deleted by delete policies </Message>
+      <Message class="mb-3" v-if="contentDeleted" severity="warn" :closable="false"> The content for this DeltaFile has been deleted. Reason for this deletion: {{ deltaFile.contentDeletedReason }} </Message>
+      <Message class="mb-3" v-if="testMode" severity="info" :closable="false"> This DeltaFile was processed in test mode. </Message>
       <div class="row mb-3">
         <div class="col-12">
           <DeltaFileInfoPanel :delta-file-data="deltaFile" @filter-logs-by-severity="filterLogsBySeverity" />

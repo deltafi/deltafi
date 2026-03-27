@@ -21,7 +21,7 @@
     <Dialog v-model:visible="dialogVisible" header="Annotate DeltaFile" :maximizable="false" :modal="true" :draggable="false" :style="{ width: '30vw' }">
       <MapEdit v-model="metadata" />
       <template #footer>
-        <span style="float: left" class="field-checkbox">
+        <span class="field-checkbox">
           <Checkbox v-model="allowOverwrites" input-id="allOverwrite" :binary="true" />
           <label for="allowOverwrite" class="ml-2">Overwrite?</label>
         </span>

@@ -46,7 +46,7 @@
       <div class="col-12">
         <CollapsiblePanel v-if="imports.length" header="Imported DeltaFiles" class="table-panel">
           <template #icons>
-            <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="importsMenuToggle">
+            <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="importsMenuToggle">
               <span class="fas fa-cog" />
             </Button>
             <Menu id="config_menu" ref="importsMenu" :model="importsMenuItems" :popup="true" />

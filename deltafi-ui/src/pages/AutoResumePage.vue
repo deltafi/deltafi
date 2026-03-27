@@ -35,7 +35,7 @@
             <InputIcon class="pi pi-search"> </InputIcon>
             <InputText v-model="filters['global'].value" class="p-inputtext-sm deltafi-input-field mx-1" placeholder="Search" />
           </IconField>
-          <Button severity="secondary" variant="text" class="p-panel-header-icon p-mr-2" @click="toggleMenu">
+          <Button severity="secondary" variant="text" class="p-panel-header-icon mr-2" @click="toggleMenu">
             <span class="fas fa-bars" />
           </Button>
         </div>
