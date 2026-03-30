@@ -21,6 +21,7 @@
 
 import { computed, inject, ref, type ComputedRef, type Ref } from "vue";
 import useErrorCount from "./useErrorCount";
+import useInvalidFlowCount from "./useInvalidFlowCount";
 import useUiConfig from "./useUiConfig";
 import useUtilFunctions from "./useUtilFunctions";
 
@@ -56,15 +57,36 @@ export default function useMenuItems(): {
   isVisible: (item: { visible: boolean | ComputedRef<boolean> }) => boolean;
 } {
   const { errorCount } = useErrorCount();
+  const { invalidDataSourceCount, invalidTransformCount, invalidDataSinkCount, startPolling } = useInvalidFlowCount();
   const { uiConfig } = useUiConfig();
   const hasPermission = inject<(permission: string) => boolean>("hasPermission")!;
   const hasSomePermissions = inject<(...permissions: string[]) => boolean>("hasSomePermissions")!;
   const { buildURL } = useUtilFunctions();
 
+  startPolling();
+
   const errorsBadge = computed(() => ({
     visible: errorCount.value > 0,
     class: "badge badge-danger badge-pill",
     value: errorCount.value,
+  }));
+
+  const invalidDataSourceBadge = computed(() => ({
+    visible: invalidDataSourceCount.value > 0,
+    class: "badge badge-danger badge-pill",
+    value: invalidDataSourceCount.value,
+  }));
+
+  const invalidTransformBadge = computed(() => ({
+    visible: invalidTransformCount.value > 0,
+    class: "badge badge-danger badge-pill",
+    value: invalidTransformCount.value,
+  }));
+
+  const invalidDataSinkBadge = computed(() => ({
+    visible: invalidDataSinkCount.value > 0,
+    class: "badge badge-danger badge-pill",
+    value: invalidDataSinkCount.value,
   }));
 
   const externalLinks = computed(() => {
@@ -210,18 +232,21 @@ export default function useMenuItems(): {
           name: "Data Sources",
           icon: "fas fas fa-file-import fa-fw",
           path: "/config/data-sources",
+          badge: () => invalidDataSourceBadge.value,
           visible: computed(() => hasPermission("FlowView")),
         },
         {
           name: "Transforms",
           icon: "fas fa-project-diagram fa-fw",
           path: "/config/transforms",
+          badge: () => invalidTransformBadge.value,
           visible: computed(() => hasPermission("FlowView")),
         },
         {
           name: "Data Sinks",
           icon: "fas fas fa-file-export fa-fw",
           path: "/config/data-sinks",
+          badge: () => invalidDataSinkBadge.value,
           visible: computed(() => hasPermission("FlowView")),
         },
         {
