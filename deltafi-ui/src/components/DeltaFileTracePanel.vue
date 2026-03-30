@@ -33,7 +33,7 @@ import dayjs from "dayjs";
 import _ from "lodash";
 
 const timestampFormat = "YYYY-MM-DD HH:mm:ss.SSS";
-const { formatTimestamp } = useUtilFunctions();
+const { formatTimestamp, duration } = useUtilFunctions();
 
 const props = defineProps({
   deltaFileData: {
@@ -164,7 +164,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
   const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "2000").style("visibility", "hidden");
 
   const showToolTip = (event, d) => {
-    const tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOriginal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOriginal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOriginal}ms ` : d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
+    const tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${duration(d.elapsed)} </br> Action Start: ${formatTimestamp(d.startOriginal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOriginal, timestampFormat)} </br> Action Elapsed: ${duration(d.startTimeElapsedOriginal)} ` : d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${duration(d.elapsed)}` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOriginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOriginal, timestampFormat)}</br> Total Elapsed: ${duration(d.elapsed)}`;
     tooltip
       .html(tipString)
       .style("visibility", "visible")
@@ -283,7 +283,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .attr("y", (d, i) => i * rowWidth + rowWidth * 0.5)
     .attr("dy", "1")
     .attr("text-anchor", "middle")
-    .text((d) => `${d.elapsed}ms`);
+    .text((d) => duration(d.elapsed));
 
   chart
     .append("g")
@@ -297,7 +297,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
     .attr("y", 0)
     .attr("dy", -3)
     .attr("text-anchor", "middle")
-    .text(String);
+    .text((d) => duration(d));
 
   chart
     .append("g")
