@@ -5,6 +5,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.52.0] - 2026-04-02
+
+### Highlights
+- Updated UI tech stack to PrimeVue 4
+- New `UnpackAvro` action
+- ActiveMQ and NATS listener bridges
+
+### Added
+- Added line number and object folding for JSON to DeltaFile Viewer.
+- Added a copy to clipboard to the DeltaFile Viewer.
+- Added error badges for invalid flows to sidebar menu for DataSources, Transforms, and DataSinks. 
+- Added the `UnpackAvro` action to unpack embedded-schema Avro object container files into metadata and record content.
+
+### Changed
+- Raw DeltaFi query and viewer now use graphql introspection to get and display DeltaFi data. 
+- Improved Viewer Trace readout for large numbers of milliseconds to convert to sec, min, etc 
+- Exposed configuration for S3 proxy to default site.yaml. Added configuration to docs. 
+
+### Fixed
+- Fixed import of On-error Data Source 
+- Fixed wrong permissions on several calls
+- Fixed jankiness of trim with name creating a new lookup table 
+- Fixed css issues causing the dialogs to look weird after the PrimeVue v4 upgrade 
+- UI: Fixed a bug that caused the content viewer list to only show the first 5 items.
+- Use the go v2 semantic versioning for go action kit
+
 ## [2.51.2] - 2026-03-18
 
 ### Highlights
@@ -5977,7 +6003,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.52.0...main
+[2.52.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.2...2.52.0
 [2.51.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.51.0...2.51.2
 [2.51.0]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.2...2.51.0
 [2.50.2]: https://gitlab.com/deltafi/deltafi/-/compare/2.50.1...2.50.2
