@@ -23,34 +23,26 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.io.Writer;
 import org.deltafi.common.io.WriterPipedInputStream;
-import org.deltafi.common.nifi.FlowFileTwoStepUnpackager;
-import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV1;
-import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV2;
-import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV3;
+import org.deltafi.common.nifi.*;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.FlowType;
-import org.deltafi.common.types.IngressEventItem;
+import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.exceptions.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.services.analytics.AnalyticEventService;
-import org.deltafi.core.types.AnalyticIngressTypeEnum;
-import org.deltafi.core.types.IngressResult;
-import org.deltafi.core.types.RestDataSource;
+import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -78,22 +70,11 @@ public class IngressService {
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
+
     public List<IngressResult> ingress(String dataSource, String filename, String contentType, String username,
             String headerMetadataString, InputStream dataStream, OffsetDateTime created) throws IngressMetadataException,
             ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException, IngressRateLimitException {
-        if (!deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled()) {
-            log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename, contentType, username,
-                    "Ingress disabled for this instance of DeltaFi");
-            throw new IngressUnavailableException("Ingress disabled for this instance of DeltaFi");
-        }
-
-        if (systemService.isContentStorageDepleted()) {
-            log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename,
-                    contentType, username, "Ingress temporarily disabled due to storage limits");
-            throw new IngressStorageException("Ingress temporarily disabled due to storage limits");
-        }
-
-        log.debug("Ingressing: dataSource={} filename={} contentType={} username={}", dataSource, filename, contentType, username);
+        ingressPreCheck(username, dataSource, filename, contentType);
 
         List<IngressResult> ingressResults;
         try {
@@ -113,7 +94,7 @@ public class IngressService {
         }
 
         ingressResults.forEach(ingressResult -> analyticEventService.recordIngress(ingressResult.did(),
-                created, ingressResult.dataSource(), FlowType.REST_DATA_SOURCE, ingressResult.content().getSize(),
+                created, ingressResult.dataSource(), FlowType.REST_DATA_SOURCE, ingressResult.content().getFirst().getSize(),
                 Collections.emptyMap(), AnalyticIngressTypeEnum.DATA_SOURCE));
 
         return ingressResults;
@@ -192,19 +173,19 @@ public class IngressService {
 
         if (restDataSource.getRateLimit() != null) {
             var rateLimit = restDataSource.getRateLimit();
-            
+
             if (rateLimit.getUnit() == org.deltafi.core.generated.types.RateLimitUnit.FILES) {
                 // FILES: try to consume 1 file token
                 if (!rateLimitService.tryConsume(dataSource, 1, rateLimit.getMaxAmount(), Duration.ofSeconds(rateLimit.getDurationSeconds()))) {
                     log.warn("Rate limit exceeded for data source '{}' - rejecting ingress for filename={}", dataSource, filename);
-                    throw new IngressRateLimitException("Rate limit exceeded - " + dataSource + " allows " + 
+                    throw new IngressRateLimitException("Rate limit exceeded - " + dataSource + " allows " +
                         rateLimit.getMaxAmount() + " files per " + rateLimit.getDurationSeconds() + " seconds");
                 }
             } else { // BYTES
                 // BYTES: check if there's room for at least 1 byte
                 if (!rateLimitService.tryConsume(dataSource, 1, rateLimit.getMaxAmount(), Duration.ofSeconds(rateLimit.getDurationSeconds()))) {
                     log.warn("Rate limit exceeded for data source '{}' - rejecting ingress for filename={}", dataSource, filename);
-                    throw new IngressRateLimitException("Rate limit exceeded - " + dataSource + " allows " + 
+                    throw new IngressRateLimitException("Rate limit exceeded - " + dataSource + " allows " +
                         rateLimit.getMaxAmount() + " bytes per " + rateLimit.getDurationSeconds() + " seconds");
                 }
             }
@@ -235,15 +216,57 @@ public class IngressService {
                 .content(List.of(content))
                 .build();
 
+        return executeIngress(restDataSource, ingressEventItem, created);
+    }
+
+    public IngressResult ingress(IngressEventItem ingressEventItem, String username) throws IngressMetadataException, IngressException, IngressUnavailableException, IngressStorageException {
+        String mediaType = MediaType.MULTIPART_FORM_DATA;
+        if (ingressEventItem.getContent() == null || ingressEventItem.getContent().isEmpty()) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        } else if (ingressEventItem.getContent().size() == 1) {
+            mediaType = ingressEventItem.getContent().getFirst().getMediaType();
+        }
+
+        ingressPreCheck(username, ingressEventItem.getFlowName(), ingressEventItem.getDeltaFileName(), mediaType);
+
+        RestDataSource restDataSource;
         try {
-            deltaFilesService.ingressRest(restDataSource, ingressEventItem, created, OffsetDateTime.now());
-            return new IngressResult(dataSource, did, content);
+            restDataSource = restDataSourceService.getActiveFlowByName(ingressEventItem.getFlowName());
+        } catch (MissingFlowException e) {
+            throw new IngressMetadataException(e.getMessage());
+        }
+
+        return executeIngress(restDataSource, ingressEventItem, OffsetDateTime.now());
+    }
+
+    private void ingressPreCheck(String username, String dataSource, String filename, String contentType) throws IngressStorageException, IngressUnavailableException {
+        username = StringUtils.isNotBlank(username) ? username : "system";
+        if (!deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled()) {
+            log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename, contentType, username,
+                    "Ingress disabled for this instance of DeltaFi");
+            throw new IngressUnavailableException("Ingress disabled for this instance of DeltaFi");
+        }
+
+        if (systemService.isContentStorageDepleted()) {
+            log.error(INGRESS_ERROR_FOR_DATASOURCE_FILENAME_CONTENT_TYPE_USERNAME, dataSource, filename,
+                    contentType, username, "Ingress temporarily disabled due to storage limits");
+            throw new IngressStorageException("Ingress temporarily disabled due to storage limits");
+        }
+
+        log.debug("Ingressing: dataSource={} filename={} contentType={} username={}", dataSource, filename, contentType, username);
+    }
+
+    private IngressResult executeIngress(RestDataSource restDataSource, IngressEventItem ingressEventItem, OffsetDateTime created) throws IngressException {
+        UUID did = ingressEventItem.getDid();
+        try {
+            deltaFilesService.ingressRest(restDataSource, ingressEventItem,  created, OffsetDateTime.now());
+            return new IngressResult(ingressEventItem);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(dataSource, did, content);
+            return new IngressResult(ingressEventItem);
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
-            deltaFilesService.deleteContentAndMetadata(did, content);
+            deltaFilesService.deleteContentAndMetadata(did, ingressEventItem.getContent());
             throw new IngressException("Ingress failed", e);
         }
     }

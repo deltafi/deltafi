@@ -44,6 +44,10 @@ deltafi:
   api:
     image: {{.Repo}}/deltafi-api:{{.Tag}}
     workers: 8
+  activemq_ingress:
+    image: {{.Repo}}/activemq-ingress:{{.Tag}}
+  nats_ingress:
+    image: {{.Repo}}/nats-ingress:{{.Tag}}
   dirwatcher:
     enabled: true
     image: {{.Repo}}/deltafi-dirwatcher:{{.Tag}}

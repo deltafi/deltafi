@@ -558,7 +558,7 @@ class DeltaFilesServiceTest {
     void testDeleteContentAndMetadata() {
         Content content = new Content();
         UUID did = UUID.randomUUID();
-        deltaFilesService.deleteContentAndMetadata(did, content);
+        deltaFilesService.deleteContentAndMetadata(did, List.of(content));
 
         verify(deltaFileRepo).deleteById(did);
         verify(contentStorageService).delete(content);
@@ -569,7 +569,7 @@ class DeltaFilesServiceTest {
         Content content = new Content();
         UUID did = UUID.randomUUID();
         doThrow(new RuntimeException("db fail")).when(deltaFileRepo).deleteById(did);
-        deltaFilesService.deleteContentAndMetadata(did, content);
+        deltaFilesService.deleteContentAndMetadata(did, List.of(content));
 
         // make sure content cleanup happens after a db failure
         verify(contentStorageService).delete(content);

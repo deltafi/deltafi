@@ -1,0 +1,38 @@
+plugins {
+    id 'java-conventions'
+    id 'maven-publish'
+}
+
+description = 'Spring Boot starter for building message-based ingress services'
+
+javadoc {
+    options.tags = ["ParametersAreNonnullByDefault"]
+}
+
+dependencies {
+    api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))
+    api project(':deltafi-common')
+    api 'org.springframework.boot:spring-boot-autoconfigure'
+
+    api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+    api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
+
+    api 'org.slf4j:slf4j-api'
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
+
+    testImplementation platform("org.junit:junit-bom:${jupiterVersion}")
+    testRuntimeOnly platform("org.junit:junit-bom:${jupiterVersion}")
+    testImplementation platform("org.assertj:assertj-bom:${assertJVersion}")
+    testImplementation project(':deltafi-common-test')
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.jupiter:junit-jupiter-params"
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    testImplementation "org.mockito:mockito-junit-jupiter"
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

@@ -23,22 +23,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ImportResponse;
+import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.exceptions.IngressMetadataException;
-import org.deltafi.core.exceptions.IngressRateLimitException;
-import org.deltafi.core.exceptions.IngressStorageException;
-import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.exceptions.*;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.DeltaFileExporter;
-import org.deltafi.core.services.DeltaFileImporter;
-import org.deltafi.core.services.IngressService;
-import org.deltafi.core.types.ExportErrorsRequest;
-import org.deltafi.core.types.ExportRequest;
-import org.deltafi.core.types.IngressResult;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.deltafi.core.services.*;
+import org.deltafi.core.types.*;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -63,7 +54,7 @@ public class DeltaFileRest {
 
     @NeedsPermission.DeltaFileIngress
     @PostMapping(value = "ingress", consumes = MediaType.ALL_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> ingressData(InputStream dataStream,
+    public ResponseEntity<Object> ingressData(InputStream dataStream,
             @RequestHeader(value = "Filename", required = false) String filename,
             @RequestHeader(value = "DataSource", required = false) String dataSource,
             @RequestHeader(value = "Metadata", required = false) String metadata,
@@ -75,17 +66,33 @@ public class DeltaFileRest {
             List<IngressResult> ingressResults = ingressService.ingress(dataSource, filename, contentType, username, metadata,
                     dataStream, OffsetDateTime.now());
             return ResponseEntity.ok(String.join(",", ingressResults.stream().map(r -> r.did().toString()).toList()));
-        } catch (IngressUnavailableException e) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
-        } catch (IngressRateLimitException e) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(e.getMessage());
-        } catch (IngressStorageException | ObjectStorageException e) {
-            return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body(e.getMessage());
-        } catch (IngressMetadataException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Throwable e) { // includes IngressException
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return handleException(e);
         }
+    }
+
+    @NeedsPermission.DeltaFileIngress
+    @PostMapping(path = "ingress/event")
+    public ResponseEntity<Object> ingressContentRef(@RequestBody IngressEventItem ingressEventItem, @RequestHeader(value = DeltaFiConstants.USER_NAME_HEADER, defaultValue = "system") String username) {
+        try {
+            IngressResult ingressResult = ingressService.ingress(ingressEventItem, username);
+            return ResponseEntity.ok(ingressResult);
+        } catch (Throwable e) {
+            return handleException(e);
+        }
+    }
+
+    private ResponseEntity<Object> handleException(Throwable ex) {
+        HttpStatus status = switch (ex) {
+            case IngressUnavailableException ignore -> HttpStatus.SERVICE_UNAVAILABLE;
+            case IngressRateLimitException ignore -> HttpStatus.TOO_MANY_REQUESTS;
+            case IngressStorageException ignore -> HttpStatus.INSUFFICIENT_STORAGE;
+            case ObjectStorageException ignore -> HttpStatus.INSUFFICIENT_STORAGE;
+            case IngressMetadataException ignore -> HttpStatus.BAD_REQUEST;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
+
+        return ResponseEntity.status(status).body(ex.getMessage());
     }
 
     @NeedsPermission.DeltaFileExport

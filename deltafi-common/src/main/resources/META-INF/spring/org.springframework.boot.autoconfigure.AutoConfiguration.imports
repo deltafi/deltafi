@@ -3,3 +3,4 @@ org.deltafi.common.content.ContentStorageServiceAutoConfiguration
 org.deltafi.common.ssl.SslAutoConfiguration
 org.deltafi.common.http.HttpServiceAutoConfiguration
 org.deltafi.common.storage.s3.minio.MinioAutoConfiguration
+org.deltafi.common.uuid.UUIDGeneratorAutoConfiguration

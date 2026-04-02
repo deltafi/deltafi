@@ -8,7 +8,7 @@ description = 'DeltaFi Core'
 
 configurations {
     docs
-    
+
     // Force resolution of lz4-java to use org.lz4 group instead of at.yawk.lz4
     all {
         resolutionStrategy {
@@ -56,7 +56,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.apache.nifi:nifi-flowfile-packager:2.4.0'
-    testImplementation 'org.awaitility:awaitility:4.3.0'
     testImplementation "com.github.victools:jsonschema-generator:${jsonschemaGeneratorVersion}"
     testImplementation "com.github.victools:jsonschema-module-jackson:${jsonschemaGeneratorVersion}"
 

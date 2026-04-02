@@ -1,0 +1,3 @@
+.ingress:
+  variables:
+    PROJECT_NAME: deltafi-ingress

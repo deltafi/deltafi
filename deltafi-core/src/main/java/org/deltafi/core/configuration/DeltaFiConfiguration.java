@@ -22,8 +22,6 @@ import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.valkey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
-import org.deltafi.common.uuid.RandomUUIDGenerator;
-import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
@@ -91,11 +89,6 @@ public class DeltaFiConfiguration {
             LocalStorageProperties localStorageProperties,
             @Value("${schedule.maintenance:true}") boolean scheduledMaintenance) {
         return new DeltaFiPropertiesService(deltaFiPropertiesRepo, eventPublisher, localStorageProperties, scheduledMaintenance);
-    }
-
-    @Bean
-    public UUIDGenerator uuidGenerator() {
-        return new RandomUUIDGenerator();
     }
 
     @Bean

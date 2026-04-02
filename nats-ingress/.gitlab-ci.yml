@@ -1,0 +1,13 @@
+.natsingress:
+  variables:
+    PROJECT_NAME: nats-ingress
+
+"🐳 Publish nats-ingress (GitLab)":
+  extends:
+    - .natsingress
+    - .docker
+
+"🐳 Publish nats-ingress (docker.io)":
+  extends:
+    - .natsingress
+    - .docker-multiarch

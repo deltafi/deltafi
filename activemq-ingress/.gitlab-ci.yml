@@ -1,0 +1,13 @@
+.activemqingress:
+  variables:
+    PROJECT_NAME: activemq-ingress
+
+"🐳 Publish activemq-ingress (GitLab)":
+  extends:
+    - .activemqingress
+    - .docker
+
+"🐳 Publish activemq-ingress (docker.io)":
+  extends:
+    - .activemqingress
+    - .docker-multiarch

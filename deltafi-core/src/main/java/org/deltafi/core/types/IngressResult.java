@@ -18,7 +18,13 @@
 package org.deltafi.core.types;
 
 import org.deltafi.common.types.Content;
+import org.deltafi.common.types.IngressEventItem;
 
+import java.util.List;
 import java.util.UUID;
 
-public record IngressResult(String dataSource, UUID did, Content content) {}
+public record IngressResult(String dataSource, UUID did, List<Content> content) {
+    public IngressResult(IngressEventItem ingressEventItem) {
+        this(ingressEventItem.getFlowName(), ingressEventItem.getDid(), ingressEventItem.getContent());
+    }
+}

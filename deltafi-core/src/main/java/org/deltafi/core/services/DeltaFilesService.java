@@ -1961,7 +1961,7 @@ public class DeltaFilesService {
         deltaFileCacheService.save(deltaFile);
     }
 
-    public void deleteContentAndMetadata(UUID did, Content content) {
+    public void deleteContentAndMetadata(UUID did, List<Content> content) {
         try {
             deltaFileRepo.deleteById(did);
         } catch (Exception e) {
@@ -1972,7 +1972,7 @@ public class DeltaFilesService {
             if (localContentStorageService.isPresent()) {
                 localContentStorageService.get().deleteContent(List.of(did), false);
             } else {
-                contentStorageService.delete(content);
+                content.forEach(contentStorageService::delete);
             }
         } catch (Exception e) {
             log.error("Failed to remove the content for did {}", did, e);

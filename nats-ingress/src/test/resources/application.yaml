@@ -1,0 +1,16 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+deltafi:
+  base-core-url: ${CORE_URL:http://deltafi-core:8080}
+  data-source: ${NATS_REST_DATA_SOURCE:smoke-rest-data-source}
+  media-type: ${NATS_MEDIA_TYPE:text/plain}
+nats:
+  server:
+    url: ${NATS_SERVER_URL:nats://localhost:4222}
+    user: ${NATS_SERVER_USER:user}
+    password: ${NATS_SERVER_PASSWORD:pass}
+    connection-timeout: ${NATS_SERVER_CONNECTION_TIMEOUT:2000}
+    max-reconnect: ${NATS_SERVER_MAX_RECONNECT:10}
+  message:
+    subject: ${NATS_MESSAGE_SUBJECT:nats-subject}

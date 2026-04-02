@@ -156,12 +156,12 @@ class IngressServiceTest {
     private void verifyNormalExecution(List<IngressResult> ingressResults, String expectedContent) throws IOException, ObjectStorageException {
         Mockito.verifyNoMoreInteractions(metricService);
         String content;
-        try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResults.getFirst().content())) {
+        try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResults.getFirst().content().getFirst())) {
             content = new String(contentInputStream.readAllBytes());
         }
         assertEquals(expectedContent, content);
         assertEquals("dataSource", ingressResults.getFirst().dataSource());
-        assertEquals("filename", ingressResults.getFirst().content().getName());
+        assertEquals("filename", ingressResults.getFirst().content().getFirst().getName());
         assertEquals(UUID_GENERATOR.generate(), ingressResults.getFirst().did());
     }
 
