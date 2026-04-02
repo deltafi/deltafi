@@ -51,7 +51,7 @@
           <div class="content-wrapper">
             <HighlightedCode v-if="loadingContent" :highlight="false" code="Loading..." />
             <div v-else-if="contentLoaded">
-              <HighlightedCode :highlight="highlightCode && selectedRenderFormat.highlight" :code="displayedContent" :language="language" />
+              <HighlightedCode :highlight="highlightCode && selectedRenderFormat.highlight" :code="displayedContent" :language="language" :foldable="language === 'json'" :line-numbers="true" />
             </div>
           </div>
           <ScrollTop target="parent" :threshold="100" icon="pi pi-arrow-up" />
@@ -212,6 +212,7 @@ const renderFormats = computed(() => {
       highlight: true,
     });
   }
+
 
   return _.sortBy(formats, "name");
 });

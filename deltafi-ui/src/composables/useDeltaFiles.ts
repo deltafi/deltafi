@@ -18,6 +18,7 @@
 
 import { reactive, ref } from "vue";
 import useGraphQL from "./useGraphQL";
+import useGraphQLIntrospection from "./useGraphQLIntrospection";
 import useApi from './useApi'
 
 export default function useDeltaFiles() {
@@ -142,6 +143,26 @@ export default function useDeltaFiles() {
   };
 
   const getRawDeltaFile = async (did: string) => {
+    let fields;
+    try {
+      const { buildQueryFields } = useGraphQLIntrospection();
+      fields = await buildQueryFields("DeltaFile", { maxDepth: 4 });
+    } catch {
+      // Fall back to the raw DB endpoint if introspection is unavailable
+      return getRawDeltaFileFallback(did);
+    }
+
+    const query = {
+      deltaFile: {
+        __args: { did },
+        ...fields,
+      },
+    };
+    await queryGraphQL(query, "getRawDeltaFile", "query", true);
+    return response.value.data.deltaFile;
+  };
+
+  const getRawDeltaFileFallback = async (did: string) => {
     const query = {
       rawDeltaFile: {
         __args: {
@@ -151,7 +172,7 @@ export default function useDeltaFiles() {
       },
     };
     await queryGraphQL(query, "getRawDeltaFile");
-    return response.value.data.rawDeltaFile;
+    return JSON.parse(response.value.data.rawDeltaFile);
   };
 
   const cancelDeltaFile = async (dids: Array<string>) => {

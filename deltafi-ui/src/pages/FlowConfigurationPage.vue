@@ -22,7 +22,7 @@
     <span v-if="hasErrors">
       <Message v-for="error in errors" :key="error" :closable="false" severity="error">{{ error }}</Message>
     </span>
-    <HighlightedCode v-else-if="flowConfigData" language="yaml" :code="flowConfigData" />
+    <HighlightedCode v-else-if="flowConfigData" language="yaml" :code="flowConfigData" :line-numbers="true" />
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
     <ScrollTop target="window" :threshold="10" icon="pi pi-arrow-up" />
   </div>

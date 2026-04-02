@@ -62,7 +62,7 @@
   </div>
   <Dialog v-model:visible="showSnapshotDialog" header="System Snapshot" :modal="true" :dismissable-mask="true" :draggable="false">
     <div class="snapshot-json-container" v-if="snapshot != null">
-      <HighlightedCode :code="snapshotJSON" language="json" :style="{ width: '65vw'}" />
+      <HighlightedCode :code="snapshotJSON" language="json" :line-numbers="true" :foldable="true" :style="{ width: '65vw'}" />
     </div>
     <template #footer>
       <span class="btn-group mt-2">

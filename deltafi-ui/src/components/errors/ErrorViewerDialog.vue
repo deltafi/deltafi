@@ -51,13 +51,13 @@
           <div v-if="cause" class="error-row">
             <div class="error-col">
               <strong>Cause</strong>
-              <HighlightedCode :highlight="false" :code="cause" />
+              <HighlightedCode :highlight="false" :code="cause" :line-numbers="true" />
             </div>
           </div>
           <div v-if="context" class="error-row">
             <div class="error-col">
               <strong>Context</strong>
-              <HighlightedCode :highlight="false" :code="context" />
+              <HighlightedCode :highlight="false" :code="context" :line-numbers="true" />
             </div>
           </div>
         </TabPanel>

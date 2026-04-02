@@ -91,7 +91,17 @@
       </div>
     </div>
     <Dialog v-model:visible="rawJSONDialog.visible" :header="rawJSONDialog.header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
-      <HighlightedCode v-if="rawJSONDialog.body" :code="rawJSONDialog.body" />
+      <template #header>
+        <span class="p-dialog-title">{{ rawJSONDialog.header }}</span>
+        <Button v-if="rawJSONDialog.body" v-tooltip.bottom="copied ? 'Copied!' : 'Copy to clipboard'" :icon="copied ? 'pi pi-check' : 'pi pi-copy'" style="margin-left: auto" severity="secondary" text rounded @click="copyRawJSON" />
+      </template>
+      <template #maximizebutton="{ maximizeCallback, maximized }">
+        <Button v-tooltip.bottom="maximized ? 'Restore' : 'Maximize'" :icon="maximized ? 'pi pi-window-minimize' : 'pi pi-window-maximize'" severity="secondary" text rounded @click="maximizeCallback" />
+      </template>
+      <template #closebutton="{ closeCallback }">
+        <Button v-tooltip.bottom="'Close'" icon="pi pi-times" severity="secondary" text rounded @click="closeCallback" />
+      </template>
+      <HighlightedCode v-if="rawJSONDialog.body" :code="rawJSONDialog.body" :line-numbers="true" :foldable="true" />
       <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
       <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
     </Dialog>
@@ -128,6 +138,7 @@ import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
 import { computed, inject, onMounted, reactive, ref, watch } from "vue";
+import { useClipboard } from "@vueuse/core";
 import { useRoute, useRouter } from "vue-router";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 
@@ -148,6 +159,7 @@ import Tabs from "primevue/tabs";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
+const { copy, copied } = useClipboard();
 const annotateDialog = ref();
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -428,7 +440,11 @@ const viewRawJSON = async () => {
   rawJSONDialog.visible = true;
   rawJSONDialog.header = did.value;
   const raw = await getRawDeltaFile(did.value);
-  rawJSONDialog.body = JSON.stringify(JSON.parse(raw), null, 2);
+  rawJSONDialog.body = JSON.stringify(raw, null, 2);
+};
+
+const copyRawJSON = () => {
+  copy(rawJSONDialog.body);
 };
 
 const onAcknowledged = (_, reason) => {
