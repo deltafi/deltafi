@@ -84,6 +84,14 @@ ingress:
   ui:
     http_port: 80
     https_port: 443
+
+# Configure Storage Container Memory limits
+s3proxy:
+  resources:
+    requests:
+      memory: 256Mi
+    limits:
+      memory: 1Gi
 ```
 
 ### Global Environment Variables

@@ -119,3 +119,11 @@ postgres:
       max_replication_slots: "1"
       random_page_cost: "1.1"
       effective_io_concurrency: "200"
+
+# S3 Proxy Configuration
+s3proxy:
+  resources:
+    requests:
+      memory: 256Mi
+    limits:
+      memory: 1Gi

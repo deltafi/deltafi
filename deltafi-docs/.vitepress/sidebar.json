@@ -89,6 +89,7 @@
       { "text": "Leader Member", "link": "/advanced/leader_member" },
       { "text": "Multithreading in Action Kits", "link": "/advanced/multithreading_java_action_kit" },
       { "text": "Directory Watcher", "link": "/advanced/directory-watcher" },
+      { "text": "S3 Proxy Tuning", "link":  "/advanced/s3-proxy-tuning"},
       { "text": "PostgreSQL Tuning", "link": "/advanced/postgres-tuning" },
       { "text": "Provenance Tracking", "link": "/advanced/provenance" }
     ]
