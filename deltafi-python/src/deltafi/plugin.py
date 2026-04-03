@@ -31,11 +31,13 @@ from os.path import isdir, isfile, join
 from pathlib import Path
 from typing import List, NamedTuple
 
+import redis
 import requests
 import yaml
 
 from deltafi.action import Action, Join
 from deltafi.actioneventqueue import ActionEventQueue
+from deltafi.artifact import Artifact, ArtifactCacheManager, ArtifactRegistryClient, ArtifactVersionChangeListener, _LazyArtifactHandle
 from deltafi.domain import Event, ActionExecution
 from deltafi.exception import ExpectedContentException, MissingMetadataException
 from deltafi.logger import get_logger
@@ -118,11 +120,14 @@ def _find_variables_filename(names: List[str]):
         return None
 
 
-def _setup_queue(max_connections):
-    url = os.getenv('VALKEY_URL', 'http://localhost:6379')
-    password = os.getenv('VALKEY_PASSWORD')
-    app_name = os.getenv('APP_NAME')
-    return ActionEventQueue(url, max_connections, password, app_name)
+def _create_valkey_pool(valkey_url):
+    from urllib.parse import urlparse
+    parsed = urlparse(valkey_url)
+    return redis.ConnectionPool(
+        host=parsed.hostname or "localhost",
+        port=parsed.port or 6379,
+        password=os.getenv('VALKEY_PASSWORD') or parsed.password,
+    )
 
 
 def _setup_content_service():
@@ -176,8 +181,14 @@ class Plugin(object):
         if thread_config is not None:
             self.thread_config = thread_config
         self.core_url = os.getenv('CORE_URL', 'http://127.0.0.1:8042')
+        valkey_url = os.getenv('VALKEY_URL', 'http://localhost:6379')
+        self.valkey_pool = _create_valkey_pool(valkey_url)
         self.image = os.getenv('IMAGE')
         self.image_pull_secret = os.getenv('IMAGE_PULL_SECRET')
+        self.description = description
+        self.display_name = os.getenv('PROJECT_NAME') if plugin_name is None else plugin_name
+        self.coordinates = _coordinates() if plugin_coordinates is None else plugin_coordinates
+
         action_classes = []
         if actions is not None and len(actions):
             action_classes.extend(actions)
@@ -187,8 +198,14 @@ class Plugin(object):
             if len(found_actions):
                 action_classes.extend(found_actions)
 
-        unique_actions = dict.fromkeys(action_classes)
-        self.singleton_actions = [action() for action in unique_actions]
+        unique_actions = list(dict.fromkeys(action_classes))
+
+        self._artifact_cache_manager = None
+        self._artifact_listener = None
+        self._init_artifact_infra(unique_actions)
+        self.singleton_actions = [self._create_action(cls) for cls in unique_actions]
+        if self._artifact_cache_manager is not None:
+            self._artifact_cache_manager.fire_startup_callbacks()
 
         self.lookup_table_suppliers = {}
         if lookup_table_suppliers_package is not None:
@@ -198,10 +215,6 @@ class Plugin(object):
             for lookup_table_supplier_class in lookup_table_supplier_classes:
                 lookup_table_supplier = lookup_table_supplier_class(lookup_table_client)
                 self.lookup_table_suppliers[lookup_table_supplier.lookup_table.name] = lookup_table_supplier
-
-        self.description = description
-        self.display_name = os.getenv('PROJECT_NAME') if plugin_name is None else plugin_name
-        self.coordinates = _coordinates() if plugin_coordinates is None else plugin_coordinates
 
         if os.getenv('ACTIONS_HOSTNAME'):
             self.hostname = os.getenv('ACTIONS_HOSTNAME')
@@ -241,6 +254,44 @@ class Plugin(object):
                     visited.add(obj)
 
         return classes
+
+    def _init_artifact_infra(self, action_classes):
+        """Start the artifact cache manager and listener if any action class declares Artifact descriptors."""
+        has_artifacts = any(
+            isinstance(attr, Artifact)
+            for cls in action_classes
+            for attr in vars(cls).values()
+        )
+        if not has_artifacts:
+            return
+        owner = f"{self.coordinates.group_id}.{self.coordinates.artifact_id}"
+        client = ArtifactRegistryClient(f"{self.core_url}/api/v2")
+        self._artifact_cache_manager = ArtifactCacheManager(client, owner)
+        self._artifact_cache_manager.start_poller()
+        self._artifact_listener = ArtifactVersionChangeListener(self.valkey_pool, self._artifact_cache_manager)
+        self._artifact_listener.start()
+
+    def _create_action(self, cls):
+        """Instantiate an action, binding resolved artifact handles before __init__ runs."""
+        descriptors = [
+            (name, attr)
+            for name, attr in vars(cls).items()
+            if isinstance(attr, Artifact)
+        ]
+        if not descriptors or self._artifact_cache_manager is None:
+            return cls()
+        # Allocate instance without calling __init__
+        instance = cls.__new__(cls)
+        # Bind artifact handles so they are available inside __init__
+        for name, descriptor in descriptors:
+            if descriptor.preload:
+                handle = self._artifact_cache_manager.resolve(descriptor)
+            else:
+                handle = _LazyArtifactHandle(descriptor, self._artifact_cache_manager)
+            instance.__dict__[name] = handle
+        # Now run __init__ — self.<artifact> is accessible
+        instance.__init__()
+        return instance
 
     def action_name(self, action):
         return f"{self.coordinates.group_id}.{action.__class__.__name__}"
@@ -337,7 +388,7 @@ class Plugin(object):
         if len(self.lookup_table_suppliers) > 0:
             total_threads += 1
 
-        self.queue = _setup_queue(total_threads)
+        self.queue = ActionEventQueue(self.valkey_pool, os.getenv('APP_NAME'))
         self.content_service = _setup_content_service()
 
         if len(self.lookup_table_suppliers) > 0:

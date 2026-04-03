@@ -18,7 +18,6 @@
 
 from datetime import datetime, timezone
 from typing import List
-from urllib.parse import urlparse
 
 import json
 import redis
@@ -29,13 +28,8 @@ LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks"
 
 
 class ActionEventQueue:
-    def __init__(self, url, max_connections, password, app_name):
-        parsed = urlparse(url)
-        self.pool = redis.ConnectionPool(
-            max_connections=max_connections,
-            host=parsed.hostname,
-            port=parsed.port,
-            password=password)
+    def __init__(self, pool, app_name):
+        self.pool = pool
         self.connection = None
         self.app_name = app_name
 

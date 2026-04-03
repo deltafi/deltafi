@@ -22,7 +22,6 @@ import redis
 from deltafi.actioneventqueue import ActionEventQueue
 from mockito import when, mock, unstub
 
-TEST_URL = "http://127.0.0.1:12345"
 TEST_ACTION = "Action"
 TEST_ITEM = "1234"
 
@@ -32,11 +31,10 @@ def test_action_event_queue_size():
     mock_pool = mock(redis.ConnectionPool)
     mock_conn = mock(redis.Redis)
 
-    when(redis).ConnectionPool(...).thenReturn(mock_pool)
     when(redis).Redis(connection_pool=mock_pool).thenReturn(mock_conn)
     when(mock_conn).zcard(TEST_ACTION).thenReturn(1)
 
-    service = ActionEventQueue(TEST_URL, 5, "password", None)
+    service = ActionEventQueue(mock_pool, None)
     assert service.size(TEST_ACTION) == 1
 
 
@@ -45,12 +43,11 @@ def test_action_event_queue_put():
     mock_pool = mock(redis.ConnectionPool)
     mock_conn = mock(redis.Redis)
 
-    when(redis).ConnectionPool(...).thenReturn(mock_pool)
     when(redis).Redis(connection_pool=mock_pool).thenReturn(mock_conn)
     when(time).time().thenReturn(1.6)
     when(mock_conn).zadd(TEST_ACTION, {TEST_ITEM: 1600}, nx=True).thenReturn(1)
 
-    service = ActionEventQueue(TEST_URL, 5, "password", None)
+    service = ActionEventQueue(mock_pool, None)
     assert service.put(TEST_ACTION, TEST_ITEM) == 1
 
 
@@ -61,9 +58,8 @@ def test_action_event_queue_take():
 
     result_tuple = (TEST_ACTION, TEST_ITEM, 1600)
 
-    when(redis).ConnectionPool(...).thenReturn(mock_pool)
     when(redis).Redis(connection_pool=mock_pool).thenReturn(mock_conn)
     when(mock_conn).bzpopmin(TEST_ACTION, 0).thenReturn(result_tuple)
 
-    service = ActionEventQueue(TEST_URL, 5, "password", "some-pod")
+    service = ActionEventQueue(mock_pool, "some-pod")
     assert service.take(TEST_ACTION) == TEST_ITEM

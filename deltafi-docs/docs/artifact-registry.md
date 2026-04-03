@@ -33,9 +33,42 @@ falls back to `shared`. A plugin can override a shared artifact with its own cop
 
 ## Using Plugin Artifacts in Plugin Code
 
-The action-kit provides annotation-driven injection of artifacts into Spring-managed beans (actions,
-services, etc.). You declare what artifact you need; the framework handles fetching, caching, and
-live updates.
+Both the Java and Python action-kits provide declarative artifact injection. You declare what
+artifact you need; the framework handles fetching, caching, and live updates.
+
+### How it works
+
+**Declaration** — artifacts are declared at the class level (Java: field annotation, Python: class
+attribute). The framework injects a live handle at startup.
+
+**Default resources** — an optional default file can be bundled with the plugin. On first deploy
+the framework publishes it to the registry automatically; when an operator publishes a real version
+the action switches to it without a restart.
+
+**Caching** — by default handles are non-cacheable: every `getBytes()` / `get_bytes()` call
+downloads fresh bytes from the registry. The default is `false` because the most common pattern
+is to react to updates via a callback and store the parsed result in your own field (a compiled
+rule engine, a loaded model, an in-memory index). In that pattern the raw bytes are only needed
+once per version, so caching them in the handle as well would waste memory for no benefit. Set
+`cacheable = true` / `cacheable=True` when your action calls `getBytes()` on every invocation
+without maintaining its own copy — caching then avoids a download on each call.
+
+**Live updates** — when an operator publishes a new version, connected plugins are notified via a
+push notification and a background poller as a safety net. Cached entries are refreshed
+automatically. Registered callbacks fire after the refresh so application logic (e.g. recompiling
+a rule engine) can react without a restart.
+
+**Scope** — controls which namespace is searched:
+
+| Value | Behaviour |
+|---|---|
+| `PLUGIN_FIRST` | Try plugin namespace first, fall back to shared (default) |
+| `PLUGIN_ONLY` | Plugin namespace only; never fall back to shared |
+| `SHARED_ONLY` | Shared namespace only; plugin namespace is never checked |
+
+---
+
+## Java Action-Kit
 
 ### Basic Example
 
@@ -43,11 +76,19 @@ live updates.
 @Component
 public class RoutingTransformAction extends TransformAction<RoutingParameters> {
 
-    @PluginArtifact(
-        artifactName = "routing-rules.json",
-        defaultResource = "defaults/routing-rules.json"
-    )
-    private ArtifactHandle routingRules;
+    private final ArtifactHandle routingRules;
+
+    public RoutingTransformAction(
+            // cacheable is true because we call routingRules.getBytes() on every transform call
+            @PluginArtifact(
+                artifactName = "routing-rules.json",
+                defaultResource = "defaults/routing-rules.json",
+                cacheable = true
+            )
+            ArtifactHandle routingRules) {
+        super("Route input based on configurable rules");
+        this.routingRules = routingRules;
+    }
 
     @Override
     public TransformResultType transform(ActionContext context,
@@ -61,77 +102,68 @@ public class RoutingTransformAction extends TransformAction<RoutingParameters> {
 }
 ```
 
-Place the default configuration at `src/main/resources/defaults/routing-rules.json`. On first
-deploy the framework publishes it to the registry automatically. When an operator publishes a real
-version, the action switches to it without a restart.
+Place the default at `src/main/resources/defaults/routing-rules.json` (classpath resource).
 
 ### `@PluginArtifact` Reference
 
-| Attribute         | Type | Default | Description |
-|-------------------|---|---|---|
-| `artifactName`    | `String` | — | Artifact identifier in the registry |
-| `alias`           | `String` | `"active"` | Alias or concrete version to resolve |
-| `scope`           | `ArtifactScope` | `PLUGIN_FIRST` | Which namespace(s) to search |
-| `preload`         | `boolean` | `true` | Fetch eagerly at startup; false = lazy on first access |
-| `cacheable`       | `boolean` | `false` | Cache bytes in memory; `false` = always fetch fresh on every call (default) |
-| `defaultResource` | `String` | `""` | Classpath resource to seed on first deploy. When set, the resource is published as the first artifact version if none exists. When blank, startup fails if the artifact is missing. |
-
-**`ArtifactScope` values:**
-
-| Value | Behaviour |
-|---|---|
-| `PLUGIN_FIRST` | Try plugin namespace first, fall back to shared |
-| `PLUGIN_ONLY` | Plugin namespace only; never fall back to shared |
-| `SHARED_ONLY` | Shared namespace only; plugin namespace is never checked |
+```java
+public MyAction(
+        @PluginArtifact(
+            artifactName    = "my-artifact",  // required
+            alias           = "active",       // default
+            scope           = PLUGIN_FIRST,   // default
+            preload         = true,           // default — eager fetch; false = lazy on first access
+            cacheable       = false,          // default — always fetch fresh; true = cache in memory
+            defaultResource = ""              // classpath resource to seed on first deploy
+        )
+        ArtifactHandle handle) {
+    ...
+}
+```
 
 ### `ArtifactHandle` API
 
-The injected field is an `ArtifactHandle`. All methods are safe to call from multiple threads.
-
-| Method | Returns | Description |
+| Method | Return type | Description |
 |---|---|---|
-| `getArtifactName()` | `String` | Artifact identifier as registered in the registry |
-| `getBytes()` | `byte[]` | Artifact content; never null |
-| `getInputStream()` | `InputStream` | Fresh stream over artifact bytes; caller must close |
-| `getString()` | `String` | Artifact content decoded as a UTF-8 string |
-| `getString(Charset)` | `String` | Artifact content decoded with the given charset |
-| `getVersion()` | `String` | Concrete version string, e.g. `"20240101-120000"` |
-| `getDescription()` | `String` | Human-readable description, or null |
+| `getArtifactName()` | `String` | Identifier as registered |
+| `getBytes()` | `byte[]` | Artifact content |
+| `getInputStream()` | `InputStream` | Streaming content (caller must close) |
+| `getString()` | `String` | UTF-8 decoded content |
+| `getString(charset)` | `String` | Decoded with given charset |
+| `getVersion()` | `String` | Concrete version, e.g. `"20240101-120000"` |
+| `getDescription()` | `String` | Human-readable description, or `null` |
 | `getContentType()` | `String` | MIME type |
-| `getSha256()` | `String` | SHA-256 digest of the content |
-| `getManifest()` | `ArtifactManifest` | Full manifest (version, description, contentType, sha256, labels) |
-| `getLabels()` | `Map<String,String>` | Freeform labels attached at publish time |
-| `isReady()` | `boolean` | `true` if an artifact was successfully resolved |
-| `isDefault()` | `boolean` | `true` if the artifact was seeded from the plugin's classpath default |
-| `isShared()` | `boolean` | `true` if the artifact came from the shared namespace |
-| `getSourcePrefix()` | `String` | Storage prefix: `"shared"` or `"plugins/{owner}"` |
-| `refresh()` | `void` | Force a re-download and update the cached bytes |
-| `onUpdate(Consumer<VersionChangedEvent>)` | `ArtifactHandle` | Register a programmatic update callback |
-| `onUpdate(Runnable)` | `ArtifactHandle` | Convenience overload without the event |
+| `getSha256()` | `String` | SHA-256 digest |
+| `getManifest()` | `ArtifactManifest` | Version, description, contentType, sha256, labels |
+| `getLabels()` | `Map<String,String>` | User-defined labels |
+| `isReady()` | `boolean` | `true` if artifact resolved successfully |
+| `isDefault()` | `boolean` | `true` if seeded from classpath default |
+| `isShared()` | `boolean` | `true` if served from shared namespace |
+| `getSourcePrefix()` | `String` | `"shared"` or `"plugins/{owner}"` |
+| `refresh()` | `void` | Force re-download |
+| `onUpdate(Consumer<VersionChangedEvent>)` | `void` | Register callback (with event) |
+| `onUpdate(Runnable)` | `void` | Register callback (without event) |
 
 ### Reacting to Version Changes
-
-When a new version is published, connected plugins receive a notification. The cache is
-refreshed automatically — `getBytes()` will return the new content on the next call. If you need
-to trigger application logic on an update (e.g. recompile a rule engine), register a callback
-programmatically using `ArtifactHandle.onUpdate()`:
 
 ```java
 @Component
 public class RuleEngineAction extends TransformAction<RuleParameters> {
 
-    @PluginArtifact(
-        artifactName = "rules.yaml",
-        defaultResource = "defaults/rules.yaml"
-    )
-    private ArtifactHandle rulesHandle;
+    private final ArtifactHandle rulesHandle;
 
     // volatile because the callback fires on the listener thread
     // while transform() runs on action-kit worker threads
     private volatile RuleEngine ruleEngine;
 
-    @PostConstruct
-    public void initialize() {
+    public RuleEngineAction(
+            @PluginArtifact(
+                artifactName = "rules.yaml",
+                defaultResource = "defaults/rules.yaml"
+            )
+            ArtifactHandle rulesHandle) {
+        super("Evaluate rules against input");
+        this.rulesHandle = rulesHandle;
         ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
         rulesHandle.onUpdate(event -> {
             log.info("Rules updated: {} → {}", event.previousVersion(), event.newVersion());
@@ -148,134 +180,151 @@ public class RuleEngineAction extends TransformAction<RuleParameters> {
 }
 ```
 
-Callbacks can also be registered in a constructor, or as method references:
+Mark state derived from the artifact `volatile` (or use `AtomicReference`) so worker threads see
+the updated value immediately after the callback assigns it.
+
+#### Extracting to a service when processing is expensive or the artifact is needed across actions
+
+The action framework can run multiple instances of the same action class in parallel (one per
+configured thread). Each instance registers its own `onUpdate` callback. When a new version
+arrives, all callbacks fire sequentially on the listener thread — meaning an expensive operation
+like compiling a rule engine would run once per instance.
+
+Move the artifact handle, derived state, and callback into a `@Service` singleton so the
+expensive work runs exactly once per update:
 
 ```java
-// With the event:
-rulesHandle.onUpdate(event ->
-    log.info("Rules updated to {}", event.newVersion()));
+@Service
+public class RuleEngineService {
 
-// Runnable overload if you don't need the event:
-rulesHandle.onUpdate(this::rebuildEngine);
+    private final ArtifactHandle rulesHandle;
+    private volatile RuleEngine ruleEngine;
+
+    public RuleEngineService(
+            @PluginArtifact(
+                artifactName = "rules.yaml",
+                defaultResource = "defaults/rules.yaml"
+            )
+            ArtifactHandle rulesHandle) {
+        this.rulesHandle = rulesHandle;
+        ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
+        rulesHandle.onUpdate(event -> {
+            log.info("Rules updated: {} → {}", event.previousVersion(), event.newVersion());
+            ruleEngine = RuleEngine.compile(rulesHandle.getBytes());
+        });
+    }
+
+    public RuleEngine getRuleEngine() {
+        return ruleEngine;
+    }
+}
+
+@Component
+public class RuleEngineAction extends TransformAction<RuleParameters> {
+
+    private final RuleEngineService ruleEngineService;
+
+    public RuleEngineAction(RuleEngineService ruleEngineService) {
+        super("Evaluate rules against input");
+        this.ruleEngineService = ruleEngineService;
+    }
+
+    @Override
+    public TransformResultType transform(ActionContext context,
+                                        RuleParameters params,
+                                        TransformInput input) {
+        return ruleEngineService.getRuleEngine().evaluate(context, input);
+    }
+}
 ```
 
-Key points:
-- The callback fires **after** the shared cache has been refreshed. `getBytes()` returns the
-  new content inside the callback.
-- The callback runs on the notification listener thread. Long-running work should be dispatched to
-  an executor to avoid blocking future notifications.
-- If the callback throws, the error is logged and the action continues with the previous version.
-  The next version-change event will trigger another attempt.
-- Mark state derived from the artifact `volatile` (or use `AtomicReference`) so action worker
-  threads see the updated value.
+No matter how many action instances are running, the rule engine compiles once per version update
+and all instances immediately see the new engine via the shared service.
 
 ### Requiring an Externally-Provided Artifact
 
-When there is no sensible default, omit `defaultResource`. If preload is true, startup will fail with a clear error
-until the artifact is uploaded:
+When there is no sensible default, omit `defaultResource`. Startup fails with a clear error until
+the artifact is uploaded.
 
 ```java
-@PluginArtifact(artifactName = "classification-model.bin")
-private ArtifactHandle model;
+@Component
+public class ClassificationAction extends TransformAction<ClassificationParameters> {
 
-private volatile Classifier classifier;
+    private final ArtifactHandle model;
+    private volatile Classifier classifier;
 
-@PostConstruct
-public void initialize() {
-    classifier = Classifier.load(model.getInputStream());
-    log.info("Model loaded: version={}, sha256={}",
-            model.getVersion(), model.getSha256());
-    model.onUpdate(event -> {
+    public ClassificationAction(
+            @PluginArtifact(artifactName = "classification-model.bin")
+            ArtifactHandle model) {
+        super("Classify input using ML model");
+        this.model = model;
         classifier = Classifier.load(model.getInputStream());
-    });
+        log.info("Model loaded: version={}, sha256={}",
+                model.getVersion(), model.getSha256());
+        model.onUpdate(event -> {
+            classifier = Classifier.load(model.getInputStream());
+        });
+    }
 }
 ```
 
 ### Multiple Artifacts
 
-An action can declare multiple artifacts, each with its own strategy:
-
 ```java
-// Ships with a default; operators can customize later
-@PluginArtifact(
-    artifactName = "enrichment-config.json",
-    defaultResource = "defaults/enrichment-config.json"
-)
-private ArtifactHandle config;
+@Component
+public class EnrichmentAction extends TransformAction<EnrichmentParameters> {
 
-// Must be provided by the operator — no default makes sense
-@PluginArtifact(artifactName = "customer-extract.csv")
-private ArtifactHandle customerData;
+    // Ships with a default; operators can customize later
+    @PluginArtifact(
+        artifactName = "enrichment-config.json",
+        defaultResource = "defaults/enrichment-config.json"
+    )
+    private ArtifactHandle config;
 
-// Platform-wide lookup table in the shared namespace
-@PluginArtifact(
-    artifactName = "geo-regions.csv",
-    scope = ArtifactScope.SHARED_ONLY
-)
-private ArtifactHandle geoRegions;
+    // Must be provided by the operator — no default makes sense
+    @PluginArtifact(artifactName = "customer-extract.csv")
+    private ArtifactHandle customerData;
 
-@PostConstruct
-public void initialize() {
-    rebuild();
-    // Each artifact can be updated independently; all trigger a rebuild
-    config.onUpdate(this::rebuild);
-    customerData.onUpdate(this::rebuild);
-    geoRegions.onUpdate(this::rebuild);
-}
+    // Platform-wide lookup table in the shared namespace
+    @PluginArtifact(
+        artifactName = "geo-regions.csv",
+        scope = ArtifactScope.SHARED_ONLY
+    )
+    private ArtifactHandle geoRegions;
 
-private void rebuild() {
-    service = new EnrichmentService(
-        parseJson(config.getBytes(), EnrichmentConfig.class),
-        CsvParser.parse(customerData.getBytes()),
-        CsvParser.parse(geoRegions.getBytes())
-    );
+    private volatile EnrichmentService service;
+
+    @PostConstruct
+    public void initialize() {
+        rebuild();
+        // Each artifact can be updated independently; all trigger a rebuild
+        config.onUpdate(this::rebuild);
+        customerData.onUpdate(this::rebuild);
+        geoRegions.onUpdate(this::rebuild);
+    }
+
+    private void rebuild() {
+        service = new EnrichmentService(
+            parseJson(config.getBytes(), EnrichmentConfig.class),
+            CsvParser.parse(customerData.getBytes()),
+            CsvParser.parse(geoRegions.getBytes())
+        );
+    }
 }
 ```
 
-Startup completes once all artifacts without a `defaultResource` have been resolved. Each artifact
-can be updated independently and the callback rebuilds the service from all current versions.
-
-### Edge Cases and Operator Guidance
-
-#### PLUGIN_FIRST: plugin-specific version added after startup
-
-When a plugin starts with `scope = PLUGIN_FIRST` and only a shared artifact exists, the cache
-resolves from the shared namespace. When an operator later publishes a plugin-specific version of
-the same artifact, a version-change notification arrives and the framework automatically promotes
-the cached entry to serve the plugin-specific bytes — no restart required. Registered callbacks
-fire normally after the promotion.
-
-If the plugin was offline when the notification was sent and misses it, the background poller will
-not detect the new plugin-specific version on its own (it polls the currently-cached namespace
-only). In that case a pod restart will pick up the plugin-specific version correctly on the next
-startup resolve.
-
-#### Deleted artifact: graceful degradation
-
-Artifact deletion does not publish a version-change notification. If an artifact is deleted from
-the registry while a plugin has it cached, the plugin continues serving the cached bytes
-indefinitely.
-
-When the background poller runs and finds the artifact absent from the registry listing it logs a
-`WARN` message and retains the cached bytes. If a version-change event is received that triggers
-a re-download and the artifact is gone, the same warning is logged and the old bytes are kept.
-
-In either case the plugin operates normally using the last-known content. To restore normal
-registry-backed operation: either re-upload a replacement artifact or restart the plugin pod
-(which will fail fast if the artifact is truly gone and no `defaultResource` is configured).
-
 ### Pinning to a Specific Version
 
-Setting `alias` to a concrete version string (rather than an alias like `"active"`) pins the
-handle to that exact version. Pinned entries are never considered stale — `getBytes()` always
-returns the same bytes without re-downloading. They still respond to explicit version-change
-notifications, so if an artifact is deleted and republished with the same version string
-the cache will update.
+Setting `alias` to a concrete version string pins the handle to that exact version. Pinned entries
+are never considered stale — `getBytes()` always returns the same bytes without re-downloading.
 
 ```java
-// Always uses version "1.0.0" regardless of what 'active' points to
-@PluginArtifact(artifactName = "stable-model.bin", alias = "1.0.0")
-private ArtifactHandle pinnedModel;
+public MyAction(
+        // Always uses version "1.0.0" regardless of what 'active' points to
+        @PluginArtifact(artifactName = "stable-model.bin", alias = "1.0.0")
+        ArtifactHandle pinnedModel) {
+    ...
+}
 ```
 
 ### Programmatic Access
@@ -487,6 +536,229 @@ The `ArtifactStream` implements `Closeable` and **must** be closed when done (th
 connection stays open until then). Streaming bypasses the shared cache — each call opens a new
 connection. Use `getArtifact()` for small, frequently-accessed artifacts and `streamArtifact()`
 only when memory pressure is a concern.
+
+---
+
+## Python Action-Kit
+
+### Basic Example
+
+```python
+import json
+from deltafi.transform import TransformAction
+from deltafi.artifact import Artifact
+
+class RoutingTransformAction(TransformAction):
+
+    routing_rules = Artifact("routing-rules.json",
+                             default_resource="defaults/routing-rules.json")
+
+    def transform(self, context, params, transform_input):
+        config = json.loads(self.routing_rules.get_string())
+        region = resolve_region(config, transform_input.content)
+        context.add_metadata("targetRegion", region)
+        return transform_input.to_transform_result(context)
+```
+
+`default_resource` is a file path relative to the working directory (not a classpath resource).
+
+### `Artifact` Descriptor Reference
+
+```python
+from deltafi.artifact import Artifact, ArtifactScope
+
+handle = Artifact(
+    "my-artifact",                     # required
+    alias="active",                    # default
+    scope=ArtifactScope.PLUGIN_FIRST,  # default
+    cacheable=False,                   # default — always fetch fresh; True = cache in memory
+    preload=True,                      # default — resolve at startup; False = defer to first access
+    default_resource=None,             # file path to seed on first deploy
+)
+```
+
+### `ArtifactHandle` API
+
+| Method | Return type | Description |
+|---|---|---|
+| `get_artifact_name()` | `str` | Identifier as registered |
+| `get_bytes()` | `bytes` | Artifact content |
+| `get_input_stream()` | `io.BytesIO` | Artifact content as a stream |
+| `get_string()` | `str` | UTF-8 decoded content |
+| `get_string(encoding)` | `str` | Decoded with given encoding |
+| `get_version()` | `str` | Concrete version, e.g. `"20240101-120000"` |
+| `get_description()` | `str` | Human-readable description, or `None` |
+| `get_content_type()` | `str` | MIME type |
+| `get_sha256()` | `str` | SHA-256 digest |
+| `get_manifest()` | `ArtifactManifest` | Version, description, content_type, sha256, labels |
+| `get_labels()` | `dict[str, str]` | User-defined labels |
+| `is_ready()` | `bool` | `True` if artifact resolved successfully |
+| `is_default()` | `bool` | `True` if seeded from `default_resource` |
+| `is_shared()` | `bool` | `True` if served from shared namespace |
+| `get_source_prefix()` | `str` | `"shared"` or `"plugins/{owner}"` |
+| `refresh()` | `None` | Force re-download |
+| `stream()` | `ArtifactStream` | Streaming download (context manager, bypasses cache) |
+| `on_update(callback)` | `ArtifactHandle` | Register callback; accepts `VersionChangedEvent` or zero args |
+
+### Reacting to Version Changes
+
+```python
+import logging
+from deltafi.transform import TransformAction
+from deltafi.artifact import Artifact
+
+logger = logging.getLogger(__name__)
+
+class RuleEngineAction(TransformAction):
+
+    rules = Artifact("rules.yaml", default_resource="defaults/rules.yaml",
+                     cacheable=True)
+
+    def __init__(self):
+        super().__init__('Evaluate rules against input')
+        self._rule_engine = RuleEngine.compile(self.rules.get_bytes())
+        self.rules.on_update(self._reload)
+
+    def _reload(self, event):
+        logger.info("Rules updated: %s → %s", event.previous_version, event.new_version)
+        self._rule_engine = RuleEngine.compile(self.rules.get_bytes())
+
+    def transform(self, context, params, transform_input):
+        return self._rule_engine.evaluate(context, transform_input)
+```
+
+The callback may accept a `VersionChangedEvent` argument, or take no arguments at all. The
+callback fires after the cache is refreshed, so `get_bytes()` inside the callback returns the
+new content.
+
+### Requiring an Externally-Provided Artifact
+
+When there is no sensible default, omit `default_resource`. Startup fails with a clear error until
+the artifact is uploaded.
+
+```python
+class ClassificationAction(TransformAction):
+
+    model = Artifact("classification-model.bin")
+
+    def __init__(self):
+        super().__init__('Classify input using ML model')
+        self._classifier = Classifier.load(self.model.get_bytes())
+        logger.info("Model loaded: version=%s sha256=%s",
+                    self.model.get_version(), self.model.get_sha256())
+        self.model.on_update(lambda event:
+            setattr(self, '_classifier', Classifier.load(self.model.get_bytes())))
+```
+
+### Multiple Artifacts
+
+```python
+from deltafi.artifact import Artifact, ArtifactScope
+
+class EnrichmentAction(TransformAction):
+
+    # Ships with a default; operators can customize later
+    config        = Artifact("enrichment-config.json",
+                             default_resource="defaults/enrichment-config.json")
+    # Must be provided by the operator — no default makes sense
+    customer_data = Artifact("customer-extract.csv")
+    # Platform-wide lookup table in the shared namespace
+    geo_regions   = Artifact("geo-regions.csv", scope=ArtifactScope.SHARED_ONLY)
+
+    def __init__(self):
+        super().__init__('Enrich input with external data')
+        self._rebuild()
+        # Each artifact can be updated independently; all trigger a rebuild
+        self.config.on_update(self._rebuild)
+        self.customer_data.on_update(self._rebuild)
+        self.geo_regions.on_update(self._rebuild)
+
+    def _rebuild(self):
+        self._service = EnrichmentService(
+            json.loads(self.config.get_string()),
+            parse_csv(self.customer_data.get_bytes()),
+            parse_csv(self.geo_regions.get_bytes()),
+        )
+```
+
+Startup completes once all artifacts without a `default_resource` have been resolved. Each
+artifact can be updated independently and the callback rebuilds the service from all current
+versions.
+
+### Streaming Large Artifacts
+
+`get_bytes()` buffers the entire artifact in memory. For large binary artifacts — ML models,
+embedding matrices, large lookup tables — use `stream()` instead. It opens a direct HTTP
+connection to the registry and lets you consume the response body without loading it all at once.
+Each call to `stream()` bypasses the shared cache and opens a new connection.
+
+```python
+# Load a large ONNX model without buffering it in memory
+with self.model.stream() as s:
+    session = onnx_runtime.create_session(s.read())
+
+# Pipe a large file to disk in chunks
+with self.embeddings.stream() as s:
+    with open("/data/embeddings.bin", "wb") as f:
+        for chunk in s.iter_content(chunk_size=65536):
+            f.write(chunk)
+```
+
+`ArtifactStream` **must** be used as a context manager — the underlying HTTP connection stays
+open until it is closed. `read()` reads all remaining bytes (equivalent to `get_bytes()`);
+`iter_content(chunk_size)` iterates in chunks without ever holding the full content in memory.
+
+### Lazy Loading
+
+By default, artifact handles are resolved (and the artifact downloaded) at plugin startup. Set
+`preload=False` to defer resolution to the first time the handle is actually accessed. This is
+useful for optional artifacts or those needed only on certain code paths.
+
+```python
+class AnalysisAction(TransformAction):
+
+    # Only downloaded when first accessed, not at startup
+    optional_model = Artifact("optional-model.bin", preload=False)
+
+    def transform(self, context, params, transform_input):
+        if params.use_model:
+            result = self.optional_model.get_bytes()  # resolved here on first call
+            ...
+```
+
+`on_update` callbacks registered in `__init__` before the handle is first accessed are buffered
+and forwarded automatically once the handle resolves.
+
+---
+
+## Edge Cases and Operator Guidance
+
+### PLUGIN_FIRST: plugin-specific version added after startup
+
+When a plugin starts with `scope = PLUGIN_FIRST` and only a shared artifact exists, the cache
+resolves from the shared namespace. When an operator later publishes a plugin-specific version of
+the same artifact, a version-change notification arrives and the framework automatically promotes
+the cached entry to serve the plugin-specific bytes — no restart required. Registered callbacks
+fire normally after the promotion.
+
+If the plugin was offline when the notification was sent and misses it, the background poller will
+not detect the new plugin-specific version on its own (it polls the currently-cached namespace
+only). In that case a pod restart will pick up the plugin-specific version correctly on the next
+startup resolve.
+
+### Deleted artifact: graceful degradation
+
+Artifact deletion does not publish a version-change notification. If an artifact is deleted from
+the registry while a plugin has it cached, the plugin continues serving the cached bytes
+indefinitely.
+
+When the background poller runs and finds the artifact absent from the registry listing it logs a
+`WARN` message and retains the cached bytes. If a version-change event is received that triggers
+a re-download and the artifact is gone, the same warning is logged and the old bytes are kept.
+
+In either case the plugin operates normally using the last-known content. To restore normal
+registry-backed operation: either re-upload a replacement artifact or restart the plugin pod
+(which will fail fast if the artifact is truly gone and no default resource is configured).
 
 ---
 
