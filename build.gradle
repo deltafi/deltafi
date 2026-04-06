@@ -1289,6 +1289,14 @@ subprojects {
                             from components.java
                             artifact sourcesJar
                             artifact javadocJar
+                            versionMapping {
+                                usage('java-api') {
+                                    fromResolutionOf('runtimeClasspath')
+                                }
+                                usage('java-runtime') {
+                                    fromResolutionResult()
+                                }
+                            }
                             pom {
                                 name = project.name
                                 description = project.description
@@ -1331,6 +1339,13 @@ subprojects {
                     signing {
                         sign publishing.publications
                     }
+                }
+            }
+
+            // gradle-plugin is published to Gradle Plugin Portal, not Maven Central
+            if (project.name == 'gradle-plugin') {
+                tasks.matching { it.name.toLowerCase().contains('sonatype') }.configureEach {
+                    enabled = false
                 }
             }
         }
